@@ -4,3 +4,4 @@ sphinx
 pytest
 pytest-runner
 tox
+lxml
