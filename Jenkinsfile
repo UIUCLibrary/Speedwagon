@@ -81,30 +81,17 @@ pipeline {
                                     python setup.py sdist bdist_wheel
                                     """
                         },
-                        "Windows CX_Freeze MSI": {
-                            node(label: "Windows") {
+                        "Windows Standalone": {
+                            node(label: "Windows&&VS2015&&DevPi") {
                                 deleteDir()
-                                checkout scm
-                                bat """${tool 'Python3.6.3_Win64'} -m venv venv
-                                       call venv/Scripts/activate.bat
-                                       pip install -r requirements.txt
-                                       python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir build/msi
-                                       call venv/Scripts/deactivate.bat
-                                    """
-                                bat "build\\msi\\frames.exe --pytest"
+                                unstash "Source"
+                                bat "call make.bat standalone"
                                 dir("dist") {
                                     stash includes: "*.msi", name: "msi"
                                 }
-
                             }
-                            node(label: "Windows") {
-                                deleteDir()
-                                git url: 'https://github.com/UIUCLibrary/ValidateMSI.git'
-                                unstash "msi"
-                                bat "call validate.bat -i"
+                        }, 
 
-                            }
-                        },
                 )
             }
             post {
