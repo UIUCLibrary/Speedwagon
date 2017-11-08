@@ -1,5 +1,7 @@
 pipeline {
-    agent any
+    agent {
+        label "Windows&&DevPi"
+    }
     environment {
         mypy_args = "--junit-xml=mypy.xml"
         pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
@@ -16,8 +18,6 @@ pipeline {
     stages {
 
         stage("Cloning Source") {
-            agent any
-
             steps {
                 deleteDir()
                 checkout scm
