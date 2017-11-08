@@ -1,3 +1,6 @@
+#!groovy
+@Library("ds-utils@v0.2.0") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
+import org.ds.*
 pipeline {
     agent {
         label "Windows&&DevPi"
@@ -42,18 +45,25 @@ pipeline {
             steps {
                 parallel(
                         "Documentation": {
-                          bat "${tool 'Python3.6.3_Win64'} -m tox -e docs"
+                            node(label: "Windows") {
+                                checkout scm
+                                bat "${tool 'Python3.6.3_Win64'} -m tox -e docs"
+                                dir('.tox/dist') {
+                                    zip archive: true, dir: 'html', glob: '', zipFile: 'sphinx_html_docs.zip'
+                                    dir("html"){
+                                        stash includes: '**', name: "HTML Documentation"
+                                    }
+                                }
+                            }
                         },
                         "MyPy": {
-                            bat "make.bat test-mypy --junit-xml=mypy.xml"
-                            junit 'mypy.xml'
+                            node(label: "Windows") {
+                                checkout scm
+                                bat "make test-mypy --html-report reports/mypy_report --junit-xml reports/mypy.xml"
+                                junit 'reports/mypy.xml'
+                            }
                           }
                 )
-            }
-            post {
-              success {
-                  zip archive: true, dir: 'html', glob: '', zipFile: 'sphinx_html_docs.zip'
-              }
             }
         }
 
