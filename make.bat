@@ -155,7 +155,7 @@ goto :eof
 :mypy
     call:install-dev
     setlocal
-    call venv\Scripts\activate.bat && mypy -p imgvalidator %*
+    call venv\Scripts\activate.bat && mypy -p frames %*
     endlocal
 goto :eof
 ::=============================================================================
