@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Project 
+    xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectRoot Condition="'$(ProjectRoot)' == ''">$(MSBuildProjectDirectory)</ProjectRoot>
+    </PropertyGroup>
+    <ItemGroup>
+        <helpers_path Include="$(MSBuildThisFileDirectory)"/>
+        <Python Include="python.exe"/>
+        <setuppy Include="$(ProjectRoot)\setup.py"/>
+    </ItemGroup>
+    <ItemGroup>
+        <UnitTests Include="$(ProjectRoot)\tests\*.py"/>
+    </ItemGroup>
+    <PropertyGroup>
+        <PyBuildFolder Condition="'$(PyBuildFolder)'==''">$(ProjectRoot)\build\</PyBuildFolder>
+        <PythonRuntimeCachePath Condition="'$(PythonRuntimeCachePath)'==''">$(PyBuildFolder)\runtimes\</PythonRuntimeCachePath>
+        <PyBuildFolder>$(ProjectRoot)\build\</PyBuildFolder>
+        <PyBuildStandaloneBuildPath>$(PyBuildFolder)standalone\</PyBuildStandaloneBuildPath>
+        <MSBuildCommunityTasksPath>$(SolutionDir)\.build</MSBuildCommunityTasksPath>
+        <MSIBuildPath>$(PyBuildFolder)msi\</MSIBuildPath>
+        <PythonRuntimeCachePath>$(PyBuildFolder)\runtimes\</PythonRuntimeCachePath>
+    </PropertyGroup>
+</Project>

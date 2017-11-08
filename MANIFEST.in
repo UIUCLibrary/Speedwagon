@@ -1,0 +1,8 @@
+# Include the license file
+include LICENSE README.rst requirements-dev.txt mypy.ini Makefile
+include tox.ini
+recursive-include frames *.py
+recursive-exclude * __pycache__
+include pytest.ini
+recursive-include tests *.py
+recursive-include docs *
