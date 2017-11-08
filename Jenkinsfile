@@ -62,7 +62,7 @@ pipeline {
                                 bat "make test-mypy --html-report reports/mypy_report --junit-xml reports/mypy.xml"
                                 junit 'reports/mypy.xml'
                             }
-                          }
+                        }
                 )
             }
         }
