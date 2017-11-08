@@ -45,7 +45,7 @@ pipeline {
                           bat "${tool 'Python3.6.3_Win64'} -m tox -e docs"
                         },
                         "MyPy": {
-                            bat "call make.bat mypy-test --junit-xml=mypy.xml"
+                            bat "make.bat test-mypy --junit-xml=mypy.xml"
                             junit 'mypy.xml'
                           }
                 )
