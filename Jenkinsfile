@@ -31,7 +31,7 @@ pipeline {
                 expression { params.UNIT_TESTS == true }
             }
             steps {
-                bat "${tool 'Python3.6.3_Win64'} -m tox"
+                bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
             }
         }
         stage("Additional tests") {
