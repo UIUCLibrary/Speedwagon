@@ -491,7 +491,7 @@ p, li { white-space: pre-wrap; }
                     <property name="minimumSize">
                      <size>
                       <width>0</width>
-                      <height>20</height>
+                      <height>50</height>
                      </size>
                     </property>
                     <property name="font">
@@ -533,9 +533,9 @@ p, li { white-space: pre-wrap; }
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="tab_wizards">
+         <widget class="QWidget" name="tab_workflow">
           <attribute name="title">
-           <string>Wizards</string>
+           <string>Workflows</string>
           </attribute>
          </widget>
         </widget>
