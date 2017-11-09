@@ -10,6 +10,7 @@ if "%~1" == "venvclean"      call:venvclean             && goto:eof
 if "%~1" == "test"           call:test                  && goto:eof
 if "%~1" == "test-mypy"      call:mypy %EXTRA_ARGS%     && goto:eof
 if "%~1" == "build"          call:build                 && goto:eof
+if "%~1" == "gui"            call:gui                   && goto:eof
 if "%~1" == "wheel"          call:wheel                 && goto:eof
 if "%~1" == "sdist"          call:sdist                 && goto:eof
 if "%~1" == "standalone"     call:standalone            && goto:eof
@@ -54,8 +55,8 @@ goto :eof
 ::=============================================================================
 :install-required-deps
     setlocal
-    echo Installing runtime requirements
-    call venv\Scripts\activate.bat && pip install -r requirements.txt --upgrade-strategy only-if-needed
+    echo Syncing runtime dependencies
+    call venv\Scripts\activate.bat && pip install -r requirements.txt --upgrade-strategy only-if-needed -q
     endlocal
 goto:eof
 ::=============================================================================
@@ -65,8 +66,8 @@ goto:eof
     call:venv
     call:install-required-deps
     setlocal
-    echo Installing development requirements
-    call venv\Scripts\activate.bat && pip install -r requirements-dev.txt --upgrade-strategy only-if-needed
+    echo Syncing development dependencies
+    call venv\Scripts\activate.bat && pip install -r requirements-dev.txt --upgrade-strategy only-if-needed -q
     endlocal
 goto :eof
 
@@ -105,6 +106,24 @@ goto :eof
     call venv\Scripts\activate.bat && python setup.py build
     endlocal
 goto :eof
+
+
+::=============================================================================
+:: Generate Python GUI files from Qt .ui file located in the ui directory
+::=============================================================================
+:gui
+    call:install-dev
+    setlocal
+    echo Converting Qt5 .ui files located in the ./ui path into .py files:
+    for %%f in (
+     ui/*.ui ) do (
+        echo     %%~nf
+        pyuic5 ui\%%f -o frames\ui\%%~nf.py
+
+    )
+    endlocal
+goto :eof
+
 
 ::=============================================================================
 :: Create a wheel distribution
