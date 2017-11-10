@@ -1,38 +1,53 @@
-from setuptools import setup
+import glob
+
 import os
-import frames
+from setuptools import setup
+from distutils.command.clean import clean as _clean
+from distutils.command.build_py import build_py
 
-def get_project_metadata():
-    metadata_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'frames', '__version__.py')
-    metadata = dict()
-    with open(metadata_file, 'r', encoding='utf-8') as f:
-        exec(f.read(), metadata)
-    return metadata
+try:
+    from pyqt_distutils.build_ui import build_ui
+    from pyqt_distutils.config import Config
 
-with open('README.rst', 'r', encoding='utf-8') as readme_file:
-    readme = readme_file.read()
-metadata = get_project_metadata()
+    class CustomBuildPy(build_py):
+        def run(self):
+            super().run()
+            self.run_command("build_ui")
+
+    class Clean(_clean):
+        def run(self):
+            super().run()
+            config = Config()
+            config.load()
+            for glob_exp, dest in config.files:
+                for src in glob.glob(glob_exp):
+
+                    if src.endswith(".ui"):
+                        gen_file = "{}_ui.py".format(os.path.splitext(src)[0])
+                        if os.path.exists(gen_file):
+                            print("Removing {}".format(gen_file))
+                            os.remove(gen_file)
+
+    cmdclass = {
+        "build_ui": build_ui,
+        "build_py": CustomBuildPy,
+        "clean": Clean,
+    }
+
+except ImportError:
+    cmdclass = {}
 
 setup(
-    name=metadata["__title__"],
-    version=metadata["__version__"],
-    packages=['frames', "frames.ui"],
-    url=metadata["__url__"],
-    license='University of Illinois/NCSA Open Source License',
-    maintainer=metadata["__maintainer__"],
-    maintainer_email=metadata["__maintainer_email__"],
-    description=metadata["__description__"],
-    long_description=readme,
     test_suite="tests",
     install_requires=[
-        "pyqt5"
+        "pyqt5",
     ],
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     entry_points={
-         "console_scripts": [
-             'frames = frames.__main__:main'
-         ]
-     },
-    zip_safe=False,
+        "console_scripts": [
+            'frames = frames.__main__:main'
+        ]
+    },
+    cmdclass=cmdclass,
 )
