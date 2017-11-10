@@ -11,8 +11,8 @@ try:
 
     class CustomBuildPy(build_py):
         def run(self):
-            super().run()
             self.run_command("build_ui")
+            super().run()
 
     class Clean(_clean):
         def run(self):
