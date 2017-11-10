@@ -215,6 +215,7 @@ goto:eof
     call:_venv
     call:_install-required-deps
     call:_install-dev
+    call:_update_gui
     setlocal
     call venv\Scripts\activate.bat && mypy -p frames %*
     endlocal
