@@ -1,9 +1,0 @@
-__title__ = 'frames'
-__version__ = '0.0.1'
-__url__ = 'http://http://www.library.illinois.edu/dccdocs/frames'
-__author__ = 'University of Illinois at Urbana Champaign'
-__author_email__ = 'hborcher@illinois.edu'
-__maintainer__ = 'Henry Borchers'
-__maintainer_email__ =  'hborcher@illinois.edu'
-__description__ = "Collection of tools and workflows for DS"
-FULL_TITLE = "DS frames"
