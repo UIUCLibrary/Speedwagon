@@ -154,3 +154,7 @@ ENV/
 .ropeproject
 
 /.mypy_cache/
+
+# Qt generated files
+frames/ui/*.py
+!frames/ui/__init__.py
