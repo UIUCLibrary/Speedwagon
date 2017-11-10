@@ -4,7 +4,7 @@ import abc
 class AbsTool(metaclass=abc.ABCMeta):
     name = None  # type: str
     description = None  # type: str
-    options = []
+    options = []  # type: ignore
 
 
 class MakeChecksumBatch(AbsTool):
