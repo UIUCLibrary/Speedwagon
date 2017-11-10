@@ -1,1 +1,3 @@
 PyQt5
+setuptools>=30.3.0
+pyqt-distutils
