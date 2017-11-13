@@ -7,6 +7,7 @@ from frames import tool as t
 
 
 class ToolSelectionDisplay(QtWidgets.QGroupBox):
+    toolChanged = QtCore.pyqtSignal(t.AbsTool)
 
     def __init__(self, *__args):
         super().__init__(*__args)
@@ -16,6 +17,7 @@ class ToolSelectionDisplay(QtWidgets.QGroupBox):
         self.scroll_area = QtWidgets.QScrollArea()
         self.scroll_area.setWidget(self.available_group_in)
         self.scroll_area.setWidgetResizable(True)
+        self._current_selected = None
 
         self.group_layout_out.addWidget(self.scroll_area)
         self.setLayout(self.group_layout_out)
@@ -25,12 +27,14 @@ class ToolSelectionDisplay(QtWidgets.QGroupBox):
         new_tool_option.setObjectName(tool.name)
         new_tool_option.setText(tool.name)
         print(tool.name)
-        # new_tool_option.toggled.connect(lambda: self.tool_selected(tool))
+        new_tool_option.toggled.connect(lambda: self._tool_selected(tool))
         # self.verticalLayout_8.addWidget(new_tool_option)
         self.group_layout_in.addWidget(new_tool_option)
 
-        # self.layout.addWidget(new_tool_option)
-        # self.available_group.addButton(new_tool_option)
+    def _tool_selected(self, tool):
+        if tool != self._current_selected:
+            self._current_selected = tool
+            self.toolChanged.emit(tool)
 
 
 class ToolConsole(QtWidgets.QGroupBox):
@@ -49,6 +53,7 @@ class ToolOptions(QtWidgets.QGroupBox):
         super().__init__(*args)
         self.setTitle("Tool Options")
         self._tool_selected = ""
+        self._description = ""
 
         self.main_layout = QtWidgets.QVBoxLayout(self)
         self.main_layout.setObjectName("main_layout")
@@ -65,11 +70,11 @@ class ToolOptions(QtWidgets.QGroupBox):
 
         self.metadata_layout.addRow(QtWidgets.QLabel("Tool Selected"), self._selected_tool_name_line)
 
-        description_information = QtWidgets.QTextEdit()
+        self._description_information = QtWidgets.QTextEdit()
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setVerticalStretch(1)
-        description_information.setSizePolicy(sizePolicy)
-        self.metadata_layout.addRow(QtWidgets.QLabel("Description"), description_information)
+        self._description_information.setSizePolicy(sizePolicy)
+        self.metadata_layout.addRow(QtWidgets.QLabel("Description"), self._description_information)
         self.main_layout.addLayout(self.metadata_layout)
         self.main_layout.addLayout(self.operations_layout)
         self.setLayout(self.main_layout)
@@ -83,6 +88,16 @@ class ToolOptions(QtWidgets.QGroupBox):
         self._tool_selected = value
         self._selected_tool_name_line.setText(value)
 
+    @property
+    def tool_description(self):
+        return self._description
+
+    @tool_description.setter
+    def tool_description(self, value):
+        self._description = value
+        self._description_information.setText(value)
+
+
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     def __init__(self, parent=None):
@@ -92,17 +107,17 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.splitter = QtWidgets.QSplitter(self.tab_tools)
         self.splitter.setOrientation(QtCore.Qt.Vertical)
         self.splitter.setChildrenCollapsible(False)
-        self.run_tools_widget = self.create_runtool_widget()
-        self.load_tools(self.run_tools_widget)
+        self.tool_selector = self.create_tool_selector_widget()
+        self.load_tools()
 
         self.tool_workspace = self.create_tool_workspace()
-        self.tool_workspace.tool_selected = "asdfsd"
+        self.tool_selector.toolChanged.connect(self.change_tool)
 
         self.console = self.create_console()
 
         # ADD tools
 
-        self.tab_tools_layout.addWidget(self.run_tools_widget)
+        self.tab_tools_layout.addWidget(self.tool_selector)
 
         self.tab_tools_layout.addWidget(self.splitter)
         self.show()
@@ -119,19 +134,27 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         console = ToolConsole(self.splitter)
         return console
 
-    @staticmethod
-    def load_tools(run_tools_widget):
-        run_tools_widget.add_tool_to_available(t.MakeChecksumBatch())
-        run_tools_widget.add_tool_to_available(t.Foo())
+    def _load_tool(self, tool):
+        self.tool_selector.add_tool_to_available(tool)
 
 
-    def create_runtool_widget(self):
+    def load_tools(self):
+        self._load_tool(t.MakeChecksumBatch())
+        self._load_tool(t.Foo())
+        # run_tools_widget.add_tool_to_available()
+        # run_tools_widget.add_tool_to_available(t.Foo())
+
+
+    def create_tool_selector_widget(self):
         tool_view = ToolSelectionDisplay(self.tab_tools)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Maximum)
         tool_view.setSizePolicy(sizePolicy)
         tool_view.setMinimumSize(QtCore.QSize(0, 100))
         return tool_view
 
+    def change_tool(self, tool: t.AbsTool):
+        self.tool_workspace.tool_selected = tool.name
+        self.tool_workspace.tool_description = tool.description
     #
     # def add_tool_to_available(self, tool: t.AbsTool):
     #     self._tools_view.add_tool_to_available(tool)
@@ -162,7 +185,6 @@ class MainWindow_example(QtWidgets.QMainWindow, main_window_ui.Ui_MainWindow):
 
 
 def main():
-    print("HERE")
     app = QtWidgets.QApplication(sys.argv)
     windows = MainWindow()
     # windows.show()
