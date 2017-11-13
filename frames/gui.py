@@ -56,12 +56,14 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         self._description = ""
         self._selected_tool_name_line = QtWidgets.QLineEdit(self)
         self._description_information = QtWidgets.QTextEdit(self)
+        self.settings = QtWidgets.QGroupBox(self)
         self.start_button = QtWidgets.QPushButton(self)
 
         self.main_layout = QtWidgets.QVBoxLayout(self)
         self.main_layout.setObjectName("main_layout")
 
         self.main_layout.addLayout(self.build_metadata_layout())
+        self.main_layout.addLayout(self.build_settings_layout())
         self.main_layout.addLayout(self.build_operations_layout())
         self.setLayout(self.main_layout)
 
@@ -74,8 +76,21 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setVerticalStretch(1)
         self._description_information.setSizePolicy(sizePolicy)
+        self._description_information.setMaximumHeight(100)
         metadata_layout.addRow(QtWidgets.QLabel("Description"), self._description_information)
         return metadata_layout
+
+    def build_settings_layout(self):
+        settings_layout = QtWidgets.QFormLayout()
+        self.settings.setTitle("Settings")
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        sizePolicy.setVerticalStretch(1)
+
+        self.settings.setSizePolicy(sizePolicy)
+        self.settings.setMinimumHeight(40)
+        settings_layout.addWidget(self.settings)
+
+        return settings_layout
 
     def build_operations_layout(self):
         operations_layout = QtWidgets.QHBoxLayout()
@@ -105,7 +120,6 @@ class ToolWorkspace(QtWidgets.QGroupBox):
     def tool_description(self, value):
         self._description = value
         self._description_information.setText(value)
-
 
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
@@ -140,58 +154,26 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     def _load_tool(self, tool):
         self.tool_selector.add_tool_to_available(tool)
 
-
     def load_tools(self):
         self._load_tool(t.MakeChecksumBatch())
         self._load_tool(t.Foo())
 
-
     def create_tool_selector_widget(self):
         tool_view = ToolSelectionDisplay(self.tab_tools)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Maximum)
-        tool_view.setSizePolicy(sizePolicy)
+        size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Maximum)
+        tool_view.setSizePolicy(size_policy)
         tool_view.setMinimumSize(QtCore.QSize(0, 100))
         return tool_view
 
     def change_tool(self, tool: t.AbsTool):
         self.tool_workspace.tool_selected = tool.name
         self.tool_workspace.tool_description = tool.description
-    #
-    # def add_tool_to_available(self, tool: t.AbsTool):
-    #     self._tools_view.add_tool_to_available(tool)
-    # new_tool_option = QtWidgets.QRadioButton(self.frame_available_tools)
-    # new_tool_option.setObjectName(tool.name)
-    # new_tool_option.setText(tool.name)
-    # new_tool_option.toggled.connect(lambda: self.tool_selected(tool))
-    # # self.verticalLayout_8.addWidget(new_tool_option)
-    # self.verticalLayout_4.addWidget(new_tool_option)
-    # self._tools_view.available_group.addButton(new_tool_option)
-
-    def tool_selected(self, tool: t.AbsTool):
-        print(tool.name)
-        self.lineEdit.setText(tool.name)
-        self.textEdit.setText(tool.description)
-        for foo in tool.options:
-            new_label = QtWidgets.QLabel(self.frame_script_options)
-            new_label.setText(foo[0])
-            print(foo)
-            self.scrollAreaWidgetContents.addWidget(new_label)
-
-
-class MainWindow_example(QtWidgets.QMainWindow, main_window_ui.Ui_MainWindow):
-    def __init__(self, parent=None):
-        super().__init__()
-        self.setupUi(self)
-        self.show()
 
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
     windows = MainWindow()
-    # windows.show()
-    rc = app.exec_()
-    print("end")
-    sys.exit(rc)
+    sys.exit(app.exec_())
 
 
 if __name__ == '__main__':
