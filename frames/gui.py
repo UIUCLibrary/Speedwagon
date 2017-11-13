@@ -41,43 +41,52 @@ class ToolConsole(QtWidgets.QGroupBox):
 
     def __init__(self, *__args):
         super().__init__(*__args)
-        self.setTitle("Tool Console")
+        self.setTitle("Console")
         self.setLayout(QtWidgets.QVBoxLayout())
         self._console = QtWidgets.QTextBrowser(self)
         self.layout().addWidget(self._console)
 
 
-class ToolOptions(QtWidgets.QGroupBox):
+class ToolWorkspace(QtWidgets.QGroupBox):
 
     def __init__(self, *args):
         super().__init__(*args)
-        self.setTitle("Tool Options")
+        self.setTitle("Tool")
         self._tool_selected = ""
         self._description = ""
+        self._selected_tool_name_line = QtWidgets.QLineEdit(self)
+        self._description_information = QtWidgets.QTextEdit(self)
+        self.start_button = QtWidgets.QPushButton(self)
 
         self.main_layout = QtWidgets.QVBoxLayout(self)
         self.main_layout.setObjectName("main_layout")
-        self.metadata_layout = QtWidgets.QFormLayout()
-        self.metadata_layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.AllNonFixedFieldsGrow)
 
-        self.operations_layout = QtWidgets.QHBoxLayout()
-        self.start_button = QtWidgets.QPushButton(self)
-        self.start_button.setText("Start")
-        self.operations_layout.addSpacerItem(QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Expanding))
-        self.operations_layout.addWidget(self.start_button)
+        self.main_layout.addLayout(self.build_metadata_layout())
+        self.main_layout.addLayout(self.build_operations_layout())
+        self.setLayout(self.main_layout)
 
-        self._selected_tool_name_line = QtWidgets.QLineEdit(self)
-
-        self.metadata_layout.addRow(QtWidgets.QLabel("Tool Selected"), self._selected_tool_name_line)
-
-        self._description_information = QtWidgets.QTextEdit()
+    def build_metadata_layout(self):
+        metadata_layout = QtWidgets.QFormLayout()
+        metadata_layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.AllNonFixedFieldsGrow)
+        self._selected_tool_name_line.setReadOnly(True)
+        self._description_information.setReadOnly(True)
+        metadata_layout.addRow(QtWidgets.QLabel("Tool Selected"), self._selected_tool_name_line)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setVerticalStretch(1)
         self._description_information.setSizePolicy(sizePolicy)
-        self.metadata_layout.addRow(QtWidgets.QLabel("Description"), self._description_information)
-        self.main_layout.addLayout(self.metadata_layout)
-        self.main_layout.addLayout(self.operations_layout)
-        self.setLayout(self.main_layout)
+        metadata_layout.addRow(QtWidgets.QLabel("Description"), self._description_information)
+        return metadata_layout
+
+    def build_operations_layout(self):
+        operations_layout = QtWidgets.QHBoxLayout()
+        self.start_button.setText("Start")
+        self.start_button.clicked.connect(self.start)
+        operations_layout.addSpacerItem(QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Expanding))
+        operations_layout.addWidget(self.start_button)
+        return operations_layout
+
+    def start(self):
+        QtWidgets.QMessageBox.information(self, "No op", "This does nothing for now")
 
     @property
     def tool_selected(self):
@@ -102,30 +111,24 @@ class ToolOptions(QtWidgets.QGroupBox):
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
-        # self._tools = []
         self.setupUi(self)
         self.splitter = QtWidgets.QSplitter(self.tab_tools)
         self.splitter.setOrientation(QtCore.Qt.Vertical)
         self.splitter.setChildrenCollapsible(False)
         self.tool_selector = self.create_tool_selector_widget()
-        self.load_tools()
-
         self.tool_workspace = self.create_tool_workspace()
         self.tool_selector.toolChanged.connect(self.change_tool)
 
         self.console = self.create_console()
 
-        # ADD tools
-
         self.tab_tools_layout.addWidget(self.tool_selector)
-
         self.tab_tools_layout.addWidget(self.splitter)
+
+        self.load_tools()
         self.show()
 
     def create_tool_workspace(self):
-        new_workspace = ToolOptions(self.splitter)
-        # sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Maximum)
-        # new_workspace.setSizePolicy(sizePolicy)
+        new_workspace = ToolWorkspace(self.splitter)
         new_workspace.setMinimumSize(QtCore.QSize(0, 200))
 
         return new_workspace
@@ -141,8 +144,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     def load_tools(self):
         self._load_tool(t.MakeChecksumBatch())
         self._load_tool(t.Foo())
-        # run_tools_widget.add_tool_to_available()
-        # run_tools_widget.add_tool_to_available(t.Foo())
 
 
     def create_tool_selector_widget(self):
