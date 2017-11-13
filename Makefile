@@ -6,7 +6,6 @@ all: build
 
 build: venv
 	@source venv/bin/activate && python setup.py build
-	@echo "Built project"
 
 venv:
 	$(PYTHON) -m venv venv
@@ -31,8 +30,16 @@ docs/build/html: venv
 	@source venv/bin/activate && cd docs && $(MAKE) html
 	@echo "Html documentation has been generated in docs/build/html
 
+test: venv
+	@source venv/bin/activate && python setup.py test
+
+test-mypy: build
+	@echo "running MyPy"
+	@source venv/bin/activate && mypy -p frames
+	@echo "running MyPy completed"
+
 clean:
-	@$(PYTHON) setup.py clean
+	@$(PYTHON) setup.py clean -qa
 	@cd docs && $(MAKE) clean
 
 	@echo "removing '.tox'"
@@ -44,4 +51,6 @@ clean:
 	@echo "removing 'Frames.egg-info'"
 	@rm -rf frames.egg-info
 
+	@echo "removing '.mypy_cache'"
+	@rm -rf .mypy_cache
 
