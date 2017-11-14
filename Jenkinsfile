@@ -236,7 +236,29 @@ pipeline {
             steps {
                 updateOnlineDocs url_subdomain: params.URL_SUBFOLDER, stash_name: "HTML Documentation"
             }
+            post {
+                success {
+                    script {
+                        echo "https://www.library.illinois.edu/dccdocs/${params.URL_SUBFOLDER} updated successfully."
+                    }
+                }
+            }
 
+        }
+    }
+    post {
+        always {
+            script {
+                def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
+                def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
+                withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                    bat "${tool 'Python3.6.3_Win64'} -m devpi remove -y ${name}==${version}"
+                }
+            }
+        }
+        success {
+            echo "Cleaning up workspace"
+            deleteDir()
         }
     }
 }
