@@ -4,6 +4,8 @@ from frames.ui import main_window_ui
 from frames.ui import main_window_shell_ui
 # from frames.tool import AbsTool, MakeChecksumBatch
 from frames import tool as t
+from collections import namedtuple
+Setting = namedtuple("Setting", ("label", "widget"))
 
 
 class ToolSelectionDisplay(QtWidgets.QGroupBox):
@@ -12,7 +14,13 @@ class ToolSelectionDisplay(QtWidgets.QGroupBox):
     def __init__(self, *__args):
         super().__init__(*__args)
         self.available_group_in = QtWidgets.QGroupBox(self)
+        size_p = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.MinimumExpanding)
+        # self.setSizePolicy(size_p)
+        self.available_group_in.setSizePolicy(size_p)
+        # self.available_group_in.setFixedHeight(100)
         self.group_layout_in = QtWidgets.QVBoxLayout(self.available_group_in)
+        # self.group_layout_in.setSpacing(0)
+        self.group_layout_in.setContentsMargins(0,0,0,0)
         self.group_layout_out = QtWidgets.QVBoxLayout(self)
         self.scroll_area = QtWidgets.QScrollArea()
         self.scroll_area.setWidget(self.available_group_in)
@@ -44,7 +52,34 @@ class ToolConsole(QtWidgets.QGroupBox):
         self.setTitle("Console")
         self.setLayout(QtWidgets.QVBoxLayout())
         self._console = QtWidgets.QTextBrowser(self)
+        self._console.setContentsMargins(0,0,0,0)
         self.layout().addWidget(self._console)
+
+
+class ToolSettings(QtWidgets.QGroupBox):
+
+    def __init__(self, *__args):
+        super().__init__(*__args)
+
+        self.setTitle("Settings")
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.MinimumExpanding)
+        sizePolicy.setVerticalStretch(1)
+        self.setSizePolicy(sizePolicy)
+        self.setMinimumHeight(50)
+        self.settings = dict()
+        settings_layout = QtWidgets.QFormLayout()
+        settings_layout.setFieldGrowthPolicy(settings_layout.AllNonFixedFieldsGrow)
+        self.setLayout(settings_layout)
+
+    def add_setting(self, label: str, widget: QtWidgets.QWidget):
+        new_setting = Setting(QtWidgets.QLabel(label), widget=widget)
+        self.settings[label] = new_setting
+        self.layout().addRow(*new_setting)
+
+    def clear(self):
+        while self.layout().rowCount() > 0:
+            self.layout().removeRow(0)
+        self.settings.clear()
 
 
 class ToolWorkspace(QtWidgets.QGroupBox):
@@ -56,19 +91,25 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         self._description = ""
         self._selected_tool_name_line = QtWidgets.QLineEdit(self)
         self._description_information = QtWidgets.QTextEdit(self)
-        self.settings = QtWidgets.QGroupBox(self)
         self.start_button = QtWidgets.QPushButton(self)
+        self.settings = ToolSettings(self)
+        # self.settings.add_setting("Input", QtWidgets.QLineEdit("sadfasdfasdf"))
+        # self.settings.add_setting("Output", QtWidgets.QLineEdit())
+        # self.settings.clear()
+
 
         self.main_layout = QtWidgets.QVBoxLayout(self)
         self.main_layout.setObjectName("main_layout")
 
         self.main_layout.addLayout(self.build_metadata_layout())
-        self.main_layout.addLayout(self.build_settings_layout())
+        self.main_layout.addWidget(self.settings)
+        # self.main_layout.addLayout(self.build_settings_layout())
         self.main_layout.addLayout(self.build_operations_layout())
         self.setLayout(self.main_layout)
 
     def build_metadata_layout(self):
         metadata_layout = QtWidgets.QFormLayout()
+        metadata_layout.setVerticalSpacing(0)
         metadata_layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.AllNonFixedFieldsGrow)
         self._selected_tool_name_line.setReadOnly(True)
         self._description_information.setReadOnly(True)
@@ -80,17 +121,10 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         metadata_layout.addRow(QtWidgets.QLabel("Description"), self._description_information)
         return metadata_layout
 
-    def build_settings_layout(self):
-        settings_layout = QtWidgets.QFormLayout()
-        self.settings.setTitle("Settings")
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        sizePolicy.setVerticalStretch(1)
-
-        self.settings.setSizePolicy(sizePolicy)
-        self.settings.setMinimumHeight(40)
-        settings_layout.addWidget(self.settings)
-
-        return settings_layout
+    # def build_settings_layout(self):
+    #     settings_layout = QtWidgets.QFormLayout()
+    #     settings_layout.addWidget(self.settings)
+        # return settings_layout
 
     def build_operations_layout(self):
         operations_layout = QtWidgets.QHBoxLayout()
@@ -149,6 +183,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
     def create_console(self):
         console = ToolConsole(self.splitter)
+
         return console
 
     def _load_tool(self, tool):
@@ -156,18 +191,23 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
     def load_tools(self):
         self._load_tool(t.MakeChecksumBatch())
-        self._load_tool(t.Foo())
+        self._load_tool(t.Spam())
+        self._load_tool(t.Eggs())
 
     def create_tool_selector_widget(self):
         tool_view = ToolSelectionDisplay(self.tab_tools)
-        size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Maximum)
-        tool_view.setSizePolicy(size_policy)
-        tool_view.setMinimumSize(QtCore.QSize(0, 100))
+        tool_view.setFixedHeight(100)
+        # size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
+        # tool_view.setSizePolicy(size_policy)
+        # tool_view.setMinimumSize(QtCore.QSize(0, 100))
         return tool_view
 
     def change_tool(self, tool: t.AbsTool):
         self.tool_workspace.tool_selected = tool.name
         self.tool_workspace.tool_description = tool.description
+        self.tool_workspace.settings.clear()
+        for option in tool.options:
+            self.tool_workspace.settings.add_setting(option.label, option.widget)
 
 
 def main():
