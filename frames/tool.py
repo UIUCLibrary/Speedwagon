@@ -1,9 +1,13 @@
 import abc
+
+import os
 from PyQt5 import QtWidgets
+
 
 class AbsTool(metaclass=abc.ABCMeta):
     name = None  # type: str
     description = None  # type: str
+
     def __init__(self) -> None:
         super().__init__()
         self.options = []  # type: ignore
@@ -18,14 +22,57 @@ class AbsToolData(metaclass=abc.ABCMeta):
     def __init__(self):
         self.label = ""
 
-    def __del__(self):
-        print("Deteting")
+
+class PathSelector(QtWidgets.QWidget):
+
+    def __init__(self, parent=None, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setContentsMargins(0,0,0,0)
+        self._value = ""
+        self.line = QtWidgets.QLineEdit()
+        self.line.editingFinished.connect(self._update_value)
+        self.button = QtWidgets.QPushButton()
+        self.button.setText("Browse")
+        self.button.clicked.connect(self.get_path)
+        layout.addWidget(self.line)
+        layout.addWidget(self.button)
+        self.setLayout(layout)
+
+
+    @property
+    def valid(self) -> bool:
+        return self._is_valid(self._value)
+
+
+    def get_path(self):
+        print("open dialog box")
+        path = QtWidgets.QFileDialog.getExistingDirectory(self, "Find path")
+        if self._is_valid(path):
+            self.value = path
+
+    def _update_value(self):
+        print("Value is {}".format(self.line.text()))
+
+    @staticmethod
+    def _is_valid(value):
+        if os.path.exists(value) and os.path.isdir(value):
+            return True
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        self._value = value
+        self.line.setText(value)
 
 
 class SelectDirectory(AbsToolData):
     @property
     def widget(self):
-        return QtWidgets.QLineEdit()
+        return PathSelector()
 
 
 class MakeChecksumBatch(AbsTool):
