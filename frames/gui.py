@@ -62,23 +62,34 @@ class ToolSettings(QtWidgets.QGroupBox):
         super().__init__(*__args)
 
         self.setTitle("Settings")
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.MinimumExpanding)
-        sizePolicy.setVerticalStretch(1)
-        self.setSizePolicy(sizePolicy)
-        self.setMinimumHeight(50)
+        self.settings_group_in = QtWidgets.QGroupBox(self)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.settings_group_in.setSizePolicy(sizePolicy)
+        # sizePolicy.setVerticalStretch(1)
+        # self._settings_group_in = QtWidgets.QGroupBox(self)
+        # size_p = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.group_layout_in = QtWidgets.QFormLayout(self.settings_group_in)
+        self.settings_layout_out = QtWidgets.QVBoxLayout(self)
+        self.scroll_area = QtWidgets.QScrollArea()
+        self.scroll_area.setWidget(self.settings_group_in)
+        self.scroll_area.setWidgetResizable(True)
+        # self.setSizePolicy(sizePolicy)
+        self.setMinimumHeight(80)
         self.settings = dict()
-        settings_layout = QtWidgets.QFormLayout()
-        settings_layout.setFieldGrowthPolicy(settings_layout.AllNonFixedFieldsGrow)
-        self.setLayout(settings_layout)
+        # self.settings_layout_out.setFieldGrowthPolicy(self.settings_layout_out.AllNonFixedFieldsGrow)
+        self.settings_layout_out.addWidget(self.scroll_area)
+        self.setLayout(self.settings_layout_out)
 
     def add_setting(self, label: str, widget: QtWidgets.QWidget):
         new_setting = Setting(QtWidgets.QLabel(label), widget=widget)
         self.settings[label] = new_setting
-        self.layout().addRow(*new_setting)
+        self.group_layout_in.addRow(*new_setting)
 
     def clear(self):
-        while self.layout().rowCount() > 0:
-            self.layout().removeRow(0)
+        l = self.group_layout_in
+        # l = self.layout()
+        while l.rowCount() > 0:
+            l.removeRow(0)
         self.settings.clear()
 
 
@@ -93,6 +104,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         self._description_information = QtWidgets.QTextEdit(self)
         self.start_button = QtWidgets.QPushButton(self)
         self.settings = ToolSettings(self)
+        self.settings.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum))
         # self.settings.add_setting("Input", QtWidgets.QLineEdit("sadfasdfasdf"))
         # self.settings.add_setting("Output", QtWidgets.QLineEdit())
         # self.settings.clear()
@@ -177,7 +189,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
     def create_tool_workspace(self):
         new_workspace = ToolWorkspace(self.splitter)
-        new_workspace.setMinimumSize(QtCore.QSize(0, 200))
+        # new_workspace.setMinimumSize(QtCore.QSize(0, 300))
 
         return new_workspace
 
