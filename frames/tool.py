@@ -28,7 +28,7 @@ class PathSelector(QtWidgets.QWidget):
     def __init__(self, parent=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         layout = QtWidgets.QHBoxLayout(self)
-        layout.setContentsMargins(0,0,0,0)
+        layout.setContentsMargins(0, 0, 0, 0)
         self._value = ""
         self.line = QtWidgets.QLineEdit()
         self.line.editingFinished.connect(self._update_value)
@@ -39,14 +39,11 @@ class PathSelector(QtWidgets.QWidget):
         layout.addWidget(self.button)
         self.setLayout(layout)
 
-
     @property
     def valid(self) -> bool:
         return self._is_valid(self._value)
 
-
     def get_path(self):
-        print("open dialog box")
         path = QtWidgets.QFileDialog.getExistingDirectory(self, "Find path")
         if self._is_valid(path):
             self.value = path

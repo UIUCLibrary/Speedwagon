@@ -3,7 +3,7 @@ from PyQt5 import QtWidgets, QtCore
 from frames.ui import main_window_ui
 from frames.ui import main_window_shell_ui
 # from frames.tool import AbsTool, MakeChecksumBatch
-from frames import tool as t
+from frames import tool as t, processing, worker
 from collections import namedtuple
 Setting = namedtuple("Setting", ("label", "widget"))
 
@@ -147,7 +147,11 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         return operations_layout
 
     def start(self):
-        QtWidgets.QMessageBox.information(self, "No op", "This does nothing for now")
+        worker.run_process()
+        # QtWidgets.QMessageBox.information(self, "No op", "This does nothing for now")
+
+        # processing_dialog = processing.ProcessingDialog()
+        # processing_dialog.exec_()
 
     @property
     def tool_selected(self):
