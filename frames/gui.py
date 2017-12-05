@@ -147,7 +147,12 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         return operations_layout
 
     def start(self):
-        worker.run_process()
+        wm = worker.WorkManager(self)
+        for _ in range(100):
+            job = worker.DummyJob()
+            wm.add_job(job)
+        wm.run()
+        # worker.run_process()
         # QtWidgets.QMessageBox.information(self, "No op", "This does nothing for now")
 
         # processing_dialog = processing.ProcessingDialog()
