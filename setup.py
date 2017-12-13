@@ -40,7 +40,12 @@ except ImportError:
 setup(
     test_suite="tests",
     install_requires=[
-        "pyqt5",
+        "pyqt5", "hathizip"
+    ],
+    packages=[
+        "frames",
+        "frames.tools",
+        "frames.ui"
     ],
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
