@@ -1,52 +1,14 @@
 import multiprocessing
 import sys
 from PyQt5 import QtWidgets, QtCore, QtGui
-
+import warnings
 import frames.tool
 import frames.tools.abstool
-from frames.ui import main_window_ui
 from frames.ui import main_window_shell_ui
-# from frames.tool import AbsTool, MakeChecksumBatch
 from frames import tool as t, processing, worker
 from collections import namedtuple
+
 Setting = namedtuple("Setting", ("label", "widget"))
-
-
-class ToolSelectionDisplay(QtWidgets.QGroupBox):
-    toolChanged = QtCore.pyqtSignal(frames.tools.abstool.AbsTool)
-
-    def __init__(self, *__args):
-        super().__init__(*__args)
-        self.available_group_in = QtWidgets.QGroupBox(self)
-        size_p = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.MinimumExpanding)
-        # self.setSizePolicy(size_p)
-        self.available_group_in.setSizePolicy(size_p)
-        # self.available_group_in.setFixedHeight(100)
-        self.group_layout_in = QtWidgets.QVBoxLayout(self.available_group_in)
-        # self.group_layout_in.setSpacing(0)
-        self.group_layout_in.setContentsMargins(0,0,0,0)
-        self.group_layout_out = QtWidgets.QVBoxLayout(self)
-        self.scroll_area = QtWidgets.QScrollArea()
-        self.scroll_area.setWidget(self.available_group_in)
-        self.scroll_area.setWidgetResizable(True)
-        self._current_selected = None
-
-        self.group_layout_out.addWidget(self.scroll_area)
-        self.setLayout(self.group_layout_out)
-
-    def add_tool_to_available(self, tool: frames.tools.abstool.AbsTool):
-        new_tool_option = QtWidgets.QRadioButton(self)
-        new_tool_option.setObjectName(tool.name)
-        new_tool_option.setText(tool.name)
-        new_tool_option.toggled.connect(lambda: self._tool_selected(tool))
-        # self.verticalLayout_8.addWidget(new_tool_option)
-        self.group_layout_in.addWidget(new_tool_option)
-
-    def _tool_selected(self, tool):
-        if tool != self._current_selected:
-            self._current_selected = tool
-            self.toolChanged.emit(tool)
-
 
 class ToolConsole(QtWidgets.QGroupBox):
 
@@ -57,95 +19,18 @@ class ToolConsole(QtWidgets.QGroupBox):
         self._console = QtWidgets.QTextBrowser(self)
         self._console.setContentsMargins(0,0,0,0)
         self.layout().addWidget(self._console)
-        font = QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
-        print(font)
+
+        #  Use a monospaced font based on what's on system running
+        monospaced_font = QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
         self._log = QtGui.QTextDocument()
-        self._log.setDefaultFont(font)
+        self._log.setDefaultFont(monospaced_font)
+
         self._console.setSource(self._log.baseUrl())
-        # self._log.contentsChanged.connect(self._console.)
         self._console.setUpdatesEnabled(True)
 
     def add_message(self, message):
         self._console.append(message)
-        # self._log.setPlainText(message)
-        # self._console.setText(self._log.toPlainText())
-        # self._console.setText(message)
 
-class ToolSettings(QtWidgets.QGroupBox):
-
-    def __init__(self, parent=None, *__args):
-        # self.(parent)
-        super().__init__(parent, *__args)
-
-        self.setTitle("Settings")
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.MinimumExpanding)
-        self.create_inside_group(sizePolicy)
-        self.create_outside_group()
-        self.setMinimumHeight(80)
-        self.settings = dict()
-
-    def create_inside_group(self, sizePolicy):
-        self.settings_group_in = QtWidgets.QGroupBox(self)
-
-        self.settings_group_in.setSizePolicy(sizePolicy)
-        self.group_layout_in = QtWidgets.QFormLayout(self.settings_group_in)
-
-    def create_outside_group(self):
-        self.settings_layout_out = QtWidgets.QVBoxLayout(self)
-        self.scroll_area = QtWidgets.QScrollArea()
-        self.scroll_area.setWidget(self.settings_group_in)
-        self.scroll_area.setWidgetResizable(True)
-        # self.setSizePolicy(sizePolicy)
-        # self.settings_layout_out.setFieldGrowthPolicy(self.settings_layout_out.AllNonFixedFieldsGrow)
-        self.settings_layout_out.addWidget(self.scroll_area)
-        self.setLayout(self.settings_layout_out)
-
-    def add_setting(self, label: str, widget: QtWidgets.QWidget):
-        widget.setParent(self)
-
-        new_setting = Setting(QtWidgets.QLabel(text=label, parent=self), widget=widget)
-
-        self.settings[label] = new_setting
-        try:
-            self.group_layout_in.addRow(*new_setting)
-        except Exception as e:
-            print(e, file=sys.stderr)
-            raise
-
-    def remove_row(self, row):
-        print(row)
-        fi = row.fieldItem
-        li = row.labelItem
-        print(fi)
-        print(li)
-        li.widget().deleteLater()
-        fi.widget().deleteLater()
-
-
-
-
-    def clear(self):
-        l = self.group_layout_in
-        # l = self.layout()
-
-        while l.rowCount():
-            row = l.takeRow(0)
-            #
-            self.remove_row(row)
-            # l.removeRow(0)
-            # print(w)
-            # if w in not Noneand w.widget():
-            #     w.widget().deleteLater()
-
-            # w.deleteLater()
-            # print(l.rowCount())
-            # f = l.removeWidget(l.removeItem())
-            # l.removeWidget(f)
-            # print(l.rowCount()l)
-            # print(f)
-            # l.removeRow(0)
-        self.settings.clear()
-        # self.create_inside_group()
 
 
 class ToolWorkspace(QtWidgets.QGroupBox):
@@ -342,24 +227,11 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # self.tool_selector.add_tool_to_available(tool)
 
     def load_tools(self):
-
         # tools =
 
         for k, v in t.available_tools().items():
             self._load_tool(v())
-        # self._load_tool(t.MakeChecksumBatch())
-        # self._load_tool(t.Spam())
-        # self._load_tool(t.Eggs())
-        # self._load_tool(t.ZipPackages())
 
-    def create_tool_selector_widget(self):
-
-        tool_view = ToolSelectionDisplay(self.tab_tools)
-        tool_view.setFixedHeight(100)
-        # size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
-        # tool_view.setSizePolicy(size_policy)
-        # tool_view.setMinimumSize(QtCore.QSize(0, 100))
-        return tool_view
 
     def change_tool(self, tool: frames.tools.abstool.AbsTool):
         self.tool_workspace.set_tool(tool)
