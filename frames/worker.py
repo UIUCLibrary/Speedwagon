@@ -1,52 +1,64 @@
 import concurrent.futures
-import time
-from abc import ABCMeta, abstractmethod
-
+# from abc import ABCMeta, abstractmethod
+import typing
+import abc
+import sys
 from PyQt5 import QtCore, QtWidgets
+from collections import namedtuple
+import multiprocessing
 
-from multiprocessing import Queue
+JobPair = namedtuple("JobPair", ("job", "args", "message_queue"))
 
-
-message_queue = Queue()
-
-
-class QtMeta(type(QtCore.QObject), ABCMeta):
+class QtMeta(type(QtCore.QObject), abc.ABCMeta):  # type: ignore
     pass
 
+class NoWorkError(RuntimeError):
+    pass
 
 class AbsJob(metaclass=QtMeta):
 
-    @abstractmethod
-    def run(self, *args, **kwargs):
+    def __init__(self):
+        self.result = None
+
+    def execute(self, *args, **kwargs):
+        self.process(*args, **kwargs)
+        self.on_completion()
+        return self.result
+
+    @abc.abstractmethod
+    def process(self, *args, **kwargs):
         pass
 
-    @abstractmethod
+    @abc.abstractmethod
     def log(self, message):
         pass
 
+    def on_completion(self):
+        pass
 
 class ProcessJob(AbsJob):
 
-    def run(self, *args, **kwargs):
+    def __init__(self):
+        super().__init__()
+        self._mq = None
+
+
+    def process(self, *args, **kwargs):
         pass
 
+    def set_message_queue(self, value):
+        self._mq = value
+
     def log(self, message):
-        message_queue.put(message, block=True)
-
-
-class DummyJob(ProcessJob):
-    def run(self, num, *args):
-        self.log("{} ---STarting something".format(num))
-        time.sleep(.1)
-        self.log("---ending something".format(num))
-        return "My result"
+        if self._mq:
+            self._mq.put(message)
 
 
 class Worker(QtCore.QObject):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
-        self._jobs = []
+        self._jobs: typing.List[JobPair] = []
 
     def initialize_worker(self):
         raise NotImplemented
@@ -57,23 +69,35 @@ class Worker(QtCore.QObject):
     def run_jobs(self, jobs):
         raise NotImplemented
 
-    def add_job(self, job: ProcessJob):
-        self._jobs.append(job)
-
 
 class ProcessWorker(Worker):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.manager = multiprocessing.Manager()
+        self._message_queue = self.manager.Queue()
 
     def initialize_worker(self, max_workers=1):
         self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)  # TODO: Fix this
 
     def cancel(self):
-        self.executor.shutdown()
+        if hasattr(self, "executor"):
+            self.executor.shutdown()
+
 
     def run_jobs(self, jobs):
-        for i, j in zip(range(len(jobs)), jobs):
-            fut = self.executor.submit(j.run, i)
+        for job, args, message_queue in jobs:
+            new_job = job()
+            new_job.set_message_queue(message_queue)
+            fut = self.executor.submit(new_job.execute, **args)
             fut.add_done_callback(self.complete_task)
             self._tasks.append(fut)
+
+    def on_completion(self):
+        pass
+
+    def add_job(self, job: typing.Type[ProcessJob], **kwargs):
+        new_job = JobPair(job, args=kwargs, message_queue=self._message_queue)
+        self._jobs.append(new_job)
 
 
 class WorkManager(ProcessWorker):
@@ -82,12 +106,24 @@ class WorkManager(ProcessWorker):
     def __init__(self, parent):
         super().__init__(parent)
         self._tasks = []
-        self.t = QtCore.QTimer()
-        self.t.timeout.connect(self._update_log)
-        self.t.start(100)
+
+
+        self.log_manager = LogManager()
         self.prog = QtWidgets.QProgressDialog(parent)
         self.prog.canceled.connect(self.cancel)
+
+        # Don't let the user play with the main interface while the program is doing work
         self.prog.setModal(True)
+
+        # Update the label to let the user know what is currently being worked on
+        self.reporter = SimpleCallbackReporter(self.prog.setLabelText)
+
+
+        # Update the log information
+        self.t = QtCore.QTimer(self)
+        self.t.timeout.connect(self._update_log)
+
+
         self._complete_task.connect(self._advance)
 
     def _advance(self):
@@ -95,29 +131,96 @@ class WorkManager(ProcessWorker):
         self.prog.setValue(value + 1)
 
     def run(self):
-        if self._jobs:
-            self.initialize_worker()
-            self.prog.setRange(0, len(self._jobs))
-            self.prog.setValue(0)
-            self.run_jobs(self._jobs)
-            self.prog.show()
+        try:
+            self.log_manager.subscribe(self.reporter)
+            if self._jobs:
+                self.t.start(100)
+                self.initialize_worker()
+                self.prog.setRange(0, len(self._jobs))
+                self.prog.setValue(0)
+                self.run_jobs(self._jobs)
+                self.prog.show()
+            else:
+                raise NoWorkError("No Jobs found")
+        except Exception:
+            self.prog.cancel()
+            raise
 
     def complete_task(self, fut: concurrent.futures.Future):
         if fut.done():
             if not fut.cancelled():
-                message = "task Completed with {} as the result".format(fut.result())
-                message_queue.put(message)
+                result = fut.result()
+                if result:
+                    message = "task Completed with {} as the result".format(fut.result())
+                    self._message_queue.put(message)
 
             self._complete_task.emit()
 
+            # check if there are more tasks to do.
+            for f in self._tasks:
+                if not f.done():
+                    break
+
+            # If all tasks are completed, run the on completion method
+            else:
+                self.on_completion()
+
     def cancel(self):
-        message_queue.put("Called cancel")
+        self.prog.close()
+        self._message_queue.put("Called cancel")
+        self.t.stop()
         for task in self._tasks:
             task.cancel()
         super().cancel()
 
-    # TODO: refactor into observer pattern so that messages can be subscribed to
     def _update_log(self):
-        while not message_queue.empty():
-            log = message_queue.get()
-            self.prog.setLabelText(log)
+        while not self._message_queue.empty():
+            log = self._message_queue.get()
+            self.log_manager.notify(log)
+
+
+class AbsObserver(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def update(self, value):
+        pass
+
+
+class AbsSubject(metaclass=abc.ABCMeta):
+
+    _observers = set()  # type: typing.Set[AbsObserver]
+
+    def subscribe(self, observer: AbsObserver):
+        if not isinstance(observer, AbsObserver):
+            raise TypeError("Observer not derived from AbsObserver")
+        self._observers |= {observer}
+
+    def unsubscribe(self, observer: AbsObserver):
+        self._observers -= {observer}
+
+    def notify(self, value=None):
+        for observer in self._observers:
+            if value is None:
+                observer.update()
+            else:
+                observer.update(value)
+
+
+class LogManager(AbsSubject):
+    # def __init__(self, message_queue_):
+    #     self.message_queue_ = message_queue_
+
+    def add_reporter(self, reporter):
+        self.subscribe(reporter)
+
+
+class SimpleCallbackReporter(AbsObserver):
+    def __init__(self, update_callback):
+        self._callback = update_callback
+
+    def update(self, value):
+        self._callback(value)
+
+
+class StdoutReporter(AbsObserver):
+    def update(self, value):
+        print(value, file=sys.stderr)
