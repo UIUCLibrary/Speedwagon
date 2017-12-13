@@ -30,7 +30,7 @@ class ZipPackages(AbsTool):
         return ZipPackageJob
 
     @staticmethod
-    def discover_jobs(source, output, *args, **kwargs) -> typing.List[dict]:
+    def discover_jobs(source, output, *args, **kwargs) -> typing.List[dict]:   # type: ignore
         ZipPackages.validate_args(source, output, args, kwargs)
 
         job_requests = []
