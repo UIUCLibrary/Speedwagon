@@ -12,6 +12,7 @@ from frames.worker import ProcessJob
 
 OptionPair = namedtuple("OptionPair", ("label", "data"))
 
+
 class AbsToolData(metaclass=abc.ABCMeta):
 
     def __init__(self, parent=None):
@@ -26,15 +27,19 @@ class AbsToolData(metaclass=abc.ABCMeta):
     @property
     def data(self):
         return self.widget.value
+
+
 class SelectDirectory(AbsToolData):
 
     def get_widget(self):
         # return PathSelector2()
         return PathSelector()
 
+
 class PathSelector2:
     def __init__(self, parent=None):
         self.parent = parent
+
 
 class PathSelector(QtWidgets.QWidget):
 
@@ -86,13 +91,12 @@ class PathSelector(QtWidgets.QWidget):
 
 
 class ToolsListModel(QtCore.QAbstractTableModel):
-
     NAME = 0
     DESCRIPTION = 1
 
-    def __init__(self, data: typing.Dict["str", AbsTool], parent=None):
+    def __init__(self, data: typing.Dict["str", AbsTool], parent=None) -> None:
         super().__init__(parent)
-        self._data = []
+        self._data: typing.List[AbsTool] = []
         for k, v in data.items():
             self._data.append(v)
 
@@ -127,12 +131,11 @@ class ToolsListModel(QtCore.QAbstractTableModel):
 
 class ToolOptionsModule(QtCore.QAbstractTableModel):
 
-    def __init__(self, data: dict, parent=None):
+    def __init__(self, data: dict, parent=None) -> None:
         super().__init__(parent)
-        self._data = dict()
-        for i, (k, v) in enumerate(data.items()):
-            self._data[i] = OptionPair(k,v)
-
+        self._data = []
+        for k, v in data.items():
+            self._data.append(OptionPair(k, v))
 
     def rowCount(self, parent=None, *args, **kwargs):
         return len(self._data)
@@ -163,9 +166,7 @@ class ToolOptionsModule(QtCore.QAbstractTableModel):
         if not index.isValid():
             return False
         existing_data = self._data[index.row()]
-        # print(data)
         self._data[index.row()] = OptionPair(existing_data.label, data)
-        # self._data[]
         return True
         # return super().setData(QModelIndex, data, role)
 
@@ -179,11 +180,12 @@ class ToolOptionsModule(QtCore.QAbstractTableModel):
 
     def get(self) -> dict:
         options = dict()
-        for i, (k, v) in self._data.items():
-            options[k] = v
+        for data in self._data:
+            options[data.label] = data.data
         return options
 
-def available_tools()->dict:
+
+def available_tools() -> dict:
     """
     Locate all tools that can be loaded
 
