@@ -38,4 +38,10 @@ class AbsTool(metaclass=abc.ABCMeta):
 
     @staticmethod
     def on_completion(*args, **kwargs):
+        print("args = {}".format(args))
+        print("kwargs = {}".format(kwargs))
         print("Completed")
+
+    @staticmethod
+    def generate_report(*args, **kwargs):
+        return None
