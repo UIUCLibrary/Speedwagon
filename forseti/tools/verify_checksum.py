@@ -29,7 +29,6 @@ class VerifyChecksumBatch(AbsTool):
     @staticmethod
     def get_arguments() -> dict:
         return {"Input": "",
-                "output": ""
                 }
 
 
