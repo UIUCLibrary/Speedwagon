@@ -71,6 +71,7 @@ class Worker(QtCore.QObject):
 
 
 class ProcessWorker(Worker):
+    finished = QtCore.pyqtSignal()
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -95,7 +96,8 @@ class ProcessWorker(Worker):
             self._tasks.append(fut)
 
     def on_completion(self):
-        pass
+        print("I'm all done")
+        self.finished.emit()
 
     def add_job(self, job: typing.Type[ProcessJob], **kwargs):
         new_job = JobPair(job, args=kwargs, message_queue=self._message_queue)
@@ -168,7 +170,7 @@ class WorkManager(ProcessWorker):
                 if not f.done():
                     break
 
-            # If all tasks are completed, run the on completion method
+            # If all tasks are on_success, run the on completion method
             else:
                 self.on_completion()
 
