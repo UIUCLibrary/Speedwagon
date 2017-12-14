@@ -8,7 +8,7 @@ from frames.ui import main_window_shell_ui
 from frames import tool as t, processing, worker
 from collections import namedtuple
 
-PROJECT_NAME = "Project Avondale"
+PROJECT_NAME = "Forseti"
 
 Setting = namedtuple("Setting", ("label", "widget"))
 
@@ -135,8 +135,13 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         else:
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
 
-    def on_success(self):
-        QtWidgets.QMessageBox.about(self, "Finished", "Everything Finished.")
+    def on_success(self, results):
+        QtWidgets.QMessageBox.about(self, "Finished", "Finished")
+        user_args = self._options_model.get()
+        report = self._tool.generate_report(results=results, user_args=user_args)
+        if report:
+            self._reporter.update(report)
+        self._tool.on_completion(results=results, user_args=user_args)
 
 
     @property
