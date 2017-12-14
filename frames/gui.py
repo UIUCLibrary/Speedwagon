@@ -8,6 +8,8 @@ from frames.ui import main_window_shell_ui
 from frames import tool as t, processing, worker
 from collections import namedtuple
 
+PROJECT_NAME = "Project Avondale"
+
 Setting = namedtuple("Setting", ("label", "widget"))
 
 class ToolConsole(QtWidgets.QGroupBox):
@@ -163,6 +165,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.splitter.setOrientation(QtCore.Qt.Vertical)
         self.splitter.setChildrenCollapsible(False)
         self._options_model = None
+        self.label_2.setText(PROJECT_NAME)
         # self.tool_selector = self.create_tool_selector_widget()
 
         self.tool_selector_view = QtWidgets.QListView(self)
@@ -242,7 +245,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 def main():
     app = QtWidgets.QApplication(sys.argv)
     windows = MainWindow()
-    windows.setWindowTitle("Project Avondale")
+    windows.setWindowTitle(PROJECT_NAME)
     sys.exit(app.exec_())
 
 
