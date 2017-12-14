@@ -36,6 +36,7 @@ class AbsJob(metaclass=QtMeta):
     def on_completion(self):
         pass
 
+
 class ProcessJob(AbsJob):
 
     def __init__(self):
@@ -71,10 +72,11 @@ class Worker(QtCore.QObject):
 
 
 class ProcessWorker(Worker):
-    finished = QtCore.pyqtSignal()
+
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
+        self.results = None
         self.manager = multiprocessing.Manager()
         self._message_queue = self.manager.Queue()
 
@@ -84,6 +86,7 @@ class ProcessWorker(Worker):
     def cancel(self):
         if hasattr(self, "executor"):
             self.executor.shutdown()
+            # TODO: emit a cancel signal
 
 
 
@@ -94,10 +97,6 @@ class ProcessWorker(Worker):
             fut = self.executor.submit(new_job.execute, **args)
             fut.add_done_callback(self.complete_task)
             self._tasks.append(fut)
-
-    def on_completion(self):
-        print("I'm all done")
-        self.finished.emit()
 
     def add_job(self, job: typing.Type[ProcessJob], **kwargs):
         new_job = JobPair(job, args=kwargs, message_queue=self._message_queue)
@@ -110,11 +109,13 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
 
 
 class WorkManager(ProcessWorker):
+    finished = QtCore.pyqtSignal(object)
     _complete_task = QtCore.pyqtSignal()
 
     def __init__(self, parent):
         super().__init__(parent)
         self._tasks = []
+        self._results = []
 
         self.log_manager = LogManager()
         self.prog = WorkProgressBar(parent)
@@ -131,6 +132,7 @@ class WorkManager(ProcessWorker):
         # Update the log information
         self.t = QtCore.QTimer(self)
         self.t.timeout.connect(self._update_log)
+        self.t.start(100)
 
 
         self._complete_task.connect(self._advance)
@@ -143,7 +145,7 @@ class WorkManager(ProcessWorker):
         try:
             self.log_manager.subscribe(self.reporter)
             if self._jobs:
-                self.t.start(100)
+
                 self.initialize_worker()
                 self.prog.setRange(0, len(self._jobs))
                 self.prog.setValue(0)
@@ -160,8 +162,9 @@ class WorkManager(ProcessWorker):
             if not fut.cancelled():
                 result = fut.result()
                 if result:
-                    message = "task Completed with {} as the result".format(fut.result())
-                    self._message_queue.put(message)
+                    self._results.append(result)
+                    # message = "task Completed with {} as the result".format(result)
+                    # self._message_queue.put(message)
 
             self._complete_task.emit()
 
@@ -206,6 +209,11 @@ class WorkManager(ProcessWorker):
         while not self._message_queue.empty():
             log = self._message_queue.get()
             self.log_manager.notify(log)
+
+    def on_completion(self):
+        # print(self._results)
+        self._message_queue.put("Finished")
+        self.finished.emit(self._results)
 
 
 class AbsObserver(metaclass=abc.ABCMeta):
