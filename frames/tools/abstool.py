@@ -15,7 +15,7 @@ class AbsTool(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def new_job(self) ->typing.Type[worker.ProcessJob]:
         pass
-        # return DummyJob()
+
 
     @staticmethod
     @abc.abstractmethod
@@ -35,3 +35,7 @@ class AbsTool(metaclass=abc.ABCMeta):
     @staticmethod
     def validate_args(*args, **kwargs):
         return True
+
+    @staticmethod
+    def on_completion(*args, **kwargs):
+        print("Completed")
