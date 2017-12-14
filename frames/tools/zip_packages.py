@@ -55,7 +55,12 @@ class ZipPackages(AbsTool):
         if not os.path.exists(output) or not os.path.isdir(output):
             raise ValueError("Invalid output")
 
-
+    @staticmethod
+    def generate_report(*args, **kwargs):
+        print(kwargs)
+        if "user_args" in kwargs:
+            return "Zipping complete. All files written to {}.".format(kwargs["user_args"]["output"])
+        return "Zipping complete. All files written to output location"
 
 
 class ZipPackageJob(ProcessJob):
@@ -64,5 +69,9 @@ class ZipPackageJob(ProcessJob):
 
         self.log("Zipping {}".format(source_path))
         hathizip.process.compress_folder(path=source_path, dst=destination_path)
-        self.log("{} successfully zipped to {}".format(source_path, destination_path))
+        # self.log("{} successfully zipped to {}".format(source_path, destination_path))
+        basename = os.path.basename(source_path)
+        newfile = os.path.join(destination_path, f"{basename}.zip")
+        self.log(f"Created {newfile}")
+        self.result = newfile
 
