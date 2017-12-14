@@ -118,6 +118,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
             tool_ = self._tool()
             try:
                 jobs = self._tool.discover_jobs(**options)
+                wm.prog.setWindowTitle(str(tool_.name).title())
                 for _job_args in jobs:
                     job = tool_.new_job()
                     wm.add_job(job, **_job_args)
@@ -130,6 +131,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
                 QtWidgets.QMessageBox.warning(self, "Invalid setting", str(e))
         else:
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
+
 
 
     @property
@@ -154,6 +156,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
+
         self.setupUi(self)
         self.tabWidget.setTabEnabled(1, False)
         self.splitter = QtWidgets.QSplitter(self.tab_tools)
@@ -239,6 +242,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 def main():
     app = QtWidgets.QApplication(sys.argv)
     windows = MainWindow()
+    windows.setWindowTitle("Project Avondale")
     sys.exit(app.exec_())
 
 
