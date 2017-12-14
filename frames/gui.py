@@ -111,8 +111,9 @@ class ToolWorkspace(QtWidgets.QGroupBox):
     def start(self):
         if issubclass(self._tool, frames.tools.abstool.AbsTool):
             options = self._options_model.get()
-            print("options are {}".format(options))
+            # print("options are {}".format(options))
             wm = worker.WorkManager(self)
+            wm.finished.connect(self.on_success)
             if self._reporter:
                 wm.log_manager.add_reporter(self._reporter)
             # options = self._tool.get_configuration()
@@ -134,6 +135,8 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         else:
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
 
+    def on_success(self):
+        QtWidgets.QMessageBox.about(self, "Finished", "Everything Finished.")
 
 
     @property
