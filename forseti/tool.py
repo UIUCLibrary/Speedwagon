@@ -3,12 +3,12 @@ import inspect
 import typing
 from collections import namedtuple
 from . import tools
-from frames.tools.abstool import AbsTool
+from forseti.tools.abstool import AbsTool
 import os
 import random
 import time
 from PyQt5 import QtWidgets, QtCore, QtGui
-from frames.worker import ProcessJob
+from forseti.worker import ProcessJob
 
 OptionPair = namedtuple("OptionPair", ("label", "data"))
 

@@ -1,6 +1,6 @@
 import sys
 
-from frames import gui
+from forseti import gui
 
 
 def main():

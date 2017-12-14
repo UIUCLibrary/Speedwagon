@@ -1,9 +1,9 @@
 import os
 import typing
 
-from frames.worker import ProcessJob
-from frames.tools.abstool import AbsTool
-from frames import worker
+from forseti.worker import ProcessJob
+from forseti.tools.abstool import AbsTool
+from forseti import worker
 
 class VerifyChecksumBatch(AbsTool):
     name = "Verify Checksum Batch"

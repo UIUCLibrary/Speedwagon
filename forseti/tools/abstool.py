@@ -1,7 +1,7 @@
 import abc
 import typing
 
-from frames import worker
+from forseti import worker
 
 
 class AbsTool(metaclass=abc.ABCMeta):

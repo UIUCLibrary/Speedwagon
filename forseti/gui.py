@@ -2,10 +2,10 @@ import multiprocessing
 import sys
 from PyQt5 import QtWidgets, QtCore, QtGui
 import warnings
-import frames.tool
-import frames.tools.abstool
-from frames.ui import main_window_shell_ui
-from frames import tool as t, processing, worker
+import forseti.tool
+import forseti.tools.abstool
+from forseti.ui import main_window_shell_ui
+from forseti import tool as t, processing, worker
 from collections import namedtuple
 
 PROJECT_NAME = "Forseti"
@@ -90,7 +90,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         metadata_layout.addRow(QtWidgets.QLabel("Description"), self._description_information)
         return metadata_layout
 
-    def set_tool(self, tool: frames.tools.abstool.AbsTool):
+    def set_tool(self, tool: forseti.tools.abstool.AbsTool):
         self._tool = tool
         self.tool_selected = tool.name
         self.tool_description = tool.description
@@ -109,7 +109,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         return operations_layout
 
     def start(self):
-        if issubclass(self._tool, frames.tools.abstool.AbsTool):
+        if issubclass(self._tool, forseti.tools.abstool.AbsTool):
             options = self._options_model.get()
             # print("options are {}".format(options))
             wm = worker.WorkManager(self)
@@ -247,7 +247,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             self._load_tool(v())
 
 
-    def change_tool(self, tool: frames.tools.abstool.AbsTool):
+    def change_tool(self, tool: forseti.tools.abstool.AbsTool):
         self.tool_workspace.set_tool(tool)
 
 def main():
