@@ -1,6 +1,6 @@
 About
 =====
 
-DS frames
+Project Avondale
 
 Collection of tools and workflows for DS
