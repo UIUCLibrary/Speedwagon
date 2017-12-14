@@ -1,6 +1,7 @@
 from .make_checksum import MakeChecksumBatch
 from .zip_packages import ZipPackages
 from .verify_checksum import VerifyChecksumBatch
+from .completeness import HathiPackageCompleteness
 # from .spam import Spam
 # from .eggs import Eggs
 # __all__ = []
