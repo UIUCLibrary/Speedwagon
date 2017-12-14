@@ -10,7 +10,7 @@
     <ProductVersion Condition="'$(ProductVersion)' == '' ">1.0.0</ProductVersion>
     <ProjectGuid>C81EC878-C4BD-11E7-93CF-005056C00008</ProjectGuid>
     <SchemaVersion >2.0</SchemaVersion>
-    <OutputName>DS frames-$(ProductVersion)-$(ProcessorArchitecture)</OutputName>
+    <OutputName>Forseti-$(ProductVersion)-$(ProcessorArchitecture)</OutputName>
     <OutputType>Package</OutputType>
     <BuildRoot>..\build\msi\</BuildRoot>
     <NuGetPackageImportStamp>

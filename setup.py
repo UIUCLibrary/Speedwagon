@@ -43,15 +43,15 @@ setup(
         "pyqt5", "hathizip"
     ],
     packages=[
-        "frames",
-        "frames.tools",
-        "frames.ui"
+        "forseti",
+        "forseti.tools",
+        "forseti.ui"
     ],
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     entry_points={
         "console_scripts": [
-            'frames = frames.__main__:main'
+            'forseti = forseti.__main__:main'
         ]
     },
     cmdclass=cmdclass,

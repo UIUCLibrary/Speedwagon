@@ -1,8 +1,8 @@
 {
     "files": [
         [
-            "frames/ui/*.ui",
-            "frames/ui"
+            "forseti/ui/*.ui",
+            "forseti/ui"
 
         ]
     ],

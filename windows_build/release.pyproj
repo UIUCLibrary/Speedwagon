@@ -40,7 +40,7 @@
     </ItemGroup>
     <Target Name="TestRelease" DependsOnTargets="Build">
         <Message Text="Running tests"/>
-        <Exec Command="python.exe -m frames --pytest" WorkingDirectory="$(PyBuildStandaloneBuildPath)" IgnoreExitCode="false"/>
+        <Exec Command="python.exe -m forseti --pytest" WorkingDirectory="$(PyBuildStandaloneBuildPath)" IgnoreExitCode="false"/>
     </Target>
     <Target Name="msi" DependsOnTargets="Build;TestRelease">
         <Exec Command="@(Python) @(setuppy) --version" WorkingDirectory="$(ProjectRoot)" ConsoleToMSBuild="true">
