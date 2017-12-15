@@ -96,9 +96,27 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         self.tool_description = tool.description
         self._options_model = t.ToolOptionsModel2(self._tool.get_user_options())
         self.settings.setModel(self._options_model)
+        for i in range(self._options_model.rowCount()):
+            index = self._options_model.index(i, 0)
+            data = self._options_model.data(index, role=QtCore.Qt.UserRole)
+            delegate = ToolWorkspace.get_delegate(data.data_type)
+            # self.settings.setItemDelegateForRow(i, None)
+            self.settings.setItemDelegateForRow(i, delegate(self))
         self.settings.resizeColumnsToContents()
         self.settings.resizeRowsToContents()
         # self.settings.update()
+
+    @staticmethod
+    def get_delegate(data_type):
+        delegates = {
+            str: QtWidgets.QItemDelegate,
+            bool: CheckBoxDelegate
+        }
+        try:
+            delegate = delegates[data_type]
+            return delegate
+        except KeyError:
+            return QtWidgets.QItemDelegate
 
     def build_operations_layout(self):
         operations_layout = QtWidgets.QHBoxLayout()
@@ -111,7 +129,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
     def start(self):
         if issubclass(self._tool, forseti.tools.abstool.AbsTool):
             options = self._options_model.get()
-            # print("options are {}".format(options))
+            print("options are {}".format(options))
             wm = worker.WorkManager(self)
             wm.finished.connect(self.on_success)
             if self._reporter:
@@ -249,6 +267,38 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
     def change_tool(self, tool: forseti.tools.abstool.AbsTool):
         self.tool_workspace.set_tool(tool)
+
+class YesNoBoxDelegate(QtWidgets.QItemDelegate):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def createEditor(self, parent, QStyleOptionViewItem, QModelIndex):
+        checkbox = QtWidgets.QComboBox(parent)
+        return checkbox
+
+    def setEditorData(self, editor: QtWidgets.QComboBox, QModelIndex):
+        editor.addItem("Yes")
+        editor.addItem("No")
+        super().setEditorData(editor, QModelIndex)
+
+
+class CheckBoxDelegate(QtWidgets.QItemDelegate):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def createEditor(self, parent, QStyleOptionViewItem, QModelIndex):
+
+        checkbox = QtWidgets.QCheckBox(parent)
+        return checkbox
+        # return super().createEditor(parent, QStyleOptionViewItem, QModelIndex)
+
+    def setEditorData(self, editor: QtWidgets.QCheckBox, QModelIndex):
+        print(editor)
+        # q_widget = QWidget
+        super().setEditorData(editor, QModelIndex)
+
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
