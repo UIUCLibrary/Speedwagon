@@ -131,7 +131,7 @@ class ToolsListModel(QtCore.QAbstractTableModel):
 
 class ToolOptionsModule(QtCore.QAbstractTableModel):
 
-    def __init__(self, data: dict, parent=None) -> None:
+    def __init__(self, data: typing.Dict[str, str], parent=None) -> None:
         super().__init__(parent)
         self._data: typing.List[OptionPair] = []
         for k, v in data.items():
