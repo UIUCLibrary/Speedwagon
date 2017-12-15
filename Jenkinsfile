@@ -7,7 +7,7 @@ pipeline {
     }
     environment {
         mypy_args = "--junit-xml=mypy.xml"
-        pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
+        // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "Forseti", description: "Name given to the project")
@@ -40,7 +40,7 @@ pipeline {
                         node(label: "Windows") {
                             checkout scm
                             // bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
-                            bat "${tool 'Python3.6.3_Win64'} -m tox -e pytest"
+                            bat "${tool 'Python3.6.3_Win64'} -m tox -e pytest -- --junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}" 
                          }
                     },
                     "Behave": {
