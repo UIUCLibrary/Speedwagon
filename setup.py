@@ -48,7 +48,7 @@ setup(
         "forseti.ui"
     ],
     setup_requires=['pytest-runner'],
-    tests_require=['pytest'],
+    tests_require=['pytest', "behave"],
     entry_points={
         "console_scripts": [
             'forseti = forseti.__main__:main'
