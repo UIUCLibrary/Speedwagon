@@ -19,16 +19,9 @@ class Eggs(AbsTool):
 
     def __init__(self) -> None:
         super().__init__()
-        # input_data = SelectDirectory()
-        # input_data.label = "Goes In"
-        # self.options.append(input_data)
 
-        # output_data = SelectDirectory()
-        # output_data.label = "Goes out"
-        # self.options.append(output_data)
 
     def new_job(self) -> typing.Type[worker.ProcessJob]:
-        # return None
         return EggsJob
 
     @staticmethod

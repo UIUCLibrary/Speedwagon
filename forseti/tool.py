@@ -1,14 +1,15 @@
 import abc
 import inspect
 import typing
+import warnings
+from abc import abstractmethod
 from collections import namedtuple
+
+from forseti.tools.tool_options import ToolOption
 from . import tools
 from forseti.tools.abstool import AbsTool
 import os
-import random
-import time
-from PyQt5 import QtWidgets, QtCore, QtGui
-from forseti.worker import ProcessJob
+from PyQt5 import QtWidgets, QtCore
 
 OptionPair = namedtuple("OptionPair", ("label", "data"))
 
@@ -130,12 +131,10 @@ class ToolsListModel(QtCore.QAbstractTableModel):
 
 
 class ToolOptionsModel(QtCore.QAbstractTableModel):
-
-    def __init__(self, data: typing.Dict[str, str], parent=None) -> None:
+    def __init__(self, parent):
         super().__init__(parent)
-        self._data: typing.List[OptionPair] = []
-        for k, v in data.items():
-            self._data.append(OptionPair(k, v))
+        self._data = []
+
 
     def rowCount(self, parent=None, *args, **kwargs):
         return len(self._data)
@@ -146,13 +145,9 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
         else:
             return 0
 
-    def data(self, index, role=None):
-        if index.isValid():
-            if role == QtCore.Qt.DisplayRole:
-                return self._data[index.row()].data
-            if role == QtCore.Qt.EditRole:
-                return self._data[index.row()].data
-        return QtCore.QVariant()
+    @abstractmethod
+    def get(self):
+        raise NotImplementedError
 
     def flags(self, index):
         if not index.isValid():
@@ -161,6 +156,23 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
         column = index.column()
         if column == 0:
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
+
+
+class ToolOptionsPairsModel(ToolOptionsModel):
+
+    def __init__(self, data: typing.Dict[str, str], parent=None) -> None:
+        super().__init__(parent)
+        warnings.warn("Use ToolOptionsModel2 instead", DeprecationWarning)
+        for k, v in data.items():
+            self._data.append(OptionPair(k, v))
+
+    def data(self, index, role=None):
+        if index.isValid():
+            if role == QtCore.Qt.DisplayRole:
+                return self._data[index.row()].data
+            if role == QtCore.Qt.EditRole:
+                return self._data[index.row()].data
+        return QtCore.QVariant()
 
     def setData(self, index, data, role=None):
         if not index.isValid():
@@ -183,6 +195,40 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
         for data in self._data:
             options[data.label] = data.data
         return options
+
+class ToolOptionsModel2(ToolOptionsModel):
+
+    def __init__(self, data: typing.List[ToolOption], parent=None) -> None:
+        super().__init__(parent)
+        self._data: typing.List[ToolOption] = data
+
+    def data(self, index, role=None):
+        if index.isValid():
+            if role == QtCore.Qt.DisplayRole:
+                return self._data[index.row()].data
+            if role == QtCore.Qt.EditRole:
+                return self._data[index.row()].data
+        return QtCore.QVariant()
+
+    def get(self):
+        options = dict()
+        for data in self._data:
+            options[data.name] = data.data
+        return options
+
+    def headerData(self, index, Qt_Orientation, role=None):
+        if Qt_Orientation == QtCore.Qt.Vertical:
+            if role == QtCore.Qt.DisplayRole:
+                title = self._data[index].name
+                return str(title).title()
+        return QtCore.QVariant()
+
+    def setData(self, index, data, role=None):
+        if not index.isValid():
+            return False
+        existing_data = self._data[index.row()]
+        self._data[index.row()].data = data
+        return True
 
 
 def available_tools() -> dict:

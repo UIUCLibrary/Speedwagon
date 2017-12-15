@@ -1,7 +1,8 @@
 import typing
 
 from forseti.worker import ProcessJob
-from forseti.tools.abstool import AbsTool
+from .abstool import AbsTool
+from .tool_options import ToolOption
 from forseti import worker
 
 class MakeChecksumBatch(AbsTool):
@@ -22,11 +23,13 @@ class MakeChecksumBatch(AbsTool):
         return []
         pass
 
+
     @staticmethod
-    def get_arguments() -> dict:
-        return {"input": "",
-                "output": "",
-                }
+    def get_user_options() -> typing.List[ToolOption]:
+        return [
+            ToolOption(name="input"),
+            ToolOption(name="output"),
+        ]
 
 
 class ChecksumJob(ProcessJob):

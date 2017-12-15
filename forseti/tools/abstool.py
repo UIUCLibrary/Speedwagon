@@ -1,6 +1,8 @@
 import abc
 import typing
+import warnings
 
+from .tool_options import ToolOption
 from forseti import worker
 
 
@@ -22,16 +24,12 @@ class AbsTool(metaclass=abc.ABCMeta):
     def discover_jobs(*args, **kwargs):
         pass
 
+
     @staticmethod
     @abc.abstractmethod
-    def get_arguments()->dict:
+    def get_user_options()->typing.List[ToolOption]:
         pass
 
-    # def get_configuration(self)->dict:
-    #     config = dict()
-    #     for option in self.options:
-    #         config[option.label] = option.data
-    #     return config
     @staticmethod
     def validate_args(*args, **kwargs):
         return True

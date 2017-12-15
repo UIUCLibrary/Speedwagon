@@ -20,22 +20,22 @@ def step_impl(context: runner.Context):
 
 @when("we provide data to generate a Qt model")
 def step_impl(context: runner.Context):
-    context.data_model = tool.ToolOptionsModel(context.data)
+    context.data_model = tool.ToolOptionsPairsModel(context.data)
     # assert context.d == "dd"
 
 
 @then("we get a ToolOptionsModel object")
 def step_impl(context: runner.Context):
-    assert isinstance(context.data_model, tool.ToolOptionsModel)
+    assert isinstance(context.data_model, tool.ToolOptionsPairsModel)
     pass
 
 
-@then("it has 2 rows")
+@then("the model has 2 rows")
 def step_impl(context: runner.Context):
     assert context.data_model.rowCount() == 2
 
 
-@step("it has 1 column")
+@step("the model has 1 column")
 def step_impl(context: runner.Context):
     assert context.data_model.columnCount() == 1
 
@@ -43,7 +43,7 @@ def step_impl(context: runner.Context):
 @given("I have an options model with a single my_option")
 def step_impl(context: runner.Context):
     data = {"my_option": ""}
-    context.data_model = tool.ToolOptionsModel(data)
+    context.data_model = tool.ToolOptionsPairsModel(data)
 
 
 @when("I ask for the display data of my_option")

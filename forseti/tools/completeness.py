@@ -3,7 +3,8 @@ import typing
 import os
 
 from forseti import worker
-from forseti.tools.abstool import AbsTool
+from .abstool import AbsTool
+from .tool_options import ToolOption
 from forseti.worker import ProcessJob
 from hathi_validate import process as validate_process
 
@@ -30,8 +31,10 @@ class HathiPackageCompleteness(AbsTool):
         return jobs
 
     @staticmethod
-    def get_arguments() -> dict:
-        return {"source": ""}
+    def get_user_options() -> typing.List[ToolOption]:
+        return [
+            ToolOption("source")
+        ]
 
     @staticmethod
     def validate_args(source, *args, **kwargs):
@@ -72,7 +75,9 @@ class HathiPackageCompleteness(AbsTool):
                "{}\n" \
                "{}\n" \
             .format(splitter, title, splitter, summary, report_details, splitter)
-
+    # @staticmethod
+    # def get_user_options() -> typing.List["ToolOptionsModel2"]:
+    #     return []
 
 class HathiPackageCompletenessJob(ProcessJob):
     def process(self, *args, **kwargs):

@@ -7,8 +7,9 @@ import os
 from forseti import worker
 # from frames.tool import  ZipPackageJob
 from forseti.tools.abstool import AbsTool
+# from forseti.tool import ToolOption
 from forseti.worker import ProcessJob
-
+from .tool_options import ToolOption
 import hathizip.process
 
 class ZipPackages(AbsTool):
@@ -42,12 +43,6 @@ class ZipPackages(AbsTool):
         return job_requests
 
     @staticmethod
-    def get_arguments() -> dict:
-        return {"source": "",
-                "output": ""
-                }
-
-    @staticmethod
     def validate_args(source, output, *args, **kwargs):
 
         if not os.path.exists(source) or not os.path.isdir(source):
@@ -62,6 +57,12 @@ class ZipPackages(AbsTool):
             return "Zipping complete. All files written to {}.".format(kwargs["user_args"]["output"])
         return "Zipping complete. All files written to output location"
 
+    @staticmethod
+    def get_user_options() -> typing.List[ToolOption]:
+        return [
+            ToolOption("source"),
+            ToolOption("output"),
+        ]
 
 class ZipPackageJob(ProcessJob):
 

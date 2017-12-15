@@ -10,8 +10,8 @@ Feature: Tool Option Model
   Scenario: Dummy2 data correct size
     Given we have two options called dummy and dummy2
     When we provide data to generate a Qt model
-    Then it has 2 rows
-    And it has 1 column
+    Then the model has 2 rows
+    And the model has 1 column
 
   Scenario: Dummy data has a option called my_option
     Given I have an options model with a single my_option
