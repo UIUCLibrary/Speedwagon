@@ -24,16 +24,18 @@ class HathiPackageCompleteness(AbsTool):
     @staticmethod
     def discover_jobs(source, *args, **kwargs):
         HathiPackageCompleteness.validate_args(source)
-        print(source)
         jobs = []
         for d in os.scandir(source):
-            jobs.append({"package_path": d.path})
+            jobs.append({"package_path": d.path, "check_ocr": kwargs["Check for OCR XML"]})
         return jobs
 
     @staticmethod
     def get_user_options() -> typing.List[ToolOption]:
+        check_option = ToolOption("Check for OCR XML", bool)
+        check_option.data = False
         return [
-            ToolOption("source")
+            ToolOption("source"),
+            check_option,
         ]
 
     @staticmethod
@@ -83,7 +85,7 @@ class HathiPackageCompletenessJob(ProcessJob):
     def process(self, *args, **kwargs):
         self.log("Checking the completeness of {}".format(kwargs['package_path']))
         # TODO Handle variations when it comes to require_page_data
-        self.result = validate_process.process_directory(kwargs['package_path'], require_page_data=False)
+        self.result = validate_process.process_directory(kwargs['package_path'], require_page_data=kwargs['check_ocr'])
         for result in self.result:
             self.log(str(result))
         # self.result = (kwargs['package_path'], res)
