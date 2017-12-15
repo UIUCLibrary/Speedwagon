@@ -6,13 +6,13 @@ from .abstool import AbsTool
 from .tool_options import ToolOption
 from forseti import worker
 
+
 class VerifyChecksumBatch(AbsTool):
     name = "Verify Checksum Batch"
     description = "Verifies the checksum values"
 
     def __init__(self) -> None:
         super().__init__()
-
 
     def new_job(self) -> typing.Type[worker.ProcessJob]:
         return ChecksumJob
@@ -27,12 +27,12 @@ class VerifyChecksumBatch(AbsTool):
         return []
         pass
 
-
     @staticmethod
     def get_user_options() -> typing.List[ToolOption]:
         return [
             ToolOption("input")
         ]
+
 
 class ChecksumJob(ProcessJob):
     def process(self, *args):
