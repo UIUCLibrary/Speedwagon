@@ -42,7 +42,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         self.setTitle("Tool")
         self._tool_selected = ""
         self._description = ""
-        self._options_model = t.ToolOptionsModule(dict())
+        self._options_model = t.ToolOptionsModel(dict())
         self._print_reporter = worker.StdoutReporter()
         self._tool = None
         if 'reporter' in kwargs:
@@ -94,7 +94,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         self._tool = tool
         self.tool_selected = tool.name
         self.tool_description = tool.description
-        self._options_model = t.ToolOptionsModule(self._tool.get_arguments())
+        self._options_model = t.ToolOptionsModel(self._tool.get_arguments())
         self.settings.setModel(self._options_model)
         self.settings.resizeColumnsToContents()
         self.settings.resizeRowsToContents()
