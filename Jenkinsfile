@@ -37,11 +37,17 @@ pipeline {
             steps {
                 parallel(
                     "PyTest": {
-                        // bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
-                        bat "${tool 'Python3.6.3_Win64'} -m tox -e pytest"
+                        node(label: "Windows") {
+                            checkout scm
+                            // bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
+                            bat "${tool 'Python3.6.3_Win64'} -m tox -e pytest"
+                         }
                     },
                     "Behave": {
-                        bat "${tool 'Python3.6.3_Win64'} -m tox -e bdd"
+                        node(label: "Windows") {
+                            checkout scm
+                            bat "${tool 'Python3.6.3_Win64'} -m tox -e bdd"
+                        }
                     }
                 )
                 
