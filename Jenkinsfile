@@ -40,7 +40,7 @@ pipeline {
                         node(label: "Windows") {
                             checkout scm
                             // bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
-                            bat "${tool 'Python3.6.3_Win64'} -m tox -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-{envname}.xml --junit-prefix=${env.NODE_NAME}  --basetemp={envtmpdir}" 
+                            bat "${tool 'Python3.6.3_Win64'} -m tox -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-py36.xml --junit-prefix=${env.NODE_NAME}" //  --basetemp={envtmpdir}" 
                          }
                     },
                     "Behave": {
