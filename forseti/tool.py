@@ -129,7 +129,7 @@ class ToolsListModel(QtCore.QAbstractTableModel):
         return 2
 
 
-class ToolOptionsModule(QtCore.QAbstractTableModel):
+class ToolOptionsModel(QtCore.QAbstractTableModel):
 
     def __init__(self, data: typing.Dict[str, str], parent=None) -> None:
         super().__init__(parent)
