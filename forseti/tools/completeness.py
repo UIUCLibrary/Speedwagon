@@ -87,7 +87,6 @@ class HathiPackageCompleteness(AbsTool):
 class HathiPackageCompletenessJob(ProcessJob):
     def process(self, **kwargs):
         self.log("Checking the completeness of {}".format(kwargs['package_path']))
-        # TODO Handle variations when it comes to require_page_data
         self.result = validate_process.process_directory(kwargs['package_path'], require_page_data=kwargs['check_ocr'])
         for result in self.result:
             self.log(str(result))
