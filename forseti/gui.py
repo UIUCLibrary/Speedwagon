@@ -130,6 +130,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         if issubclass(self._tool, forseti.tools.abstool.AbsTool):
             options = self._options_model.get()
             print("options are {}".format(options))
+
             wm = worker.WorkManager(self)
             wm.finished.connect(self.on_success)
             if self._reporter:
@@ -138,6 +139,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
             # print(options)
             tool_ = self._tool()
             try:
+                self._tool.validate_args(**options)
                 jobs = self._tool.discover_jobs(**options)
                 wm.prog.setWindowTitle(str(tool_.name).title())
                 for _job_args in jobs:
@@ -145,11 +147,20 @@ class ToolWorkspace(QtWidgets.QGroupBox):
                     wm.add_job(job, **_job_args)
                 try:
                     wm.run()
+
                 except RuntimeError as e:
                     QtWidgets.QMessageBox.warning(self, "Process failed", str(e))
+                # except TypeError as e:
+                #     QtWidgets.QMessageBox.critical(self, "Process failed", str(e))
+                #     raise
+
             except ValueError as e:
-                wm.cancel()
+                wm.cancel(quiet=True)
                 QtWidgets.QMessageBox.warning(self, "Invalid setting", str(e))
+            except Exception as e:
+                wm.cancel(quiet=True)
+                QtWidgets.QMessageBox.critical(self, "Process failed", str(e))
+                raise
         else:
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
 
