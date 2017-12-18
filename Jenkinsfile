@@ -30,7 +30,8 @@ pipeline {
                 echo "Finding Jira issue $params.JIRA_ISSUE"
                 script {
                     // def result = jiraSearch "issue = $params.JIRA_ISSUE"
-                    def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
+                    def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
+                    // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
                     if(result.isEmpty()){
                         echo "Jira issue $params.JIRA_ISSUE not found"
                         error("Jira issue $params.JIRA_ISSUE not found")
