@@ -11,6 +11,7 @@ pipeline {
     }
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "Forseti", description: "Name given to the project")
+        string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
         booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run automated unit tests")
         booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
         booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a package")
@@ -20,6 +21,27 @@ pipeline {
         string(name: 'URL_SUBFOLDER', defaultValue: "forseti", description: 'The directory that the docs should be saved under')
     }
     stages {
+        stage("Testing Jira issue"){
+            agent any
+            when {
+                expression {params.JIRA_ISSUE != ""}
+            }
+            steps {
+                echo "Finding Jira issue $params.JIRA_ISSUE"
+                script {
+                    // def result = jiraSearch "issue = $params.JIRA_ISSUE"
+                    def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
+                    if(result.isEmpty()){
+                        echo "Jira issue $params.JIRA_ISSUE not found"
+                        error("Jira issue $params.JIRA_ISSUE not found")
+
+                    } else {
+                        echo "Located ${result}"
+                    }
+                }
+
+            }
+        }
 
         stage("Cloning Source") {
             steps {
