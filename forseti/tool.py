@@ -1,4 +1,5 @@
 import abc
+import importlib
 import inspect
 import typing
 import warnings
@@ -241,7 +242,16 @@ def available_tools() -> dict:
 
     """
     located_tools = dict()
-    for name_, module_class in inspect.getmembers(tools, lambda m: inspect.isclass(m) and not inspect.isabstract(m)):
-        if issubclass(module_class, AbsTool):
-            located_tools[module_class.name] = module_class
+    root = os.path.join(os.path.dirname(__file__), "tools")
+    tree = os.scandir(root)
+
+    for m in tree:
+        try:
+            module = importlib.import_module("{}.tools.{}".format(__package__, os.path.splitext(m.name)[0]))
+            for name_, module_class in inspect.getmembers(module, lambda m: inspect.isclass(m) and not inspect.isabstract(m)):
+                if issubclass(module_class, AbsTool):
+                    located_tools[module_class.name] = module_class
+        except ImportError as e:
+            raise ImportError("Unable to load {}. Reason: {}".format(m, e))
+
     return located_tools
