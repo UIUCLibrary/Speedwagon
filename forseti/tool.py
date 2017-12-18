@@ -5,7 +5,7 @@ import warnings
 from abc import abstractmethod
 from collections import namedtuple
 
-from forseti.tools.tool_options import ToolOption
+from forseti.tools.tool_options import ToolOptionDataType
 from . import tools
 from forseti.tools.abstool import AbsTool
 import os
@@ -198,16 +198,18 @@ class ToolOptionsPairsModel(ToolOptionsModel):
 
 class ToolOptionsModel2(ToolOptionsModel):
 
-    def __init__(self, data: typing.List[ToolOption], parent=None) -> None:
+    def __init__(self, data: typing.List[ToolOptionDataType], parent=None) -> None:
         super().__init__(parent)
-        self._data: typing.List[ToolOption] = data
+        self._data: typing.List[ToolOptionDataType] = data
 
     def data(self, index, role=None):
         if index.isValid():
             if role == QtCore.Qt.DisplayRole:
-                return self._data[index.row()].data
+                return str(self._data[index.row()].data)
             if role == QtCore.Qt.EditRole:
                 return self._data[index.row()].data
+            if role == QtCore.Qt.UserRole:
+                return self._data[index.row()]
         return QtCore.QVariant()
 
     def get(self):
