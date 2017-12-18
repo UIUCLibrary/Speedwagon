@@ -22,11 +22,11 @@ class HathiPackageCompleteness(AbsTool):
         return HathiPackageCompletenessJob
 
     @staticmethod
-    def discover_jobs(source, *args, **kwargs):
-        HathiPackageCompleteness.validate_args(source)
+    def discover_jobs(**user_args):
+        # HathiPackageCompleteness.validate_args(user_args['source'])
         jobs = []
-        for d in os.scandir(source):
-            jobs.append({"package_path": d.path, "check_ocr": kwargs["Check for OCR XML"]})
+        for d in os.scandir(user_args['source']):
+            jobs.append({"package_path": d.path, "check_ocr": user_args["Check for OCR XML"]})
         return jobs
 
     @staticmethod
@@ -40,7 +40,10 @@ class HathiPackageCompleteness(AbsTool):
 
     @staticmethod
     def validate_args(source, *args, **kwargs):
-        if not os.path.exists(source) or not os.path.isdir(source):
+        src = source
+        if not src:
+            raise ValueError("Missing value")
+        if not os.path.exists(src) or not os.path.isdir(src):
             raise ValueError("Invalid source")
 
     @staticmethod
@@ -82,7 +85,7 @@ class HathiPackageCompleteness(AbsTool):
     #     return []
 
 class HathiPackageCompletenessJob(ProcessJob):
-    def process(self, *args, **kwargs):
+    def process(self, **kwargs):
         self.log("Checking the completeness of {}".format(kwargs['package_path']))
         # TODO Handle variations when it comes to require_page_data
         self.result = validate_process.process_directory(kwargs['package_path'], require_page_data=kwargs['check_ocr'])

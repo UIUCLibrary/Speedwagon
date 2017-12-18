@@ -21,7 +21,7 @@ class AbsTool(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def discover_jobs(*args, **kwargs):
+    def discover_jobs(**user_args):
         pass
 
 
@@ -31,7 +31,7 @@ class AbsTool(metaclass=abc.ABCMeta):
         pass
 
     @staticmethod
-    def validate_args(*args, **kwargs):
+    def validate_args(**user_args):
         return True
 
     @staticmethod
