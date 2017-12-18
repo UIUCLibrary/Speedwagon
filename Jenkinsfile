@@ -27,10 +27,11 @@ pipeline {
                 expression {params.UPDATE_JIRA_EPIC != ""}
             }
             steps {
-                echo "Finding Jira epic located on ${JIRA_SITE}"
+                echo "Finding Jira epic"
                 script {
                     // def result = jiraSearch "issue = $params.JIRA_ISSUE"
-                    
+                    jiraComment body: 'Just a test', issueKey: 'PSR-83'
+                    def issue = issueSelector: [$class: 'DefaultIssueSelector']
                     def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
                     // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
                     if(result.isEmpty()){
