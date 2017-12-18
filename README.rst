@@ -1,6 +1,6 @@
 About
 =====
 
-DS frames
+Forseti
 
 Collection of tools and workflows for DS

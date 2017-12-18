@@ -7,19 +7,46 @@ pipeline {
     }
     environment {
         mypy_args = "--junit-xml=mypy.xml"
-        pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
+        // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
     parameters {
-        string(name: "PROJECT_NAME", defaultValue: "DS frames", description: "Name given to the project")
+        string(name: "PROJECT_NAME", defaultValue: "Forseti", description: "Name given to the project")
+        booleanParam(name: "UPDATE_JIRA_EPIC", defaultValue: true, description: "Write a Update information on JIRA board")
+        string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
         booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run automated unit tests")
         booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
         booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a package")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         choice(choices: 'None\nRelease_to_devpi_only\nRelease_to_devpi_and_sccm\n', description: "Release the build to production. Only available in the Master branch", name: 'RELEASE')
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update online documentation")
-        string(name: 'URL_SUBFOLDER', defaultValue: "frames", description: 'The directory that the docs should be saved under')
+        string(name: 'URL_SUBFOLDER', defaultValue: "forseti", description: 'The directory that the docs should be saved under')
     }
     stages {
+        stage("Testing Jira epic"){
+            agent any
+            when {
+                expression {params.UPDATE_JIRA_EPIC == true}
+            }
+            steps {
+                echo "Finding Jira epic"
+                script {
+                    // def result = jiraSearch "issue = $params.JIRA_ISSUE"
+                    // jiraComment body: 'Just a test', issueKey: 'PSR-83'
+                    def result = jiraGetIssue idOrKey: 'PSR-83', site: 'https://bugs.library.illinois.edu'
+                    echo "result = ${result}"
+                    // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
+                    // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
+                    // if(result.isEmpty()){
+                    //     echo "Jira issue not found"
+                    //     error("Jira issue not found")
+
+                    // } else {
+                    //     echo "Located ${result}"
+                    // }
+                }
+
+            }
+        }
 
         stage("Cloning Source") {
             steps {
@@ -35,7 +62,24 @@ pipeline {
                 expression { params.UNIT_TESTS == true }
             }
             steps {
-                bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
+                parallel(
+                    "PyTest": {
+                        node(label: "Windows") {
+                            checkout scm
+                            // bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
+                            bat "${tool 'Python3.6.3_Win64'} -m tox -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}" 
+                            junit "reports/junit-${env.NODE_NAME}-pytest.xml"
+                         }
+                    },
+                    "Behave": {
+                        node(label: "Windows") {
+                            checkout scm
+                            bat "${tool 'Python3.6.3_Win64'} -m tox -e bdd --  --junit --junit-directory reports" 
+                            junit "reports/*.xml"
+                        }
+                    }
+                )
+                
             }
         }
         stage("Additional tests") {
@@ -76,11 +120,7 @@ pipeline {
             steps {
                 parallel(
                         "Source and Wheel formats": {
-                            bat """${tool 'Python3.6.3_Win64'} -m venv venv
-                                    call venv\\Scripts\\activate.bat
-                                    pip install -r requirements-dev.txt
-                                    python setup.py sdist bdist_wheel
-                                    """
+                            bat "call make.bat"
                         },
                         "Windows Standalone": {
                             node(label: "Windows&&VS2015&&DevPi") {
@@ -240,7 +280,29 @@ pipeline {
             steps {
                 updateOnlineDocs url_subdomain: params.URL_SUBFOLDER, stash_name: "HTML Documentation"
             }
+            post {
+                success {
+                    script {
+                        echo "https://www.library.illinois.edu/dccdocs/${params.URL_SUBFOLDER} updated successfully."
+                    }
+                }
+            }
 
+        }
+    }
+    post {
+        always {
+            script {
+                def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
+                def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
+                withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                    bat "${tool 'Python3.6.3_Win64'} -m devpi remove -y ${name}==${version}"
+                }
+            }
+        }
+        success {
+            echo "Cleaning up workspace"
+            deleteDir()
         }
     }
 }

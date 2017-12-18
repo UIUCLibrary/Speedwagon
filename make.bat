@@ -217,7 +217,7 @@ goto:eof
     call:_install-dev
     call:_update_gui
     setlocal
-    call venv\Scripts\activate.bat && mypy -p frames %*
+    call venv\Scripts\activate.bat && mypy -p forseti %*
     endlocal
 goto:eof
 
@@ -256,12 +256,12 @@ goto:eof
 
 
 
-	if exist .cache rd /q /s .cache                 && echo Removed .cache
-	if exist .reports rd /q /s .reports             && echo Removed .reports
-	if exist .mypy_cache rd /q /s .mypy_cache       && echo Removed .mypy_cache
-	if exist .eggs rd /q /s .eggs                   && echo Removed .eggs
-	if exist .tox rd /q /s .tox                     && echo Removed .tox
-	if exist frames.egg-info rd /q /s frames.egg-info && echo Removed frames.egg-info
+	if exist .cache rd /q /s .cache                     && echo Removed .cache
+	if exist .reports rd /q /s .reports                 && echo Removed .reports
+	if exist .mypy_cache rd /q /s .mypy_cache           && echo Removed .mypy_cache
+	if exist .eggs rd /q /s .eggs                       && echo Removed .eggs
+	if exist .tox rd /q /s .tox                         && echo Removed .tox
+	if exist forseti.egg-info rd /q /s forseti.egg-info && echo Removed forseti.egg-info
 	endlocal
 goto:eof
 

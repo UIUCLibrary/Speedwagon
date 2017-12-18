@@ -40,13 +40,18 @@ except ImportError:
 setup(
     test_suite="tests",
     install_requires=[
-        "pyqt5",
+        "pyqt5", "hathizip", "HathiValidate"
+    ],
+    packages=[
+        "forseti",
+        "forseti.tools",
+        "forseti.ui"
     ],
     setup_requires=['pytest-runner'],
-    tests_require=['pytest'],
+    tests_require=['pytest', "behave"],
     entry_points={
         "console_scripts": [
-            'frames = frames.__main__:main'
+            'forseti = forseti.__main__:main'
         ]
     },
     cmdclass=cmdclass,
