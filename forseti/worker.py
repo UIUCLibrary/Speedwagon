@@ -9,11 +9,14 @@ import multiprocessing
 
 JobPair = namedtuple("JobPair", ("job", "args", "message_queue"))
 
+
 class QtMeta(type(QtCore.QObject), abc.ABCMeta):  # type: ignore
     pass
 
+
 class NoWorkError(RuntimeError):
     pass
+
 
 class AbsJob(metaclass=QtMeta):
 
@@ -43,8 +46,7 @@ class ProcessJob(AbsJob):
         super().__init__()
         self._mq = None
 
-
-    def process(self, *args, **kwargs):
+    def process(self, **kwargs):
         pass
 
     def set_message_queue(self, value):
@@ -88,8 +90,6 @@ class ProcessWorker(Worker):
             self.executor.shutdown()
             # TODO: emit a cancel signal
 
-
-
     def run_jobs(self, jobs):
         for job, args, message_queue in jobs:
             new_job = job()
@@ -101,6 +101,7 @@ class ProcessWorker(Worker):
     def add_job(self, job: typing.Type[ProcessJob], **kwargs):
         new_job = JobPair(job, args=kwargs, message_queue=self._message_queue)
         self._jobs.append(new_job)
+
 
 class WorkProgressBar(QtWidgets.QProgressDialog):
 
@@ -128,12 +129,10 @@ class WorkManager(ProcessWorker):
         # Update the label to let the user know what is currently being worked on
         self.reporter = SimpleCallbackReporter(self.prog.setLabelText)
 
-
         # Update the log information
         self.t = QtCore.QTimer(self)
         self.t.timeout.connect(self._update_log)
         self.t.start(100)
-
 
         self._complete_task.connect(self._advance)
 
@@ -177,7 +176,7 @@ class WorkManager(ProcessWorker):
             else:
                 self.on_completion()
 
-    def cancel(self):
+    def cancel(self, quiet=False):
         self.prog.setAutoClose(False)
         self.prog.canceled.disconnect(self.cancel)
         self._message_queue.put("Called cancel")
@@ -188,22 +187,21 @@ class WorkManager(ProcessWorker):
         self.t.stop()
         super().cancel()
         # QtWidgets.QMessageBox.about(self.prog, "Canceling", "Canceling")
-            # print(f"canceling {task}")
+        # print(f"canceling {task}")
         # QtWidgets.QMessageBox("asdfasdfasdf", "asdfasdfasdf")
         # list(map(lambda task: task.cancel(), self._tasks))
         # self.executor.submit(concurrent.futures.wait, )
         # concurrent.futures.wait(self._tasks,return_when=concurrent.futures.ALL_COMPLETED)
 
         self.prog.close()
-        QtWidgets.QMessageBox.about(self.prog, "Canceled", "Successfully Canceled")
+        if not quiet:
+            QtWidgets.QMessageBox.about(self.prog, "Canceled", "Successfully Canceled")
 
         # for task in self._tasks:
         #     task.cancel()
         # for task in self._tasks:
         #     if not task.done():
         #         task.get()
-
-
 
     def _update_log(self):
         while not self._message_queue.empty():
@@ -223,7 +221,6 @@ class AbsObserver(metaclass=abc.ABCMeta):
 
 
 class AbsSubject(metaclass=abc.ABCMeta):
-
     _observers = set()  # type: typing.Set[AbsObserver]
 
     def subscribe(self, observer: AbsObserver):
