@@ -12,6 +12,7 @@ pipeline {
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "Forseti", description: "Name given to the project")
         booleanParam(name: "UPDATE_JIRA_EPIC", defaultValue: true, description: "Write a Update information on JIRA board")
+        string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
         booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run automated unit tests")
         booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
         booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a package")
@@ -27,12 +28,12 @@ pipeline {
                 expression {params.UPDATE_JIRA_EPIC != ""}
             }
             steps {
-                echo "Finding Jira epic on ${JIRA_SITE}"
+                echo "Finding Jira epic"
                 script {
                     // def result = jiraSearch "issue = $params.JIRA_ISSUE"
                     // jiraComment body: 'Just a test', issueKey: 'PSR-83'
-                    // def issue = issueSelector: [$class: 'DefaultIssueSelector']
-                    def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
+                    def result = jiraGetIssue idOrKey: 'PSR-83', site: 'https://bugs.library.illinois.edu'
+                    // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
                     // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
                     if(result.isEmpty()){
                         echo "Jira issue not found"
