@@ -21,20 +21,20 @@ pipeline {
         string(name: 'URL_SUBFOLDER', defaultValue: "forseti", description: 'The directory that the docs should be saved under')
     }
     stages {
-        stage("Testing Jira issue"){
+        stage("Testing Jira epic"){
             agent any
             when {
                 expression {params.UPDATE_JIRA_EPIC != ""}
             }
             steps {
-                echo "Finding Jira issue $params.JIRA_ISSUE"
+                echo "Finding Jira epic"
                 script {
                     // def result = jiraSearch "issue = $params.JIRA_ISSUE"
                     def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
                     // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
                     if(result.isEmpty()){
-                        echo "Jira issue $params.JIRA_ISSUE not found"
-                        error("Jira issue $params.JIRA_ISSUE not found")
+                        echo "Jira issue not found"
+                        error("Jira issue not found")
 
                     } else {
                         echo "Located ${result}"
