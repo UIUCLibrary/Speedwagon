@@ -3,7 +3,7 @@ import typing
 
 from forseti.worker import ProcessJob
 from .abstool import AbsTool
-from .tool_options import ToolOption
+from .tool_options import ToolOptionDataType
 from forseti import worker
 
 
@@ -28,9 +28,9 @@ class VerifyChecksumBatch(AbsTool):
         pass
 
     @staticmethod
-    def get_user_options() -> typing.List[ToolOption]:
+    def get_user_options() -> typing.List[ToolOptionDataType]:
         return [
-            ToolOption("input")
+            ToolOptionDataType("input")
         ]
 
 
