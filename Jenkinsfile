@@ -25,7 +25,7 @@ pipeline {
         stage("Testing Jira epic"){
             agent any
             when {
-                expression {params.UPDATE_JIRA_EPIC != ""}
+                expression {params.UPDATE_JIRA_EPIC == true}
             }
             steps {
                 echo "Finding Jira epic"
@@ -33,15 +33,16 @@ pipeline {
                     // def result = jiraSearch "issue = $params.JIRA_ISSUE"
                     // jiraComment body: 'Just a test', issueKey: 'PSR-83'
                     def result = jiraGetIssue idOrKey: 'PSR-83', site: 'https://bugs.library.illinois.edu'
+                    echo "result = ${result}"
                     // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
                     // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
-                    if(result.isEmpty()){
-                        echo "Jira issue not found"
-                        error("Jira issue not found")
+                    // if(result.isEmpty()){
+                    //     echo "Jira issue not found"
+                    //     error("Jira issue not found")
 
-                    } else {
-                        echo "Located ${result}"
-                    }
+                    // } else {
+                    //     echo "Located ${result}"
+                    // }
                 }
 
             }
