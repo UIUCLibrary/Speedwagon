@@ -52,7 +52,6 @@ class ZipPackages(AbsTool):
 
     @staticmethod
     def generate_report(*args, **kwargs):
-        print(kwargs)
         if "user_args" in kwargs:
             return "Zipping complete. All files written to {}.".format(kwargs["user_args"]["output"])
         return "Zipping complete. All files written to output location"
