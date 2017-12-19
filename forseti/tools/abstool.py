@@ -35,10 +35,12 @@ class AbsTool(metaclass=abc.ABCMeta):
         return True
 
     @staticmethod
+    def post_process(user_args:dict):
+        pass
+
+    @staticmethod
     def on_completion(*args, **kwargs):
-        print("args = {}".format(args))
-        print("kwargs = {}".format(kwargs))
-        print("Completed")
+        pass
 
     @staticmethod
     def generate_report(*args, **kwargs):
