@@ -1,13 +1,18 @@
 import typing
 
+import os
+
 from forseti.worker import ProcessJob
 from .abstool import AbsTool
 from .tool_options import ToolOptionDataType
 from forseti import worker
+from pyhathiprep import checksum
+
 
 class MakeChecksumBatch(AbsTool):
     name = "Make Checksum Batch"
-    description = "Makes a checksums"
+    description = "Makes a checksums" \
+                  "\nInput: path to a root folder"
 
     def __init__(self) -> None:
         super().__init__()
@@ -19,20 +24,62 @@ class MakeChecksumBatch(AbsTool):
         return ChecksumJob
 
     @staticmethod
-    def discover_jobs(*args, **kwargs):
-        return []
+    def discover_jobs(**user_args):
+        jobs = []
+        package_root = user_args['input']
+        for root, dirs, files in os.walk(package_root):
+            for file_ in files:
+                full_path = os.path.join(root, file_)
+                relpath = os.path.relpath(full_path, package_root)
+                job = {
+                    "source_path": package_root,
+                    "filename": relpath
+                }
+                jobs.append(job)
+        return jobs
         pass
 
+    @staticmethod
+    def validate_args(**user_args):
+        if not os.path.exists(user_args["input"]) or not os.path.isdir(user_args["input"]):
+            raise ValueError("Invalid user arguments")
 
     @staticmethod
     def get_user_options() -> typing.List[ToolOptionDataType]:
         return [
             ToolOptionDataType(name="input"),
-            ToolOptionDataType(name="output"),
+            # ToolOptionDataType(name="output"),
         ]
+
+    @staticmethod
+    def on_completion(*args, **kwargs):
+        source_path = kwargs["user_args"]['input']
+        report_builder = checksum.HathiChecksumReport()
+        for filename, hash_value in [(result['filename'], result['checksum']) for result in kwargs['results']]:
+            # print(filename, hash_value)
+            report_builder.add_entry(filename, hash_value)
+        report = report_builder.build()
+        checksum_file = os.path.join(source_path, "checksum.md5")
+        print(checksum_file)
+        with open(checksum_file, "w", encoding="utf-8") as wf:
+            wf.write(report)
+
+    @staticmethod
+    def generate_report(*args, **kwargs):
+        user_args = kwargs['user_args']
+        results = kwargs['results']
+        return f"Checksum values for {len(results)} files written to checksum.md5"
+
+    #     super().on_completion(*args, **kwargs)
 
 
 class ChecksumJob(ProcessJob):
-    def process(self, *args):
-        self.log("Calculated the checksum of file")
-        self.log("Adding checksum hash to file")
+    def process(self, *args, **kwargs):
+        source_path = kwargs['source_path']
+        source_file = kwargs['filename']
+        self.log(f"Calculated the checksum for {source_file}")
+        # create_checksum_report("dd")
+        self.result = {
+            "filename": source_file,
+            "checksum": checksum.calculate_md5_hash(os.path.join(source_path, source_file))
+        }
