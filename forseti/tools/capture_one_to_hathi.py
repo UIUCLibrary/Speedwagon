@@ -7,6 +7,7 @@ from forseti.tools.abstool import AbsTool
 from forseti.tools.tool_options import ToolOptionDataType
 from forseti.worker import ProcessJob
 
+# TODO: This needs the code from https://github.com/UIUCLibrary/DCCMedusaPackager
 
 class CaptureOneToHathiTiffPackage(AbsTool):
     name = "Convert CaptureOne TIFF to Hathi TIFF package"
@@ -21,6 +22,8 @@ class CaptureOneToHathiTiffPackage(AbsTool):
     @staticmethod
     def discover_jobs(**user_args):
         jobs = []
+        jobs.append(user_args['input'])
+        # cli.get_packages()
         return jobs
 
     def new_job(self) -> typing.Type[worker.ProcessJob]:
@@ -43,6 +46,6 @@ class CaptureOneToHathiTiffPackage(AbsTool):
 
 
 class PackageConverter(ProcessJob):
-    pass
-    # def process(self, **kwargs):
-    #     super().process(**kwargs)
+
+    def process(self, *args, **kwargs):
+        pass
