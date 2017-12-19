@@ -40,9 +40,11 @@ class ToolWorkspace(QtWidgets.QGroupBox):
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
         self.setTitle("Tool")
+        self.log_manager = worker.LogManager()
         self._tool_selected = ""
         self._description = ""
-        self._options_model = t.ToolOptionsPairsModel(dict())
+        # self._options_model = t.ToolOptionsPairsModel(dict())
+        self._options_model = t.ToolOptionsModel2([])
         self._print_reporter = worker.StdoutReporter()
         self._tool = None
         if 'reporter' in kwargs:
@@ -129,17 +131,22 @@ class ToolWorkspace(QtWidgets.QGroupBox):
     def start(self):
         if issubclass(self._tool, forseti.tools.abstool.AbsTool):
             options = self._options_model.get()
-            print("options are {}".format(options))
+            # print("options are {}".format(options))
 
-            wm = worker.WorkManager(self)
+            wm = worker.WorkManager2(self)
             wm.finished.connect(self.on_success)
+            wm.completion_callback = self._tool.on_completion
+            # wm.finished.connect(self._tool.on_completion)
+            # wm.finished.connect(lambda: self._tool.on_completion())
             if self._reporter:
+                self.log_manager.add_reporter(self._reporter)
                 wm.log_manager.add_reporter(self._reporter)
             # options = self._tool.get_configuration()
             # print(options)
             tool_ = self._tool()
             try:
                 self._tool.validate_args(**options)
+                # wm.completion_callback = lambda: self._tool.on_completion()
                 jobs = self._tool.discover_jobs(**options)
                 wm.prog.setWindowTitle(str(tool_.name).title())
                 for _job_args in jobs:
@@ -159,18 +166,23 @@ class ToolWorkspace(QtWidgets.QGroupBox):
                 QtWidgets.QMessageBox.warning(self, "Invalid setting", str(e))
             except Exception as e:
                 wm.cancel(quiet=True)
-                QtWidgets.QMessageBox.critical(self, "Process failed", str(e))
+                QtWidgets.QMessageBox.critical(self,
+                                               f"Unhandled Exception: {type(e).__name__}",
+                                               f"Unable to continue due to an unhandled exception.\n{e}")
                 raise
         else:
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
 
-    def on_success(self, results):
-        QtWidgets.QMessageBox.about(self, "Finished", "Finished")
+    def on_success(self, results, callback):
         user_args = self._options_model.get()
+        callback(results=results,user_args=user_args)
         report = self._tool.generate_report(results=results, user_args=user_args)
         if report:
-            self._reporter.update(report)
-        self._tool.on_completion(results=results, user_args=user_args)
+            self.log_manager.notify(report)
+
+        # self._tool.on_completion(results=results,user_args=user_args)
+
+        QtWidgets.QMessageBox.about(self, "Finished", "Finished")
 
 
     @property
@@ -315,7 +327,8 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     windows = MainWindow()
     windows.setWindowTitle(PROJECT_NAME)
-    sys.exit(app.exec_())
+    rc = app.exec_()
+    sys.exit(rc)
 
 
 if __name__ == '__main__':
