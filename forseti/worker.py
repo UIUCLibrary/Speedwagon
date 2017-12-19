@@ -46,7 +46,7 @@ class ProcessJob(AbsJob):
         super().__init__()
         self._mq = None
 
-    def process(self, **kwargs):
+    def process(self, *args, **kwargs):
         pass
 
     def set_message_queue(self, value):
@@ -98,8 +98,8 @@ class ProcessWorker(Worker):
             fut.add_done_callback(self.complete_task)
             self._tasks.append(fut)
 
-    def add_job(self, job: typing.Type[ProcessJob], **kwargs):
-        new_job = JobPair(job, args=kwargs, message_queue=self._message_queue)
+    def add_job(self, job: typing.Type[ProcessJob], **job_args):
+        new_job = JobPair(job, args=job_args, message_queue=self._message_queue)
         self._jobs.append(new_job)
 
 
