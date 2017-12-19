@@ -3,4 +3,6 @@ recursive-exclude forseti/ui *.py
 recursive-include forseti/ui *.ui
 include forseti/ui/__init__.py
 recursive-include tests *.py
+recursive-include features/steps *.py
+recursive-include features *.features
 recursive-include docs *
