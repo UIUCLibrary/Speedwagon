@@ -22,7 +22,6 @@ class CaptureOneToHathiTiffPackage(AbsTool):
     @staticmethod
     def discover_jobs(**user_args):
         jobs = []
-        jobs.append(user_args['input'])
         # cli.get_packages()
         return jobs
 
