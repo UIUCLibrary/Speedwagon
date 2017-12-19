@@ -25,7 +25,7 @@ class AbsJob(metaclass=QtMeta):
 
     def execute(self, *args, **kwargs):
         self.process(*args, **kwargs)
-        self.on_completion()
+        self.on_completion(*args, **kwargs)
         return self.result
 
     @abc.abstractmethod
@@ -36,7 +36,7 @@ class AbsJob(metaclass=QtMeta):
     def log(self, message):
         pass
 
-    def on_completion(self):
+    def on_completion(self, *args, **kwargs):
         pass
 
 
@@ -183,7 +183,6 @@ class WorkManager(ProcessWorker):
         for task in reversed(self._tasks):
             if not task.done():
                 task.cancel()
-        print(self._tasks)
         self.t.stop()
         super().cancel()
         # QtWidgets.QMessageBox.about(self.prog, "Canceling", "Canceling")
@@ -208,10 +207,56 @@ class WorkManager(ProcessWorker):
             log = self._message_queue.get()
             self.log_manager.notify(log)
 
-    def on_completion(self):
+    def on_completion(self, *args, **kwargs):
         # print(self._results)
-        self._message_queue.put("Finished")
         self.finished.emit(self._results)
+        self._message_queue.put("Finished")
+
+
+class WorkManager2(WorkManager):
+    finished = QtCore.pyqtSignal(object, object)
+
+    def complete_task(self, fut: concurrent.futures.Future):
+        if fut.done():
+            if not fut.cancelled():
+                result = fut.result()
+                if result:
+                    self._results.append(result)
+                    # message = "task Completed with {} as the result".format(result)
+                    # self._message_queue.put(message)
+
+            self._complete_task.emit()
+
+            # check if there are more tasks to do.
+            for f in self._tasks:
+                if not f.done():
+                    break
+
+            # If all tasks are on_success, run the on completion method
+            else:
+
+                # Flush the log buffer before running on_completion
+                self._update_log()
+                # self.log_manager.
+                self.on_completion(results=self._results)
+
+    def on_completion(self, *args, **kwargs):
+        self.finished.emit(self._results, self.completion_callback)
+        # super().on_completion(*args, **kwargs)
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.completion_callback: callable = None
+    #
+    # def on_completion(self, *args, **kwargs):
+    #     super().on_completion()
+    #     print("Here")
+        # self.post_processing(results=self._results)
+
+    def post_processing(self, *args, **kwargs):
+        if self.completion_callback:
+            self.completion_callback(*args, **kwargs)
+        self._message_queue.put("Finished")
 
 
 class AbsObserver(metaclass=abc.ABCMeta):
@@ -221,6 +266,7 @@ class AbsObserver(metaclass=abc.ABCMeta):
 
 
 class AbsSubject(metaclass=abc.ABCMeta):
+    lock = multiprocessing.Lock()
     _observers = set()  # type: typing.Set[AbsObserver]
 
     def subscribe(self, observer: AbsObserver):
@@ -232,12 +278,12 @@ class AbsSubject(metaclass=abc.ABCMeta):
         self._observers -= {observer}
 
     def notify(self, value=None):
-        for observer in self._observers:
-            if value is None:
-                observer.update()
-            else:
-                observer.update(value)
-
+        with self.lock:
+            for observer in self._observers:
+                if value is None:
+                    observer.update()
+                else:
+                    observer.update(value)
 
 class LogManager(AbsSubject):
     # def __init__(self, message_queue_):
