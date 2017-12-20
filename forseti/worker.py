@@ -73,8 +73,7 @@ class Worker(QtCore.QObject, metaclass=WorkerMeta):
         """
         super().__init__()
         self.parent = parent
-        # self._jobs: typing.List[JobPair] = []
-        self._jobsq = queue.Queue()
+        self._jobs_queue = queue.Queue()
 
     @abstractmethod
     def initialize_worker(self) -> None:
@@ -123,13 +122,13 @@ class ProcessWorker(Worker):
 
     def add_job(self, job: typing.Type[ProcessJob], **job_args):
         new_job = JobPair(job, args=job_args, message_queue=self._message_queue)
-        self._jobsq.put(new_job)
+        self._jobs_queue.put(new_job)
 
     def run_all_jobs(self):
-        while self._jobsq.qsize() != 0:
-            job, args, message_queue = self._jobsq.get()
+        while self._jobs_queue.qsize() != 0:
+            job, args, message_queue = self._jobs_queue.get()
             self._exec_job(job, args, message_queue)
-            self._jobsq.task_done()
+            self._jobs_queue.task_done()
 
 
 
@@ -173,10 +172,10 @@ class WorkManager(ProcessWorker):
     def run(self):
         try:
             self.log_manager.subscribe(self.reporter)
-            if self._jobsq.qsize() > 0:
+            if self._jobs_queue.qsize() > 0:
 
                 self.initialize_worker()
-                self.prog.setRange(0, self._jobsq.qsize())
+                self.prog.setRange(0, self._jobs_queue.qsize())
                 self.prog.setValue(0)
                 self.run_all_jobs()
                 # self.run_jobs(self._jobs)
@@ -222,8 +221,6 @@ class WorkManager2(WorkManager):
                 result = fut.result()
                 if result:
                     self._results.append(result)
-                    # message = "task Completed with {} as the result".format(result)
-                    # self._message_queue.put(message)
 
             self._complete_task.emit()
 
@@ -241,6 +238,7 @@ class WorkManager2(WorkManager):
                 self.on_completion(results=self._results)
 
     def on_completion(self, *args, **kwargs):
+        self._jobs_queue.join()
         self.finished.emit(self._results, self.completion_callback)
         # super().on_completion(*args, **kwargs)
 
