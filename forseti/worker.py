@@ -1,8 +1,11 @@
 import concurrent.futures
 # from abc import ABCMeta, abstractmethod
+import queue
 import typing
 import abc
 import sys
+from abc import abstractmethod, ABCMeta
+
 from PyQt5 import QtCore, QtWidgets
 from collections import namedtuple
 import multiprocessing
@@ -57,20 +60,41 @@ class ProcessJob(AbsJob):
             self._mq.put(message)
 
 
-class Worker(QtCore.QObject):
+class WorkerMeta(type(QtCore.QObject), ABCMeta):  # type: ignore
+    pass
+
+
+class Worker(QtCore.QObject, metaclass=WorkerMeta):
     def __init__(self, parent):
+        """Interface for managing jobs. Designed handle loading and executing jobs.
+
+        Args:
+            parent: The widget controlling the worker
+        """
         super().__init__()
         self.parent = parent
-        self._jobs: typing.List[JobPair] = []
+        # self._jobs: typing.List[JobPair] = []
+        self._jobsq = queue.Queue()
 
-    def initialize_worker(self):
-        raise NotImplemented
+    @abstractmethod
+    def initialize_worker(self) -> None:
+        """Initialize the executor"""
+        pass
 
-    def cancel(self):
-        raise NotImplemented
+    @abstractmethod
+    def cancel(self) -> None:
+        """Shutdown the executor"""
+        pass
 
-    def run_jobs(self, jobs):
-        raise NotImplemented
+    @abstractmethod
+    def run_all_jobs(self):
+        """Execute jobs in loaded in q"""
+        pass
+
+    @abstractmethod
+    def add_job(self, job: typing.Type[ProcessJob], **job_args):
+        """Load jobs into queue"""
+        pass
 
 
 class ProcessWorker(Worker):
@@ -90,17 +114,23 @@ class ProcessWorker(Worker):
             self.executor.shutdown()
             # TODO: emit a cancel signal
 
-    def run_jobs(self, jobs):
-        for job, args, message_queue in jobs:
-            new_job = job()
-            new_job.set_message_queue(message_queue)
-            fut = self.executor.submit(new_job.execute, **args)
-            fut.add_done_callback(self.complete_task)
-            self._tasks.append(fut)
+    def _exec_job(self, job, args, message_queue):
+        new_job = job()
+        new_job.set_message_queue(message_queue)
+        fut = self.executor.submit(new_job.execute, **args)
+        fut.add_done_callback(self.complete_task)
+        self._tasks.append(fut)
 
     def add_job(self, job: typing.Type[ProcessJob], **job_args):
         new_job = JobPair(job, args=job_args, message_queue=self._message_queue)
-        self._jobs.append(new_job)
+        self._jobsq.put(new_job)
+
+    def run_all_jobs(self):
+        while self._jobsq.qsize() != 0:
+            job, args, message_queue = self._jobsq.get()
+            self._exec_job(job, args, message_queue)
+            self._jobsq.task_done()
+
 
 
 class WorkProgressBar(QtWidgets.QProgressDialog):
@@ -143,12 +173,13 @@ class WorkManager(ProcessWorker):
     def run(self):
         try:
             self.log_manager.subscribe(self.reporter)
-            if self._jobs:
+            if self._jobsq.qsize() > 0:
 
                 self.initialize_worker()
-                self.prog.setRange(0, len(self._jobs))
+                self.prog.setRange(0, self._jobsq.qsize())
                 self.prog.setValue(0)
-                self.run_jobs(self._jobs)
+                self.run_all_jobs()
+                # self.run_jobs(self._jobs)
                 self.prog.show()
             else:
                 raise NoWorkError("No Jobs found")
@@ -156,25 +187,6 @@ class WorkManager(ProcessWorker):
             self.prog.cancel()
             raise
 
-    def complete_task(self, fut: concurrent.futures.Future):
-        if fut.done():
-            if not fut.cancelled():
-                result = fut.result()
-                if result:
-                    self._results.append(result)
-                    # message = "task Completed with {} as the result".format(result)
-                    # self._message_queue.put(message)
-
-            self._complete_task.emit()
-
-            # check if there are more tasks to do.
-            for f in self._tasks:
-                if not f.done():
-                    break
-
-            # If all tasks are on_success, run the on completion method
-            else:
-                self.on_completion()
 
     def cancel(self, quiet=False):
         self.prog.setAutoClose(False)
@@ -185,22 +197,10 @@ class WorkManager(ProcessWorker):
                 task.cancel()
         self.t.stop()
         super().cancel()
-        # QtWidgets.QMessageBox.about(self.prog, "Canceling", "Canceling")
-        # print(f"canceling {task}")
-        # QtWidgets.QMessageBox("asdfasdfasdf", "asdfasdfasdf")
-        # list(map(lambda task: task.cancel(), self._tasks))
-        # self.executor.submit(concurrent.futures.wait, )
-        # concurrent.futures.wait(self._tasks,return_when=concurrent.futures.ALL_COMPLETED)
 
         self.prog.close()
         if not quiet:
             QtWidgets.QMessageBox.about(self.prog, "Canceled", "Successfully Canceled")
-
-        # for task in self._tasks:
-        #     task.cancel()
-        # for task in self._tasks:
-        #     if not task.done():
-        #         task.get()
 
     def _update_log(self):
         while not self._message_queue.empty():
@@ -247,16 +247,7 @@ class WorkManager2(WorkManager):
     def __init__(self, parent):
         super().__init__(parent)
         self.completion_callback: callable = None
-    #
-    # def on_completion(self, *args, **kwargs):
-    #     super().on_completion()
-    #     print("Here")
-        # self.post_processing(results=self._results)
 
-    def post_processing(self, *args, **kwargs):
-        if self.completion_callback:
-            self.completion_callback(*args, **kwargs)
-        self._message_queue.put("Finished")
 
 
 class AbsObserver(metaclass=abc.ABCMeta):
