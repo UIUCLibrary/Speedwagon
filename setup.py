@@ -49,6 +49,7 @@ setup(
     ],
     setup_requires=['pytest-runner'],
     tests_require=['pytest', "behave"],
+    python_requires=">=3.6",
     entry_points={
         "console_scripts": [
             'forseti = forseti.__main__:main'
