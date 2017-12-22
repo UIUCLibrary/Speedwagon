@@ -21,7 +21,7 @@ class AbsTool(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def discover_jobs(**user_args):
+    def discover_jobs(**user_args)->typing.List[dict]:
         pass
 
 
