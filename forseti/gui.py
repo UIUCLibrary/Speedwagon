@@ -7,7 +7,7 @@ import forseti.tools.abstool
 from forseti.ui import main_window_shell_ui
 from forseti import tool as t, processing, worker
 from collections import namedtuple
-
+import traceback
 PROJECT_NAME = "Forseti"
 
 Setting = namedtuple("Setting", ("label", "widget"))
@@ -166,10 +166,18 @@ class ToolWorkspace(QtWidgets.QGroupBox):
                 QtWidgets.QMessageBox.warning(self, "Invalid setting", str(e))
             except Exception as e:
                 wm.cancel(quiet=True)
-                QtWidgets.QMessageBox.critical(self,
-                                               f"Unhandled Exception: {type(e).__name__}",
-                                               f"Unable to continue due to an unhandled exception.\n{e}")
-                raise
+                exception_message = traceback.format_exception(type(e), e, tb=e.__traceback__)
+                msg = QtWidgets.QMessageBox(self)
+                msg.setIcon(QtWidgets.QMessageBox.Critical)
+                msg.setWindowTitle(str(type(e).__name__))
+                msg.setText(str(e))
+                msg.setDetailedText("".join(exception_message))
+                msg.exec_()
+                sys.exit(1)
+                # QtWidgets.QMessageBox.critical(self,
+                #                                f"Unhandled Exception: {type(e).__name__}",
+                #                                f"Unable to continue due to an unhandled exception.\n{e}")
+                # raise
         else:
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
 
