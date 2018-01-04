@@ -148,7 +148,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
                 self._tool.validate_args(**options)
                 # wm.completion_callback = lambda: self._tool.on_completion()
                 jobs = self._tool.discover_jobs(**options)
-                wm.prog.setWindowTitle(str(tool_.name).title())
+                wm.prog.setWindowTitle(str(tool_.name))
                 for _job_args in jobs:
                     job = tool_.new_job()
                     wm.add_job(job, **_job_args)
@@ -200,7 +200,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
     @tool_selected.setter
     def tool_selected(self, value):
         self._tool_selected = value
-        self._selected_tool_name_line.setText(value.title())
+        self._selected_tool_name_line.setText(value)
 
     @property
     def tool_description(self):
