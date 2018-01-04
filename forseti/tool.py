@@ -110,7 +110,7 @@ class ToolsListModel(QtCore.QAbstractTableModel):
             data = self._data[index.row()]
             if role == QtCore.Qt.DisplayRole:
                 if index.column() == ToolsListModel.NAME:
-                    return data.name.title()
+                    return data.name
                 if index.column() == ToolsListModel.DESCRIPTION:
                     return data.description
                 else:
@@ -187,7 +187,7 @@ class ToolOptionsPairsModel(ToolOptionsModel):
         if Qt_Orientation == QtCore.Qt.Vertical:
             if role == QtCore.Qt.DisplayRole:
                 title = self._data[index].label
-                return str(title).title()
+                return str(title)
         return QtCore.QVariant()
         # return super().headerData(index, Qt_Orientation, role)
 
@@ -223,7 +223,7 @@ class ToolOptionsModel2(ToolOptionsModel):
         if Qt_Orientation == QtCore.Qt.Vertical:
             if role == QtCore.Qt.DisplayRole:
                 title = self._data[index].name
-                return str(title).title()
+                return str(title)
         return QtCore.QVariant()
 
     def setData(self, index, data, role=None):

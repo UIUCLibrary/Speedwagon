@@ -12,7 +12,9 @@ from hathi_validate import process
 
 class VerifyChecksumBatch(AbsTool):
     name = "Verify Checksum Batch"
-    description = "Verify checksum values in checksum batch file, report errors"
+    description = "Verify checksum values in checksum batch file, report errors. Input is a text file containing a " \
+                  "list of multiple files and their md5 values. The listed files are expected to be siblings to the " \
+                  "checksum file"
 
     def __init__(self) -> None:
         super().__init__()

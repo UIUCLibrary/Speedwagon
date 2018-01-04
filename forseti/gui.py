@@ -7,7 +7,7 @@ import forseti.tools.abstool
 from forseti.ui import main_window_shell_ui
 from forseti import tool as t, processing, worker
 from collections import namedtuple
-
+import traceback
 PROJECT_NAME = "Forseti"
 
 Setting = namedtuple("Setting", ("label", "widget"))
@@ -62,31 +62,32 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         self.settings.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
         self.settings.verticalHeader().setSectionsClickable(False)
 
-        self.settings.setMinimumHeight(50)
+        # self.settings.setMinimumHeight(50)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         # sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         sizePolicy.setVerticalStretch(1)
         self.settings.setSizePolicy(sizePolicy)
 
+        #  TODO: make self.main_layout add only widgets or layouts
 
         self.main_layout = QtWidgets.QVBoxLayout(self)
         self.main_layout.setObjectName("main_layout")
 
-        self.main_layout.addLayout(self.build_metadata_layout())
-        self.main_layout.addWidget(self.settings, stretch=0)
+        self.main_layout.addLayout(self.build_metadata_layout(), stretch=0)
+        self.main_layout.addWidget(self.settings, stretch=0, alignment=QtCore.Qt.AlignTop)
         # self.main_layout.addLayout(self.build_settings_layout())
         self.main_layout.addLayout(self.build_operations_layout())
         self.setLayout(self.main_layout)
 
     def build_metadata_layout(self):
         metadata_layout = QtWidgets.QFormLayout()
-        metadata_layout.setVerticalSpacing(0)
+        metadata_layout.setVerticalSpacing(1)
         metadata_layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.AllNonFixedFieldsGrow)
         self._selected_tool_name_line.setReadOnly(True)
         self._description_information.setReadOnly(True)
         metadata_layout.addRow(QtWidgets.QLabel("Tool Selected"), self._selected_tool_name_line)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        sizePolicy.setVerticalStretch(1)
+        sizePolicy.setVerticalStretch(0)
         self._description_information.setSizePolicy(sizePolicy)
         self._description_information.setMaximumHeight(100)
         metadata_layout.addRow(QtWidgets.QLabel("Description"), self._description_information)
@@ -97,6 +98,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         self.tool_selected = tool.name
         self.tool_description = tool.description
         self._options_model = t.ToolOptionsModel2(self._tool.get_user_options())
+        self.settings.setVisible(False)
         self.settings.setModel(self._options_model)
         for i in range(self._options_model.rowCount()):
             index = self._options_model.index(i, 0)
@@ -104,9 +106,13 @@ class ToolWorkspace(QtWidgets.QGroupBox):
             delegate = ToolWorkspace.get_delegate(data.data_type)
             # self.settings.setItemDelegateForRow(i, None)
             self.settings.setItemDelegateForRow(i, delegate(self))
+        # print()
+        # self.settings.
+        # self.settings.setMaximumHeight(24 * self._options_model.rowCount())
         self.settings.resizeColumnsToContents()
         self.settings.resizeRowsToContents()
         # self.settings.update()
+        self.settings.setVisible(True)
 
     @staticmethod
     def get_delegate(data_type):
@@ -148,7 +154,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
                 self._tool.validate_args(**options)
                 # wm.completion_callback = lambda: self._tool.on_completion()
                 jobs = self._tool.discover_jobs(**options)
-                wm.prog.setWindowTitle(str(tool_.name).title())
+                wm.prog.setWindowTitle(str(tool_.name))
                 for _job_args in jobs:
                     job = tool_.new_job()
                     wm.add_job(job, **_job_args)
@@ -166,10 +172,18 @@ class ToolWorkspace(QtWidgets.QGroupBox):
                 QtWidgets.QMessageBox.warning(self, "Invalid setting", str(e))
             except Exception as e:
                 wm.cancel(quiet=True)
-                QtWidgets.QMessageBox.critical(self,
-                                               f"Unhandled Exception: {type(e).__name__}",
-                                               f"Unable to continue due to an unhandled exception.\n{e}")
-                raise
+                exception_message = traceback.format_exception(type(e), e, tb=e.__traceback__)
+                msg = QtWidgets.QMessageBox(self)
+                msg.setIcon(QtWidgets.QMessageBox.Critical)
+                msg.setWindowTitle(str(type(e).__name__))
+                msg.setText(str(e))
+                msg.setDetailedText("".join(exception_message))
+                msg.exec_()
+                sys.exit(1)
+                # QtWidgets.QMessageBox.critical(self,
+                #                                f"Unhandled Exception: {type(e).__name__}",
+                #                                f"Unable to continue due to an unhandled exception.\n{e}")
+                # raise
         else:
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
 
@@ -192,7 +206,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
     @tool_selected.setter
     def tool_selected(self, value):
         self._tool_selected = value
-        self._selected_tool_name_line.setText(value.title())
+        self._selected_tool_name_line.setText(value)
 
     @property
     def tool_description(self):
@@ -237,7 +251,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # self.tab_tools_layout.addWidget(self.tool_selector)
         self.tab_tools_layout.addWidget(self.splitter)
 
-
         self.tool_workspace._reporter = self._reporter
         self.load_tools()
         self.tool_list = t.ToolsListModel(t.available_tools())
@@ -254,7 +267,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # print(self.mapper.currentIndex())
         # self.mapper.toNext()
         # print(self.mapper.currentIndex())
-
+        # self.splitter.setStretchFactor(0, 0)
+        # self.splitter.setStretchFactor(1, 1)
         self.show()
 
     def tool_selected(self, index: QtCore.QModelIndex):
