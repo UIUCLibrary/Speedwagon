@@ -62,31 +62,32 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         self.settings.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
         self.settings.verticalHeader().setSectionsClickable(False)
 
-        self.settings.setMinimumHeight(50)
+        # self.settings.setMinimumHeight(50)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         # sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         sizePolicy.setVerticalStretch(1)
         self.settings.setSizePolicy(sizePolicy)
 
+        #  TODO: make self.main_layout add only widgets or layouts
 
         self.main_layout = QtWidgets.QVBoxLayout(self)
         self.main_layout.setObjectName("main_layout")
 
-        self.main_layout.addLayout(self.build_metadata_layout())
-        self.main_layout.addWidget(self.settings, stretch=0)
+        self.main_layout.addLayout(self.build_metadata_layout(), stretch=0)
+        self.main_layout.addWidget(self.settings, stretch=0, alignment=QtCore.Qt.AlignTop)
         # self.main_layout.addLayout(self.build_settings_layout())
         self.main_layout.addLayout(self.build_operations_layout())
         self.setLayout(self.main_layout)
 
     def build_metadata_layout(self):
         metadata_layout = QtWidgets.QFormLayout()
-        metadata_layout.setVerticalSpacing(0)
+        metadata_layout.setVerticalSpacing(1)
         metadata_layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.AllNonFixedFieldsGrow)
         self._selected_tool_name_line.setReadOnly(True)
         self._description_information.setReadOnly(True)
         metadata_layout.addRow(QtWidgets.QLabel("Tool Selected"), self._selected_tool_name_line)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        sizePolicy.setVerticalStretch(1)
+        sizePolicy.setVerticalStretch(0)
         self._description_information.setSizePolicy(sizePolicy)
         self._description_information.setMaximumHeight(100)
         metadata_layout.addRow(QtWidgets.QLabel("Description"), self._description_information)
@@ -97,6 +98,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         self.tool_selected = tool.name
         self.tool_description = tool.description
         self._options_model = t.ToolOptionsModel2(self._tool.get_user_options())
+        self.settings.setVisible(False)
         self.settings.setModel(self._options_model)
         for i in range(self._options_model.rowCount()):
             index = self._options_model.index(i, 0)
@@ -104,9 +106,13 @@ class ToolWorkspace(QtWidgets.QGroupBox):
             delegate = ToolWorkspace.get_delegate(data.data_type)
             # self.settings.setItemDelegateForRow(i, None)
             self.settings.setItemDelegateForRow(i, delegate(self))
+        # print()
+        # self.settings.
+        # self.settings.setMaximumHeight(24 * self._options_model.rowCount())
         self.settings.resizeColumnsToContents()
         self.settings.resizeRowsToContents()
         # self.settings.update()
+        self.settings.setVisible(True)
 
     @staticmethod
     def get_delegate(data_type):
@@ -245,7 +251,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # self.tab_tools_layout.addWidget(self.tool_selector)
         self.tab_tools_layout.addWidget(self.splitter)
 
-
         self.tool_workspace._reporter = self._reporter
         self.load_tools()
         self.tool_list = t.ToolsListModel(t.available_tools())
@@ -262,7 +267,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # print(self.mapper.currentIndex())
         # self.mapper.toNext()
         # print(self.mapper.currentIndex())
-
+        # self.splitter.setStretchFactor(0, 0)
+        # self.splitter.setStretchFactor(1, 1)
         self.show()
 
     def tool_selected(self, index: QtCore.QModelIndex):
