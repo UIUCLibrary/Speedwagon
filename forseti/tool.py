@@ -7,6 +7,7 @@ from abc import abstractmethod
 from collections import namedtuple
 
 from forseti.tools.tool_options import ToolOptionDataType
+from forseti.tools import tool_options
 from . import tools
 from forseti.tools.abstool import AbsTool
 import os
@@ -108,7 +109,7 @@ class ToolsListModel(QtCore.QAbstractTableModel):
     def data(self, index, role=None):
         if index.isValid():
             data = self._data[index.row()]
-            if role == QtCore.Qt.DisplayRole:
+            if role == QtCore.Qt.DisplayRole or role == QtCore.Qt.EditRole:
                 if index.column() == ToolsListModel.NAME:
                     return data.name
                 if index.column() == ToolsListModel.DESCRIPTION:
@@ -233,6 +234,46 @@ class ToolOptionsModel2(ToolOptionsModel):
         self._data[index.row()].data = data
         return True
 
+
+class ToolOptionsModel3(ToolOptionsModel):
+
+    def __init__(self, data: typing.List[tool_options.UserOptionPythonDataType], parent=None) -> None:
+        super().__init__(parent)
+        self._data: typing.List[tool_options.UserOptionPythonDataType] = data
+
+    def data(self, index, role=None):
+        if index.isValid():
+            if role == QtCore.Qt.DisplayRole:
+                data = self._data[index.row()].data
+                if data:
+                    return str(data)
+                else:
+                    return ""
+            if role == QtCore.Qt.EditRole:
+                return self._data[index.row()].data
+            if role == QtCore.Qt.UserRole:
+                return self._data[index.row()]
+        return QtCore.QVariant()
+
+    def get(self):
+        options = dict()
+        for data in self._data:
+            options[data.label_text] = data.data
+        return options
+
+    def headerData(self, index, Qt_Orientation, role=None):
+        if Qt_Orientation == QtCore.Qt.Vertical:
+            if role == QtCore.Qt.DisplayRole:
+                title = self._data[index].label_text
+                return str(title)
+        return QtCore.QVariant()
+
+    def setData(self, index, data, role=None):
+        if not index.isValid():
+            return False
+        existing_data = self._data[index.row()]
+        self._data[index.row()].data = data
+        return True
 
 def available_tools() -> dict:
     """
