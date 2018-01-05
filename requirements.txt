@@ -4,3 +4,4 @@ pyqt-distutils
 hathizip
 HathiValidate
 pyhathiprep
+hathichecksumupdater
