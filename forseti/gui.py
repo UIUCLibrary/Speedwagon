@@ -8,9 +8,11 @@ from forseti.ui import main_window_shell_ui
 from forseti import tool as t, processing, worker
 from collections import namedtuple
 import traceback
+
 PROJECT_NAME = "Forseti"
 
 Setting = namedtuple("Setting", ("label", "widget"))
+
 
 class ToolConsole(QtWidgets.QGroupBox):
 
@@ -19,7 +21,7 @@ class ToolConsole(QtWidgets.QGroupBox):
         self.setTitle("Console")
         self.setLayout(QtWidgets.QVBoxLayout())
         self._console = QtWidgets.QTextBrowser(self)
-        self._console.setContentsMargins(0,0,0,0)
+        self._console.setContentsMargins(0, 0, 0, 0)
         self.layout().addWidget(self._console)
 
         #  Use a monospaced font based on what's on system running
@@ -34,10 +36,10 @@ class ToolConsole(QtWidgets.QGroupBox):
         self._console.append(message)
 
 
-
 class ToolWorkspace(QtWidgets.QGroupBox):
 
     def __init__(self, *args, **kwargs):
+        warnings.warn("Stop using this", DeprecationWarning)
         super().__init__(*args)
         self.setTitle("Tool")
         self.log_manager = worker.LogManager()
@@ -51,10 +53,14 @@ class ToolWorkspace(QtWidgets.QGroupBox):
             self._reporter = kwargs['reporter']
         else:
             self._reporter = None
-        self._selected_tool_name_line = QtWidgets.QLineEdit(self)
-        self._description_information = QtWidgets.QTextEdit(self)
+
+        # self._selected_tool_name_line = QtWidgets.QLineEdit(self)
+        # self._description_information = QtWidgets.QTextEdit(self)
+        ####################################
+
         self.start_button = QtWidgets.QPushButton(self)
         self.settings = QtWidgets.QTableView(self)
+        self.settings.setVisible(False)
         self.settings.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         self.settings.horizontalHeader().setVisible(False)
         self.settings.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
@@ -79,25 +85,27 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         self.main_layout.addLayout(self.build_operations_layout())
         self.setLayout(self.main_layout)
 
+        ####################################
+
     def build_metadata_layout(self):
         metadata_layout = QtWidgets.QFormLayout()
         metadata_layout.setVerticalSpacing(1)
         metadata_layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.AllNonFixedFieldsGrow)
-        self._selected_tool_name_line.setReadOnly(True)
-        self._description_information.setReadOnly(True)
-        metadata_layout.addRow(QtWidgets.QLabel("Tool Selected"), self._selected_tool_name_line)
+        # self._selected_tool_name_line.setReadOnly(True)
+        # self._description_information.setReadOnly(True)
+        # metadata_layout.addRow(QtWidgets.QLabel("Tool Selected"), self._selected_tool_name_line)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setVerticalStretch(0)
-        self._description_information.setSizePolicy(sizePolicy)
-        self._description_information.setMaximumHeight(100)
-        metadata_layout.addRow(QtWidgets.QLabel("Description"), self._description_information)
+        # self._description_information.setSizePolicy(sizePolicy)
+        # self._description_information.setMaximumHeight(100)
+        # metadata_layout.addRow(QtWidgets.QLabel("Description"), self._description_information)
         return metadata_layout
 
     def set_tool(self, tool: forseti.tools.abstool.AbsTool):
         self._tool = tool
-        self.tool_selected = tool.name
-        self.tool_description = tool.description
-        self._options_model = t.ToolOptionsModel2(self._tool.get_user_options())
+        # self.tool_selected = tool.name
+        # self.tool_description = tool.description
+        self._options_model = t.ToolOptionsModel2(self._tool.get_user_options())  # type: ignore
         self.settings.setVisible(False)
         self.settings.setModel(self._options_model)
         for i in range(self._options_model.rowCount()):
@@ -112,7 +120,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         self.settings.resizeColumnsToContents()
         self.settings.resizeRowsToContents()
         # self.settings.update()
-        self.settings.setVisible(True)
+        # self.settings.setVisible(True)
 
     @staticmethod
     def get_delegate(data_type):
@@ -188,8 +196,9 @@ class ToolWorkspace(QtWidgets.QGroupBox):
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
 
     def on_success(self, results, callback):
+
         user_args = self._options_model.get()
-        callback(results=results,user_args=user_args)
+        callback(results=results, user_args=user_args)
         report = self._tool.generate_report(results=results, user_args=user_args)
         if report:
             self.log_manager.notify(report)
@@ -197,7 +206,6 @@ class ToolWorkspace(QtWidgets.QGroupBox):
         # self._tool.on_completion(results=results,user_args=user_args)
 
         QtWidgets.QMessageBox.about(self, "Finished", "Finished")
-
 
     @property
     def tool_selected(self):
@@ -240,51 +248,182 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # self.tool_selector_view.clicked.connect(lambda s: print("clicked on {}".format(s.row())))
 
         # self.tool_selector.toolChanged.connect(self.change_tool)
-        self.tool_workspace = self.create_tool_workspace()
+        # self.tool_workspace = self.create_tool_workspace()
+
+        ###########################################################
+        #
+        self.tool_workspace2 = QtWidgets.QGroupBox()
+        self.tool_workspace2.setTitle("Tool")
+        self._selected_tool_name_line2 = QtWidgets.QLineEdit()
+        self._selected_tool_name_line2.setReadOnly(True)
+        self._description_information2 = QtWidgets.QTextBrowser()
+        # self._description_information2 = QtWidgets.QLabel()
+        # self._description_information2 = QtWidgets.QTextEdit()
+        # self._description_information2.setText()
+        # self._description_information2.setReadOnly(True)
+
+        # Add the configuration and metadata widgets
+        self.tool_config_layout = QtWidgets.QFormLayout()
+        # self.tool_config_layout.
+        self.tool_settings = QtWidgets.QTableView(self)
+        self.tool_settings.setItemDelegate(MyDelegate(self))
+        self.tool_settings.horizontalHeader().setVisible(False)
+        self.tool_settings.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.tool_settings.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.tool_settings.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
+        self.tool_settings.verticalHeader().setSectionsClickable(False)
+
+        self.tool_config_layout.addRow(QtWidgets.QLabel("Tool Selected"), self._selected_tool_name_line2)
+        self.tool_config_layout.addRow(QtWidgets.QLabel("Description"), self._description_information2)
+        self.tool_config_layout.addRow(QtWidgets.QLabel("Tool Settings"), self.tool_settings)
+
+        # Add the actions, aka Buttons
+        self.tool_actions_layout = QtWidgets.QHBoxLayout()
+        self.start_button = QtWidgets.QPushButton()
+        self.start_button.setText("Start")
+        self.start_button.clicked.connect(self.start)
+
+        self.tool_actions_layout.addSpacerItem(QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Expanding))
+        self.tool_actions_layout.addWidget(self.start_button)
+
+        # Add the sublayouts to master layout
+        self.tool_workspace2_layout = QtWidgets.QVBoxLayout()
+        self.tool_workspace2_layout.addLayout(self.tool_config_layout)
+        self.tool_workspace2_layout.addLayout(self.tool_actions_layout)
+        self.tool_workspace2.setLayout(self.tool_workspace2_layout)
+
+        self.splitter.addWidget(self.tool_workspace2)
+        ###########################################################
+        self.log_manager = worker.LogManager()
         self.console = self.create_console()
         self._reporter = worker.SimpleCallbackReporter(self.console.add_message)
         self._reporter.update("Ready!")
 
-
-
         self.tab_tools_layout.addWidget(self.tool_selector_view)
+
         # self.tab_tools_layout.addWidget(self.tool_selector)
         self.tab_tools_layout.addWidget(self.splitter)
 
-        self.tool_workspace._reporter = self._reporter
+        # self.tool_workspace._reporter = self._reporter
         self.load_tools()
         self.tool_list = t.ToolsListModel(t.available_tools())
         self.tool_selector_view.setModel(self.tool_list)
         self.tool_selector_view.selectionModel().currentChanged.connect(self.tool_selected)
-        # self.tool_selector_view.selectionChanged.conne
 
-        # self.mapper = QtWidgets.QDataWidgetMapper(self)
-        # self.mapper.setModel(self.tool_list)
-        # print(self.mapper.currentIndex())
-        # self.mapper.addMapping(self._selected_tool_name_line,  0)
-        # self.mapper.addMapping(self._selected_tool_description_line,  1)
-        # self.mapper.toFirst()
-        # print(self.mapper.currentIndex())
-        # self.mapper.toNext()
-        # print(self.mapper.currentIndex())
-        # self.splitter.setStretchFactor(0, 0)
-        # self.splitter.setStretchFactor(1, 1)
+        self.mapper = QtWidgets.QDataWidgetMapper(self)
+        self.mapper.setModel(self.tool_list)
+        self.mapper.addMapping(self._selected_tool_name_line2, 0)
+
+        # This needs custom mapping because without it, new line characters are removed
+        self.mapper.addMapping(self._description_information2, 1, b"plainText")
+
+        self.tool_selector_view.selectionModel().currentChanged.connect(self.mapper.setCurrentModelIndex)
+        self.tool_selector_view.selectionModel().currentChanged.connect(
+            lambda: self.tool_settings.resizeRowsToContents())
+
         self.show()
+
+    #
+    # def get(self):
+    #     options = dict()
+    #     for data in self._data:
+    #         options[data.name] = data.data
+    #     return options
+    def on_success(self, results, callback):
+        user_args = self._options_model.get()
+        callback(results=results, user_args=user_args)
+        report = self._tool.generate_report(results=results, user_args=user_args)
+        if report:
+            self.log_manager.notify(report)
+
+        # self._tool.on_completion(results=results,user_args=user_args)
+
+        QtWidgets.QMessageBox.about(self, "Finished", "Finished")
+
+    def start(self):
+
+        if len(self.tool_selector_view.selectedIndexes()) != 1:
+            print("Invalid number of selected Indexes. Expected 1. Found {}".format(
+                len(self.tool_selector_view.selectedIndexes())))
+            return
+        tool = self.tool_list.data(self.tool_selector_view.selectedIndexes()[0], QtCore.Qt.UserRole)
+        ###########################
+        if issubclass(tool, forseti.tools.abstool.AbsTool):
+            # options = self.tool_config_layout.get(
+            options = self._options_model.get()
+            # print("options are {}".format(options))
+
+            # TODO, shouldn't be setting this here, However, the worker needs
+            self._tool = tool
+            wm = worker.WorkManager2(self)
+            wm.finished.connect(self.on_success)
+            wm.completion_callback = tool.on_completion
+            # wm.finished.connect(self._tool.on_completion)
+            # wm.finished.connect(lambda: self._tool.on_completion())
+            if self._reporter:
+                self.log_manager.add_reporter(self._reporter)
+                wm.log_manager.add_reporter(self._reporter)
+            # options = self._tool.get_configuration()
+            # print(options)
+            active_tool = tool()
+            try:
+                tool.validate_args(**options)
+                # wm.completion_callback = lambda: self._tool.on_completion()
+                jobs = tool.discover_jobs(**options)
+                wm.prog.setWindowTitle(str(tool.name))
+                for _job_args in jobs:
+                    job = active_tool.new_job()
+                    wm.add_job(job, **_job_args)
+                try:
+                    wm.run()
+
+                except RuntimeError as e:
+                    QtWidgets.QMessageBox.warning(self, "Process failed", str(e))
+                # except TypeError as e:
+                #     QtWidgets.QMessageBox.critical(self, "Process failed", str(e))
+                #     raise
+
+            except ValueError as e:
+                wm.cancel(quiet=True)
+                QtWidgets.QMessageBox.warning(self, "Invalid setting", str(e))
+            except Exception as e:
+                wm.cancel(quiet=True)
+                exception_message = traceback.format_exception(type(e), e, tb=e.__traceback__)
+                msg = QtWidgets.QMessageBox(self)
+                msg.setIcon(QtWidgets.QMessageBox.Critical)
+                msg.setWindowTitle(str(type(e).__name__))
+                msg.setText(str(e))
+                msg.setDetailedText("".join(exception_message))
+                msg.exec_()
+                sys.exit(1)
+                # QtWidgets.QMessageBox.critical(self,
+                #                                f"Unhandled Exception: {type(e).__name__}",
+                #                                f"Unable to continue due to an unhandled exception.\n{e}")
+                # raise
+        else:
+            QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
 
     def tool_selected(self, index: QtCore.QModelIndex):
         tool = self.tool_list.data(index, QtCore.Qt.UserRole)
         # model.
-        self.tool_workspace.set_tool(tool)
+        # self.tool_workspace.set_tool(tool)
+        #################
+        self._options_model = t.ToolOptionsModel3(tool.get_user_options())
+        self.tool_settings.setModel(self._options_model)
+        ##################
+        # self.tool_settings.set
         # self._selected_tool_name_line.setText(tool.name)
         # self._selected_tool_description_line.setText(tool.description)
         # print(tool)
         # print(index)
 
-    def create_tool_workspace(self):
-        new_workspace = ToolWorkspace(self.splitter)
-        # new_workspace.setMinimumSize(QtCore.QSize(0, 300))
-
-        return new_workspace
+    # def create_tool_workspace(self):
+    #     warnings.warn("To be removed", DeprecationWarning)
+    #     new_workspace = ToolWorkspace(self.splitter)
+    #     new_workspace.setVisible(False)
+    #     # new_workspace.setMinimumSize(QtCore.QSize(0, 300))
+    #
+    #     return new_workspace
 
     def create_console(self):
         console = ToolConsole(self.splitter)
@@ -301,9 +440,9 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         for k, v in t.available_tools().items():
             self._load_tool(v())
 
-
     def change_tool(self, tool: forseti.tools.abstool.AbsTool):
         self.tool_workspace.set_tool(tool)
+
 
 class YesNoBoxDelegate(QtWidgets.QItemDelegate):
 
@@ -320,13 +459,56 @@ class YesNoBoxDelegate(QtWidgets.QItemDelegate):
         super().setEditorData(editor, QModelIndex)
 
 
+class MyDelegate(QtWidgets.QItemDelegate):
+    #
+    # def __init__(self, parent=None):
+    #     print("Using my delegate")
+    #     super().__init__(parent)
+
+    def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionViewItem,
+              index: QtCore.QModelIndex):
+        # print("HERe")
+        # button = QtWidgets.QPushButton()
+        # painter.drawRect(option.rect)
+        if index.isValid():
+            painter.setBrush(QtGui.QBrush(QtCore.Qt.black))
+            value = index.data(QtCore.Qt.DisplayRole)
+            painter.drawText(option.rect, QtCore.Qt.AlignVCenter, value)
+        painter.restore()
+
+
+
+    def createEditor(self, parent, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex):
+        if index.isValid():
+            tool_settings = index.data(QtCore.Qt.UserRole)
+            print(tool_settings.data_type)
+            browser_widget = tool_settings.browse()
+            if browser_widget:
+                return browser_widget
+        return super().createEditor(parent, option, index)
+
+    def setEditorData(self, editor: QtWidgets.QPushButton, index: QtCore.QModelIndex):
+
+        if index.isValid():
+            i = index.data(QtCore.Qt.UserRole)
+            i.browse()
+        super().setEditorData(editor, index)
+
+    def setModelData(self, widget: QtWidgets.QWidget, model: QtCore.QAbstractItemModel, index):
+        if isinstance(widget, QtWidgets.QFileDialog):
+            files = widget.selectedFiles()
+            if len(files) == 1:
+                model.setData(index, files[0])
+            return
+        super().setModelData(widget, model, index)
+
+
 class CheckBoxDelegate(QtWidgets.QItemDelegate):
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
     def createEditor(self, parent, QStyleOptionViewItem, QModelIndex):
-
         checkbox = QtWidgets.QCheckBox(parent)
         return checkbox
         # return super().createEditor(parent, QStyleOptionViewItem, QModelIndex)
