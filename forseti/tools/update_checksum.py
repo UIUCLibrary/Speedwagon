@@ -2,15 +2,26 @@ import typing
 
 import os
 
+from forseti.tools.tool_options import FileData
 from forseti.worker import ProcessJob
 from .abstool import AbsTool
-from .tool_options import ToolOptionDataType
+# from .tool_options import ToolOptionDataType
+from forseti.tools import tool_options
 from forseti import worker
 # from pyhathiprep import checksum
 from hathi_checksum import checksum_report, update_report
 from hathi_checksum import utils as hathi_checksum_utils
 # import hathi_checksum
 
+class ChecksumFile(FileData):
+
+    @staticmethod
+    def filename() -> str:
+        return "checksum.md5"
+
+    @staticmethod
+    def filter() -> str:
+        return "Checksum files (*.md5)"
 
 def find_outdated(results: typing.List[typing.Dict[str, str]]):
     for result in results:
@@ -56,9 +67,9 @@ class UpdateChecksumBatch(AbsTool):
             raise ValueError("Selected input is not a checksum.md5 file")
 
     @staticmethod
-    def get_user_options() -> typing.List[ToolOptionDataType]:
+    def get_user_options() -> typing.List[tool_options.UserOption]:
         return [
-            ToolOptionDataType(name="input"),
+            tool_options.UserOptionCustomDataType("input", ChecksumFile),
             # ToolOptionDataType(name="output"),
         ]
 

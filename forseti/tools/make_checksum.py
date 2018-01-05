@@ -4,7 +4,8 @@ import os
 
 from forseti.worker import ProcessJob
 from .abstool import AbsTool
-from .tool_options import ToolOptionDataType
+from forseti.tools import tool_options
+# from .tool_options import ToolOptionDataType
 from forseti import worker
 from pyhathiprep import checksum
 
@@ -45,9 +46,9 @@ class MakeChecksumBatch(AbsTool):
             raise ValueError("Invalid user arguments")
 
     @staticmethod
-    def get_user_options() -> typing.List[ToolOptionDataType]:
+    def get_user_options() -> typing.List[tool_options.UserOption]:
         return [
-            ToolOptionDataType(name="input"),
+            tool_options.UserOptionPythonDataType("input"),
             # ToolOptionDataType(name="output"),
         ]
 

@@ -1,13 +1,28 @@
 import os
 import typing
 
+from PyQt5 import QtWidgets
+
+from forseti.tools.tool_options import AbsCustomData, FileData
 from forseti.worker import ProcessJob
 from .abstool import AbsTool
-from .tool_options import ToolOptionDataType
+# from .tool_options import ToolOptionDataType, UserOptionPythonDataType
+from forseti.tools import tool_options
 from forseti import worker
 import hathi_validate
 
 from hathi_validate import process
+
+
+class ChecksumFile(FileData):
+
+    @staticmethod
+    def filename() -> str:
+        return "checksum.md5"
+
+    @staticmethod
+    def filter() -> str:
+        return "Checksum files (*.md5)"
 
 
 class VerifyChecksumBatch(AbsTool):
@@ -38,9 +53,11 @@ class VerifyChecksumBatch(AbsTool):
         pass
 
     @staticmethod
-    def get_user_options() -> typing.List[ToolOptionDataType]:
+    def get_user_options() -> typing.List[tool_options.UserOption]:
         return [
-            ToolOptionDataType("input")
+            # ToolOptionDataType("input")
+            tool_options.UserOptionCustomDataType("input", ChecksumFile)
+
         ]
 
     @staticmethod

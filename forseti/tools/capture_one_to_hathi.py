@@ -4,7 +4,8 @@ import os
 
 from forseti import worker
 from forseti.tools.abstool import AbsTool
-from forseti.tools.tool_options import ToolOptionDataType
+# from forseti.tools.tool_options import UserOption
+from forseti.tools import tool_options
 from forseti.worker import ProcessJob
 
 import MedusaPackager
@@ -49,10 +50,10 @@ class CaptureOneToHathiTiffPackage(AbsTool):
         return PackageConverter
 
     @staticmethod
-    def get_user_options() -> typing.List[ToolOptionDataType]:
+    def get_user_options() -> typing.List[tool_options.UserOption]:
         return [
-            ToolOptionDataType(name="input"),
-            ToolOptionDataType(name="output"),
+            tool_options.UserOptionPythonDataType("input"),
+            tool_options.UserOptionPythonDataType("output"),
         ]
 
     @staticmethod

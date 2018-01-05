@@ -4,7 +4,8 @@ import os
 
 from forseti import worker
 from .abstool import AbsTool
-from .tool_options import ToolOptionDataType
+# from .tool_options import ToolOptionDataType
+from forseti.tools import tool_options
 from forseti.worker import ProcessJob
 from hathi_validate import process as validate_process
 
@@ -30,11 +31,11 @@ class HathiPackageCompleteness(AbsTool):
         return jobs
 
     @staticmethod
-    def get_user_options() -> typing.List[ToolOptionDataType]:
-        check_option = ToolOptionDataType("Check for OCR XML", bool)
+    def get_user_options() -> typing.List[tool_options.UserOption]:
+        check_option = tool_options.UserOptionPythonDataType("Check for OCR XML", bool)
         check_option.data = False
         return [
-            ToolOptionDataType("source"),
+            tool_options.UserOptionPythonDataType("source"),
             check_option,
         ]
 
