@@ -6,6 +6,8 @@ import warnings
 from abc import abstractmethod
 from collections import namedtuple
 
+import sys
+
 from forseti.tools.tool_options import ToolOptionDataType
 from forseti.tools import tool_options
 from . import tools
@@ -293,6 +295,10 @@ def available_tools() -> dict:
                 if issubclass(module_class, AbsTool):
                     located_tools[module_class.name] = module_class
         except ImportError as e:
-            raise ImportError("Unable to load {}. Reason: {}".format(m, e))
+
+            print("Unable to load {}. Reason: {}".format(m, e), file=sys.stderr)
+            # raise ImportError("Unable to load {}. Reason: {}".format(m, e))
+        # except ModuleNotFoundError as e:
+        #     print("Unable to load {}".format(m))
 
     return located_tools
