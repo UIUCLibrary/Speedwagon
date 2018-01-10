@@ -131,7 +131,6 @@ class ProcessWorker(Worker):
             self._jobs_queue.task_done()
 
 
-
 class WorkProgressBar(QtWidgets.QProgressDialog):
 
     def closeEvent(self, QCloseEvent):
@@ -148,15 +147,15 @@ class WorkManager(ProcessWorker):
         self._results = []
 
         self.log_manager = LogManager()
-        self.prog = WorkProgressBar(parent)
+        self.progress_window = WorkProgressBar(parent)
 
-        self.prog.canceled.connect(self.cancel)
+        self.progress_window.canceled.connect(self.cancel)
 
         # Don't let the user play with the main interface while the program is doing work
-        self.prog.setModal(True)
+        self.progress_window.setModal(True)
 
         # Update the label to let the user know what is currently being worked on
-        self.reporter = SimpleCallbackReporter(self.prog.setLabelText)
+        self.reporter = SimpleCallbackReporter(self.progress_window.setLabelText)
 
         # Update the log information
         self.t = QtCore.QTimer(self)
@@ -166,30 +165,29 @@ class WorkManager(ProcessWorker):
         self._complete_task.connect(self._advance)
 
     def _advance(self):
-        value = self.prog.value()
-        self.prog.setValue(value + 1)
+        value = self.progress_window.value()
+        self.progress_window.setValue(value + 1)
 
     def run(self):
         try:
             self.log_manager.subscribe(self.reporter)
             if self._jobs_queue.qsize() > 0:
-
                 self.initialize_worker()
-                self.prog.setRange(0, self._jobs_queue.qsize())
-                self.prog.setValue(0)
+                self.progress_window.setRange(0, self._jobs_queue.qsize())
+                self.progress_window.setValue(0)
                 self.run_all_jobs()
                 # self.run_jobs(self._jobs)
-                self.prog.show()
+                self.progress_window.show()
+
             else:
                 raise NoWorkError("No Jobs found")
         except Exception:
-            self.prog.cancel()
+            self.progress_window.cancel()
             raise
 
-
     def cancel(self, quiet=False):
-        self.prog.setAutoClose(False)
-        self.prog.canceled.disconnect(self.cancel)
+        self.progress_window.setAutoClose(False)
+        self.progress_window.canceled.disconnect(self.cancel)
         self._message_queue.put("Called cancel")
         for task in reversed(self._tasks):
             if not task.done():
@@ -197,9 +195,9 @@ class WorkManager(ProcessWorker):
         self.t.stop()
         super().cancel()
 
-        self.prog.close()
+        self.progress_window.close()
         if not quiet:
-            QtWidgets.QMessageBox.about(self.prog, "Canceled", "Successfully Canceled")
+            QtWidgets.QMessageBox.about(self.progress_window, "Canceled", "Successfully Canceled")
 
     def _update_log(self):
         while not self._message_queue.empty():
@@ -214,13 +212,32 @@ class WorkManager(ProcessWorker):
 
 class WorkManager2(WorkManager):
     finished = QtCore.pyqtSignal(object, object)
+    failed = QtCore.pyqtSignal(Exception)
 
     def complete_task(self, fut: concurrent.futures.Future):
         if fut.done():
+            # ex = fut.exception()
+            # if ex:
+            #     raise ex
+                # return
+
             if not fut.cancelled():
-                result = fut.result()
-                if result:
-                    self._results.append(result)
+                try:
+                    result = fut.result()
+                    if result:
+                        self._results.append(result)
+                except Exception as e:
+
+                    if self.progress_window.isActiveWindow():
+                        self.progress_window.cancel()
+                    # self.cancel(True)
+                    self.failed.emit(e)
+                    raise
+                    # return
+                    # self.on_failure(e)
+
+                    # return
+                    # raise
 
             self._complete_task.emit()
 
@@ -241,6 +258,12 @@ class WorkManager2(WorkManager):
         self._jobs_queue.join()
         self.finished.emit(self._results, self.completion_callback)
         # super().on_completion(*args, **kwargs)
+    #
+    # def on_failure(self, reason):
+    #     msg = "Failed, {}".format(reason)
+    #     print(msg)
+    #     self._message_queue.put(msg)
+    #     self.failed.emit(msg)
 
     def __init__(self, parent):
         super().__init__(parent)
