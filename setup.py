@@ -40,7 +40,10 @@ except ImportError:
 setup(
     test_suite="tests",
     install_requires=[
-        "pyqt5", "hathizip", "HathiValidate", "pyhathiprep", "hathichecksumupdater"
+        "pyqt5",
+        "hathizip",
+        "HathiValidate>=0.2.0",
+        "pyhathiprep", "hathichecksumupdater"
     ],
     packages=[
         "forseti",
