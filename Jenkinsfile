@@ -11,7 +11,7 @@ pipeline {
     }
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "Forseti", description: "Name given to the project")
-        booleanParam(name: "UPDATE_JIRA_EPIC", defaultValue: true, description: "Write a Update information on JIRA board")
+        booleanParam(name: "UPDATE_JIRA_EPIC", defaultValue: false, description: "Write a Update information on JIRA board")
         string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
         booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run automated unit tests")
         booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
