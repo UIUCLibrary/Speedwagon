@@ -45,7 +45,7 @@ setup(
         "HathiValidate>=0.2.0",
         "pyhathiprep",
         "hathichecksumupdater",
-        "MedusaPackager"
+        # "MedusaPackager"
     ],
     packages=[
         "forseti",
