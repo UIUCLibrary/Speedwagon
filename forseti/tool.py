@@ -247,7 +247,7 @@ class ToolOptionsModel3(ToolOptionsModel):
         if index.isValid():
             if role == QtCore.Qt.DisplayRole:
                 data = self._data[index.row()].data
-                if data:
+                if data is not None:
                     return str(data)
                 else:
                     return ""
