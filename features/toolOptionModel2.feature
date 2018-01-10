@@ -18,7 +18,7 @@ Feature: Tool Option Model with feature options
     Given I have an options model with ToolOptions 2 with a single my_option
     When I ask for the display data of my_option
     Then the data returned is an empty string
-    And the headerData is title case "My_Option"
+    And the headerData is "my_option"
 
 
   Scenario: Dummy data with ToolOptions has a option called my_option but no changes are made
