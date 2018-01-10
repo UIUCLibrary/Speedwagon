@@ -31,6 +31,7 @@ class ToolConsole(QtWidgets.QGroupBox):
 
         self._console.setSource(self._log.baseUrl())
         self._console.setUpdatesEnabled(True)
+        self._console.setFont(monospaced_font)
 
     def add_message(self, message):
         self._console.append(message)
@@ -162,7 +163,7 @@ class ToolWorkspace(QtWidgets.QGroupBox):
                 self._tool.validate_args(**options)
                 # wm.completion_callback = lambda: self._tool.on_completion()
                 jobs = self._tool.discover_jobs(**options)
-                wm.prog.setWindowTitle(str(tool_.name))
+                wm.progress_window.setWindowTitle(str(tool_.name))
                 for _job_args in jobs:
                     job = tool_.new_job()
                     wm.add_job(job, **_job_args)
@@ -330,6 +331,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     #         options[data.name] = data.data
     #     return options
     def on_success(self, results, callback):
+        print("Success")
         user_args = self._options_model.get()
         callback(results=results, user_args=user_args)
         report = self._tool.generate_report(results=results, user_args=user_args)
@@ -340,6 +342,20 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         QtWidgets.QMessageBox.about(self, "Finished", "Finished")
 
+    def on_failed(self, exc):
+        print("************** {}".format(exc))
+        if exc:
+            self.log_manager.notify(str(exc))
+            exception_message = traceback.format_exception(type(exc), exc, tb=exc.__traceback__)
+            msg = QtWidgets.QMessageBox(self)
+            msg.setIcon(QtWidgets.QMessageBox.Warning)
+            msg.setWindowTitle(str(type(exc).__name__))
+            msg.setText(str(exc))
+            msg.setDetailedText("".join(exception_message))
+            msg.exec_()
+        # raise exc
+        # sys.exit(1)
+
     def start(self):
 
         if len(self.tool_selector_view.selectedIndexes()) != 1:
@@ -348,6 +364,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             return
         tool = self.tool_list.data(self.tool_selector_view.selectedIndexes()[0], QtCore.Qt.UserRole)
         ###########################
+
         if issubclass(tool, forseti.tools.abstool.AbsTool):
             # options = self.tool_config_layout.get(
             options = self._options_model.get()
@@ -357,6 +374,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             self._tool = tool
             wm = worker.WorkManager2(self)
             wm.finished.connect(self.on_success)
+            wm.failed.connect(self.on_failed)
             wm.completion_callback = tool.on_completion
             # wm.finished.connect(self._tool.on_completion)
             # wm.finished.connect(lambda: self._tool.on_completion())
@@ -370,7 +388,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                 tool.validate_args(**options)
                 # wm.completion_callback = lambda: self._tool.on_completion()
                 jobs = tool.discover_jobs(**options)
-                wm.prog.setWindowTitle(str(tool.name))
+                wm.progress_window.setWindowTitle(str(tool.name))
                 for _job_args in jobs:
                     job = active_tool.new_job()
                     wm.add_job(job, **_job_args)
@@ -386,6 +404,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             except ValueError as e:
                 wm.cancel(quiet=True)
                 QtWidgets.QMessageBox.warning(self, "Invalid setting", str(e))
+
             except Exception as e:
                 wm.cancel(quiet=True)
                 exception_message = traceback.format_exception(type(e), e, tb=e.__traceback__)
@@ -400,8 +419,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                 #                                f"Unhandled Exception: {type(e).__name__}",
                 #                                f"Unable to continue due to an unhandled exception.\n{e}")
                 # raise
+            print("Out")
         else:
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
+
 
     def tool_selected(self, index: QtCore.QModelIndex):
         tool = self.tool_list.data(index, QtCore.Qt.UserRole)
