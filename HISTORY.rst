@@ -11,3 +11,4 @@ Dev
    * Verify Hathitrust Package Completeness
    * Zip Packages
    * Verify Checksum Batch
+   * Make Checksum Batch

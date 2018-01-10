@@ -38,5 +38,5 @@ class EggsJob(ProcessJob):
 
         self.result = "But I wanted {} Eggs".format(random.randint(1, 1000))
 
-    def on_completion(self):
+    def on_completion(self, *args, **kwargs):
         self.log("Finished making eggs")

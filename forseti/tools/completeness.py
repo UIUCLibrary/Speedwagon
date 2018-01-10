@@ -4,9 +4,11 @@ import os
 
 from forseti import worker
 from .abstool import AbsTool
-from .tool_options import ToolOptionDataType
+# from .tool_options import ToolOptionDataType
+from forseti.tools import tool_options
 from forseti.worker import ProcessJob
-from hathi_validate import process as validate_process
+from hathi_validate import process as validate_process, validator
+from hathi_validate import report as hathi_reporter
 
 
 class HathiPackageCompleteness(AbsTool):
@@ -26,16 +28,24 @@ class HathiPackageCompleteness(AbsTool):
         # HathiPackageCompleteness.validate_args(user_args['source'])
         jobs = []
         for d in os.scandir(user_args['source']):
-            jobs.append({"package_path": d.path, "check_ocr": user_args["Check for OCR XML"]})
+            jobs.append({
+                "package_path": d.path,
+                "check_page_data": user_args["Check for page_data in meta.yml"],
+                "check_ocr_data": user_args["Check ALTO OCR xml files"],
+            }
+            )
         return jobs
 
     @staticmethod
-    def get_user_options() -> typing.List[ToolOptionDataType]:
-        check_option = ToolOptionDataType("Check for OCR XML", bool)
-        check_option.data = False
+    def get_user_options() -> typing.List[tool_options.UserOption]:
+        check_page_data_option = tool_options.UserOptionPythonDataType("Check for page_data in meta.yml", bool)
+        check_page_data_option.data = False
+        check_ocr_option = tool_options.UserOptionPythonDataType("Check ALTO OCR xml files", bool)
+        check_ocr_option.data = True
         return [
-            ToolOptionDataType("source"),
-            check_option,
+            tool_options.UserOptionPythonDataType("source"),
+            check_page_data_option,
+            check_ocr_option
         ]
 
     @staticmethod
@@ -52,43 +62,124 @@ class HathiPackageCompleteness(AbsTool):
         for result_group in kwargs['results']:
             for result in result_group:
                 results.append(result)
-        splitter = "*" * 80
-        title = "Validation report"
-        summary = "{} issues detected.".format(len(results))
-        if results:
-            try:
-                sorted_results = sorted(results, key=lambda r: r.source)
-
-            except Exception as e:
-                print(e)
-                raise
-
-            message_lines = []
-            for result in sorted_results:
-                message_lines.append(str(result))
-            report_details = "\n".join(message_lines)
-        else:
-            report_details = ""
-
-        return "\n" \
-               "{}\n" \
-               "{}\n" \
-               "{}\n" \
-               "\n" \
-               "{}\n" \
-               "\n" \
-               "{}\n" \
-               "{}\n" \
-            .format(splitter, title, splitter, summary, report_details, splitter)
+        # splitter = "*" * 80
+        # title = "Validation report"
+        # summary = "{} issues detected.".format(len(results))
+        # if results:
+        #     try:
+        #         sorted_results = sorted(results, key=lambda r: r.source)
+        #
+        #     except Exception as e:
+        #         print(e)
+        #         raise
+        #
+        #     message_lines = []
+        #     for result in sorted_results:
+        #         message_lines.append(str(result))
+        #     report_details = "\n".join(message_lines)
+        # else:
+        #     report_details = ""
+        #
+        # return "\n" \
+        #        "{}\n" \
+        #        "{}\n" \
+        #        "{}\n" \
+        #        "\n" \
+        #        "{}\n" \
+        #        "\n" \
+        #        "{}\n" \
+        #        "{}\n" \
+        #     .format(splitter, title, splitter, summary, report_details, splitter)
+        return hathi_reporter.get_report_as_str(results, 70)
+        # re
     # @staticmethod
     # def get_user_options() -> typing.List["ToolOptionsModel2"]:
     #     return []
 
+
 class HathiPackageCompletenessJob(ProcessJob):
     def process(self, **kwargs):
-        self.log("Checking the completeness of {}".format(kwargs['package_path']))
-        # TODO Handle variations when it comes to require_page_data
-        self.result = validate_process.process_directory(kwargs['package_path'], require_page_data=kwargs['check_ocr'])
-        for result in self.result:
-            self.log(str(result))
+        package_path= kwargs['package_path']
+        check_ocr = kwargs['check_ocr_data']
+        self.log("Checking the completeness of {}".format(package_path))
+        # self.result = validate_process.process_directory(kwargs['package_path'],
+        #                                                  require_page_data=kwargs['check_page_data'])
+        # for result in self.result:
+        #     self.log(str(result))
+            
+        # logger.debug("Looking for missing package files in {}".format(pkg))
+        errors = []
+        missing_files_errors = validate_process.run_validation(validator.ValidateMissingFiles(path=package_path))
+        if missing_files_errors:
+            for error in missing_files_errors:
+                self.log(error.message)
+                errors.append(error)
+
+        # Look for missing components
+        extensions = [".txt", ".jp2"]
+        if check_ocr:
+            extensions.append(".xml")
+        # s.debug("Looking for missing component files in {}".format(pkg))
+        missing_files_errors = validate_process.run_validation(validator.ValidateComponents(package_path, "^\d{8}$", *extensions))
+        if not missing_files_errors:
+            self.log("Found no missing component files in {}".format(package_path))
+        else:
+            for error in missing_files_errors:
+                self.log(error.message)
+                errors.append(error)
+        # exit()
+        # Validate extra subdirectories
+        self.log("Looking for extra subdirectories in {}".format(package_path))
+        extra_subdirectories_errors = validate_process.run_validation(validator.ValidateExtraSubdirectories(path=package_path))
+        if not extra_subdirectories_errors:
+            self.log("No extra subdirectories found in {}".format(package_path))
+        else:
+            for error in extra_subdirectories_errors:
+                self.log(error.message)
+                errors.append(error)
+
+        # Validate Checksums
+        checksum_report = os.path.join(package_path, "checksum.md5")
+        self.log("Validating checksums found in {}".format(checksum_report))
+        checksum_report_errors = validate_process.run_validation(validator.ValidateChecksumReport(package_path, checksum_report))
+        if not checksum_report_errors:
+            self.log("All checksums in {} successfully validated".format(checksum_report))
+        else:
+            for error in checksum_report_errors:
+                errors.append(error)
+
+        # Validate Marc
+        marc_file=os.path.join(package_path, "marc.xml")
+        self.log("Validating marc.xml in {}".format(package_path))
+        marc_errors = validate_process.run_validation(validator.ValidateMarc(marc_file))
+        if not marc_errors:
+            self.log("{} successfully validated".format(marc_file))
+        else:
+            for error in marc_errors:
+                self.log(error.message)
+                errors.append(error)
+
+        # Validate YML
+        yml_file = os.path.join(package_path, "meta.yml")
+        self.log("Validating meta.yml in {}".format(package_path))
+        meta_yml_errors = validate_process.run_validation(validator.ValidateMetaYML(yaml_file=yml_file, path=package_path, required_page_data=True))
+        if not meta_yml_errors:
+            self.log("{} successfully validated".format(yml_file))
+        else:
+            for error in meta_yml_errors:
+                self.log(error.message)
+                errors.append(error)
+        #
+
+        # Validate ocr files
+        if check_ocr:
+            self.log("Validating ocr files in {}".format(package_path))
+            ocr_errors = validate_process.run_validation(validator.ValidateOCRFiles(path=package_path))
+            if ocr_errors:
+                self.log("No validation errors found in ".format(package_path))
+            # else:
+                for error in ocr_errors:
+                    self.log(error.message)
+                    errors.append(error)
+        self.result = errors
         # self.result = (kwargs['package_path'], res)

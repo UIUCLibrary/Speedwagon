@@ -9,7 +9,8 @@ from forseti import worker
 from forseti.tools.abstool import AbsTool
 # from forseti.tool import ToolOption
 from forseti.worker import ProcessJob
-from .tool_options import ToolOptionDataType
+# from .tool_options import UserOption
+from forseti.tools import tool_options
 import hathizip.process
 
 class ZipPackages(AbsTool):
@@ -52,16 +53,15 @@ class ZipPackages(AbsTool):
 
     @staticmethod
     def generate_report(*args, **kwargs):
-        print(kwargs)
         if "user_args" in kwargs:
             return "Zipping complete. All files written to {}.".format(kwargs["user_args"]["output"])
         return "Zipping complete. All files written to output location"
 
     @staticmethod
-    def get_user_options() -> typing.List[ToolOptionDataType]:
+    def get_user_options() -> typing.List[tool_options.UserOption]:
         return [
-            ToolOptionDataType("source"),
-            ToolOptionDataType("output"),
+            tool_options.UserOptionPythonDataType("source"),
+            tool_options.UserOptionPythonDataType("output"),
         ]
 
 class ZipPackageJob(ProcessJob):

@@ -57,10 +57,10 @@ def step_impl(context: runner.Context):
     assert context.result == ""
 
 
-@step('the headerData is title case "My_Option"')
+@step('the headerData is "my_option"')
 def step_impl(context):
     result = context.data_model.headerData(0, Qt_Orientation=QtCore.Qt.Vertical, role=QtCore.Qt.DisplayRole)
-    assert result == "My_Option"
+    assert result == "my_option"
 
 @when("I ask for the final data")
 def step_impl(context: runner.Context):

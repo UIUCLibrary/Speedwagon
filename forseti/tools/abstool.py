@@ -2,7 +2,7 @@ import abc
 import typing
 import warnings
 
-from .tool_options import ToolOptionDataType
+from .tool_options import UserOption
 from forseti import worker
 
 
@@ -21,13 +21,13 @@ class AbsTool(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def discover_jobs(**user_args):
+    def discover_jobs(**user_args)->typing.List[dict]:
         pass
 
 
     @staticmethod
     @abc.abstractmethod
-    def get_user_options()->typing.List[ToolOptionDataType]:
+    def get_user_options() -> typing.List[UserOption]:
         pass
 
     @staticmethod
@@ -35,10 +35,12 @@ class AbsTool(metaclass=abc.ABCMeta):
         return True
 
     @staticmethod
+    def post_process(user_args:dict):
+        pass
+
+    @staticmethod
     def on_completion(*args, **kwargs):
-        print("args = {}".format(args))
-        print("kwargs = {}".format(kwargs))
-        print("Completed")
+        pass
 
     @staticmethod
     def generate_report(*args, **kwargs):

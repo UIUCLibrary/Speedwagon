@@ -49,5 +49,5 @@ class DummyJob(ProcessJob):
         self.result = "My result {}".format(random.randint(1, 1000))
         # return
 
-    def on_completion(self):
+    def on_completion(self, *args, **kwargs):
         self.log("---ending something")
