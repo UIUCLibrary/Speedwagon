@@ -43,7 +43,9 @@ setup(
         "pyqt5",
         "hathizip",
         "HathiValidate>=0.2.0",
-        "pyhathiprep", "hathichecksumupdater"
+        "pyhathiprep",
+        "hathichecksumupdater",
+        "MedusaPackager"
     ],
     packages=[
         "forseti",
