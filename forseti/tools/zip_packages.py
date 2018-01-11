@@ -58,10 +58,10 @@ class ZipPackages(AbsTool):
         return "Zipping complete. All files written to output location"
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption]:
+    def get_user_options() -> typing.List[tool_options.UserOption2]:
         return [
-            tool_options.UserOptionPythonDataType("source"),
-            tool_options.UserOptionPythonDataType("output"),
+            tool_options.UserOptionCustomDataType("source", tool_options.FolderData),
+            tool_options.UserOptionCustomDataType("output", tool_options.FolderData),
         ]
 
 class ZipPackageJob(ProcessJob):

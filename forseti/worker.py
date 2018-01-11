@@ -27,9 +27,13 @@ class AbsJob(metaclass=QtMeta):
         self.result = None
 
     def execute(self, *args, **kwargs):
-        self.process(*args, **kwargs)
-        self.on_completion(*args, **kwargs)
-        return self.result
+        try:
+            self.process(*args, **kwargs)
+            self.on_completion(*args, **kwargs)
+            return self.result
+        except Exception as e:
+            print("Failed {}".format(e))
+            return None
 
     @abc.abstractmethod
     def process(self, *args, **kwargs):
@@ -181,7 +185,8 @@ class WorkManager(ProcessWorker):
 
             else:
                 raise NoWorkError("No Jobs found")
-        except Exception:
+        except Exception as e:
+            print(e)
             self.progress_window.cancel()
             raise
 
@@ -227,6 +232,7 @@ class WorkManager2(WorkManager):
                     if result:
                         self._results.append(result)
                 except Exception as e:
+                    print(e)
 
                     if self.progress_window.isActiveWindow():
                         self.progress_window.cancel()

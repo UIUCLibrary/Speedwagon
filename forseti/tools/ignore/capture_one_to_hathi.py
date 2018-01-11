@@ -50,10 +50,10 @@ class CaptureOneToHathiTiffPackage(AbsTool):
         return PackageConverter
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption]:
+    def get_user_options() -> typing.List[tool_options.UserOption2]:
         return [
-            tool_options.UserOptionPythonDataType("input"),
-            tool_options.UserOptionPythonDataType("output"),
+            tool_options.UserOptionPythonDataType2("input"),
+            tool_options.UserOptionPythonDataType2("output"),
         ]
 
     @staticmethod

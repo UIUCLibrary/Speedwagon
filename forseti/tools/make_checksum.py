@@ -42,13 +42,18 @@ class MakeChecksumBatch(AbsTool):
 
     @staticmethod
     def validate_args(**user_args):
-        if not os.path.exists(user_args["input"]) or not os.path.isdir(user_args["input"]):
+        input_data = user_args["input"]
+        if input_data is None:
+            raise ValueError("Missing value in input")
+
+        if not os.path.exists(input_data) or not os.path.isdir(input_data):
             raise ValueError("Invalid user arguments")
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption]:
+    def get_user_options() -> typing.List[tool_options.UserOption2]:
         return [
-            tool_options.UserOptionPythonDataType("input"),
+            tool_options.UserOptionCustomDataType("input", tool_options.FolderData),
+            # tool_options.UserOptionPythonDataType2("input"),
             # ToolOptionDataType(name="output"),
         ]
 

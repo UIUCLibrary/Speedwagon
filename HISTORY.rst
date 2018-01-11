@@ -12,3 +12,5 @@ Dev
    * Zip Packages
    * Verify Checksum Batch
    * Make Checksum Batch
+* Fixes:
+   * Verify Hathitrust Package Completeness optionally checks for OCR files
