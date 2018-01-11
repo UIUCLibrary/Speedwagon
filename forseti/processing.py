@@ -1,3 +1,5 @@
+import warnings
+
 from PyQt5 import QtWidgets, QtCore
 import multiprocessing
 
@@ -14,6 +16,7 @@ class ProcessingDialog(QtWidgets.QProgressDialog):
     #     self.completed_successfully.emit()
 
     def __init__(self, *__args):
+        warnings.warn("Don't use", DeprecationWarning)
         super().__init__(*__args)
         self.completed_successfully.connect(self.all_done)
         # self.lock = threading.Lock()

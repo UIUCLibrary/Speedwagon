@@ -469,6 +469,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 class YesNoBoxDelegate(QtWidgets.QItemDelegate):
 
     def __init__(self, parent=None):
+        warnings.warn("Don't use", DeprecationWarning)
         super().__init__(parent)
 
     def createEditor(self, parent, QStyleOptionViewItem, QModelIndex):
@@ -547,6 +548,7 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
 class CheckBoxDelegate(QtWidgets.QItemDelegate):
 
     def __init__(self, parent=None):
+        warnings.warn("Dont use this", DeprecationWarning)
         super().__init__(parent)
 
     def createEditor(self, parent, QStyleOptionViewItem, QModelIndex):

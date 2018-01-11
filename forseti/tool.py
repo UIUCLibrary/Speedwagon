@@ -33,22 +33,24 @@ class AbsToolData(metaclass=abc.ABCMeta):
     def data(self):
         return self.widget.value
 
-
-class SelectDirectory(AbsToolData):
-
-    def get_widget(self):
-        # return PathSelector2()
-        return PathSelector()
+#
+# class SelectDirectory(AbsToolData):
+#
+#     def get_widget(self):
+#         # return PathSelector2()
+#         return PathSelector()
 
 
 class PathSelector2:
     def __init__(self, parent=None):
+        warnings.warn("Don't use", DeprecationWarning)
         self.parent = parent
 
 
 class PathSelector(QtWidgets.QWidget):
 
     def __init__(self, parent=None, *args, **kwargs):
+        warnings.warn("Removing", DeprecationWarning)
         super().__init__(parent, *args, **kwargs)
         # self._parent = parent
         layout = QtWidgets.QHBoxLayout(self)
@@ -165,8 +167,8 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
 class ToolOptionsPairsModel(ToolOptionsModel):
 
     def __init__(self, data: typing.Dict[str, str], parent=None) -> None:
-        super().__init__(parent)
         warnings.warn("Use ToolOptionsModel2 instead", DeprecationWarning)
+        super().__init__(parent)
         for k, v in data.items():
             self._data.append(OptionPair(k, v))
 
@@ -203,6 +205,7 @@ class ToolOptionsPairsModel(ToolOptionsModel):
 class ToolOptionsModel2(ToolOptionsModel):
 
     def __init__(self, data: typing.List[ToolOptionDataType], parent=None) -> None:
+        warnings.warn("Use ToolOptionsModel3 instead", DeprecationWarning)
         super().__init__(parent)
         self._data: typing.List[ToolOptionDataType] = data
 

@@ -1,6 +1,7 @@
 import abc
 import os
 import typing
+import warnings
 from abc import abstractmethod, ABCMeta
 
 from PyQt5 import QtWidgets, QtCore
@@ -19,6 +20,7 @@ class ToolOption:
 
 class ToolOptionDataType(ToolOption):
     def __init__(self, name, data_type=str) -> None:
+        warnings.warn("To be removed", DeprecationWarning)
         super().__init__(name)
         self.data_type = data_type
         self._data = ""
@@ -36,6 +38,7 @@ class ToolOptionDataType(ToolOption):
 
 class UserOption(metaclass=abc.ABCMeta):
     def __init__(self, label_text):
+        warnings.warn("Use UserOption2 instead", DeprecationWarning)
         self.label_text = label_text
         self.data = None
 
@@ -62,6 +65,7 @@ class UserOption2(metaclass=abc.ABCMeta):
 
 class UserOptionPythonDataType(UserOption):
     def __init__(self, label_text, data_type=str) -> None:
+        warnings.warn("Use UserOptionPythonDataType2 instead", DeprecationWarning)
         super().__init__(label_text)
         self.data_type = data_type
         self.data = None
@@ -128,6 +132,11 @@ class UserOptionCustomDataType(UserOption2):
 
 
 class FileData(AbsCustomData, metaclass=abc.ABCMeta):
+
+
+    def __init__(self) -> None:
+        warnings.warn("Removing soon", DeprecationWarning)
+        super().__init__()
 
     @classmethod
     def is_valid(cls, value) -> bool:
