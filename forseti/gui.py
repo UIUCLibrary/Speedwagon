@@ -332,7 +332,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     #         options[data.name] = data.data
     #     return options
     def on_success(self, results, callback):
-        print("Success")
         user_args = self._options_model.get()
         callback(results=results, user_args=user_args)
         report = self._tool.generate_report(results=results, user_args=user_args)
@@ -420,7 +419,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                 #                                f"Unhandled Exception: {type(e).__name__}",
                 #                                f"Unable to continue due to an unhandled exception.\n{e}")
                 # raise
-            print("Out")
         else:
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
 
