@@ -540,7 +540,6 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
         super().setModelData(widget, model, index)
 
     def destroyEditor(self, QWidget, QModelIndex):
-        print("Destroy editor")
         super().destroyEditor(QWidget, QModelIndex)
 
 
