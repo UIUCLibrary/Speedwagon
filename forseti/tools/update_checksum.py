@@ -1,8 +1,8 @@
 import typing
 
 import os
+from PyQt5 import QtWidgets
 
-from forseti.tools.tool_options import FileData
 from forseti.worker import ProcessJob
 from .abstool import AbsTool
 # from .tool_options import ToolOptionDataType
@@ -13,15 +13,44 @@ from hathi_checksum import checksum_report, update_report
 from hathi_checksum import utils as hathi_checksum_utils
 # import hathi_checksum
 
-class ChecksumFile(FileData):
+class ChecksumFile(tool_options.AbsBrowseableWidget):
+    def browse_clicked(self):
+        selection = QtWidgets.QFileDialog.getOpenFileName(filter="Checksum files (*.md5)")
+        if selection[0]:
+            self.data = selection[0]
+            self.editingFinished.emit()
 
-    @staticmethod
-    def filename() -> str:
-        return "checksum.md5"
 
-    @staticmethod
-    def filter() -> str:
-        return "Checksum files (*.md5)"
+class ChecksumData(tool_options.AbsCustomData2):
+
+    @classmethod
+    def is_valid(cls, value) -> bool:
+        if not os.path.exists(value):
+            return False
+        if os.path.basename(value) == "checksum":
+            print("No a checksum file")
+            return False
+        return True
+
+    @classmethod
+    def edit_widget(cls) -> QtWidgets.QWidget:
+        return ChecksumFile()
+
+
+# @staticmethod
+    # def filename() -> str:
+    #     return "checksum.md5"
+    #
+    # @staticmethod
+    # def filter() -> str:
+    #     return "Checksum files (*.md5)"
+    #
+    # def browse_clicked(self):
+    #     selection = QtWidgets.QFileDialog()
+    #     if selection:
+    #         self.data = selection
+    #         self.editingFinished.emit()
+
 
 def find_outdated(results: typing.List[typing.Dict[str, str]]):
     for result in results:
@@ -61,16 +90,18 @@ class UpdateChecksumBatch(AbsTool):
 
     @staticmethod
     def validate_args(**user_args):
-        if not os.path.exists(user_args["input"]) or not os.path.isfile(user_args["input"]):
+        input_data = user_args["input"]
+        if input_data is None:
+            raise ValueError("Missing value in input")
+        if not os.path.exists(input_data) or not os.path.isfile(input_data):
             raise ValueError("Invalid user arguments")
-        if os.path.basename(user_args['input']) != "checksum.md5":
+        if os.path.basename(input_data) != "checksum.md5":
             raise ValueError("Selected input is not a checksum.md5 file")
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption]:
+    def get_user_options() -> typing.List[tool_options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType("input", ChecksumFile),
-            # ToolOptionDataType(name="output"),
+            tool_options.UserOptionCustomDataType("input", ChecksumData),
         ]
 
     @staticmethod

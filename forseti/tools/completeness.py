@@ -27,7 +27,7 @@ class HathiPackageCompleteness(AbsTool):
     def discover_jobs(**user_args):
         # HathiPackageCompleteness.validate_args(user_args['source'])
         jobs = []
-        for d in os.scandir(user_args['source']):
+        for d in os.scandir(user_args['Source']):
             jobs.append({
                 "package_path": d.path,
                 "check_page_data": user_args["Check for page_data in meta.yml"],
@@ -37,20 +37,20 @@ class HathiPackageCompleteness(AbsTool):
         return jobs
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption]:
-        check_page_data_option = tool_options.UserOptionPythonDataType("Check for page_data in meta.yml", bool)
+    def get_user_options() -> typing.List[tool_options.UserOption2]:
+        check_page_data_option = tool_options.UserOptionPythonDataType2("Check for page_data in meta.yml", bool)
         check_page_data_option.data = False
-        check_ocr_option = tool_options.UserOptionPythonDataType("Check ALTO OCR xml files", bool)
+        check_ocr_option = tool_options.UserOptionPythonDataType2("Check ALTO OCR xml files", bool)
         check_ocr_option.data = True
         return [
-            tool_options.UserOptionPythonDataType("source"),
+            tool_options.UserOptionCustomDataType("Source", tool_options.FolderData),
             check_page_data_option,
             check_ocr_option
         ]
 
     @staticmethod
-    def validate_args(source, *args, **kwargs):
-        src = source
+    def validate_args(Source, *args, **kwargs):
+        src = Source
         if not src:
             raise ValueError("Missing value")
         if not os.path.exists(src) or not os.path.isdir(src):

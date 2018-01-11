@@ -14,16 +14,38 @@ import hathi_validate
 from hathi_validate import process
 
 
-class ChecksumFile(FileData):
+# class ChecksumFile(FileData):
+#
+#     @staticmethod
+#     def filename() -> str:
+#         return "checksum.md5"
+#
+#     @staticmethod
+#     def filter() -> str:
+#         return "Checksum files (*.md5)"
 
-    @staticmethod
-    def filename() -> str:
-        return "checksum.md5"
+class ChecksumFile(tool_options.AbsBrowseableWidget):
+    def browse_clicked(self):
+        selection = QtWidgets.QFileDialog.getOpenFileName(filter="Checksum files (*.md5)")
+        if selection[0]:
+            self.data = selection[0]
+            self.editingFinished.emit()
 
-    @staticmethod
-    def filter() -> str:
-        return "Checksum files (*.md5)"
 
+class ChecksumData(tool_options.AbsCustomData2):
+
+    @classmethod
+    def is_valid(cls, value) -> bool:
+        if not os.path.exists(value):
+            return False
+        if os.path.basename(value) == "checksum":
+            print("No a checksum file")
+            return False
+        return True
+
+    @classmethod
+    def edit_widget(cls) -> QtWidgets.QWidget:
+        return ChecksumFile()
 
 class VerifyChecksumBatch(AbsTool):
     name = "Verify Checksum Batch"
@@ -53,15 +75,20 @@ class VerifyChecksumBatch(AbsTool):
         pass
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption]:
+    def get_user_options() -> typing.List[tool_options.UserOption2]:
         return [
             # ToolOptionDataType("input")
-            tool_options.UserOptionCustomDataType("input", ChecksumFile)
+            # tool_options.UserOptionPythonDataType2("input")
+            tool_options.UserOptionCustomDataType("input", ChecksumData),
+            # tool_options.UserOptionCustomDataType("input", ChecksumFile)
 
         ]
 
     @staticmethod
     def validate_args(**user_args):
+        input_data = user_args["input"]
+        if input_data is None:
+            raise ValueError("Missing value in input")
         if not os.path.exists(user_args["input"]) or not os.path.splitext(user_args['input'])[1] == ".md5":
             raise ValueError("Invalid user arguments")
 
