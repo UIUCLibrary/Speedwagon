@@ -4,6 +4,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 import warnings
 import forseti.tool
 import forseti.tools.abstool
+from forseti.tools import tool_options
 from forseti.ui import main_window_shell_ui
 from forseti import tool as t, processing, worker
 from collections import namedtuple
@@ -480,48 +481,67 @@ class YesNoBoxDelegate(QtWidgets.QItemDelegate):
         super().setEditorData(editor, QModelIndex)
 
 
-class MyDelegate(QtWidgets.QItemDelegate):
+class MyDelegate(QtWidgets.QStyledItemDelegate):
+
     #
     # def __init__(self, parent=None):
     #     print("Using my delegate")
     #     super().__init__(parent)
 
-    def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionViewItem,
-              index: QtCore.QModelIndex):
-        # print("HERe")
-        # button = QtWidgets.QPushButton()
-        # painter.drawRect(option.rect)
-        if index.isValid():
-            painter.setBrush(QtGui.QBrush(QtCore.Qt.black))
-            value = index.data(QtCore.Qt.DisplayRole)
-            painter.drawText(option.rect, QtCore.Qt.AlignVCenter, value)
-        painter.restore()
+    # def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionViewItem,
+    #           index: QtCore.QModelIndex):
+    #     # print("HERe")
+    #     # button = QtWidgets.QPushButton()
+    #     # painter.drawRect(option.rect)
+    #     if index.isValid():
+    #         painter.setBrush(QtGui.QBrush(QtCore.Qt.black))
+    #         value = index.data(QtCore.Qt.DisplayRole)
+    #         painter.drawText(option.rect, QtCore.Qt.AlignVCenter, value)
+    #     painter.restore()
 
 
 
     def createEditor(self, parent, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex):
         if index.isValid():
             tool_settings = index.data(QtCore.Qt.UserRole)
-            print(tool_settings.data_type)
-            browser_widget = tool_settings.browse()
+            browser_widget = tool_settings.edit_widget()
             if browser_widget:
+                assert isinstance(browser_widget, tool_options.CustomItemWidget)
+                browser_widget.editingFinished.connect(self.update_custom_item)
+
+                # browser_widget.editingFinished.connect(lambda : self.commitData(browser_widget))
+                browser_widget.setParent(parent)
+
+
                 return browser_widget
         return super().createEditor(parent, option, index)
+
+    def update_custom_item(self):
+        self.commitData.emit(self.sender())
+
 
     def setEditorData(self, editor: QtWidgets.QPushButton, index: QtCore.QModelIndex):
 
         if index.isValid():
             i = index.data(QtCore.Qt.UserRole)
-            i.browse()
+            if isinstance(editor, tool_options.CustomItemWidget):
+                editor.data = i.data
+            # i.browse()
         super().setEditorData(editor, index)
 
     def setModelData(self, widget: QtWidgets.QWidget, model: QtCore.QAbstractItemModel, index):
-        if isinstance(widget, QtWidgets.QFileDialog):
-            files = widget.selectedFiles()
-            if len(files) == 1:
-                model.setData(index, files[0])
+        if isinstance(widget, tool_options.CustomItemWidget):
+            model.setData(index, widget.data)
             return
+        #     files = widget.selectedFiles()
+        #     if len(files) == 1:
+        #         model.setData(index, files[0])
+        #     return
         super().setModelData(widget, model, index)
+
+    def destroyEditor(self, QWidget, QModelIndex):
+        print("Destroy editor")
+        super().destroyEditor(QWidget, QModelIndex)
 
 
 class CheckBoxDelegate(QtWidgets.QItemDelegate):
