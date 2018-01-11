@@ -268,6 +268,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tool_config_layout = QtWidgets.QFormLayout()
         # self.tool_config_layout.
         self.tool_settings = QtWidgets.QTableView(self)
+        self.tool_settings.setEditTriggers(QtWidgets.QAbstractItemView.AllEditTriggers)
         self.tool_settings.setItemDelegate(MyDelegate(self))
         self.tool_settings.horizontalHeader().setVisible(False)
         self.tool_settings.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
