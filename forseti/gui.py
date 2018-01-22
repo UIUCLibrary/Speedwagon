@@ -240,8 +240,12 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.splitter.setChildrenCollapsible(False)
         self._options_model = None
         self.label_2.setText(PROJECT_NAME)
-        dist = pkg_resources.get_distribution("forseti")
-        self.version_label.setText(dist.version)
+        try:
+            dist = pkg_resources.get_distribution("forseti")
+            version = dist.version
+        except pkg_resources.DistributionNotFound:
+            version = "Development version"
+        self.version_label.setText(version)
         # self.tool_selector = self.create_tool_selector_widget()
 
         self.tool_selector_view = QtWidgets.QListView(self)
