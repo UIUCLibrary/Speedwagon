@@ -210,7 +210,8 @@ pipeline {
             }
             post {
                 success {
-                    echo "it Worked. Pushing file to ${env.BRANCH_NAME} index"
+                    echo "it Worked. 
+                    ing file to ${env.BRANCH_NAME} index"
                     script {
                         def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
                         def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
@@ -235,7 +236,7 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                         bat "${tool 'Python3.6.3_Win64'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                         bat "${tool 'Python3.6.3_Win64'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                        bat "${tool 'Python3.6.3_Win64'} -m devpi push ${name}==${version} production/${params.RELEASE}"
+                        bat "${tool 'Python3.6.3_Win64'} -m devpi push ${name}==${version} production/release"
                     }
 
                 }
