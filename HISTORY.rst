@@ -19,3 +19,6 @@ Release History
 
 Dev
 +++
+
+* User Interface:
+   * Display version number on main window
