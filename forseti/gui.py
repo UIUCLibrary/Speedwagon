@@ -9,6 +9,7 @@ from forseti.ui import main_window_shell_ui
 from forseti import tool as t, processing, worker
 from collections import namedtuple
 import traceback
+import pkg_resources
 
 PROJECT_NAME = "Forseti"
 
@@ -239,6 +240,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.splitter.setChildrenCollapsible(False)
         self._options_model = None
         self.label_2.setText(PROJECT_NAME)
+        dist = pkg_resources.get_distribution("forseti")
+        self.version_label.setText(dist.version)
         # self.tool_selector = self.create_tool_selector_widget()
 
         self.tool_selector_view = QtWidgets.QListView(self)
