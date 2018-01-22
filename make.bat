@@ -203,7 +203,7 @@ goto:eof
     call:_install-dev
     call:_update_gui
     setlocal
-    call venv\Scripts\activate.bat && python setup.py test
+    call venv\Scripts\activate.bat && python setup.py test && python -m behave
     endlocal
 goto:eof
 
