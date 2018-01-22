@@ -99,7 +99,7 @@ class HathiPackageCompleteness(AbsTool):
 
 class HathiPackageCompletenessJob(ProcessJob):
     def process(self, **kwargs):
-        package_path= kwargs['package_path']
+        package_path = os.path.normcase(kwargs['package_path'])
         check_ocr = kwargs['check_ocr_data']
         self.log("Checking the completeness of {}".format(package_path))
         # self.result = validate_process.process_directory(kwargs['package_path'],
@@ -150,25 +150,31 @@ class HathiPackageCompletenessJob(ProcessJob):
 
         # Validate Marc
         marc_file=os.path.join(package_path, "marc.xml")
-        self.log("Validating marc.xml in {}".format(package_path))
-        marc_errors = validate_process.run_validation(validator.ValidateMarc(marc_file))
-        if not marc_errors:
-            self.log("{} successfully validated".format(marc_file))
+        if not os.path.exists(marc_file):
+             self.log("Skipping \'{}\' due to file not found".format(marc_file))
         else:
-            for error in marc_errors:
-                self.log(error.message)
-                errors.append(error)
+            self.log("Validating marc.xml in {}".format(package_path))
+            marc_errors = validate_process.run_validation(validator.ValidateMarc(marc_file))
+            if not marc_errors:
+                self.log("{} successfully validated".format(marc_file))
+            else:
+                for error in marc_errors:
+                    self.log(error.message)
+                    errors.append(error)
 
         # Validate YML
         yml_file = os.path.join(package_path, "meta.yml")
-        self.log("Validating meta.yml in {}".format(package_path))
-        meta_yml_errors = validate_process.run_validation(validator.ValidateMetaYML(yaml_file=yml_file, path=package_path, required_page_data=True))
-        if not meta_yml_errors:
-            self.log("{} successfully validated".format(yml_file))
+        if not os.path.exists(yml_file):
+            self.log("Skipping \'{}\' due to file not found".format(yml_file))
         else:
-            for error in meta_yml_errors:
-                self.log(error.message)
-                errors.append(error)
+            self.log("Validating meta.yml in {}".format(package_path))
+            meta_yml_errors = validate_process.run_validation(validator.ValidateMetaYML(yaml_file=yml_file, path=package_path, required_page_data=True))
+            if not meta_yml_errors:
+                self.log("{} successfully validated".format(yml_file))
+            else:
+                for error in meta_yml_errors:
+                    self.log(error.message)
+                    errors.append(error)
         #
 
         # Validate ocr files
