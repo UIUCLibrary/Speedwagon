@@ -14,3 +14,4 @@ Dev
    * Make Checksum Batch
 * Fixes:
    * Verify Hathitrust Package Completeness optionally checks for OCR files
+   * Verify Hathitrust Package Completeness issue when dealing with paths that include spaces
