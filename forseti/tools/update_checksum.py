@@ -194,12 +194,6 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
                     report = os.path.join(root, file_)
                     for filename, report_md5_hash in UpdateChecksumBatchMultiple.locate_files(report):
 
-                        # job = {
-                        #     ResultValues.SOURCE_FILE: filename,
-                        #     "report_md5_hash": report_md5_hash,
-                        #     "location": root,
-                        #     "checksum_source": report
-                        # }
                         job = {
                             "filename": filename,
                             "report_md5_hash": report_md5_hash,
@@ -244,9 +238,3 @@ class ChecksumJob(ProcessJob):
             ResultValues.CHECKSUM_EXPECTED: kwargs['report_md5_hash'],
             ResultValues.CHECKSUM_SOURCE: report
         }
-        # self.result = {
-        #     "filename": source_file,
-        #     "checksum_actual": hash_value,
-        #     "checksum_expected": kwargs['report_md5_hash'],
-        #     "checksum_source": report
-        # }
