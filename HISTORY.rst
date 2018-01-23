@@ -25,3 +25,6 @@ Dev
 * New Tools:
    * Update Checksum Batch [Multiple]
    * Update Checksum Batch [Single]
+* Tool Changes:
+   * Split Make Checksum Batch into multiple and single versions
+   * Split Verify Checksum Batch into multiple and single versions
