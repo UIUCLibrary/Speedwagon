@@ -111,7 +111,7 @@ class VerifyChecksum(AbsTool):
     @classmethod
     def find_failed(cls, new_results: typing.Dict[
         str, typing.List[typing.Dict[ResultValues, typing.Union[bool, str]]]]) -> dict:
-        failed = collections.defaultdict(list)
+        failed: typing.DefaultDict[str, list] = collections.defaultdict(list)
         for checksum_file, results in new_results.items():
 
             for failed_item in filter(lambda it: not it[ResultValues.VALID], results):
