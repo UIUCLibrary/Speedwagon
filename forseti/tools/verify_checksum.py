@@ -66,7 +66,7 @@ class VerifyChecksum(AbsTool):
     @classmethod
     def generate_report(cls, *args, **kwargs):
         results = kwargs['results']
-
+        line_sep = "\n" + "-" * 60
         sorted_results = cls.sort_results(results)
         results_with_failures = cls.find_failed(sorted_results)
 
@@ -80,7 +80,7 @@ class VerifyChecksum(AbsTool):
                                  f"\n\n{status}" \
                                  f"\n{failure_list}"
                 messages.append(single_message)
-            report = "\n\n".join(messages)
+            report = "\n{}\n".format(line_sep).join(messages)
 
         else:
             stats_message = f"All {len(results)} passed checksum validation."
