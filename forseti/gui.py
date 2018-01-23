@@ -340,11 +340,22 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     #         options[data.name] = data.data
     #     return options
     def on_success(self, results, callback):
+        self.log_manager.notify("\n\nDone\n")
         user_args = self._options_model.get()
         callback(results=results, user_args=user_args)
         report = self._tool.generate_report(results=results, user_args=user_args)
         if report:
-            self.log_manager.notify(report)
+            line_sep = "\n" + "*" * 60
+
+            fancy_report = f"{line_sep}" \
+                           f"\n   Report" \
+                           f"{line_sep}" \
+                           f"\n" \
+                           f"\n{report}" \
+                           f"\n" \
+                           f"{line_sep}"
+
+            self.log_manager.notify(fancy_report)
 
         # self._tool.on_completion(results=results,user_args=user_args)
 
