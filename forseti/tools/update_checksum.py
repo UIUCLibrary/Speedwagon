@@ -106,7 +106,7 @@ class UpdateChecksum(AbsTool):
             (res[ResultValues.FILENAME], res[ResultValues.CHECKSUM_SOURCE]) for res in find_outdated(results)],
             # (res['filename'], res['checksum_source']) for res in find_outdated(results)],
                                 key=lambda it: it[1])
-        outdated_items_data = collections.defaultdict(list)
+        outdated_items_data: typing.DefaultDict[str, list] = collections.defaultdict(list)
         for k, v in itertools.groupby(outdated_items, key=lambda it: it[1]):
             for file_ in v:
                 outdated_items_data[k].append(file_[0])
