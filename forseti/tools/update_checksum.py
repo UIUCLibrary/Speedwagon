@@ -79,7 +79,7 @@ class UpdateChecksum(AbsTool):
         user_args = kwargs['user_args']
         results = kwargs['results']
 
-        outdated_items = cls.sort_result(results)
+        outdated_items = cls.sort_results(results)
 
         report_lines = []
         if outdated_items:
@@ -93,7 +93,7 @@ class UpdateChecksum(AbsTool):
             return "No outdated entries found in {}".format(user_args[UserArgs.INPUT.value])
 
     @classmethod
-    def sort_result(cls, results) -> typing.Dict[str, typing.List[str]]:
+    def sort_results(cls, results) -> typing.Dict[str, typing.List[str]]:
         """ Sort the data and put it into a dictionary with the source as the key
 
         Args:
@@ -195,7 +195,7 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
                     for filename, report_md5_hash in UpdateChecksumBatchMultiple.locate_files(report):
 
                         # job = {
-                        #     ResultValues.FILENAME: filename,
+                        #     ResultValues.SOURCE_FILE: filename,
                         #     "report_md5_hash": report_md5_hash,
                         #     "location": root,
                         #     "checksum_source": report
