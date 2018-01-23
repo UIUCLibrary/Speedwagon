@@ -1,9 +1,10 @@
+import collections
 import os
 import typing
 
+import itertools
 from PyQt5 import QtWidgets
 
-from forseti.tools.tool_options import AbsCustomData, FileData
 from forseti.worker import ProcessJob
 from .abstool import AbsTool
 # from .tool_options import ToolOptionDataType, UserOptionPythonDataType
@@ -13,16 +14,26 @@ import hathi_validate
 
 from hathi_validate import process
 
+import enum
 
-# class ChecksumFile(FileData):
-#
-#     @staticmethod
-#     def filename() -> str:
-#         return "checksum.md5"
-#
-#     @staticmethod
-#     def filter() -> str:
-#         return "Checksum files (*.md5)"
+
+class UserArgs(enum.Enum):
+    INPUT = "Input"
+
+
+class ResultValues(enum.Enum):
+    VALID = "valid"
+    FILENAME = "filename"
+    PATH = "path"
+    CHECKSUM_REPORT_FILE = "checksum_report_file"
+
+
+class JobValues(enum.Enum):
+    SOURCE_REPORT = "source_report"
+    EXPECTED_HASH = "expected_hash"
+    ITEM_FILENAME = "filename"
+    ROOT_PATH = "path"
+
 
 class ChecksumFile(tool_options.AbsBrowseableWidget):
     def browse_clicked(self):
@@ -47,89 +58,180 @@ class ChecksumData(tool_options.AbsCustomData2):
     def edit_widget(cls) -> QtWidgets.QWidget:
         return ChecksumFile()
 
-class VerifyChecksumBatch(AbsTool):
-    name = "Verify Checksum Batch"
-    description = "Verify checksum values in checksum batch file, report errors. Input is a text file containing a " \
-                  "list of multiple files and their md5 values. The listed files are expected to be siblings to the " \
-                  "checksum file."
 
-    def __init__(self) -> None:
-        super().__init__()
-
+class VerifyChecksum(AbsTool):
     def new_job(self) -> typing.Type[worker.ProcessJob]:
         return ChecksumJob
+
+    @classmethod
+    def generate_report(cls, *args, **kwargs):
+        results = kwargs['results']
+
+        sorted_results = cls.sort_results(results)
+        results_with_failures = cls.find_failed(sorted_results)
+
+        if len(results_with_failures) > 0:
+            messages = []
+            for checksum_file, failed_files in results_with_failures.items():
+                status = f"{len(failed_files)} files failed checksum validation."
+                failed_files_bullets = [f"* {failure[ResultValues.FILENAME]}" for failure in failed_files]
+                failure_list = "\n".join(failed_files_bullets)
+                single_message = f"{checksum_file}" \
+                                 f"\n\n{status}" \
+                                 f"\n{failure_list}"
+                messages.append(single_message)
+            report = "\n\n".join(messages)
+
+        else:
+            stats_message = f"All {len(results)} passed checksum validation."
+            failure_list = ""
+            report = f"Success" \
+                     f"\n{stats_message}" \
+                     f"\n{failure_list}"
+        return report
+
+    @classmethod
+    def sort_results(cls, results) -> typing.Dict[str, typing.List[typing.Dict[ResultValues, typing.Union[bool, str]]]]:
+        """ Sort the data and put it into a dictionary with the source as the key
+
+        Args:
+            results:
+
+        Returns: Dictionary of organized data where the source is the key and the value contains all the files updated
+
+        """
+        new_results: typing.DefaultDict[str, list] = collections.defaultdict(list)
+        sorted_results = sorted(results, key=lambda it: it[ResultValues.CHECKSUM_REPORT_FILE])
+        for k, v in itertools.groupby(sorted_results, key=lambda it: it[ResultValues.CHECKSUM_REPORT_FILE]):
+            print(k)
+            for result_data in v:
+                new_results[k].append(result_data)
+        return dict(new_results)
+
+    @classmethod
+    def find_failed(cls, new_results: typing.Dict[
+        str, typing.List[typing.Dict[ResultValues, typing.Union[bool, str]]]]) -> dict:
+        failed = collections.defaultdict(list)
+        for checksum_file, results in new_results.items():
+
+            for failed_item in filter(lambda it: not it[ResultValues.VALID], results):
+                failed[checksum_file].append(failed_item)
+        return dict(failed)
+
+
+class VerifyChecksumBatchSingle(VerifyChecksum):
+    name = "Verify Checksum Batch [Single]"
+    description = "Verify checksum values in checksum batch file, report errors. " \
+                  "\n\nInput is a text file containing a list of multiple files and their md5 values. The listed files " \
+                  "are expected to be siblings to the checksum file."
 
     @staticmethod
     def discover_jobs(**user_args):
         jobs = []
-        checksum_path = os.path.dirname(user_args["input"])
-        for report_md5_hash, filename in hathi_validate.process.extracts_checksums(user_args["input"]):
+        relative_path = os.path.dirname(user_args[UserArgs.INPUT.value])
+        checksum_report_file = os.path.abspath(user_args[UserArgs.INPUT.value])
+
+        for report_md5_hash, filename in hathi_validate.process.extracts_checksums(checksum_report_file):
             new_job = {
-                "expected_hash": report_md5_hash,
-                "filename": filename,
-                "checksum_path": checksum_path
+                JobValues.EXPECTED_HASH.value: report_md5_hash,
+                JobValues.ITEM_FILENAME.value: filename,
+                JobValues.ROOT_PATH.value: relative_path,
+                JobValues.SOURCE_REPORT.value: checksum_report_file
             }
             jobs.append(new_job)
-            # )
         return jobs
-        pass
 
     @staticmethod
     def get_user_options() -> typing.List[tool_options.UserOption2]:
         return [
-            # ToolOptionDataType("input")
-            # tool_options.UserOptionPythonDataType2("input")
-            tool_options.UserOptionCustomDataType("input", ChecksumData),
-            # tool_options.UserOptionCustomDataType("input", ChecksumFile)
+            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, ChecksumData),
 
         ]
 
     @staticmethod
     def validate_args(**user_args):
-        input_data = user_args["input"]
+        input_data = user_args[UserArgs.INPUT.value]
         if input_data is None:
             raise ValueError("Missing value in input")
-        if not os.path.exists(user_args["input"]) or not os.path.splitext(user_args['input'])[1] == ".md5":
+        if not os.path.exists(input_data) or not os.path.splitext(input_data)[1] == ".md5":
             raise ValueError("Invalid user arguments")
 
-    @classmethod
-    def generate_report(cls, *args, **kwargs):
-        results = kwargs['results']
-        failed_files = list(filter(lambda result: not result['valid'], results))
-        if failed_files:
-            status = "Failure!"
-            stats_message = f"{len(failed_files)} files failed checksum validation."
-            failed_files_bullet = [f"* {failure['filename']}" for failure in failed_files]
-            failure_list = "\n".join(failed_files_bullet)
-        else:
-            status = "Success!"
 
-            stats_message = f"All {len(results)} passed checksum validation."
+class VerifyChecksumBatchMultiple(VerifyChecksum):
+    name = "Verify Checksum Batch [Multiple]"
+    description = "Verify checksum values in checksum batch file, report errors. " \
+                  "\n\nInput is path that contains subdirectory which a text file containing a " \
+                  "list of multiple files and their md5 values. The listed files are expected to be siblings to the " \
+                  "checksum file."
 
-            failure_list = ""
-        return f"{status}" \
-               f"\n{stats_message}" \
-               f"\n{failure_list}"
-        # super().generate_report(*args, **kwargs)
+    @staticmethod
+    def discover_jobs(**user_args) -> typing.List[dict]:
+        jobs = []
+        user_input = user_args[UserArgs.INPUT.value]
+        for root, dirs, files in os.walk(os.path.abspath(user_input)):
+            for file_ in files:
+                if file_ != "checksum.md5":
+                    continue
+
+                checksum_report_file = os.path.join(root, file_)
+                for report_md5_hash, filename in hathi_validate.process.extracts_checksums(checksum_report_file):
+                    new_job = {
+                        JobValues.EXPECTED_HASH.value: report_md5_hash,
+                        JobValues.ITEM_FILENAME.value: filename,
+                        JobValues.ROOT_PATH.value: root,
+                        JobValues.SOURCE_REPORT.value: checksum_report_file
+                    }
+                    jobs.append(new_job)
+        return jobs
+
+    @staticmethod
+    def get_user_options() -> typing.List[tool_options.UserOption2]:
+        return [
+            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, tool_options.FolderData),
+        ]
+
+    @staticmethod
+    def validate_args(**user_args):
+        input_data = user_args[UserArgs.INPUT.value]
+        if input_data is None:
+            raise ValueError("Missing value in input")
+
+        if not os.path.exists(input_data) or not os.path.isdir(input_data):
+            raise ValueError("Invalid user arguments")
+
 
 
 class ChecksumJob(ProcessJob):
     def process(self, *args, **kwargs):
-        filename = kwargs['filename']
-        expected = kwargs['expected_hash']
-        full_path = os.path.join(kwargs['checksum_path'], kwargs['filename'])
+        filename = kwargs[JobValues.ITEM_FILENAME.value]
+        # filename = kwargs['filename']
+        source_report = kwargs[JobValues.SOURCE_REPORT.value]
+        expected = kwargs[JobValues.EXPECTED_HASH.value]
+        checksum_path = kwargs[JobValues.ROOT_PATH.value]
+        full_path = os.path.join(checksum_path, filename)
 
         self.log("Validating {}".format(filename))
         actual_md5 = process.calculate_md5(full_path)
+
         result = {
-            "filename": filename,
-            "path": kwargs['checksum_path'],
+            ResultValues.FILENAME: filename,
+            ResultValues.PATH: checksum_path,
+            ResultValues.CHECKSUM_REPORT_FILE: source_report
         }
+        # result = {
+        #     "filename": filename,
+        #     "path": kwargs['checksum_path'],
+        # }
         if expected != actual_md5:
             self.log(f"Hash mismatch for {filename}. Expected: {expected}. Actual: {actual_md5}")
-            result['valid'] = False
+            result[ResultValues.VALID] = False
         else:
-            result['valid'] = True
+            result[ResultValues.VALID] = True
+        # if expected != actual_md5:
+        #     self.log(f"Hash mismatch for {filename}. Expected: {expected}. Actual: {actual_md5}")
+        #     result['valid'] = False
+        # else:
+        #     result['valid'] = True
         self.result = result
         # self.log("comparing checksum to expected value")
         # return ""
