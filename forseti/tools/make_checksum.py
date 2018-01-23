@@ -70,8 +70,8 @@ class MakeChecksumBatch(AbsTool):
         with open(checksum_file, "w", encoding="utf-8") as wf:
             wf.write(report)
 
-    @staticmethod
-    def generate_report(*args, **kwargs):
+    @classmethod
+    def generate_report(cls, *args, **kwargs):
         user_args = kwargs['user_args']
         results = kwargs['results']
         return f"Checksum values for {len(results)} files written to checksum.md5"

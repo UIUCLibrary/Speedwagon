@@ -92,8 +92,8 @@ class VerifyChecksumBatch(AbsTool):
         if not os.path.exists(user_args["input"]) or not os.path.splitext(user_args['input'])[1] == ".md5":
             raise ValueError("Invalid user arguments")
 
-    @staticmethod
-    def generate_report(*args, **kwargs):
+    @classmethod
+    def generate_report(cls, *args, **kwargs):
         results = kwargs['results']
         failed_files = list(filter(lambda result: not result['valid'], results))
         if failed_files:

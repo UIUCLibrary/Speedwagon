@@ -42,6 +42,7 @@ class AbsTool(metaclass=abc.ABCMeta):
     def on_completion(*args, **kwargs):
         pass
 
-    @staticmethod
-    def generate_report(*args, **kwargs):
+    # @staticmethod
+    @classmethod
+    def generate_report(cls, *args, **kwargs):
         return None
