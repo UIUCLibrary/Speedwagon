@@ -7,7 +7,7 @@ Release History
 +++++
 
 * Named Forseti
-* Working tools:
+* Working Tools:
    * Verify Hathitrust Package Completeness
    * Zip Packages
    * Verify Checksum Batch
@@ -22,3 +22,6 @@ Dev
 
 * User Interface:
    * Display version number on main window
+* New Tools:
+   * Update Checksum Batch [Multiple]
+   * Update Checksum Batch [Single]
