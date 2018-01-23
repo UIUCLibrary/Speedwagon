@@ -1,6 +1,6 @@
 import collections
 import typing
-
+import enum
 import os
 
 import itertools
@@ -16,7 +16,15 @@ from hathi_checksum import checksum_report, update_report
 from hathi_checksum import utils as hathi_checksum_utils
 
 
-# TODO: convert arguments to Enum
+class ResultValues(enum.Enum):
+    FILENAME = "filename"
+    CHECKSUM_SOURCE = "checksum_source"
+    CHECKSUM_ACTUAL = "checksum_actual"
+    CHECKSUM_EXPECTED = "checksum_expected"
+
+
+class UserArgs(enum.Enum):
+    INPUT = "Input"
 
 # import hathi_checksum
 
@@ -59,9 +67,9 @@ class ChecksumData(tool_options.AbsCustomData2):
 #         self.editingFinished.emit()
 
 
-def find_outdated(results: typing.List[typing.Dict[str, str]]):
+def find_outdated(results: typing.List[typing.Dict[ResultValues, str]]):
     for result in results:
-        if result['checksum_actual'] != result['checksum_expected']:
+        if result[ResultValues.CHECKSUM_ACTUAL] != result[ResultValues.CHECKSUM_EXPECTED]:
             yield result
 
 
@@ -82,7 +90,7 @@ class UpdateChecksum(AbsTool):
         if report_lines:
             return "\n".join(report_lines)
         else:
-            return "No outdated entries found in {}".format(user_args['input'])
+            return "No outdated entries found in {}".format(user_args[UserArgs.INPUT.value])
 
     @classmethod
     def sort_result(cls, results) -> typing.Dict[str, typing.List[str]]:
@@ -94,7 +102,9 @@ class UpdateChecksum(AbsTool):
         Returns: Dictionary of organized data where the source is the key and the value contains all the files updated
 
         """
-        outdated_items = sorted([(res['filename'], res['checksum_source']) for res in find_outdated(results)],
+        outdated_items = sorted([
+            (res[ResultValues.FILENAME], res[ResultValues.CHECKSUM_SOURCE]) for res in find_outdated(results)],
+            # (res['filename'], res['checksum_source']) for res in find_outdated(results)],
                                 key=lambda it: it[1])
         outdated_items_data = collections.defaultdict(list)
         for k, v in itertools.groupby(outdated_items, key=lambda it: it[1]):
@@ -106,8 +116,14 @@ class UpdateChecksum(AbsTool):
     def on_completion(*args, **kwargs):
         # source_path = kwargs["user_args"]['input']
         for outdated_result in find_outdated(kwargs['results']):
-            update_report.update_hash_value(outdated_result['checksum_source'], outdated_result['filename'],
-                                            outdated_result['checksum_actual'])
+            update_report.update_hash_value(
+                outdated_result[ResultValues.CHECKSUM_SOURCE],
+                # outdated_result['checksum_source'],
+                outdated_result[ResultValues.FILENAME],
+                # outdated_result['filename'],
+                outdated_result[ResultValues.CHECKSUM_ACTUAL]
+                # outdated_result['checksum_actual']
+            )
 
 
 class UpdateChecksumBatchSingle(UpdateChecksum):
@@ -123,8 +139,10 @@ class UpdateChecksumBatchSingle(UpdateChecksum):
     @staticmethod
     def discover_jobs(**user_args):
         jobs = []
-        md5_report = user_args['input']
-        path = os.path.dirname(os.path.abspath(user_args['input']))
+        md5_report = user_args[UserArgs.INPUT.value]
+        # md5_report = user_args['input']
+        path = os.path.dirname(os.path.abspath(user_args[UserArgs.INPUT.value]))
+        # path = os.path.dirname(os.path.abspath(user_args['input']))
         for report_md5_hash, filename in checksum_report.extracts_checksums(md5_report):
             job = {
                 "filename": filename,
@@ -138,7 +156,9 @@ class UpdateChecksumBatchSingle(UpdateChecksum):
 
     @staticmethod
     def validate_args(**user_args):
-        input_data = user_args["input"]
+        input_data = user_args[UserArgs.INPUT.value]
+        # input_data = user_args["input"]
+
         if input_data is None:
             raise ValueError("Missing value in input")
         if not os.path.exists(input_data) or not os.path.isfile(input_data):
@@ -149,7 +169,7 @@ class UpdateChecksumBatchSingle(UpdateChecksum):
     @staticmethod
     def get_user_options() -> typing.List[tool_options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType("input", ChecksumData),
+            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, ChecksumData),
         ]
 
     #     super().on_completion(*args, **kwargs)
@@ -166,12 +186,20 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
     @staticmethod
     def discover_jobs(**user_args) -> typing.List[dict]:
         jobs = []
-        package_root = user_args['input']
+        package_root = user_args[UserArgs.INPUT.value]
+        # package_root = user_args['input']
         for root, dirs, files in os.walk(package_root):
             for file_ in files:
                 if file_.lower() == "checksum.md5":
                     report = os.path.join(root, file_)
                     for filename, report_md5_hash in UpdateChecksumBatchMultiple.locate_files(report):
+
+                        # job = {
+                        #     ResultValues.FILENAME: filename,
+                        #     "report_md5_hash": report_md5_hash,
+                        #     "location": root,
+                        #     "checksum_source": report
+                        # }
                         job = {
                             "filename": filename,
                             "report_md5_hash": report_md5_hash,
@@ -184,12 +212,13 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
     @staticmethod
     def get_user_options() -> typing.List[tool_options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType("input", tool_options.FolderData),
+            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, tool_options.FolderData),
         ]
 
     @staticmethod
     def validate_args(**user_args):
-        input_data = user_args["input"]
+        input_data = user_args[UserArgs.INPUT.value]
+        # input_data = user_args["input"]
         if input_data is None:
             raise ValueError("Missing value in input")
 
@@ -210,8 +239,14 @@ class ChecksumJob(ProcessJob):
         self.log(f"Calculating the md5 for {source_file}")
         hash_value = hathi_checksum_utils.calculate_md5(os.path.join(source_path, source_file))
         self.result = {
-            "filename": source_file,
-            "checksum_actual": hash_value,
-            "checksum_expected": kwargs['report_md5_hash'],
-            "checksum_source": report
+            ResultValues.FILENAME: source_file,
+            ResultValues.CHECKSUM_ACTUAL: hash_value,
+            ResultValues.CHECKSUM_EXPECTED: kwargs['report_md5_hash'],
+            ResultValues.CHECKSUM_SOURCE: report
         }
+        # self.result = {
+        #     "filename": source_file,
+        #     "checksum_actual": hash_value,
+        #     "checksum_expected": kwargs['report_md5_hash'],
+        #     "checksum_source": report
+        # }
