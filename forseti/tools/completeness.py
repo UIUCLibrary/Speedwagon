@@ -12,6 +12,7 @@ from forseti.tools import tool_options
 from forseti.worker import ProcessJob, GuiLogger
 from hathi_validate import process as validate_process, validator
 from hathi_validate import report as hathi_reporter
+import hathi_validate
 
 
 class HathiPackageCompleteness(AbsTool):
@@ -74,9 +75,10 @@ class HathiPackageCompletenessJob(ProcessJob):
         super().__init__()
 
     def process(self, **kwargs):
-        logger = logging.getLogger()
+        logger = logging.getLogger(hathi_validate.__name__)
         logger.setLevel(logging.INFO)
         gui_logger = GuiLogger(self.log)
+        # logger.addHandler(logging.StreamHandler())
         logger.addHandler(gui_logger)
 
         package_path = os.path.normcase(kwargs['package_path'])
@@ -176,4 +178,6 @@ class HathiPackageCompletenessJob(ProcessJob):
                     self.log(error.message)
                     errors.append(error)
         self.result = errors
+        logger.removeHandler(gui_logger)
+        self.log("Package completeness evaluation of {} completed".format(package_path))
         # self.result = (kwargs['package_path'], res)

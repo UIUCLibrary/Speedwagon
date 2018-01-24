@@ -145,6 +145,16 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
         super().closeEvent(QCloseEvent)
 
 
+class ProgressMessageBoxLogHandler(logging.Handler):
+
+    def __init__(self, dialog_box: QtWidgets.QProgressDialog, level=logging.NOTSET) -> None:
+        super().__init__(level)
+        self.dialog_box = dialog_box
+
+    def emit(self, record):
+        self.dialog_box.setLabelText(record.msg)
+
+
 class _WorkManager(ProcessWorker):
     finished = QtCore.pyqtSignal(object)
     _complete_task = QtCore.pyqtSignal()
@@ -154,9 +164,9 @@ class _WorkManager(ProcessWorker):
         self._tasks = []
         self._results = []
 
-        self._log_manager = LogManager()
-        self.log_manager2 = logging.getLogger()
-        self.log_manager2.setLevel(logging.DEBUG)
+        # self._log_manager = LogManager()
+        self.process_logger = logging.getLogger(__name__)
+        self.process_logger.setLevel(logging.DEBUG)
 
         self.progress_window = WorkProgressBar(parent)
 
@@ -166,31 +176,24 @@ class _WorkManager(ProcessWorker):
         self.progress_window.setModal(True)
 
         # Update the label to let the user know what is currently being worked on
-        self.reporter = SimpleCallbackReporter(self.progress_window.setLabelText)
+        # self._reporter = SimpleCallbackReporter(self.progress_window.setLabelText)
+        self.process_logger.addHandler(ProgressMessageBoxLogHandler(self.progress_window))
 
         # Update the log information
         self.t = QtCore.QTimer(self)
         self.t.timeout.connect(self._update_log)
-        self.t.start(200)
+        self.t.start(100)
 
         self._complete_task.connect(self._advance)
+
 
     def _advance(self):
         value = self.progress_window.value()
         self.progress_window.setValue(value + 1)
 
-    @property
-    def log_manager(self):
-        warnings.warn("Use log_manager2 instead", DeprecationWarning)
-        return self._log_manager
-
-    @log_manager.setter
-    def log_manager(self, value):
-        self._log_manager = value
-
     def run(self):
         try:
-            self.log_manager.subscribe(self.reporter)
+            # self.log_manager.subscribe(self.reporter)
             if self._jobs_queue.qsize() > 0:
                 self.initialize_worker()
                 self.progress_window.setRange(0, self._jobs_queue.qsize())
@@ -224,7 +227,7 @@ class _WorkManager(ProcessWorker):
         while not self._message_queue.empty():
             log = self._message_queue.get()
             # self.log_manager.notify(log)
-            self.log_manager2.info(log)
+            self.process_logger.info(log)
 
     def on_completion(self, *args, **kwargs):
         # print(self._results)

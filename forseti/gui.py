@@ -41,7 +41,7 @@ class ToolConsole(QtWidgets.QGroupBox):
 
 
 class ConsoleLogger(logging.Handler):
-    def __init__(self, console: ToolConsole, level=logging.NOTSET):
+    def __init__(self, console: ToolConsole, level=logging.NOTSET) -> None:
         super().__init__(level)
         self.console = console
         # self.callback = callback
@@ -53,6 +53,7 @@ class ConsoleLogger(logging.Handler):
 
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
+    # noinspection PyUnresolvedReferences
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -128,20 +129,16 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tool_workspace2.setLayout(self.tool_workspace2_layout)
 
         self.splitter.addWidget(self.tool_workspace2)
-        ###########################################################
-        # self._log_manager = worker.LogManager()
         self.console = self.create_console()
-        # self._reporter_ = worker.SimpleCallbackReporter(self.console.add_message)
-        # self._reporter.emit("Ready!")
 
         ###########################################################
         #  TODO Replace above with below
         ###########################################################
-        self.log_manager2 = logging.getLogger(__name__)
-        self.log_manager2.setLevel(logging.DEBUG)
+        self.log_manager = logging.getLogger(__name__)
+        self.log_manager.setLevel(logging.DEBUG)
         self._handler = ConsoleLogger(self.console)
-        self.log_manager2.addHandler(self._handler)
-        self.log_manager2.info("READY! 2")
+        self.log_manager.addHandler(self._handler)
+        self.log_manager.info("READY!")
         ###########################################################
 
         self.tab_tools_layout.addWidget(self.tool_selector_view)
@@ -167,31 +164,32 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             lambda: self.tool_settings.resizeRowsToContents())
 
         self.show()
-    @property
-    def log_manager(self):
-        warnings.warn("Remove this", DeprecationWarning)
-        return self._log_manager
+    #
+    # @property
+    # def log_manager(self):
+    #     warnings.warn("Remove this", DeprecationWarning)
+    #     return self._log_manager
+    #
+    # @log_manager.setter
+    # def log_manager(self, value):
+    #     self._log_manager = value
+    #
+    # @property
+    # def _reporter(self):
+    #     warnings.warn("Don't use this", DeprecationWarning)
+    #     return self._reporter_
+    #
+    # @_reporter.setter
+    # def _reporter(self, value):
+    #     self._reporter_ = value
 
-    @log_manager.setter
-    def log_manager(self, value):
-        self._log_manager = value
-
-    @property
-    def _reporter(self):
-        warnings.warn("Don't use this", DeprecationWarning)
-        return self._reporter_
-
-    @_reporter.setter
-    def _reporter(self, value):
-        self._reporter_ = value
     # def get(self):
     #     options = dict()
     #     for data in self._data:
     #         options[data.name] = data.data
     #     return options
     def on_success(self, results, callback):
-        # self.log_manager.notify("\n\nDone\n")
-        self.log_manager2.info("Done")
+        self.log_manager.info("Done!")
         user_args = self._options_model.get()
         callback(results=results, user_args=user_args)
         report = self._tool.generate_report(results=results, user_args=user_args)
@@ -207,7 +205,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                            f"{line_sep}"
 
             # self.log_manager.notify(fancy_report)
-            self.log_manager2.info(fancy_report)
+            self.log_manager.info(fancy_report)
 
         # self._tool.on_completion(results=results,user_args=user_args)
 
@@ -217,7 +215,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         print("************** {}".format(exc))
         if exc:
             # self.log_manager.notify(str(exc))
-            self.log_manager2.warning(str(exc))
+            self.log_manager.warning(str(exc))
             exception_message = traceback.format_exception(type(exc), exc, tb=exc.__traceback__)
             msg = QtWidgets.QMessageBox(self)
             msg.setIcon(QtWidgets.QMessageBox.Warning)
@@ -250,14 +248,14 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             wm.completion_callback = tool.on_completion
             if self._handler:
                 # print("Asdfasdf")
-                wm.log_manager2.addHandler(self._handler)
+                wm.process_logger.addHandler(self._handler)
             # wm.finished.connect(self._tool.on_completion)
             # wm.finished.connect(lambda: self._tool.on_completion())
             # if self._reporter:
-                # self.log_manager.add_reporter(self._reporter)
-                # wm.log_manager.add_reporter(self._reporter)
+            # self.log_manager.add_reporter(self._reporter)
+            # wm.log_manager.add_reporter(self._reporter)
             # else:
-            # self.log_manager2.addHandler(logging.StreamHandler(sys.stdout))
+            # self.process_logger.addHandler(logging.StreamHandler(sys.stdout))
 
             # options = self._tool.get_configuration()
             # print(options)
@@ -299,7 +297,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                 # raise
         else:
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
-
 
     def tool_selected(self, index: QtCore.QModelIndex):
         tool = self.tool_list.data(index, QtCore.Qt.UserRole)
@@ -376,8 +373,6 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
     #         painter.drawText(option.rect, QtCore.Qt.AlignVCenter, value)
     #     painter.restore()
 
-
-
     def createEditor(self, parent, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex):
         if index.isValid():
             tool_settings = index.data(QtCore.Qt.UserRole)
@@ -389,13 +384,12 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
                 # browser_widget.editingFinished.connect(lambda : self.commitData(browser_widget))
                 browser_widget.setParent(parent)
 
-
                 return browser_widget
         return super().createEditor(parent, option, index)
 
+    # noinspection PyUnresolvedReferences
     def update_custom_item(self):
         self.commitData.emit(self.sender())
-
 
     def setEditorData(self, editor: QtWidgets.QPushButton, index: QtCore.QModelIndex):
 
@@ -453,5 +447,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
