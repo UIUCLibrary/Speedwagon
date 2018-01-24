@@ -1,12 +1,15 @@
+import logging
 import typing
 
 import os
+
+import sys
 
 from forseti import worker
 from .abstool import AbsTool
 # from .tool_options import ToolOptionDataType
 from forseti.tools import tool_options
-from forseti.worker import ProcessJob
+from forseti.worker import ProcessJob, GuiLogger
 from hathi_validate import process as validate_process, validator
 from hathi_validate import report as hathi_reporter
 
@@ -62,43 +65,20 @@ class HathiPackageCompleteness(AbsTool):
         for result_group in kwargs['results']:
             for result in result_group:
                 results.append(result)
-        # splitter = "*" * 80
-        # title = "Validation report"
-        # summary = "{} issues detected.".format(len(results))
-        # if results:
-        #     try:
-        #         sorted_results = sorted(results, key=lambda r: r.source)
-        #
-        #     except Exception as e:
-        #         print(e)
-        #         raise
-        #
-        #     message_lines = []
-        #     for result in sorted_results:
-        #         message_lines.append(str(result))
-        #     report_details = "\n".join(message_lines)
-        # else:
-        #     report_details = ""
-        #
-        # return "\n" \
-        #        "{}\n" \
-        #        "{}\n" \
-        #        "{}\n" \
-        #        "\n" \
-        #        "{}\n" \
-        #        "\n" \
-        #        "{}\n" \
-        #        "{}\n" \
-        #     .format(splitter, title, splitter, summary, report_details, splitter)
+
         return hathi_reporter.get_report_as_str(results, 70)
-        # re
-    # @staticmethod
-    # def get_user_options() -> typing.List["ToolOptionsModel2"]:
-    #     return []
 
 
 class HathiPackageCompletenessJob(ProcessJob):
+    def __init__(self):
+        super().__init__()
+
     def process(self, **kwargs):
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        gui_logger = GuiLogger(self.log)
+        logger.addHandler(gui_logger)
+
         package_path = os.path.normcase(kwargs['package_path'])
         check_ocr = kwargs['check_ocr_data']
         self.log("Checking the completeness of {}".format(package_path))
@@ -106,7 +86,7 @@ class HathiPackageCompletenessJob(ProcessJob):
         #                                                  require_page_data=kwargs['check_page_data'])
         # for result in self.result:
         #     self.log(str(result))
-            
+
         # logger.debug("Looking for missing package files in {}".format(pkg))
         errors = []
         missing_files_errors = validate_process.run_validation(validator.ValidateMissingFiles(path=package_path))
@@ -120,7 +100,8 @@ class HathiPackageCompletenessJob(ProcessJob):
         if check_ocr:
             extensions.append(".xml")
         # s.debug("Looking for missing component files in {}".format(pkg))
-        missing_files_errors = validate_process.run_validation(validator.ValidateComponents(package_path, "^\d{8}$", *extensions))
+        missing_files_errors = validate_process.run_validation(
+            validator.ValidateComponents(package_path, "^\d{8}$", *extensions))
         if not missing_files_errors:
             self.log("Found no missing component files in {}".format(package_path))
         else:
@@ -130,7 +111,8 @@ class HathiPackageCompletenessJob(ProcessJob):
         # exit()
         # Validate extra subdirectories
         self.log("Looking for extra subdirectories in {}".format(package_path))
-        extra_subdirectories_errors = validate_process.run_validation(validator.ValidateExtraSubdirectories(path=package_path))
+        extra_subdirectories_errors = validate_process.run_validation(
+            validator.ValidateExtraSubdirectories(path=package_path))
         if not extra_subdirectories_errors:
             self.log("No extra subdirectories found in {}".format(package_path))
         else:
@@ -140,8 +122,13 @@ class HathiPackageCompletenessJob(ProcessJob):
 
         # Validate Checksums
         checksum_report = os.path.join(package_path, "checksum.md5")
-        self.log("Validating checksums found in {}".format(checksum_report))
-        checksum_report_errors = validate_process.run_validation(validator.ValidateChecksumReport(package_path, checksum_report))
+        files_to_check = []
+        for a, file_name in validate_process.extracts_checksums(checksum_report):
+            files_to_check.append(file_name)
+
+        self.log("Validating checksums of the {} files included in {}".format(len(files_to_check), checksum_report))
+        checksum_report_errors = validate_process.run_validation(
+            validator.ValidateChecksumReport(package_path, checksum_report))
         if not checksum_report_errors:
             self.log("All checksums in {} successfully validated".format(checksum_report))
         else:
@@ -149,9 +136,9 @@ class HathiPackageCompletenessJob(ProcessJob):
                 errors.append(error)
 
         # Validate Marc
-        marc_file=os.path.join(package_path, "marc.xml")
+        marc_file = os.path.join(package_path, "marc.xml")
         if not os.path.exists(marc_file):
-             self.log("Skipping \'{}\' due to file not found".format(marc_file))
+            self.log("Skipping \'{}\' due to file not found".format(marc_file))
         else:
             self.log("Validating marc.xml in {}".format(package_path))
             marc_errors = validate_process.run_validation(validator.ValidateMarc(marc_file))
@@ -168,7 +155,8 @@ class HathiPackageCompletenessJob(ProcessJob):
             self.log("Skipping \'{}\' due to file not found".format(yml_file))
         else:
             self.log("Validating meta.yml in {}".format(package_path))
-            meta_yml_errors = validate_process.run_validation(validator.ValidateMetaYML(yaml_file=yml_file, path=package_path, required_page_data=True))
+            meta_yml_errors = validate_process.run_validation(
+                validator.ValidateMetaYML(yaml_file=yml_file, path=package_path, required_page_data=True))
             if not meta_yml_errors:
                 self.log("{} successfully validated".format(yml_file))
             else:
@@ -183,7 +171,7 @@ class HathiPackageCompletenessJob(ProcessJob):
             ocr_errors = validate_process.run_validation(validator.ValidateOCRFiles(path=package_path))
             if ocr_errors:
                 self.log("No validation errors found in ".format(package_path))
-            # else:
+                # else:
                 for error in ocr_errors:
                     self.log(error.message)
                     errors.append(error)
