@@ -1,9 +1,12 @@
 import concurrent.futures
+
 # from abc import ABCMeta, abstractmethod
+import logging
 import queue
 import typing
 import abc
 import sys
+import warnings
 from abc import abstractmethod, ABCMeta
 
 from PyQt5 import QtCore, QtWidgets
@@ -12,6 +15,7 @@ import multiprocessing
 
 JobPair = namedtuple("JobPair", ("job", "args", "message_queue"))
 
+MessageLog = namedtuple("MessageLog", ("message",))
 
 class QtMeta(type(QtCore.QObject), abc.ABCMeta):  # type: ignore
     pass
@@ -141,7 +145,7 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
         super().closeEvent(QCloseEvent)
 
 
-class WorkManager(ProcessWorker):
+class _WorkManager(ProcessWorker):
     finished = QtCore.pyqtSignal(object)
     _complete_task = QtCore.pyqtSignal()
 
@@ -150,7 +154,10 @@ class WorkManager(ProcessWorker):
         self._tasks = []
         self._results = []
 
-        self.log_manager = LogManager()
+        self._log_manager = LogManager()
+        self.log_manager2 = logging.getLogger()
+        self.log_manager2.setLevel(logging.DEBUG)
+
         self.progress_window = WorkProgressBar(parent)
 
         self.progress_window.canceled.connect(self.cancel)
@@ -164,13 +171,22 @@ class WorkManager(ProcessWorker):
         # Update the log information
         self.t = QtCore.QTimer(self)
         self.t.timeout.connect(self._update_log)
-        self.t.start(100)
+        self.t.start(200)
 
         self._complete_task.connect(self._advance)
 
     def _advance(self):
         value = self.progress_window.value()
         self.progress_window.setValue(value + 1)
+
+    @property
+    def log_manager(self):
+        warnings.warn("Use log_manager2 instead", DeprecationWarning)
+        return self._log_manager
+
+    @log_manager.setter
+    def log_manager(self, value):
+        self._log_manager = value
 
     def run(self):
         try:
@@ -207,7 +223,8 @@ class WorkManager(ProcessWorker):
     def _update_log(self):
         while not self._message_queue.empty():
             log = self._message_queue.get()
-            self.log_manager.notify(log)
+            # self.log_manager.notify(log)
+            self.log_manager2.info(log)
 
     def on_completion(self, *args, **kwargs):
         # print(self._results)
@@ -215,7 +232,7 @@ class WorkManager(ProcessWorker):
         self._message_queue.put("Finished")
 
 
-class WorkManager2(WorkManager):
+class WorkManager2(_WorkManager):
     finished = QtCore.pyqtSignal(object, object)
     failed = QtCore.pyqtSignal(Exception)
 
@@ -258,6 +275,7 @@ class WorkManager2(WorkManager):
                 # Flush the log buffer before running on_completion
                 self._update_log()
                 # self.log_manager.
+
                 self.on_completion(results=self._results)
 
     def on_completion(self, *args, **kwargs):
@@ -279,7 +297,7 @@ class WorkManager2(WorkManager):
 
 class AbsObserver(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def update(self, value):
+    def emit(self, value):
         pass
 
 
@@ -299,11 +317,16 @@ class AbsSubject(metaclass=abc.ABCMeta):
         with self.lock:
             for observer in self._observers:
                 if value is None:
-                    observer.update()
+                    observer.emit()
                 else:
-                    observer.update(value)
+                    observer.emit(value)
+
 
 class LogManager(AbsSubject):
+    def __init__(self) -> None:
+        super().__init__()
+        warnings.warn("Use default logging instead", DeprecationWarning)
+
     # def __init__(self, message_queue_):
     #     self.message_queue_ = message_queue_
 
@@ -313,12 +336,22 @@ class LogManager(AbsSubject):
 
 class SimpleCallbackReporter(AbsObserver):
     def __init__(self, update_callback):
+        warnings.warn("Don't use", DeprecationWarning)
         self._callback = update_callback
 
-    def update(self, value):
+    def emit(self, value):
         self._callback(value)
 
 
 class StdoutReporter(AbsObserver):
-    def update(self, value):
+    def emit(self, value):
         print(value, file=sys.stderr)
+
+
+class GuiLogger(logging.Handler):
+    def __init__(self, callback, level=logging.NOTSET):
+        super().__init__(level)
+        self.callback = callback
+
+    def emit(self, record):
+        self.callback(record.msg)

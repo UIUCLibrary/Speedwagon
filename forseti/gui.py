@@ -1,12 +1,13 @@
-import multiprocessing
+import logging
 import sys
-from PyQt5 import QtWidgets, QtCore, QtGui
 import warnings
+
+from PyQt5 import QtWidgets, QtCore, QtGui
 import forseti.tool
 import forseti.tools.abstool
 from forseti.tools import tool_options
 from forseti.ui import main_window_shell_ui
-from forseti import tool as t, processing, worker
+from forseti import tool as t, worker
 from collections import namedtuple
 import traceback
 import pkg_resources
@@ -39,6 +40,16 @@ class ToolConsole(QtWidgets.QGroupBox):
         self._console.append(message)
 
 
+class ConsoleLogger(logging.Handler):
+    def __init__(self, console: ToolConsole, level=logging.NOTSET):
+        super().__init__(level)
+        self.console = console
+        # self.callback = callback
+
+    def emit(self, record):
+        self.console.add_message(record.msg)
+        # print(record.msg)
+        # self.callback(record.msg)
 
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
@@ -116,10 +127,20 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         self.splitter.addWidget(self.tool_workspace2)
         ###########################################################
-        self.log_manager = worker.LogManager()
+        # self._log_manager = worker.LogManager()
         self.console = self.create_console()
-        self._reporter = worker.SimpleCallbackReporter(self.console.add_message)
-        self._reporter.update("Ready!")
+        # self._reporter_ = worker.SimpleCallbackReporter(self.console.add_message)
+        # self._reporter.emit("Ready!")
+
+        ###########################################################
+        #  TODO Replace above with below
+        ###########################################################
+        self.log_manager2 = logging.getLogger(__name__)
+        self.log_manager2.setLevel(logging.DEBUG)
+        self._handler = ConsoleLogger(self.console)
+        self.log_manager2.addHandler(self._handler)
+        self.log_manager2.info("READY! 2")
+        ###########################################################
 
         self.tab_tools_layout.addWidget(self.tool_selector_view)
 
@@ -144,15 +165,31 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             lambda: self.tool_settings.resizeRowsToContents())
 
         self.show()
+    @property
+    def log_manager(self):
+        warnings.warn("Remove this", DeprecationWarning)
+        return self._log_manager
 
-    #
+    @log_manager.setter
+    def log_manager(self, value):
+        self._log_manager = value
+
+    @property
+    def _reporter(self):
+        warnings.warn("Don't use this", DeprecationWarning)
+        return self._reporter_
+
+    @_reporter.setter
+    def _reporter(self, value):
+        self._reporter_ = value
     # def get(self):
     #     options = dict()
     #     for data in self._data:
     #         options[data.name] = data.data
     #     return options
     def on_success(self, results, callback):
-        self.log_manager.notify("\n\nDone\n")
+        # self.log_manager.notify("\n\nDone\n")
+        self.log_manager2.info("Done")
         user_args = self._options_model.get()
         callback(results=results, user_args=user_args)
         report = self._tool.generate_report(results=results, user_args=user_args)
@@ -167,7 +204,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                            f"\n" \
                            f"{line_sep}"
 
-            self.log_manager.notify(fancy_report)
+            # self.log_manager.notify(fancy_report)
+            self.log_manager2.info(fancy_report)
 
         # self._tool.on_completion(results=results,user_args=user_args)
 
@@ -176,7 +214,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     def on_failed(self, exc):
         print("************** {}".format(exc))
         if exc:
-            self.log_manager.notify(str(exc))
+            # self.log_manager.notify(str(exc))
+            self.log_manager2.warning(str(exc))
             exception_message = traceback.format_exception(type(exc), exc, tb=exc.__traceback__)
             msg = QtWidgets.QMessageBox(self)
             msg.setIcon(QtWidgets.QMessageBox.Warning)
@@ -207,11 +246,17 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             wm.finished.connect(self.on_success)
             wm.failed.connect(self.on_failed)
             wm.completion_callback = tool.on_completion
+            if self._handler:
+                # print("Asdfasdf")
+                wm.log_manager2.addHandler(self._handler)
             # wm.finished.connect(self._tool.on_completion)
             # wm.finished.connect(lambda: self._tool.on_completion())
-            if self._reporter:
-                self.log_manager.add_reporter(self._reporter)
-                wm.log_manager.add_reporter(self._reporter)
+            # if self._reporter:
+                # self.log_manager.add_reporter(self._reporter)
+                # wm.log_manager.add_reporter(self._reporter)
+            # else:
+            # self.log_manager2.addHandler(logging.StreamHandler(sys.stdout))
+
             # options = self._tool.get_configuration()
             # print(options)
             active_tool = tool()
@@ -391,6 +436,12 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
 
 
 def main():
+    # logger = logging.getLogger()
+    # logger.setLevel(logging.DEBUG)
+    # stdout_handler = logging.StreamHandler(sys.stdout)
+    # logger.addHandler(stdout_handler)
+    # logger.info("asdfasdfasdf")
+
     app = QtWidgets.QApplication(sys.argv)
     windows = MainWindow()
     windows.setWindowTitle(PROJECT_NAME)
@@ -400,3 +451,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
