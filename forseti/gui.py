@@ -96,6 +96,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         # Add the configuration and metadata widgets
         self.tool_config_layout = QtWidgets.QFormLayout()
+        self.tool_config_layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.ExpandingFieldsGrow)
+
         # self.tool_config_layout.
         self.tool_settings = QtWidgets.QTableView(self)
         self.tool_settings.setEditTriggers(QtWidgets.QAbstractItemView.AllEditTriggers)
