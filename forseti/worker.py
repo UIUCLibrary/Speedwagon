@@ -13,6 +13,8 @@ from PyQt5 import QtCore, QtWidgets
 from collections import namedtuple
 import multiprocessing
 
+PROCESS_LOGGING_REFRESH_RATE = 100
+
 JobPair = namedtuple("JobPair", ("job", "args", "message_queue"))
 
 MessageLog = namedtuple("MessageLog", ("message",))
@@ -182,7 +184,7 @@ class _WorkManager(ProcessWorker):
         # Update the log information
         self.t = QtCore.QTimer(self)
         self.t.timeout.connect(self._update_log)
-        self.t.start(100)
+        self.t.start(PROCESS_LOGGING_REFRESH_RATE)
 
         self._complete_task.connect(self._advance)
 
