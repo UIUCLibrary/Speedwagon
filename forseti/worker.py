@@ -9,11 +9,11 @@ import sys
 import warnings
 from abc import abstractmethod, ABCMeta
 
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 from collections import namedtuple
 import multiprocessing
 
-PROCESS_LOGGING_REFRESH_RATE = 100
+PROCESS_LOGGING_REFRESH_RATE = 200
 
 JobPair = namedtuple("JobPair", ("job", "args", "message_queue"))
 
@@ -113,9 +113,14 @@ class ProcessWorker(Worker):
         super().__init__(*args, **kwargs)
         self.results = None
         self.manager = multiprocessing.Manager()
+        self._tasks = []
         self._message_queue = self.manager.Queue()
 
+
+
+
     def initialize_worker(self, max_workers=1):
+        logging.debug("Setting up the executer")
         self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)  # TODO: Fix this
 
     def cancel(self):
@@ -127,6 +132,8 @@ class ProcessWorker(Worker):
         new_job = job()
         new_job.set_message_queue(message_queue)
         fut = self.executor.submit(new_job.execute, **args)
+
+        # FIXME: What class is complete_task from???
         fut.add_done_callback(self.complete_task)
         self._tasks.append(fut)
 
@@ -163,8 +170,11 @@ class _WorkManager(ProcessWorker):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self._tasks = []
+
         self._results = []
+
+                # Update the log information
+
 
         # self._log_manager = LogManager()
         self.process_logger = logging.getLogger(__name__)
@@ -178,22 +188,25 @@ class _WorkManager(ProcessWorker):
         self.progress_window.setModal(True)
 
         # Update the label to let the user know what is currently being worked on
-        # self._reporter = SimpleCallbackReporter(self.progress_window.setLabelText)
         self.process_logger.addHandler(ProgressMessageBoxLogHandler(self.progress_window))
 
-        # Update the log information
-        self.t = QtCore.QTimer(self)
-        self.t.timeout.connect(self._update_log)
-        self.t.start(PROCESS_LOGGING_REFRESH_RATE)
+
+
 
         self._complete_task.connect(self._advance)
 
+    def _exec_job(self, job, args, message_queue):
+        super()._exec_job(job, args, message_queue)
 
     def _advance(self):
         value = self.progress_window.value()
         self.progress_window.setValue(value + 1)
 
     def run(self):
+        t = QtCore.QTimer(self)
+        t.timeout.connect(self._update_log)
+        t.start(PROCESS_LOGGING_REFRESH_RATE)
+        print("STarting")
         try:
             # self.log_manager.subscribe(self.reporter)
             if self._jobs_queue.qsize() > 0:
@@ -210,6 +223,9 @@ class _WorkManager(ProcessWorker):
             print(e)
             self.progress_window.cancel()
             raise
+        finally:
+            t.stop()
+        #     self.t.stop()
 
     def cancel(self, quiet=False):
         self.progress_window.setAutoClose(False)
@@ -218,7 +234,7 @@ class _WorkManager(ProcessWorker):
         for task in reversed(self._tasks):
             if not task.done():
                 task.cancel()
-        self.t.stop()
+        # self.t.stop()
         super().cancel()
 
         self.progress_window.close()
@@ -226,13 +242,17 @@ class _WorkManager(ProcessWorker):
             QtWidgets.QMessageBox.about(self.progress_window, "Canceled", "Successfully Canceled")
 
     def _update_log(self):
+        print("Updating log with a size of {}".format(self._message_queue.qsize()))
         while not self._message_queue.empty():
+            # print(self._message_queue.qsize())
             log = self._message_queue.get()
             # self.log_manager.notify(log)
             self.process_logger.info(log)
+        # print("done updating log")
 
     def on_completion(self, *args, **kwargs):
         # print(self._results)
+        # self.t.stop()
         self.finished.emit(self._results)
         self._message_queue.put("Finished")
 
@@ -266,7 +286,7 @@ class WorkManager2(_WorkManager):
 
                     # return
                     # raise
-
+            logging.debug("Completed task")
             self._complete_task.emit()
 
             # check if there are more tasks to do.
@@ -279,6 +299,7 @@ class WorkManager2(_WorkManager):
 
                 # Flush the log buffer before running on_completion
                 self._update_log()
+
                 # self.log_manager.
 
                 self.on_completion(results=self._results)
@@ -286,6 +307,7 @@ class WorkManager2(_WorkManager):
     def on_completion(self, *args, **kwargs):
         self._jobs_queue.join()
         self.finished.emit(self._results, self.completion_callback)
+        # self.t.stop()
         # super().on_completion(*args, **kwargs)
     #
     # def on_failure(self, reason):
@@ -296,6 +318,7 @@ class WorkManager2(_WorkManager):
 
     def __init__(self, parent):
         super().__init__(parent)
+        print("HEre")
         self.completion_callback: callable = None
 
 

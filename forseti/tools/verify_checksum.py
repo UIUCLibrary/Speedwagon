@@ -1,4 +1,5 @@
 import collections
+import logging
 import os
 import typing
 
@@ -200,19 +201,25 @@ class VerifyChecksumBatchMultiple(VerifyChecksum):
             raise ValueError("Invalid user arguments")
 
 
-
 class ChecksumJob(ProcessJob):
+    logger = logging.getLogger(hathi_validate.__name__)
+
     def process(self, *args, **kwargs):
+        self.logger.setLevel(logging.DEBUG)
+        handler = logging.StreamHandler()
+        self.logger.addHandler(handler)
         filename = kwargs[JobValues.ITEM_FILENAME.value]
         # filename = kwargs['filename']
         source_report = kwargs[JobValues.SOURCE_REPORT.value]
         expected = kwargs[JobValues.EXPECTED_HASH.value]
         checksum_path = kwargs[JobValues.ROOT_PATH.value]
         full_path = os.path.join(checksum_path, filename)
-
-        self.log("Validating {}".format(filename))
+        self.logger.debug("Starting with {}".format(full_path))
+        # self.logger.debug("Arguments = {}".format(kwargs) )
+        self.logger.debug("Calculating md5 for {}".format(full_path))
         actual_md5 = process.calculate_md5(full_path)
-
+        self.logger.debug("Comparing {}".format(filename))
+        # self.log()
         result = {
             ResultValues.FILENAME: filename,
             ResultValues.PATH: checksum_path,
@@ -233,5 +240,9 @@ class ChecksumJob(ProcessJob):
         # else:
         #     result['valid'] = True
         self.result = result
+        self.logger.debug("Done with {}".format(filename))
+        logging.debug("Done with {}".format(filename))
+
+        self.logger.removeHandler(handler)
         # self.log("comparing checksum to expected value")
         # return ""

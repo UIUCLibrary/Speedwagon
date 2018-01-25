@@ -1,6 +1,10 @@
+import logging
 import sys
 import pkg_resources
 from forseti import gui
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
 
 def main():
     try:

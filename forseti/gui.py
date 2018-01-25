@@ -56,7 +56,9 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
     def __init__(self, parent=None):
         super().__init__(parent)
-
+        self.log_manager = logging.getLogger(__name__)
+        # logger = logging.getLogger(__name__)
+        self.log_manager.debug("Setting up ui")
         self.setupUi(self)
         self.tabWidget.setTabEnabled(1, False)
         self.splitter = QtWidgets.QSplitter(self.tab_tools)
@@ -132,11 +134,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.console = self.create_console()
 
         ###########################################################
-        #  TODO Replace above with below
-        ###########################################################
-        self.log_manager = logging.getLogger(__name__)
-        self.log_manager.setLevel(logging.DEBUG)
+
+        # self.log_manager.setLevel(logging.DEBUG)
         self._handler = ConsoleLogger(self.console)
+        self._handler.setLevel(logging.INFO)
         self.log_manager.addHandler(self._handler)
         self.log_manager.info("READY!")
         ###########################################################
@@ -163,6 +164,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tool_selector_view.selectionModel().currentChanged.connect(
             lambda: self.tool_settings.resizeRowsToContents())
 
+        self.log_manager.debug("Displaying Main Window")
         self.show()
     #
     # @property
@@ -212,6 +214,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         QtWidgets.QMessageBox.about(self, "Finished", "Finished")
 
     def on_failed(self, exc):
+        self.log_manager.error("Process failed. Reason: {}".format(exc))
         print("************** {}".format(exc))
         if exc:
             # self.log_manager.notify(str(exc))
@@ -227,7 +230,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # sys.exit(1)
 
     def start(self):
-
+        logger = logging.getLogger(__name__)
+        logger.debug("Start button pressed")
         if len(self.tool_selector_view.selectedIndexes()) != 1:
             print("Invalid number of selected Indexes. Expected 1. Found {}".format(
                 len(self.tool_selector_view.selectedIndexes())))
@@ -242,31 +246,37 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
             # TODO, shouldn't be setting this here, However, the worker needs
             self._tool = tool
+
             wm = worker.WorkManager2(self)
             wm.finished.connect(self.on_success)
             wm.failed.connect(self.on_failed)
             wm.completion_callback = tool.on_completion
             if self._handler:
                 # print("Asdfasdf")
+                logger.debug("Settin work manager log handler")
                 wm.process_logger.addHandler(self._handler)
+
+
             # wm.finished.connect(self._tool.on_completion)
             # wm.finished.connect(lambda: self._tool.on_completion())
             # if self._reporter:
             # self.log_manager.add_reporter(self._reporter)
             # wm.log_manager.add_reporter(self._reporter)
             # else:
-            # self.process_logger.addHandler(logging.StreamHandler(sys.stdout))
+            # self.lo.addHandler(logging.StreamHandler(sys.stdout))
 
             # options = self._tool.get_configuration()
             # print(options)
             active_tool = tool()
             try:
+                self.log_manager.debug("Validating arguments")
                 tool.validate_args(**options)
                 # wm.completion_callback = lambda: self._tool.on_completion()
                 jobs = tool.discover_jobs(**options)
                 wm.progress_window.setWindowTitle(str(tool.name))
                 for _job_args in jobs:
                     job = active_tool.new_job()
+                    self.log_manager.debug("Adding {} with {} to work manager".format(job, _job_args))
                     wm.add_job(job, **_job_args)
                 try:
                     wm.run()
@@ -289,12 +299,15 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                 msg.setWindowTitle(str(type(e).__name__))
                 msg.setText(str(e))
                 msg.setDetailedText("".join(exception_message))
+                self.log_manager.fatal("Terminating application. Reason: {}".format(e))
                 msg.exec_()
                 sys.exit(1)
                 # QtWidgets.QMessageBox.critical(self,
                 #                                f"Unhandled Exception: {type(e).__name__}",
                 #                                f"Unable to continue due to an unhandled exception.\n{e}")
                 # raise
+            finally:
+                print("out", sys.stderr)
         else:
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
 
