@@ -247,7 +247,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             # TODO, shouldn't be setting this here, However, the worker needs
             self._tool = tool
 
-            wm = worker.WorkManager2(self)
+            wm = worker.WorkDisplay(self)
             wm.finished.connect(self.on_success)
             wm.failed.connect(self.on_failed)
             wm.completion_callback = tool.on_completion
