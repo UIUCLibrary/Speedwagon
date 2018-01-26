@@ -206,7 +206,7 @@ class ChecksumJob(ProcessJob):
 
     def process(self, *args, **kwargs):
         self.logger.setLevel(logging.DEBUG)
-        handler = logging.StreamHandler()
+        handler = worker.GuiLogger(self.log)
         self.logger.addHandler(handler)
         filename = kwargs[JobValues.ITEM_FILENAME.value]
         # filename = kwargs['filename']
@@ -219,7 +219,6 @@ class ChecksumJob(ProcessJob):
         self.logger.debug("Calculating md5 for {}".format(full_path))
         actual_md5 = process.calculate_md5(full_path)
         self.logger.debug("Comparing {}".format(filename))
-        # self.log()
         result = {
             ResultValues.FILENAME: filename,
             ResultValues.PATH: checksum_path,
