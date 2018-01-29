@@ -1,6 +1,6 @@
 import abc
 import traceback
-
+import logging
 import sys
 
 import time
@@ -25,13 +25,15 @@ class RunRunner:
     def __init__(self, strategy: AbsRunner) -> None:
         self._strategy = strategy
 
-    def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success: typing.Callable, on_failure: typing.Callable, log_handler) -> None:
-        return self._strategy.run(parent, tool, options, on_success, on_failure, log_handler)
+    def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success: typing.Callable,
+            on_failure: typing.Callable, logger: logging.Logger) -> None:
+        return self._strategy.run(parent, tool, options, on_success, on_failure, logger)
 
 
 class UsingWorkWrapper(AbsRunner):
-    def run(self, parrent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success, on_failure, log_handler):
-        with worker.WorkWrapper(parrent, tool, log_handler=log_handler) as work_manager:
+    def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success, on_failure,
+            logger: logging.Logger):
+        with worker.WorkWrapper(parent, tool, logger=logger) as work_manager:
 
             work_manager.worker_display.finished.connect(on_success)
             work_manager.worker_display.failed.connect(on_failure)
@@ -63,11 +65,12 @@ class UsingWorkWrapper(AbsRunner):
                 print("running {} tasks".format(work_manager.worker_display._jobs_queue.qsize()), file=sys.stderr)
                 try:
                     work_manager.run()
+
                     # print("AFTER")
                     # work_manager.worker_display.run()
 
                 except RuntimeError as e:
-                    QtWidgets.QMessageBox.warning(parrent, "Process failed", str(e))
+                    QtWidgets.QMessageBox.warning(parent, "Process failed", str(e))
                 # except TypeError as e:
                 #     QtWidgets.QMessageBox.critical(self, "Process failed", str(e))
                 #     raise
@@ -77,7 +80,7 @@ class UsingWorkWrapper(AbsRunner):
                 # if work_manager._working is not None:
                 #     work_manager.worker_display.cancel(e, quiet=True)
                 work_manager.worker_display.cancel(quiet=True)
-                QtWidgets.QMessageBox.warning(parrent, "Invalid setting", str(e))
+                QtWidgets.QMessageBox.warning(parent, "Invalid setting", str(e))
                 return
 
             except Exception as e:
@@ -94,3 +97,16 @@ class UsingWorkWrapper(AbsRunner):
                 sys.exit(1)
             finally:
                 print("out!", file=sys.stderr)
+
+
+class UsingWorkManager(AbsRunner):
+    def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success, on_failure, log_handler):
+        worker_manager = worker.WorkerManager(title=tool.name, tool=tool, parent=parent, logger=log_handler)
+        # worker_manager.logger = log_handler
+        try:
+            with worker_manager.open(options) as work_runner:
+                work_runner.run()
+
+            on_success(worker_manager.results, tool.on_completion)
+        except Exception as e:
+            on_failure(e)

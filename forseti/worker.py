@@ -71,9 +71,12 @@ class ProcessJob(AbsJob):
     def process(self, *args, **kwargs):
         pass
 
+
+    # @classmethod
     def set_message_queue(self, value):
         # self._mq = value
         self.mq = value
+
 
     def log(self, message):
         if self.mq:
@@ -130,13 +133,16 @@ class UIWorker(Worker):
 
 # class ProcessWorker(Worker):
 class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
-    manager = multiprocessing.Manager()
-    _message_queue = manager.Queue()
+
+
     # _message_queue = manager.Queue(maxsize=100)
+    # _message_queue = queue.Queue()  # type: ignore
     executor = concurrent.futures.ProcessPoolExecutor(max_workers=1)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.manager = multiprocessing.Manager()
+        self._message_queue = self.manager.Queue()  # type: ignore
         self._results = None
         # self.manager = multiprocessing.Manager()
         self._tasks = []
@@ -158,7 +164,8 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
     @classmethod
     def _exec_job(cls, job, args, message_queue):
         new_job = job()
-        new_job.set_message_queue(message_queue)
+        # new_job.set_message_queue(message_queue)
+        new_job.mq = message_queue
         fut = cls.executor.submit(new_job.execute, **args)
 
         # fut.add_done_callback(self.complete_task)
@@ -206,6 +213,8 @@ class ProgressMessageBoxLogHandler(logging.Handler):
 
     def emit(self, record):
         self.dialog_box.setLabelText(record.msg)
+        QtWidgets.QApplication.processEvents()
+
 
 
 class MessageRefresher(contextlib.AbstractContextManager):
@@ -217,14 +226,12 @@ class MessageRefresher(contextlib.AbstractContextManager):
         # super().__init__()
 
     def __enter__(self):
-        print("entering")
         self._timer.timeout.connect(self.callback)
         self._timer.start(self._rate)
         return self
         # return super().__enter__()
 
     def __exit__(self, exc_type, exc_value, traceback):
-        print("Exiting")
         self._timer.timeout.disconnect(self.callback)
         super().__exit__(exc_type, exc_value, traceback)
 
@@ -390,7 +397,6 @@ class WorkDisplay(WorkManager):
                 # self.progress_window.show()
 
                 self.run_all_jobs()
-                # print("ASDFASDFASDFASDFASDFASDFASDFASDF", file=sys.stderr)
                 # logging.debug("All jobs launched")
 
                 # self.run_jobs(self._jobs)
@@ -430,12 +436,12 @@ class WorkDisplay(WorkManager):
 
 class WorkWrapper(contextlib.AbstractContextManager):
 
-    def __init__(self, parent, tool, log_handler: logging.Handler) -> None:
+    def __init__(self, parent, tool, logger: logging.Logger) -> None:
         self.parent = parent
         self.worker_display = WorkDisplay(self.parent)
         self.successful = False
         self.active_tool = tool()
-        self.log_handler = log_handler
+        self.logger = logger
         self.worker_display.finished.connect(self.completed)
         self._working = None
         QtCore.QCoreApplication.processEvents()
@@ -449,7 +455,8 @@ class WorkWrapper(contextlib.AbstractContextManager):
     def __enter__(self):
 
         self.worker_display.completion_callback = self.active_tool.on_completion
-        self.worker_display.process_logger.addHandler(self.log_handler)
+        for handler in self.logger.handlers:
+           self.worker_display.process_logger.addHandler(handler)
         self._working = True
 
         return self
@@ -468,7 +475,8 @@ class WorkWrapper(contextlib.AbstractContextManager):
                 break
             # time.sleep(.01)
             pass
-        self.worker_display.process_logger.removeHandler(self.log_handler)
+        for handler in self.logger.handlers:
+            self.worker_display.process_logger.removeHandler(handler)
         if self.successful:
             QtWidgets.QMessageBox.about(self.parent, "Finished", "Finished")
         # print("Exiting like I should", file=sys.stderr)
@@ -566,6 +574,7 @@ class ProcessWorker2(Worker2):
 
     @classmethod
     def add_job(cls, job, args, message_queue):
+        # job.mq = message_queue
         job.set_message_queue(message_queue)
         return cls.executor.submit(job.execute, **args)
 
@@ -589,37 +598,48 @@ class ProcessWorker2(Worker2):
 
 
 class WorkRunner(contextlib.AbstractContextManager):
-    manager = multiprocessing.Manager()
-    _log_queue = manager.Queue()
+    # _log_queue = queue.Queue()  # type: ignore
 
-    def __init__(self, parent=None, title=None, results_queue=None) -> None:
+    def __init__(self, logger: logging.Logger, parent=None, title=None, results_queue=None, ) -> None:
+        self.manager = multiprocessing.Manager()
+        self._log_queue = self.manager.Queue()  # type: ignore
+        # self.logger = logging.getLogger(__name__)
+        self.logger = logger
+        self.parent = parent
         self.dialog = QtWidgets.QProgressDialog(parent)
+        self.handler = ProgressMessageBoxLogHandler(self.dialog)
+        # self.logger.addHandler(ProgressMessageBoxLogHandler(self.dialog))
         # self.dialog.setVisible(True)
         self.dialog.setModal(True)
-        self.dialog.setAutoClose(False)
+        # self.dialog.setAutoClose(False)
         self.dialog.setWindowTitle(title)
-        self.jobs: queue.Queue[JobPair] = queue.Queue()
-        # TODO put work_manager on own thread.
+        self.jobs = self.manager.Queue()
+
         self.work_manager = ProcessWorker2()
-        self.results = results_queue or queue.Queue()
+        self.results = results_queue or self.manager.Queue()
         self._tasks : typing.List[concurrent.futures.Future] = []
 
     def __enter__(self):
         self.work_manager.initialize_worker()
+        self.logger.addHandler(self.handler)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.work_manager.executor.shutdown()
         self.dialog.close()
+        self.logger.removeHandler(self.handler)
+
+    def load(self):
+        pass
 
     def run(self):
 
         self.dialog.setRange(0, self.jobs.qsize())
-        self.dialog.canceled.connect(self._cancle)
+        self.dialog.canceled.connect(self._cancel)
 
-        self.dialog.setVisible(True)
 
         # Load add all jobs to the work manager
+        self.dialog.setVisible(True)
         while not self.jobs.empty():
             foo = self.jobs.get()
             new_job = foo.job()
@@ -630,54 +650,71 @@ class WorkRunner(contextlib.AbstractContextManager):
 
         QtWidgets.QApplication.processEvents()
 
-        with MessageRefresher(self._refresh_progress, parent=self.dialog, rate=100):
+        with MessageRefresher(self._refresh_progress, parent=self.dialog, rate=20):
             for res in concurrent.futures.as_completed(self._tasks):
+
                 try:
                     result = res.result()
-                    print("Result = {}".format(result))
+                    self.results.put(result)
+                    self.dialog.setValue(self.results.qsize())
+                    # self.dialog.setLabelText(result)
+                    # print("Result = {}".format(result))
 
                 except concurrent.futures.CancelledError:
                     break
-                self.results.put(result)
-                self.dialog.setValue(self.results.qsize())
 
-        # for some reason the cancel is being called if it's finished correctly, so if it gets here
-        # simple remove the payload of the cancel slot
-        self.dialog.canceled.disconnect(self._cancle)
+            # for some reason the cancel is being called if it's finished correctly, so if it gets here
+            # simple remove the payload of the cancel slot
+            self.dialog.canceled.disconnect(self._cancel)
 
     def _refresh_progress(self):
         # Needs to be updated otherwise it hangs
-        QtWidgets.QApplication.processEvents()
         while not self._log_queue.empty():
             message = self._log_queue.get()
-            self.dialog.setLabelText(message)
+            self.logger.info(message)
+            # self.dialog.setLabelText(message)
+            # QtWidgets.QApplication.processEvents()
         pass
 
-    def _cancle(self):
+    def _cancel(self):
         for i, task in enumerate(reversed(self._tasks)):
+
             if task.cancel():
-                print(i)
+                print("Cancelled {}".format(i + 1))
+            else:
+                print(task)
+        self._refresh_progress()
+        # QtWidgets.QApplication.processEvents()
+        QtWidgets.QMessageBox.about(self.parent, "Canceled", "Successfully Canceled")
 
 
 class WorkerManager:
-    manager = multiprocessing.Manager()
-    _log_manager = manager.Queue()
+    # _log_manager = manager.Queue()  # type: ignore
+    # _log_manager = queue.Queue()  # type: ignore
 
-    def __init__(self, title, tool, parent=None) -> None:
+    def __init__(self, title, tool, logger, parent=None) -> None:
+
+        self.manager = multiprocessing.Manager()
+        self._log_manager = self.manager.Queue()
+        self.logger = logger
+        # self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
         self.title = title
         self._tool = tool
         self.parent = parent
         # self._processor = ProcessWorker2()
         self._results: typing.List[dict] = []
-        self._results_queue: queue.Queue[dict] = queue.Queue()
+        self._results_queue: queue.Queue[dict] = self.manager.Queue()
+
 
     def open(self, settings) -> WorkRunner:
         if self._tool is None:
             raise ValueError("Need to have a tool")
 
-        runner = WorkRunner(self.parent, title=self.title, results_queue=self._results_queue)
+        runner = WorkRunner(logger=self.logger, parent=self.parent, title=self.title, results_queue=self._results_queue)
         for args in self._get_jobs(settings):
-            new_job = JobPair(self._tool.new_job(), args=args, message_queue=self._log_manager)
+            new_job_ = self._tool.new_job()
+            new_job = JobPair(new_job_, args=args, message_queue=self._log_manager)
             runner.jobs.put(new_job)
         return runner
 
