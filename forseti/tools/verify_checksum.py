@@ -206,7 +206,7 @@ class ChecksumJob(ProcessJob):
 
     def process(self, *args, **kwargs):
         # self.logger.setLevel(logging.DEBUG)
-        handler = worker.GuiLogger(self.log)
+        handler = worker.GuiLogHandler(self.log)
         self.logger.addHandler(handler)
         filename = kwargs[JobValues.ITEM_FILENAME.value]
         # filename = kwargs['filename']
@@ -215,7 +215,7 @@ class ChecksumJob(ProcessJob):
         checksum_path = kwargs[JobValues.ROOT_PATH.value]
         full_path = os.path.join(checksum_path, filename)
         # self.logger.debug("Starting with {}".format(full_path))
-        self.log("Starting with {}".format(filename))
+        self.log("Calculating MD5 for {}".format(filename))
         # self.logger.debug("Arguments = {}".format(kwargs) )
         # self.logger.debug("Calculating md5 for {}".format(full_path))
         actual_md5 = process.calculate_md5(full_path)
@@ -233,6 +233,7 @@ class ChecksumJob(ProcessJob):
             self.log(f"Hash mismatch for {filename}. Expected: {expected}. Actual: {actual_md5}")
             result[ResultValues.VALID] = False
         else:
+            self.log("MD5 for {} matches".format(filename))
             result[ResultValues.VALID] = True
         # if expected != actual_md5:
         #     self.log(f"Hash mismatch for {filename}. Expected: {expected}. Actual: {actual_md5}")
