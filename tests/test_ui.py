@@ -71,7 +71,7 @@ def test_work_runner(qtbot):
     tool = EchoTool()
 
     user_settings = {'message': 'hello world'}
-    test_worker = worker.WorkerManager(title="test runner", tool=tool)
+    test_worker = worker.WorkerManager(title="test runner", tool=tool, logger=logging.getLogger(__name__))
 
     with test_worker.open(settings=user_settings) as work_runner:
         assert isinstance(work_runner, worker.WorkRunner)
@@ -80,11 +80,11 @@ def test_work_runner(qtbot):
 
         assert work_runner.jobs.qsize() == 2
         assert work_runner.dialog.windowTitle() == "test runner"
-
+        work_runner.load()
         work_runner.run()
         assert work_runner.dialog.minimum() == 0
         assert work_runner.dialog.maximum() == 2
-        assert work_runner.dialog.isVisible() is True
+    assert work_runner.dialog.isVisible() is False
 
     assert isinstance(test_worker.results, list)
     assert len(test_worker.results) == 2
