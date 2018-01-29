@@ -46,7 +46,8 @@ class CaptureOneToHathiTiffPackage(AbsTool):
         # TODO: Fix this so that it only happen once in another method
         return jobs
 
-    def new_job(self) -> typing.Type[worker.ProcessJob]:
+    @staticmethod
+    def new_job() -> typing.Type[worker.ProcessJob]:
         return PackageConverter
 
     @staticmethod

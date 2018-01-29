@@ -21,7 +21,8 @@ class Eggs(AbsTool):
         super().__init__()
 
 
-    def new_job(self) -> typing.Type[worker.ProcessJob]:
+    @staticmethod
+    def new_job() -> typing.Type[worker.ProcessJob]:
         return EggsJob
 
     @staticmethod

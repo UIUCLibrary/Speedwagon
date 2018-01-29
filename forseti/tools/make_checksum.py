@@ -75,7 +75,8 @@ class MakeChecksumBatchSingle(MakeChecksumBatch):
     # def __init__(self) -> None:
     #     super().__init__()
 
-    def new_job(self) -> typing.Type[worker.ProcessJob]:
+    @staticmethod
+    def new_job() -> typing.Type[worker.ProcessJob]:
         return ChecksumJob
 
     @staticmethod
@@ -116,7 +117,8 @@ class MakeChecksumBatchMultiple(MakeChecksumBatch):
     description = "Creates a checksum.md5 for every subdirectory found inside a given path" \
                   "\nInput: Path to a root directory that contains subdirectories to generate checksum.md5 files"
 
-    def new_job(self) -> typing.Type[worker.ProcessJob]:
+    @staticmethod
+    def new_job() -> typing.Type[worker.ProcessJob]:
         return ChecksumJob
 
     @staticmethod

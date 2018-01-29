@@ -133,7 +133,8 @@ class UpdateChecksumBatchSingle(UpdateChecksum):
 
     # "\nInput: path to a root folder"
 
-    def new_job(self) -> typing.Type[worker.ProcessJob]:
+    @staticmethod
+    def new_job() -> typing.Type[worker.ProcessJob]:
         return ChecksumJob
 
     @staticmethod
@@ -180,7 +181,8 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
     description = "Updates the checksum hash in all checksum.md5 file found in a path" \
                   "\nInput: path to a root folder"
 
-    def new_job(self) -> typing.Type[worker.ProcessJob]:
+    @staticmethod
+    def new_job() -> typing.Type[worker.ProcessJob]:
         return ChecksumJob
 
     @staticmethod

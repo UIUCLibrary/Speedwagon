@@ -61,7 +61,9 @@ class ChecksumData(tool_options.AbsCustomData2):
 
 
 class VerifyChecksum(AbsTool):
-    def new_job(self) -> typing.Type[worker.ProcessJob]:
+
+    @staticmethod
+    def new_job() -> typing.Type[worker.ProcessJob]:
         return ChecksumJob
 
     @classmethod

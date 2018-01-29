@@ -28,7 +28,8 @@ class ZipPackages(AbsTool):
         # input_data.label = "Package root"
         # self.options.append(input_data)
 
-    def new_job(self) -> typing.Type[worker.ProcessJob]:
+    @staticmethod
+    def new_job() -> typing.Type[worker.ProcessJob]:
         return ZipPackageJob
 
     @staticmethod

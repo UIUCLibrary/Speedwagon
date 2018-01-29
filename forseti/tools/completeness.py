@@ -26,7 +26,8 @@ class HathiPackageCompleteness(AbsTool):
                   "equal number of each); and that its XML, YML, and TIFF or JP2 files are well-formed and valid. " \
                   "(This workflow provides console feedback, but doesn’t write new files as output)."
 
-    def new_job(self) -> typing.Type[worker.ProcessJob]:
+    @staticmethod
+    def new_job() -> typing.Type[worker.ProcessJob]:
         return HathiPackageCompletenessJob
 
     @staticmethod
