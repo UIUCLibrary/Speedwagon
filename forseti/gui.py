@@ -57,9 +57,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.log_manager = logging.getLogger(__name__)
+
+        # self.log_manager.setLevel(logging.DEBUG)
         # logger = logging.getLogger(__name__)
-        self.log_manager.debug("Setting up ui")
+        # self.log_manager.debug("Setting up ui")
         self.setupUi(self)
         self.tabWidget.setTabEnabled(1, False)
         self.splitter = QtWidgets.QSplitter(self.tab_tools)
@@ -136,10 +137,9 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
 
         ###########################################################
-
-        # self.log_manager.setLevel(logging.DEBUG)
+        self.log_manager = logging.getLogger(__name__)
+        self.log_manager.setLevel(logging.DEBUG)
         self._handler = ConsoleLogger(self.console)
-        self._handler.setLevel(logging.INFO)
         self.log_manager.addHandler(self._handler)
         self.log_manager.info("READY!")
         ###########################################################
@@ -166,7 +166,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tool_selector_view.selectionModel().currentChanged.connect(
             lambda: self.tool_settings.resizeRowsToContents())
 
-        self.log_manager.debug("Displaying Main Window")
         self.tabWidget.removeTab(1)
         self.show()
     #
