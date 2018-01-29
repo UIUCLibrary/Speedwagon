@@ -205,7 +205,7 @@ class ChecksumJob(ProcessJob):
     logger = logging.getLogger(hathi_validate.__name__)
 
     def process(self, *args, **kwargs):
-        self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
         handler = worker.GuiLogger(self.log)
         self.logger.addHandler(handler)
         filename = kwargs[JobValues.ITEM_FILENAME.value]
@@ -214,11 +214,12 @@ class ChecksumJob(ProcessJob):
         expected = kwargs[JobValues.EXPECTED_HASH.value]
         checksum_path = kwargs[JobValues.ROOT_PATH.value]
         full_path = os.path.join(checksum_path, filename)
-        self.logger.debug("Starting with {}".format(full_path))
+        # self.logger.debug("Starting with {}".format(full_path))
+        self.log("Starting with {}".format(filename))
         # self.logger.debug("Arguments = {}".format(kwargs) )
-        self.logger.debug("Calculating md5 for {}".format(full_path))
+        # self.logger.debug("Calculating md5 for {}".format(full_path))
         actual_md5 = process.calculate_md5(full_path)
-        self.logger.debug("Comparing {}".format(filename))
+        # self.logger.debug("Comparing {}".format(filename))
         result = {
             ResultValues.FILENAME: filename,
             ResultValues.PATH: checksum_path,
@@ -239,8 +240,8 @@ class ChecksumJob(ProcessJob):
         # else:
         #     result['valid'] = True
         self.result = result
-        self.logger.debug("Done with {}".format(filename))
-        logging.debug("Done with {}".format(filename))
+        self.logger.debug("Done validating {}".format(filename))
+        # logging.debug("Done with {}".format(filename))
 
         self.logger.removeHandler(handler)
         # self.log("comparing checksum to expected value")
