@@ -11,7 +11,7 @@ from forseti import worker
 from .abstool import AbsTool
 # from .tool_options import ToolOptionDataType
 from forseti.tools import tool_options
-from forseti.worker import ProcessJob, GuiLogger
+from forseti.worker import ProcessJob, GuiLogHandler
 from hathi_validate import process as validate_process, validator
 from hathi_validate import report as hathi_reporter
 import hathi_validate
@@ -80,7 +80,7 @@ class HathiPackageCompletenessJob(ProcessJob):
 
     @contextmanager
     def log_config(self, logger):
-        gui_logger = GuiLogger(self.log)
+        gui_logger = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)
             yield
@@ -89,11 +89,12 @@ class HathiPackageCompletenessJob(ProcessJob):
 
     def process(self, **kwargs):
         my_logger = logging.getLogger(hathi_validate.__name__)
+        my_logger.setLevel(logging.INFO)
         with self.log_config(my_logger):
 
             # logger = logging.getLogger(hathi_validate.__name__)
             # logger.setLevel(logging.INFO)
-            gui_logger = GuiLogger(self.log)
+            # gui_logger = GuiLogHandler(self.log)
             # logger.addHandler(logging.StreamHandler())
             # logger.addHandler(gui_logger)
 
