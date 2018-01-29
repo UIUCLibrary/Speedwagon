@@ -53,7 +53,7 @@ setup(
         "forseti.ui"
     ],
     setup_requires=['pytest-runner'],
-    tests_require=['pytest', "behave"],
+    tests_require=['pytest', "behave", "pytest-qt"],
     python_requires=">=3.6",
     entry_points={
         "console_scripts": [
