@@ -3,6 +3,7 @@ wheel
 sphinx
 pytest
 pytest-runner
+pytest-qt
 behave
 tox
 lxml
