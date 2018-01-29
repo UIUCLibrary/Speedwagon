@@ -545,7 +545,7 @@ class AbsSubject(metaclass=abc.ABCMeta):
 #         print(value, file=sys.stderr)
 
 
-class GuiLogger(logging.Handler):
+class GuiLogHandler(logging.Handler):
     def __init__(self, callback, level=logging.NOTSET):
         super().__init__(level)
         self.callback = callback
