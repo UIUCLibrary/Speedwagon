@@ -28,7 +28,8 @@ class ZipPackages(AbsTool):
         # input_data.label = "Package root"
         # self.options.append(input_data)
 
-    def new_job(self) -> typing.Type[worker.ProcessJob]:
+    @staticmethod
+    def new_job() -> typing.Type[worker.ProcessJob]:
         return ZipPackageJob
 
     @staticmethod
@@ -51,8 +52,8 @@ class ZipPackages(AbsTool):
         if not os.path.exists(output) or not os.path.isdir(output):
             raise ValueError("Invalid output")
 
-    @staticmethod
-    def generate_report(*args, **kwargs):
+    @classmethod
+    def generate_report(cls, *args, **kwargs):
         if "user_args" in kwargs:
             return "Zipping complete. All files written to {}.".format(kwargs["user_args"]["output"])
         return "Zipping complete. All files written to output location"

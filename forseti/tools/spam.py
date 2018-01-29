@@ -32,7 +32,8 @@ class Spam(AbsTool):
         # output_data.label = "Output"
         # self.options.append(output_data)
 
-    def new_job(self) -> typing.Type[worker.ProcessJob]:
+    @staticmethod
+    def new_job() -> typing.Type[worker.ProcessJob]:
         return DummyJob
         # return DummyJob()
 

@@ -71,6 +71,13 @@
             </property>
            </widget>
           </item>
+          <item>
+           <widget class="QLabel" name="version_label">
+            <property name="text">
+             <string>Version Information</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>

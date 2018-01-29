@@ -14,8 +14,9 @@ class AbsTool(metaclass=abc.ABCMeta):
         super().__init__()
         self.options = []  # type: ignore
 
+    @staticmethod
     @abc.abstractmethod
-    def new_job(self) ->typing.Type[worker.ProcessJob]:
+    def new_job() ->typing.Type[worker.ProcessJob]:
         pass
 
 
@@ -42,6 +43,7 @@ class AbsTool(metaclass=abc.ABCMeta):
     def on_completion(*args, **kwargs):
         pass
 
-    @staticmethod
-    def generate_report(*args, **kwargs):
+    # @staticmethod
+    @classmethod
+    def generate_report(cls, *args, **kwargs):
         return None
