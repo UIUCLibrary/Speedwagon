@@ -285,9 +285,9 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             #
             #         print("running {} tasks".format(work_manager.worker_display._jobs_queue.qsize()), file=sys.stderr)
             #         try:
-            #             work_manager.run()
+            #             work_manager.finish()
             #             # print("AFTER")
-            #             # work_manager.worker_display.run()
+            #             # work_manager.worker_display.finish()
             #
             #         except RuntimeError as e:
             #             QtWidgets.QMessageBox.warning(self, "Process failed", str(e))
@@ -385,7 +385,7 @@ class JobRunner(QtCore.QThread):
             job = self._active_tool.new_job()
             self._manager.add_job(job, **job_args)
 
-        self._manager.run()
+        self._manager.finish()
 
 
 # class YesNoBoxDelegate(QtWidgets.QItemDelegate):
