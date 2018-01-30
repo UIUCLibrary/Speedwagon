@@ -19,7 +19,8 @@ Release History
 
 Dev
 +++
-
+* General:
+   * Report more verbose detail on the processes working. This is done by piping the log information used by the dependent tools into the information presented to the user.
 * User Interface:
    * Display version number on main window
 * New Tools:

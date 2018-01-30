@@ -80,8 +80,8 @@ def test_work_runner(qtbot):
 
         assert work_runner.jobs.qsize() == 2
         assert work_runner.dialog.windowTitle() == "test runner"
-        work_runner.load()
-        work_runner.run()
+        work_runner.start()
+        work_runner.finish()
         assert work_runner.dialog.minimum() == 0
         assert work_runner.dialog.maximum() == 2
     assert work_runner.dialog.isVisible() is False
@@ -112,7 +112,7 @@ def test_runner(qtbot):
         assert work_runner.jobs.qsize() == 1118
         assert work_runner.dialog.windowTitle() == "test runner"
 
-        work_runner.run()
+        work_runner.finish()
         assert work_runner.dialog.minimum() == 0
         assert work_runner.dialog.maximum() == 1118
         assert work_runner.dialog.isVisible() is True

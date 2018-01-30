@@ -5,6 +5,7 @@ import sys
 
 import time
 import typing
+import warnings
 
 from PyQt5 import QtCore, QtWidgets
 
@@ -31,6 +32,11 @@ class RunRunner:
 
 
 class UsingWorkWrapper(AbsRunner):
+
+    def __init__(self) -> None:
+        super().__init__()
+        warnings.warn("Use UsingWorkManager instead", DeprecationWarning)
+
     def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success, on_failure,
             logger: logging.Logger):
         with worker.WorkWrapper(parent, tool, logger=logger) as work_manager:
@@ -67,7 +73,7 @@ class UsingWorkWrapper(AbsRunner):
                     work_manager.run()
 
                     # print("AFTER")
-                    # work_manager.worker_display.run()
+                    # work_manager.worker_display.finish()
 
                 except RuntimeError as e:
                     QtWidgets.QMessageBox.warning(parent, "Process failed", str(e))
@@ -105,7 +111,8 @@ class UsingWorkManager(AbsRunner):
         # worker_manager.logger = log_handler
         try:
             with worker_manager.open(options) as work_runner:
-                work_runner.run()
+                work_runner.start()
+                work_runner.finish()
 
             on_success(worker_manager.results, tool.on_completion)
         except Exception as e:
