@@ -67,7 +67,7 @@ class UsingWorkWrapper(AbsRunner):
                     work_manager.run()
 
                     # print("AFTER")
-                    # work_manager.worker_display.run()
+                    # work_manager.worker_display.finish()
 
                 except RuntimeError as e:
                     QtWidgets.QMessageBox.warning(parent, "Process failed", str(e))
@@ -105,7 +105,8 @@ class UsingWorkManager(AbsRunner):
         # worker_manager.logger = log_handler
         try:
             with worker_manager.open(options) as work_runner:
-                work_runner.run()
+                work_runner.start()
+                work_runner.finish()
 
             on_success(worker_manager.results, tool.on_completion)
         except Exception as e:
