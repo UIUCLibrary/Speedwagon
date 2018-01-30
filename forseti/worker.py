@@ -237,6 +237,7 @@ class WorkManager(ProcessWorker):
     failed = QtCore.pyqtSignal(Exception)
 
     def __init__(self, parent):
+        warnings.warn("Don't use", DeprecationWarning)
         super().__init__(parent)
 
         self._results = []
@@ -359,6 +360,7 @@ class WorkManager(ProcessWorker):
 class WorkDisplay(WorkManager):
 
     def __init__(self, parent):
+        warnings.warn("Don't use", DeprecationWarning)
         super().__init__(parent)
         self.progress_window = QtWidgets.QProgressDialog(parent)
         # self.progress_window = WorkProgressBar(parent)
@@ -432,6 +434,7 @@ class WorkDisplay(WorkManager):
 class WorkWrapper(contextlib.AbstractContextManager):
 
     def __init__(self, parent, tool, logger: logging.Logger) -> None:
+        warnings.warn("Use WorkerManager instead", DeprecationWarning)
         self.parent = parent
         self.worker_display = WorkDisplay(self.parent)
         self.successful = False

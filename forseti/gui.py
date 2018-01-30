@@ -374,6 +374,7 @@ class JobSearcher(QtCore.QThread):
 class JobRunner(QtCore.QThread):
 
     def __init__(self, manager, active_tool, jobs,  parent=None):
+        warnings.warn("Don't use", DeprecationWarning)
         super().__init__(parent)
         self._manager = manager
         self._jobs = jobs

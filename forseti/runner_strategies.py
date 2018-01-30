@@ -5,6 +5,7 @@ import sys
 
 import time
 import typing
+import warnings
 
 from PyQt5 import QtCore, QtWidgets
 
@@ -31,6 +32,11 @@ class RunRunner:
 
 
 class UsingWorkWrapper(AbsRunner):
+
+    def __init__(self) -> None:
+        super().__init__()
+        warnings.warn("Use UsingWorkManager instead", DeprecationWarning)
+
     def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success, on_failure,
             logger: logging.Logger):
         with worker.WorkWrapper(parent, tool, logger=logger) as work_manager:
