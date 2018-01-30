@@ -602,6 +602,8 @@ class WorkRunner(contextlib.AbstractContextManager):
             for res in concurrent.futures.as_completed(self._tasks):
 
                 try:
+                    if res.cancelled():
+                        continue
                     result = res.result()
                     self.results.put(result)
                     self.dialog.setValue(self.results.qsize())
