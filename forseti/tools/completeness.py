@@ -12,7 +12,9 @@ from .abstool import AbsTool
 # from .tool_options import ToolOptionDataType
 from forseti.tools import tool_options
 from forseti.worker import ProcessJob, GuiLogHandler
-from hathi_validate import process as validate_process, validator
+from hathi_validate import process as validate_process
+from hathi_validate import validator
+from hathi_validate import manifest as validate_manifest
 from hathi_validate import report as hathi_reporter
 import hathi_validate
 
@@ -66,11 +68,27 @@ class HathiPackageCompleteness(AbsTool):
     @staticmethod
     def generate_report(*args, **kwargs):
         results = []
+        user_args= kwargs['user_args']
+        batch_root = user_args['Source']
+        batch_manifest_builder = validate_manifest.PackageManifestDirector()
+        for package_path in filter(lambda i: i.is_dir(), os.scandir(batch_root)):
+            package_builder = batch_manifest_builder.add_package(package_path.path)
+            for root, dirs, files in os.walk(package_path.path):
+                for file_ in files:
+                    relative = os.path.relpath(root, os.path.abspath(batch_root))
+                    package_builder.add_file(os.path.join(relative, file_))
+
+        manifest_report = validate_manifest.get_report_as_str(batch_manifest_builder.build_manifest(), width=70)
+
+        # Error report
         for result_group in kwargs['results']:
             for result in result_group:
                 results.append(result)
 
-        return hathi_reporter.get_report_as_str(results, 70)
+        error_report = hathi_reporter.get_report_as_str(results, 70)
+        return f"{manifest_report}" \
+               f"\n" \
+               f"\n{error_report}"
 
 
 
@@ -91,6 +109,8 @@ class HathiPackageCompletenessJob(ProcessJob):
     def process(self, **kwargs):
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
+
+
         with self.log_config(my_logger):
 
             # logger = logging.getLogger(hathi_validate.__name__)
