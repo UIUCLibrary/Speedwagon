@@ -42,7 +42,7 @@ setup(
     install_requires=[
         "pyqt5",
         "hathizip",
-        "HathiValidate>=0.2.0",
+        "HathiValidate>=0.3.1",
         "pyhathiprep",
         "hathichecksumupdater",
         # "MedusaPackager"

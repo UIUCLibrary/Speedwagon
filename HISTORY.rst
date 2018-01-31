@@ -29,3 +29,4 @@ Dev
 * Tool Changes:
    * Split Make Checksum Batch into multiple and single versions
    * Split Verify Checksum Batch into multiple and single versions
+   * Verify HathiTrust Package Completeness generates a file manifest report as well as an error report
