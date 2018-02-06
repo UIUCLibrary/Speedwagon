@@ -5,9 +5,9 @@ pipeline {
     agent {
         label "Windows&&DevPi"
     }
-    options {
-        disableConcurrentBuilds()  //each branch has 1 job running at a time
-    }
+    // options {
+    //     disableConcurrentBuilds()  //each branch has 1 job running at a time
+    // }
 
     environment {
         mypy_args = "--junit-xml=mypy.xml"
