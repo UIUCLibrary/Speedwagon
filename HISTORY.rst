@@ -3,6 +3,21 @@
 Release History
 ---------------
 
+0.0.2
++++++
+* General:
+   * Report more verbose detail on the processes working. This is done by piping the log information used by the dependent tools into the information presented to the user.
+* User Interface:
+   * Display version number on main window
+* New Tools:
+   * Update Checksum Batch [Multiple]
+   * Update Checksum Batch [Single]
+* Tool Changes:
+   * Split Make Checksum Batch into multiple and single versions
+   * Split Verify Checksum Batch into multiple and single versions
+   * Verify HathiTrust Package Completeness generates a file manifest report as well as an error report
+
+
 0.0.1
 +++++
 
@@ -19,14 +34,3 @@ Release History
 
 Dev
 +++
-* General:
-   * Report more verbose detail on the processes working. This is done by piping the log information used by the dependent tools into the information presented to the user.
-* User Interface:
-   * Display version number on main window
-* New Tools:
-   * Update Checksum Batch [Multiple]
-   * Update Checksum Batch [Single]
-* Tool Changes:
-   * Split Make Checksum Batch into multiple and single versions
-   * Split Verify Checksum Batch into multiple and single versions
-   * Verify HathiTrust Package Completeness generates a file manifest report as well as an error report
