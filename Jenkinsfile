@@ -105,11 +105,12 @@ pipeline {
                             node(label: "Windows") {
                                 script {
                                     checkout scm
-                                    def mypy_rc = bat returnStdout: true, script: "make test-mypy --html-report reports/mypy_report --junit-xml reports/mypy.xml"
-                                    if (mypy_rc != 0) {
-                                        echo "MyPy complained"
-                                    } else {
+                                    def mypy_rc = bat returnStatus: true, script: "make test-mypy --html-report reports/mypy_report --junit-xml reports/mypy.xml"
+                                    if (mypy_rc == 0) {
                                         echo "MyPy found no issues"
+                                        
+                                    } else {
+                                        echo "MyPy complained with an exit code of ${mypy_rc}."
                                     }
                                     junit 'reports/mypy.xml'
                                 }

@@ -1,4 +1,4 @@
-include LICENSE README.rst requirements.txt requirements-dev.txt mypy.ini Makefile tox.ini pytest.ini
+include LICENSE README.rst requirements.txt requirements-dev.txt Makefile tox.ini
 recursive-exclude forseti/ui *.py
 recursive-include forseti/ui *.ui
 include forseti/ui/__init__.py
