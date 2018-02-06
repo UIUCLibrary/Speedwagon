@@ -60,6 +60,16 @@ class AbsJob(metaclass=QtMeta):
     def on_completion(self, *args, **kwargs):
         pass
 
+    @classmethod
+    def new(cls, job, message_queue, *args, **kwargs):
+        new_job = job()
+        new_job.set_message_queue(message_queue)
+        new_job.execute(*args, **kwargs)
+        return new_job.result
+        # print(message_queue)
+        # print(job)
+        # print("HERER")
+
 
 class ProcessJob(AbsJob):
     mq = None
