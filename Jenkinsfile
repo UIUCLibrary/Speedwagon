@@ -103,9 +103,16 @@ pipeline {
                         },
                         "MyPy": {
                             node(label: "Windows") {
-                                checkout scm
-                                bat "make test-mypy --html-report reports/mypy_report --junit-xml reports/mypy.xml"
-                                junit 'reports/mypy.xml'
+                                script {
+                                    checkout scm
+                                    def mypy_rc = bat returnStdout: true, script: "make test-mypy --html-report reports/mypy_report --junit-xml reports/mypy.xml"
+                                    if (mypy_rc != 0) {
+                                        echo "MyPy complained"
+                                    } else {
+                                        echo "MyPy found no issues"
+                                    }
+                                    junit 'reports/mypy.xml'
+                                }
                             }
                         }
                 )

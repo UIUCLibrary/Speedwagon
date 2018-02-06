@@ -62,8 +62,9 @@ def test_model(qtbot):
     d = model.get()
     assert d["message"] == "hello world"
 
-
+@pytest.mark.notFromSetupPy
 def test_work_runner(qtbot):
+
 
     # results in two jobs,
     # the first job's result is the same message as the user settings
@@ -73,8 +74,10 @@ def test_work_runner(qtbot):
     user_settings = {'message': 'hello world'}
     test_worker = worker.WorkerManager(title="test runner", tool=tool, logger=logging.getLogger(__name__))
 
+
+
     with test_worker.open(settings=user_settings) as work_runner:
-        assert isinstance(work_runner, worker.WorkRunner)
+        assert isinstance(work_runner, worker.WorkRunnerExternal)
 
         assert work_runner.dialog.isVisible() is False
 
@@ -89,7 +92,6 @@ def test_work_runner(qtbot):
     assert isinstance(test_worker.results, list)
     assert len(test_worker.results) == 2
     assert isinstance(test_worker.results[0], dict)
-
     results = sorted(test_worker.results, key=lambda x: x["message"])
 
     assert results[0]["success"] == "yes"
@@ -97,6 +99,7 @@ def test_work_runner(qtbot):
 
     assert results[1]["success"] == "yes"
     assert results[1]["message"] == "nope"
+
 
 @pytest.mark.skip("Local test only")
 def test_runner(qtbot):
