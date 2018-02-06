@@ -33,6 +33,7 @@ class AbsToolData(metaclass=abc.ABCMeta):
     def data(self):
         return self.widget.value
 
+
 #
 # class SelectDirectory(AbsToolData):
 #
@@ -141,7 +142,6 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
         super().__init__(parent)
         self._data = []
 
-
     def rowCount(self, parent=None, *args, **kwargs):
         return len(self._data)
 
@@ -201,6 +201,7 @@ class ToolOptionsPairsModel(ToolOptionsModel):
         for data in self._data:
             options[data.label] = data.data
         return options
+
 
 class ToolOptionsModel2(ToolOptionsModel):
 
@@ -280,6 +281,7 @@ class ToolOptionsModel3(ToolOptionsModel):
         self._data[index.row()].data = data
         return True
 
+
 def available_tools() -> dict:
     """
     Locate all tools that can be loaded
@@ -294,7 +296,8 @@ def available_tools() -> dict:
     for m in tree:
         try:
             module = importlib.import_module("{}.tools.{}".format(__package__, os.path.splitext(m.name)[0]))
-            for name_, module_class in inspect.getmembers(module, lambda m: inspect.isclass(m) and not inspect.isabstract(m)):
+            for name_, module_class in inspect.getmembers(module,
+                                                          lambda m: inspect.isclass(m) and not inspect.isabstract(m)):
                 if issubclass(module_class, AbsTool):
                     located_tools[module_class.name] = module_class
         except ImportError as e:
