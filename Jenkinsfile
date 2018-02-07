@@ -97,8 +97,12 @@ pipeline {
                             node(label: "Windows") {
                                 checkout scm
                                 bat "${tool 'Python3.6.3_Win64'} -m tox -e docs"
-                                dir('.tox/dist') {
-                                    zip archive: true, dir: 'html', glob: '', zipFile: 'sphinx_html_docs.zip'
+                                script{
+                                    // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
+                                    def alljob = env.JOB_NAME.tokenize("/") as String[]
+                                    def project_name = alljob[0]
+                                    dir('.tox/dist') {
+                                    zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,6)}.zip"
                                     dir("html"){
                                         stash includes: '**', name: "HTML Documentation"
                                     }
