@@ -102,9 +102,10 @@ pipeline {
                                     def alljob = env.JOB_NAME.tokenize("/") as String[]
                                     def project_name = alljob[0]
                                     dir('.tox/dist') {
-                                    zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,6)}.zip"
-                                    dir("html"){
-                                        stash includes: '**', name: "HTML Documentation"
+                                        zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,6)}.zip"
+                                        dir("html"){
+                                            stash includes: '**', name: "HTML Documentation"
+                                        }
                                     }
                                 }
                             }
