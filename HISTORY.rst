@@ -34,3 +34,5 @@ Release History
 
 Dev
 +++
+* New tool:
+   * Convert CaptureOne TIFF to Hathi TIFF package
