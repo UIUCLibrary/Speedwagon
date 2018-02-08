@@ -34,13 +34,36 @@ class JobValues(enum.Enum):
 
 class CaptureOneToHathiTiffPackage(AbsTool):
     name = "Convert CaptureOne TIFF to Hathi TIFF package"
-    description = "Work in progress!!" \
-                  "\n" \
-                  "\nInput is a path to a folder of TIFF files all named with a bibID as a prefacing identifier, a " \
+    description = "Input is a path to a folder of TIFF files all named with a bibID as a prefacing identifier, a " \
                   "final delimiting underscore or dash, and a sequence consisting of padded zeroes and a number." \
                   "\n" \
-                  "\nOutput is a directory of folders named by bibID with the prefacing delimiter stripped from each " \
-                  "filename."
+                  "\nOutput is a directory to put the new packages." \
+                  "\n" \
+                  "\nInput:" \
+                  "\n  + batch folder" \
+                  "\n      - uniqueID1_00000001.tif" \
+                  "\n      - uniqueID1_00000002.tif" \
+                  "\n      - uniqueID1_00000003.tif" \
+                  "\n      - uniqueID2_00000001.tif" \
+                  "\n      - uniqueID2_00000002.tif" \
+                  "\n" \
+                  "\nOutput:" \
+                  "\n + uniqueID1 (folder)" \
+                  "\n     + preservation (folder)" \
+                  "\n         - uniqueID1_00000001.tif" \
+                  "\n         - uniqueID1_00000002.tif" \
+                  "\n         - uniqueID1_00000003.tif" \
+                  "\n     + access (folder)" \
+                  "\n         - uniqueID1_00000001.jp2" \
+                  "\n         - uniqueID1_00000002.jp2" \
+                  "\n         - uniqueID1_00000003.jp2" \
+                  "\n + uniqueID2 (folder)" \
+                  "\n     + preservation (folder)" \
+                  "\n         - uniqueID2_00000001.tif" \
+                  "\n         - uniqueID2_00000002.tif" \
+                  "\n     + access (folder)" \
+                  "\n         - uniqueID2_00000001.jp2" \
+                  "\n         - uniqueID2_00000002.jp2"
 
     @staticmethod
     def discover_jobs(**user_args) -> typing.List[dict]:
