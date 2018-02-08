@@ -9,8 +9,8 @@ from forseti.tools.abstool import AbsTool
 from forseti.tools import tool_options
 from forseti.worker import ProcessJob, GuiLogHandler
 
-import packager
-import packager.packages
+import uiucprescon.packager
+import uiucprescon.packager.packages
 import enum
 
 
@@ -47,7 +47,7 @@ class CaptureOneToHathiTiffPackage(AbsTool):
         jobs = []
         source_input = user_args[UserArgs.INPUT.value]
         dest = user_args[UserArgs.OUTPUT.value]
-        package_factory = packager.PackageFactory(packager.packages.CaptureOnePackage())
+        package_factory = uiucprescon.packager.PackageFactory(uiucprescon.packager.packages.CaptureOnePackage())
 
         for package in package_factory.locate_packages(source_input):
             jobs.append({
@@ -90,7 +90,7 @@ class PackageConverter(ProcessJob):
             logger.removeHandler(gui_logger)
 
     def process(self, *args, **kwargs):
-        my_logger = logging.getLogger(packager.__name__)
+        my_logger = logging.getLogger(uiucprescon.packager.__name__)
         my_logger.setLevel(logging.INFO)
         with self.log_config(my_logger):
             existing_package = kwargs[JobValues.PACKAGE.value]
@@ -98,5 +98,5 @@ class PackageConverter(ProcessJob):
             source_path = kwargs[JobValues.SOURCE_PATH.value]
             package_id = existing_package.metadata['id']
             self.log(f"Converting {package_id} from {source_path} to a Hathi Trust Tiff package at {new_package_root}")
-            package_factory = packager.PackageFactory(packager.packages.HathiTiff())
+            package_factory = uiucprescon.packager.PackageFactory(uiucprescon.packager.packages.HathiTiff())
             package_factory.transform(existing_package, dest=new_package_root)
