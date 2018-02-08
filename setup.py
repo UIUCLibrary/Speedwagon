@@ -45,6 +45,7 @@ setup(
         "HathiValidate>=0.3.1",
         "pyhathiprep",
         "hathichecksumupdater",
+        "uiucprescon-packager"
         # "MedusaPackager"
     ],
     packages=[
