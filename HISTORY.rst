@@ -34,5 +34,6 @@ Release History
 
 Dev
 +++
-* New tool:
+* New tools:
    * Convert CaptureOne TIFF to Hathi TIFF package
+   * Generate MARC.XML Files
