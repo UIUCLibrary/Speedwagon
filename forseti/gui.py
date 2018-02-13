@@ -154,7 +154,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.load_tools()
         self.tool_list = t.ToolsListModel(t.available_tools())
         self.tool_selector_view.setModel(self.tool_list)
-        self.tool_selector_view.selectionModel().currentChanged.connect(self.tool_selected)
+        self.tool_selector_view.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
         self.mapper = QtWidgets.QDataWidgetMapper(self)
         self.mapper.setModel(self.tool_list)
@@ -163,12 +163,23 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # This needs custom mapping because without it, new line characters are removed
         self.mapper.addMapping(self._description_information2, 1, b"plainText")
 
-        self.tool_selector_view.selectionModel().currentChanged.connect(self.mapper.setCurrentModelIndex)
-        self.tool_selector_view.selectionModel().currentChanged.connect(
-            lambda: self.tool_settings.resizeRowsToContents())
+        self.tool_selector_view.selectionModel().currentChanged.connect(self.update_tool_selected)
 
         self.tabWidget.removeTab(1)
         self.show()
+
+    def update_tool_selected(self, current, previous):
+
+        try:
+            self.tool_selected(current)
+            self.tool_settings.resizeRowsToContents()
+            self.mapper.setCurrentModelIndex(current)
+        except Exception as e:
+            self.tool_selected(previous)
+            self.tool_settings.resizeRowsToContents()
+            self.mapper.setCurrentModelIndex(previous)
+            self.tool_selector_view.setCurrentIndex(previous)
+
     #
     # @property
     # def log_manager(self):
@@ -324,8 +335,16 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # model.
         # self.tool_workspace.set_tool(tool)
         #################
-        self._options_model = t.ToolOptionsModel3(tool.get_user_options())
-        self.tool_settings.setModel(self._options_model)
+        try:
+            self._options_model = t.ToolOptionsModel3(tool.get_user_options())
+
+            self.tool_settings.setModel(self._options_model)
+        except Exception as e:
+            message = "Unable to use {} as it's not fully implemented".format(tool.name)
+            QtWidgets.QMessageBox.warning(self, "Tool settings error", message)
+            self.log_manager.warning(message)
+            raise
+
         ##################
         # self.tool_settings.set
         # self._selected_tool_name_line.setText(tool.name)
