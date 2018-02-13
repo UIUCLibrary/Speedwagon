@@ -244,7 +244,10 @@ class ToolOptionsModel2(ToolOptionsModel):
 class ToolOptionsModel3(ToolOptionsModel):
 
     def __init__(self, data: typing.List[tool_options.UserOptionPythonDataType], parent=None) -> None:
+        if data is None:
+            raise NotImplementedError
         super().__init__(parent)
+
         self._data: typing.List[tool_options.UserOptionPythonDataType] = data
 
     def data(self, index, role=None):
