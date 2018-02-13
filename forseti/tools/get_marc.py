@@ -9,6 +9,7 @@ from forseti.tools.abstool import AbsTool
 from forseti.worker import ProcessJob
 from uiucprescon import pygetmarc
 
+
 class UserArgs(enum.Enum):
     INPUT = "Input"
 
@@ -16,6 +17,11 @@ class UserArgs(enum.Enum):
 class JobValues(enum.Enum):
     BIB_ID = "bib_id"
     PATH = "path"
+
+
+class ResultsValues(enum.Enum):
+    BIB_ID = "bib_id"
+    SUCCESS = "success"
 
 
 class GenerateMarcXMLFilesTool(AbsTool):
@@ -62,6 +68,28 @@ class GenerateMarcXMLFilesTool(AbsTool):
             tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, tool_options.FolderData),
         ]
 
+    @classmethod
+    def generate_report(cls, *args, **kwargs):
+        user_args = kwargs['user_args']
+        results = kwargs['results']
+        failed = []
+
+        for result in results:
+            if not result[ResultsValues.SUCCESS.value] is True:
+                failed.append(result)
+
+        if failed:
+            status = f"Warning! [{len(failed)}] packages experienced errors retrieving MARC.XML files:"
+            failed_list = "\n".join([f"  * {i[ResultsValues.BIB_ID.value]}" for i in failed])
+
+            message = f"{status}" \
+                      f"\n" \
+                      f"\n{failed_list}"
+        else:
+            message = f"Success! [{len(results)}] MARC.XML files were retrieved and written to their named folders"
+
+        return message
+
 
 class MarcGenerator(ProcessJob):
 
@@ -71,8 +99,18 @@ class MarcGenerator(ProcessJob):
         dst = os.path.normpath(os.path.join(folder, "MARC.XML"))
 
         self.log(f"Retrieving MARC.XML for {bib_id}")
-        marc = pygetmarc.get_marc(int(bib_id))
+        try:
+            marc = pygetmarc.get_marc(int(bib_id))
 
-        with open(dst, "w", encoding="utf-8-sig") as f:
-            f.write(f"{marc}\n")
-        self.log(f"Generated {dst}")
+            with open(dst, "w", encoding="utf-8-sig") as f:
+                f.write(f"{marc}\n")
+            self.log(f"Generated {dst}")
+            success = True
+        except ValueError as e:
+            self.log(f"Error! Could not retrieve MARC.XML for {bib_id}")
+            success = False
+
+        self.result = {
+            ResultsValues.BIB_ID.value: bib_id,
+            ResultsValues.SUCCESS.value: success
+        }
