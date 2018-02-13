@@ -45,7 +45,8 @@ setup(
         "HathiValidate>=0.3.1",
         "pyhathiprep",
         "hathichecksumupdater",
-        # "MedusaPackager"
+        "uiucprescon-packager",
+        "uiucprescon-getmarc"
     ],
     packages=[
         "forseti",
