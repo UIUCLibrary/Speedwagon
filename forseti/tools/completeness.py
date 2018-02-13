@@ -16,6 +16,7 @@ from hathi_validate import process as validate_process
 from hathi_validate import validator
 from hathi_validate import manifest as validate_manifest
 from hathi_validate import report as hathi_reporter
+from hathi_validate import result as hathi_result
 import hathi_validate
 
 
@@ -111,6 +112,7 @@ class HathiPackageCompletenessJob(ProcessJob):
         my_logger.setLevel(logging.INFO)
 
 
+
         with self.log_config(my_logger):
 
             # logger = logging.getLogger(hathi_validate.__name__)
@@ -122,6 +124,7 @@ class HathiPackageCompletenessJob(ProcessJob):
 
             package_path = os.path.normcase(kwargs['package_path'])
             check_ocr = kwargs['check_ocr_data']
+            report_builder = hathi_result.SummaryDirector(source=package_path)
             self.log("Checking the completeness of {}".format(package_path))
             # self.result = validate_process.process_directory(kwargs['package_path'],
             #                                                  require_page_data=kwargs['check_page_data'])
@@ -163,49 +166,57 @@ class HathiPackageCompletenessJob(ProcessJob):
 
             # Validate Checksums
             checksum_report = os.path.join(package_path, "checksum.md5")
-            files_to_check = []
-            for a, file_name in validate_process.extracts_checksums(checksum_report):
-                files_to_check.append(file_name)
+            try:
+                files_to_check = []
+                for a, file_name in validate_process.extracts_checksums(checksum_report):
+                    files_to_check.append(file_name)
 
-            self.log("Validating checksums of the {} files included in {}".format(len(files_to_check), checksum_report))
-            checksum_report_errors = validate_process.run_validation(
-                validator.ValidateChecksumReport(package_path, checksum_report))
-            if not checksum_report_errors:
-                self.log("All checksums in {} successfully validated".format(checksum_report))
-            else:
-                for error in checksum_report_errors:
-                    errors.append(error)
+                self.log("Validating checksums of the {} files included in {}".format(len(files_to_check), checksum_report))
+                checksum_report_errors = validate_process.run_validation(
+                    validator.ValidateChecksumReport(package_path, checksum_report))
+                if not checksum_report_errors:
+                    self.log("All checksums in {} successfully validated".format(checksum_report))
+                else:
+                    for error in checksum_report_errors:
+                        errors.append(error)
+            except FileNotFoundError as e:
+                report_builder.add_error("Unable to validate checksums. Reason {}".format(e))
 
             # Validate Marc
             marc_file = os.path.join(package_path, "marc.xml")
-            if not os.path.exists(marc_file):
-                self.log("Skipping \'{}\' due to file not found".format(marc_file))
-            else:
-                self.log("Validating marc.xml in {}".format(package_path))
-                marc_errors = validate_process.run_validation(validator.ValidateMarc(marc_file))
-                if not marc_errors:
-                    self.log("{} successfully validated".format(marc_file))
+            try:
+                if not os.path.exists(marc_file):
+                    self.log("Skipping \'{}\' due to file not found".format(marc_file))
                 else:
-                    for error in marc_errors:
-                        self.log(error.message)
-                        errors.append(error)
+                    self.log("Validating marc.xml in {}".format(package_path))
+                    marc_errors = validate_process.run_validation(validator.ValidateMarc(marc_file))
+                    if not marc_errors:
+                        self.log("{} successfully validated".format(marc_file))
+                    else:
+                        for error in marc_errors:
+                            self.log(error.message)
+                            errors.append(error)
+            except FileNotFoundError as e:
+                report_builder.add_error("Unable to Validate Marc. Reason {}".format(e))
 
             # Validate YML
             yml_file = os.path.join(package_path, "meta.yml")
-            if not os.path.exists(yml_file):
-                self.log("Skipping \'{}\' due to file not found".format(yml_file))
-            else:
-                self.log("Validating meta.yml in {}".format(package_path))
-                meta_yml_errors = validate_process.run_validation(
-                    validator.ValidateMetaYML(yaml_file=yml_file, path=package_path, required_page_data=True))
-                if not meta_yml_errors:
-                    self.log("{} successfully validated".format(yml_file))
+            try:
+                if not os.path.exists(yml_file):
+                    self.log("Skipping \'{}\' due to file not found".format(yml_file))
                 else:
-                    for error in meta_yml_errors:
-                        self.log(error.message)
-                        errors.append(error)
-            #
-
+                    self.log("Validating meta.yml in {}".format(package_path))
+                    meta_yml_errors = validate_process.run_validation(
+                        validator.ValidateMetaYML(yaml_file=yml_file, path=package_path, required_page_data=True))
+                    if not meta_yml_errors:
+                        self.log("{} successfully validated".format(yml_file))
+                    else:
+                        for error in meta_yml_errors:
+                            self.log(error.message)
+                            errors.append(error)
+                #
+            except FileNotFoundError as e:
+                report_builder.add_error(report_builder.add_error("Unable to validate YAML. Reason {}".format(e)))
             # Validate ocr files
             if check_ocr:
                 self.log("Validating ocr files in {}".format(package_path))
@@ -216,6 +227,8 @@ class HathiPackageCompletenessJob(ProcessJob):
                     for error in ocr_errors:
                         self.log(error.message)
                         errors.append(error)
+            for error in report_builder.construct():
+                errors.append(error)
             self.result = errors
             self.log("Package completeness evaluation of {} completed".format(package_path))
         # logger.removeHandler(gui_logger)
