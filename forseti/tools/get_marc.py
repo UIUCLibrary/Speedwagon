@@ -94,11 +94,12 @@ class GenerateMarcXMLFilesTool(AbsTool):
 class MarcGenerator(ProcessJob):
 
     def process(self, *args, **kwargs):
+        out_file_name = "MARC.XML"
         bib_id = kwargs[JobValues.BIB_ID.value]
         folder = kwargs[JobValues.PATH.value]
-        dst = os.path.normpath(os.path.join(folder, "MARC.XML"))
+        dst = os.path.normpath(os.path.join(folder, out_file_name))
 
-        self.log(f"Retrieving MARC.XML for {bib_id}")
+        self.log(f"Retrieving {out_file_name} for {bib_id}")
         try:
             marc = pygetmarc.get_marc(int(bib_id))
 
@@ -107,7 +108,7 @@ class MarcGenerator(ProcessJob):
             self.log(f"Generated {dst}")
             success = True
         except ValueError as e:
-            self.log(f"Error! Could not retrieve MARC.XML for {bib_id}")
+            self.log(f"Error! Could not retrieve {out_file_name} for {bib_id}")
             success = False
 
         self.result = {
