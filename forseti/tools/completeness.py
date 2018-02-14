@@ -69,7 +69,7 @@ class HathiPackageCompleteness(AbsTool):
     @staticmethod
     def generate_report(*args, **kwargs):
         results = []
-        user_args= kwargs['user_args']
+        user_args = kwargs['user_args']
         batch_root = user_args['Source']
         batch_manifest_builder = validate_manifest.PackageManifestDirector()
         for package_path in filter(lambda i: i.is_dir(), os.scandir(batch_root)):
@@ -92,7 +92,6 @@ class HathiPackageCompleteness(AbsTool):
                f"\n{error_report}"
 
 
-
 class HathiPackageCompletenessJob(ProcessJob):
 
     def __init__(self):
@@ -111,126 +110,157 @@ class HathiPackageCompletenessJob(ProcessJob):
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
 
-
-
         with self.log_config(my_logger):
 
-            # logger = logging.getLogger(hathi_validate.__name__)
-            # logger.setLevel(logging.INFO)
-            # gui_logger = GuiLogHandler(self.log)
-            # logger.addHandler(logging.StreamHandler())
-            # logger.addHandler(gui_logger)
-
-
             package_path = os.path.normcase(kwargs['package_path'])
-            check_ocr = kwargs['check_ocr_data']
-            report_builder = hathi_result.SummaryDirector(source=package_path)
+            request_ocr_validation = kwargs['check_ocr_data']
             self.log("Checking the completeness of {}".format(package_path))
-            # self.result = validate_process.process_directory(kwargs['package_path'],
-            #                                                  require_page_data=kwargs['check_page_data'])
-            # for result in self.result:
-            #     self.log(str(result))
 
-            # logger.debug("Looking for missing package files in {}".format(pkg))
             errors = []
-            missing_files_errors = validate_process.run_validation(validator.ValidateMissingFiles(path=package_path))
-            if missing_files_errors:
-                for error in missing_files_errors:
-                    self.log(error.message)
-                    errors.append(error)
+
+            # Look for missing package level files
+            errors += self.check_missing_package_files(package_path)
 
             # Look for missing components
-            extensions = [".txt", ".jp2"]
-            if check_ocr:
-                extensions.append(".xml")
-            # s.debug("Looking for missing component files in {}".format(pkg))
-            missing_files_errors = validate_process.run_validation(
-                validator.ValidateComponents(package_path, "^\d{8}$", *extensions))
-            if not missing_files_errors:
-                self.log("Found no missing component files in {}".format(package_path))
-            else:
-                for error in missing_files_errors:
-                    self.log(error.message)
-                    errors.append(error)
-            # exit()
+            errors += self.check_missing_components(request_ocr_validation, package_path)
+
             # Validate extra subdirectories
             self.log("Looking for extra subdirectories in {}".format(package_path))
-            extra_subdirectories_errors = validate_process.run_validation(
-                validator.ValidateExtraSubdirectories(path=package_path))
-            if not extra_subdirectories_errors:
-                self.log("No extra subdirectories found in {}".format(package_path))
-            else:
-                for error in extra_subdirectories_errors:
-                    self.log(error.message)
-                    errors.append(error)
+            errors += self.check_extra_subdirectory(package_path)
 
             # Validate Checksums
-            checksum_report = os.path.join(package_path, "checksum.md5")
-            try:
-                files_to_check = []
-                for a, file_name in validate_process.extracts_checksums(checksum_report):
-                    files_to_check.append(file_name)
-
-                self.log("Validating checksums of the {} files included in {}".format(len(files_to_check), checksum_report))
-                checksum_report_errors = validate_process.run_validation(
-                    validator.ValidateChecksumReport(package_path, checksum_report))
-                if not checksum_report_errors:
-                    self.log("All checksums in {} successfully validated".format(checksum_report))
-                else:
-                    for error in checksum_report_errors:
-                        errors.append(error)
-            except FileNotFoundError as e:
-                report_builder.add_error("Unable to validate checksums. Reason: {}".format(e))
+            errors += self.check_checksums(package_path)
 
             # Validate Marc
-            marc_file = os.path.join(package_path, "marc.xml")
-            try:
-                if not os.path.exists(marc_file):
-                    self.log("Skipping \'{}\' due to file not found".format(marc_file))
-                else:
-                    self.log("Validating marc.xml in {}".format(package_path))
-                    marc_errors = validate_process.run_validation(validator.ValidateMarc(marc_file))
-                    if not marc_errors:
-                        self.log("{} successfully validated".format(marc_file))
-                    else:
-                        for error in marc_errors:
-                            self.log(error.message)
-                            errors.append(error)
-            except FileNotFoundError as e:
-                report_builder.add_error("Unable to Validate Marc. Reason: {}".format(e))
+            errors += self.check_marc(package_path)
 
             # Validate YML
-            yml_file = os.path.join(package_path, "meta.yml")
-            try:
-                if not os.path.exists(yml_file):
-                    self.log("Skipping \'{}\' due to file not found".format(yml_file))
-                else:
-                    self.log("Validating meta.yml in {}".format(package_path))
-                    meta_yml_errors = validate_process.run_validation(
-                        validator.ValidateMetaYML(yaml_file=yml_file, path=package_path, required_page_data=True))
-                    if not meta_yml_errors:
-                        self.log("{} successfully validated".format(yml_file))
-                    else:
-                        for error in meta_yml_errors:
-                            self.log(error.message)
-                            errors.append(error)
-                #
-            except FileNotFoundError as e:
-                report_builder.add_error(report_builder.add_error("Unable to validate YAML. Reason: {}".format(e)))
+            errors += self.check_yaml(package_path)
+
             # Validate ocr files
-            if check_ocr:
+            if request_ocr_validation:
                 self.log("Validating ocr files in {}".format(package_path))
-                ocr_errors = validate_process.run_validation(validator.ValidateOCRFiles(path=package_path))
-                if ocr_errors:
-                    self.log("No validation errors found in ".format(package_path))
-                    # else:
-                    for error in ocr_errors:
-                        self.log(error.message)
-                        errors.append(error)
-            for error in report_builder.construct():
-                errors.append(error)
+                errors += self.check_ocr(package_path)
+
             self.result = errors
             self.log("Package completeness evaluation of {} completed".format(package_path))
-        # logger.removeHandler(gui_logger)
-        # print("I have {} handlers going out".format(len(logger.handlers)))
-        # self.result = (kwargs['package_path'], res)
+
+    def check_ocr(self, package_path) -> typing.List[hathi_result.ResultSummary]:
+        errors = []
+        ocr_errors = validate_process.run_validation(validator.ValidateOCRFiles(path=package_path))
+        if ocr_errors:
+            self.log("No validation errors found in ".format(package_path))
+            # else:
+            for error in ocr_errors:
+                self.log(error.message)
+                errors.append(error)
+        return errors
+
+    def check_yaml(self, package_path) -> typing.List[hathi_result.ResultSummary]:
+        yml_file = os.path.join(package_path, "meta.yml")
+        errors = []
+        report_builder = hathi_result.SummaryDirector(source=yml_file)
+        try:
+            if not os.path.exists(yml_file):
+                self.log("Skipping \'{}\' due to file not found".format(yml_file))
+            else:
+                self.log("Validating meta.yml in {}".format(package_path))
+                meta_yml_errors = validate_process.run_validation(
+                    validator.ValidateMetaYML(yaml_file=yml_file, path=package_path, required_page_data=True))
+                if not meta_yml_errors:
+                    self.log("{} successfully validated".format(yml_file))
+                else:
+                    for error in meta_yml_errors:
+                        self.log(error.message)
+                        errors.append(error)
+            #
+        except FileNotFoundError as e:
+            report_builder.add_error(report_builder.add_error("Unable to validate YAML. Reason: {}".format(e)))
+        for error in report_builder.construct():
+            errors.append(error)
+        return errors
+
+    def check_marc(self, package_path) -> typing.List[hathi_result.ResultSummary]:
+        marc_file = os.path.join(package_path, "marc.xml")
+        report_builder = hathi_result.SummaryDirector(source=marc_file)
+        errors = []
+
+        try:
+            if not os.path.exists(marc_file):
+                self.log("Skipping \'{}\' due to file not found".format(marc_file))
+            else:
+                self.log("Validating marc.xml in {}".format(package_path))
+                marc_errors = validate_process.run_validation(validator.ValidateMarc(marc_file))
+                if not marc_errors:
+                    self.log("{} successfully validated".format(marc_file))
+                else:
+                    for error in marc_errors:
+                        self.log(error.message)
+                        errors.append(error)
+        except FileNotFoundError as e:
+            report_builder.add_error("Unable to Validate Marc. Reason: {}".format(e))
+        for error in report_builder.construct():
+            errors.append(error)
+        return errors
+
+    def check_checksums(self, package_path) -> typing.List[hathi_result.ResultSummary]:
+        errors = []
+        checksum_report = os.path.join(package_path, "checksum.md5")
+        report_builder = hathi_result.SummaryDirector(source=checksum_report)
+        try:
+            files_to_check = []
+            for a, file_name in validate_process.extracts_checksums(checksum_report):
+                files_to_check.append(file_name)
+            self.log(
+                "Validating checksums of the {} files included in {}".format(len(files_to_check), checksum_report))
+
+            checksum_report_errors = validate_process.run_validation(
+                validator.ValidateChecksumReport(package_path, checksum_report))
+            if not checksum_report_errors:
+                self.log("All checksums in {} successfully validated".format(checksum_report))
+            else:
+                for error in checksum_report_errors:
+                    errors.append(error)
+        except FileNotFoundError as e:
+            report_builder.add_error("Unable to validate checksums. Reason: {}".format(e))
+        for error in report_builder.construct():
+            errors.append(error)
+        return errors
+
+    def check_extra_subdirectory(self, package_path):
+        errors = []
+        extra_subdirectories_errors = validate_process.run_validation(
+            validator.ValidateExtraSubdirectories(path=package_path))
+        if not extra_subdirectories_errors:
+            self.log("No extra subdirectories found in {}".format(package_path))
+        else:
+            for error in extra_subdirectories_errors:
+                self.log(error.message)
+                errors.append(error)
+
+        return errors
+
+    def check_missing_package_files(self, package_path):
+        errors = []
+        missing_files_errors = validate_process.run_validation(validator.ValidateMissingFiles(path=package_path))
+        if missing_files_errors:
+            for error in missing_files_errors:
+                self.log(error.message)
+                errors.append(error)
+        return errors
+
+    def check_missing_components(self, check_ocr: bool, package_path: str) -> typing.List[hathi_result.ResultSummary]:
+        errors = []
+        extensions = [".txt", ".jp2"]
+        if check_ocr:
+            extensions.append(".xml")
+        # s.debug("Looking for missing component files in {}".format(pkg))
+        missing_files_errors = validate_process.run_validation(
+            validator.ValidateComponents(package_path, "^\d{8}$", *extensions))
+        if not missing_files_errors:
+            self.log("Found no missing component files in {}".format(package_path))
+        else:
+            for error in missing_files_errors:
+                self.log(error.message)
+                errors.append(error)
+        return errors
