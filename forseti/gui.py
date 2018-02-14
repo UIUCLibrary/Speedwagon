@@ -70,10 +70,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.label_2.setText(PROJECT_NAME)
         try:
             dist = pkg_resources.get_distribution("forseti")
-            version = dist.version
+            self.version = dist.version
         except pkg_resources.DistributionNotFound:
-            version = "Development version"
-        self.version_label.setText(version)
+            self.version = "Development version"
+        self.version_label.setText(self.version)
         # self.tool_selector = self.create_tool_selector_widget()
 
         self.tool_selector_view = QtWidgets.QListView(self)
@@ -135,7 +135,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.splitter.addWidget(self.tool_workspace2)
         self.console = self.create_console()
 
-
         ###########################################################
         self.log_manager = logging.getLogger(__name__)
         self.log_manager.setLevel(logging.DEBUG)
@@ -166,7 +165,31 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tool_selector_view.selectionModel().currentChanged.connect(self.update_tool_selected)
 
         self.tabWidget.removeTab(1)
+
+        # Add menu bar
+        menu_bar = self.menuBar()
+        help_menu = menu_bar.addMenu("Help")
+
+        # Create an About button
+        about_button = QtWidgets.QAction("About", self)
+        about_button.triggered.connect(self.show_about_window)
+        help_menu.addAction(about_button)
+
+        # Show Window
         self.show()
+
+    def show_about_window(self):
+
+        message = f"Forseti" \
+                  f"\n" \
+                  f"\n" \
+                  f"Collection of tools and workflows for DS" \
+                  f"\n" \
+                  f"\n" \
+                  f"Version {self.version}"
+
+        f = QtWidgets.QMessageBox.about(self, "About", message)
+        print(f)
 
     def update_tool_selected(self, current, previous):
 
@@ -263,8 +286,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
             runner.run(self, tool, options, self.on_success, self.on_failed, self.log_manager)
 
-
-
             # with worker.WorkWrapper(self, tool, log_handler=self._handler) as work_manager:
             #     # TODO, shouldn't be setting this here, However, the worker needs
             #
@@ -329,7 +350,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         else:
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
 
-
     def tool_selected(self, index: QtCore.QModelIndex):
         tool = self.tool_list.data(index, QtCore.Qt.UserRole)
         # model.
@@ -390,9 +410,10 @@ class JobSearcher(QtCore.QThread):
         jobs = self._tool.discover_jobs(**self._options)
         self.jobs = jobs
 
+
 class JobRunner(QtCore.QThread):
 
-    def __init__(self, manager, active_tool, jobs,  parent=None):
+    def __init__(self, manager, active_tool, jobs, parent=None):
         warnings.warn("Don't use", DeprecationWarning)
         super().__init__(parent)
         self._manager = manager
@@ -500,7 +521,6 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
 #         super().setEditorData(editor, QModelIndex)
 
 def main():
-
     # logger = logging.getLogger()
     # logger.setLevel(logging.DEBUG)
     # stdout_handler = logging.StreamHandler(sys.stdout)
