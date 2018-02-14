@@ -46,7 +46,7 @@ class AbsJob(metaclass=QtMeta):
         except Exception as e:
             print("Failed {}".format(e), file=sys.stderr)
             self.successful = False
-            # raise
+            raise
             return None
 
     @abc.abstractmethod
@@ -74,8 +74,8 @@ class AbsJob(metaclass=QtMeta):
 class ProcessJob(AbsJob):
     mq = None
 
-    # def __init__(self):
-    #     super().__init__()
+    def __init__(self):
+        super().__init__()
     #     # self._mq = None
 
     def process(self, *args, **kwargs):
