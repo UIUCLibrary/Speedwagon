@@ -180,7 +180,7 @@ class HathiPackageCompletenessJob(ProcessJob):
                     for error in checksum_report_errors:
                         errors.append(error)
             except FileNotFoundError as e:
-                report_builder.add_error("Unable to validate checksums. Reason {}".format(e))
+                report_builder.add_error("Unable to validate checksums. Reason: {}".format(e))
 
             # Validate Marc
             marc_file = os.path.join(package_path, "marc.xml")
@@ -197,7 +197,7 @@ class HathiPackageCompletenessJob(ProcessJob):
                             self.log(error.message)
                             errors.append(error)
             except FileNotFoundError as e:
-                report_builder.add_error("Unable to Validate Marc. Reason {}".format(e))
+                report_builder.add_error("Unable to Validate Marc. Reason: {}".format(e))
 
             # Validate YML
             yml_file = os.path.join(package_path, "meta.yml")
@@ -216,7 +216,7 @@ class HathiPackageCompletenessJob(ProcessJob):
                             errors.append(error)
                 #
             except FileNotFoundError as e:
-                report_builder.add_error(report_builder.add_error("Unable to validate YAML. Reason {}".format(e)))
+                report_builder.add_error(report_builder.add_error("Unable to validate YAML. Reason: {}".format(e)))
             # Validate ocr files
             if check_ocr:
                 self.log("Validating ocr files in {}".format(package_path))
