@@ -42,6 +42,7 @@ class HathiPackageCompleteness(AbsTool):
                 "package_path": d.path,
                 "check_page_data": user_args["Check for page_data in meta.yml"],
                 "check_ocr_data": user_args["Check ALTO OCR xml files"],
+                "_check_ocr_utf8": user_args['Check OCR xml files are utf-8'],
             }
             )
         return jobs
@@ -51,11 +52,14 @@ class HathiPackageCompleteness(AbsTool):
         check_page_data_option = tool_options.UserOptionPythonDataType2("Check for page_data in meta.yml", bool)
         check_page_data_option.data = False
         check_ocr_option = tool_options.UserOptionPythonDataType2("Check ALTO OCR xml files", bool)
+        check_ocr_utf8_option = tool_options.UserOptionPythonDataType2('Check OCR xml files are utf-8', bool)
+        check_ocr_utf8_option.data = False
         check_ocr_option.data = True
         return [
             tool_options.UserOptionCustomDataType("Source", tool_options.FolderData),
             check_page_data_option,
-            check_ocr_option
+            check_ocr_option,
+            check_ocr_utf8_option
         ]
 
     @staticmethod
@@ -114,38 +118,43 @@ class HathiPackageCompletenessJob(ProcessJob):
 
             package_path = os.path.normcase(kwargs['package_path'])
             request_ocr_validation = kwargs['check_ocr_data']
+            request_ocr_utf8_validation = kwargs['_check_ocr_utf8']
             self.log("Checking the completeness of {}".format(package_path))
 
             errors = []
 
             # Look for missing package level files
-            errors += self.check_missing_package_files(package_path)
+            errors += self._check_missing_package_files(package_path)
 
             # Look for missing components
-            errors += self.check_missing_components(request_ocr_validation, package_path)
+            errors += self._check_missing_components(request_ocr_validation, package_path)
 
             # Validate extra subdirectories
             self.log("Looking for extra subdirectories in {}".format(package_path))
-            errors += self.check_extra_subdirectory(package_path)
+            errors += self._check_extra_subdirectory(package_path)
 
             # Validate Checksums
-            errors += self.check_checksums(package_path)
+            errors += self._check_checksums(package_path)
 
             # Validate Marc
-            errors += self.check_marc(package_path)
+            errors += self._check_marc(package_path)
 
             # Validate YML
-            errors += self.check_yaml(package_path)
+            errors += self._check_yaml(package_path)
 
             # Validate ocr files
             if request_ocr_validation:
                 self.log("Validating ocr files in {}".format(package_path))
-                errors += self.check_ocr(package_path)
+                errors += self._check_ocr(package_path)
+
+            if request_ocr_utf8_validation:
+                self.log("Validating ocr files in {} only have utf-8 characters".format(package_path))
+                errors += self._check_ocr_utf8(package_path)
 
             self.result = errors
             self.log("Package completeness evaluation of {} completed".format(package_path))
 
-    def check_ocr(self, package_path) -> typing.List[hathi_result.ResultSummary]:
+    def _check_ocr(self, package_path) -> typing.List[hathi_result.ResultSummary]:
         errors = []
         ocr_errors = validate_process.run_validation(validator.ValidateOCRFiles(path=package_path))
         if ocr_errors:
@@ -156,7 +165,7 @@ class HathiPackageCompletenessJob(ProcessJob):
                 errors.append(error)
         return errors
 
-    def check_yaml(self, package_path) -> typing.List[hathi_result.ResultSummary]:
+    def _check_yaml(self, package_path) -> typing.List[hathi_result.ResultSummary]:
         yml_file = os.path.join(package_path, "meta.yml")
         errors = []
         report_builder = hathi_result.SummaryDirector(source=yml_file)
@@ -180,7 +189,7 @@ class HathiPackageCompletenessJob(ProcessJob):
             errors.append(error)
         return errors
 
-    def check_marc(self, package_path) -> typing.List[hathi_result.ResultSummary]:
+    def _check_marc(self, package_path) -> typing.List[hathi_result.ResultSummary]:
         marc_file = os.path.join(package_path, "marc.xml")
         report_builder = hathi_result.SummaryDirector(source=marc_file)
         errors = []
@@ -203,7 +212,7 @@ class HathiPackageCompletenessJob(ProcessJob):
             errors.append(error)
         return errors
 
-    def check_checksums(self, package_path) -> typing.List[hathi_result.ResultSummary]:
+    def _check_checksums(self, package_path) -> typing.List[hathi_result.ResultSummary]:
         errors = []
         checksum_report = os.path.join(package_path, "checksum.md5")
         report_builder = hathi_result.SummaryDirector(source=checksum_report)
@@ -227,7 +236,7 @@ class HathiPackageCompletenessJob(ProcessJob):
             errors.append(error)
         return errors
 
-    def check_extra_subdirectory(self, package_path):
+    def _check_extra_subdirectory(self, package_path) -> typing.List[hathi_result.ResultSummary]:
         errors = []
         extra_subdirectories_errors = validate_process.run_validation(
             validator.ValidateExtraSubdirectories(path=package_path))
@@ -240,7 +249,7 @@ class HathiPackageCompletenessJob(ProcessJob):
 
         return errors
 
-    def check_missing_package_files(self, package_path):
+    def _check_missing_package_files(self, package_path) -> typing.List[hathi_result.ResultSummary]:
         errors = []
         missing_files_errors = validate_process.run_validation(validator.ValidateMissingFiles(path=package_path))
         if missing_files_errors:
@@ -249,7 +258,7 @@ class HathiPackageCompletenessJob(ProcessJob):
                 errors.append(error)
         return errors
 
-    def check_missing_components(self, check_ocr: bool, package_path: str) -> typing.List[hathi_result.ResultSummary]:
+    def _check_missing_components(self, check_ocr: bool, package_path: str) -> typing.List[hathi_result.ResultSummary]:
         errors = []
         extensions = [".txt", ".jp2"]
         if check_ocr:
@@ -264,3 +273,28 @@ class HathiPackageCompletenessJob(ProcessJob):
                 self.log(error.message)
                 errors.append(error)
         return errors
+
+    def _check_ocr_utf8(self, package_path) -> typing.List[hathi_result.ResultSummary]:
+        errors = []
+
+        def filter_ocr_only(entry: os.DirEntry):
+            if not entry.is_file():
+                return False
+
+            name, ext = os.path.splitext(entry.name)
+
+            if ext.lower() != ".xml":
+                return False
+
+            if name.lower() == "marc":
+                return False
+
+            return True
+
+        for ocr_file in filter(filter_ocr_only, os.scandir(package_path)):
+            print(ocr_file)
+            # TODO: read file as UTF-8, if fails to do so, list it as an error
+            # for file_ in files:
+            #     print(os.path.join(root, file_))
+        return errors
+        pass
