@@ -191,7 +191,7 @@ class HathiPackageCompletenessJob(ProcessJob):
 
     def _check_marc(self, package_path) -> typing.List[hathi_result.ResultSummary]:
         marc_file = os.path.join(package_path, "marc.xml")
-        report_builder = hathi_result.SummaryDirector(source=marc_file)
+        result_builder = hathi_result.SummaryDirector(source=marc_file)
         errors = []
 
         try:
@@ -207,8 +207,8 @@ class HathiPackageCompletenessJob(ProcessJob):
                         self.log(error.message)
                         errors.append(error)
         except FileNotFoundError as e:
-            report_builder.add_error("Unable to Validate Marc. Reason: {}".format(e))
-        for error in report_builder.construct():
+            result_builder.add_error("Unable to Validate Marc. Reason: {}".format(e))
+        for error in result_builder.construct():
             errors.append(error)
         return errors
 
@@ -275,7 +275,7 @@ class HathiPackageCompletenessJob(ProcessJob):
         return errors
 
     def _check_ocr_utf8(self, package_path) -> typing.List[hathi_result.ResultSummary]:
-        errors = []
+
 
         def filter_ocr_only(entry: os.DirEntry):
             if not entry.is_file():
@@ -291,8 +291,27 @@ class HathiPackageCompletenessJob(ProcessJob):
 
             return True
 
+        def find_non_utf8_characters(file_path:str)->typing.List[str]:
+            _invalid_characters = []
+            with open(file_path, "r", encoding="utf8") as f:
+                for line in f:
+                    print(line)
+            return _invalid_characters
+
+        errors: typing.List[hathi_result.ResultSummary] = []
+
+        print("looking for invalid charactesr")
+        ocr_file: os.DirEntry
         for ocr_file in filter(filter_ocr_only, os.scandir(package_path)):
-            print(ocr_file)
+            print(ocr_file.path)
+            invalid_characters = find_non_utf8_characters(ocr_file.path)
+            if invalid_characters:
+                result_builder = hathi_result.SummaryDirector(source=ocr_file)
+                for invalid_character in invalid_characters:
+                    result_builder.add_error(str(invalid_character))
+                errors += result_builder.construct()
+
+
             # TODO: read file as UTF-8, if fails to do so, list it as an error
             # for file_ in files:
             #     print(os.path.join(root, file_))
