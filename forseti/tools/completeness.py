@@ -4,6 +4,7 @@ import typing
 import os
 
 import sys
+import warnings
 from contextlib import contextmanager
 from functools import wraps
 
@@ -274,7 +275,7 @@ class HathiPackageCompletenessJob(ProcessJob):
         return errors
 
     def _check_ocr_utf8(self, package_path) -> typing.List[hathi_result.ResultSummary]:
-
+        # TODO: refactor this into Hathi Validate
         def filter_ocr_only(entry: os.DirEntry):
             if not entry.is_file():
                 return False
@@ -290,6 +291,7 @@ class HathiPackageCompletenessJob(ProcessJob):
             return True
 
         def find_non_utf8_characters(file_path: str) -> hathi_result.ResultSummary:
+            warnings.warn("Use  HathiValidate.ValidateUTF8Files instead", DeprecationWarning)
             result_builder = hathi_result.SummaryDirector(source=file_path)
             with open(file_path, "rb") as f:
 
