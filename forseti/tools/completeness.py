@@ -275,7 +275,7 @@ class HathiPackageCompletenessJob(ProcessJob):
         return errors
 
     def _check_ocr_utf8(self, package_path) -> typing.List[hathi_result.ResultSummary]:
-        # TODO: refactor this into Hathi Validate
+
         def filter_ocr_only(entry: os.DirEntry):
             if not entry.is_file():
                 return False
@@ -290,26 +290,15 @@ class HathiPackageCompletenessJob(ProcessJob):
 
             return True
 
-        def find_non_utf8_characters(file_path: str) -> hathi_result.ResultSummary:
-            warnings.warn("Use  HathiValidate.ValidateUTF8Files instead", DeprecationWarning)
-            result_builder = hathi_result.SummaryDirector(source=file_path)
-            with open(file_path, "rb") as f:
-
-                for line_num, line in enumerate(f):
-                    try:
-                        line.decode("utf-8", errors="strict")
-                    except UnicodeDecodeError as e:
-                        result_builder.add_error("Line {} contains illegal characters. Details: {}".format(line_num + 1, e))
-            return result_builder.construct()
-
         errors: typing.List[hathi_result.ResultSummary] = []
+
 
         ocr_file: os.DirEntry
         for ocr_file in filter(filter_ocr_only, os.scandir(package_path)):
             self.log("Looking for invalid characters in {}".format(ocr_file.path))
+            invalid_ocr_character = validate_process.run_validation(validator.ValidateUTF8Files(ocr_file.path))
 
-            invalid_characters = find_non_utf8_characters(ocr_file.path)
-            if invalid_characters:
-                errors += invalid_characters
+            if invalid_ocr_character:
+                errors += invalid_ocr_character
 
         return errors
