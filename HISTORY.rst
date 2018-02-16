@@ -34,6 +34,8 @@ Release History
 
 Dev
 +++
-* New tools:
+* New Tools:
    * Convert CaptureOne TIFF to Hathi TIFF package
    * Generate MARC.XML Files
+* Tool Changes:
+   * * Verify HathiTrust Package Completeness optionally checks if the OCR files contain any characters that are not in UTF-8
