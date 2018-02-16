@@ -2,7 +2,7 @@ PyQt5
 setuptools>=30.3.0
 pyqt-distutils
 hathizip
-HathiValidate>=0.3.2
+HathiValidate>=0.3.3
 pyhathiprep
 hathichecksumupdater
 uiucprescon-packager

@@ -42,7 +42,7 @@ setup(
     install_requires=[
         "pyqt5",
         "hathizip",
-        "HathiValidate>=0.3.2",
+        "HathiValidate>=0.3.3",
         "pyhathiprep",
         "hathichecksumupdater",
         "uiucprescon-packager",
