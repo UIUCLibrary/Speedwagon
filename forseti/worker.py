@@ -76,6 +76,7 @@ class ProcessJob(AbsJob):
 
     def __init__(self):
         super().__init__()
+
     #     # self._mq = None
 
     def process(self, *args, **kwargs):
@@ -217,7 +218,6 @@ class ProgressMessageBoxLogHandler(logging.Handler):
 
     def emit(self, record):
         self.dialog_box.setLabelText(record.msg)
-        # QtWidgets.QApplication.processEvents()
 
 
 class MessageRefresher(contextlib.AbstractContextManager):
@@ -306,7 +306,7 @@ class WorkManager(ProcessWorker):
         #     self.on_completion(results=self.results)
 
     def on_completion(self, *args, **kwargs):
-        # self._jobs_queue.join()
+        # self._jobs_queue.get_results()
         self.finished.emit(self.results, self.completion_callback)
         # self.t.stop()
         # super().on_completion(*args, **kwargs)
@@ -846,6 +846,34 @@ class WorkRunnerExternal(contextlib.AbstractContextManager):
         QtWidgets.QMessageBox.about(self.parent, "Canceled", "Successfully Canceled")
 
 
+class WorkRunnerExternal2(contextlib.AbstractContextManager):
+    def __init__(self, tool, options, parent):
+        self.results = []
+        self._tool = tool
+        self._options = options
+        self._parent = parent
+        self.abort_callback = None
+        # self._message_logger = logger
+        self.jobs: queue.Queue[JobPair] = queue.Queue()
+
+    def __enter__(self):
+        self.dialog = QtWidgets.QProgressDialog(self._parent)
+        self.dialog.setModal(True)
+        self.dialog.setLabelText("Initializing")
+        self.progress_dialog_box_handler = ProgressMessageBoxLogHandler(self.dialog)
+        self.dialog.canceled.connect(self.abort)
+        # self.dialog.show()
+        # self.dialog.exec_()
+        return self
+
+    def abort(self):
+        if self.abort_callback:
+            self.abort_callback()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.dialog.close()
+
+
 class WorkerManager:
     # manager = None
 
@@ -875,7 +903,6 @@ class WorkerManager:
         if self._tool is None:
             raise ValueError("Need to have a tool")
 
-        # runner = WorkRunner(logger=self.logger, parent=self.parent, title=self.title)
         searching_dialog = QtWidgets.QProgressDialog()
         searching_dialog.setWindowTitle("Locating jobs")
         runner = WorkRunnerExternal(process_worker=self._job_processor, logger=self.logger, parent=self.parent,
@@ -898,3 +925,92 @@ class WorkerManager:
         while not self._results_queue.empty():
             self._results.append(self._results_queue.get())
         return self._results
+
+
+class ToolJobManager(contextlib.AbstractContextManager):
+
+    def __init__(self, max_workers=1) -> None:
+        self.manager = multiprocessing.Manager()
+        self._max_workers = max_workers
+        self.active = False
+        self._pending_jobs = queue.Queue()
+        self.futures = []
+        self._results = []
+        self.logger = logging.getLogger(__name__)
+        # self._message_queue = queue.Queue()
+
+    def __enter__(self):
+        self._message_queue = self.manager.Queue()
+        self._executor = concurrent.futures.ProcessPoolExecutor(self._max_workers)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        print("Still have {} unstarted jobs in the queue".format(self._pending_jobs.qsize()))
+        self._executor.shutdown()
+
+    def open(self, options, tool, parent):
+        return WorkRunnerExternal2(tool=tool, options=options, parent=parent)
+
+    def add_job(self, job, settings):
+        self._pending_jobs.put(JobPair(job, settings))
+
+    def start(self):
+        self.active = True
+        while not self._pending_jobs.empty():
+            tool, settings = self._pending_jobs.get()
+            job_type = tool.new_job()
+            job = job_type()
+            job.mq = self._message_queue
+            fut = self._executor.submit(job.execute, **settings)
+            self.futures.append(fut)
+
+    def abort(self):
+        self.active = False
+        still_running = []
+        dialog = QtWidgets.QProgressDialog()
+        dialog.setWindowTitle("Canceling")
+        dialog.setModal(True)
+        for future in reversed(self.futures):
+            if not future.cancel():
+                if future.running():
+                    still_running.append(future)
+        dialog.setRange(0, len(still_running))
+        dialog.setLabelText("Canceling".format(len(still_running)))
+        dialog.show()
+        # TODO: set cancel dialog to force the cancellation of the future
+        while True:
+            try:
+                QtWidgets.QApplication.processEvents()
+                for i, future in enumerate(concurrent.futures.as_completed(still_running, timeout=.1)):
+                    dialog.setValue(i + 1)
+                break
+            except concurrent.futures.TimeoutError:
+                continue
+        dialog.accept()
+        print("canceled")
+    def get_results(self, timeout_callback=None) -> list:
+        results = []
+        while self.active:
+            try:
+                completed_results = []
+                for f in concurrent.futures.as_completed(self.futures, timeout=0.01):
+                    if not f.cancelled():
+                        completed_results.append(f.result())
+
+                if timeout_callback:
+                    completed = [f for f in self.futures if f.done()]
+                    timeout_callback(len(completed), len(self.futures))
+                self.active = False
+                self.futures = []
+                results = completed_results
+            except concurrent.futures.TimeoutError:
+                while not self._message_queue.empty():
+                    self.logger.info(self._message_queue.get())
+
+                if timeout_callback:
+                    completed = [f for f in self.futures if f.done()]
+                    timeout_callback(len(completed), len(self.futures))
+                QtWidgets.QApplication.processEvents()
+                continue
+
+        return results
