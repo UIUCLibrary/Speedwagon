@@ -55,9 +55,9 @@ class ConsoleLogger(logging.Handler):
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
-    def __init__(self, parent=None):
+    def __init__(self, work_manager: worker.ToolJobManager, parent=None) -> None:
         super().__init__(parent)
-
+        self._work_manager = work_manager
         # self.log_manager.setLevel(logging.DEBUG)
         # logger = logging.getLogger(__name__)
         # self.log_manager.debug("Setting up ui")
@@ -136,7 +136,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.console = self.create_console()
 
         ###########################################################
-        self.log_manager = logging.getLogger(__name__)
+        self.log_manager = self._work_manager.logger
+        # self.log_manager = logging.getLogger(__name__)
         self.log_manager.setLevel(logging.DEBUG)
         self._handler = ConsoleLogger(self.console)
         self._handler.setLevel(logging.INFO)
@@ -281,71 +282,11 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
             # wrapped_strat = runner_strategies.UsingWorkWrapper()
             # runner = runner_strategies.RunRunner(wrapped_strat)
-            manager_strat = runner_strategies.UsingWorkManager()
+            manager_strat = runner_strategies.UsingExternalManager(manager=self._work_manager)
+            # manager_strat = runner_strategies.UsingWorkManager()
             runner = runner_strategies.RunRunner(manager_strat)
 
-            runner.run(self, tool, options, self.on_success, self.on_failed, self.log_manager)
-
-            # with worker.WorkWrapper(self, tool, log_handler=self._handler) as work_manager:
-            #     # TODO, shouldn't be setting this here, However, the worker needs
-            #
-            #     # wm = worker.WorkDisplay(self)
-            #     # wm = w.worker_display
-            #     work_manager.worker_display.finished.connect(self.on_success)
-            #     work_manager.worker_display.failed.connect(self.on_failed)
-            #
-            #     try:
-            #         self.log_manager.debug("Validating arguments")
-            #         work_manager.valid_arguments(options)
-            #         # tool.validate_args(**options)
-            #         # wm.completion_callback = lambda: self._tool.on_completion()
-            #
-            #         # Search for jobs
-            #         job_searcher = JobSearcher(tool, options)
-            #         # print("Job search starting", file=sys.stderr)
-            #         job_searcher.start()
-            #         while not job_searcher.isFinished():
-            #             # self.log_manager.info("Loading")
-            #             # print("loading", file=sys.stderr)
-            #             QtCore.QCoreApplication.processEvents()
-            #             # self.QApplication.processEvents()
-            #         # print("Job search Finished", file=sys.stderr)
-            #
-            #         for _job_args in job_searcher.jobs:
-            #             self.log_manager.debug("Adding {} with {} to work manager".format(tool, _job_args))
-            #             work_manager.add_job(_job_args)
-            #
-            #         print("running {} tasks".format(work_manager.worker_display._jobs_queue.qsize()), file=sys.stderr)
-            #         try:
-            #             work_manager.finish()
-            #             # print("AFTER")
-            #             # work_manager.worker_display.finish()
-            #
-            #         except RuntimeError as e:
-            #             QtWidgets.QMessageBox.warning(self, "Process failed", str(e))
-            #         # except TypeError as e:
-            #         #     QtWidgets.QMessageBox.critical(self, "Process failed", str(e))
-            #         #     raise
-            #
-            #     except ValueError as e:
-            #
-            #         work_manager.worker_display.cancel(e, quiet=True)
-            #         QtWidgets.QMessageBox.warning(self, "Invalid setting", str(e))
-            #
-            #     except Exception as e:
-            #         work_manager.worker_display.cancel(e, quiet=True)
-            #         exception_message = traceback.format_exception(type(e), e, tb=e.__traceback__)
-            #         msg = QtWidgets.QMessageBox(self)
-            #         msg.setIcon(QtWidgets.QMessageBox.Critical)
-            #         msg.setWindowTitle(str(type(e).__name__))
-            #         msg.setText(str(e))
-            #         msg.setDetailedText("".join(exception_message))
-            #         self.log_manager.fatal("Terminating application. Reason: {}".format(e))
-            #         msg.exec_()
-            #         print("Exiting early", file=sys.stderr)
-            #         sys.exit(1)
-            #     finally:
-            #         print("out!", file=sys.stderr)
+            runner.run(self, tool, options, self.on_success, self.on_failed, self._work_manager.logger)
 
         else:
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
@@ -521,16 +462,16 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
 #         super().setEditorData(editor, QModelIndex)
 
 def main():
-    # logger = logging.getLogger()
-    # logger.setLevel(logging.DEBUG)
-    # stdout_handler = logging.StreamHandler(sys.stdout)
-    # logger.addHandler(stdout_handler)
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    logger.addHandler(stdout_handler)
     # logger.info("asdfasdfasdf")
-
     app = QtWidgets.QApplication(sys.argv)
-    windows = MainWindow()
-    windows.setWindowTitle(PROJECT_NAME)
-    rc = app.exec_()
+    with worker.ToolJobManager() as work_manager:
+        windows = MainWindow(work_manager=work_manager)
+        windows.setWindowTitle(PROJECT_NAME)
+        rc = app.exec_()
     sys.exit(rc)
 
 
