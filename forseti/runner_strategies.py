@@ -18,7 +18,8 @@ import forseti.gui
 class AbsRunner(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success, on_failure, log_handler):
+    def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success, on_failure,
+            logger: logging.Logger):
         pass
 
 
@@ -106,9 +107,9 @@ class UsingWorkWrapper(AbsRunner):
 
 
 class UsingWorkManager(AbsRunner):
-    def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success, on_failure, log_handler):
-        worker_manager = worker.WorkerManager(title=tool.name, tool=tool, parent=parent, logger=log_handler)
-        # worker_manager.logger = log_handler
+    def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success, on_failure, logger):
+        worker_manager = worker.WorkerManager(title=tool.name, tool=tool, parent=parent, logger=logger)
+        # worker_manager.logger = logger
         try:
             with worker_manager.open(options) as work_runner:
                 work_runner.start()
@@ -117,3 +118,42 @@ class UsingWorkManager(AbsRunner):
             on_success(worker_manager.results, tool.on_completion)
         except Exception as e:
             on_failure(e)
+
+
+class UsingExternalManager(AbsRunner):
+
+    def __init__(self, manager: worker.ToolJobManager) -> None:
+        self._manager = manager
+
+    def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success, on_failure,
+            logger: logging.Logger):
+        try:
+            with self._manager.open(options=options, tool=tool, parent=parent) as runner:
+
+                def update_progress(current: int, total: int):
+                    runner.dialog.setMaximum(total)
+                    runner.dialog.setValue(current)
+                    if current == total:
+                        runner.dialog.accept()
+
+                runner.abort_callback = self.on_runner_aborted
+                logger.addHandler(runner.progress_dialog_box_handler)
+                runner.dialog.setRange(0, 0)
+
+                i = -1
+                for i, new_setting in enumerate(tool.discover_jobs(**options)):
+                    self._manager.add_job(tool, new_setting)
+                    logger.info("Found {} jobs".format(i + 1))
+                runner.dialog.setMaximum(i)
+
+                self._manager.start()
+
+                runner.dialog.show()
+                results = self._manager.get_results(update_progress)
+
+                on_success(results, tool.on_completion)
+        except Exception as e:
+            on_failure(e)
+
+    def on_runner_aborted(self):
+        self._manager.abort()
