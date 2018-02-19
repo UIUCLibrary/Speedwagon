@@ -82,8 +82,9 @@ class ProcessJob(AbsJob):
 
     # @classmethod
     def set_message_queue(self, value):
-        # self._mq = value
-        self.mq = value
+        pass
+        self._mq = value
+        # cls.mq = value
 
     def log(self, message):
         if self.mq:
@@ -986,29 +987,41 @@ class ToolJobManager(contextlib.AbstractContextManager):
                 continue
         dialog.accept()
         print("canceled")
+
     def get_results(self, timeout_callback=None) -> list:
-        results = []
+        # results = []
+        total_jobs = len(self.futures)
+        completed = 0
         while self.active:
             try:
                 completed_results = []
                 for f in concurrent.futures.as_completed(self.futures, timeout=0.01):
                     if not f.cancelled():
-                        completed_results.append(f.result())
+                        result = f.result()
+                        self.futures.remove(f)
+                        completed += 1
+                        yield result
+                        # completed_results.append(f.result())
 
                 if timeout_callback:
-                    completed = [f for f in self.futures if f.done()]
-                    timeout_callback(len(completed), len(self.futures))
+                    timeout_callback(completed, total_jobs)
+
                 self.active = False
-                self.futures = []
+                self.futures.clear()
+                self.flush_message_buffer()
                 results = completed_results
+
             except concurrent.futures.TimeoutError:
-                while not self._message_queue.empty():
-                    self.logger.info(self._message_queue.get())
+                self.flush_message_buffer()
 
                 if timeout_callback:
-                    completed = [f for f in self.futures if f.done()]
-                    timeout_callback(len(completed), len(self.futures))
+                    # completed = [f for f in self.futures if f.done()]
+                    timeout_callback(completed, total_jobs)
                 QtWidgets.QApplication.processEvents()
                 continue
+        self.flush_message_buffer()
+        # return results
 
-        return results
+    def flush_message_buffer(self):
+        while not self._message_queue.empty():
+            self.logger.info(self._message_queue.get())
