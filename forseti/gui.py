@@ -160,6 +160,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         about_button.triggered.connect(self.show_about_window)
         help_menu.addAction(about_button)
 
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+
         # Show Window
         self.show()
 
