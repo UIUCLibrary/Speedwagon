@@ -9,7 +9,7 @@ import warnings
 
 from PyQt5 import QtCore, QtWidgets
 
-import forseti.tools.abstool
+import forseti.tools
 # Tool, Options,
 from forseti import worker
 import forseti.gui
@@ -18,7 +18,7 @@ import forseti.gui
 class AbsRunner(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success, on_failure,
+    def run(self, parent, tool: forseti.tools.AbsTool, options: dict, on_success, on_failure,
             logger: logging.Logger):
         pass
 
@@ -27,7 +27,7 @@ class RunRunner:
     def __init__(self, strategy: AbsRunner) -> None:
         self._strategy = strategy
 
-    def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success: typing.Callable,
+    def run(self, parent, tool: forseti.tools.AbsTool, options: dict, on_success: typing.Callable,
             on_failure: typing.Callable, logger: logging.Logger) -> None:
         return self._strategy.run(parent, tool, options, on_success, on_failure, logger)
 
@@ -125,7 +125,7 @@ class UsingExternalManager(AbsRunner):
     def __init__(self, manager: worker.ToolJobManager) -> None:
         self._manager = manager
 
-    def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success, on_failure,
+    def run(self, parent, tool: forseti.tools.AbsTool, options: dict, on_success, on_failure,
             logger: logging.Logger):
         try:
             with self._manager.open(options=options, tool=tool, parent=parent) as runner:
@@ -152,7 +152,6 @@ class UsingExternalManager(AbsRunner):
 
                 results = list()
                 for result in self._manager.get_results(update_progress):
-                    # print(result)
                     results.append(result)
                 logger.removeHandler(runner.progress_dialog_box_handler)
 
