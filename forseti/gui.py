@@ -20,8 +20,8 @@ Setting = namedtuple("Setting", ("label", "widget"))
 
 class ToolConsole(QtWidgets.QGroupBox):
 
-    def __init__(self, *__args):
-        super().__init__(*__args)
+    def __init__(self, parent):
+        super().__init__(parent)
         self.setTitle("Console")
         self.setLayout(QtWidgets.QVBoxLayout())
         self._console = QtWidgets.QTextBrowser(self)
@@ -55,12 +55,9 @@ class ConsoleLogger(logging.Handler):
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
-    def __init__(self, work_manager: worker.ToolJobManager, parent=None) -> None:
-        super().__init__(parent)
+    def __init__(self, work_manager: worker.ToolJobManager) -> None:
+        super().__init__()
         self._work_manager = work_manager
-        # self.log_manager.setLevel(logging.DEBUG)
-        # logger = logging.getLogger(__name__)
-        # self.log_manager.debug("Setting up ui")
         self.setupUi(self)
         self.tabWidget.setTabEnabled(1, False)
         self.splitter = QtWidgets.QSplitter(self.tab_tools)
@@ -74,18 +71,9 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         except pkg_resources.DistributionNotFound:
             self.version = "Development version"
         self.version_label.setText(self.version)
-        # self.tool_selector = self.create_tool_selector_widget()
 
         self.tool_selector_view = QtWidgets.QListView(self)
         self.tool_selector_view.setFixedHeight(100)
-
-        # self.tool_selector_view.clicked.connect(self.tool_selected)
-        # self.tool_selector_view.indexesMoved.connect(self.tool_selected)
-
-        # self.tool_selector_view.clicked.connect(lambda s: print("clicked on {}".format(s.row())))
-
-        # self.tool_selector.toolChanged.connect(self.change_tool)
-        # self.tool_workspace = self.create_tool_workspace()
 
         ###########################################################
         #
@@ -94,17 +82,13 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self._selected_tool_name_line2 = QtWidgets.QLineEdit()
         self._selected_tool_name_line2.setReadOnly(True)
         self._description_information2 = QtWidgets.QTextBrowser()
-        # self._description_information2 = QtWidgets.QLabel()
-        # self._description_information2 = QtWidgets.QTextEdit()
-        # self._description_information2.setText()
-        # self._description_information2.setReadOnly(True)
 
         # Add the configuration and metadata widgets
         self.tool_config_layout = QtWidgets.QFormLayout()
         self.tool_config_layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.ExpandingFieldsGrow)
 
         # self.tool_config_layout.
-        self.tool_settings = QtWidgets.QTableView(self)
+        self.tool_settings = QtWidgets.QTableView(parent=self)
         self.tool_settings.setEditTriggers(QtWidgets.QAbstractItemView.AllEditTriggers)
         self.tool_settings.setItemDelegate(MyDelegate(self))
         self.tool_settings.horizontalHeader().setVisible(False)
@@ -151,8 +135,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tab_tools_layout.addWidget(self.splitter)
 
         # self.tool_workspace._reporter = self._reporter
-        self.load_tools()
-        self.tool_list = t.ToolsListModel(t.available_tools())
+        # self.load_tools()
+        self.tool_list = t.ToolsListModel(t.available_tools(), parent=self)
         self.tool_selector_view.setModel(self.tool_list)
         self.tool_selector_view.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
@@ -340,34 +324,34 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tool_workspace.set_tool(tool)
 
 
-class JobSearcher(QtCore.QThread):
-    def __init__(self, tool, options, parent=None):
-        super(JobSearcher, self).__init__(parent)
-        self._options = options
-        self._tool = tool
-        self.jobs = []
+# class JobSearcher(QtCore.QThread):
+#     def __init__(self, tool, options, parent=None):
+#         super(JobSearcher, self).__init__(parent)
+#         self._options = options
+#         self._tool = tool
+#         self.jobs = []
+#
+#     def run(self):
+#         jobs = self._tool.discover_jobs(**self._options)
+#         self.jobs = jobs
 
-    def run(self):
-        jobs = self._tool.discover_jobs(**self._options)
-        self.jobs = jobs
 
-
-class JobRunner(QtCore.QThread):
-
-    def __init__(self, manager, active_tool, jobs, parent=None):
-        warnings.warn("Don't use", DeprecationWarning)
-        super().__init__(parent)
-        self._manager = manager
-        self._jobs = jobs
-        self._active_tool = active_tool
-
-    def run(self):
-        print("This is job runner!")
-        for job_args in self._jobs:
-            job = self._active_tool.new_job()
-            self._manager.add_job(job, **job_args)
-
-        self._manager.finish()
+# class JobRunner(QtCore.QThread):
+#
+#     def __init__(self, manager, active_tool, jobs, parent=None):
+#         warnings.warn("Don't use", DeprecationWarning)
+#         super().__init__(parent)
+#         self._manager = manager
+#         self._jobs = jobs
+#         self._active_tool = active_tool
+#
+#     def run(self):
+#         print("This is job runner!")
+#         for job_args in self._jobs:
+#             job = self._active_tool.new_job()
+#             self._manager.add_job(job, **job_args)
+#
+#         self._manager.finish()
 
 
 # class YesNoBoxDelegate(QtWidgets.QItemDelegate):
@@ -472,6 +456,8 @@ def main():
         windows = MainWindow(work_manager=work_manager)
         windows.setWindowTitle(PROJECT_NAME)
         rc = app.exec_()
+    print("all done", file=sys.stderr)
+    # app.flush()
     sys.exit(rc)
 
 
