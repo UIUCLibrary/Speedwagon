@@ -1,5 +1,5 @@
 import concurrent.futures
-
+import forseti.tools
 # from abc import ABCMeta, abstractmethod
 import contextlib
 import logging
@@ -9,7 +9,6 @@ import abc
 import sys
 import warnings
 from abc import abstractmethod, ABCMeta
-
 from PyQt5 import QtCore, QtWidgets
 from collections import namedtuple
 import multiprocessing
@@ -932,9 +931,9 @@ class ToolJobManager(contextlib.AbstractContextManager):
         self.manager = multiprocessing.Manager()
         self._max_workers = max_workers
         self.active = False
-        self._pending_jobs = queue.Queue()
-        self.futures = []
-        self._results = []
+        self._pending_jobs: queue.Queue[forseti.tools.AbsTool] = queue.Queue()
+        self.futures: typing.List[concurrent.futures.Future] = []
+        # self._results = []
         self.logger = logging.getLogger(__name__)
         # self._message_queue = queue.Queue()
 
@@ -944,7 +943,6 @@ class ToolJobManager(contextlib.AbstractContextManager):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        print("Still have {} unstarted jobs in the queue".format(self._pending_jobs.qsize()))
         self._executor.shutdown()
 
     def open(self, options, tool, parent):
@@ -988,20 +986,17 @@ class ToolJobManager(contextlib.AbstractContextManager):
         dialog.accept()
         print("canceled")
 
-    def get_results(self, timeout_callback=None) -> list:
-        # results = []
+    def get_results(self, timeout_callback=None) -> typing.Iterable[typing.Any]:
         total_jobs = len(self.futures)
         completed = 0
         while self.active:
             try:
-                completed_results = []
                 for f in concurrent.futures.as_completed(self.futures, timeout=0.01):
                     if not f.cancelled():
                         result = f.result()
                         self.futures.remove(f)
                         completed += 1
                         yield result
-                        # completed_results.append(f.result())
 
                 if timeout_callback:
                     timeout_callback(completed, total_jobs)
@@ -1009,7 +1004,6 @@ class ToolJobManager(contextlib.AbstractContextManager):
                 self.active = False
                 self.futures.clear()
                 self.flush_message_buffer()
-                results = completed_results
 
             except concurrent.futures.TimeoutError:
                 self.flush_message_buffer()
