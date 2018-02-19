@@ -5,5 +5,5 @@ hathizip
 HathiValidate>=0.3.3
 pyhathiprep
 hathichecksumupdater
-uiucprescon-packager
+uiucprescon-packager>=0.1.0
 uiucprescon-getmarc
