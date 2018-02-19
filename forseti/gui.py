@@ -448,18 +448,16 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
 #         super().setEditorData(editor, QModelIndex)
 
 def main():
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
-    stdout_handler = logging.StreamHandler(sys.stdout)
-    logger.addHandler(stdout_handler)
+    # logger = logging.getLogger()
+    # logger.setLevel(logging.DEBUG)
+    # stdout_handler = logging.StreamHandler(sys.stdout)
+    # logger.addHandler(stdout_handler)
     # logger.info("asdfasdfasdf")
     app = QtWidgets.QApplication(sys.argv)
     with worker.ToolJobManager() as work_manager:
         windows = MainWindow(work_manager=work_manager)
         windows.setWindowTitle(PROJECT_NAME)
         rc = app.exec_()
-    print("all done", file=sys.stderr)
-    # app.flush()
     sys.exit(rc)
 
 
