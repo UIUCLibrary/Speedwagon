@@ -45,7 +45,7 @@ setup(
         "HathiValidate>=0.3.3",
         "pyhathiprep",
         "hathichecksumupdater",
-        "uiucprescon-packager",
+        "uiucprescon-packager>=0.1.0",
         "uiucprescon-getmarc"
     ],
     packages=[
@@ -57,7 +57,7 @@ setup(
     tests_require=['pytest', "behave", "pytest-qt"],
     python_requires=">=3.6",
     entry_points={
-        "console_scripts": [
+        "gui_scripts": [
             'forseti = forseti.__main__:main'
         ]
     },
