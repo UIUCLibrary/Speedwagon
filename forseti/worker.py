@@ -289,9 +289,7 @@ class ToolJobManager(contextlib.AbstractContextManager):
         self.active = False
         self._pending_jobs: queue.Queue[forseti.tools.AbsTool] = queue.Queue()
         self.futures: typing.List[concurrent.futures.Future] = []
-        # self._results = []
         self.logger = logging.getLogger(__name__)
-        # self._message_queue = queue.Queue()
 
     def __enter__(self):
         self._message_queue = self.manager.Queue()
@@ -349,8 +347,9 @@ class ToolJobManager(contextlib.AbstractContextManager):
                 break
             except concurrent.futures.TimeoutError:
                 continue
+        self.logger.info("Cancelled")
+        self.flush_message_buffer()
         dialog.accept()
-        print("canceled")
 
     def get_results(self, timeout_callback=None) -> typing.Iterable[typing.Any]:
         total_jobs = len(self.futures)
@@ -363,6 +362,7 @@ class ToolJobManager(contextlib.AbstractContextManager):
                         self.futures.remove(f)
                         completed += 1
                         self._pending_jobs.task_done()
+                        self.flush_message_buffer()
                         timeout_callback(completed, total_jobs)
                         yield result
 
