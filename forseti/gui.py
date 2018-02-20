@@ -136,7 +136,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         # self.tool_workspace._reporter = self._reporter
         # self.load_tools()
-        self.tool_list = t.ToolsListModel(t.available_tools(), parent=self)
+        self.tool_list = t.ToolsListModel(t.available_tools())
         self.tool_selector_view.setModel(self.tool_list)
         self.tool_selector_view.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
