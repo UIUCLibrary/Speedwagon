@@ -20,8 +20,8 @@ Setting = namedtuple("Setting", ("label", "widget"))
 
 class ToolConsole(QtWidgets.QGroupBox):
 
-    def __init__(self, *__args):
-        super().__init__(*__args)
+    def __init__(self, parent):
+        super().__init__(parent)
         self.setTitle("Console")
         self.setLayout(QtWidgets.QVBoxLayout())
         self._console = QtWidgets.QTextBrowser(self)
@@ -55,12 +55,9 @@ class ConsoleLogger(logging.Handler):
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-        # self.log_manager.setLevel(logging.DEBUG)
-        # logger = logging.getLogger(__name__)
-        # self.log_manager.debug("Setting up ui")
+    def __init__(self, work_manager: worker.ToolJobManager) -> None:
+        super().__init__()
+        self._work_manager = work_manager
         self.setupUi(self)
         self.tabWidget.setTabEnabled(1, False)
         self.splitter = QtWidgets.QSplitter(self.tab_tools)
@@ -74,18 +71,9 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         except pkg_resources.DistributionNotFound:
             self.version = "Development version"
         self.version_label.setText(self.version)
-        # self.tool_selector = self.create_tool_selector_widget()
 
         self.tool_selector_view = QtWidgets.QListView(self)
         self.tool_selector_view.setFixedHeight(100)
-
-        # self.tool_selector_view.clicked.connect(self.tool_selected)
-        # self.tool_selector_view.indexesMoved.connect(self.tool_selected)
-
-        # self.tool_selector_view.clicked.connect(lambda s: print("clicked on {}".format(s.row())))
-
-        # self.tool_selector.toolChanged.connect(self.change_tool)
-        # self.tool_workspace = self.create_tool_workspace()
 
         ###########################################################
         #
@@ -94,17 +82,13 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self._selected_tool_name_line2 = QtWidgets.QLineEdit()
         self._selected_tool_name_line2.setReadOnly(True)
         self._description_information2 = QtWidgets.QTextBrowser()
-        # self._description_information2 = QtWidgets.QLabel()
-        # self._description_information2 = QtWidgets.QTextEdit()
-        # self._description_information2.setText()
-        # self._description_information2.setReadOnly(True)
 
         # Add the configuration and metadata widgets
         self.tool_config_layout = QtWidgets.QFormLayout()
         self.tool_config_layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.ExpandingFieldsGrow)
 
         # self.tool_config_layout.
-        self.tool_settings = QtWidgets.QTableView(self)
+        self.tool_settings = QtWidgets.QTableView(parent=self)
         self.tool_settings.setEditTriggers(QtWidgets.QAbstractItemView.AllEditTriggers)
         self.tool_settings.setItemDelegate(MyDelegate(self))
         self.tool_settings.horizontalHeader().setVisible(False)
@@ -136,7 +120,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.console = self.create_console()
 
         ###########################################################
-        self.log_manager = logging.getLogger(__name__)
+        self.log_manager = self._work_manager.logger
+        # self.log_manager = logging.getLogger(__name__)
         self.log_manager.setLevel(logging.DEBUG)
         self._handler = ConsoleLogger(self.console)
         self._handler.setLevel(logging.INFO)
@@ -150,7 +135,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tab_tools_layout.addWidget(self.splitter)
 
         # self.tool_workspace._reporter = self._reporter
-        self.load_tools()
+        # self.load_tools()
         self.tool_list = t.ToolsListModel(t.available_tools())
         self.tool_selector_view.setModel(self.tool_list)
         self.tool_selector_view.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
@@ -174,6 +159,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         about_button = QtWidgets.QAction("About", self)
         about_button.triggered.connect(self.show_about_window)
         help_menu.addAction(about_button)
+
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
         # Show Window
         self.show()
@@ -281,71 +268,11 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
             # wrapped_strat = runner_strategies.UsingWorkWrapper()
             # runner = runner_strategies.RunRunner(wrapped_strat)
-            manager_strat = runner_strategies.UsingWorkManager()
+            manager_strat = runner_strategies.UsingExternalManager(manager=self._work_manager)
+            # manager_strat = runner_strategies.UsingWorkManager()
             runner = runner_strategies.RunRunner(manager_strat)
 
-            runner.run(self, tool, options, self.on_success, self.on_failed, self.log_manager)
-
-            # with worker.WorkWrapper(self, tool, log_handler=self._handler) as work_manager:
-            #     # TODO, shouldn't be setting this here, However, the worker needs
-            #
-            #     # wm = worker.WorkDisplay(self)
-            #     # wm = w.worker_display
-            #     work_manager.worker_display.finished.connect(self.on_success)
-            #     work_manager.worker_display.failed.connect(self.on_failed)
-            #
-            #     try:
-            #         self.log_manager.debug("Validating arguments")
-            #         work_manager.valid_arguments(options)
-            #         # tool.validate_args(**options)
-            #         # wm.completion_callback = lambda: self._tool.on_completion()
-            #
-            #         # Search for jobs
-            #         job_searcher = JobSearcher(tool, options)
-            #         # print("Job search starting", file=sys.stderr)
-            #         job_searcher.start()
-            #         while not job_searcher.isFinished():
-            #             # self.log_manager.info("Loading")
-            #             # print("loading", file=sys.stderr)
-            #             QtCore.QCoreApplication.processEvents()
-            #             # self.QApplication.processEvents()
-            #         # print("Job search Finished", file=sys.stderr)
-            #
-            #         for _job_args in job_searcher.jobs:
-            #             self.log_manager.debug("Adding {} with {} to work manager".format(tool, _job_args))
-            #             work_manager.add_job(_job_args)
-            #
-            #         print("running {} tasks".format(work_manager.worker_display._jobs_queue.qsize()), file=sys.stderr)
-            #         try:
-            #             work_manager.finish()
-            #             # print("AFTER")
-            #             # work_manager.worker_display.finish()
-            #
-            #         except RuntimeError as e:
-            #             QtWidgets.QMessageBox.warning(self, "Process failed", str(e))
-            #         # except TypeError as e:
-            #         #     QtWidgets.QMessageBox.critical(self, "Process failed", str(e))
-            #         #     raise
-            #
-            #     except ValueError as e:
-            #
-            #         work_manager.worker_display.cancel(e, quiet=True)
-            #         QtWidgets.QMessageBox.warning(self, "Invalid setting", str(e))
-            #
-            #     except Exception as e:
-            #         work_manager.worker_display.cancel(e, quiet=True)
-            #         exception_message = traceback.format_exception(type(e), e, tb=e.__traceback__)
-            #         msg = QtWidgets.QMessageBox(self)
-            #         msg.setIcon(QtWidgets.QMessageBox.Critical)
-            #         msg.setWindowTitle(str(type(e).__name__))
-            #         msg.setText(str(e))
-            #         msg.setDetailedText("".join(exception_message))
-            #         self.log_manager.fatal("Terminating application. Reason: {}".format(e))
-            #         msg.exec_()
-            #         print("Exiting early", file=sys.stderr)
-            #         sys.exit(1)
-            #     finally:
-            #         print("out!", file=sys.stderr)
+            runner.run(self, tool, options, self.on_success, self.on_failed, self._work_manager.logger)
 
         else:
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
@@ -399,34 +326,34 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tool_workspace.set_tool(tool)
 
 
-class JobSearcher(QtCore.QThread):
-    def __init__(self, tool, options, parent=None):
-        super(JobSearcher, self).__init__(parent)
-        self._options = options
-        self._tool = tool
-        self.jobs = []
+# class JobSearcher(QtCore.QThread):
+#     def __init__(self, tool, options, parent=None):
+#         super(JobSearcher, self).__init__(parent)
+#         self._options = options
+#         self._tool = tool
+#         self.jobs = []
+#
+#     def run(self):
+#         jobs = self._tool.discover_jobs(**self._options)
+#         self.jobs = jobs
 
-    def run(self):
-        jobs = self._tool.discover_jobs(**self._options)
-        self.jobs = jobs
 
-
-class JobRunner(QtCore.QThread):
-
-    def __init__(self, manager, active_tool, jobs, parent=None):
-        warnings.warn("Don't use", DeprecationWarning)
-        super().__init__(parent)
-        self._manager = manager
-        self._jobs = jobs
-        self._active_tool = active_tool
-
-    def run(self):
-        print("This is job runner!")
-        for job_args in self._jobs:
-            job = self._active_tool.new_job()
-            self._manager.add_job(job, **job_args)
-
-        self._manager.finish()
+# class JobRunner(QtCore.QThread):
+#
+#     def __init__(self, manager, active_tool, jobs, parent=None):
+#         warnings.warn("Don't use", DeprecationWarning)
+#         super().__init__(parent)
+#         self._manager = manager
+#         self._jobs = jobs
+#         self._active_tool = active_tool
+#
+#     def run(self):
+#         print("This is job runner!")
+#         for job_args in self._jobs:
+#             job = self._active_tool.new_job()
+#             self._manager.add_job(job, **job_args)
+#
+#         self._manager.finish()
 
 
 # class YesNoBoxDelegate(QtWidgets.QItemDelegate):
@@ -526,11 +453,11 @@ def main():
     # stdout_handler = logging.StreamHandler(sys.stdout)
     # logger.addHandler(stdout_handler)
     # logger.info("asdfasdfasdf")
-
     app = QtWidgets.QApplication(sys.argv)
-    windows = MainWindow()
-    windows.setWindowTitle(PROJECT_NAME)
-    rc = app.exec_()
+    with worker.ToolJobManager() as work_manager:
+        windows = MainWindow(work_manager=work_manager)
+        windows.setWindowTitle(PROJECT_NAME)
+        rc = app.exec_()
     sys.exit(rc)
 
 
