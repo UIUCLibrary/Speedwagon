@@ -102,8 +102,8 @@ class ToolsListModel(QtCore.QAbstractTableModel):
     NAME = 0
     DESCRIPTION = 1
 
-    def __init__(self, data: typing.Dict["str", AbsTool], parent) -> None:
-        super().__init__(parent)
+    def __init__(self, data: typing.Dict["str", AbsTool]) -> None:
+        super().__init__()
         self._data: typing.List[AbsTool] = []
         for k, v in data.items():
             self._data.append(v)
@@ -165,82 +165,82 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
 
 
 #
-# class ToolOptionsPairsModel(ToolOptionsModel):
+class ToolOptionsPairsModel(ToolOptionsModel):
+
+    def __init__(self, data: typing.Dict[str, str], parent=None) -> None:
+        warnings.warn("Use ToolOptionsModel2 instead", DeprecationWarning)
+        super().__init__(parent)
+        for k, v in data.items():
+            self._data.append(OptionPair(k, v))
+
+    def data(self, index, role=None):
+        if index.isValid():
+            if role == QtCore.Qt.DisplayRole:
+                return self._data[index.row()].data
+            if role == QtCore.Qt.EditRole:
+                return self._data[index.row()].data
+        return QtCore.QVariant()
+
+    def setData(self, index, data, role=None):
+        if not index.isValid():
+            return False
+        existing_data = self._data[index.row()]
+        self._data[index.row()] = OptionPair(existing_data.label, data)
+        return True
+        # return super().setData(QModelIndex, data, role)
+
+    def headerData(self, index, Qt_Orientation, role=None):
+        if Qt_Orientation == QtCore.Qt.Vertical:
+            if role == QtCore.Qt.DisplayRole:
+                title = self._data[index].label
+                return str(title)
+        return QtCore.QVariant()
+        # return super().headerData(index, Qt_Orientation, role)
+
+    def get(self) -> dict:
+        options = dict()
+        for data in self._data:
+            options[data.label] = data.data
+        return options
+
 #
-#     def __init__(self, data: typing.Dict[str, str], parent=None) -> None:
-#         warnings.warn("Use ToolOptionsModel2 instead", DeprecationWarning)
-#         super().__init__(parent)
-#         for k, v in data.items():
-#             self._data.append(OptionPair(k, v))
-#
-#     def data(self, index, role=None):
-#         if index.isValid():
-#             if role == QtCore.Qt.DisplayRole:
-#                 return self._data[index.row()].data
-#             if role == QtCore.Qt.EditRole:
-#                 return self._data[index.row()].data
-#         return QtCore.QVariant()
-#
-#     def setData(self, index, data, role=None):
-#         if not index.isValid():
-#             return False
-#         existing_data = self._data[index.row()]
-#         self._data[index.row()] = OptionPair(existing_data.label, data)
-#         return True
-#         # return super().setData(QModelIndex, data, role)
-#
-#     def headerData(self, index, Qt_Orientation, role=None):
-#         if Qt_Orientation == QtCore.Qt.Vertical:
-#             if role == QtCore.Qt.DisplayRole:
-#                 title = self._data[index].label
-#                 return str(title)
-#         return QtCore.QVariant()
-#         # return super().headerData(index, Qt_Orientation, role)
-#
-#     def get(self) -> dict:
-#         options = dict()
-#         for data in self._data:
-#             options[data.label] = data.data
-#         return options
-#
-#
-# class ToolOptionsModel2(ToolOptionsModel):
-#
-#     def __init__(self, data: typing.List[ToolOptionDataType], parent=None) -> None:
-#         warnings.warn("Use ToolOptionsModel3 instead", DeprecationWarning)
-#         super().__init__(parent)
-#         self._data: typing.List[ToolOptionDataType] = data
-#
-#     def data(self, index, role=None):
-#         if index.isValid():
-#             if role == QtCore.Qt.DisplayRole:
-#                 return str(self._data[index.row()].data)
-#             if role == QtCore.Qt.EditRole:
-#                 return self._data[index.row()].data
-#             if role == QtCore.Qt.UserRole:
-#                 return self._data[index.row()]
-#         return QtCore.QVariant()
-#
-#     def get(self):
-#         options = dict()
-#         for data in self._data:
-#             options[data.name] = data.data
-#         return options
-#
-#     def headerData(self, index, Qt_Orientation, role=None):
-#         if Qt_Orientation == QtCore.Qt.Vertical:
-#             if role == QtCore.Qt.DisplayRole:
-#                 title = self._data[index].name
-#                 return str(title)
-#         return QtCore.QVariant()
-#
-#     def setData(self, index, data, role=None):
-#         if not index.isValid():
-#             return False
-#         existing_data = self._data[index.row()]
-#         self._data[index.row()].data = data
-#         return True
-#
+class ToolOptionsModel2(ToolOptionsModel):
+
+    def __init__(self, data: typing.List[ToolOptionDataType], parent=None) -> None:
+        warnings.warn("Use ToolOptionsModel3 instead", DeprecationWarning)
+        super().__init__(parent)
+        self._data: typing.List[ToolOptionDataType] = data
+
+    def data(self, index, role=None):
+        if index.isValid():
+            if role == QtCore.Qt.DisplayRole:
+                return str(self._data[index.row()].data)
+            if role == QtCore.Qt.EditRole:
+                return self._data[index.row()].data
+            if role == QtCore.Qt.UserRole:
+                return self._data[index.row()]
+        return QtCore.QVariant()
+
+    def get(self):
+        options = dict()
+        for data in self._data:
+            options[data.name] = data.data
+        return options
+
+    def headerData(self, index, Qt_Orientation, role=None):
+        if Qt_Orientation == QtCore.Qt.Vertical:
+            if role == QtCore.Qt.DisplayRole:
+                title = self._data[index].name
+                return str(title)
+        return QtCore.QVariant()
+
+    def setData(self, index, data, role=None):
+        if not index.isValid():
+            return False
+        existing_data = self._data[index.row()]
+        self._data[index.row()].data = data
+        return True
+
 
 class ToolOptionsModel3(ToolOptionsModel):
 
