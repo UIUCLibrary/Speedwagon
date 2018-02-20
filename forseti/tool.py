@@ -102,8 +102,8 @@ class ToolsListModel(QtCore.QAbstractTableModel):
     NAME = 0
     DESCRIPTION = 1
 
-    def __init__(self, data: typing.Dict["str", AbsTool], parent=None) -> None:
-        super().__init__(parent)
+    def __init__(self, data: typing.Dict["str", AbsTool]) -> None:
+        super().__init__()
         self._data: typing.List[AbsTool] = []
         for k, v in data.items():
             self._data.append(v)
@@ -164,6 +164,7 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
 
 
+#
 class ToolOptionsPairsModel(ToolOptionsModel):
 
     def __init__(self, data: typing.Dict[str, str], parent=None) -> None:
@@ -202,7 +203,7 @@ class ToolOptionsPairsModel(ToolOptionsModel):
             options[data.label] = data.data
         return options
 
-
+#
 class ToolOptionsModel2(ToolOptionsModel):
 
     def __init__(self, data: typing.List[ToolOptionDataType], parent=None) -> None:
