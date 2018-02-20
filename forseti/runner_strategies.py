@@ -131,8 +131,12 @@ class UsingExternalManager(AbsRunner):
             with self._manager.open(options=options, tool=tool, parent=parent) as runner:
 
                 def update_progress(current: int, total: int):
-                    runner.dialog.setMaximum(total)
-                    runner.dialog.setValue(current)
+
+                    if total != runner.dialog.maximum():
+                        runner.dialog.setMaximum(total)
+                    if current != runner.dialog.value():
+                        runner.dialog.setValue(current)
+
                     if current == total:
                         runner.dialog.accept()
 
