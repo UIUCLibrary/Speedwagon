@@ -302,7 +302,7 @@ def available_tools() -> dict:
             module = importlib.import_module("{}.tools.{}".format(__package__, os.path.splitext(m.name)[0]))
             for name_, module_class in inspect.getmembers(module,
                                                           lambda m: inspect.isclass(m) and not inspect.isabstract(m)):
-                if issubclass(module_class, AbsTool):
+                if issubclass(module_class, AbsTool) and module_class.active:
                     located_tools[module_class.name] = module_class
         except ImportError as e:
 
