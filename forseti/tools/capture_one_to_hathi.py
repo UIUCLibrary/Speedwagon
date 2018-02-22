@@ -5,12 +5,13 @@ from contextlib import contextmanager
 import os
 
 from forseti import worker
-from forseti.tools.abstool import AbsTool
+from forseti.tools import AbsTool
 from forseti.tools import tool_options
 from forseti.worker import ProcessJob, GuiLogHandler
 
 import uiucprescon.packager
 import uiucprescon.packager.packages
+from uiucprescon.packager.packages.collection_builder import Metadata
 import enum
 
 
@@ -23,7 +24,6 @@ class ResultValues(enum.Enum):
     VALID = "valid"
     FILENAME = "filename"
     PATH = "path"
-    CHECKSUM_REPORT_FILE = "checksum_report_file"
 
 
 class JobValues(enum.Enum):
@@ -37,33 +37,25 @@ class CaptureOneToHathiTiffPackage(AbsTool):
     description = "Input is a path to a folder of TIFF files all named with a bibID as a prefacing identifier, a " \
                   "final delimiting underscore or dash, and a sequence consisting of padded zeroes and a number." \
                   "\n" \
-                  "\nOutput is a directory to put the new packages." \
+                  "\nOutput is a directory of folders named by bibID with the " \
+                  "prefacing delimiter stripped from each filename."\
                   "\n" \
                   "\nInput:" \
                   "\n  + batch folder" \
-                  "\n      - uniqueID1_00000001.tif" \
-                  "\n      - uniqueID1_00000002.tif" \
-                  "\n      - uniqueID1_00000003.tif" \
-                  "\n      - uniqueID2_00000001.tif" \
-                  "\n      - uniqueID2_00000002.tif" \
+                  "\n      - Bibid1_00000001.tif" \
+                  "\n      - Bibid1_00000002.tif" \
+                  "\n      - Bibid1_00000003.tif" \
+                  "\n      - Bibid2_00000001.tif" \
+                  "\n      - Bibid2_00000002.tif" \
                   "\n" \
                   "\nOutput:" \
-                  "\n + uniqueID1 (folder)" \
-                  "\n     + preservation (folder)" \
-                  "\n         - uniqueID1_00000001.tif" \
-                  "\n         - uniqueID1_00000002.tif" \
-                  "\n         - uniqueID1_00000003.tif" \
-                  "\n     + access (folder)" \
-                  "\n         - uniqueID1_00000001.jp2" \
-                  "\n         - uniqueID1_00000002.jp2" \
-                  "\n         - uniqueID1_00000003.jp2" \
-                  "\n + uniqueID2 (folder)" \
-                  "\n     + preservation (folder)" \
-                  "\n         - uniqueID2_00000001.tif" \
-                  "\n         - uniqueID2_00000002.tif" \
-                  "\n     + access (folder)" \
-                  "\n         - uniqueID2_00000001.jp2" \
-                  "\n         - uniqueID2_00000002.jp2"
+                  "\n  + Bibid1 (folder)" \
+                  "\n      - 00000001.tif" \
+                  "\n      - 00000002.tif" \
+                  "\n      - 00000003.tif" \
+                  "\n  + Bibid2 (folder)" \
+                  "\n      - 00000001.tif" \
+                  "\n      - 00000002.tif"
 
     @staticmethod
     def discover_jobs(**user_args) -> typing.List[dict]:
@@ -119,7 +111,7 @@ class PackageConverter(ProcessJob):
             existing_package = kwargs[JobValues.PACKAGE.value]
             new_package_root = kwargs[JobValues.OUTPUT.value]
             source_path = kwargs[JobValues.SOURCE_PATH.value]
-            package_id = existing_package.metadata['id']
+            package_id = existing_package.metadata[Metadata.ID]
             self.log(f"Converting {package_id} from {source_path} to a Hathi Trust Tiff package at {new_package_root}")
             package_factory = uiucprescon.packager.PackageFactory(uiucprescon.packager.packages.HathiTiff())
             package_factory.transform(existing_package, dest=new_package_root)

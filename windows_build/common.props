@@ -16,7 +16,7 @@
         <PyBuildFolder Condition="'$(PyBuildFolder)'==''">$(ProjectRoot)\build\</PyBuildFolder>
         <PythonRuntimeCachePath Condition="'$(PythonRuntimeCachePath)'==''">$(PyBuildFolder)\runtimes\</PythonRuntimeCachePath>
         <PyBuildFolder>$(ProjectRoot)\build\</PyBuildFolder>
-        <PyBuildStandaloneBuildPath>$(PyBuildFolder)standalone\</PyBuildStandaloneBuildPath>
+        <PyBuildStandaloneBuildPath>$(PyBuildFolder)standalone</PyBuildStandaloneBuildPath>
         <MSBuildCommunityTasksPath>$(SolutionDir)\.build</MSBuildCommunityTasksPath>
         <MSIBuildPath>$(PyBuildFolder)msi\</MSIBuildPath>
         <PythonRuntimeCachePath>$(PyBuildFolder)\runtimes\</PythonRuntimeCachePath>
