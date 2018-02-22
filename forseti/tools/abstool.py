@@ -2,13 +2,14 @@ import abc
 import typing
 import warnings
 
-from .tool_options import UserOption2
+from . import tool_options
 from forseti import worker
 
 
 class AbsTool(metaclass=abc.ABCMeta):
     name = None  # type: str
     description = None  # type: str
+    active = True  # type: bool
 
     def __init__(self) -> None:
         super().__init__()
@@ -28,7 +29,7 @@ class AbsTool(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def get_user_options() -> typing.List[UserOption2]:
+    def get_user_options() -> typing.List[tool_options.UserOption2]:
         pass
 
     @staticmethod
