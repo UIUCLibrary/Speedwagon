@@ -1,7 +1,7 @@
 PyQt5
 setuptools>=30.3.0
 pyqt-distutils
-hathizip
+hathizip>=0.1.3
 HathiValidate>=0.3.3
 pyhathiprep
 hathichecksumupdater
