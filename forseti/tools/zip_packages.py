@@ -12,8 +12,8 @@ from forseti import worker
 from forseti.tools.abstool import AbsTool
 # from forseti.tool import ToolOption
 from forseti.worker import ProcessJob, GuiLogHandler
-# from .tool_options import UserOption
-from forseti.tools import tool_options
+# from .options import UserOption
+from forseti.tools import options
 import hathizip.process
 import hathizip
 
@@ -77,10 +77,10 @@ class ZipPackages(AbsTool):
         return "Zipping complete. All files written to output location"
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType(UserArgs.SOURCE.value, tool_options.FolderData),
-            tool_options.UserOptionCustomDataType(UserArgs.OUTPUT.value, tool_options.FolderData),
+            options.UserOptionCustomDataType(UserArgs.SOURCE.value, options.FolderData),
+            options.UserOptionCustomDataType(UserArgs.OUTPUT.value, options.FolderData),
         ]
 
 

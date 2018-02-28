@@ -1,15 +1,15 @@
 from behave import *
 from behave import runner
 
-import forseti.tools.tool_options
+import forseti.tools.options
 from forseti import tool
 
 use_step_matcher("re")
 @given("we have two ToolOptions called dummy and dummy2")
 def step_impl(context):
     data = [
-        forseti.tools.tool_options.ToolOptionDataType(name="dummy"),
-        forseti.tools.tool_options.ToolOptionDataType(name="dummy2")
+        forseti.tools.options.ToolOptionDataType(name="dummy"),
+        forseti.tools.options.ToolOptionDataType(name="dummy2")
     ]
 
     context.data = data
@@ -25,7 +25,7 @@ def step_impl(context: runner.Context):
 
 @given("I have an options model with ToolOptions 2 with a single my_option")
 def step_impl(context: runner.Context):
-    data = [forseti.tools.tool_options.ToolOptionDataType(name="my_option")]
+    data = [forseti.tools.options.ToolOptionDataType(name="my_option")]
     context.data_model = tool.ToolOptionsModel2(data)
 
 

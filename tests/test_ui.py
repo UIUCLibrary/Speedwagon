@@ -9,7 +9,7 @@ import logging
 from forseti import worker
 import forseti.tools.verify_checksum
 from forseti.tools.abstool import AbsTool
-from forseti.tools import tool_options
+from forseti.tools import options
 import forseti.tool
 
 
@@ -36,9 +36,9 @@ class EchoTool(AbsTool):
         ]
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionPythonDataType2("message")
+            options.UserOptionPythonDataType2("message")
         ]
 
 

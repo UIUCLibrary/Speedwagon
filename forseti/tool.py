@@ -8,8 +8,8 @@ from collections import namedtuple
 
 import sys
 
-from forseti.tools.tool_options import ToolOptionDataType
-from forseti.tools import tool_options
+from forseti.tools.options import ToolOptionDataType
+from forseti.tools import options
 from . import tools
 from forseti.tools.abstool import AbsTool
 import os
@@ -244,12 +244,12 @@ class ToolOptionsModel2(ToolOptionsModel):
 
 class ToolOptionsModel3(ToolOptionsModel):
 
-    def __init__(self, data: typing.List[tool_options.UserOptionPythonDataType], parent=None) -> None:
+    def __init__(self, data: typing.List[options.UserOptionPythonDataType], parent=None) -> None:
         if data is None:
             raise NotImplementedError
         super().__init__(parent)
 
-        self._data: typing.List[tool_options.UserOptionPythonDataType] = data
+        self._data: typing.List[options.UserOptionPythonDataType] = data
 
     def data(self, index, role=None):
         if index.isValid():

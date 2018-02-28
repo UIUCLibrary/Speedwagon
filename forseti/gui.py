@@ -6,7 +6,7 @@ import time
 from PyQt5 import QtWidgets, QtCore, QtGui
 import forseti.tool
 import forseti.tools.abstool
-from forseti.tools import tool_options
+from forseti.tools import options
 from forseti.ui import main_window_shell_ui
 from forseti import tool as t, worker, runner_strategies
 from collections import namedtuple
@@ -395,7 +395,7 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
             tool_settings = index.data(QtCore.Qt.UserRole)
             browser_widget = tool_settings.edit_widget()
             if browser_widget:
-                assert isinstance(browser_widget, tool_options.CustomItemWidget)
+                assert isinstance(browser_widget, options.CustomItemWidget)
                 browser_widget.editingFinished.connect(self.update_custom_item)
 
                 # browser_widget.editingFinished.connect(lambda : self.commitData(browser_widget))
@@ -412,13 +412,13 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
 
         if index.isValid():
             i = index.data(QtCore.Qt.UserRole)
-            if isinstance(editor, tool_options.CustomItemWidget):
+            if isinstance(editor, options.CustomItemWidget):
                 editor.data = i.data
             # i.browse()
         super().setEditorData(editor, index)
 
     def setModelData(self, widget: QtWidgets.QWidget, model: QtCore.QAbstractItemModel, index):
-        if isinstance(widget, tool_options.CustomItemWidget):
+        if isinstance(widget, options.CustomItemWidget):
             model.setData(index, widget.data)
             return
         #     files = widget.selectedFiles()

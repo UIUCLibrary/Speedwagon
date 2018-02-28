@@ -8,8 +8,8 @@ from PyQt5 import QtWidgets
 
 from forseti.worker import ProcessJob
 from .abstool import AbsTool
-# from .tool_options import ToolOptionDataType, UserOptionPythonDataType
-from forseti.tools import tool_options
+# from .options import ToolOptionDataType, UserOptionPythonDataType
+from forseti.tools import options
 from forseti import worker
 import hathi_validate
 
@@ -36,7 +36,7 @@ class JobValues(enum.Enum):
     ROOT_PATH = "path"
 
 
-class ChecksumFile(tool_options.AbsBrowseableWidget):
+class ChecksumFile(options.AbsBrowseableWidget):
     def browse_clicked(self):
         selection = QtWidgets.QFileDialog.getOpenFileName(filter="Checksum files (*.md5)")
         if selection[0]:
@@ -44,7 +44,7 @@ class ChecksumFile(tool_options.AbsBrowseableWidget):
             self.editingFinished.emit()
 
 
-class ChecksumData(tool_options.AbsCustomData2):
+class ChecksumData(options.AbsCustomData2):
 
     @classmethod
     def is_valid(cls, value) -> bool:
@@ -145,9 +145,9 @@ class VerifyChecksumBatchSingle(VerifyChecksum):
         return jobs
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, ChecksumData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value, ChecksumData),
 
         ]
 
@@ -188,9 +188,9 @@ class VerifyChecksumBatchMultiple(VerifyChecksum):
         return jobs
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, tool_options.FolderData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value, options.FolderData),
         ]
 
     @staticmethod
