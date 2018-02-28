@@ -15,7 +15,6 @@ from PyQt5 import QtCore, QtWidgets
 from collections import namedtuple
 import multiprocessing
 
-
 JobPair = namedtuple("JobPair", ("job", "args"))
 
 MessageLog = namedtuple("MessageLog", ("message",))
@@ -66,6 +65,65 @@ class AbsJob(metaclass=QtMeta):
         # print(message_queue)
         # print(job)
         # print("HERER")
+
+
+class TaskStatus(enum.Enum):
+    IDLE = 0
+    WORKING = 1
+    SUCCESS = 2
+    FAILED = 3
+
+
+class AbsTask(metaclass=abc.ABCMeta):
+    def __init__(self):
+        self.result = None
+        # TODO: refactor into state machine
+        self.status = TaskStatus.IDLE
+
+
+
+    @abc.abstractmethod
+    def process(self):
+        pass
+
+
+class AbsJob2(metaclass=abc.ABCMeta):
+
+    def __init__(self) -> None:
+        # Todo: use the results builder from validate
+        self.result = []  # type: ignore
+        self.successful: bool = None
+        self.tasks: typing.List[AbsTask] = []
+
+    @property
+    def progress(self) -> float:
+        amount_completed = len([task for task in self.tasks if task.status.value > TaskStatus.WORKING.value])
+        return amount_completed/ len(self.tasks)
+
+    def execute(self, *args, **kwargs):
+
+        try:
+            for task in self.tasks:
+                task.process()
+                if task.result is not None:
+                    self.result += task.result
+            self.on_completion(*args, **kwargs)
+            self.successful = True
+            return self.result
+        except Exception as e:
+            print("Failed {}".format(e), file=sys.stderr)
+            self.successful = False
+            raise
+
+    def on_completion(self, *args, **kwargs):
+        pass
+
+    @classmethod
+    def new(cls, job, message_queue, *args, **kwargs):
+        new_job = job()
+        new_job.set_message_queue(message_queue)
+        new_job.execute(*args, **kwargs)
+        return new_job.result
 
 
 class ProcessJob(AbsJob):
@@ -218,7 +276,6 @@ class ProgressMessageBoxLogHandler(logging.Handler):
         self.dialog_box.setLabelText(record.msg)
 
 
-
 class AbsObserver(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def emit(self, value):
@@ -253,8 +310,6 @@ class GuiLogHandler(logging.Handler):
 
     def emit(self, record):
         self.callback(record.msg)
-
-
 
 
 class WorkRunnerExternal2(contextlib.AbstractContextManager):
