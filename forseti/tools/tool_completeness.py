@@ -10,8 +10,8 @@ from functools import wraps
 
 from forseti import worker
 from .abstool import AbsTool
-# from .tool_options import ToolOptionDataType
-from forseti.tools import tool_options
+# from .options import ToolOptionDataType
+from forseti.tools import options
 from forseti.worker import ProcessJob, GuiLogHandler
 from hathi_validate import process as validate_process
 from hathi_validate import validator
@@ -49,15 +49,15 @@ class HathiPackageCompleteness(AbsTool):
         return jobs
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
-        check_page_data_option = tool_options.UserOptionPythonDataType2("Check for page_data in meta.yml", bool)
+    def get_user_options() -> typing.List[options.UserOption2]:
+        check_page_data_option = options.UserOptionPythonDataType2("Check for page_data in meta.yml", bool)
         check_page_data_option.data = False
-        check_ocr_option = tool_options.UserOptionPythonDataType2("Check ALTO OCR xml files", bool)
-        check_ocr_utf8_option = tool_options.UserOptionPythonDataType2('Check OCR xml files are utf-8', bool)
+        check_ocr_option = options.UserOptionPythonDataType2("Check ALTO OCR xml files", bool)
+        check_ocr_utf8_option = options.UserOptionPythonDataType2('Check OCR xml files are utf-8', bool)
         check_ocr_utf8_option.data = False
         check_ocr_option.data = True
         return [
-            tool_options.UserOptionCustomDataType("Source", tool_options.FolderData),
+            options.UserOptionCustomDataType("Source", options.FolderData),
             check_page_data_option,
             check_ocr_option,
             check_ocr_utf8_option

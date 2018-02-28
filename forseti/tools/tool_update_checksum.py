@@ -8,8 +8,8 @@ from PyQt5 import QtWidgets
 
 from forseti.worker import ProcessJob
 from .abstool import AbsTool
-# from .tool_options import ToolOptionDataType
-from forseti.tools import tool_options
+# from .options import ToolOptionDataType
+from forseti.tools import options
 from forseti import worker
 # from pyhathiprep import checksum
 from hathi_checksum import checksum_report, update_report
@@ -28,7 +28,7 @@ class UserArgs(enum.Enum):
 
 # import hathi_checksum
 
-class ChecksumFile(tool_options.AbsBrowseableWidget):
+class ChecksumFile(options.AbsBrowseableWidget):
     def browse_clicked(self):
         selection = QtWidgets.QFileDialog.getOpenFileName(filter="Checksum files (*.md5)")
         if selection[0]:
@@ -36,7 +36,7 @@ class ChecksumFile(tool_options.AbsBrowseableWidget):
             self.editingFinished.emit()
 
 
-class ChecksumData(tool_options.AbsCustomData2):
+class ChecksumData(options.AbsCustomData2):
 
     @classmethod
     def is_valid(cls, value) -> bool:
@@ -168,9 +168,9 @@ class UpdateChecksumBatchSingle(UpdateChecksum):
             raise ValueError("Selected input is not a checksum.md5 file")
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, ChecksumData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value, ChecksumData),
         ]
 
     #     super().on_completion(*args, **kwargs)
@@ -206,9 +206,9 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
         return jobs
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, tool_options.FolderData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value, options.FolderData),
         ]
 
     @staticmethod

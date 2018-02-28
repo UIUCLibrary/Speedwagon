@@ -4,7 +4,7 @@ import typing
 import os
 
 from forseti import worker
-from forseti.tools import tool_options
+from forseti.tools import options
 from forseti.tools.abstool import AbsTool
 from forseti.worker import ProcessJob
 from uiucprescon import pygetmarc
@@ -63,9 +63,9 @@ class GenerateMarcXMLFilesTool(AbsTool):
         return jobs
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, tool_options.FolderData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value, options.FolderData),
         ]
 
     @classmethod

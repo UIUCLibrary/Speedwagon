@@ -1,18 +1,13 @@
+import enum
 import logging
 import typing
 from contextlib import contextmanager
 
-import os
-
 from forseti import worker
-from forseti.tools import AbsTool
-from forseti.tools import tool_options
-from forseti.worker import ProcessJob, GuiLogHandler
-
+from forseti.tools import AbsTool, options
 import uiucprescon.packager
 import uiucprescon.packager.packages
 from uiucprescon.packager.packages.collection_builder import Metadata
-import enum
 
 
 class UserArgs(enum.Enum):
@@ -24,6 +19,7 @@ class ResultValues(enum.Enum):
     VALID = "valid"
     FILENAME = "filename"
     PATH = "path"
+    CHECKSUM_REPORT_FILE = "checksum_report_file"
 
 
 class JobValues(enum.Enum):
@@ -32,30 +28,39 @@ class JobValues(enum.Enum):
     SOURCE_PATH = "source_path"
 
 
-class CaptureOneToHathiTiffPackage(AbsTool):
-    name = "Convert CaptureOne TIFF to Hathi TIFF package"
+class CaptureOneToDLCompound(AbsTool):
+    name = "Convert CaptureOne TIFF to Digital Library Compound Object"
     description = "Input is a path to a folder of TIFF files all named with a bibID as a prefacing identifier, a " \
                   "final delimiting underscore or dash, and a sequence consisting of padded zeroes and a number." \
                   "\n" \
-                  "\nOutput is a directory of folders named by bibID with the " \
-                  "prefacing delimiter stripped from each filename."\
+                  "\nOutput is a directory to put the new packages." \
                   "\n" \
                   "\nInput:" \
                   "\n  + batch folder" \
-                  "\n      - Bibid1_00000001.tif" \
-                  "\n      - Bibid1_00000002.tif" \
-                  "\n      - Bibid1_00000003.tif" \
-                  "\n      - Bibid2_00000001.tif" \
-                  "\n      - Bibid2_00000002.tif" \
+                  "\n      - uniqueID1_00000001.tif" \
+                  "\n      - uniqueID1_00000002.tif" \
+                  "\n      - uniqueID1_00000003.tif" \
+                  "\n      - uniqueID2_00000001.tif" \
+                  "\n      - uniqueID2_00000002.tif" \
                   "\n" \
                   "\nOutput:" \
-                  "\n  + Bibid1 (folder)" \
-                  "\n      - 00000001.tif" \
-                  "\n      - 00000002.tif" \
-                  "\n      - 00000003.tif" \
-                  "\n  + Bibid2 (folder)" \
-                  "\n      - 00000001.tif" \
-                  "\n      - 00000002.tif"
+                  "\n + uniqueID1 (folder)" \
+                  "\n     + preservation (folder)" \
+                  "\n         - uniqueID1_00000001.tif" \
+                  "\n         - uniqueID1_00000002.tif" \
+                  "\n         - uniqueID1_00000003.tif" \
+                  "\n     + access (folder)" \
+                  "\n         - uniqueID1_00000001.jp2" \
+                  "\n         - uniqueID1_00000002.jp2" \
+                  "\n         - uniqueID1_00000003.jp2" \
+                  "\n + uniqueID2 (folder)" \
+                  "\n     + preservation (folder)" \
+                  "\n         - uniqueID2_00000001.tif" \
+                  "\n         - uniqueID2_00000002.tif" \
+                  "\n     + access (folder)" \
+                  "\n         - uniqueID2_00000001.jp2" \
+                  "\n         - uniqueID2_00000002.jp2"
+    active = True
 
     @staticmethod
     def discover_jobs(**user_args) -> typing.List[dict]:
@@ -78,26 +83,19 @@ class CaptureOneToHathiTiffPackage(AbsTool):
         return PackageConverter
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, tool_options.FolderData),
-            tool_options.UserOptionCustomDataType(UserArgs.OUTPUT.value, tool_options.FolderData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value, options.FolderData),
+            options.UserOptionCustomDataType(UserArgs.OUTPUT.value, options.FolderData),
         ]
 
-    @staticmethod
-    def validate_args(**user_args):
-        if not os.path.exists(user_args[UserArgs.INPUT.value]) or not os.path.isdir(user_args[UserArgs.INPUT.value]):
-            raise ValueError("Invalid value in input ")
-
-        if not os.path.exists(user_args[UserArgs.OUTPUT.value]) or not os.path.isdir(user_args[UserArgs.OUTPUT.value]):
-            raise ValueError("Invalid value in output ")
 
 
-class PackageConverter(ProcessJob):
+class PackageConverter(worker.ProcessJob):
 
     @contextmanager
     def log_config(self, logger):
-        gui_logger = GuiLogHandler(self.log)
+        gui_logger = worker.GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)
             yield
@@ -113,5 +111,5 @@ class PackageConverter(ProcessJob):
             source_path = kwargs[JobValues.SOURCE_PATH.value]
             package_id = existing_package.metadata[Metadata.ID]
             self.log(f"Converting {package_id} from {source_path} to a Hathi Trust Tiff package at {new_package_root}")
-            package_factory = uiucprescon.packager.PackageFactory(uiucprescon.packager.packages.HathiTiff())
+            package_factory = uiucprescon.packager.PackageFactory(uiucprescon.packager.packages.DigitalLibraryCompound())
             package_factory.transform(existing_package, dest=new_package_root)

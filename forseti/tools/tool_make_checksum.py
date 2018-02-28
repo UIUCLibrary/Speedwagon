@@ -8,8 +8,8 @@ import itertools
 
 from forseti.worker import ProcessJob
 from .abstool import AbsTool
-from forseti.tools import tool_options
-# from .tool_options import ToolOptionDataType
+from forseti.tools import options
+# from .options import ToolOptionDataType
 from forseti import worker
 from pyhathiprep import checksum
 
@@ -106,9 +106,9 @@ class MakeChecksumBatchSingle(MakeChecksumBatch):
             raise ValueError("Invalid user arguments")
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, tool_options.FolderData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value, options.FolderData),
         ]
 
 
@@ -153,9 +153,9 @@ class MakeChecksumBatchMultiple(MakeChecksumBatch):
         return jobs
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, tool_options.FolderData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value, options.FolderData),
         ]
 
     @staticmethod

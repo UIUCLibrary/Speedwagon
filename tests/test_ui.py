@@ -7,9 +7,9 @@ from PyQt5 import QtCore, QtWidgets
 
 import logging
 from forseti import worker
-import forseti.tools.verify_checksum
+import forseti.tools.tool_verify_checksum
 from forseti.tools.abstool import AbsTool
-from forseti.tools import tool_options
+from forseti.tools import options
 import forseti.tool
 
 
@@ -36,9 +36,9 @@ class EchoTool(AbsTool):
         ]
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionPythonDataType2("message")
+            options.UserOptionPythonDataType2("message")
         ]
 
 
@@ -103,7 +103,7 @@ def test_work_runner(qtbot):
 
 @pytest.mark.skip("Local test only")
 def test_runner(qtbot):
-    tool = forseti.tools.verify_checksum.VerifyChecksumBatchSingle()
+    tool = forseti.tools.tool_verify_checksum.VerifyChecksumBatchSingle()
     user_settings = {'Input': '/Users/hborcher/test_images/Brittle Books - Good/1251150/checksum.md5'}
     test_worker = worker.WorkerManager(title="test runner", tool=tool)
 
