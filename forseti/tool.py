@@ -297,7 +297,12 @@ def available_tools() -> dict:
     root = os.path.join(os.path.dirname(__file__), "tools")
     tree = os.scandir(root)
 
-    for m in tree:
+    def filter_only_tools(item: os.DirEntry):
+        if not str(item.name).startswith("tool_"):
+            return False
+        return True
+
+    for m in filter(filter_only_tools, tree):
         try:
             module = importlib.import_module("{}.tools.{}".format(__package__, os.path.splitext(m.name)[0]))
             for name_, module_class in inspect.getmembers(module,
