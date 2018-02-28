@@ -38,5 +38,6 @@ Dev
 * New Tools:
    * Convert CaptureOne TIFF to Hathi TIFF package
    * Generate MARC.XML Files
+   * Zip Packages
 * Tool Changes:
    * * Verify HathiTrust Package Completeness optionally checks if the OCR files contain any characters that are not in UTF-8

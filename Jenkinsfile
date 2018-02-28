@@ -158,6 +158,7 @@ pipeline {
                       unstash "msi"
                       archiveArtifacts artifacts: "*.whl", fingerprint: true
                       archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
+                      archiveArtifacts artifacts: "*.zip", fingerprint: true
                       archiveArtifacts artifacts: "*.msi", fingerprint: true
                 }
               }
@@ -192,7 +193,7 @@ pipeline {
             }
             steps {
                 parallel(
-                        "Source": {
+                        "Source Distribution: .tar.gz": {
                             script {
                                 def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
                                 def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
@@ -207,7 +208,22 @@ pipeline {
 
                             }
                         },
-                        "Wheel": {
+                        "Source Distribution: .zip": {
+                            script {
+                                def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
+                                def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
+                                node("Windows") {
+                                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                                        bat "${tool 'Python3.6.3_Win64'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                                        bat "${tool 'Python3.6.3_Win64'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                                        echo "Testing Source package in devpi"
+                                        bat "${tool 'Python3.6.3_Win64'} -m devpi test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s zip"
+                                    }
+                                }
+
+                            }
+                        },
+                        "Built Distribution: Wheel": {
                             script {
                                 def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
                                 def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
