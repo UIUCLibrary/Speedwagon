@@ -54,10 +54,6 @@ pipeline {
 
         stage("Cloning Source") {
             steps {
-                script {
-                    def causes = currentBuild.rawBuild.getCauses()
-                    echo "Causes = ${causes}"
-                }
                 deleteDir()
                 checkout scm
                 stash includes: '**', name: "Source", useDefaultExcludes: false
