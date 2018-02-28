@@ -1,4 +1,6 @@
 import concurrent.futures
+import enum
+
 import forseti.tools
 # from abc import ABCMeta, abstractmethod
 import contextlib
