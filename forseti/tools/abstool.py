@@ -3,7 +3,7 @@ import typing
 import warnings
 
 from . import options
-from forseti import worker
+import forseti.worker
 
 
 class AbsTool(metaclass=abc.ABCMeta):
@@ -17,7 +17,7 @@ class AbsTool(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def new_job() ->typing.Type[worker.ProcessJob]:
+    def new_job() ->typing.Type["forseti.worker.ProcessJob"]:
         pass
 
 
