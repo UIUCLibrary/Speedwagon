@@ -223,7 +223,7 @@ pipeline {
 
                             }
                         },
-                        "Built Distribution: Wheel": {
+                        "Built Distribution: .whl": {
                             script {
                                 def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
                                 def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
