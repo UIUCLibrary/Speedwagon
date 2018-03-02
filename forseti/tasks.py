@@ -244,7 +244,7 @@ class SubtaskJobAdapter(forseti.worker.AbsJobAdapter, forseti.worker.ProcessJob)
 
     def __init__(self, adaptee: Subtask) -> None:
         super().__init__(adaptee)
-        self.adaptee.parent_task_log_q = self.queue_adapter
+        self.adaptee.parent_task_log_q = QueueAdapter()
 
     @property
     def queue_adapter(self):
