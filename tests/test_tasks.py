@@ -1,4 +1,5 @@
 import io
+import logging
 import queue
 import time
 import typing
@@ -11,19 +12,23 @@ from forseti import TaskBuilder, worker
 
 class SimpleSubtask(forseti.tasks.Subtask):
 
+    def __init__(self, message):
+        super().__init__()
+        self.message = message
+
     def work(self) -> bool:
         self.log("processing")
-        self.result = "got it"
+        self.result = self.message
         return True
+
+    @property
+    def settings(self):
+        return {"r": "ad"}
 
 
 class SimpleMultistage(forseti.tasks.MultiStageTask):
     def process_subtask_results(self, subtask_results: typing.List[typing.Any]) -> typing.Any:
         return "\n".join(subtask_results)
-    #
-    # def exec(self, *args, **kwargs):
-    #     return super().exec(*args, **kwargs)
-    #
 
 
 class SimpleTaskBuilder(forseti.tasks.AbsTaskBuilder):
@@ -36,7 +41,7 @@ class SimpleTaskBuilder(forseti.tasks.AbsTaskBuilder):
 @pytest.fixture
 def simple_task_builder():
     builder = TaskBuilder(SimpleTaskBuilder())
-    builder.add_subtask(subtask=SimpleSubtask())
+    builder.add_subtask(subtask=SimpleSubtask("got it"))
     return builder
 
 
@@ -72,7 +77,7 @@ def test_task_logs(simple_task_builder):
 
 
 def test_task_with_2_subtask_results(simple_task_builder):
-    simple_task_builder.add_subtask(subtask=SimpleSubtask())
+    simple_task_builder.add_subtask(subtask=SimpleSubtask("got it"))
     task = simple_task_builder.build_task()
     task.exec()
     assert isinstance(task.result, str)
@@ -80,7 +85,7 @@ def test_task_with_2_subtask_results(simple_task_builder):
 
 
 def test_task_log_with_2_subtask(simple_task_builder):
-    simple_task_builder.add_subtask(subtask=SimpleSubtask())
+    simple_task_builder.add_subtask(subtask=SimpleSubtask(message="got it"))
     task = simple_task_builder.build_task()
     task.exec()
     assert len(task.log_q) == 2
@@ -88,7 +93,7 @@ def test_task_log_with_2_subtask(simple_task_builder):
 
 def test_task_can_be_picked():
     builder = TaskBuilder(SimpleTaskBuilder())
-    builder.add_subtask(subtask=SimpleSubtask())
+    builder.add_subtask(subtask=SimpleSubtask(message="got it"))
 
     task_original = builder.build_task()
     serialized = TaskBuilder.save(task_original)
@@ -113,25 +118,61 @@ def test_task_as_concurrent_future(simple_task_builder):
         futures.append(executor.submit(execute_task, new_task))
 
         for future in concurrent.futures.as_completed(futures):
-            assert future.result() == "got it"
+            assert "got it" == future.result()
 
 
-def test_adapter(simple_task_builder):
-    simple_task_builder.add_subtask(SimpleSubtask())
-    new_task = simple_task_builder.build_task()
+@pytest.fixture
+def simple_task_builder_with_2_subtasks():
+    builder = TaskBuilder(SimpleTaskBuilder())
+    builder.add_subtask(subtask=SimpleSubtask("First"))
+    builder.add_subtask(subtask=SimpleSubtask("Second"))
+    return builder
+
+
+@pytest.mark.adapter
+def test_adapter_results(simple_task_builder_with_2_subtasks):
+    new_task = simple_task_builder_with_2_subtasks.build_task()
 
     with worker.ToolJobManager() as manager:
         for subtask in new_task.subtasks:
-            settings = {}
-            # adapter =
-            # new_job = adapter.job
-            # settings = adapter.settings
-            adapted_tool = forseti.tasks.TaskJobAdapter(subtask)
-            manager.add_job(adapted_tool, settings)
+            adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
+            manager.add_job(adapted_tool, adapted_tool.settings)
         manager.start()
+
         results = list(manager.get_results())
 
         assert len(results) == 2
-        for result in results:
-            assert result == "got it"
+        assert "First" == results[0]
+        assert "Second" == results[1]
 
+
+class LogCatcher(logging.Handler):
+
+    def __init__(self, storage: list, level=logging.NOTSET):
+        super().__init__(level)
+        self.storage = storage
+
+    def emit(self, record):
+        self.storage.append(record)
+
+
+@pytest.mark.adapter
+def test_adapter_logs(simple_task_builder_with_2_subtasks):
+    logs = []
+    log_catcher = LogCatcher(logs)
+    new_task = simple_task_builder_with_2_subtasks.build_task()
+
+    with worker.ToolJobManager() as manager:
+        manager.logger.setLevel(logging.INFO)
+        manager.logger.addHandler(log_catcher)
+
+        for subtask in new_task.subtasks:
+            adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
+            manager.add_job(adapted_tool, adapted_tool.settings)
+        manager.start()
+
+        list(manager.get_results())
+
+    assert len(logs) == 2
+    assert logs[0].message == "processing"
+    assert logs[1].message == "processing"

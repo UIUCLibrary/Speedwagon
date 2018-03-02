@@ -45,6 +45,10 @@ class AbsSubtask(metaclass=abc.ABCMeta):
     def exec(self) -> None:
         pass
 
+    @property
+    def settings(self):
+        return {}
+
 
 class Subtask(AbsSubtask):
     def __init__(self):
@@ -223,21 +227,39 @@ class TaskBuilder:
         return obj
 
 
-class TaskJobAdapter(forseti.tools.abstool.AbsJobAdapter):
+class QueueAdapter:
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._queue: queue.Queue = None
+
+    def append(self, item):
+        self._queue.put(item)
+
+    def set_message_queue(self, value: queue.Queue):
+        self._queue = value
+
+
+class SubtaskJobAdapter(forseti.worker.AbsJobAdapter, forseti.worker.ProcessJob):
+
+    def __init__(self, adaptee: Subtask) -> None:
+        super().__init__(adaptee)
+        self.adaptee.parent_task_log_q = QueueAdapter()
+
+    @property
+    def queue_adapter(self):
+        return QueueAdapter()
+
     def process(self, *args, **kwargs):
-        self.result = "got it"
+        self.adaptee.exec()
+        self.result = self.adaptee.result
 
-    def execute(self, *args, **kwargs):
-        try:
-            self.process(*args, **kwargs)
+    def set_message_queue(self, value):
+        self.adaptee.parent_task_log_q.set_message_queue(value)
 
-            self.on_completion(*args, **kwargs)
-            self.successful = True
-            return self.result
-        except Exception as e:
-            print("Failed {}".format(e), file=sys.stderr)
-            self.successful = False
-            raise
-
-    def on_completion(*args, **kwargs):
-        pass
+    @property
+    def settings(self) -> dict:
+        if self.adaptee.settings:
+            return self.adaptee.settings
+        else:
+            return {key: value for key, value in self.adaptee.__dict__.items() if key != "parent_task_log_q"}

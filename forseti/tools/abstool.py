@@ -1,9 +1,6 @@
 import abc
 import typing
-import warnings
-from abc import abstractmethod
 
-from forseti.worker import ProcessJob
 from . import options
 import forseti.worker
 
@@ -52,19 +49,3 @@ class AbsTool(metaclass=abc.ABCMeta):
         return None
 
 
-class AbsJobAdapter(metaclass=abc.ABCMeta):
-    def __init__(self, adaptee):
-        self._adaptee = adaptee
-
-    @property
-    def adaptee(self):
-        return self._adaptee
-
-    @abc.abstractmethod
-    def process(self, *args, **kwargs):
-        pass
-
-
-    @abc.abstractmethod
-    def on_completion(self, *args, **kwargs):
-        pass
