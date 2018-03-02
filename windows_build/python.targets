@@ -2,7 +2,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <Import Project="common.props"/>
     <PropertyGroup>
-        <BuildInfo Condition="'$(BUILD_ID)' != ''">--build-number $(BUILD_ID)</BuildInfo>
+        <BuildInfo Condition="'$(BUILD_NUMBER)' != ''">--build-number $(BUILD_NUMBER)</BuildInfo>
     </PropertyGroup>
     <Target Name="PythonRuntime">
         <Message Text="MSBuildToolsPath = $(MSBuildToolsPath)"/>
