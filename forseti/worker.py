@@ -402,3 +402,6 @@ class AbsJobAdapter(metaclass=abc.ABCMeta):
     def process(self, *args, **kwargs):
         pass
 
+    @abc.abstractmethod
+    def set_message_queue(self, value):
+        pass
