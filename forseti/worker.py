@@ -64,7 +64,7 @@ class AbsJob(metaclass=QtMeta):
 
 
 class ProcessJob(AbsJob):
-    mq = None
+    _mq = None
 
     def __init__(self):
         super().__init__()
@@ -74,15 +74,14 @@ class ProcessJob(AbsJob):
     def process(self, *args, **kwargs):
         pass
 
-    # @classmethod
     def set_message_queue(self, value):
         pass
         self._mq = value
         # cls.mq = value
 
     def log(self, message):
-        if self.mq:
-            self.mq.put(message)
+        if self._mq:
+            self._mq.put(message)
 
 
 class JobPair(typing.NamedTuple):
@@ -309,9 +308,8 @@ class ToolJobManager(contextlib.AbstractContextManager):
         self.active = True
         while not self._pending_jobs.empty():
             job, settings = self._pending_jobs.get()
-            # job_type = tool
-            # job = job_type()
-            job.mq = self._message_queue
+            job.set_message_queue(self._message_queue)
+            # job.mq = self._message_queue
             fut = self._executor.submit(job.execute, **settings)
             self.futures.append(fut)
 
@@ -389,3 +387,18 @@ class ToolJobManager(contextlib.AbstractContextManager):
         while not self._message_queue.empty():
             self.logger.info(self._message_queue.get())
             self._message_queue.task_done()
+
+
+
+class AbsJobAdapter(metaclass=abc.ABCMeta):
+    def __init__(self, adaptee):
+        self._adaptee = adaptee
+
+    @property
+    def adaptee(self):
+        return self._adaptee
+
+    @abc.abstractmethod
+    def process(self, *args, **kwargs):
+        pass
+
