@@ -14,7 +14,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
         self.options = []  # type: ignore
 
     @abc.abstractmethod
-    def create_new_job(self, **job_args) -> forseti.worker.AbsJob2:
+    def create_new_job(self, **job_args) -> forseti.tasks.MultiStageTask:
         pass
 
 
