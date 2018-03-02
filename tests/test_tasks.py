@@ -6,14 +6,13 @@ import concurrent.futures
 import pytest
 import pickle
 import forseti.tasks
-from forseti import TaskBuilder
+from forseti import TaskBuilder, worker
 
 
 class SimpleSubtask(forseti.tasks.Subtask):
 
     def work(self) -> bool:
         self.log("processing")
-        time.sleep(1)
         self.result = "got it"
         return True
 
@@ -21,6 +20,10 @@ class SimpleSubtask(forseti.tasks.Subtask):
 class SimpleMultistage(forseti.tasks.MultiStageTask):
     def process_subtask_results(self, subtask_results: typing.List[typing.Any]) -> typing.Any:
         return "\n".join(subtask_results)
+    #
+    # def exec(self, *args, **kwargs):
+    #     return super().exec(*args, **kwargs)
+    #
 
 
 class SimpleTaskBuilder(forseti.tasks.AbsTaskBuilder):
@@ -93,21 +96,42 @@ def test_task_can_be_picked():
     task_unserialized = TaskBuilder.load(serialized)
     assert task_original.name == task_unserialized.name
 
-# def test_dummy():
-# with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executer:
-#     future = executer.submit(print, "hello")
+    # with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executer:
+    #     future = executer.submit(print, "hello")
 
-#
-# def test_task_as_concurrent_future(simple_task_builder):
-#     task = simple_task_builder.build_task()
-#     # tasks.append(task)
-#     futures = []
-#
-#     with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executer:
-#         futures.append(executer.submit(task.exec))
-#         for future in concurrent.futures.as_completed(futures):
-#             print(future.result())
-#         # concurrent.futures.wait([results])
-#         # print(results)
-#         # for result in results:
-#         #     print(result)
+
+def execute_task(new_task):
+    new_task.exec()
+    return new_task.result
+
+
+def test_task_as_concurrent_future(simple_task_builder):
+    new_task = simple_task_builder.build_task()
+
+    futures = []
+    with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+        futures.append(executor.submit(execute_task, new_task))
+
+        for future in concurrent.futures.as_completed(futures):
+            assert future.result() == "got it"
+
+
+def test_adapter(simple_task_builder):
+    simple_task_builder.add_subtask(SimpleSubtask())
+    new_task = simple_task_builder.build_task()
+
+    with worker.ToolJobManager() as manager:
+        for subtask in new_task.subtasks:
+            settings = {}
+            # adapter =
+            # new_job = adapter.job
+            # settings = adapter.settings
+            adapted_tool = forseti.tasks.TaskJobAdapter(subtask)
+            manager.add_job(adapted_tool, settings)
+        manager.start()
+        results = list(manager.get_results())
+
+        assert len(results) == 2
+        for result in results:
+            assert result == "got it"
+
