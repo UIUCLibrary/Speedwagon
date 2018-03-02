@@ -69,7 +69,7 @@ class RunRunner:
 #                     # self.log_manager.debug("Adding {} with {} to work manager".format(tool, _job_args))
 #                     work_manager.add_job(_job_args)
 #
-#                 print("running {} tasks".format(work_manager.worker_display._jobs_queue.qsize()), file=sys.stderr)
+#                 print("running {} subtasks".format(work_manager.worker_display._jobs_queue.qsize()), file=sys.stderr)
 #                 try:
 #                     work_manager.run()
 #
@@ -146,7 +146,8 @@ class UsingExternalManager(AbsRunner):
 
                 i = -1
                 for i, new_setting in enumerate(tool.discover_jobs(**options)):
-                    self._manager.add_job(tool, new_setting)
+                    new_job = tool.new_job()
+                    self._manager.add_job(new_job(), new_setting)
                 logger.info("Found {} jobs".format(i + 1))
                 runner.dialog.setMaximum(i)
 
