@@ -31,7 +31,6 @@ class SimpleMultistage(forseti.tasks.MultiStageTask):
         return "\n".join(subtask_results)
 
 
-
 class SimpleTaskBuilder(forseti.tasks.AbsTaskBuilder):
 
     @property
@@ -130,16 +129,6 @@ def simple_task_builder_with_2_subtasks():
     return builder
 
 
-class LogCatcher(logging.Handler):
-
-    def __init__(self, storage: list, level=logging.NOTSET):
-        super().__init__(level)
-        self.storage = storage
-
-    def emit(self, record):
-        self.storage.append(record)
-
-
 @pytest.mark.adapter
 def test_adapter_results(simple_task_builder_with_2_subtasks):
     new_task = simple_task_builder_with_2_subtasks.build_task()
@@ -157,6 +146,16 @@ def test_adapter_results(simple_task_builder_with_2_subtasks):
         assert "Second" == results[1]
 
 
+class LogCatcher(logging.Handler):
+
+    def __init__(self, storage: list, level=logging.NOTSET):
+        super().__init__(level)
+        self.storage = storage
+
+    def emit(self, record):
+        self.storage.append(record)
+
+
 @pytest.mark.adapter
 def test_adapter_logs(simple_task_builder_with_2_subtasks):
     logs = []
@@ -164,7 +163,9 @@ def test_adapter_logs(simple_task_builder_with_2_subtasks):
     new_task = simple_task_builder_with_2_subtasks.build_task()
 
     with worker.ToolJobManager() as manager:
+        manager.logger.setLevel(logging.INFO)
         manager.logger.addHandler(log_catcher)
+
         for subtask in new_task.subtasks:
             adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
             manager.add_job(adapted_tool, adapted_tool.settings)
