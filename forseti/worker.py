@@ -1,5 +1,4 @@
 import concurrent.futures
-import enum
 
 import forseti.tools
 # from abc import ABCMeta, abstractmethod
@@ -9,13 +8,10 @@ import queue
 import typing
 import abc
 import sys
-import warnings
 from abc import abstractmethod, ABCMeta
 from PyQt5 import QtCore, QtWidgets
 from collections import namedtuple
 import multiprocessing
-
-JobPair = namedtuple("JobPair", ("job", "args"))
 
 MessageLog = namedtuple("MessageLog", ("message",))
 
@@ -62,68 +58,9 @@ class AbsJob(metaclass=QtMeta):
         new_job.set_message_queue(message_queue)
         new_job.execute(*args, **kwargs)
         return new_job.result
-        # print(message_queue)
-        # print(job)
+        # print(logger_queue)
+        # print(task)
         # print("HERER")
-
-
-class TaskStatus(enum.Enum):
-    IDLE = 0
-    WORKING = 1
-    SUCCESS = 2
-    FAILED = 3
-
-
-class AbsTask(metaclass=abc.ABCMeta):
-    def __init__(self):
-        self.result = None
-        # TODO: refactor into state machine
-        self.status = TaskStatus.IDLE
-
-
-
-    @abc.abstractmethod
-    def process(self):
-        pass
-
-
-class AbsJob2(metaclass=abc.ABCMeta):
-
-    def __init__(self) -> None:
-        # Todo: use the results builder from validate
-        self.result = []  # type: ignore
-        self.successful: bool = None
-        self.tasks: typing.List[AbsTask] = []
-
-    @property
-    def progress(self) -> float:
-        amount_completed = len([task for task in self.tasks if task.status.value > TaskStatus.WORKING.value])
-        return amount_completed/ len(self.tasks)
-
-    def execute(self, *args, **kwargs):
-
-        try:
-            for task in self.tasks:
-                task.process()
-                if task.result is not None:
-                    self.result += task.result
-            self.on_completion(*args, **kwargs)
-            self.successful = True
-            return self.result
-        except Exception as e:
-            print("Failed {}".format(e), file=sys.stderr)
-            self.successful = False
-            raise
-
-    def on_completion(self, *args, **kwargs):
-        pass
-
-    @classmethod
-    def new(cls, job, message_queue, *args, **kwargs):
-        new_job = job()
-        new_job.set_message_queue(message_queue)
-        new_job.execute(*args, **kwargs)
-        return new_job.result
 
 
 class ProcessJob(AbsJob):
@@ -146,6 +83,11 @@ class ProcessJob(AbsJob):
     def log(self, message):
         if self.mq:
             self.mq.put(message)
+
+
+class JobPair(typing.NamedTuple):
+    task: ProcessJob
+    args: dict
 
 
 class WorkerMeta(type(QtCore.QObject), ABCMeta):  # type: ignore
@@ -225,7 +167,7 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
     @classmethod
     def _exec_job(cls, job, args, message_queue):
         new_job = job()
-        # new_job.set_message_queue(message_queue)
+        # new_job.set_message_queue(logger_queue)
         new_job.mq = message_queue
         fut = cls.executor.submit(new_job.execute, **args)
 
@@ -319,7 +261,7 @@ class WorkRunnerExternal2(contextlib.AbstractContextManager):
         self._options = options
         self._parent = parent
         self.abort_callback = None
-        self.jobs: queue.Queue[JobPair] = queue.Queue()
+        # self.jobs: queue.Queue[JobPair] = queue.Queue()
 
     def __enter__(self):
         self.dialog = QtWidgets.QProgressDialog(self._parent)
@@ -359,15 +301,16 @@ class ToolJobManager(contextlib.AbstractContextManager):
     def open(self, options, tool, parent):
         return WorkRunnerExternal2(tool=tool, options=options, parent=parent)
 
-    def add_job(self, job, settings):
+    def add_job(self, job: ProcessJob, settings: dict) -> None:
+
         self._pending_jobs.put(JobPair(job, settings))
 
     def start(self):
         self.active = True
         while not self._pending_jobs.empty():
-            tool, settings = self._pending_jobs.get()
-            job_type = tool.new_job()
-            job = job_type()
+            job, settings = self._pending_jobs.get()
+            # job_type = tool
+            # job = job_type()
             job.mq = self._message_queue
             fut = self._executor.submit(job.execute, **settings)
             self.futures.append(fut)
@@ -420,7 +363,8 @@ class ToolJobManager(contextlib.AbstractContextManager):
                         completed += 1
                         self._pending_jobs.task_done()
                         self.flush_message_buffer()
-                        timeout_callback(completed, total_jobs)
+                        if timeout_callback:
+                            timeout_callback(completed, total_jobs)
                         yield result
 
                 if timeout_callback:
