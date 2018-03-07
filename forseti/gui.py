@@ -8,7 +8,7 @@ import forseti.tool
 import forseti.tools.abstool
 from forseti.tools import options
 from forseti.ui import main_window_shell_ui
-from forseti import tool as t, worker, runner_strategies
+from forseti import tool as tool_, worker, runner_strategies
 from collections import namedtuple
 import traceback
 import pkg_resources
@@ -59,7 +59,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         super().__init__()
         self._work_manager = work_manager
         self.setupUi(self)
-        self.tabWidget.setTabEnabled(1, False)
         self.splitter = QtWidgets.QSplitter(self.tab_tools)
         self.splitter.setOrientation(QtCore.Qt.Vertical)
         self.splitter.setChildrenCollapsible(False)
@@ -73,7 +72,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.version_label.setText(self.version)
 
         self.tool_selector_view = QtWidgets.QListView(self)
-        self.tool_selector_view.setFixedHeight(100)
+        self.tool_selector_view.setMinimumHeight(100)
+        # self.tool_selector_view.setFixedHeight(100)
 
         ###########################################################
         #
@@ -136,7 +136,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         # self.tool_workspace._reporter = self._reporter
         # self.load_tools()
-        self.tool_list = t.ToolsListModel(t.available_tools())
+        self.tool_list = tool_.ToolsListModel(tool_.available_tools())
         self.tool_selector_view.setModel(self.tool_list)
         self.tool_selector_view.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
@@ -149,7 +149,13 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         self.tool_selector_view.selectionModel().currentChanged.connect(self.update_tool_selected)
 
-        self.tabWidget.removeTab(1)
+        ######################
+        self.workflow_selector_view = QtWidgets.QListView(self)
+        self.workflow_selector_view.setMinimumHeight(100)
+
+        # TODO: Change the model to show workflows only
+        self.workflow_selector_view.setModel(self.tool_list)
+        self.tab_workflow_layout.addWidget(self.workflow_selector_view)
 
         # Add menu bar
         menu_bar = self.menuBar()
@@ -202,7 +208,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     #
     # @property
     # def _reporter(self):
-    #     warnings.warn("Don't use this", DeprecationWarning)
+    #     warnings.warn("Don'tool_ use this", DeprecationWarning)
     #     return self._reporter_
     #
     # @_reporter.setter
@@ -283,7 +289,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # self.tool_workspace.set_tool(tool)
         #################
         try:
-            self._options_model = t.ToolOptionsModel3(tool.get_user_options())
+            self._options_model = tool_.ToolOptionsModel3(tool.get_user_options())
 
             self.tool_settings.setModel(self._options_model)
         except Exception as e:
@@ -319,7 +325,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     def load_tools(self):
         # tools =
 
-        for k, v in t.available_tools().items():
+        for k, v in tool_.available_tools().items():
             self._load_tool(v())
 
     def change_tool(self, tool: forseti.tools.abstool.AbsTool):
@@ -341,7 +347,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 # class JobRunner(QtCore.QThread):
 #
 #     def __init__(self, manager, active_tool, jobs, parent=None):
-#         warnings.warn("Don't use", DeprecationWarning)
+#         warnings.warn("Don'tool_ use", DeprecationWarning)
 #         super().__init__(parent)
 #         self._manager = manager
 #         self._jobs = jobs
@@ -359,7 +365,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 # class YesNoBoxDelegate(QtWidgets.QItemDelegate):
 #
 #     def __init__(self, parent=None):
-#         warnings.warn("Don't use", DeprecationWarning)
+#         warnings.warn("Don'tool_ use", DeprecationWarning)
 #         super().__init__(parent)
 #
 #     def createEditor(self, parent, QStyleOptionViewItem, QModelIndex):
