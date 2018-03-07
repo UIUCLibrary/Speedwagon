@@ -84,7 +84,7 @@
        <item>
         <widget class="QTabWidget" name="tabWidget">
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="tab_tools">
           <attribute name="title">
@@ -109,6 +109,7 @@
           <attribute name="title">
            <string>Workflows</string>
           </attribute>
+          <layout class="QVBoxLayout" name="tab_workflow_layout"/>
          </widget>
         </widget>
        </item>
