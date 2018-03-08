@@ -48,18 +48,6 @@
      <property name="currentIndex">
       <number>1</number>
      </property>
-     <widget class="QWidget" name="tab_tools">
-      <attribute name="title">
-       <string>Tools</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="tab_tools_layout"/>
-     </widget>
-     <widget class="QWidget" name="tab_workflow">
-      <attribute name="title">
-       <string>Workflows</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="tab_workflow_layout"/>
-     </widget>
     </widget>
    </item>
    </layout>
