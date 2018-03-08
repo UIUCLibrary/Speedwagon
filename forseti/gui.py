@@ -123,25 +123,25 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.log_manager.info("READY!")
         ###########################################################
 
-        self.tool_list = tool_.ToolsListModel(tools)
-        self.tool_selector_view.setModel(self.tool_list)
+        self._tools_model = tool_.ToolsListModel(tools)
+        self.tool_selector_view.setModel(self._tools_model)
         self.tool_selector_view.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
         self.mapper = QtWidgets.QDataWidgetMapper(self)
-        self.mapper.setModel(self.tool_list)
+        self.mapper.setModel(self._tools_model)
         self.mapper.addMapping(self._selected_tool_name_line2, 0)
 
         # This needs custom mapping because without it, new line characters are removed
         self.mapper.addMapping(self._description_information2, 1, b"plainText")
 
-        self.tool_selector_view.selectionModel().currentChanged.connect(self.update_tool_selected)
+        self.tool_selector_view.selectionModel().currentChanged.connect(self._update_tool_selected)
 
         ######################
         self.workflow_selector_view = QtWidgets.QListView(self)
         self.workflow_selector_view.setMinimumHeight(100)
 
         # TODO: Change the model to show workflows only
-        self.workflow_selector_view.setModel(self.tool_list)
+        self.workflow_selector_view.setModel(self._tools_model)
         self.tab_workflow_layout.addWidget(self.workflow_selector_view)
 
         # Add menu bar
@@ -183,7 +183,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         QtWidgets.QMessageBox.about(self, "About", message)
 
-    def update_tool_selected(self, current, previous):
+    def _update_tool_selected(self, current, previous):
 
         try:
             self.tool_selected(current)
@@ -242,7 +242,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                 len(self.tool_selector_view.selectedIndexes())))
             return
 
-        tool = self.tool_list.data(self.tool_selector_view.selectedIndexes()[0], QtCore.Qt.UserRole)
+        tool = self._tools_model.data(self.tool_selector_view.selectedIndexes()[0], QtCore.Qt.UserRole)
         if issubclass(tool, forseti.tools.abstool.AbsTool):
             options = self._options_model.get()
             self._tool = tool
@@ -259,7 +259,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
 
     def tool_selected(self, index: QtCore.QModelIndex):
-        tool = self.tool_list.data(index, QtCore.Qt.UserRole)
+        tool = self._tools_model.data(index, QtCore.Qt.UserRole)
         # model.
         # self.tool_workspace.set_tool(tool)
         #################
