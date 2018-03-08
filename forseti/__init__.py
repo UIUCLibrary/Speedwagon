@@ -22,14 +22,14 @@ def get_version():
         # included as part of the setup script, which it includes it to the
         # same path as the main exe.
         # =====================================================================
-        setup_cfg = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../", "setup.cfg"))
+        setup_cfg = os.path.abspath(os.path.join(os.path.dirname(__file__), "../", "setup.cfg"))
         if os.path.exists(setup_cfg):
             metadata = get_project_metadata(setup_cfg)
-            if metadata["name"] == "HathiZip":
+            if metadata["name"] == "forseti":
                 return metadata["version"]
         # =====================================================================
 
-        print("Has the metadata for this project been built?", file=sys.stderr)
+        print("No package metadata for this project located", file=sys.stderr)
         version = "Unknown"
     except FileNotFoundError as e:
         version = "Unknown"
