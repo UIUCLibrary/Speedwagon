@@ -181,8 +181,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                   f"\n" \
                   f"Version {forseti.__version__}"
 
-        f = QtWidgets.QMessageBox.about(self, "About", message)
-        print(f)
+        QtWidgets.QMessageBox.about(self, "About", message)
 
     def update_tool_selected(self, current, previous):
 
