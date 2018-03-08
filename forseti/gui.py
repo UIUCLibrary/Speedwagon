@@ -54,7 +54,7 @@ class ConsoleLogger(logging.Handler):
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
-    def __init__(self, work_manager: worker.ToolJobManager) -> None:
+    def __init__(self, work_manager: worker.ToolJobManager, tools) -> None:
         super().__init__()
         self._work_manager = work_manager
         self.setupUi(self)
@@ -123,7 +123,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.log_manager.info("READY!")
         ###########################################################
 
-        self.tool_list = tool_.ToolsListModel(tool_.available_tools())
+        self.tool_list = tool_.ToolsListModel(tools)
         self.tool_selector_view.setModel(self.tool_list)
         self.tool_selector_view.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
@@ -350,9 +350,9 @@ def main():
     except pkg_resources.DistributionNotFound:
         version = "Development version"
     app = QtWidgets.QApplication(sys.argv)
-
+    tools = tool_.available_tools()
     with worker.ToolJobManager() as work_manager:
-        windows = MainWindow(work_manager=work_manager)
+        windows = MainWindow(work_manager=work_manager, tools=tools)
         windows.setWindowTitle(f"{PROJECT_NAME}: Version {version}")
         rc = app.exec_()
     sys.exit(rc)
