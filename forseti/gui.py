@@ -50,8 +50,6 @@ class ConsoleLogger(logging.Handler):
 
     def emit(self, record):
         self.console.add_message(record.msg)
-        # print(record.msg)
-        # self.callback(record.msg)
 
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
@@ -206,30 +204,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             self.mapper.setCurrentModelIndex(previous)
             self.tool_selector_view.setCurrentIndex(previous)
 
-    #
-    # @property
-    # def log_manager(self):
-    #     warnings.warn("Remove this", DeprecationWarning)
-    #     return self._log_manager
-    #
-    # @log_manager.setter
-    # def log_manager(self, value):
-    #     self._log_manager = value
-    #
-    # @property
-    # def _reporter(self):
-    #     warnings.warn("Don'tool_ use this", DeprecationWarning)
-    #     return self._reporter_
-    #
-    # @_reporter.setter
-    # def _reporter(self, value):
-    #     self._reporter_ = value
 
-    # def get(self):
-    #     options = dict()
-    #     for data in self._data:
-    #         options[data.name] = data.data
-    #     return options
     def on_success(self, results, callback):
         self.log_manager.info("Done!")
         user_args = self._options_model.get()
@@ -308,21 +283,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             self.log_manager.warning(message)
             raise
 
-        ##################
-        # self.tool_settings.set
-        # self._selected_tool_name_line.setText(tool.name)
-        # self._selected_tool_description_line.setText(tool.description)
-        # print(tool)
-        # print(index)
-
-    # def create_tool_workspace(self):
-    #     warnings.warn("To be removed", DeprecationWarning)
-    #     new_workspace = ToolWorkspace(self.job_splitter)
-    #     new_workspace.setVisible(False)
-    #     # new_workspace.setMinimumSize(QtCore.QSize(0, 300))
-    #
-    #     return new_workspace
-
     def create_console(self):
         console = ToolConsole(self.main_splitter)
 
@@ -342,69 +302,9 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tool_workspace.set_tool(tool)
 
 
-# class JobSearcher(QtCore.QThread):
-#     def __init__(self, tool, options, parent=None):
-#         super(JobSearcher, self).__init__(parent)
-#         self._options = options
-#         self._tool = tool
-#         self.jobs = []
-#
-#     def run(self):
-#         jobs = self._tool.discover_jobs(**self._options)
-#         self.jobs = jobs
-
-
-# class JobRunner(QtCore.QThread):
-#
-#     def __init__(self, manager, active_tool, jobs, parent=None):
-#         warnings.warn("Don'tool_ use", DeprecationWarning)
-#         super().__init__(parent)
-#         self._manager = manager
-#         self._jobs = jobs
-#         self._active_tool = active_tool
-#
-#     def run(self):
-#         print("This is job runner!")
-#         for job_args in self._jobs:
-#             job = self._active_tool.new_job()
-#             self._manager.add_job(job, **job_args)
-#
-#         self._manager.finish()
-
-
-# class YesNoBoxDelegate(QtWidgets.QItemDelegate):
-#
-#     def __init__(self, parent=None):
-#         warnings.warn("Don'tool_ use", DeprecationWarning)
-#         super().__init__(parent)
-#
-#     def createEditor(self, parent, QStyleOptionViewItem, QModelIndex):
-#         checkbox = QtWidgets.QComboBox(parent)
-#         return checkbox
-#
-#     def setEditorData(self, editor: QtWidgets.QComboBox, QModelIndex):
-#         editor.addItem("Yes")
-#         editor.addItem("No")
-#         super().setEditorData(editor, QModelIndex)
-
 
 class MyDelegate(QtWidgets.QStyledItemDelegate):
 
-    #
-    # def __init__(self, parent=None):
-    #     print("Using my delegate")
-    #     super().__init__(parent)
-
-    # def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionViewItem,
-    #           index: QtCore.QModelIndex):
-    #     # print("HERe")
-    #     # button = QtWidgets.QPushButton()
-    #     # painter.drawRect(option.rect)
-    #     if index.isValid():
-    #         painter.setBrush(QtGui.QBrush(QtCore.Qt.black))
-    #         value = index.data(QtCore.Qt.DisplayRole)
-    #         painter.drawText(option.rect, QtCore.Qt.AlignVCenter, value)
-    #     painter.restore()
 
     def createEditor(self, parent, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex):
         if index.isValid():
@@ -437,38 +337,13 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
         if isinstance(widget, options.CustomItemWidget):
             model.setData(index, widget.data)
             return
-        #     files = widget.selectedFiles()
-        #     if len(files) == 1:
-        #         model.setData(index, files[0])
-        #     return
         super().setModelData(widget, model, index)
 
     def destroyEditor(self, QWidget, QModelIndex):
         super().destroyEditor(QWidget, QModelIndex)
 
-
-# class CheckBoxDelegate(QtWidgets.QItemDelegate):
-#
-#     def __init__(self, parent=None):
-#         warnings.warn("Dont use this", DeprecationWarning)
-#         super().__init__(parent)
-#
-#     def createEditor(self, parent, QStyleOptionViewItem, QModelIndex):
-#         checkbox = QtWidgets.QCheckBox(parent)
-#         return checkbox
-#         # return super().createEditor(parent, QStyleOptionViewItem, QModelIndex)
-#
-#     def setEditorData(self, editor: QtWidgets.QCheckBox, QModelIndex):
-#         print(editor)
-#         # q_widget = QWidget
-#         super().setEditorData(editor, QModelIndex)
-
 def main():
-    # logger = logging.getLogger()
-    # logger.setLevel(logging.DEBUG)
-    # stdout_handler = logging.StreamHandler(sys.stdout)
-    # logger.addHandler(stdout_handler)
-    # logger.info("asdfasdfasdf")
+
     try:
         dist = pkg_resources.get_distribution("forseti")
         version = dist.version
