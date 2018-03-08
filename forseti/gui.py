@@ -23,7 +23,8 @@ class ToolConsole(QtWidgets.QGroupBox):
     def __init__(self, parent):
         super().__init__(parent)
         self.setTitle("Console")
-        self.setLayout(QtWidgets.QVBoxLayout())
+        layout = QtWidgets.QVBoxLayout()
+        self.setLayout(layout)
         self._console = QtWidgets.QTextBrowser(self)
         self._console.setContentsMargins(0, 0, 0, 0)
         self.layout().addWidget(self._console)
@@ -59,18 +60,14 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         super().__init__()
         self._work_manager = work_manager
         self.setupUi(self)
-        self.splitter = QtWidgets.QSplitter(self.tab_tools)
-        self.splitter.setOrientation(QtCore.Qt.Vertical)
-        self.splitter.setChildrenCollapsible(False)
-        self._options_model = None
-        self.label_2.setText(PROJECT_NAME)
-        try:
-            dist = pkg_resources.get_distribution("forseti")
-            self.version = dist.version
-        except pkg_resources.DistributionNotFound:
-            self.version = "Development version"
-        self.version_label.setText(self.version)
 
+        self.main_splitter = QtWidgets.QSplitter(self.tabWidget)
+        self.main_splitter.setOrientation(QtCore.Qt.Vertical)
+        self.main_splitter.setChildrenCollapsible(False)
+
+        self.mainLayout.addWidget(self.main_splitter)
+        self.main_splitter.addWidget(self.tabWidget)
+        self._options_model = None
         self.tool_selector_view = QtWidgets.QListView(self)
         self.tool_selector_view.setMinimumHeight(100)
         # self.tool_selector_view.setFixedHeight(100)
@@ -115,13 +112,12 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tool_workspace2_layout.addLayout(self.tool_config_layout)
         self.tool_workspace2_layout.addLayout(self.tool_actions_layout)
         self.tool_workspace2.setLayout(self.tool_workspace2_layout)
-
-        self.splitter.addWidget(self.tool_workspace2)
+        self.tab_tools_layout.addWidget(self.tool_selector_view)
+        self.tab_tools_layout.addWidget(self.tool_workspace2)
         self.console = self.create_console()
 
         ###########################################################
         self.log_manager = self._work_manager.logger
-        # self.log_manager = logging.getLogger(__name__)
         self.log_manager.setLevel(logging.DEBUG)
         self._handler = ConsoleLogger(self.console)
         self._handler.setLevel(logging.INFO)
@@ -129,13 +125,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.log_manager.info("READY!")
         ###########################################################
 
-        self.tab_tools_layout.addWidget(self.tool_selector_view)
-
-        # self.tab_tools_layout.addWidget(self.tool_selector)
-        self.tab_tools_layout.addWidget(self.splitter)
-
-        # self.tool_workspace._reporter = self._reporter
-        # self.load_tools()
         self.tool_list = tool_.ToolsListModel(tool_.available_tools())
         self.tool_selector_view.setModel(self.tool_list)
         self.tool_selector_view.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
@@ -159,19 +148,40 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         # Add menu bar
         menu_bar = self.menuBar()
+
+        # File Menu
+
+        file_menu = menu_bar.addMenu("File")
+
+        # Create Exit button
+        exit_button = QtWidgets.QAction("Exit", self)
+        exit_button.triggered.connect(self.close)
+
+        file_menu.addAction(exit_button)
+
+        # Help Menu
         help_menu = menu_bar.addMenu("Help")
 
         # Create an About button
         about_button = QtWidgets.QAction("About", self)
         about_button.triggered.connect(self.show_about_window)
+
         help_menu.addAction(about_button)
 
+
+        # ##################
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
         # Show Window
         self.show()
 
     def show_about_window(self):
+        # TODO: refactor to function to get metadata
+        try:
+            dist = pkg_resources.get_distribution("forseti")
+            version = dist.version
+        except pkg_resources.DistributionNotFound:
+            version = "Development version"
 
         message = f"Forseti" \
                   f"\n" \
@@ -179,7 +189,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                   f"Collection of tools and workflows for DS" \
                   f"\n" \
                   f"\n" \
-                  f"Version {self.version}"
+                  f"Version {version}"
 
         f = QtWidgets.QMessageBox.about(self, "About", message)
         print(f)
@@ -307,14 +317,14 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
     # def create_tool_workspace(self):
     #     warnings.warn("To be removed", DeprecationWarning)
-    #     new_workspace = ToolWorkspace(self.splitter)
+    #     new_workspace = ToolWorkspace(self.job_splitter)
     #     new_workspace.setVisible(False)
     #     # new_workspace.setMinimumSize(QtCore.QSize(0, 300))
     #
     #     return new_workspace
 
     def create_console(self):
-        console = ToolConsole(self.splitter)
+        console = ToolConsole(self.main_splitter)
 
         return console
 
@@ -459,10 +469,16 @@ def main():
     # stdout_handler = logging.StreamHandler(sys.stdout)
     # logger.addHandler(stdout_handler)
     # logger.info("asdfasdfasdf")
+    try:
+        dist = pkg_resources.get_distribution("forseti")
+        version = dist.version
+    except pkg_resources.DistributionNotFound:
+        version = "Development version"
     app = QtWidgets.QApplication(sys.argv)
+
     with worker.ToolJobManager() as work_manager:
         windows = MainWindow(work_manager=work_manager)
-        windows.setWindowTitle(PROJECT_NAME)
+        windows.setWindowTitle(f"{PROJECT_NAME}: Version {version}")
         rc = app.exec_()
     sys.exit(rc)
 
