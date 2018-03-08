@@ -166,7 +166,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         help_menu.addAction(about_button)
 
-
         # ##################
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
@@ -174,20 +173,13 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.show()
 
     def show_about_window(self):
-        # TODO: refactor to function to get metadata
-        try:
-            dist = pkg_resources.get_distribution("forseti")
-            version = dist.version
-        except pkg_resources.DistributionNotFound:
-            version = "Development version"
-
         message = f"Forseti" \
                   f"\n" \
                   f"\n" \
                   f"Collection of tools and workflows for DS" \
                   f"\n" \
                   f"\n" \
-                  f"Version {version}"
+                  f"Version {forseti.__version__}"
 
         f = QtWidgets.QMessageBox.about(self, "About", message)
         print(f)
@@ -203,7 +195,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             self.tool_settings.resizeRowsToContents()
             self.mapper.setCurrentModelIndex(previous)
             self.tool_selector_view.setCurrentIndex(previous)
-
 
     def on_success(self, results, callback):
         self.log_manager.info("Done!")
@@ -302,9 +293,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tool_workspace.set_tool(tool)
 
 
-
 class MyDelegate(QtWidgets.QStyledItemDelegate):
-
 
     def createEditor(self, parent, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex):
         if index.isValid():
@@ -342,18 +331,13 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
     def destroyEditor(self, QWidget, QModelIndex):
         super().destroyEditor(QWidget, QModelIndex)
 
-def main():
 
-    try:
-        dist = pkg_resources.get_distribution("forseti")
-        version = dist.version
-    except pkg_resources.DistributionNotFound:
-        version = "Development version"
+def main():
     app = QtWidgets.QApplication(sys.argv)
     tools = tool_.available_tools()
     with worker.ToolJobManager() as work_manager:
         windows = MainWindow(work_manager=work_manager, tools=tools)
-        windows.setWindowTitle(f"{PROJECT_NAME}: Version {version}")
+        windows.setWindowTitle(f"{PROJECT_NAME}: Version {forseti.__version__}")
         rc = app.exec_()
     sys.exit(rc)
 
