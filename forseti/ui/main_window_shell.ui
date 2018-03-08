@@ -52,39 +52,13 @@
       <attribute name="title">
        <string>Tools</string>
       </attribute>
-      <layout class="QVBoxLayout" name="tab_tools_layout">
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
-      </layout>
+      <layout class="QVBoxLayout" name="tab_tools_layout"/>
      </widget>
      <widget class="QWidget" name="tab_workflow">
       <attribute name="title">
        <string>Workflows</string>
       </attribute>
-      <layout class="QVBoxLayout" name="tab_workflow_layout">
-        <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
-      </layout>
+      <layout class="QVBoxLayout" name="tab_workflow_layout"/>
      </widget>
     </widget>
    </item>
