@@ -5,6 +5,7 @@ import setuptools.config
 import os
 import sys
 
+
 def get_project_metadata(config_file):
     return setuptools.config.read_configuration(config_file)["metadata"]
 
