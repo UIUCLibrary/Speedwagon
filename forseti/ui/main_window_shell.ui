@@ -20,7 +20,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_3">
+   <layout class="QVBoxLayout" name="mainLayout">
     <property name="leftMargin">
      <number>0</number>
     </property>
@@ -33,9 +33,26 @@
     <property name="bottomMargin">
      <number>0</number>
     </property>
-    <item>
-     <widget class="QWidget" name="widget" native="true">
-      <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
+    <widget class="QFrame" name="frame">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>1</number>
+     </property>
+     <widget class="QWidget" name="tab_tools">
+      <attribute name="title">
+       <string>Tools</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="tab_tools_layout">
        <property name="leftMargin">
         <number>0</number>
        </property>
@@ -48,51 +65,17 @@
        <property name="bottomMargin">
         <number>0</number>
        </property>
-       <item>
-        <widget class="QFrame" name="frame">
-         <property name="frameShape">
-          <enum>QFrame::StyledPanel</enum>
-         </property>
-         <property name="frameShadow">
-          <enum>QFrame::Raised</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QTabWidget" name="tabWidget">
-         <property name="currentIndex">
-          <number>1</number>
-         </property>
-         <widget class="QWidget" name="tab_tools">
-          <attribute name="title">
-           <string>Tools</string>
-          </attribute>
-          <layout class="QVBoxLayout" name="tab_tools_layout">
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-          </layout>
-         </widget>
-         <widget class="QWidget" name="tab_workflow">
-          <attribute name="title">
-           <string>Workflows</string>
-          </attribute>
-          <layout class="QVBoxLayout" name="tab_workflow_layout"/>
-         </widget>
-        </widget>
-       </item>
       </layout>
      </widget>
-    </item>
+     <widget class="QWidget" name="tab_workflow">
+      <attribute name="title">
+       <string>Workflows</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="tab_workflow_layout"/>
+     </widget>
+    </widget>
+   </item>
+
    </layout>
   </widget>
  </widget>
