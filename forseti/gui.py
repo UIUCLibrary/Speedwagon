@@ -6,6 +6,7 @@ import time
 from PyQt5 import QtWidgets, QtCore, QtGui
 import forseti.tool
 import forseti.tools.abstool
+import forseti.workflow
 from forseti.tools import options
 from forseti.ui import main_window_shell_ui
 from forseti import tool as tool_, worker, runner_strategies
@@ -54,7 +55,7 @@ class ConsoleLogger(logging.Handler):
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
-    def __init__(self, work_manager: worker.ToolJobManager, tools) -> None:
+    def __init__(self, work_manager: worker.ToolJobManager, tools, workflows) -> None:
         super().__init__()
         self._work_manager = work_manager
         self.setupUi(self)
@@ -72,11 +73,11 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         ###########################################################
         #
-        self.tool_workspace2 = QtWidgets.QGroupBox()
-        self.tool_workspace2.setTitle("Tool")
+        self.tool_workspace = QtWidgets.QGroupBox()
+        self.tool_workspace.setTitle("Tool")
         self._selected_tool_name_line2 = QtWidgets.QLineEdit()
         self._selected_tool_name_line2.setReadOnly(True)
-        self._description_information2 = QtWidgets.QTextBrowser()
+        self._tool_description_information = QtWidgets.QTextBrowser()
 
         # Add the configuration and metadata widgets
         self.tool_config_layout = QtWidgets.QFormLayout()
@@ -92,26 +93,27 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tool_settings.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
         self.tool_settings.verticalHeader().setSectionsClickable(False)
 
-        self.tool_config_layout.addRow(QtWidgets.QLabel("Tool Selected"), self._selected_tool_name_line2)
-        self.tool_config_layout.addRow(QtWidgets.QLabel("Description"), self._description_information2)
-        self.tool_config_layout.addRow(QtWidgets.QLabel("Tool Settings"), self.tool_settings)
+        self.tool_config_layout.addRow(QtWidgets.QLabel("Selected"), self._selected_tool_name_line2)
+        self.tool_config_layout.addRow(QtWidgets.QLabel("Description"), self._tool_description_information)
+        self.tool_config_layout.addRow(QtWidgets.QLabel("Settings"), self.tool_settings)
 
         # Add the actions, aka Buttons
-        self.tool_actions_layout = QtWidgets.QHBoxLayout()
-        self.start_button = QtWidgets.QPushButton()
-        self.start_button.setText("Start")
-        self.start_button.clicked.connect(self.start)
+        self._tool_actions_layout = QtWidgets.QHBoxLayout()
+        self._tool_start_button = QtWidgets.QPushButton()
+        self._tool_start_button.setText("Start")
+        self._tool_start_button.clicked.connect(self._start_tool)
 
-        self.tool_actions_layout.addSpacerItem(QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Expanding))
-        self.tool_actions_layout.addWidget(self.start_button)
+        self._tool_actions_layout.addSpacerItem(QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Expanding))
+        self._tool_actions_layout.addWidget(self._tool_start_button)
 
         # Add the sublayouts to master layout
         self.tool_workspace2_layout = QtWidgets.QVBoxLayout()
         self.tool_workspace2_layout.addLayout(self.tool_config_layout)
-        self.tool_workspace2_layout.addLayout(self.tool_actions_layout)
-        self.tool_workspace2.setLayout(self.tool_workspace2_layout)
+        # self.tool_workspace2_layout.addLayout(self._tool_actions_layout)
+        self.tool_workspace.setLayout(self.tool_workspace2_layout)
         self.tab_tools_layout.addWidget(self.tool_selector_view)
-        self.tab_tools_layout.addWidget(self.tool_workspace2)
+        self.tab_tools_layout.addWidget(self.tool_workspace)
+        self.tab_tools_layout.addLayout(self._tool_actions_layout)
         self.console = self.create_console()
 
         ###########################################################
@@ -124,6 +126,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         ###########################################################
 
         self._tools_model = tool_.ToolsListModel(tools)
+        self._workflow_model = tool_.ToolsListModel(workflows)
         self.tool_selector_view.setModel(self._tools_model)
         self.tool_selector_view.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
@@ -132,17 +135,49 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.mapper.addMapping(self._selected_tool_name_line2, 0)
 
         # This needs custom mapping because without it, new line characters are removed
-        self.mapper.addMapping(self._description_information2, 1, b"plainText")
+        self.mapper.addMapping(self._tool_description_information, 1, b"plainText")
 
         self.tool_selector_view.selectionModel().currentChanged.connect(self._update_tool_selected)
 
         ######################
-        self.workflow_selector_view = QtWidgets.QListView(self)
-        self.workflow_selector_view.setMinimumHeight(100)
+        self._workflow_selector_view = QtWidgets.QListView(self)
+        self._workflow_selector_view.setMinimumHeight(100)
 
         # TODO: Change the model to show workflows only
-        self.workflow_selector_view.setModel(self._tools_model)
-        self.tab_workflow_layout.addWidget(self.workflow_selector_view)
+        self._workflow_selector_view.setModel(self._workflow_model)
+        self.tab_workflow_layout.addWidget(self._workflow_selector_view)
+
+        self._workflow_workspace = QtWidgets.QGroupBox()
+        self._workflow_workspace.setTitle("Workflow")
+
+        self._selected_workflow_name_line = QtWidgets.QLineEdit()
+        self._selected_workflow_description_information = QtWidgets.QTextBrowser()
+
+        self._workflow_workspace_layout = QtWidgets.QVBoxLayout()
+
+        self._workflow_settings = QtWidgets.QTableView(parent=self)
+
+        self._workflow_config_layout = QtWidgets.QFormLayout()
+        self._workflow_config_layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.ExpandingFieldsGrow)
+
+        self._workflow_config_layout.addRow(QtWidgets.QLabel("Selected"), self._selected_workflow_name_line)
+        self._workflow_config_layout.addRow(QtWidgets.QLabel("Description"),
+                                            self._selected_workflow_description_information)
+        self._workflow_config_layout.addRow(QtWidgets.QLabel("Settings"), self._workflow_settings)
+
+        self._workflow_actions_layout = QtWidgets.QHBoxLayout()
+        self._workflow_start_button = QtWidgets.QPushButton()
+        self._workflow_start_button.setText("Start")
+        self._workflow_start_button.clicked.connect(self.start_workflow)
+
+        self._workflow_actions_layout.addSpacerItem(QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Expanding))
+        self._workflow_actions_layout.addWidget(self._workflow_start_button)
+
+        self._workflow_workspace.setLayout(self._workflow_workspace_layout)
+        self._workflow_workspace_layout.addLayout(self._workflow_config_layout)
+        # self._workflow_workspace_layout.addLayout(self._workflow_actions_layout)
+        self.tab_workflow_layout.addWidget(self._workflow_workspace)
+        self.tab_workflow_layout.addLayout(self._workflow_actions_layout)
 
         # Add menu bar
         menu_bar = self.menuBar()
@@ -186,11 +221,23 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     def _update_tool_selected(self, current, previous):
 
         try:
-            self.tool_selected(current)
+            self._tool_selected(current)
             self.tool_settings.resizeRowsToContents()
             self.mapper.setCurrentModelIndex(current)
         except Exception as e:
-            self.tool_selected(previous)
+            self._tool_selected(previous)
+            self.tool_settings.resizeRowsToContents()
+            self.mapper.setCurrentModelIndex(previous)
+            self.tool_selector_view.setCurrentIndex(previous)
+
+    def _update_workflow_selected(self, current, previous):
+
+        try:
+            self._tool_selected(current)
+            self.tool_settings.resizeRowsToContents()
+            self.mapper.setCurrentModelIndex(current)
+        except Exception as e:
+            self._tool_selected(previous)
             self.tool_settings.resizeRowsToContents()
             self.mapper.setCurrentModelIndex(previous)
             self.tool_selector_view.setCurrentIndex(previous)
@@ -234,7 +281,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # raise exc
         # sys.exit(1)
 
-    def start(self):
+    def _start_tool(self):
         # logger = logging.getLogger(__name__)
         # logger.debug("Start button pressed")
         if len(self.tool_selector_view.selectedIndexes()) != 1:
@@ -258,7 +305,13 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         else:
             QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
 
-    def tool_selected(self, index: QtCore.QModelIndex):
+    def start_workflow(self):
+        if len(self._workflow_selector_view.selectedIndexes()) != 1:
+            print("Invalid number of selected Indexes. Expected 1. Found {}".format(
+                len(self._workflow_selector_view.selectedIndexes())))
+            return
+
+    def _tool_selected(self, index: QtCore.QModelIndex):
         tool = self._tools_model.data(index, QtCore.Qt.UserRole)
         # model.
         # self.tool_workspace.set_tool(tool)
@@ -278,18 +331,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         return console
 
-    def _load_tool(self, tool):
-        pass
-        # self.tool_selector.add_tool_to_available(tool)
-
-    def load_tools(self):
-        # tools =
-
-        for k, v in tool_.available_tools().items():
-            self._load_tool(v())
-
-    def change_tool(self, tool: forseti.tools.abstool.AbsTool):
-        self.tool_workspace.set_tool(tool)
 
 
 class MyDelegate(QtWidgets.QStyledItemDelegate):
@@ -334,8 +375,9 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
 def main():
     app = QtWidgets.QApplication(sys.argv)
     tools = tool_.available_tools()
+    workflows = forseti.workflow.available_workflows()
     with worker.ToolJobManager() as work_manager:
-        windows = MainWindow(work_manager=work_manager, tools=tools)
+        windows = MainWindow(work_manager=work_manager, tools=tools, workflows=workflows)
         windows.setWindowTitle(f"{PROJECT_NAME}: Version {forseti.__version__}")
         rc = app.exec_()
     sys.exit(rc)
