@@ -71,7 +71,20 @@
       <attribute name="title">
        <string>Workflows</string>
       </attribute>
-      <layout class="QVBoxLayout" name="tab_workflow_layout"/>
+      <layout class="QVBoxLayout" name="tab_workflow_layout">
+        <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+      </layout>
      </widget>
     </widget>
    </item>
