@@ -6,6 +6,8 @@ import time
 from PyQt5 import QtCore, QtWidgets
 
 import logging
+
+import forseti.models
 from forseti import worker
 import forseti.tools.tool_verify_checksum
 from forseti.tools.abstool import AbsTool
@@ -56,7 +58,7 @@ def test_model(qtbot):
     user_options = tool.get_user_options()
 
     assert isinstance(user_options, list)
-    model = forseti.tool.ToolOptionsModel3(user_options)
+    model = forseti.models.ToolOptionsModel3(user_options)
     index = model.index(0, 0)
     model.setData(index, "hello world")
     d = model.get()
