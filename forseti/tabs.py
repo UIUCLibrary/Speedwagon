@@ -5,6 +5,7 @@ from abc import ABCMeta, abstractmethod
 
 from PyQt5 import QtWidgets, QtCore
 
+import forseti.models
 import forseti.tools
 from forseti import tool as tool_, runner_strategies
 from forseti.tools import options
@@ -15,7 +16,6 @@ class AbsTab(metaclass=abc.ABCMeta):
         self.log_manager = log_manager
         self.parent = parent
         self.work_manager = work_manager
-
         self.tab, self.tab_layout = self.create_tab()
 
     @abc.abstractmethod
@@ -39,7 +39,7 @@ class AbsTab(metaclass=abc.ABCMeta):
         return tool_settings
 
     @classmethod
-    def create_config_layout(cls, parent):
+    def create_config_layout(cls, parent) -> typing.Tuple[typing.Dict[str, QtWidgets.QWidget], QtWidgets.QLayout]:
         tool_config_layout = QtWidgets.QFormLayout()
 
         tool_name_line = QtWidgets.QLineEdit()
@@ -62,13 +62,13 @@ class AbsTab(metaclass=abc.ABCMeta):
         return widgets, tool_config_layout
 
     @staticmethod
-    def create_workspace(title):
+    def create_workspace(title) -> QtWidgets.QWidget:
         tool_workspace = QtWidgets.QGroupBox()
         workspace2_layout = QtWidgets.QVBoxLayout()
 
         tool_workspace.setTitle(title)
         tool_workspace.setLayout(workspace2_layout)
-        return tool_workspace, workspace2_layout
+        return tool_workspace
 
     @staticmethod
     def create_tab() -> typing.Tuple[QtWidgets.QWidget, QtWidgets.QLayout]:
@@ -80,9 +80,18 @@ class AbsTab(metaclass=abc.ABCMeta):
 
 
 class ItemSelectionTab(AbsTab, metaclass=ABCMeta):
-    @abstractmethod
-    def _update_tool_selected(self, current, previous):
-        pass
+    def __init__(self, name, parent, item_model, work_manager, log_manager):
+        super().__init__(parent, work_manager, log_manager)
+        self.item_selection_model = item_model
+        self.options_model = None
+        self.tab_name = name
+        self.item_selector_view = self._create_selector_view(parent, model=self.item_selection_model)
+        self.workspace = self.create_workspace(self.tab_name)
+        self.config_widgets, self.config_layout = self.create_config_layout(parent)
+        self.workspace.layout().addLayout(self.config_layout)
+        self.item_form = self.create_form(self.parent, self.config_widgets, model=self.item_selection_model)
+        self.actions_widgets, self.actions_layout = self.create_actions()
+        self.compose_tab_layout()
 
     def _create_selector_view(self, parent, model):
         selector_view = QtWidgets.QListView(parent)
@@ -93,7 +102,7 @@ class ItemSelectionTab(AbsTab, metaclass=ABCMeta):
         return selector_view
 
     @staticmethod
-    def _create_tool_mapper(parent, config_widgets, model):
+    def create_form(parent, config_widgets, model):
         tool_mapper = QtWidgets.QDataWidgetMapper(parent)
         tool_mapper.setModel(model)
         tool_mapper.addMapping(config_widgets['name'], 0)
@@ -101,11 +110,15 @@ class ItemSelectionTab(AbsTab, metaclass=ABCMeta):
         tool_mapper.addMapping(config_widgets['description'], 1, b"plainText")
         return tool_mapper
 
-    @abstractmethod
+    @abc.abstractmethod
     def start(self):
         pass
 
-    def create_actions(self):
+    @abc.abstractmethod
+    def get_item_options_model(self, tool):
+        pass
+
+    def create_actions(self) -> typing.Tuple[typing.Dict[str, QtWidgets.QWidget], QtWidgets.QLayout]:
         tool_actions_layout = QtWidgets.QHBoxLayout()
 
         start_button = QtWidgets.QPushButton()
@@ -123,41 +136,57 @@ class ItemSelectionTab(AbsTab, metaclass=ABCMeta):
         if self.is_ready_to_start():
             self.start()
 
-    @abstractmethod
+    @abc.abstractmethod
     def is_ready_to_start(self) -> bool:
         pass
+
+    def _update_tool_selected(self, current, previous):
+        selection_settings_widget = self.config_widgets['settings']
+        try:
+            self.item_selected(current)
+            selection_settings_widget.resizeRowsToContents()
+            self.item_form.setCurrentModelIndex(current)
+        except Exception as e:
+            self.item_selected(previous)
+            selection_settings_widget.resizeRowsToContents()
+            self.item_form.setCurrentModelIndex(previous)
+            self.item_selector_view.setCurrentIndex(previous)
+
+    def item_selected(self, index: QtCore.QModelIndex):
+
+        tool = self.item_selection_model.data(index, QtCore.Qt.UserRole)
+        item_settings = self.config_widgets['settings']
+        # model.
+        # self.workspace.set_tool(tool)
+        #################
+        try:
+            model = self.get_item_options_model(tool)
+            self.options_model = model
+            item_settings.setModel(self.options_model)
+        except Exception as e:
+            message = "Unable to use {} as it's not fully implemented".format(tool.name)
+            QtWidgets.QMessageBox.warning(self, "Tool settings error", message)
+            self.log_manager.warning(message)
+            raise
+
+    def compose_tab_layout(self):
+        self.tab_layout.addWidget(self.item_selector_view)
+        self.tab_layout.addWidget(self.workspace)
+        self.tab_layout.addLayout(self.actions_layout)
 
 
 class ToolTab(ItemSelectionTab):
     def __init__(self, parent, tools, work_manager, log_manager):
-        super().__init__(parent, work_manager, log_manager)
-        self._tool_options_model = None
+        super().__init__("Tool", parent, forseti.models.ToolsListModel(tools), work_manager, log_manager)
 
-        # Create model for tool options
-        self._tools_model = tool_.ToolsListModel(tools)
+        # self.actions_widgets, self.actions_layout = self.create_actions()
+        # self.item_form = self.create_form(self.parent, self.config_widgets, model=self._tool_selection_model)
 
-        # =============================
-
-        self.tool_workspace, self.workspace_layout = self.create_workspace("Tool")
-        self.config_widgets, self.tool_config_layout = self.create_config_layout(parent)
-        self.workspace_layout.addLayout(self.tool_config_layout)
-        self.actions, self._tool_actions_layout = self.create_actions()
-        # =============================
-
-        self._tool_selector_view = self._create_selector_view(parent, model=self._tools_model)
-        self._tool_mapper = self._create_tool_mapper(self.parent, self.config_widgets, model=self._tools_model)
-
-        self.compose_tab_layout()
-
-    def compose_tab_layout(self):
-        self.tab_layout.addWidget(self._tool_selector_view)
-        self.tab_layout.addWidget(self.tool_workspace)
-        self.tab_layout.addLayout(self._tool_actions_layout)
 
     def is_ready_to_start(self) -> bool:
-        if len(self._tool_selector_view.selectedIndexes()) != 1:
+        if len(self.item_selector_view.selectedIndexes()) != 1:
             print("Invalid number of selected Indexes. Expected 1. Found {}".format(
-                len(self._tool_selector_view.selectedIndexes())))
+                len(self.item_selector_view.selectedIndexes())))
             return False
         return True
 
@@ -165,10 +194,10 @@ class ToolTab(ItemSelectionTab):
         # logger = logging.getLogger(__name__)
         # logger.debug("Start button pressed")
 
-        tool = self._tools_model.data(self._tool_selector_view.selectedIndexes()[0], QtCore.Qt.UserRole)
-        if issubclass(tool, forseti.tools.abstool.AbsTool):
-            options = self._tool_options_model.get()
-            self._tool = tool
+        item = self.item_selection_model.data(self.item_selector_view.selectedIndexes()[0], QtCore.Qt.UserRole)
+        if issubclass(item, forseti.tools.abstool.AbsTool):
+            options = self.options_model.get()
+            self._tool = item
 
             # wrapped_strat = runner_strategies.UsingWorkWrapper()
             # runner = runner_strategies.RunRunner(wrapped_strat)
@@ -176,7 +205,7 @@ class ToolTab(ItemSelectionTab):
             # manager_strat = runner_strategies.UsingWorkManager()
             runner = runner_strategies.RunRunner(manager_strat)
 
-            runner.run(self.parent, tool, options, self._on_success, self._on_failed, self.work_manager.logger)
+            runner.run(self.parent, item, options, self._on_success, self._on_failed, self.work_manager.logger)
 
         else:
             QtWidgets.QMessageBox.warning(self.parent, "No op", "No tool selected.")
@@ -197,7 +226,7 @@ class ToolTab(ItemSelectionTab):
 
     def _on_success(self, results, callback):
         self.log_manager.info("Done!")
-        user_args = self._tool_options_model.get()
+        user_args = self.options_model.get()
         callback(results=results, user_args=user_args)
         report = self._tool.generate_report(results=results, user_args=user_args)
         if report:
@@ -218,46 +247,19 @@ class ToolTab(ItemSelectionTab):
 
         # QtWidgets.QMessageBox.about(self, "Finished", "Finished")
 
-    def _update_tool_selected(self, current, previous):
-        tool_settings = self.config_widgets['settings']
-        try:
-            self._tool_selected(current)
-            tool_settings.resizeRowsToContents()
-            self._tool_mapper.setCurrentModelIndex(current)
-        except Exception as e:
-            self._tool_selected(previous)
-            tool_settings.resizeRowsToContents()
-            self._tool_mapper.setCurrentModelIndex(previous)
-            self._tool_selector_view.setCurrentIndex(previous)
 
-    def _tool_selected(self, index: QtCore.QModelIndex):
-        tool = self._tools_model.data(index, QtCore.Qt.UserRole)
-        tool_settings = self.config_widgets['settings']
-        # model.
-        # self.tool_workspace.set_tool(tool)
-        #################
-        try:
-            self._tool_options_model = tool_.ToolOptionsModel3(tool.get_user_options())
 
-            tool_settings.setModel(self._tool_options_model)
-        except Exception as e:
-            message = "Unable to use {} as it's not fully implemented".format(tool.name)
-            QtWidgets.QMessageBox.warning(self, "Tool settings error", message)
-            self.log_manager.warning(message)
-            raise
+
+
+    def get_item_options_model(self, tool):
+        model = forseti.models.ToolOptionsModel3(tool.get_user_options())
+        return model
 
 
 class WorkflowsTab(ItemSelectionTab):
 
     def __init__(self, parent, workflows, work_manager, log_manager):
-        super().__init__(parent, work_manager, log_manager)
-        self._workflow_model = tool_.ToolsListModel(workflows)
-        self.config_widgets, self.workflow_config_layout = self.create_config_layout(parent)
-        self.workflow_workspace, self.workspace_layout = self.create_workspace("Workflow")
-        self.workspace_layout.addLayout(self.workflow_config_layout)
-        self._workflow_selector_view = self._create_selector_view(parent, model=self._workflow_model)
-        self._workflow_actions, self._workflow_actions_layout = self.create_actions()
-        self.compose_tab_layout()
+        super().__init__("Workflow", parent, forseti.models.WorkflowListModel(workflows), work_manager, log_manager)
 
     def is_ready_to_start(self):
         return False
@@ -265,14 +267,14 @@ class WorkflowsTab(ItemSelectionTab):
     def start(self):
         print("starting")
 
-        # if len(self._tool_selector_view.selectedIndexes()) != 1:
+        # if len(self.item_selector_view.selectedIndexes()) != 1:
         #     print("Invalid number of selected Indexes. Expected 1. Found {}".format(
-        #         len(self._tool_selector_view.selectedIndexes())))
+        #         len(self.item_selector_view.selectedIndexes())))
         #     return
         #
-        # tool = self._tools_model.data(self._tool_selector_view.selectedIndexes()[0], QtCore.Qt.UserRole)
+        # tool = self._tool_selection_model.data(self.item_selector_view.selectedIndexes()[0], QtCore.Qt.UserRole)
         # if issubclass(tool, forseti.tools.abstool.AbsTool):
-        #     options = self._tool_options_model.get()
+        #     options = self.options_model.get()
         #     self._tool = tool
         #
         #     # wrapped_strat = runner_strategies.UsingWorkWrapper()
@@ -286,24 +288,9 @@ class WorkflowsTab(ItemSelectionTab):
         # else:
         #     QtWidgets.QMessageBox.warning(self.parent, "No op", "No tool selected.")
 
-    def compose_tab_layout(self):
-        self.tab_layout.addWidget(self._workflow_selector_view)
-        self.tab_layout.addWidget(self.workflow_workspace)
-        self.tab_layout.addLayout(self._workflow_actions_layout)
-
-    # TODO: _update_tool_selected
-    def _update_tool_selected(self, current, previous):
+    def get_item_options_model(self, tool):
         pass
-        # tool_settings = self.config_widgets['settings']
-        # try:
-        #     self._tool_selected(current)
-        #     tool_settings.resizeRowsToContents()
-        #     self._tool_mapper.setCurrentModelIndex(current)
-        # except Exception as e:
-        #     self._tool_selected(previous)
-        #     tool_settings.resizeRowsToContents()
-        #     self._tool_mapper.setCurrentModelIndex(previous)
-        #     self._tool_selector_view.setCurrentIndex(previous)
+        # return tool_.ToolsListModel(tool)
 
 
 class MyDelegate(QtWidgets.QStyledItemDelegate):
