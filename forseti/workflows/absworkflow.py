@@ -5,8 +5,8 @@ import forseti.worker
 
 
 class AbsWorkflow(metaclass=abc.ABCMeta):
-    name = None
-    description = None
+    name: str = None
+    description: str = None
     active = True
 
     def __init__(self) -> None:
