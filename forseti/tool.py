@@ -1,16 +1,12 @@
 import abc
-import importlib
-import inspect
 import typing
 import warnings
 from abc import abstractmethod
 from collections import namedtuple
 
-import sys
-
+import forseti.finder
 from forseti.tools.options import ToolOptionDataType
 from forseti.tools import options
-from . import tools
 from forseti.tools.abstool import AbsTool
 import os
 from PyQt5 import QtWidgets, QtCore
@@ -203,6 +199,7 @@ class ToolOptionsPairsModel(ToolOptionsModel):
             options[data.label] = data.data
         return options
 
+
 #
 class ToolOptionsModel2(ToolOptionsModel):
 
@@ -286,6 +283,23 @@ class ToolOptionsModel3(ToolOptionsModel):
         return True
 
 
+class ToolFinder(forseti.finder.AbsDynamicFinder):
+
+    @staticmethod
+    def py_module_filter(item: os.DirEntry):
+        if not str(item.name).startswith("tool_"):
+            return False
+        return True
+
+    @property
+    def package_name(self) -> str:
+        return "{}.tools".format(__package__)
+
+    @property
+    def base_class(self):
+        return AbsTool
+
+
 def available_tools() -> dict:
     """
     Locate all tools that can be loaded
@@ -293,27 +307,6 @@ def available_tools() -> dict:
     Returns: Dictionary of all tools
 
     """
-    located_tools = dict()
     root = os.path.join(os.path.dirname(__file__), "tools")
-    tree = os.scandir(root)
-
-    def filter_only_tools(item: os.DirEntry):
-        if not str(item.name).startswith("tool_"):
-            return False
-        return True
-
-    for m in filter(filter_only_tools, tree):
-        try:
-            module = importlib.import_module("{}.tools.{}".format(__package__, os.path.splitext(m.name)[0]))
-            for name_, module_class in inspect.getmembers(module,
-                                                          lambda m: inspect.isclass(m) and not inspect.isabstract(m)):
-                if issubclass(module_class, AbsTool) and module_class.active:
-                    located_tools[module_class.name] = module_class
-        except ImportError as e:
-
-            print("Unable to load {}. Reason: {}".format(m, e), file=sys.stderr)
-            # raise ImportError("Unable to load {}. Reason: {}".format(m, e))
-        # except ModuleNotFoundError as e:
-        #     print("Unable to load {}".format(m))
-
-    return located_tools
+    finder = ToolFinder(root)
+    return finder.locate()
