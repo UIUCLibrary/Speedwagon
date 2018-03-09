@@ -83,7 +83,7 @@ def test_work_runner(qtbot):
 
         assert work_runner.jobs.qsize() == 2
         assert work_runner.dialog.windowTitle() == "test runner"
-        work_runner.start()
+        work_runner._start_tool()
         work_runner.finish()
         assert work_runner.dialog.minimum() == 0
         assert work_runner.dialog.maximum() == 2

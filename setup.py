@@ -51,6 +51,7 @@ setup(
     packages=[
         "forseti",
         "forseti.tools",
+        "forseti.workflows",
         "forseti.ui"
     ],
     setup_requires=['pytest-runner'],
