@@ -3,6 +3,7 @@ import sys
 import typing
 
 import abc
+from abc import abstractmethod, ABCMeta
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 import forseti.tool
@@ -59,7 +60,7 @@ class AbsTab(metaclass=abc.ABCMeta):
         self.parent = parent
         self.work_manager = work_manager
 
-        self.tab, self.tab_tools_layout = self.create_tab()
+        self.tab, self.tab_layout = self.create_tab()
 
     @abc.abstractmethod
     def compose_tab_layout(self):
@@ -83,7 +84,6 @@ class AbsTab(metaclass=abc.ABCMeta):
 
     @classmethod
     def create_config_layout(cls, parent):
-
         tool_config_layout = QtWidgets.QFormLayout()
 
         tool_name_line = QtWidgets.QLineEdit()
@@ -119,12 +119,52 @@ class AbsTab(metaclass=abc.ABCMeta):
         tab_tools = QtWidgets.QWidget()
         tab_tools.setObjectName("tab")
         tab_tools_layout = QtWidgets.QVBoxLayout(tab_tools)
-        tab_tools_layout.setObjectName("tab_tools_layout")
+        tab_tools_layout.setObjectName("tab_layout")
         return tab_tools, tab_tools_layout
 
 
+class ItemSelectionTab(AbsTab, metaclass=ABCMeta):
+    @abstractmethod
+    def _update_tool_selected(self, current, previous):
+        pass
 
-class ToolTab(AbsTab):
+    def _create_selector_view(self, parent, model):
+        selector_view = QtWidgets.QListView(parent)
+        selector_view.setMinimumHeight(100)
+        selector_view.setModel(model)
+        selector_view.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        selector_view.selectionModel().currentChanged.connect(self._update_tool_selected)
+        return selector_view
+
+    @staticmethod
+    def _create_tool_mapper(parent, config_widgets, model):
+        tool_mapper = QtWidgets.QDataWidgetMapper(parent)
+        tool_mapper.setModel(model)
+        tool_mapper.addMapping(config_widgets['name'], 0)
+        # This needs custom mapping because without it, new line characters are removed
+        tool_mapper.addMapping(config_widgets['description'], 1, b"plainText")
+        return tool_mapper
+
+    @abstractmethod
+    def start(self):
+        pass
+
+    def create_actions(self):
+        tool_actions_layout = QtWidgets.QHBoxLayout()
+
+        start_button = QtWidgets.QPushButton()
+        start_button.setText("Start")
+        start_button.clicked.connect(self.start)
+
+        tool_actions_layout.addSpacerItem(QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Expanding))
+        tool_actions_layout.addWidget(start_button)
+        actions = {
+            "start_button": start_button
+        }
+        return actions, tool_actions_layout
+
+
+class ToolTab(ItemSelectionTab):
     def __init__(self, parent, tools, work_manager, log_manager):
         super().__init__(parent, work_manager, log_manager)
         self._tool_options_model = None
@@ -140,53 +180,41 @@ class ToolTab(AbsTab):
         self.actions, self._tool_actions_layout = self.create_actions()
         # =============================
 
-        self._tool_selector_view = self.create_selector_view(parent, model=self._tools_model)
-        self._tool_mapper = self.create_tool_mapper(self.parent, self.config_widgets, model=self._tools_model)
+        self._tool_selector_view = self._create_selector_view(parent, model=self._tools_model)
+        self._tool_mapper = self._create_tool_mapper(self.parent, self.config_widgets, model=self._tools_model)
 
         self.compose_tab_layout()
 
     def compose_tab_layout(self):
-        self.tab_tools_layout.addWidget(self._tool_selector_view)
-        self.tab_tools_layout.addWidget(self.tool_workspace)
-        self.tab_tools_layout.addLayout(self._tool_actions_layout)
+        self.tab_layout.addWidget(self._tool_selector_view)
+        self.tab_layout.addWidget(self.tool_workspace)
+        self.tab_layout.addLayout(self._tool_actions_layout)
 
-    @staticmethod
-    def create_tool_mapper(parent, config_widgets, model):
-        tool_mapper = QtWidgets.QDataWidgetMapper(parent)
-        tool_mapper.setModel(model)
-        tool_mapper.addMapping(config_widgets['name'], 0)
-        # This needs custom mapping because without it, new line characters are removed
-        tool_mapper.addMapping(config_widgets['description'], 1, b"plainText")
-        return tool_mapper
+    def start(self):
+        # logger = logging.getLogger(__name__)
+        # logger.debug("Start button pressed")
+        if len(self._tool_selector_view.selectedIndexes()) != 1:
+            print("Invalid number of selected Indexes. Expected 1. Found {}".format(
+                len(self._tool_selector_view.selectedIndexes())))
+            return
 
+        tool = self._tools_model.data(self._tool_selector_view.selectedIndexes()[0], QtCore.Qt.UserRole)
+        if issubclass(tool, forseti.tools.abstool.AbsTool):
+            options = self._tool_options_model.get()
+            self._tool = tool
 
+            # wrapped_strat = runner_strategies.UsingWorkWrapper()
+            # runner = runner_strategies.RunRunner(wrapped_strat)
+            manager_strat = runner_strategies.UsingExternalManager(manager=self.work_manager)
+            # manager_strat = runner_strategies.UsingWorkManager()
+            runner = runner_strategies.RunRunner(manager_strat)
 
-    def create_selector_view(self, parent, model):
-        selector_view = QtWidgets.QListView(parent)
-        selector_view.setMinimumHeight(100)
-        selector_view.setModel(model)
-        selector_view.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        selector_view.selectionModel().currentChanged.connect(self._update_tool_selected)
-        return selector_view
+            runner.run(self.parent, tool, options, self._on_success, self._on_failed, self.work_manager.logger)
 
+        else:
+            QtWidgets.QMessageBox.warning(self.parent, "No op", "No tool selected.")
 
-
-    def create_actions(self) -> typing.Tuple[typing.Dict[str, QtWidgets.QWidget], QtWidgets.QLayout]:
-        tool_actions_layout = QtWidgets.QHBoxLayout()
-
-        start_button = QtWidgets.QPushButton()
-        start_button.setText("Start")
-        start_button.clicked.connect(self._start_tool)
-
-        tool_actions_layout.addSpacerItem(QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Expanding))
-        tool_actions_layout.addWidget(start_button)
-        actions = {
-            "start_button": start_button
-        }
-        return actions, tool_actions_layout
-
-
-    def on_failed(self, exc):
+    def _on_failed(self, exc):
         self.log_manager.error("Process failed. Reason: {}".format(exc))
         print("************** {}".format(exc))
         if exc:
@@ -200,7 +228,7 @@ class ToolTab(AbsTab):
             msg.setDetailedText("".join(exception_message))
             msg.exec_()
 
-    def on_success(self, results, callback):
+    def _on_success(self, results, callback):
         self.log_manager.info("Done!")
         user_args = self._tool_options_model.get()
         callback(results=results, user_args=user_args)
@@ -251,29 +279,61 @@ class ToolTab(AbsTab):
             self.log_manager.warning(message)
             raise
 
-    def _start_tool(self):
-        # logger = logging.getLogger(__name__)
-        # logger.debug("Start button pressed")
-        if len(self._tool_selector_view.selectedIndexes()) != 1:
-            print("Invalid number of selected Indexes. Expected 1. Found {}".format(
-                len(self._tool_selector_view.selectedIndexes())))
-            return
 
-        tool = self._tools_model.data(self._tool_selector_view.selectedIndexes()[0], QtCore.Qt.UserRole)
-        if issubclass(tool, forseti.tools.abstool.AbsTool):
-            options = self._tool_options_model.get()
-            self._tool = tool
+class WorkflowsTab(ItemSelectionTab):
 
-            # wrapped_strat = runner_strategies.UsingWorkWrapper()
-            # runner = runner_strategies.RunRunner(wrapped_strat)
-            manager_strat = runner_strategies.UsingExternalManager(manager=self.work_manager)
-            # manager_strat = runner_strategies.UsingWorkManager()
-            runner = runner_strategies.RunRunner(manager_strat)
+    def __init__(self, parent, workflows, work_manager, log_manager):
+        super().__init__(parent, work_manager, log_manager)
+        self._workflow_model = tool_.ToolsListModel(workflows)
+        self.config_widgets, self.workflow_config_layout = self.create_config_layout(parent)
+        self.workflow_workspace, self.workspace_layout = self.create_workspace("Workflow")
+        self.workspace_layout.addLayout(self.workflow_config_layout)
+        self._workflow_selector_view = self._create_selector_view(parent, model=self._workflow_model)
+        self._workflow_actions, self._workflow_actions_layout = self.create_actions()
+        self.compose_tab_layout()
 
-            runner.run(self.parent, tool, options, self.on_success, self.on_failed, self.work_manager.logger)
+    def start(self):
+        print("starting")
 
-        else:
-            QtWidgets.QMessageBox.warning(self.parent, "No op", "No tool selected.")
+        # if len(self._tool_selector_view.selectedIndexes()) != 1:
+        #     print("Invalid number of selected Indexes. Expected 1. Found {}".format(
+        #         len(self._tool_selector_view.selectedIndexes())))
+        #     return
+        #
+        # tool = self._tools_model.data(self._tool_selector_view.selectedIndexes()[0], QtCore.Qt.UserRole)
+        # if issubclass(tool, forseti.tools.abstool.AbsTool):
+        #     options = self._tool_options_model.get()
+        #     self._tool = tool
+        #
+        #     # wrapped_strat = runner_strategies.UsingWorkWrapper()
+        #     # runner = runner_strategies.RunRunner(wrapped_strat)
+        #     manager_strat = runner_strategies.UsingExternalManager(manager=self.work_manager)
+        #     # manager_strat = runner_strategies.UsingWorkManager()
+        #     runner = runner_strategies.RunRunner(manager_strat)
+        #
+        #     runner.run(self.parent, tool, options, self._on_success, self._on_failed, self.work_manager.logger)
+        #
+        # else:
+        #     QtWidgets.QMessageBox.warning(self.parent, "No op", "No tool selected.")
+
+    def compose_tab_layout(self):
+        self.tab_layout.addWidget(self._workflow_selector_view)
+        self.tab_layout.addWidget(self.workflow_workspace)
+        self.tab_layout.addLayout(self._workflow_actions_layout)
+
+    # TODO: _update_tool_selected
+    def _update_tool_selected(self, current, previous):
+        pass
+        # tool_settings = self.config_widgets['settings']
+        # try:
+        #     self._tool_selected(current)
+        #     tool_settings.resizeRowsToContents()
+        #     self._tool_mapper.setCurrentModelIndex(current)
+        # except Exception as e:
+        #     self._tool_selected(previous)
+        #     tool_settings.resizeRowsToContents()
+        #     self._tool_mapper.setCurrentModelIndex(previous)
+        #     self._tool_selector_view.setCurrentIndex(previous)
 
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
@@ -296,58 +356,11 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tools_tab = ToolTab(self, tools, self._work_manager, self.log_manager)
         self.tabWidget.addTab(self.tools_tab.tab, "Tools")
 
-        # WORKFLOW tab
-        self.tab_workflow = QtWidgets.QWidget()
-        self.tab_workflow.setObjectName("tab_workflow")
-        self.tab_workflow_layout = QtWidgets.QVBoxLayout(self.tab_workflow)
-        self.tab_workflow_layout.setObjectName("tab_workflow_layout")
+        self.workflows_tab = WorkflowsTab(parent=self, workflows=workflows, work_manager=self._work_manager,
+                                          log_manager=self.log_manager)
 
-        # self._tool_selector_view.setFixedHeight(100)
-
-        ###########################################################
-        #
-
-        ######################
-        self._workflow_model = tool_.ToolsListModel(workflows)
-        self._workflow_selector_view = QtWidgets.QListView(self)
-        self._workflow_selector_view.setMinimumHeight(100)
-
-        # TODO: Change the model to show workflows only
-        self._workflow_selector_view.setModel(self._workflow_model)
-        self.tab_workflow_layout.addWidget(self._workflow_selector_view)
-
-        self._workflow_workspace = QtWidgets.QGroupBox()
-        self._workflow_workspace.setTitle("Workflow")
-
-        self._selected_workflow_name_line = QtWidgets.QLineEdit()
-        self._selected_workflow_description_information = QtWidgets.QTextBrowser()
-
-        self._workflow_workspace_layout = QtWidgets.QVBoxLayout()
-
-        self._workflow_settings = QtWidgets.QTableView(parent=self)
-
-        self._workflow_config_layout = QtWidgets.QFormLayout()
-        self._workflow_config_layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.ExpandingFieldsGrow)
-
-        self._workflow_config_layout.addRow(QtWidgets.QLabel("Selected"), self._selected_workflow_name_line)
-        self._workflow_config_layout.addRow(QtWidgets.QLabel("Description"),
-                                            self._selected_workflow_description_information)
-        self._workflow_config_layout.addRow(QtWidgets.QLabel("Settings"), self._workflow_settings)
-
-        self._workflow_actions_layout = QtWidgets.QHBoxLayout()
-        self._workflow_start_button = QtWidgets.QPushButton()
-        self._workflow_start_button.setText("Start")
-        self._workflow_start_button.clicked.connect(self.start_workflow)
-
-        self._workflow_actions_layout.addSpacerItem(QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Expanding))
-        self._workflow_actions_layout.addWidget(self._workflow_start_button)
-
-        self._workflow_workspace.setLayout(self._workflow_workspace_layout)
-        self._workflow_workspace_layout.addLayout(self._workflow_config_layout)
-        # self._workflow_workspace_layout.addLayout(self._workflow_actions_layout)
-        self.tab_workflow_layout.addWidget(self._workflow_workspace)
-        self.tab_workflow_layout.addLayout(self._workflow_actions_layout)
-        self.tabWidget.addTab(self.tab_workflow, "Workflows")
+        self.tabWidget.addTab(self.workflows_tab.tab, "Workflows")
+        self.tabWidget.setCurrentIndex(1)
 
         ###########################################################
         self.main_splitter.addWidget(self.tabWidget)
@@ -422,8 +435,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     #         self._tool_mapper.setCurrentModelIndex(previous)
     #         self._tool_selector_view.setCurrentIndex(previous)
     #
-    # def on_success(self, results, callback):
-    #     self.tools_tab.tab.on_success(results, callback)
+    # def _on_success(self, results, callback):
+    #     self.tools_tab.tab._on_success(results, callback)
     #     # self.log_manager.info("Done!")
     #     # user_args = self._tool_options_model.get()
     #     # callback(results=results, user_args=user_args)
@@ -446,8 +459,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     #     #
     #     # # QtWidgets.QMessageBox.about(self, "Finished", "Finished")
     #
-    # def on_failed(self, exc):
-    #     self.tools_tab.tab.on_failed(exc)
+    # def _on_failed(self, exc):
+    #     self.tools_tab.tab._on_failed(exc)
     #     # self.log_manager.error("Process failed. Reason: {}".format(exc))
     #     # print("************** {}".format(exc))
     #     # if exc:
@@ -484,7 +497,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # #     #     # manager_strat = runner_strategies.UsingWorkManager()
     # #     #     runner = runner_strategies.RunRunner(manager_strat)
     # #     #
-    # #     #     runner.run(self, tool, options, self.on_success, self.on_failed, self.work_manager.logger)
+    # #     #     runner.run(self, tool, options, self._on_success, self._on_failed, self.work_manager.logger)
     # #     #
     # #     # else:
     # #     #     QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
