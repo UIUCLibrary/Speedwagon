@@ -1,6 +1,7 @@
 import logging
 import sys
 
+import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui
 import forseti.tool
 import forseti.tools.abstool
@@ -245,9 +246,12 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
+    icon = pkg_resources.resource_stream(__name__, "favicon.ico")
+    app.setWindowIcon(QtGui.QIcon(icon.name))
     tools = tool_.available_tools()
     workflows = forseti.workflow.available_workflows()
     with worker.ToolJobManager() as work_manager:
+
         windows = MainWindow(work_manager=work_manager, tools=tools, workflows=workflows)
         windows.setWindowTitle(f"{PROJECT_NAME}: Version {forseti.__version__}")
         rc = app.exec_()
