@@ -17,7 +17,6 @@ PROJECT_NAME = "Forseti"
 
 Setting = namedtuple("Setting", ("label", "widget"))
 
-
 class ToolConsole(QtWidgets.QGroupBox):
 
     def __init__(self, parent):
@@ -454,6 +453,8 @@ def main():
     # logger.addHandler(stdout_handler)
     # logger.info("asdfasdfasdf")
     app = QtWidgets.QApplication(sys.argv)
+    icon = pkg_resources.resource_stream(__name__, "favicon.ico")
+    app.setWindowIcon(QtGui.QIcon(icon.name))
     with worker.ToolJobManager() as work_manager:
         windows = MainWindow(work_manager=work_manager)
         windows.setWindowTitle(PROJECT_NAME)
