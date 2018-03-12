@@ -62,5 +62,6 @@ setup(
             'forseti = forseti.__main__:main'
         ]
     },
+    package_data={'forseti': ["favicon.ico"]},
     cmdclass=cmdclass,
 )
