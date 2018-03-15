@@ -18,7 +18,7 @@ class SimpleSubtask(forseti.tasks.Subtask):
 
     def work(self) -> bool:
         self.log("processing")
-        self.result = self.message
+        self.results = self.message
         return True
 
     @property
@@ -138,8 +138,10 @@ def test_adapter_results(simple_task_builder_with_2_subtasks):
             adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
             manager.add_job(adapted_tool, adapted_tool.settings)
         manager.start()
+        results = list()
+        for r in manager.get_results():
+            results.append(r.data)
 
-        results = list(manager.get_results())
 
         assert len(results) == 2
         assert "First" == results[0]
