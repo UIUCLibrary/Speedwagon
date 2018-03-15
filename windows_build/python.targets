@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <Import Project="common.props"/>
-
+    <PropertyGroup>
+        <BuildInfo Condition="'$(BUILD_NUMBER)' != ''">--build-number $(BUILD_NUMBER)</BuildInfo>
+    </PropertyGroup>
     <Target Name="PythonRuntime">
         <Message Text="MSBuildToolsPath = $(MSBuildToolsPath)"/>
         <ItemGroup>
@@ -14,7 +16,7 @@
     <Target Name="Wheel">
         <Message Text="Building wheel package $(ProjectRoot)"/>
         <Message Text="Building wheel package"/>
-        <Exec Command="@(Python) @(setuppy) bdist_wheel -d $(OutputPath)" WorkingDirectory="$(ProjectRoot)"/>
+        <Exec Command="@(Python) @(setuppy) bdist_wheel -d $(OutputPath) $(BuildInfo)" WorkingDirectory="$(ProjectRoot)"/>
     </Target>
     <Target Name="PythonRequirements">
         <Message Text="Install Python development requirements"/>

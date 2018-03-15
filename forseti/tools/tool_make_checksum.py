@@ -6,7 +6,7 @@ import enum
 
 import itertools
 
-from forseti.worker import ProcessJob
+from forseti.worker import ProcessJobWorker
 from .abstool import AbsTool
 from forseti.tools import options
 # from .options import ToolOptionDataType
@@ -33,7 +33,7 @@ class JobValues(enum.Enum):
 class MakeChecksumBatch(AbsTool):
     @classmethod
     def generate_report(cls, *args, **kwargs):
-        user_args = kwargs['user_args']
+        kwargs = kwargs['kwargs']
         results = kwargs['results']
         # report = f"Checksum values for {len(results)} files written to checksum.md5"
         report_lines = []
@@ -76,7 +76,7 @@ class MakeChecksumBatchSingle(MakeChecksumBatch):
     #     super().__init__()
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJob]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
         return ChecksumJob
 
     @staticmethod
@@ -118,7 +118,7 @@ class MakeChecksumBatchMultiple(MakeChecksumBatch):
                   "\nInput: Path to a root directory that contains subdirectories to generate checksum.md5 files"
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJob]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
         return ChecksumJob
 
     @staticmethod
@@ -168,7 +168,7 @@ class MakeChecksumBatchMultiple(MakeChecksumBatch):
             raise ValueError("Invalid user arguments")
 
 
-class ChecksumJob(ProcessJob):
+class ChecksumJob(ProcessJobWorker):
     def process(self, *args, **kwargs):
         item_path = kwargs[JobValues.SOURCE_PATH.value]
         item_file_name = kwargs[JobValues.FILENAME.value]
@@ -186,7 +186,7 @@ class ChecksumJob(ProcessJob):
 
         }
         #
-        # self.result = {
+        # self.task_result = {
         #     "filename": source_file,
         #     "checksum": checksum.calculate_md5_hash(os.path.join(source_path, source_file))
         # }

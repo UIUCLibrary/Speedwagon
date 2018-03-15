@@ -1,6 +1,7 @@
 from behave import *
 from behave import runner
 
+import forseti.models
 import forseti.tools.options
 from forseti import tool
 
@@ -16,16 +17,16 @@ def step_impl(context):
 
 @then("we get a ToolOptionsModel2 object")
 def step_impl(context: runner.Context):
-    assert isinstance(context.data_model, tool.ToolOptionsModel2)
+    assert isinstance(context.data_model, forseti.models.ToolOptionsModel2)
 
 
 @when("we provide data to generate a Qt model options model 2")
 def step_impl(context: runner.Context):
-    context.data_model = tool.ToolOptionsModel2(context.data)
+    context.data_model = forseti.models.ToolOptionsModel2(context.data)
 
 @given("I have an options model with ToolOptions 2 with a single my_option")
 def step_impl(context: runner.Context):
     data = [forseti.tools.options.ToolOptionDataType(name="my_option")]
-    context.data_model = tool.ToolOptionsModel2(data)
+    context.data_model = forseti.models.ToolOptionsModel2(data)
 
 

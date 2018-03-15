@@ -7,7 +7,7 @@ import os
 from forseti import worker
 from forseti.tools import AbsTool
 from forseti.tools import options
-from forseti.worker import ProcessJob, GuiLogHandler
+from forseti.worker import ProcessJobWorker, GuiLogHandler
 
 import uiucprescon.packager
 import uiucprescon.packager.packages
@@ -58,7 +58,7 @@ class CaptureOneToHathiTiffPackage(AbsTool):
                   "\n      - 00000002.tif"
 
     @staticmethod
-    def discover_jobs(**user_args) -> typing.List[dict]:
+    def discover_task_metadata(**user_args) -> typing.List[dict]:
         jobs = []
         source_input = user_args[UserArgs.INPUT.value]
         dest = user_args[UserArgs.OUTPUT.value]
@@ -74,7 +74,7 @@ class CaptureOneToHathiTiffPackage(AbsTool):
         return jobs
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJob]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
         return PackageConverter
 
     @staticmethod
@@ -85,7 +85,7 @@ class CaptureOneToHathiTiffPackage(AbsTool):
         ]
 
     @staticmethod
-    def validate_args(**user_args):
+    def validate_user_options(**user_args):
         if not os.path.exists(user_args[UserArgs.INPUT.value]) or not os.path.isdir(user_args[UserArgs.INPUT.value]):
             raise ValueError("Invalid value in input ")
 
@@ -93,7 +93,7 @@ class CaptureOneToHathiTiffPackage(AbsTool):
             raise ValueError("Invalid value in output ")
 
 
-class PackageConverter(ProcessJob):
+class PackageConverter(ProcessJobWorker):
 
     @contextmanager
     def log_config(self, logger):

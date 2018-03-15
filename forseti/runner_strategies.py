@@ -9,17 +9,23 @@ import warnings
 
 from PyQt5 import QtCore, QtWidgets
 
-import forseti.tools
+import forseti.job
+import forseti.workflows
+import forseti.tasks
 # Tool, Options,
 from forseti import worker
 import forseti.gui
 
 
+class TaskFailed(Exception):
+    pass
+
+
 class AbsRunner(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def run(self, parent, tool: forseti.tools.AbsTool, options: dict, on_success, on_failure,
-            logger: logging.Logger):
+    def run(self, parent, job: forseti.job.AbsJob, options: dict, logger: logging.Logger,
+            completion_callback=None) -> None:
         pass
 
 
@@ -27,9 +33,9 @@ class RunRunner:
     def __init__(self, strategy: AbsRunner) -> None:
         self._strategy = strategy
 
-    def run(self, parent, tool: forseti.tools.AbsTool, options: dict, on_success: typing.Callable,
-            on_failure: typing.Callable, logger: logging.Logger) -> None:
-        return self._strategy.run(parent, tool, options, on_success, on_failure, logger)
+    def run(self, parent, tool: forseti.job.AbsJob, options: dict, logger: logging.Logger,
+            completion_callback=None) -> None:
+        self._strategy.run(parent, tool, options, logger, completion_callback)
 
 
 # class UsingWorkWrapper(AbsRunner):
@@ -38,18 +44,18 @@ class RunRunner:
 #         super().__init__()
 #         warnings.warn("Use UsingWorkManager instead", DeprecationWarning)
 #
-#     def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success, on_failure,
+#     def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, finalization_task, on_failure,
 #             logger: logging.Logger):
 #         with worker.WorkWrapper(parent, tool, logger=logger) as work_manager:
 #
-#             work_manager.worker_display.finished.connect(on_success)
+#             work_manager.worker_display.finished.connect(finalization_task)
 #             work_manager.worker_display.failed.connect(on_failure)
 #
 #             try:
 #                 # self.log_manager.debug("Validating arguments")
 #                 work_manager.valid_arguments(options)
-#                 # tool.validate_args(**options)
-#                 # wm.completion_callback = lambda: self._tool.on_completion()
+#                 # tool.validate_user_options(**options)
+#                 # wm.completion_callback = lambda: self._tool.setup_task()
 #
 #                 # Search for jobs
 #                 job_searcher = forseti.gui.JobSearcher(tool, options)
@@ -69,7 +75,7 @@ class RunRunner:
 #                     # self.log_manager.debug("Adding {} with {} to work manager".format(tool, _job_args))
 #                     work_manager.add_job(_job_args)
 #
-#                 print("running {} tasks".format(work_manager.worker_display._jobs_queue.qsize()), file=sys.stderr)
+#                 print("running {} subtasks".format(work_manager.worker_display._jobs_queue.qsize()), file=sys.stderr)
 #                 try:
 #                     work_manager.run()
 #
@@ -107,7 +113,7 @@ class RunRunner:
 
 
 # class UsingWorkManager(AbsRunner):
-#     def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, on_success, on_failure, logger):
+#     def run(self, parent, tool: forseti.tools.abstool.AbsTool, options: dict, finalization_task, on_failure, logger):
 #         worker_manager = worker.WorkerManager(title=tool.name, tool=tool, parent=parent, logger=logger)
 #         # worker_manager.logger = logger
 #         try:
@@ -115,20 +121,21 @@ class RunRunner:
 #                 work_runner.start()
 #                 work_runner.finish()
 #
-#             on_success(worker_manager.results, tool.on_completion)
+#             finalization_task(worker_manager.results, tool.setup_task)
 #         except Exception as e:
 #             on_failure(e)
 
 
 class UsingExternalManager(AbsRunner):
 
-    def __init__(self, manager: worker.ToolJobManager) -> None:
+    def __init__(self, manager: worker.ToolJobManager, on_success, on_failure) -> None:
         self._manager = manager
+        self._on_success = on_success
+        self._on_failure = on_failure
 
-    def run(self, parent, tool: forseti.tools.AbsTool, options: dict, on_success, on_failure,
-            logger: logging.Logger):
+    def run(self, parent, job: forseti.job.AbsJob, options: dict, logger: logging.Logger, completion_callback=None):
         try:
-            with self._manager.open(options=options, tool=tool, parent=parent) as runner:
+            with self._manager.open(options=options, tool=job, parent=parent) as runner:
 
                 def update_progress(current: int, total: int):
 
@@ -140,28 +147,168 @@ class UsingExternalManager(AbsRunner):
                     if current == total:
                         runner.dialog.accept()
 
-                runner.abort_callback = self.on_runner_aborted
-                logger.addHandler(runner.progress_dialog_box_handler)
-                runner.dialog.setRange(0, 0)
+                if isinstance(job, forseti.tools.AbsTool):
+                    runner.abort_callback = self.on_runner_aborted
+                    logger.addHandler(runner.progress_dialog_box_handler)
+                    runner.dialog.setRange(0, 0)
 
-                i = -1
-                for i, new_setting in enumerate(tool.discover_jobs(**options)):
-                    self._manager.add_job(tool, new_setting)
-                logger.info("Found {} jobs".format(i + 1))
-                runner.dialog.setMaximum(i)
+                    i = -1
+                    for i, new_setting in enumerate(job.discover_task_metadata(**options)):
+                        new_job = job.new_job()
+                        self._manager.add_job(new_job(), new_setting)
+                    logger.info("Found {} jobs".format(i + 1))
+                    runner.dialog.setMaximum(i)
 
-                self._manager.start()
+                    self._manager.start()
 
-                runner.dialog.show()
+                    runner.dialog.show()
 
-                results = list()
-                for result in self._manager.get_results(update_progress):
-                    results.append(result)
-                logger.removeHandler(runner.progress_dialog_box_handler)
+                    results = list()
+                    for result in self._manager.get_results(update_progress):
+                        results.append(result)
+                    logger.removeHandler(runner.progress_dialog_box_handler)
 
-                on_success(results, tool.on_completion)
+                    self._on_success(results, job.on_completion)
         except Exception as e:
-            on_failure(e)
+            self._on_failure(e)
 
     def on_runner_aborted(self):
         self._manager.abort()
+
+
+class UsingExternalManagerForAdapter(AbsRunner):
+
+    def __init__(self, manager: worker.ToolJobManager) -> None:
+        self._manager = manager
+
+    def _update_progress(self, runner, current: int, total: int):
+
+        if total != runner.dialog.maximum():
+            runner.dialog.setMaximum(total)
+        if current != runner.dialog.value():
+            runner.dialog.setValue(current)
+
+        if current == total:
+            runner.dialog.accept()
+
+    def run(self, parent, job: forseti.job.AbsJob, options: dict, logger: logging.Logger,
+            completion_callback=None) -> None:
+
+        results: typing.List[typing.Any] = []
+        if isinstance(job, forseti.workflows.AbsWorkflow):
+
+            try:
+                results += self._run_pre_tasks(parent, job, options, logger)
+            except TaskFailed as e:
+                logger.error("Job stopped during pre-task phase. Reason: {}".format(e))
+                return
+
+            try:
+                results += self._run_main_tasks(parent, job, options, logger)
+            except TaskFailed as e:
+                logger.error("Job stopped during main tasks phase. Reason: {}".format(e))
+                return
+
+            try:
+                results += self._run_post_tasks(parent, job, options, results, logger)
+            except TaskFailed as e:
+                logger.error("Job stopped during post-task phase. Reason: {}".format(e))
+                return
+
+            logger.debug("Generating report")
+            report = job.generate_report(results, **options)
+            if report:
+                logger.info(report)
+
+    def _run_main_tasks(self, parent, job, options, logger) -> list:
+        results = []
+        with self._manager.open(parent=parent, runner=worker.WorkRunnerExternal3) as runner:
+            runner.abort_callback = self._manager.abort
+            i = -1
+            runner.dialog.setRange(0, 0)
+            runner.dialog.setWindowTitle(job.name)
+            try:
+                logger.addHandler(runner.progress_dialog_box_handler)
+                # add any tasks that need to start before the main work
+                # startup_task_builder = forseti.tasks.TaskBuilder(forseti.tasks.MultiStageTaskBuilder())
+                # # job.setup_task(startup_task_builder)
+                # startup_task = startup_task_builder.build_task()
+                # for subtask in startup_task.subtasks:
+                #     adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
+                #     self._manager.add_job(adapted_tool, adapted_tool.settings)
+                #     # self._manager.add_startup_job(adapted_tool, adapted_tool.settings)
+
+                # Run the main tasks. Keep track of the progress
+                for new_task_metadata in job.discover_task_metadata(**options):
+                    main_task_builder = forseti.tasks.TaskBuilder(forseti.tasks.MultiStageTaskBuilder())
+                    job.create_new_task(main_task_builder, **new_task_metadata)
+                    new_task = main_task_builder.build_task()
+                    for subtask in new_task.subtasks:
+                        i += 1
+                        adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
+                        self._manager.add_job(adapted_tool, adapted_tool.settings)
+                logger.info("Found {} jobs".format(i + 1))
+                runner.dialog.setMaximum(i)
+                self._manager.start()
+
+                runner.dialog.show()
+                for result in self._manager.get_results(lambda x, y: self._update_progress(runner, x, y)):
+                    # for f in self._manager.futures:
+                    #     print(f)
+                    if result is not None:
+                        results.append(result)
+                if runner.was_aborted:
+                    raise TaskFailed("User Aborted")
+            finally:
+                logger.removeHandler(runner.progress_dialog_box_handler)
+            return results
+
+    def _run_post_tasks(self, parent, job, options, results, logger) -> list:
+        _results = []
+        with self._manager.open(parent=parent, runner=worker.WorkRunnerExternal3) as runner:
+            runner.dialog.setRange(0, 0)
+            try:
+                logger.addHandler(runner.progress_dialog_box_handler)
+                finalization_task_builder = forseti.tasks.TaskBuilder(forseti.tasks.MultiStageTaskBuilder())
+                job.completion_task(finalization_task_builder, results, **options)
+                task = finalization_task_builder.build_task()
+                for subtask in task.subtasks:
+                    adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
+                    self._manager.add_job(adapted_tool, adapted_tool.settings)
+                self._manager.start()
+                for post_result in self._manager.get_results(lambda x, y: self._update_progress(runner, x, y)):
+                    if post_result is not None:
+                        _results.append(post_result)
+
+                runner.dialog.accept()
+                runner.dialog.close()
+                if runner.was_aborted:
+                    raise TaskFailed("User Aborted")
+                return _results
+            finally:
+                logger.removeHandler(runner.progress_dialog_box_handler)
+
+    def _run_pre_tasks(self, parent, job, options, logger):
+        results = []
+        with self._manager.open(parent=parent, runner=worker.WorkRunnerExternal3) as runner:
+            runner.dialog.setRange(0, 0)
+            logger.addHandler(runner.progress_dialog_box_handler)
+            try:
+                task_builder = forseti.tasks.TaskBuilder(forseti.tasks.MultiStageTaskBuilder())
+                job.initial_task(task_builder, **options)
+                task = task_builder.build_task()
+                for subtask in task.subtasks:
+                    adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
+                    self._manager.add_job(adapted_tool, adapted_tool.settings)
+                self._manager.start()
+                for post_result in self._manager.get_results(lambda x, y: self._update_progress(runner, x, y)):
+                    if post_result is not None:
+                        results.append(post_result)
+
+                runner.dialog.accept()
+                runner.dialog.close()
+                if runner.was_aborted:
+                    raise TaskFailed("User Aborted")
+                return results
+            finally:
+                logger.removeHandler(runner.progress_dialog_box_handler)

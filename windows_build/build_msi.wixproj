@@ -8,7 +8,7 @@
     <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
     <ProcessorArchitecture Condition=" '$(ProcessorArchitecture)' == '' ">amd64</ProcessorArchitecture>
     <ProductVersion Condition="'$(ProductVersion)' == '' ">1.0.0</ProductVersion>
-    <BuildInformation Condition="'$(BUILD_ID)' != ''">.$(BUILD_ID)</BuildInformation>
+    <BuildInformation Condition="'$(BUILD_NUMBER)' != ''">-$(BUILD_NUMBER)</BuildInformation>
     <ProjectGuid>C81EC878-C4BD-11E7-93CF-005056C00008</ProjectGuid>
     <SchemaVersion >2.0</SchemaVersion>
     <OutputName>Forseti-$(ProductVersion)$(BuildInformation)-$(ProcessorArchitecture)</OutputName>

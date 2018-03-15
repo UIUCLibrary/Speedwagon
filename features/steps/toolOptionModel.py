@@ -2,6 +2,7 @@ from behave import *
 from behave import runner
 from PyQt5 import QtCore
 # from pytest_bdd import scenario, given, when, then
+import forseti.models
 from forseti import tool
 
 
@@ -20,13 +21,13 @@ def step_impl(context: runner.Context):
 
 @when("we provide data to generate a Qt model")
 def step_impl(context: runner.Context):
-    context.data_model = tool.ToolOptionsPairsModel(context.data)
+    context.data_model = forseti.models.ToolOptionsPairsModel(context.data)
     # assert context.d == "dd"
 
 
 @then("we get a ToolOptionsModel object")
 def step_impl(context: runner.Context):
-    assert isinstance(context.data_model, tool.ToolOptionsPairsModel)
+    assert isinstance(context.data_model, forseti.models.ToolOptionsPairsModel)
     pass
 
 
@@ -43,7 +44,7 @@ def step_impl(context: runner.Context):
 @given("I have an options model with a single my_option")
 def step_impl(context: runner.Context):
     data = {"my_option": ""}
-    context.data_model = tool.ToolOptionsPairsModel(data)
+    context.data_model = forseti.models.ToolOptionsPairsModel(data)
 
 
 @when("I ask for the display data of my_option")

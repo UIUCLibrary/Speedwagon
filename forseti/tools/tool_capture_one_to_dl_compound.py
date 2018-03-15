@@ -63,7 +63,7 @@ class CaptureOneToDLCompound(AbsTool):
     active = True
 
     @staticmethod
-    def discover_jobs(**user_args) -> typing.List[dict]:
+    def discover_task_metadata(**user_args) -> typing.List[dict]:
         jobs = []
         source_input = user_args[UserArgs.INPUT.value]
         dest = user_args[UserArgs.OUTPUT.value]
@@ -79,7 +79,7 @@ class CaptureOneToDLCompound(AbsTool):
         return jobs
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJob]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
         return PackageConverter
 
     @staticmethod
@@ -91,7 +91,7 @@ class CaptureOneToDLCompound(AbsTool):
 
 
 
-class PackageConverter(worker.ProcessJob):
+class PackageConverter(worker.ProcessJobWorker):
 
     @contextmanager
     def log_config(self, logger):

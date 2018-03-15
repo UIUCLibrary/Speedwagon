@@ -6,6 +6,8 @@ import time
 from PyQt5 import QtCore, QtWidgets
 
 import logging
+
+import forseti.models
 from forseti import worker
 import forseti.tools.tool_verify_checksum
 from forseti.tools.abstool import AbsTool
@@ -23,11 +25,11 @@ class EchoTool(AbsTool):
                   "eget, auctor nibh. Vestibulum sollicitudin sem eget enim congue tristique. Cras sed purus ac diam " \
                   "pulvinar scelerisque et efficitur justo. Duis eu nunc arcu"
 
-    def new_job(self) -> typing.Type[worker.ProcessJob]:
+    def new_job(self) -> typing.Type[worker.ProcessJobWorker]:
         return EchoJob
 
     @staticmethod
-    def discover_jobs(**user_args) -> typing.List[dict]:
+    def discover_task_metadata(**user_args) -> typing.List[dict]:
         alt = user_args.copy()
         alt["message"] = "nope"
         return [
@@ -42,7 +44,7 @@ class EchoTool(AbsTool):
         ]
 
 
-class EchoJob(worker.ProcessJob):
+class EchoJob(worker.ProcessJobWorker):
 
     def process(self, *args, **kwargs):
         self.result = {
@@ -56,7 +58,7 @@ def test_model(qtbot):
     user_options = tool.get_user_options()
 
     assert isinstance(user_options, list)
-    model = forseti.tool.ToolOptionsModel3(user_options)
+    model = forseti.models.ToolOptionsModel3(user_options)
     index = model.index(0, 0)
     model.setData(index, "hello world")
     d = model.get()
@@ -67,7 +69,7 @@ def test_work_runner(qtbot):
 
 
     # results in two jobs,
-    # the first job's result is the same message as the user settings
+    # the first job's task_result is the same message as the user settings
     # the second is the message "nope"
     tool = EchoTool()
 
@@ -83,7 +85,7 @@ def test_work_runner(qtbot):
 
         assert work_runner.jobs.qsize() == 2
         assert work_runner.dialog.windowTitle() == "test runner"
-        work_runner.start()
+        work_runner._start_tool()
         work_runner.finish()
         assert work_runner.dialog.minimum() == 0
         assert work_runner.dialog.maximum() == 2

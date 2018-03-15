@@ -6,7 +6,7 @@ import typing
 import itertools
 from PyQt5 import QtWidgets
 
-from forseti.worker import ProcessJob
+from forseti.worker import ProcessJobWorker
 from .abstool import AbsTool
 # from .options import ToolOptionDataType, UserOptionPythonDataType
 from forseti.tools import options
@@ -63,7 +63,7 @@ class ChecksumData(options.AbsCustomData2):
 class VerifyChecksum(AbsTool):
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJob]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
         return ChecksumJob
 
     @classmethod
@@ -129,7 +129,7 @@ class VerifyChecksumBatchSingle(VerifyChecksum):
                   "are expected to be siblings to the checksum file."
 
     @staticmethod
-    def discover_jobs(**user_args):
+    def discover_task_metadata(**user_args):
         jobs = []
         relative_path = os.path.dirname(user_args[UserArgs.INPUT.value])
         checksum_report_file = os.path.abspath(user_args[UserArgs.INPUT.value])
@@ -152,7 +152,7 @@ class VerifyChecksumBatchSingle(VerifyChecksum):
         ]
 
     @staticmethod
-    def validate_args(**user_args):
+    def validate_user_options(**user_args):
         input_data = user_args[UserArgs.INPUT.value]
         if input_data is None:
             raise ValueError("Missing value in input")
@@ -168,7 +168,7 @@ class VerifyChecksumBatchMultiple(VerifyChecksum):
                   "checksum file."
 
     @staticmethod
-    def discover_jobs(**user_args) -> typing.List[dict]:
+    def discover_task_metadata(**user_args) -> typing.List[dict]:
         jobs = []
         user_input = user_args[UserArgs.INPUT.value]
         for root, dirs, files in os.walk(os.path.abspath(user_input)):
@@ -194,7 +194,7 @@ class VerifyChecksumBatchMultiple(VerifyChecksum):
         ]
 
     @staticmethod
-    def validate_args(**user_args):
+    def validate_user_options(**user_args):
         input_data = user_args[UserArgs.INPUT.value]
         if input_data is None:
             raise ValueError("Missing value in input")
@@ -203,7 +203,7 @@ class VerifyChecksumBatchMultiple(VerifyChecksum):
             raise ValueError("Invalid user arguments")
 
 
-class ChecksumJob(ProcessJob):
+class ChecksumJob(ProcessJobWorker):
     logger = logging.getLogger(hathi_validate.__name__)
 
     def process(self, *args, **kwargs):
@@ -227,7 +227,7 @@ class ChecksumJob(ProcessJob):
             ResultValues.PATH: checksum_path,
             ResultValues.CHECKSUM_REPORT_FILE: source_report
         }
-        # result = {
+        # task_result = {
         #     "filename": filename,
         #     "path": kwargs['checksum_path'],
         # }
@@ -239,9 +239,9 @@ class ChecksumJob(ProcessJob):
             result[ResultValues.VALID] = True
         # if expected != actual_md5:
         #     self.log(f"Hash mismatch for {filename}. Expected: {expected}. Actual: {actual_md5}")
-        #     result['valid'] = False
+        #     task_result['valid'] = False
         # else:
-        #     result['valid'] = True
+        #     task_result['valid'] = True
         self.result = result
         self.logger.debug("Done validating {}".format(filename))
         # logging.debug("Done with {}".format(filename))

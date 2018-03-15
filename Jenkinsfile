@@ -11,6 +11,7 @@ pipeline {
 
     environment {
         mypy_args = "--junit-xml=mypy.xml"
+        build_number = VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
         // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
     parameters {
@@ -68,7 +69,7 @@ pipeline {
             steps {
                 parallel(
                     "PyTest": {
-                        node(label: "Windows") {
+                        node(label: "Windows&&DevPi") {
                             checkout scm
                             // bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
                             bat "${tool 'Python3.6.3_Win64'} -m tox -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}" 
@@ -76,7 +77,7 @@ pipeline {
                          }
                     },
                     "Behave": {
-                        node(label: "Windows") {
+                        node(label: "Windows&&DevPi") {
                             checkout scm
                             bat "${tool 'Python3.6.3_Win64'} -m tox -e bdd --  --junit --junit-directory reports" 
                             junit "reports/*.xml"
