@@ -2,6 +2,16 @@
 
 Release History
 ---------------
+0.0.3
++++++
+* Improved performance and responsiveness
+* New Tools:
+   * Convert CaptureOne TIFF to Hathi TIFF package
+   * Generate MARC.XML Files
+   * Zip Packages
+* Tool Changes:
+   * * Verify HathiTrust Package Completeness optionally checks if the OCR files contain any characters that are not in UTF-8
+
 
 0.0.2
 +++++
@@ -20,7 +30,6 @@ Release History
 
 0.0.1
 +++++
-
 * Named Forseti
 * Working Tools:
    * Verify HathiTrust Package Completeness
@@ -34,10 +43,8 @@ Release History
 
 Dev
 +++
-* Improved performance and responsiveness
-* New Tools:
-   * Convert CaptureOne TIFF to Hathi TIFF package
-   * Generate MARC.XML Files
-   * Zip Packages
-* Tool Changes:
-   * * Verify HathiTrust Package Completeness optionally checks if the OCR files contain any characters that are not in UTF-8
+* General:
+   * Added Workflow tab
+   * Add Worflow API
+* Changes:
+   * Verify HathiTrust Package Completeness is now a Workflow (instead of a tool)
