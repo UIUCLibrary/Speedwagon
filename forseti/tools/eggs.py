@@ -6,7 +6,7 @@ from forseti import worker
 # from frames.tool import SelectDirectory, EggsJob
 from forseti.tools.abstool import AbsTool
 
-from forseti.worker import ProcessJob
+from forseti.worker import ProcessJobWorker
 class Eggs(AbsTool):
     name = "Eggs"
     description = "Sed odio sem, vestibulum a lacus sed, posuere porta neque. Ut urna arcu, dignissim a dolor ac, " \
@@ -22,17 +22,17 @@ class Eggs(AbsTool):
 
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJob]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
         return EggsJob
 
     @staticmethod
-    def discover_jobs(*args, **kwargs):
+    def discover_task_metadata(*args, **kwargs):
         jobs = []
         for x in range(10):
             jobs.append({"num": x})
         return jobs
 
-class EggsJob(ProcessJob):
+class EggsJob(ProcessJobWorker):
     def process(self, num=0, *args):
         self.log("Making {} eggs".format(num))
         time.sleep(.1)
