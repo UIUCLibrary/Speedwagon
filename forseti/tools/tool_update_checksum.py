@@ -6,7 +6,7 @@ import os
 import itertools
 from PyQt5 import QtWidgets
 
-from forseti.worker import ProcessJob
+from forseti.worker import ProcessJobWorker
 from .abstool import AbsTool
 # from .options import ToolOptionDataType
 from forseti.tools import options
@@ -76,7 +76,7 @@ def find_outdated(results: typing.List[typing.Dict[ResultValues, str]]):
 class UpdateChecksum(AbsTool):
     @classmethod
     def generate_report(cls, *args, **kwargs):
-        user_args = kwargs['user_args']
+        kwargs = kwargs['kwargs']
         results = kwargs['results']
 
         outdated_items = cls.sort_results(results)
@@ -90,7 +90,7 @@ class UpdateChecksum(AbsTool):
         if report_lines:
             return "\n".join(report_lines)
         else:
-            return "No outdated entries found in {}".format(user_args[UserArgs.INPUT.value])
+            return "No outdated entries found in {}".format(kwargs[UserArgs.INPUT.value])
 
     @classmethod
     def sort_results(cls, results) -> typing.Dict[str, typing.List[str]]:
@@ -134,11 +134,11 @@ class UpdateChecksumBatchSingle(UpdateChecksum):
     # "\nInput: path to a root folder"
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJob]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
         return ChecksumJob
 
     @staticmethod
-    def discover_jobs(**user_args):
+    def discover_task_metadata(**user_args):
         jobs = []
         md5_report = user_args[UserArgs.INPUT.value]
         # md5_report = user_args['input']
@@ -156,7 +156,7 @@ class UpdateChecksumBatchSingle(UpdateChecksum):
         pass
 
     @staticmethod
-    def validate_args(**user_args):
+    def validate_user_options(**user_args):
         input_data = user_args[UserArgs.INPUT.value]
         # input_data = user_args["input"]
 
@@ -173,7 +173,7 @@ class UpdateChecksumBatchSingle(UpdateChecksum):
             options.UserOptionCustomDataType(UserArgs.INPUT.value, ChecksumData),
         ]
 
-    #     super().on_completion(*args, **kwargs)
+    #     super().setup_task(*args, **kwargs)
 
 
 class UpdateChecksumBatchMultiple(UpdateChecksum):
@@ -182,11 +182,11 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
                   "\nInput: path to a root folder"
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJob]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
         return ChecksumJob
 
     @staticmethod
-    def discover_jobs(**user_args) -> typing.List[dict]:
+    def discover_task_metadata(**user_args) -> typing.List[dict]:
         jobs = []
         package_root = user_args[UserArgs.INPUT.value]
         # package_root = user_args['input']
@@ -212,7 +212,7 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
         ]
 
     @staticmethod
-    def validate_args(**user_args):
+    def validate_user_options(**user_args):
         input_data = user_args[UserArgs.INPUT.value]
         # input_data = user_args["input"]
         if input_data is None:
@@ -227,7 +227,7 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
             yield filename, report_md5_hash
 
 
-class ChecksumJob(ProcessJob):
+class ChecksumJob(ProcessJobWorker):
     def process(self, *args, **kwargs):
         source_path = kwargs['location']
         source_file = kwargs['filename']

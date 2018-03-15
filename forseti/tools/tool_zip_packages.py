@@ -11,7 +11,7 @@ from forseti import worker
 # from frames.tool import  ZipPackageJob
 from forseti.tools.abstool import AbsTool
 # from forseti.tool import ToolOption
-from forseti.worker import ProcessJob, GuiLogHandler
+from forseti.worker import ProcessJobWorker, GuiLogHandler
 # from .options import UserOption
 from forseti.tools import options
 import hathizip.process
@@ -44,14 +44,14 @@ class ZipPackages(AbsTool):
         # self.options.append(input_data)
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJob]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
         return ZipPackageJob
 
     @staticmethod
-    def discover_jobs(*args, **kwargs) -> typing.List[dict]:  # type: ignore
+    def discover_task_metadata(*args, **kwargs) -> typing.List[dict]:  # type: ignore
         source = kwargs[UserArgs.SOURCE.value]
         output = kwargs[UserArgs.OUTPUT.value]
-        ZipPackages.validate_args(**kwargs)
+        ZipPackages.validate_user_options(**kwargs)
         job_requests = []
         for dir_ in filter(lambda x: x.is_dir(), os.scandir(source)):
             job_requests.append({JobValues.SOURCE_PATH.value: dir_.path,
@@ -61,7 +61,7 @@ class ZipPackages(AbsTool):
         return job_requests
 
     @staticmethod
-    def validate_args(**user_args):
+    def validate_user_options(**user_args):
         source = user_args[UserArgs.SOURCE.value]
         output = user_args[UserArgs.OUTPUT.value]
         if not os.path.exists(source) or not os.path.isdir(source):
@@ -71,8 +71,8 @@ class ZipPackages(AbsTool):
 
     @classmethod
     def generate_report(cls, *args, **kwargs):
-        if "user_args" in kwargs:
-            output = kwargs["user_args"][UserArgs.OUTPUT.value]
+        if "kwargs" in kwargs:
+            output = kwargs["kwargs"][UserArgs.OUTPUT.value]
             return "Zipping complete. All files written to \"{}\".".format(output)
         return "Zipping complete. All files written to output location"
 
@@ -84,7 +84,7 @@ class ZipPackages(AbsTool):
         ]
 
 
-class ZipPackageJob(ProcessJob):
+class ZipPackageJob(ProcessJobWorker):
     @contextmanager
     def log_config(self, logger):
         gui_logger = GuiLogHandler(self.log)
