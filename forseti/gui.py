@@ -1,5 +1,6 @@
 import logging
 import sys
+import traceback
 
 import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -16,12 +17,12 @@ PROJECT_NAME = "Forseti"
 Setting = namedtuple("Setting", ("label", "widget"))
 
 
-class ToolConsole(QtWidgets.QGroupBox):
+class ToolConsole(QtWidgets.QWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.setTitle("Console")
         layout = QtWidgets.QVBoxLayout()
+        layout.setContentsMargins(0,0,0,0)
         self.setLayout(layout)
         self._console = QtWidgets.QTextBrowser(self)
         self._console.setContentsMargins(0, 0, 0, 0)
@@ -47,7 +48,11 @@ class ConsoleLogger(logging.Handler):
         # self.callback = callback
 
     def emit(self, record):
-        self.console.add_message(record.msg)
+        try:
+            self.console.add_message(record.msg)
+        except RuntimeError as e:
+            print("Error: {}".format(e), file=sys.stderr)
+            traceback.print_tb(e.__traceback__)
 
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
@@ -67,7 +72,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         self.mainLayout.addWidget(self.main_splitter)
 
-        self.tools_tab = ToolTab(self, tools, self._work_manager, self.log_manager)
+        self.tools_tab = ToolTab(parent=self, tools=tools, work_manager=self._work_manager, log_manager=self.log_manager)
         self.tabWidget.addTab(self.tools_tab.tab, "Tools")
 
         self.workflows_tab = WorkflowsTab(parent=self, workflows=workflows, work_manager=self._work_manager,
@@ -109,10 +114,18 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         help_menu.addAction(about_button)
 
         # ##################
+
+        self.statusBar()
+
+        # ##################
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
         # Show Window
         self.show()
+
+    def closeEvent(self, *args, **kwargs):
+        self.log_manager.removeHandler(self._handler)
+        super().closeEvent(*args, **kwargs)
 
     def show_about_window(self):
         message = f"Forseti" \
@@ -169,7 +182,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     #     #     # self.log_manager.notify(fancy_report)
     #     #     self.log_manager.info(fancy_report)
     #     #
-    #     # # self._tool.on_completion(results=results,user_args=user_args)
+    #     # # self._tool.setup_task(results=results,user_args=user_args)
     #     #
     #     # # QtWidgets.QMessageBox.about(self, "Finished", "Finished")
     #
@@ -248,12 +261,15 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     icon = pkg_resources.resource_stream(__name__, "favicon.ico")
     app.setWindowIcon(QtGui.QIcon(icon.name))
+    app.setApplicationVersion(f"{forseti.__version__}")
+    app.setApplicationDisplayName(f"{PROJECT_NAME}")
     tools = tool_.available_tools()
     workflows = forseti.workflow.available_workflows()
     with worker.ToolJobManager() as work_manager:
 
         windows = MainWindow(work_manager=work_manager, tools=tools, workflows=workflows)
-        windows.setWindowTitle(f"{PROJECT_NAME}: Version {forseti.__version__}")
+        windows.setWindowTitle("")
+        # windows.setWindowTitle(f"Version {forseti.__version__}")
         rc = app.exec_()
     sys.exit(rc)
 
