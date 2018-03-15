@@ -10,6 +10,7 @@ from forseti.tools.abstool import AbsTool
 
 class Spam(AbsTool):
     name = "Spam"
+    active = False
     description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ac diam id purus pretium " \
                   "venenatis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia " \
                   "Curae; Fusce laoreet fermentum lorem et pretium. Duis iaculis venenatis sagittis. Nulla tristique " \
