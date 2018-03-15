@@ -310,11 +310,12 @@ class WorkflowsTab(ItemSelectionTab):
                 #     print(adapted_tool)
             print("starting")
             runner.run(self.parent, new_workflow, user_options, self.work_manager.logger)
-        except Exception as e:
+        except Exception as exc:
             msg = QtWidgets.QMessageBox(self.parent)
             msg.setIcon(QtWidgets.QMessageBox.Warning)
-            msg.setWindowTitle(e.__class__.__name__)
-            msg.setText(str(e))
+            msg.setWindowTitle(exc.__class__.__name__)
+            msg.setText(str(exc))
+            msg.setDetailedText("".join(traceback.format_exception(type(exc), exc, tb=exc.__traceback__)))
             # msg.setDetailedText("".join(exception_message))
             msg.exec_()
             return
