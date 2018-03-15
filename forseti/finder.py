@@ -4,7 +4,7 @@ import inspect
 import os
 import sys
 import typing
-
+from forseti.job import AbsJob
 from forseti.tools import AbsTool
 
 
@@ -18,7 +18,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
     def py_module_filter(item: os.DirEntry) -> bool:
         pass
 
-    def locate(self) -> dict:
+    def locate(self) -> typing.Dict["str", AbsJob]:
         located_class = dict()
         tree = os.scandir(self.path)
 
@@ -29,14 +29,16 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def base_class(self):
+    def base_class(self) -> typing.Type[AbsJob]:
         pass
 
     def load(self, module_file) -> typing.Iterable[typing.Tuple[str, typing.Any]]:
+        def class_member_filter(item):
+            return inspect.isclass(item) and not inspect.isabstract(item)
 
         try:
             module = importlib.import_module("{}.{}".format(self.package_name, os.path.splitext(module_file)[0]))
-            members = inspect.getmembers(module, lambda m: inspect.isclass(m) and not inspect.isabstract(m))
+            members = inspect.getmembers(module, class_member_filter)
 
             for name_, module_class in members:
                 if issubclass(module_class, self.base_class) and module_class.active:
