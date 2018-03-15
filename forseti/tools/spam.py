@@ -2,7 +2,7 @@ import random
 import time
 import typing
 
-from forseti.worker import ProcessJob
+from forseti.worker import ProcessJobWorker
 from forseti import worker
 # from frames.tool import SelectDirectory, DummyJob
 from forseti.tools.abstool import AbsTool
@@ -33,21 +33,21 @@ class Spam(AbsTool):
         # self.options.append(output_data)
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJob]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
         return DummyJob
         # return DummyJob()
 
     @staticmethod
-    def discover_jobs(*args, **kwargs):
+    def discover_task_metadata(*args, **kwargs):
         for x in range(100):
             yield {"num": x}
 
-class DummyJob(ProcessJob):
+class DummyJob(ProcessJobWorker):
     def process(self, num=0, *args):
         self.log("{} ---STarting something".format(num))
         time.sleep(.1)
 
-        self.result = "My result {}".format(random.randint(1, 1000))
+        self.result = "My task_result {}".format(random.randint(1, 1000))
         # return
 
     def on_completion(self, *args, **kwargs):
