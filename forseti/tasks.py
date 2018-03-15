@@ -183,10 +183,11 @@ class MultiStageTask(Task):
         try:
             for task in self.subtasks:
                 task.exec()
-                if task.task_result is not None:
-                    subtask_results.append(task.task_result)
+                if task.results is not None:
+                    subtask_results.append(task.results)
             self.on_completion(*args, **kwargs)
-            self.result = self.process_subtask_results(subtask_results)
+            if subtask_results:
+                self.result = self.process_subtask_results(subtask_results)
             return self.result
         except Exception as e:
             print("Failed {}".format(e), file=sys.stderr)
@@ -196,7 +197,7 @@ class MultiStageTask(Task):
         pass
 
     def process_subtask_results(self, subtask_results: typing.List[typing.Any]) -> typing.Any:
-        pass
+        return subtask_results
 
 
 class AbsTaskBuilder(metaclass=abc.ABCMeta):
