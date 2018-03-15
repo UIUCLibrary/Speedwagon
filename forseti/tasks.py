@@ -1,4 +1,6 @@
 import abc
+import warnings
+
 import collections
 import copy
 import enum
@@ -12,7 +14,7 @@ import forseti
 import forseti.tools.abstool
 import forseti.worker
 from forseti.tools import AbsTool, options
-from forseti.worker import ProcessJob
+from forseti.worker import ProcessJobWorker
 
 
 class TaskStatus(enum.IntEnum):
@@ -23,6 +25,7 @@ class TaskStatus(enum.IntEnum):
 
 
 class AbsSubtask(metaclass=abc.ABCMeta):
+    name: str = None
 
     @abc.abstractmethod
     def work(self) -> bool:
@@ -33,13 +36,18 @@ class AbsSubtask(metaclass=abc.ABCMeta):
         pass
 
     @property
-    def result(self):
+    def task_result(self):
         return None
 
-    @result.setter  # type: ignore
-    @abc.abstractmethod
-    def result(self, value) -> typing.Any:
-        pass
+    @property
+    def results(self):
+        return None
+
+    # @task_result.setter  # type: ignore
+    # # @abc.abstractmethod
+    # def task_result(self, value) -> None:
+    #     warnings.warn("Using results instead", PendingDeprecationWarning)
+    #     pass
 
     @abc.abstractmethod
     def exec(self) -> None:
@@ -50,9 +58,15 @@ class AbsSubtask(metaclass=abc.ABCMeta):
         return {}
 
 
+class Result(typing.NamedTuple):
+    source: typing.Type[AbsSubtask]
+    data: typing.Any
+
+
 class Subtask(AbsSubtask):
+
     def __init__(self):
-        self._result = None
+        self._result: Result = None
         # TODO: refactor into state machine
         self.status = TaskStatus.IDLE
 
@@ -60,12 +74,26 @@ class Subtask(AbsSubtask):
         # self.parent_task_log_q: queue.Queue[str] = None
 
     @property
-    def result(self):
+    def task_result(self):
         return self._result
 
-    @result.setter
-    def result(self, value):
-        self._result = value
+    # self._result = Result(self.__class__, value)
+    # @property
+    # def results(self):
+    #     pass
+
+    # @task_result.setter
+    # def task_result(self, value: typing.Type[typing.Any]):
+    #     warnings.warn("Using results instead", PendingDeprecationWarning)
+    #     self._result = Result(self.__class__, value)
+
+    @property
+    def results(self):
+        return self._result.data
+
+    @results.setter
+    def results(self, value):
+        self._result = Result(self.__class__, value)
 
     def log(self, message):
         self.parent_task_log_q.append(message)
@@ -155,8 +183,8 @@ class MultiStageTask(Task):
         try:
             for task in self.subtasks:
                 task.exec()
-                if task.result is not None:
-                    subtask_results.append(task.result)
+                if task.task_result is not None:
+                    subtask_results.append(task.task_result)
             self.on_completion(*args, **kwargs)
             self.result = self.process_subtask_results(subtask_results)
             return self.result
@@ -240,7 +268,7 @@ class QueueAdapter:
         self._queue = value
 
 
-class SubtaskJobAdapter(forseti.worker.AbsJobAdapter, forseti.worker.ProcessJob):
+class SubtaskJobAdapter(forseti.worker.AbsJobAdapter, forseti.worker.ProcessJobWorker):  # type: ignore
 
     def __init__(self, adaptee: Subtask) -> None:
         super().__init__(adaptee)
@@ -252,7 +280,7 @@ class SubtaskJobAdapter(forseti.worker.AbsJobAdapter, forseti.worker.ProcessJob)
 
     def process(self, *args, **kwargs):
         self.adaptee.exec()
-        self.result = self.adaptee.result
+        self.result = self.adaptee.task_result
 
     def set_message_queue(self, value):
         self.adaptee.parent_task_log_q.set_message_queue(value)
@@ -263,3 +291,14 @@ class SubtaskJobAdapter(forseti.worker.AbsJobAdapter, forseti.worker.ProcessJob)
             return self.adaptee.settings
         else:
             return {key: value for key, value in self.adaptee.__dict__.items() if key != "parent_task_log_q"}
+
+    @property
+    def name(self) -> str:  # type: ignore
+        return self.adaptee.name
+
+
+class MultiStageTaskBuilder(AbsTaskBuilder):
+
+    @property
+    def task(self) -> MultiStageTask:
+        return MultiStageTask()
