@@ -2,22 +2,28 @@ import typing
 import warnings
 from abc import abstractmethod
 from collections import namedtuple
-
+import enum
+from forseti.job import AbsJob
 from PyQt5 import QtCore
 
-from forseti.tools import AbsTool, options
+from forseti.tools import options
 from forseti.tools.options import ToolOptionDataType
 
 
-class ItemListModel(QtCore.QAbstractTableModel):
+class JobModelData(enum.Enum):
     NAME = 0
     DESCRIPTION = 1
 
-    def __init__(self, data: typing.Dict["str", AbsTool]) -> None:
+
+class ItemListModel(QtCore.QAbstractTableModel):
+    # NAME = 0
+    # DESCRIPTION = 1
+
+    def __init__(self, data: typing.Dict["str", typing.Type[AbsJob]]) -> None:
         super().__init__()
-        self._data: typing.List[AbsTool] = []
+        self.jobs: typing.List[typing.Type[AbsJob]] = []
         for k, v in data.items():
-            self._data.append(v)
+            self.jobs.append(v)
 
     def flags(self, index):
         # if index.isValid():
@@ -30,7 +36,15 @@ class ItemListModel(QtCore.QAbstractTableModel):
         return 2
 
     def rowCount(self, parent=None, *args, **kwargs):
-        return len(self._data)
+        return len(self.jobs)
+
+    @staticmethod
+    def _extract_job_metadata(job:typing.Type[AbsJob], data_type: JobModelData):
+        static_data_values: typing.Dict[JobModelData, typing.Any] = {
+            JobModelData.NAME: job.name,
+            JobModelData.DESCRIPTION: job.description
+        }
+        return static_data_values[data_type]
 
 
 OptionPair = namedtuple("OptionPair", ("label", "data"))
@@ -38,36 +52,27 @@ OptionPair = namedtuple("OptionPair", ("label", "data"))
 
 class ToolsListModel(ItemListModel):
 
-    def data(self, index, role=None):
+    def data(self, index, role=None) -> typing.Union[str, typing.Type[AbsJob], QtCore.QVariant]:
         if index.isValid():
-            data = self._data[index.row()]
+            data = self.jobs[index.row()]
             if role == QtCore.Qt.DisplayRole or role == QtCore.Qt.EditRole:
-                if index.column() == self.NAME:
-                    return data.name
-                if index.column() == self.DESCRIPTION:
-                    return data.description
-                else:
-                    print(index.column())
+                return self._extract_job_metadata(job=data, data_type=JobModelData(index.column()))
             if role == QtCore.Qt.UserRole:
-                return self._data[index.row()]
+                return self.jobs[index.row()]
 
         return QtCore.QVariant()
 
 
 class WorkflowListModel(ItemListModel):
 
-    def data(self, index, role=None):
+    def data(self, index, role=None) -> typing.Union[str, typing.Type[AbsJob], QtCore.QVariant]:
         if index.isValid():
-            data = self._data[index.row()]
+            data = self.jobs[index.row()]
             if role == QtCore.Qt.DisplayRole or role == QtCore.Qt.EditRole:
-                if index.column() == self.NAME:
-                    return data.name
-                if index.column() == self.DESCRIPTION:
-                    return data.description
-                else:
-                    print(index.column())
+                return self._extract_job_metadata(job=data, data_type=JobModelData(index.column()))
             if role == QtCore.Qt.UserRole:
-                return self._data[index.row()]
+                job = self.jobs[index.row()]
+                return job
 
         return QtCore.QVariant()
 
