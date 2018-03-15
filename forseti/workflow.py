@@ -3,9 +3,6 @@ from PyQt5 import QtCore
 import forseti.finder
 from forseti.workflows import AbsWorkflow
 
-class WorkflowsListModel(QtCore.QAbstractTableModel):
-    pass
-
 
 class WorkflowFinder(forseti.finder.AbsDynamicFinder):
 
