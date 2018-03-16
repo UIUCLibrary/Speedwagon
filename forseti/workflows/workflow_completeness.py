@@ -52,10 +52,12 @@ class CompletenessWorkflow(AbsWorkflow):
 
     def discover_task_metadata(self, **user_args) -> typing.List[dict]:
         jobs = []
+
         def directory_only_filter(item: os.DirEntry):
             if not item.is_dir():
                 return False
             return True
+
         for d in filter(directory_only_filter, os.scandir(user_args['Source'])):
             jobs.append({
                 "package_path": d.path,
@@ -137,7 +139,6 @@ class CompletenessWorkflow(AbsWorkflow):
             raise ValueError("Source is missing a value")
         if not os.path.exists(src) or not os.path.isdir(src):
             raise ValueError("Invalid source")
-
 
 
 class CompletenessSubTask(Subtask):
