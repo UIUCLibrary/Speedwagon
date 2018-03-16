@@ -52,7 +52,11 @@ class CompletenessWorkflow(AbsWorkflow):
 
     def discover_task_metadata(self, **user_args) -> typing.List[dict]:
         jobs = []
-        for d in os.scandir(user_args['Source']):
+        def directory_only_filter(item: os.DirEntry):
+            if not item.is_dir():
+                return False
+            return True
+        for d in filter(directory_only_filter, os.scandir(user_args['Source'])):
             jobs.append({
                 "package_path": d.path,
                 "check_page_data": user_args["Check for page_data in meta.yml"],
