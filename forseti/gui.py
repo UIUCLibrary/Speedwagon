@@ -72,19 +72,31 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         self.mainLayout.addWidget(self.main_splitter)
 
-        self.tools_tab = ToolTab(parent=self, tools=tools, work_manager=self._work_manager, log_manager=self.log_manager)
+
+        ###########################################################
+        # Tabs
+        ###########################################################
+
+        self.tools_tab = ToolTab(parent=self,
+                                 tools=tools,
+                                 work_manager=self._work_manager,
+                                 log_manager=self.log_manager)
         self.tabWidget.addTab(self.tools_tab.tab, "Tools")
 
-        self.workflows_tab = WorkflowsTab(parent=self, workflows=workflows, work_manager=self._work_manager,
+        self.workflows_tab = WorkflowsTab(parent=self,
+                                          workflows=workflows,
+                                          work_manager=self._work_manager,
                                           log_manager=self.log_manager)
-
         self.tabWidget.addTab(self.workflows_tab.tab, "Workflows")
-        self.tabWidget.setCurrentIndex(1)
+
+        # Add the tabs widget as the first widget
+        self.main_splitter.addWidget(self.tabWidget)
 
         ###########################################################
-        self.main_splitter.addWidget(self.tabWidget)
+        #  Console
         ###########################################################
         self.console = self.create_console()
+        self.main_splitter.addWidget(self.console)
         self._handler = ConsoleLogger(self.console)
         self._handler.setLevel(logging.INFO)
         self.log_manager.addHandler(self._handler)
