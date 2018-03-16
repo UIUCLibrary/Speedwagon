@@ -34,8 +34,10 @@ class AbsTab(metaclass=abc.ABCMeta):
         tool_settings.horizontalHeader().setVisible(False)
         tool_settings.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         tool_settings.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        tool_settings.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
-        tool_settings.verticalHeader().setSectionsClickable(False)
+        v_header = tool_settings.verticalHeader()
+        v_header.setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
+        v_header.setSectionsClickable(False)
+        v_header.setDefaultSectionSize(25)
         return tool_settings
 
     @classmethod

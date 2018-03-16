@@ -4,7 +4,7 @@ import typing
 import warnings
 from abc import abstractmethod, ABCMeta
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 
 
 class WidgetMeta(abc.ABCMeta, type(QtCore.QObject)):  # type: ignore
@@ -173,9 +173,12 @@ class CustomItemWidget(QtWidgets.QWidget):
     def __init__(self, parent=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self._data = ""
-        self.layout = QtWidgets.QHBoxLayout(parent)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.layout)
+        self.inner_layout = QtWidgets.QHBoxLayout(parent)
+        self.inner_layout.setSpacing(3)
+        self.inner_layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.inner_layout)
+        self.setAutoFillBackground(True)
+
 
 
     @property
@@ -193,10 +196,14 @@ class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
-        self.text_line = QtWidgets.QLineEdit()
-        self.browse_button = QtWidgets.QPushButton("Browse")
-        self.layout.addWidget(self.text_line)
-        self.layout.addWidget(self.browse_button)
+        self.text_line = QtWidgets.QLineEdit(self)
+        size_p =QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                      QtWidgets.QSizePolicy.MinimumExpanding)
+        self.text_line.setSizePolicy(size_p)
+        self.browse_button = QtWidgets.QPushButton("Browse",parent=self)
+        # self.browse_button.setSizePolicy(size_p)
+        self.inner_layout.addWidget(self.text_line)
+        self.inner_layout.addWidget(self.browse_button)
         self.text_line.textEdited.connect(self._change_data)
         self.text_line.editingFinished.connect(self.editingFinished)
         # self.text_line.focus
