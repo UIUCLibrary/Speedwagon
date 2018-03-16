@@ -98,8 +98,9 @@ class ItemSelectionTab(AbsTab, metaclass=ABCMeta):
 
     def _create_selector_view(self, parent, model: QtCore.QAbstractTableModel):
         selector_view = QtWidgets.QListView(parent)
-        selector_view.setMinimumHeight(100)
+        selector_view.setUniformItemSizes(True)
         selector_view.setModel(model)
+        selector_view.setMaximumHeight((selector_view.sizeHintForRow(0) * model.rowCount()) + 4)
         selector_view.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         selector_view.selectionModel().currentChanged.connect(self._update_tool_selected)
 
