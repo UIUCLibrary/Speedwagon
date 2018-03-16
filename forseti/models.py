@@ -59,7 +59,8 @@ class ToolsListModel(ItemListModel):
                 return self._extract_job_metadata(job=data, data_type=JobModelData(index.column()))
             if role == QtCore.Qt.UserRole:
                 return self.jobs[index.row()]
-
+            if role == QtCore.Qt.SizeHintRole:
+                return QtCore.QSize(10, 20)
         return QtCore.QVariant()
 
 
@@ -73,6 +74,8 @@ class WorkflowListModel(ItemListModel):
             if role == QtCore.Qt.UserRole:
                 job = self.jobs[index.row()]
                 return job
+            if role == QtCore.Qt.SizeHintRole:
+                return QtCore.QSize(10, 20)
 
         return QtCore.QVariant()
 
