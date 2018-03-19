@@ -12,6 +12,10 @@ from forseti.ui import main_window_shell_ui
 from forseti import tool as tool_, worker
 from collections import namedtuple
 
+TAB_WIDGET_SIZE_POLICY = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Maximum)
+
+CONSOLE_SIZE_POLICY = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
+
 PROJECT_NAME = "Forseti"
 
 Setting = namedtuple("Setting", ("label", "widget"))
@@ -73,6 +77,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.mainLayout.addWidget(self.main_splitter)
 
 
+
         ###########################################################
         # Tabs
         ###########################################################
@@ -83,26 +88,36 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                                  log_manager=self.log_manager)
         self.tabWidget.addTab(self.tools_tab.tab, "Tools")
 
+
         self.workflows_tab = WorkflowsTab(parent=self,
                                           workflows=workflows,
                                           work_manager=self._work_manager,
                                           log_manager=self.log_manager)
         self.tabWidget.addTab(self.workflows_tab.tab, "Workflows")
+        # self.tabWidget.setMinimumHeight(100)
 
         # Add the tabs widget as the first widget
+        self.tabWidget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
+        # self.main_splitter.setHandleWidth(10)
         self.main_splitter.addWidget(self.tabWidget)
+
 
         ###########################################################
         #  Console
         ###########################################################
         self.console = self.create_console()
+        self.console.setMinimumHeight(50)
+        self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
+        # self.tabWidget.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Maximum))
         self.main_splitter.addWidget(self.console)
         self._handler = ConsoleLogger(self.console)
         self._handler.setLevel(logging.INFO)
         self.log_manager.addHandler(self._handler)
         self.log_manager.info("READY!")
         ###########################################################
-
+        self.main_splitter.setStretchFactor(0, 0)
+        self.main_splitter.setStretchFactor(1, 2)
+        # self.main_splitter.set
         # Add menu bar
         menu_bar = self.menuBar()
 
