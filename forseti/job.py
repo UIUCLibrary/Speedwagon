@@ -84,14 +84,14 @@ class AbsWorkflow(AbsJob):
     def discover_task_metadata(self, **user_args) -> typing.List[dict]:
         pass
 
-    def completion_task(self, task_builder: "forseti.tasks.TaskBuilder", results, **user_args) -> None:
+    def completion_task(self, task_builder: forseti.tasks.TaskBuilder, results, **user_args) -> None:
         pass
 
-    def initial_task(self, task_builder: "forseti.tasks.TaskBuilder", **user_args) -> None:
+    def initial_task(self, task_builder: forseti.tasks.TaskBuilder, **user_args) -> None:
         pass
 
     @classmethod
-    def generate_report(cls, results: typing.List["forseti.tasks.Result"], **user_args) -> typing.Optional[str]:
+    def generate_report(cls, results: typing.List[forseti.tasks.Result], **user_args) -> typing.Optional[str]:
         pass
 
     # @abc.abstractmethod
