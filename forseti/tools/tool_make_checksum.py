@@ -33,7 +33,7 @@ class JobValues(enum.Enum):
 class MakeChecksumBatch(AbsTool):
     @classmethod
     def generate_report(cls, *args, **kwargs):
-        kwargs = kwargs['kwargs']
+        user_args = kwargs['user_args']
         results = kwargs['results']
         # report = f"Checksum values for {len(results)} files written to checksum.md5"
         report_lines = []
