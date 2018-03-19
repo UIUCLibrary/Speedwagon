@@ -1,5 +1,4 @@
 from .tasks import TaskBuilder
-from . import tools
 import pkg_resources
 import setuptools.config
 import os
@@ -22,7 +21,8 @@ def get_version():
         # included as part of the setup script, which it includes it to the
         # same path as the main exe.
         # =====================================================================
-        setup_cfg = os.path.abspath(os.path.join(os.path.dirname(__file__), "../", "setup.cfg"))
+        setup_cfg = os.path.abspath(os.path.join(
+            os.path.dirname(__file__), "../", "setup.cfg"))
         if os.path.exists(setup_cfg):
             metadata = get_project_metadata(setup_cfg)
             if metadata["name"] == "forseti":
