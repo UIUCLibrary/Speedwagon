@@ -4,12 +4,10 @@ import traceback
 
 import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui
-import forseti.tool
 import forseti.job
-import forseti.workflow
 from forseti.tabs import ToolTab, WorkflowsTab
 from forseti.ui import main_window_shell_ui
-from forseti import tool as tool_, worker
+from forseti import worker
 from collections import namedtuple
 
 TAB_WIDGET_SIZE_POLICY = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Maximum)
@@ -26,7 +24,7 @@ class ToolConsole(QtWidgets.QWidget):
     def __init__(self, parent):
         super().__init__(parent)
         layout = QtWidgets.QVBoxLayout()
-        layout.setContentsMargins(0,0,0,0)
+        layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
         self._console = QtWidgets.QTextBrowser(self)
         self._console.setContentsMargins(0, 0, 0, 0)
@@ -76,8 +74,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         self.mainLayout.addWidget(self.main_splitter)
 
-
-
         ###########################################################
         # Tabs
         ###########################################################
@@ -87,7 +83,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                                  work_manager=self._work_manager,
                                  log_manager=self.log_manager)
         self.tabWidget.addTab(self.tools_tab.tab, "Tools")
-
 
         self.workflows_tab = WorkflowsTab(parent=self,
                                           workflows=workflows,
@@ -100,7 +95,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tabWidget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
         # self.main_splitter.setHandleWidth(10)
         self.main_splitter.addWidget(self.tabWidget)
-
 
         ###########################################################
         #  Console
@@ -165,118 +159,11 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         QtWidgets.QMessageBox.about(self, "About", message)
 
-    # def _update_tool_selected(self, current, previous):
-    #     self.tools_tab._update_tool_selected(current, previous)
-    #     # try:
-    #     #     self._tool_selected(current)
-    #     #     self.tool_settings.resizeRowsToContents()
-    #     #     self._tool_mapper.setCurrentModelIndex(current)
-    #     # except Exception as e:
-    #     #     self._tool_selected(previous)
-    #     #     self.tool_settings.resizeRowsToContents()
-    #     #     self._tool_mapper.setCurrentModelIndex(previous)
-    #     #     self._tool_selector_view.setCurrentIndex(previous)
-    #
-    # def _update_workflow_selected(self, current, previous):
-    #
-    #     try:
-    #         self._tool_selected(current)
-    #         self.tool_settings.resizeRowsToContents()
-    #         self._tool_mapper.setCurrentModelIndex(current)
-    #     except Exception as e:
-    #         self._tool_selected(previous)
-    #         self.tool_settings.resizeRowsToContents()
-    #         self._tool_mapper.setCurrentModelIndex(previous)
-    #         self._tool_selector_view.setCurrentIndex(previous)
-    #
-    # def _on_success(self, results, callback):
-    #     self.tools_tab.tab._on_success(results, callback)
-    #     # self.log_manager.info("Done!")
-    #     # user_args = self._tool_options_model.get()
-    #     # callback(results=results, user_args=user_args)
-    #     # report = self._tool.generate_report(results=results, user_args=user_args)
-    #     # if report:
-    #     #     line_sep = "\n" + "*" * 60
-    #     #
-    #     #     fancy_report = f"{line_sep}" \
-    #     #                    f"\n   Report" \
-    #     #                    f"{line_sep}" \
-    #     #                    f"\n" \
-    #     #                    f"\n{report}" \
-    #     #                    f"\n" \
-    #     #                    f"{line_sep}"
-    #     #
-    #     #     # self.log_manager.notify(fancy_report)
-    #     #     self.log_manager.info(fancy_report)
-    #     #
-    #     # # self._tool.setup_task(results=results,user_args=user_args)
-    #     #
-    #     # # QtWidgets.QMessageBox.about(self, "Finished", "Finished")
-    #
-    # def _on_failed(self, exc):
-    #     self.tools_tab.tab._on_failed(exc)
-    #     # self.log_manager.error("Process failed. Reason: {}".format(exc))
-    #     # print("************** {}".format(exc))
-    #     # if exc:
-    #     #     # self.log_manager.notify(str(exc))
-    #     #     self.log_manager.warning(str(exc))
-    #     #     exception_message = traceback.format_exception(type(exc), exc, tb=exc.__traceback__)
-    #     #     msg = QtWidgets.QMessageBox(self)
-    #     #     msg.setIcon(QtWidgets.QMessageBox.Warning)
-    #     #     msg.setWindowTitle(str(type(exc).__name__))
-    #     #     msg.setText(str(exc))
-    #     #     msg.setDetailedText("".join(exception_message))
-    #     #     msg.exec_()
-    #     # # raise exc
-    #     # sys.exit(1)
-    #
-    # def _start_tool(self):
-    #     self.tools_tab._start_tool()
-    #
-    # #     # # logger = logging.getLogger(__name__)
-    # #     # # logger.debug("Start button pressed")
-    # #     # if len(self._tool_selector_view.selectedIndexes()) != 1:
-    # #     #     print("Invalid number of selected Indexes. Expected 1. Found {}".format(
-    # #     #         len(self._tool_selector_view.selectedIndexes())))
-    # #     #     return
-    # #     #
-    # #     # tool = self._tools_model.data(self._tool_selector_view.selectedIndexes()[0], QtCore.Qt.UserRole)
-    # #     # if issubclass(tool, forseti.tools.abstool.AbsTool):
-    # #     #     options = self._tool_options_model.get()
-    # #     #     self._tool = tool
-    # #     #
-    # #     #     # wrapped_strat = runner_strategies.UsingWorkWrapper()
-    # #     #     # runner = runner_strategies.RunRunner(wrapped_strat)
-    # #     #     manager_strat = runner_strategies.UsingExternalManager(manager=self.work_manager)
-    # #     #     # manager_strat = runner_strategies.UsingWorkManager()
-    # #     #     runner = runner_strategies.RunRunner(manager_strat)
-    # #     #
-    # #     #     runner.run(self, tool, options, self._on_success, self._on_failed, self.work_manager.logger)
-    # #     #
-    # #     # else:
-    # #     #     QtWidgets.QMessageBox.warning(self, "No op", "No tool selected.")
-
     def start_workflow(self):
         if len(self._workflow_selector_view.selectedIndexes()) != 1:
             print("Invalid number of selected Indexes. Expected 1. Found {}".format(
                 len(self._workflow_selector_view.selectedIndexes())))
             return
-
-    # def _tool_selected(self, index: QtCore.QModelIndex):
-    #     self.tools_tab._tool_selected(index)
-    #     # tool = self._tools_model.data(index, QtCore.Qt.UserRole)
-    #     # # model.
-    #     # # self.tool_workspace.set_tool(tool)
-    #     # #################
-    #     # try:
-    #     #     self._tool_options_model = tool_.ToolOptionsModel3(tool.get_user_options())
-    #     #
-    #     #     self.tool_settings.setModel(self._tool_options_model)
-    #     # except Exception as e:
-    #     #     message = "Unable to use {} as it's not fully implemented".format(tool.name)
-    #     #     QtWidgets.QMessageBox.warning(self, "Tool settings error", message)
-    #     #     self.log_manager.warning(message)
-    #     #     raise
 
     def create_console(self):
         console = ToolConsole(self.main_splitter)
@@ -293,7 +180,6 @@ def main():
     tools = forseti.job.available_tools()
     workflows = forseti.job.available_workflows()
     with worker.ToolJobManager() as work_manager:
-
         windows = MainWindow(work_manager=work_manager, tools=tools, workflows=workflows)
         windows.setWindowTitle("")
         # windows.setWindowTitle(f"Version {forseti.__version__}")
