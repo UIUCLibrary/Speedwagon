@@ -421,7 +421,8 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
                 for f in concurrent.futures.as_completed(self.futures, timeout=0.01):
                     if not f.cancelled():
                         result = f.result()
-                        self.futures.remove(f)
+                        if f in self.futures:
+                            self.futures.remove(f)
                         completed += 1
 
                         self.flush_message_buffer()
