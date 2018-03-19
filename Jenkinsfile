@@ -188,7 +188,7 @@ pipeline {
 
             }
         }
-        stage("Test Devpi packages") {
+        stage("Test DevPi packages") {
             when {
                 expression { params.DEPLOY_DEVPI == true && (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev")}
             }
