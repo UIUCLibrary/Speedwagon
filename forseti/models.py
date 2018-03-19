@@ -205,6 +205,8 @@ class ToolOptionsModel3(ToolOptionsModel):
                 return self._data[index.row()].data
             if role == QtCore.Qt.UserRole:
                 return self._data[index.row()]
+            if role == QtCore.Qt.SizeHintRole:
+                return QtCore.QSize(10,25)
         return QtCore.QVariant()
 
     def get(self):
