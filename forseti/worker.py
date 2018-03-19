@@ -11,7 +11,6 @@ import queue
 import typing
 import abc
 import sys
-from abc import abstractmethod, ABCMeta
 from PyQt5 import QtCore, QtWidgets
 from collections import namedtuple
 import multiprocessing
@@ -93,35 +92,35 @@ class JobPair(typing.NamedTuple):
     args: dict
 
 
-class WorkerMeta(type(QtCore.QObject), ABCMeta):  # type: ignore
+class WorkerMeta(type(QtCore.QObject), abc.ABCMeta):  # type: ignore
     pass
 
 
-class Worker2(metaclass=ABCMeta):
+class Worker2(metaclass=abc.ABCMeta):
     @classmethod
-    @abstractmethod
+    @abc.abstractmethod
     def initialize_worker(cls) -> None:
         """Initialize the executor"""
         pass
 
 
-class Worker(metaclass=ABCMeta):
-    @abstractmethod
+class Worker(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
     def initialize_worker(self) -> None:
         """Initialize the executor"""
         pass
 
-    @abstractmethod
+    @abc.abstractmethod
     def cancel(self) -> None:
         """Shutdown the executor"""
         pass
 
-    @abstractmethod
+    @abc.abstractmethod
     def run_all_jobs(self):
         """Execute jobs in loaded in q"""
         pass
 
-    @abstractmethod
+    @abc.abstractmethod
     def add_job(self, job: typing.Type[ProcessJobWorker], **job_args):
         """Load jobs into queue"""
         pass
@@ -193,11 +192,11 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
             self.complete_task(future)
         self.on_completion(results=self._results)
 
-    @abstractmethod
+    @abc.abstractmethod
     def complete_task(self, fut: concurrent.futures.Future):
         pass
 
-    @abstractmethod
+    @abc.abstractmethod
     def on_completion(self, *args, **kwargs):
         pass
 
@@ -323,7 +322,26 @@ def _execute(job, **settings):
     pass
 
 
-class ToolJobManager(contextlib.AbstractContextManager):
+class AbsJobManager(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def add_job(self, job, settings):
+        pass
+
+    @abc.abstractmethod
+    def start(self):
+        pass
+
+    @abc.abstractmethod
+    def flush_message_buffer(self):
+        pass
+
+    @abc.abstractmethod
+    def abort(self):
+        pass
+
+
+
+class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
     def __init__(self, max_workers=1) -> None:
         self.manager = multiprocessing.Manager()
