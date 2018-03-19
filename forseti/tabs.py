@@ -45,16 +45,16 @@ class AbsTab(metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def create_config_layout(cls, parent):
+    def create_workspace_layout(cls, parent):
         pass
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def create_workspace(title):
+    def create_workspace(cls, title, parent):
         pass
 
 
-class Tab(AbsTab, metaclass=abc.ABCMeta):
+class Tab(AbsTab):
     def __init__(self, parent, work_manager):
         self.parent = parent
         self.work_manager = work_manager
@@ -78,43 +78,41 @@ class Tab(AbsTab, metaclass=abc.ABCMeta):
         return tool_settings
 
     @classmethod
-    def create_config_layout(cls, parent) -> typing.Tuple[
+    def create_workspace_layout(cls, parent) -> typing.Tuple[
         typing.Dict[TabWidgets, QtWidgets.QWidget], QtWidgets.QLayout]:
         tool_config_layout = QtWidgets.QFormLayout()
 
-        tool_name_line = QtWidgets.QLineEdit()
-        tool_name_line.setReadOnly(True)
+        name_line = QtWidgets.QLineEdit()
+        name_line.setReadOnly(True)
 
-        tool_description_information = QtWidgets.QTextBrowser()
-        tool_description_information.setMinimumHeight(75)
+        description_information = QtWidgets.QTextBrowser()
+        description_information.setMinimumHeight(75)
 
-        # tool_description_information.setMaximumHeight(200)
-
-        tool_settings = cls.create_tools_settings_view(parent)
-        # tool_settings.set
+        settings = cls.create_tools_settings_view(parent)
 
         tool_config_layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.ExpandingFieldsGrow)
-        tool_config_layout.addRow(QtWidgets.QLabel("Selected"), tool_name_line)
-        tool_config_layout.addRow(QtWidgets.QLabel("Description"), tool_description_information)
-        tool_config_layout.addRow(QtWidgets.QLabel("Settings"), tool_settings)
+        tool_config_layout.addRow(QtWidgets.QLabel("Selected"), name_line)
+        tool_config_layout.addRow(QtWidgets.QLabel("Description"), description_information)
+        tool_config_layout.addRow(QtWidgets.QLabel("Settings"), settings)
 
         widgets = {
-            TabWidgets.NAME: tool_name_line,
-            TabWidgets.DESCRIPTION: tool_description_information,
-            TabWidgets.SETTINGS: tool_settings,
+            TabWidgets.NAME: name_line,
+            TabWidgets.DESCRIPTION: description_information,
+            TabWidgets.SETTINGS: settings,
 
         }
         return widgets, tool_config_layout
 
-    @staticmethod
-    def create_workspace(title) -> QtWidgets.QWidget:
-        # workspace2_layout = QtWidgets.QVBoxLayout()
+    @classmethod
+    def create_workspace(cls, title, parent) -> typing.Tuple[
+        QtWidgets.QWidget, typing.Dict[TabWidgets, QtWidgets.QWidget], QtWidgets.QLayout]:
         tool_workspace = QtWidgets.QGroupBox()
-        # tool_workspace.setSizePolicy()
 
         tool_workspace.setTitle(title)
-        # tool_workspace.setLayout(workspace2_layout)
-        return tool_workspace
+        workspace_widgets, layout = cls.create_workspace_layout(parent)
+        tool_workspace.setLayout(layout)
+        tool_workspace.setSizePolicy(WORKFLOW_SIZE_POLICY)
+        return (tool_workspace, workspace_widgets, layout)
 
     @staticmethod
     def create_tab() -> typing.Tuple[QtWidgets.QWidget, QtWidgets.QLayout]:
@@ -133,19 +131,18 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         self.options_model = None
         self.tab_name = name
         self.item_selector_view = self._create_selector_view(parent, model=self.item_selection_model)
-        index = self.item_selection_model.index(0, 0)
-        print(index.isValid())
-        # self.item_selector_view.setCurrentIndex(
-        # sm = self.item_selector_view.selectionModel()
 
-        self.workspace = self.create_workspace(self.tab_name)
-        self.config_widgets, self.config_layout = self.create_config_layout(parent)
-        # self.workspace.layout().addLayout(self.config_layout)
-        self.workspace.setLayout(self.config_layout)
-        self.workspace.setSizePolicy(WORKFLOW_SIZE_POLICY)
-        self.item_form = self.create_form(self.parent, self.config_widgets, model=self.item_selection_model)
+        self.workspace, self.workspace_widgets, self.workspace_layout = self.create_workspace(self.tab_name, parent)
+
+        self.item_form = self.create_form(self.parent, self.workspace_widgets, model=self.item_selection_model)
         self.actions_widgets, self.actions_layout = self.create_actions()
         self.compose_tab_layout()
+
+        self.init_selection()
+
+    def init_selection(self):
+        # Set the first item
+        index = self.item_selection_model.index(0, 0)
         self.item_selector_view.setCurrentIndex(index)
 
     def _create_selector_view(self, parent, model: QtCore.QAbstractTableModel):
@@ -212,7 +209,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         pass
 
     def _update_tool_selected(self, current, previous):
-        # selection_settings_widget = self.config_widgets['settings']
+        # selection_settings_widget = self.workspace_widgets['settings']
         try:
             if current.isValid():
                 self.item_selected(current)
@@ -230,8 +227,8 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     def item_selected(self, index: QtCore.QModelIndex):
 
         item = self.item_selection_model.data(index, QtCore.Qt.UserRole)
-        item_settings = self.config_widgets[TabWidgets.SETTINGS]
-        # item_settings = self.config_widgets['settings']
+        item_settings = self.workspace_widgets[TabWidgets.SETTINGS]
+        # item_settings = self.workspace_widgets['settings']
         # model.
         # self.workspace.set_tool(tool)
         #################
@@ -270,7 +267,7 @@ class ToolTab(ItemSelectionTab):
         super().__init__("Tool", parent, forseti.models.ToolsListModel(tools), work_manager, log_manager)
 
         # self.actions_widgets, self.actions_layout = self.create_actions()
-        # self.item_form = self.create_form(self.parent, self.config_widgets, model=self._tool_selection_model)
+        # self.item_form = self.create_form(self.parent, self.workspace_widgets, model=self._tool_selection_model)
 
     def is_ready_to_start(self) -> bool:
         if len(self.item_selector_view.selectedIndexes()) != 1:
