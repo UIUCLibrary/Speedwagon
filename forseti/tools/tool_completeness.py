@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from functools import wraps
 
 from forseti import worker
-from .abstool import AbsTool
+from forseti.job import AbsTool
 # from .options import ToolOptionDataType
 from forseti.tools import options
 from forseti.worker import ProcessJobWorker, GuiLogHandler

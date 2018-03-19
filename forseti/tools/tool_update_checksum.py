@@ -7,7 +7,7 @@ import itertools
 from PyQt5 import QtWidgets
 
 from forseti.worker import ProcessJobWorker
-from .abstool import AbsTool
+from forseti.job import AbsTool
 # from .options import ToolOptionDataType
 from forseti.tools import options
 from forseti import worker
@@ -26,7 +26,6 @@ class ResultValues(enum.Enum):
 class UserArgs(enum.Enum):
     INPUT = "Input"
 
-# import hathi_checksum
 
 class ChecksumFile(options.AbsBrowseableWidget):
     def browse_clicked(self):
@@ -52,21 +51,6 @@ class ChecksumData(options.AbsCustomData2):
         return ChecksumFile()
 
 
-# @staticmethod
-# def filename() -> str:
-#     return "checksum.md5"
-#
-# @staticmethod
-# def filter() -> str:
-#     return "Checksum files (*.md5)"
-#
-# def browse_clicked(self):
-#     selection = QtWidgets.QFileDialog()
-#     if selection:
-#         self.data = selection
-#         self.editingFinished.emit()
-
-
 def find_outdated(results: typing.List[typing.Dict[ResultValues, str]]):
     for result in results:
         if result[ResultValues.CHECKSUM_ACTUAL] != result[ResultValues.CHECKSUM_EXPECTED]:
@@ -76,9 +60,8 @@ def find_outdated(results: typing.List[typing.Dict[ResultValues, str]]):
 class UpdateChecksum(AbsTool):
     @classmethod
     def generate_report(cls, *args, **kwargs):
-        kwargs = kwargs['kwargs']
         results = kwargs['results']
-
+        user_args = kwargs['user_args']
         outdated_items = cls.sort_results(results)
 
         report_lines = []
@@ -90,7 +73,7 @@ class UpdateChecksum(AbsTool):
         if report_lines:
             return "\n".join(report_lines)
         else:
-            return "No outdated entries found in {}".format(kwargs[UserArgs.INPUT.value])
+            return "No outdated entries found in {}".format(user_args[UserArgs.INPUT.value])
 
     @classmethod
     def sort_results(cls, results) -> typing.Dict[str, typing.List[str]]:
@@ -105,7 +88,7 @@ class UpdateChecksum(AbsTool):
         outdated_items = sorted([
             (res[ResultValues.FILENAME], res[ResultValues.CHECKSUM_SOURCE]) for res in find_outdated(results)],
             # (res['filename'], res['checksum_source']) for res in find_outdated(results)],
-                                key=lambda it: it[1])
+            key=lambda it: it[1])
         outdated_items_data: typing.DefaultDict[str, list] = collections.defaultdict(list)
         for k, v in itertools.groupby(outdated_items, key=lambda it: it[1]):
             for file_ in v:
@@ -114,15 +97,11 @@ class UpdateChecksum(AbsTool):
 
     @staticmethod
     def on_completion(*args, **kwargs):
-        # source_path = kwargs["user_args"]['input']
         for outdated_result in find_outdated(kwargs['results']):
             update_report.update_hash_value(
                 outdated_result[ResultValues.CHECKSUM_SOURCE],
-                # outdated_result['checksum_source'],
                 outdated_result[ResultValues.FILENAME],
-                # outdated_result['filename'],
                 outdated_result[ResultValues.CHECKSUM_ACTUAL]
-                # outdated_result['checksum_actual']
             )
 
 
@@ -173,8 +152,6 @@ class UpdateChecksumBatchSingle(UpdateChecksum):
             options.UserOptionCustomDataType(UserArgs.INPUT.value, ChecksumData),
         ]
 
-    #     super().setup_task(*args, **kwargs)
-
 
 class UpdateChecksumBatchMultiple(UpdateChecksum):
     name = "Update Checksum Batch [Multiple]"
@@ -195,7 +172,6 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
                 if file_.lower() == "checksum.md5":
                     report = os.path.join(root, file_)
                     for filename, report_md5_hash in UpdateChecksumBatchMultiple.locate_files(report):
-
                         job = {
                             "filename": filename,
                             "report_md5_hash": report_md5_hash,

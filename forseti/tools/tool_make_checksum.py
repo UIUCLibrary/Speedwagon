@@ -7,7 +7,7 @@ import enum
 import itertools
 
 from forseti.worker import ProcessJobWorker
-from .abstool import AbsTool
+from forseti.job import AbsTool
 from forseti.tools import options
 # from .options import ToolOptionDataType
 from forseti import worker

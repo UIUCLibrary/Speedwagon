@@ -6,11 +6,13 @@ import typing
 import itertools
 from PyQt5 import QtWidgets
 
-from forseti.worker import ProcessJobWorker
-from .abstool import AbsTool
+# from forseti.worker import ProcessJobWorker
+# from .abstool import AbsTool
 # from .options import ToolOptionDataType, UserOptionPythonDataType
 from forseti.tools import options
-from forseti import worker
+import forseti.worker
+import forseti.job
+# from forseti import worker, job
 import hathi_validate
 
 from hathi_validate import process
@@ -60,10 +62,10 @@ class ChecksumData(options.AbsCustomData2):
         return ChecksumFile()
 
 
-class VerifyChecksum(AbsTool):
+class VerifyChecksum(forseti.job.AbsTool):
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJobWorker]:
+    def new_job() -> typing.Type[forseti.worker.ProcessJobWorker]:
         return ChecksumJob
 
     @classmethod
@@ -112,8 +114,10 @@ class VerifyChecksum(AbsTool):
         return dict(new_results)
 
     @classmethod
-    def find_failed(cls, new_results: typing.Dict[
-        str, typing.List[typing.Dict[ResultValues, typing.Union[bool, str]]]]) -> dict:
+    def find_failed(cls, new_results: typing.Dict[str,
+                                                  typing.List[
+                                                      typing.Dict[ResultValues,
+                                                                  typing.Union[bool, str]]]]) -> dict:
         failed: typing.DefaultDict[str, list] = collections.defaultdict(list)
         for checksum_file, results in new_results.items():
 
@@ -203,12 +207,12 @@ class VerifyChecksumBatchMultiple(VerifyChecksum):
             raise ValueError("Invalid user arguments")
 
 
-class ChecksumJob(ProcessJobWorker):
+class ChecksumJob(forseti.worker.ProcessJobWorker):
     logger = logging.getLogger(hathi_validate.__name__)
 
     def process(self, *args, **kwargs):
         # self.logger.setLevel(logging.DEBUG)
-        handler = worker.GuiLogHandler(self.log)
+        handler = forseti.worker.GuiLogHandler(self.log)
         self.logger.addHandler(handler)
         filename = kwargs[JobValues.ITEM_FILENAME.value]
         # filename = kwargs['filename']

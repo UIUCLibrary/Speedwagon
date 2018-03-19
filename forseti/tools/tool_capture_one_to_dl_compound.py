@@ -4,7 +4,8 @@ import typing
 from contextlib import contextmanager
 
 from forseti import worker
-from forseti.tools import AbsTool, options
+from forseti.tools import options
+from forseti.job import AbsTool
 import uiucprescon.packager
 import uiucprescon.packager.packages
 from uiucprescon.packager.packages.collection_builder import Metadata

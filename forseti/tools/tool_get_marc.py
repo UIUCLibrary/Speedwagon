@@ -5,7 +5,7 @@ import os
 
 from forseti import worker
 from forseti.tools import options
-from forseti.tools.abstool import AbsTool
+from forseti.job import AbsTool
 from forseti.worker import ProcessJobWorker
 from uiucprescon import pygetmarc
 
@@ -70,7 +70,7 @@ class GenerateMarcXMLFilesTool(AbsTool):
 
     @classmethod
     def generate_report(cls, *args, **kwargs):
-        kwargs = kwargs['kwargs']
+        user_args = kwargs['user_args']
         results = kwargs['results']
         failed = []
 

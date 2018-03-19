@@ -5,7 +5,7 @@ from contextlib import contextmanager
 import os
 
 from forseti import worker
-from forseti.tools import AbsTool
+from forseti.job import AbsTool
 from forseti.tools import options
 from forseti.worker import ProcessJobWorker, GuiLogHandler
 

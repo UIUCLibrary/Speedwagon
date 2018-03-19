@@ -1,18 +1,13 @@
 import enum
 import logging
-import random
 import typing
-import time
 
 import os
 from contextlib import contextmanager
 
 from forseti import worker
-# from frames.tool import  ZipPackageJob
-from forseti.tools.abstool import AbsTool
-# from forseti.tool import ToolOption
+from forseti.job import AbsTool
 from forseti.worker import ProcessJobWorker, GuiLogHandler
-# from .options import UserOption
 from forseti.tools import options
 import hathizip.process
 import hathizip
