@@ -290,8 +290,8 @@ def main():
     app.setWindowIcon(QtGui.QIcon(icon.name))
     app.setApplicationVersion(f"{forseti.__version__}")
     app.setApplicationDisplayName(f"{PROJECT_NAME}")
-    tools = tool_.available_tools()
-    workflows = forseti.workflow.available_workflows()
+    tools = forseti.job.available_tools()
+    workflows = forseti.job.available_workflows()
     with worker.ToolJobManager() as work_manager:
 
         windows = MainWindow(work_manager=work_manager, tools=tools, workflows=workflows)

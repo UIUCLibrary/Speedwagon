@@ -13,7 +13,6 @@ import forseti.tools.tool_verify_checksum
 # from forseti.tools.abstool import AbsTool
 from forseti.job import AbsTool
 from forseti.tools import options
-import forseti.tool
 
 
 class EchoTool(AbsTool):
