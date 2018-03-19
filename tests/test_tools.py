@@ -1,6 +1,5 @@
 import forseti.job
 import forseti.models
-# from PyQt5 import QtCore
 import pytest
 
 
