@@ -2,9 +2,8 @@ import abc
 import os
 import typing
 import warnings
-from abc import abstractmethod, ABCMeta
 
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtCore
 
 
 class WidgetMeta(abc.ABCMeta, type(QtCore.QObject)):  # type: ignore
@@ -133,7 +132,6 @@ class UserOptionCustomDataType(UserOption2):
 
 class FileData(AbsCustomData, metaclass=abc.ABCMeta):
 
-
     def __init__(self) -> None:
         warnings.warn("Removing soon", DeprecationWarning)
         super().__init__()
@@ -179,8 +177,6 @@ class CustomItemWidget(QtWidgets.QWidget):
         self.setLayout(self.inner_layout)
         self.setAutoFillBackground(True)
 
-
-
     @property
     def data(self):
         return self._data
@@ -197,10 +193,10 @@ class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
         self.text_line = QtWidgets.QLineEdit(self)
-        size_p =QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
-                                      QtWidgets.QSizePolicy.MinimumExpanding)
+        size_p = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                       QtWidgets.QSizePolicy.MinimumExpanding)
         self.text_line.setSizePolicy(size_p)
-        self.browse_button = QtWidgets.QPushButton("Browse",parent=self)
+        self.browse_button = QtWidgets.QPushButton("Browse", parent=self)
         # self.browse_button.setSizePolicy(size_p)
         self.inner_layout.addWidget(self.text_line)
         self.inner_layout.addWidget(self.browse_button)
@@ -214,8 +210,7 @@ class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
         # self.setFocusPolicy(QtCore.Qt.StrongFocus)
         # self.text_line.setFocusPolicy(QtCore.Qt.StrongFocus)
 
-
-    @abstractmethod
+    @abc.abstractmethod
     def browse_clicked(self):
         pass
 
