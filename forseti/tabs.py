@@ -11,8 +11,7 @@ import forseti.tools
 import forseti.job
 from forseti import runner_strategies
 from forseti.tools import options
-from forseti.workflow import AbsWorkflow
-
+from forseti.job import AbsWorkflow
 
 SELECTOR_VIEW_SIZE_POLICY = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                   QtWidgets.QSizePolicy.MinimumExpanding)

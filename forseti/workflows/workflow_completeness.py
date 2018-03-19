@@ -2,7 +2,6 @@ import enum
 import logging
 import os
 import sys
-import time
 import typing
 
 import itertools
@@ -13,7 +12,7 @@ import hathi_validate
 import forseti
 from forseti.tasks import Subtask
 from forseti.tools import options
-from forseti.workflows import AbsWorkflow
+from forseti.job import AbsWorkflow
 from hathi_validate import manifest as validate_manifest
 from hathi_validate import report as hathi_reporter
 from hathi_validate import result as hathi_result

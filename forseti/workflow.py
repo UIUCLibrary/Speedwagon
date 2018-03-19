@@ -1,7 +1,7 @@
 import os
 from PyQt5 import QtCore
 import forseti.finder
-from forseti.workflows import AbsWorkflow
+from forseti.job import AbsWorkflow
 
 
 class WorkflowFinder(forseti.finder.AbsDynamicFinder):

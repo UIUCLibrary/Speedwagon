@@ -1,7 +1,7 @@
 import concurrent.futures
 import traceback
 
-import forseti.tools
+# import forseti.job
 # import forseti.tasks
 
 # from abc import ABCMeta, abstractmethod
@@ -347,7 +347,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         self.manager = multiprocessing.Manager()
         self._max_workers = max_workers
         self.active = False
-        self._pending_jobs: queue.Queue[forseti.tools.AbsTool] = queue.Queue()
+        self._pending_jobs: queue.Queue["forseti.job.AbsTool"] = queue.Queue()  # type: ignore
         self.futures: typing.List[concurrent.futures.Future] = []
         self.logger = logging.getLogger(__name__)
 
@@ -413,7 +413,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         self.flush_message_buffer()
         dialog.accept()
 
-    def get_results(self, timeout_callback=None) -> typing.Iterable["forseti.tasks.Result"]:
+    def get_results(self, timeout_callback=None) -> typing.Iterable["forseti.tasks.Result"]:  # type: ignore
         total_jobs = len(self.futures)
         completed = 0
         while self.active:
