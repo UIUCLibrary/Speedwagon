@@ -147,7 +147,7 @@ class UsingExternalManager(AbsRunner):
                     if current == total:
                         runner.dialog.accept()
 
-                if isinstance(job, forseti.tools.AbsTool):
+                if isinstance(job, forseti.job.AbsTool):
                     runner.abort_callback = self.on_runner_aborted
                     logger.addHandler(runner.progress_dialog_box_handler)
                     runner.dialog.setRange(0, 0)

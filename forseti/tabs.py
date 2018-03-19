@@ -8,9 +8,11 @@ from PyQt5 import QtWidgets, QtCore
 
 import forseti.models
 import forseti.tools
+import forseti.job
 from forseti import runner_strategies
 from forseti.tools import options
 from forseti.workflow import AbsWorkflow
+
 
 SELECTOR_VIEW_SIZE_POLICY = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                   QtWidgets.QSizePolicy.MinimumExpanding)
@@ -281,7 +283,7 @@ class ToolTab(ItemSelectionTab):
         # logger.debug("Start button pressed")
 
         item = self.item_selection_model.data(self.item_selector_view.selectedIndexes()[0], QtCore.Qt.UserRole)
-        if issubclass(item, forseti.tools.abstool.AbsTool):
+        if issubclass(item, forseti.job.AbsTool):
             try:
                 options = self.options_model.get()
                 item.validate_user_options(**options)

@@ -7,7 +7,8 @@ import concurrent.futures
 import pytest
 import pickle
 import forseti.tasks
-from forseti import TaskBuilder, worker
+from forseti import worker
+from forseti.tasks import TaskBuilder
 
 
 class SimpleSubtask(forseti.tasks.Subtask):

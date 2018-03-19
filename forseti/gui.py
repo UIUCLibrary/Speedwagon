@@ -5,7 +5,7 @@ import traceback
 import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui
 import forseti.tool
-import forseti.tools.abstool
+import forseti.job
 import forseti.workflow
 from forseti.tabs import ToolTab, WorkflowsTab
 from forseti.ui import main_window_shell_ui

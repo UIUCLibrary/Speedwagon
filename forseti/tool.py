@@ -2,7 +2,8 @@ import abc
 import warnings
 
 import forseti.finder
-from forseti.tools.abstool import AbsTool
+# from forseti.tools.abstool import AbsTool
+from forseti.job import AbsTool
 import os
 from PyQt5 import QtWidgets
 

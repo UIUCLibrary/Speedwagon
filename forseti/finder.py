@@ -4,8 +4,8 @@ import inspect
 import os
 import sys
 import typing
-from forseti.job import AbsJob
-from forseti.tools import AbsTool
+from forseti.job import AbsJob, AbsTool
+# from forseti.tools import AbsTool
 
 
 class AbsDynamicFinder(metaclass=abc.ABCMeta):
