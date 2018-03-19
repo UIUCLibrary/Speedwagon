@@ -195,7 +195,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
             completion_callback=None) -> None:
 
         results: typing.List[typing.Any] = []
-        if isinstance(job, forseti.workflows.AbsWorkflow):
+        if isinstance(job, forseti.job.AbsWorkflow):
 
             try:
                 results += self._run_pre_tasks(parent, job, options, logger)
