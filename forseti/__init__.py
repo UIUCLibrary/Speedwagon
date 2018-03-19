@@ -1,4 +1,3 @@
-from .tasks import TaskBuilder
 import pkg_resources
 import setuptools.config
 import os
