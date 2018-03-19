@@ -1,5 +1,6 @@
 import abc
 import traceback
+import enum
 import typing
 from abc import ABCMeta, abstractmethod
 
@@ -7,17 +8,28 @@ from PyQt5 import QtWidgets, QtCore
 
 import forseti.models
 import forseti.tools
-from forseti import tool as tool_, runner_strategies
+from forseti import runner_strategies
 from forseti.tools import options
 from forseti.workflow import AbsWorkflow
 
+SELECTOR_VIEW_SIZE_POLICY = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                                  QtWidgets.QSizePolicy.MinimumExpanding)
 
-class AbsTab(metaclass=abc.ABCMeta):
-    def __init__(self, parent, work_manager):
-        self.parent = parent
-        self.work_manager = work_manager
-        self.tab, self.tab_layout = self.create_tab()
+WORKFLOW_SIZE_POLICY = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                             QtWidgets.QSizePolicy.Minimum)
 
+# This one is correct
+ITEM_SETTINGS_POLICY = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                             QtWidgets.QSizePolicy.Maximum)
+
+
+class TabWidgets(enum.Enum):
+    NAME = "name"
+    DESCRIPTION = "description"
+    SETTINGS = "settings"
+
+
+class AbsTab(metaclass=ABCMeta):
     @abc.abstractmethod
     def compose_tab_layout(self):
         pass
@@ -25,6 +37,31 @@ class AbsTab(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def create_actions(self):
         pass
+
+    @staticmethod
+    @abstractmethod
+    def create_tools_settings_view(parent):
+        pass
+
+    @classmethod
+    @abstractmethod
+    def create_config_layout(cls, parent):
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def create_workspace(title):
+        pass
+
+
+class Tab(AbsTab, metaclass=abc.ABCMeta):
+    def __init__(self, parent, work_manager):
+        self.parent = parent
+        self.work_manager = work_manager
+        self.tab, self.tab_layout = self.create_tab()
+        self.tab.setSizePolicy(WORKFLOW_SIZE_POLICY)
+        self.tab.setMinimumHeight(300)
+        # self.tab.setFixedHeight(500)
 
     @staticmethod
     def create_tools_settings_view(parent):
@@ -41,15 +78,20 @@ class AbsTab(metaclass=abc.ABCMeta):
         return tool_settings
 
     @classmethod
-    def create_config_layout(cls, parent) -> typing.Tuple[typing.Dict[str, QtWidgets.QWidget], QtWidgets.QLayout]:
+    def create_config_layout(cls, parent) -> typing.Tuple[
+        typing.Dict[TabWidgets, QtWidgets.QWidget], QtWidgets.QLayout]:
         tool_config_layout = QtWidgets.QFormLayout()
 
         tool_name_line = QtWidgets.QLineEdit()
         tool_name_line.setReadOnly(True)
 
         tool_description_information = QtWidgets.QTextBrowser()
+        tool_description_information.setMinimumHeight(75)
+
+        # tool_description_information.setMaximumHeight(200)
 
         tool_settings = cls.create_tools_settings_view(parent)
+        # tool_settings.set
 
         tool_config_layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.ExpandingFieldsGrow)
         tool_config_layout.addRow(QtWidgets.QLabel("Selected"), tool_name_line)
@@ -57,19 +99,21 @@ class AbsTab(metaclass=abc.ABCMeta):
         tool_config_layout.addRow(QtWidgets.QLabel("Settings"), tool_settings)
 
         widgets = {
-            "name": tool_name_line,
-            "description": tool_description_information,
-            "settings": tool_settings,
+            TabWidgets.NAME: tool_name_line,
+            TabWidgets.DESCRIPTION: tool_description_information,
+            TabWidgets.SETTINGS: tool_settings,
+
         }
         return widgets, tool_config_layout
 
     @staticmethod
     def create_workspace(title) -> QtWidgets.QWidget:
+        # workspace2_layout = QtWidgets.QVBoxLayout()
         tool_workspace = QtWidgets.QGroupBox()
-        workspace2_layout = QtWidgets.QVBoxLayout()
+        # tool_workspace.setSizePolicy()
 
         tool_workspace.setTitle(title)
-        tool_workspace.setLayout(workspace2_layout)
+        # tool_workspace.setLayout(workspace2_layout)
         return tool_workspace
 
     @staticmethod
@@ -81,7 +125,7 @@ class AbsTab(metaclass=abc.ABCMeta):
         return tab_tools, tab_tools_layout
 
 
-class ItemSelectionTab(AbsTab, metaclass=ABCMeta):
+class ItemSelectionTab(Tab, metaclass=ABCMeta):
     def __init__(self, name, parent: QtWidgets.QWidget, item_model, work_manager, log_manager) -> None:
         super().__init__(parent, work_manager)
         self.log_manager = log_manager
@@ -89,18 +133,41 @@ class ItemSelectionTab(AbsTab, metaclass=ABCMeta):
         self.options_model = None
         self.tab_name = name
         self.item_selector_view = self._create_selector_view(parent, model=self.item_selection_model)
+        index = self.item_selection_model.index(0, 0)
+        print(index.isValid())
+        # self.item_selector_view.setCurrentIndex(
+        # sm = self.item_selector_view.selectionModel()
+
         self.workspace = self.create_workspace(self.tab_name)
         self.config_widgets, self.config_layout = self.create_config_layout(parent)
-        self.workspace.layout().addLayout(self.config_layout)
+        # self.workspace.layout().addLayout(self.config_layout)
+        self.workspace.setLayout(self.config_layout)
+        self.workspace.setSizePolicy(WORKFLOW_SIZE_POLICY)
         self.item_form = self.create_form(self.parent, self.config_widgets, model=self.item_selection_model)
         self.actions_widgets, self.actions_layout = self.create_actions()
         self.compose_tab_layout()
+        self.item_selector_view.setCurrentIndex(index)
 
     def _create_selector_view(self, parent, model: QtCore.QAbstractTableModel):
         selector_view = QtWidgets.QListView(parent)
         selector_view.setUniformItemSizes(True)
         selector_view.setModel(model)
-        selector_view.setMaximumHeight((selector_view.sizeHintForRow(0) * model.rowCount()) + 4)
+
+        MIN_ROWS_VIS = 4
+        MAX_ROWS_VIS = 5
+
+        if model.rowCount() < MIN_ROWS_VIS:
+            min_rows = model.rowCount()
+        else:
+            min_rows = MIN_ROWS_VIS
+        selector_view.setFixedHeight((selector_view.sizeHintForRow(0) * min_rows) + 4)
+        # selector_view.setMinimumHeight((selector_view.sizeHintForRow(0) * min_rows) + 4)
+        # if model.rowCount() > MAX_ROWS_VIS:
+        #     max_rows = MAX_ROWS_VIS
+        # else:
+        #     max_rows = model.rowCount()
+        # selector_view.setMaximumHeight((selector_view.sizeHintForRow(0) * max_rows) + 4)
+        selector_view.setSizePolicy(SELECTOR_VIEW_SIZE_POLICY)
         selector_view.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         selector_view.selectionModel().currentChanged.connect(self._update_tool_selected)
 
@@ -110,9 +177,8 @@ class ItemSelectionTab(AbsTab, metaclass=ABCMeta):
     def create_form(parent, config_widgets, model):
         tool_mapper = QtWidgets.QDataWidgetMapper(parent)
         tool_mapper.setModel(model)
-        tool_mapper.addMapping(config_widgets['name'], 0)
-        # This needs custom mapping because without it, new line characters are removed
-        tool_mapper.addMapping(config_widgets['description'], 1, b"plainText")
+        tool_mapper.addMapping(config_widgets[TabWidgets.NAME], 0)
+        tool_mapper.addMapping(config_widgets[TabWidgets.DESCRIPTION], 1, b"plainText")
         return tool_mapper
 
     @abc.abstractmethod
@@ -146,7 +212,7 @@ class ItemSelectionTab(AbsTab, metaclass=ABCMeta):
         pass
 
     def _update_tool_selected(self, current, previous):
-        selection_settings_widget = self.config_widgets['settings']
+        # selection_settings_widget = self.config_widgets['settings']
         try:
             if current.isValid():
                 self.item_selected(current)
@@ -164,7 +230,8 @@ class ItemSelectionTab(AbsTab, metaclass=ABCMeta):
     def item_selected(self, index: QtCore.QModelIndex):
 
         item = self.item_selection_model.data(index, QtCore.Qt.UserRole)
-        item_settings = self.config_widgets['settings']
+        item_settings = self.config_widgets[TabWidgets.SETTINGS]
+        # item_settings = self.config_widgets['settings']
         # model.
         # self.workspace.set_tool(tool)
         #################
@@ -172,6 +239,9 @@ class ItemSelectionTab(AbsTab, metaclass=ABCMeta):
             model = self.get_item_options_model(item)
             self.options_model = model
             item_settings.setModel(self.options_model)
+            item_settings.setFixedHeight(((item_settings.sizeHintForRow(0) - 1) * model.rowCount()) + 2)
+            item_settings.setSizePolicy(ITEM_SETTINGS_POLICY)
+            # item_settings.resize()
         except Exception as e:
             tb = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
             message = "Unable to use {}. Reason: {}".format(item.name, e)
@@ -189,6 +259,7 @@ class ItemSelectionTab(AbsTab, metaclass=ABCMeta):
             raise
 
     def compose_tab_layout(self):
+        self.tab_layout.setAlignment(QtCore.Qt.AlignTop)
         self.tab_layout.addWidget(self.item_selector_view)
         self.tab_layout.addWidget(self.workspace)
         self.tab_layout.addLayout(self.actions_layout)
@@ -230,7 +301,9 @@ class ToolTab(ItemSelectionTab):
             # wrapped_strat = runner_strategies.UsingWorkWrapper()
             # runner = runner_strategies.RunRunner(wrapped_strat)
 
-            manager_strat = runner_strategies.UsingExternalManager(manager=self.work_manager, on_success=self._on_success, on_failure=self._on_failed)
+            manager_strat = runner_strategies.UsingExternalManager(manager=self.work_manager,
+                                                                   on_success=self._on_success,
+                                                                   on_failure=self._on_failed)
             # manager_strat = runner_strategies.UsingWorkManager()
             runner = runner_strategies.RunRunner(manager_strat)
 
@@ -294,7 +367,8 @@ class WorkflowsTab(ItemSelectionTab):
         return True
 
     def start(self):
-        selected_workflow = self.item_selection_model.data(self.item_selector_view.selectedIndexes()[0], QtCore.Qt.UserRole)
+        selected_workflow = self.item_selection_model.data(self.item_selector_view.selectedIndexes()[0],
+                                                           QtCore.Qt.UserRole)
         new_workflow = selected_workflow()
         assert isinstance(new_workflow, AbsWorkflow)
         user_options = (self.options_model.get())
@@ -304,13 +378,12 @@ class WorkflowsTab(ItemSelectionTab):
             manager_strat = runner_strategies.UsingExternalManagerForAdapter(manager=self.work_manager)
             runner = runner_strategies.RunRunner(manager_strat)
 
-
-                # task = new_workflow.create_new_task(**new_task_metadata)
-                # print(task)
-                # for subtask in task.subtasks:
-                #     adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
-                #     print("** {}".format(subtask))
-                #     print(adapted_tool)
+            # task = new_workflow.create_new_task(**new_task_metadata)
+            # print(task)
+            # for subtask in task.subtasks:
+            #     adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
+            #     print("** {}".format(subtask))
+            #     print(adapted_tool)
             print("starting")
             runner.run(self.parent, new_workflow, user_options, self.work_manager.logger)
         except Exception as exc:
@@ -323,7 +396,6 @@ class WorkflowsTab(ItemSelectionTab):
             msg.exec_()
             return
             #     runner
-
 
     def _on_success(self, results, callback):
         print("success")
