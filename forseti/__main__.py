@@ -1,11 +1,11 @@
 import logging
 import sys
-import pkg_resources
 import forseti
 import forseti.gui
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
+
 
 def main():
     print("{}: {}".format(forseti.__name__, forseti.__version__))
