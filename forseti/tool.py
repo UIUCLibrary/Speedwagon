@@ -24,61 +24,6 @@ class AbsToolData(metaclass=abc.ABCMeta):
         return self.widget.value
 
 
-class PathSelector2:
-    def __init__(self, parent=None):
-        warnings.warn("Don't use", DeprecationWarning)
-        self.parent = parent
-
-
-class PathSelector(QtWidgets.QWidget):
-
-    def __init__(self, parent=None, *args, **kwargs):
-        warnings.warn("Removing", DeprecationWarning)
-        super().__init__(parent, *args, **kwargs)
-        # self._parent = parent
-        layout = QtWidgets.QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        self._value = ""
-        self.line = QtWidgets.QLineEdit(parent=self)
-        self.line.editingFinished.connect(self._update_value)
-        self.button = QtWidgets.QPushButton(parent=self)
-        self.button.setText("Browse")
-        self.button.clicked.connect(self.get_path)
-        layout.addWidget(self.line)
-        layout.addWidget(self.button)
-        self.setLayout(layout)
-
-    @property
-    def valid(self) -> bool:
-        return self._is_valid(self._value)
-
-    def get_path(self):
-        path = QtWidgets.QFileDialog.getExistingDirectory(self, "Find path")
-        if self._is_valid(path):
-            self.value = path
-
-    def _update_value(self):
-        print("Value is {}".format(self.value))
-
-    @staticmethod
-    def _is_valid(value):
-        if os.path.exists(value) and os.path.isdir(value):
-            return True
-
-    @property
-    def value(self):
-        return self.line.text()
-
-    @value.setter
-    def value(self, value):
-        print("My value is now {}".format(value))
-        # self._value = value
-        self.line.setText(value)
-
-    def destroy(self, destroyWindow=True, destroySubWindows=True):
-        print("destroyed")
-        super().destroy(destroyWindow, destroySubWindows)
-
 
 
 class ToolFinder(forseti.finder.AbsDynamicFinder):
