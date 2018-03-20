@@ -3,15 +3,17 @@ import setuptools.config
 import os
 import sys
 
-
 def get_project_metadata(config_file):
     return setuptools.config.read_configuration(config_file)["metadata"]
 
 
 def get_version():
+    package_distribution: pkg_resources.EggInfoDistribution
     try:
-        package_metadata = pkg_resources.get_distribution("forseti")
-        version = package_metadata.version
+        package_distribution = pkg_resources.get_distribution(f"{__name__}")
+        pkg_resources.require(f"{__name__}")
+        version = package_distribution.version
+
     except pkg_resources.DistributionNotFound as e:
 
         # =====================================================================
@@ -24,7 +26,7 @@ def get_version():
             os.path.dirname(__file__), "../", "setup.cfg"))
         if os.path.exists(setup_cfg):
             metadata = get_project_metadata(setup_cfg)
-            if metadata["name"] == "forseti":
+            if metadata["name"] == f"{__name__}":
                 return metadata["version"]
         # =====================================================================
 
