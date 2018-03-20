@@ -3,7 +3,6 @@ from behave import runner
 
 import forseti.models
 import forseti.tools.options
-from forseti import tool
 
 use_step_matcher("re")
 @given("we have two ToolOptions called dummy and dummy2")

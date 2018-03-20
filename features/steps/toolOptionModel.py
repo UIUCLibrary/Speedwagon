@@ -1,9 +1,7 @@
 from behave import *
 from behave import runner
 from PyQt5 import QtCore
-# from pytest_bdd import scenario, given, when, then
 import forseti.models
-from forseti import tool
 
 
 # use_step_matcher("re")
