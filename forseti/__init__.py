@@ -3,14 +3,18 @@ import setuptools.config
 import os
 import sys
 
+
 def get_project_metadata(config_file):
     return setuptools.config.read_configuration(config_file)["metadata"]
 
 
+def get_project_distribution() -> pkg_resources.Distribution:
+    return pkg_resources.get_distribution(f"{__name__}")
+
+
 def get_version():
-    package_distribution: pkg_resources.EggInfoDistribution
     try:
-        package_distribution = pkg_resources.get_distribution(f"{__name__}")
+        package_distribution = get_project_distribution()
         pkg_resources.require(f"{__name__}")
         version = package_distribution.version
 
