@@ -4,7 +4,7 @@ import enum
 import pickle
 import queue
 import sys
-import typing
+from typing import NamedTuple, Type, Optional, List, Deque, Any
 
 import forseti.worker
 
@@ -35,11 +35,15 @@ class AbsSubtask(metaclass=abc.ABCMeta):
     def results(self):
         return None
 
-    # @task_result.setter  # type: ignore
-    # # @abc.abstractmethod
-    # def task_result(self, value) -> None:
-    #     warnings.warn("Using results instead", PendingDeprecationWarning)
-    #     pass
+    @property  # type: ignore
+    @abc.abstractmethod
+    def status(self) -> TaskStatus:
+        pass
+
+    @status.setter  # type: ignore
+    @abc.abstractmethod
+    def status(self, value: TaskStatus):
+        pass
 
     @abc.abstractmethod
     def exec(self) -> None:
@@ -49,10 +53,20 @@ class AbsSubtask(metaclass=abc.ABCMeta):
     def settings(self):
         return {}
 
+    @property  # type: ignore
+    @abc.abstractmethod
+    def parent_task_log_q(self) -> Deque[str]:
+        pass
 
-class Result(typing.NamedTuple):
-    source: typing.Type[AbsSubtask]
-    data: typing.Any
+    @parent_task_log_q.setter  # type: ignore
+    @abc.abstractmethod
+    def parent_task_log_q(self, value: Deque[str]):
+        pass
+
+
+class Result(NamedTuple):
+    source: Type[AbsSubtask]
+    data: Any
 
 
 class Subtask(AbsSubtask):
@@ -60,14 +74,31 @@ class Subtask(AbsSubtask):
     def __init__(self):
         self._result: Result = None
         # TODO: refactor into state machine
-        self.status = TaskStatus.IDLE
+        self._status = TaskStatus.IDLE
 
-        self.parent_task_log_q: typing.Deque[str] = None
-        # self.parent_task_log_q: queue.Queue[str] = None
+        self._parent_task_log_q: Deque[str] = None
 
-    @property
+    @property  # type: ignore
+    def parent_task_log_q(self) -> Deque[str]:
+        return self._parent_task_log_q
+
+    @parent_task_log_q.setter
+    def parent_task_log_q(self, value: Deque[str]):
+        self._parent_task_log_q = value
+
     def task_result(self):
         return self._result
+
+    @property
+    def status(self) -> TaskStatus:
+        return self._status
+
+    @status.setter
+    def status(self, value: TaskStatus):
+        self._status = value
+
+    def work(self) -> bool:
+        return super().work()
 
     # self._result = Result(self.__class__, value)
     # @property
@@ -83,9 +114,13 @@ class Subtask(AbsSubtask):
     def results(self):
         return self._result.data
 
-    @results.setter
-    def results(self, value):
-        self._result = Result(self.__class__, value)
+    # @results.setter
+    # def results(self, value):
+    #     warnings.warn("Don't use", DeprecationWarning)
+    #     self._result = Result(self.__class__, value)
+
+    def set_results(self, results):
+        self._result = Result(self.__class__, results)
 
     def log(self, message):
         self.parent_task_log_q.append(message)
@@ -115,10 +150,51 @@ class AbsTask(metaclass=abc.ABCMeta):
         pass
 
 
-class Task(AbsTask):
+class AbsTaskComponents(metaclass=abc.ABCMeta):
+
+    @property  # type: ignore
+    @abc.abstractmethod
+    def pretask(self) -> Optional[AbsSubtask]:
+        pass
+
+    @pretask.setter  # type: ignore
+    @abc.abstractmethod
+    def pretask(self, value: AbsSubtask):
+        pass
+
+    @property  # type: ignore
+    @abc.abstractmethod
+    def posttask(self) -> Optional[AbsSubtask]:
+        pass
+
+    @posttask.setter  # type: ignore
+    @abc.abstractmethod
+    def posttask(self, value: AbsSubtask):
+        pass
+
+
+class Task(AbsTask, AbsTaskComponents):
     def __init__(self) -> None:
-        self.log_q: typing.Deque[str] = collections.deque()
-        self.result: typing.Any = None
+        self.log_q: Deque[str] = collections.deque()
+        self.result: Any = None
+        self._pre_task: Optional[AbsSubtask] = None
+        self._post_task: Optional[AbsSubtask] = None
+
+    @property
+    def pretask(self) -> Optional[AbsSubtask]:
+        return self._pre_task
+
+    @pretask.setter
+    def pretask(self, value: AbsSubtask):
+        self._pre_task = value
+
+    @property
+    def posttask(self) -> Optional[AbsSubtask]:
+        return self._post_task
+
+    @posttask.setter
+    def posttask(self, value: AbsSubtask):
+        self._post_task = value
 
 
 class MultiStageTask(Task):
@@ -127,7 +203,7 @@ class MultiStageTask(Task):
     def __init__(self) -> None:
         super().__init__()
         # Todo: use the results builder from validate
-        self.subtasks: typing.List[Subtask] = []
+        self.subtasks: List[AbsSubtask] = []
 
     @property
     def status(self) -> TaskStatus:
@@ -166,17 +242,19 @@ class MultiStageTask(Task):
 
     @property
     def progress(self) -> float:
-        amount_completed = len([task for task in self.subtasks if task.status > TaskStatus.WORKING])
+        amount_completed = len(
+            [task for task in self.subtasks
+             if task.status > TaskStatus.WORKING])
         return amount_completed / len(self.subtasks)
 
     def exec(self, *args, **kwargs):
 
         subtask_results = []
         try:
-            for task in self.subtasks:
-                task.exec()
-                if task.results is not None:
-                    subtask_results.append(task.results)
+            for subtask in self.subtasks:
+                subtask.exec()
+                if subtask.results is not None:
+                    subtask_results.append(subtask.results)
             self.on_completion(*args, **kwargs)
             if subtask_results:
                 self.result = self.process_subtask_results(subtask_results)
@@ -188,34 +266,62 @@ class MultiStageTask(Task):
     def on_completion(self, *args, **kwargs):
         pass
 
-    def process_subtask_results(self, subtask_results: typing.List[typing.Any]) -> typing.Any:
+    def process_subtask_results(self, subtask_results: List[Any]) -> Any:
         return subtask_results
 
 
 class AbsTaskBuilder(metaclass=abc.ABCMeta):
-
-    def __init__(self) -> None:
-        self._subtasks: typing.List[Subtask] = []
-
     @property
     @abc.abstractmethod
     def task(self) -> MultiStageTask:
         pass
 
-    def add_subtask(self, task: Subtask) -> None:
+    @abc.abstractmethod
+    def add_subtask(self, task):
+        pass
+
+    @abc.abstractmethod
+    def build_task(self):
+        pass
+
+    @abc.abstractmethod
+    def set_pretask(self, subtask: AbsSubtask):
+        pass
+
+    @abc.abstractmethod
+    def set_posttask(self, subtask: AbsSubtask):
+        pass
+
+
+class BaseTaskBuilder(AbsTaskBuilder):
+
+    def __init__(self) -> None:
+        self._subtasks: List[AbsSubtask] = []
+        self._pretask: Optional[AbsSubtask] = None
+        self._posttask: Optional[AbsSubtask] = None
+
+    def add_subtask(self, task: AbsSubtask) -> None:
         self._subtasks.append(task)
 
     def build_task(self) -> MultiStageTask:
         task = self.task
+        task.pretask = self._pretask
+        task.posttask = self._posttask
         for subtask in self._subtasks:
-            subtask.parent_task_log_q = task.log_q
+            subtask.parent_task_log_q = task.log_q  # type: ignore
             task.subtasks.append(subtask)
         return task
+
+    def set_pretask(self, subtask: AbsSubtask):
+        self._pretask = subtask
+
+    def set_posttask(self, subtask: AbsSubtask):
+        self._posttask = subtask
 
 
 class TaskBuilder:
     # The director
-    def __init__(self, builder: AbsTaskBuilder) -> None:
+    def __init__(self, builder: BaseTaskBuilder) -> None:
         self._builder = builder
 
     def build_task(self) -> MultiStageTask:
@@ -224,6 +330,12 @@ class TaskBuilder:
 
     def add_subtask(self, subtask: Subtask):
         self._builder.add_subtask(subtask)
+
+    def set_pretask(self, subtask):
+        self._builder.set_pretask(subtask)
+
+    def set_posttask(self, posttask):
+        self._builder.set_posttask(posttask)
 
     @staticmethod
     def save(task_obj):
@@ -261,10 +373,12 @@ class QueueAdapter:
         self._queue = value
 
 
-class SubtaskJobAdapter(forseti.worker.AbsJobAdapter, forseti.worker.ProcessJobWorker):  # type: ignore
+class SubtaskJobAdapter(forseti.worker.AbsJobAdapter,
+                        forseti.worker.ProcessJobWorker):  # type: ignore
 
-    def __init__(self, adaptee: Subtask) -> None:
-        super().__init__(adaptee)
+    def __init__(self, adaptee: AbsSubtask) -> None:
+        forseti.worker.AbsJobAdapter.__init__(self, adaptee)
+        forseti.worker.ProcessJobWorker.__init__(self)
         self.adaptee.parent_task_log_q = QueueAdapter()
 
     @property
@@ -273,7 +387,7 @@ class SubtaskJobAdapter(forseti.worker.AbsJobAdapter, forseti.worker.ProcessJobW
 
     def process(self, *args, **kwargs):
         self.adaptee.exec()
-        self.result = self.adaptee.task_result
+        self.result = self.adaptee.task_result()
 
     def set_message_queue(self, value):
         self.adaptee.parent_task_log_q.set_message_queue(value)
@@ -283,14 +397,15 @@ class SubtaskJobAdapter(forseti.worker.AbsJobAdapter, forseti.worker.ProcessJobW
         if self.adaptee.settings:
             return self.adaptee.settings
         else:
-            return {key: value for key, value in self.adaptee.__dict__.items() if key != "parent_task_log_q"}
+            return {key: value for key, value in self.adaptee.__dict__.items()
+                    if key != "parent_task_log_q"}
 
     @property
     def name(self) -> str:  # type: ignore
         return self.adaptee.name
 
 
-class MultiStageTaskBuilder(AbsTaskBuilder):
+class MultiStageTaskBuilder(BaseTaskBuilder):
 
     @property
     def task(self) -> MultiStageTask:
