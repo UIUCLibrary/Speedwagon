@@ -373,8 +373,8 @@ class QueueAdapter:
         self._queue = value
 
 
-class SubtaskJobAdapter(forseti.worker.AbsJobAdapter,
-                        forseti.worker.ProcessJobWorker):  # type: ignore
+class SubtaskJobAdapter(forseti.worker.AbsJobAdapter,  # type: ignore
+                        forseti.worker.ProcessJobWorker):
 
     def __init__(self, adaptee: AbsSubtask) -> None:
         forseti.worker.AbsJobAdapter.__init__(self, adaptee)
