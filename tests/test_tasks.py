@@ -7,6 +7,7 @@ import concurrent.futures
 import pytest
 import pickle
 import forseti.tasks
+import forseti.worker
 from forseti import worker
 from forseti.tasks import TaskBuilder
 
@@ -19,7 +20,23 @@ class SimpleSubtask(forseti.tasks.Subtask):
 
     def work(self) -> bool:
         self.log("processing")
-        self.results = self.message
+        self.set_results(self.message)
+        return True
+
+    @property
+    def settings(self):
+        return {"r": "ad"}
+
+
+class SimplePreTask(forseti.tasks.Subtask):
+
+    def __init__(self, message):
+        super().__init__()
+        self.message = message
+
+    def work(self) -> bool:
+        self.log("Setting up")
+        self.set_results(self.message)
         return True
 
     @property
@@ -32,7 +49,7 @@ class SimpleMultistage(forseti.tasks.MultiStageTask):
         return "\n".join(subtask_results)
 
 
-class SimpleTaskBuilder(forseti.tasks.AbsTaskBuilder):
+class SimpleTaskBuilder(forseti.tasks.BaseTaskBuilder):
 
     @property
     def task(self) -> SimpleMultistage:
@@ -51,9 +68,9 @@ def test_task_builder(simple_task_builder):
 
     assert isinstance(task, forseti.tasks.MultiStageTask)
 
-    assert len(task.subtasks) == 1
+    assert len(task.main_subtasks) == 1
 
-    assert isinstance(task.subtasks[0], SimpleSubtask)
+    assert isinstance(task.main_subtasks[0], SimpleSubtask)
 
     assert task.progress == 0.0
 
@@ -135,14 +152,13 @@ def test_adapter_results(simple_task_builder_with_2_subtasks):
     new_task = simple_task_builder_with_2_subtasks.build_task()
 
     with worker.ToolJobManager() as manager:
-        for subtask in new_task.subtasks:
-            adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
+        for subtask in new_task.main_subtasks:
+            adapted_tool = forseti.worker.SubtaskJobAdapter(subtask)
             manager.add_job(adapted_tool, adapted_tool.settings)
         manager.start()
         results = list()
         for r in manager.get_results():
             results.append(r.data)
-
 
         assert len(results) == 2
         assert "First" == results[0]
@@ -169,8 +185,8 @@ def test_adapter_logs(simple_task_builder_with_2_subtasks):
         manager.logger.setLevel(logging.INFO)
         manager.logger.addHandler(log_catcher)
 
-        for subtask in new_task.subtasks:
-            adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
+        for subtask in new_task.main_subtasks:
+            adapted_tool = forseti.worker.SubtaskJobAdapter(subtask)
             manager.add_job(adapted_tool, adapted_tool.settings)
         manager.start()
 
@@ -179,3 +195,79 @@ def test_adapter_logs(simple_task_builder_with_2_subtasks):
     assert len(logs) == 2
     assert logs[0].message == "processing"
     assert logs[1].message == "processing"
+
+
+def test_pretask_builder():
+    pretask = SimplePreTask("Starting")
+
+    builder = TaskBuilder(SimpleTaskBuilder())
+    builder.set_pretask(subtask=pretask)
+    builder.add_subtask(subtask=SimpleSubtask("First"))
+    builder.add_subtask(subtask=SimpleSubtask("Second"))
+    task = builder.build_task()
+    assert task.pretask == pretask
+
+
+def test_posttask_builder():
+    posttask = SimpleSubtask("ending")
+
+    builder = TaskBuilder(SimpleTaskBuilder())
+    builder.add_subtask(subtask=SimpleSubtask("First"))
+    builder.add_subtask(subtask=SimpleSubtask("Second"))
+    builder.set_posttask(posttask)
+    task = builder.build_task()
+    assert task.posttask == posttask
+
+
+@pytest.mark.adapter
+def test_adapter_results_with_pretask():
+    pretask = SimplePreTask("Starting")
+
+    builder = TaskBuilder(SimpleTaskBuilder())
+    builder.set_pretask(subtask=pretask)
+    builder.add_subtask(subtask=SimpleSubtask("First"))
+    builder.add_subtask(subtask=SimpleSubtask("Second"))
+    new_task = builder.build_task()
+
+    with worker.ToolJobManager() as manager:
+        # adapted_pretask_tool = forseti.tasks.SubtaskJobAdapter(new_task.pretask)
+        # manager.add_job(adapted_pretask_tool, adapted_pretask_tool.settings)
+        for subtask in new_task.subtasks:
+            adapted_tool = forseti.worker.SubtaskJobAdapter(subtask)
+            manager.add_job(adapted_tool, adapted_tool.settings)
+        manager.start()
+        results = list()
+        for r in manager.get_results():
+            results.append(r.data)
+
+        assert len(results) == 3
+        assert "Starting" == results[0]
+        assert "First" == results[1]
+        assert "Second" == results[2]
+
+
+@pytest.mark.adapter
+def test_adapter_results_with_posttask():
+    post_task = SimpleSubtask("Ending")
+
+    builder = TaskBuilder(SimpleTaskBuilder())
+    builder.set_posttask(subtask=post_task)
+    builder.add_subtask(subtask=SimpleSubtask("First"))
+    builder.add_subtask(subtask=SimpleSubtask("Second"))
+    new_task = builder.build_task()
+
+    with worker.ToolJobManager() as manager:
+        # adapted_pretask_tool = forseti.tasks.SubtaskJobAdapter(new_task.pretask)
+        # manager.add_job(adapted_pretask_tool, adapted_pretask_tool.settings)
+        for subtask in new_task.subtasks:
+            adapted_tool = forseti.worker.SubtaskJobAdapter(subtask)
+            manager.add_job(adapted_tool, adapted_tool.settings)
+        manager.start()
+        results = list()
+        for r in manager.get_results():
+            results.append(r.data)
+
+        assert len(results) == 3
+        assert "First" == results[0]
+        assert "Second" == results[1]
+        assert "Ending" == results[2]
