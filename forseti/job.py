@@ -6,6 +6,8 @@ import sys
 import typing
 import forseti.tasks
 import forseti.tools.options
+import forseti.worker
+
 
 class AbsJob(metaclass=abc.ABCMeta):
     active = True
@@ -23,22 +25,8 @@ class AbsJob(metaclass=abc.ABCMeta):
     def validate_user_options(**user_args):
         return True
 
-    @abc.abstractmethod
-    def discover_task_metadata(self, **user_args)->typing.List[dict]:
-        pass
-
     def create_new_task(self, task_builder: "forseti.tasks.TaskBuilder", **job_args):
         pass
-
-    # def setup_task(self, task_builder: "forseti.tasks.TaskBuilder"):
-    #     pass
-    #
-    # def finalization_task(self, task_builder: "forseti.tasks.TaskBuilder"):
-    #     pass
-
-    # @classmethod
-    # def generate_report(cls, *args, **kwargs):
-    #     return None
 
 
 class AbsTool(AbsJob):
@@ -81,7 +69,7 @@ class AbsWorkflow(AbsJob):
         super().__init__()
 
     @abc.abstractmethod
-    def discover_task_metadata(self, **user_args) -> typing.List[dict]:
+    def discover_task_metadata(self, initial_results: typing.List[typing.Any], **user_args) -> typing.List[dict]:
         pass
 
     def completion_task(self, task_builder: forseti.tasks.TaskBuilder, results, **user_args) -> None:
