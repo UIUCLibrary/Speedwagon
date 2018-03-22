@@ -14,6 +14,8 @@ import sys
 from PyQt5 import QtCore, QtWidgets
 from collections import namedtuple
 import multiprocessing
+from forseti import job
+from forseti.tasks import AbsSubtask, QueueAdapter
 
 MessageLog = namedtuple("MessageLog", ("message",))
 
@@ -347,7 +349,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         self.manager = multiprocessing.Manager()
         self._max_workers = max_workers
         self.active = False
-        self._pending_jobs: queue.Queue["forseti.job.AbsTool"] = queue.Queue()  # type: ignore
+        self._pending_jobs: queue.Queue[JobPair] = queue.Queue()
         self.futures: typing.List[concurrent.futures.Future] = []
         self.logger = logging.getLogger(__name__)
 
@@ -414,7 +416,8 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         dialog.accept()
 
     # TODO: refactor to use an overloaded method instead of a callback
-    def get_results(self, timeout_callback=None) -> typing.Iterable["forseti.tasks.Result"]:  # type: ignore
+    def get_results(self, timeout_callback=None):
+        # def get_results(self, timeout_callback=None) -> typing.Iterable["forseti.tasks.Result"]:
         total_jobs = len(self.futures)
         completed = 0
         while self.active:
@@ -429,7 +432,8 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
                         self.flush_message_buffer()
                         if timeout_callback:
                             timeout_callback(completed, total_jobs)
-                        yield result
+                        if result is not None:
+                            yield result
 
                 if timeout_callback:
                     timeout_callback(completed, total_jobs)
@@ -494,3 +498,35 @@ class AbsJobAdapter(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def name(self) -> str:
         pass
+
+
+class SubtaskJobAdapter(AbsJobAdapter,  # type: ignore
+                        ProcessJobWorker):
+
+    def __init__(self, adaptee: AbsSubtask) -> None:
+        AbsJobAdapter.__init__(self, adaptee)
+        ProcessJobWorker.__init__(self)
+        self.adaptee.parent_task_log_q = QueueAdapter()
+
+    @property
+    def queue_adapter(self):
+        return QueueAdapter()
+
+    def process(self, *args, **kwargs):
+        self.adaptee.exec()
+        self.result = self.adaptee.task_result
+
+    def set_message_queue(self, value):
+        self.adaptee.parent_task_log_q.set_message_queue(value)
+
+    @property
+    def settings(self) -> dict:
+        if self.adaptee.settings:
+            return self.adaptee.settings
+        else:
+            return {key: value for key, value in self.adaptee.__dict__.items()
+                    if key != "parent_task_log_q"}
+
+    @property
+    def name(self) -> str:  # type: ignore
+        return self.adaptee.name
