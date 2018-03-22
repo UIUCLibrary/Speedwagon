@@ -378,12 +378,19 @@ class WorkflowsTab(ItemSelectionTab):
 
             # task = new_workflow.create_new_task(**new_task_metadata)
             # print(task)
-            # for subtask in task.subtasks:
+            # for subtask in task.main_subtasks:
             #     adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
             #     print("** {}".format(subtask))
             #     print(adapted_tool)
             print("starting")
             runner.run(self.parent, new_workflow, user_options, self.work_manager.logger)
+        except ValueError as exc:
+            msg = QtWidgets.QMessageBox(self.parent)
+            msg.setIcon(QtWidgets.QMessageBox.Warning)
+            msg.setWindowTitle(exc.__class__.__name__)
+            msg.setText(str(exc))
+            msg.exec()
+
         except Exception as exc:
             msg = QtWidgets.QMessageBox(self.parent)
             msg.setIcon(QtWidgets.QMessageBox.Warning)
