@@ -21,11 +21,6 @@ from hathi_validate import process as validate_process
 from hathi_validate import validator
 
 
-class UserArgs(enum.Enum):
-    INPUT = "Input"
-    OUTPUT = "Output"
-
-
 class CompletenessWorkflow(AbsWorkflow):
     name = "Verify HathiTrust Package Completeness"
     description = "This workflow takes as its input a directory of HathiTrust packages. It evaluates each subfolder " \
@@ -49,7 +44,7 @@ class CompletenessWorkflow(AbsWorkflow):
             check_ocr_utf8_option
         ]
 
-    def discover_task_metadata(self, **user_args) -> typing.List[dict]:
+    def discover_task_metadata(self, initial_results: typing.List[typing.Any], **user_args) -> typing.List[dict]:
         jobs = []
 
         def directory_only_filter(item: os.DirEntry):
@@ -57,9 +52,9 @@ class CompletenessWorkflow(AbsWorkflow):
                 return False
             return True
 
-        for d in filter(directory_only_filter, os.scandir(user_args['Source'])):
+        for dir_path in filter(directory_only_filter, os.scandir(user_args['Source'])):
             jobs.append({
-                "package_path": d.path,
+                "package_path": dir_path.path,
                 "check_page_data": user_args["Check for page_data in meta.yml"],
                 "check_ocr_data": user_args["Check ALTO OCR xml files"],
                 "_check_ocr_utf8": user_args['Check OCR xml files are utf-8'],
@@ -99,7 +94,6 @@ class CompletenessWorkflow(AbsWorkflow):
         results_grouped = dict()
         for k, g in _result_grouped:
             results_grouped[k] = [i.data for i in g]
-        # print(results_grouped)
 
         manifest_report = results_grouped[HathiManifestGenerationTask][0]
 
@@ -169,7 +163,7 @@ class HathiCheckMissingPackageFilesTask(CompletenessSubTask):
                 for error in missing_files_errors:
                     self.log(error.message)
                     errors.append(error)
-            self.results = errors
+            self.set_results(errors)
         return True
 
 
@@ -197,7 +191,7 @@ class HathiCheckMissingComponentsTask(CompletenessSubTask):
                 for error in missing_files_errors:
                     self.log(error.message)
                     errors.append(error)
-            self.results = errors
+            self.set_results(errors)
         return True
 
 
@@ -221,7 +215,7 @@ class ValidateExtraSubdirectoriesTask(CompletenessSubTask):
                     self.log(error.message)
                     errors.append(error)
 
-            self.results = errors
+            self.set_results(errors)
         return True
 
 
@@ -257,7 +251,7 @@ class ValidateChecksumsTask(CompletenessSubTask):
                 report_builder.add_error("Unable to validate checksums. Reason: {}".format(e))
             for error in report_builder.construct():
                 errors.append(error)
-            self.results = errors
+            self.set_results(errors)
         return True
 
 
@@ -291,7 +285,7 @@ class ValidateMarcTask(CompletenessSubTask):
                 result_builder.add_error("Unable to Validate Marc. Reason: {}".format(e))
             for error in result_builder.construct():
                 errors.append(error)
-            self.results = errors
+            self.set_results(errors)
         return True
 
 
@@ -313,7 +307,7 @@ class ValidateOCRFilesTask(CompletenessSubTask):
                 for error in ocr_errors:
                     self.log(error.message)
                     errors.append(error)
-            self.results = errors
+            self.set_results(errors)
         return True
 
 
@@ -348,7 +342,7 @@ class ValidateYMLTask(CompletenessSubTask):
                 report_builder.add_error(report_builder.add_error("Unable to validate YAML. Reason: {}".format(e)))
             for error in report_builder.construct():
                 errors.append(error)
-            self.results = errors
+            self.set_results(errors)
         return True
 
 
@@ -386,7 +380,7 @@ class ValidateOCFilesUTF8Task(CompletenessSubTask):
                 if invalid_ocr_character:
                     errors += invalid_ocr_character
 
-            self.results = errors
+            self.set_results(errors)
         return True
 
 
@@ -410,5 +404,5 @@ class HathiManifestGenerationTask(CompletenessSubTask):
                         package_builder.add_file(os.path.join(relative, file_))
             manifest = batch_manifest_builder.build_manifest()
             manifest_report = validate_manifest.get_report_as_str(manifest, width=70)
-            self.results = manifest_report
+            self.set_results(manifest_report)
         return True
