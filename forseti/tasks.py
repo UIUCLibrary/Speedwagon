@@ -1,12 +1,11 @@
 import abc
+
 import collections
 import enum
 import pickle
 import queue
 import sys
 from typing import NamedTuple, Type, Optional, List, Deque, Any
-
-import forseti.worker
 
 
 class TaskStatus(enum.IntEnum):
@@ -28,11 +27,11 @@ class AbsSubtask(metaclass=abc.ABCMeta):
         pass
 
     @property
-    def task_result(self):
+    def task_result(self) -> Optional['Result']:
         return None
 
     @property
-    def results(self):
+    def results(self) -> Optional[Any]:
         return None
 
     @property  # type: ignore
@@ -71,7 +70,7 @@ class Result(NamedTuple):
 
 class Subtask(AbsSubtask):
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._result: Result = None
         # TODO: refactor into state machine
         self._status = TaskStatus.IDLE
@@ -86,6 +85,7 @@ class Subtask(AbsSubtask):
     def parent_task_log_q(self, value: Deque[str]):
         self._parent_task_log_q = value
 
+    @property
     def task_result(self):
         return self._result
 
@@ -114,16 +114,11 @@ class Subtask(AbsSubtask):
     def results(self):
         return self._result.data
 
-    # @results.setter
-    # def results(self, value):
-    #     warnings.warn("Don't use", DeprecationWarning)
-    #     self._result = Result(self.__class__, value)
-
     def set_results(self, results):
         self._result = Result(self.__class__, results)
 
     def log(self, message):
-        self.parent_task_log_q.append(message)
+        self._parent_task_log_q.append(message)
 
     def exec(self) -> None:
         self.status = TaskStatus.WORKING
@@ -132,6 +127,45 @@ class Subtask(AbsSubtask):
             self.status = TaskStatus.FAILED
         else:
             self.status = TaskStatus.SUCCESS
+
+
+class PreTask(AbsSubtask):
+
+    def __init__(self) -> None:
+        self._status = TaskStatus.IDLE
+        self._parent_task_log_q: Deque[str] = None
+        self._result: Result = None
+
+    @property
+    def status(self) -> TaskStatus:
+        return self._status
+
+    @property
+    def parent_task_log_q(self) -> Deque[str]:
+        return self._parent_task_log_q
+
+    @parent_task_log_q.setter
+    def parent_task_log_q(self, value):
+        self._parent_task_log_q = value
+
+    def exec(self) -> None:
+        if not self.work():
+            self._status = TaskStatus.FAILED
+        else:
+            self._status = TaskStatus.SUCCESS
+
+    def log(self, message):
+        self._parent_task_log_q.append(message)
+    #
+    @property
+    def task_result(self):
+        return self._result
+
+    def pretask_result(self):
+        pass
+
+    def work(self) -> bool:
+        return super().work()
 
 
 class AbsTask(metaclass=abc.ABCMeta):
@@ -196,6 +230,16 @@ class Task(AbsTask, AbsTaskComponents):
     def posttask(self, value: AbsSubtask):
         self._post_task = value
 
+    def on_completion(self, *args, **kwargs):
+        return super().on_completion(*args, **kwargs)
+
+    def exec(self, *args, **kwargs):
+        return super().exec(*args, **kwargs)
+
+    @property
+    def status(self) -> TaskStatus:
+        return super().status
+
 
 class MultiStageTask(Task):
     name = "Task"
@@ -203,7 +247,23 @@ class MultiStageTask(Task):
     def __init__(self) -> None:
         super().__init__()
         # Todo: use the results builder from validate
-        self.subtasks: List[AbsSubtask] = []
+        self._main_subtasks: List[AbsSubtask] = []
+
+    @property
+    def main_subtasks(self):
+        return self._main_subtasks
+
+    @property
+    def subtasks(self):
+        all_subtasks = []
+
+        if self.pretask:
+            all_subtasks.append(self.pretask)
+
+        all_subtasks += self._main_subtasks
+        if self.posttask:
+            all_subtasks.append(self.posttask)
+        return all_subtasks
 
     @property
     def status(self) -> TaskStatus:
@@ -212,7 +272,7 @@ class MultiStageTask(Task):
         started = False
         all_success = True
 
-        for sub_task in self.subtasks:
+        for sub_task in self.main_subtasks:
             if sub_task.status > TaskStatus.IDLE:
                 started = True
 
@@ -243,15 +303,23 @@ class MultiStageTask(Task):
     @property
     def progress(self) -> float:
         amount_completed = len(
-            [task for task in self.subtasks
+            [task for task in self.main_subtasks
              if task.status > TaskStatus.WORKING])
-        return amount_completed / len(self.subtasks)
+        return amount_completed / len(self.main_subtasks)
 
     def exec(self, *args, **kwargs):
 
         subtask_results = []
         try:
-            for subtask in self.subtasks:
+
+            if self.pretask:
+                self.pretask.exec()
+                if self.pretask.results:
+                    subtask_results.append(self.pretask.results)
+                else:
+                    print("NOOOOP")
+
+            for subtask in self.main_subtasks:
                 subtask.exec()
                 if subtask.results is not None:
                     subtask_results.append(subtask.results)
@@ -296,21 +364,35 @@ class AbsTaskBuilder(metaclass=abc.ABCMeta):
 class BaseTaskBuilder(AbsTaskBuilder):
 
     def __init__(self) -> None:
-        self._subtasks: List[AbsSubtask] = []
+        self._main_subtasks: List[AbsSubtask] = []
         self._pretask: Optional[AbsSubtask] = None
         self._posttask: Optional[AbsSubtask] = None
 
     def add_subtask(self, task: AbsSubtask) -> None:
-        self._subtasks.append(task)
+        self._main_subtasks.append(task)
 
     def build_task(self) -> MultiStageTask:
         task = self.task
-        task.pretask = self._pretask
-        task.posttask = self._posttask
-        for subtask in self._subtasks:
+
+        if self._pretask is not None:
+            pretask = self._pretask
+            pretask.parent_task_log_q = task.log_q  # type: ignore
+            task.pretask = pretask
+
+        for subtask in self._main_subtasks:
             subtask.parent_task_log_q = task.log_q  # type: ignore
-            task.subtasks.append(subtask)
+            task.main_subtasks.append(subtask)
+
+        if self._posttask is not None:
+            post_task = self._posttask
+            post_task.parent_task_log_q = task.log_q  # type: ignore
+            task.posttask = post_task
+
         return task
+
+    @property
+    def task(self) -> MultiStageTask:
+        return super().task
 
     def set_pretask(self, subtask: AbsSubtask):
         self._pretask = subtask
@@ -331,11 +413,11 @@ class TaskBuilder:
     def add_subtask(self, subtask: Subtask):
         self._builder.add_subtask(subtask)
 
-    def set_pretask(self, subtask):
+    def set_pretask(self, subtask: Subtask):
         self._builder.set_pretask(subtask)
 
-    def set_posttask(self, posttask):
-        self._builder.set_posttask(posttask)
+    def set_posttask(self, subtask):
+        self._builder.set_posttask(subtask)
 
     @staticmethod
     def save(task_obj):
@@ -371,38 +453,6 @@ class QueueAdapter:
 
     def set_message_queue(self, value: queue.Queue):
         self._queue = value
-
-
-class SubtaskJobAdapter(forseti.worker.AbsJobAdapter,  # type: ignore
-                        forseti.worker.ProcessJobWorker):
-
-    def __init__(self, adaptee: AbsSubtask) -> None:
-        forseti.worker.AbsJobAdapter.__init__(self, adaptee)
-        forseti.worker.ProcessJobWorker.__init__(self)
-        self.adaptee.parent_task_log_q = QueueAdapter()
-
-    @property
-    def queue_adapter(self):
-        return QueueAdapter()
-
-    def process(self, *args, **kwargs):
-        self.adaptee.exec()
-        self.result = self.adaptee.task_result()
-
-    def set_message_queue(self, value):
-        self.adaptee.parent_task_log_q.set_message_queue(value)
-
-    @property
-    def settings(self) -> dict:
-        if self.adaptee.settings:
-            return self.adaptee.settings
-        else:
-            return {key: value for key, value in self.adaptee.__dict__.items()
-                    if key != "parent_task_log_q"}
-
-    @property
-    def name(self) -> str:  # type: ignore
-        return self.adaptee.name
 
 
 class MultiStageTaskBuilder(BaseTaskBuilder):
