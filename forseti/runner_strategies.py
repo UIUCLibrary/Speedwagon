@@ -10,6 +10,7 @@ import warnings
 from PyQt5 import QtCore, QtWidgets
 
 import forseti.job
+import forseti.worker
 import forseti.workflows
 import forseti.tasks
 # Tool, Options,
@@ -75,7 +76,7 @@ class RunRunner:
 #                     # self.log_manager.debug("Adding {} with {} to work manager".format(tool, _job_args))
 #                     work_manager.add_job(_job_args)
 #
-#                 print("running {} subtasks".format(work_manager.worker_display._jobs_queue.qsize()), file=sys.stderr)
+#                 print("running {} main_subtasks".format(work_manager.worker_display._jobs_queue.qsize()), file=sys.stderr)
 #                 try:
 #                     work_manager.run()
 #
@@ -198,13 +199,14 @@ class UsingExternalManagerForAdapter(AbsRunner):
         if isinstance(job, forseti.job.AbsWorkflow):
 
             try:
-                results += self._run_pre_tasks(parent, job, options, logger)
+                presults = self._run_pre_tasks(parent, job, options, logger)
+                results += presults
             except TaskFailed as e:
                 logger.error("Job stopped during pre-task phase. Reason: {}".format(e))
                 return
 
             try:
-                results += self._run_main_tasks(parent, job, options, logger)
+                results += self._run_main_tasks(parent, job, options,presults, logger)
             except TaskFailed as e:
                 logger.error("Job stopped during main tasks phase. Reason: {}".format(e))
                 return
@@ -220,7 +222,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
             if report:
                 logger.info(report)
 
-    def _run_main_tasks(self, parent, job, options, logger) -> list:
+    def _run_main_tasks(self, parent, job: forseti.job.AbsWorkflow, options, pretask_results, logger) -> list:
         results = []
         with self._manager.open(parent=parent, runner=worker.WorkRunnerExternal3) as runner:
             runner.abort_callback = self._manager.abort
@@ -233,19 +235,19 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 # startup_task_builder = forseti.tasks.TaskBuilder(forseti.tasks.MultiStageTaskBuilder())
                 # # job.setup_task(startup_task_builder)
                 # startup_task = startup_task_builder.build_task()
-                # for subtask in startup_task.subtasks:
+                # for subtask in startup_task.main_subtasks:
                 #     adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
                 #     self._manager.add_job(adapted_tool, adapted_tool.settings)
                 #     # self._manager.add_startup_job(adapted_tool, adapted_tool.settings)
 
                 # Run the main tasks. Keep track of the progress
-                for new_task_metadata in job.discover_task_metadata(**options):
+                for new_task_metadata in job.discover_task_metadata(pretask_results, **options):
                     main_task_builder = forseti.tasks.TaskBuilder(forseti.tasks.MultiStageTaskBuilder())
                     job.create_new_task(main_task_builder, **new_task_metadata)
                     new_task = main_task_builder.build_task()
                     for subtask in new_task.subtasks:
                         i += 1
-                        adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
+                        adapted_tool = forseti.worker.SubtaskJobAdapter(subtask)
                         self._manager.add_job(adapted_tool, adapted_tool.settings)
                 logger.info("Found {} jobs".format(i + 1))
                 runner.dialog.setMaximum(i)
@@ -272,8 +274,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 finalization_task_builder = forseti.tasks.TaskBuilder(forseti.tasks.MultiStageTaskBuilder())
                 job.completion_task(finalization_task_builder, results, **options)
                 task = finalization_task_builder.build_task()
-                for subtask in task.subtasks:
-                    adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
+                for subtask in task.main_subtasks:
+                    adapted_tool = forseti.worker.SubtaskJobAdapter(subtask)
                     self._manager.add_job(adapted_tool, adapted_tool.settings)
                 self._manager.start()
                 for post_result in self._manager.get_results(lambda x, y: self._update_progress(runner, x, y)):
@@ -297,8 +299,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 task_builder = forseti.tasks.TaskBuilder(forseti.tasks.MultiStageTaskBuilder())
                 job.initial_task(task_builder, **options)
                 task = task_builder.build_task()
-                for subtask in task.subtasks:
-                    adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
+                for subtask in task.main_subtasks:
+                    adapted_tool = forseti.worker.SubtaskJobAdapter(subtask)
                     self._manager.add_job(adapted_tool, adapted_tool.settings)
                 self._manager.start()
                 for post_result in self._manager.get_results(lambda x, y: self._update_progress(runner, x, y)):
