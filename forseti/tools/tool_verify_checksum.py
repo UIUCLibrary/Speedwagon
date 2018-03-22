@@ -65,7 +65,7 @@ class ChecksumData(options.AbsCustomData2):
 class VerifyChecksum(forseti.job.AbsTool):
 
     @staticmethod
-    def new_job() -> typing.Type[forseti.worker.ProcessJobWorker]:
+    def new_job() -> typing.Type["forseti.worker.ProcessJobWorker"]:
         return ChecksumJob
 
     @classmethod
@@ -108,7 +108,6 @@ class VerifyChecksum(forseti.job.AbsTool):
         new_results: typing.DefaultDict[str, list] = collections.defaultdict(list)
         sorted_results = sorted(results, key=lambda it: it[ResultValues.CHECKSUM_REPORT_FILE])
         for k, v in itertools.groupby(sorted_results, key=lambda it: it[ResultValues.CHECKSUM_REPORT_FILE]):
-            print(k)
             for result_data in v:
                 new_results[k].append(result_data)
         return dict(new_results)
@@ -170,6 +169,7 @@ class VerifyChecksumBatchMultiple(VerifyChecksum):
                   "\n\nInput is path that contains subdirectory which a text file containing a " \
                   "list of multiple files and their md5 values. The listed files are expected to be siblings to the " \
                   "checksum file."
+    active = False
 
     @staticmethod
     def discover_task_metadata(**user_args) -> typing.List[dict]:
