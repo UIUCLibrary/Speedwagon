@@ -2,6 +2,7 @@ from behave import *
 from behave import runner
 from PyQt5 import QtCore
 import forseti.models
+import forseti.tools.options
 
 
 # use_step_matcher("re")
@@ -19,13 +20,13 @@ def step_impl(context: runner.Context):
 
 @when("we provide data to generate a Qt model")
 def step_impl(context: runner.Context):
-    context.data_model = forseti.models.ToolOptionsPairsModel(context.data)
+    context.data_model = forseti.models.ToolOptionsModel3(context.data)
     # assert context.d == "dd"
 
 
 @then("we get a ToolOptionsModel object")
 def step_impl(context: runner.Context):
-    assert isinstance(context.data_model, forseti.models.ToolOptionsPairsModel)
+    assert isinstance(context.data_model, forseti.models.ToolOptionsModel3)
     pass
 
 
@@ -48,7 +49,8 @@ def step_impl(context: runner.Context):
 @when("I ask for the display data of my_option")
 def step_impl(context: runner.Context):
     context.index = context.data_model.index(0, 0)
-    context.result = context.data_model.data(context.index, role=QtCore.Qt.DisplayRole)
+    context.result = context.data_model.data(context.index,
+                                             role=QtCore.Qt.DisplayRole)
 
 
 @then("the data returned is an empty string")
@@ -58,8 +60,10 @@ def step_impl(context: runner.Context):
 
 @step('the headerData is "my_option"')
 def step_impl(context):
-    result = context.data_model.headerData(0, Qt_Orientation=QtCore.Qt.Vertical, role=QtCore.Qt.DisplayRole)
+    result = context.data_model.headerData(0, Qt_Orientation=QtCore.Qt.Vertical,
+                                           role=QtCore.Qt.DisplayRole)
     assert result == "my_option"
+
 
 @when("I ask for the final data")
 def step_impl(context: runner.Context):
@@ -92,3 +96,12 @@ def step_impl(context: runner.Context):
 def step_impl(context: runner.Context):
     assert context.result["my_option"] == "my data"
 
+
+@given("we have two ToolOptions called dummy and dummy2")
+def step_impl(context):
+    data = [
+        forseti.tools.options.UserOptionPythonDataType2("dummy", str),
+        forseti.tools.options.UserOptionPythonDataType2("dummy2", str)
+    ]
+
+    context.data = data
