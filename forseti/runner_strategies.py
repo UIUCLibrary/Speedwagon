@@ -134,11 +134,21 @@ class UsingExternalManagerForAdapter(AbsRunner):
     ) -> None:
 
         results: typing.List[typing.Any] = []
+
         if isinstance(job, forseti.job.AbsWorkflow):
 
             try:
-                presults = self._run_pre_tasks(parent, job, options, logger)
-                results += presults
+                pre_results = self._run_pre_tasks(parent, job, options, logger)
+
+                results += pre_results
+
+                if isinstance(job, forseti.job.Workflow):
+                    new_options = self._get_additional_options(parent,
+                                                               job,
+                                                               options,
+                                                               pre_results)
+                    if new_options:
+                        options = {**options, **new_options}
 
             except TaskFailed as e:
 
@@ -152,7 +162,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 results += self._run_main_tasks(parent,
                                                 job,
                                                 options,
-                                                presults,
+                                                pre_results,
                                                 logger)
 
             except TaskFailed as e:
@@ -324,3 +334,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 return results
             finally:
                 logger.removeHandler(runner.progress_dialog_box_handler)
+    @staticmethod
+    def _get_additional_options(parent, job, options, pretask_results) -> typing.Optional[dict]:
+
+        return job.get_additional_info(parent, options, pretask_results)
