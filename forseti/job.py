@@ -25,7 +25,9 @@ class AbsJob(metaclass=abc.ABCMeta):
     def validate_user_options(**user_args):
         return True
 
-    def create_new_task(self, task_builder: "forseti.tasks.TaskBuilder", **job_args):
+    def create_new_task(self,
+                        task_builder: "forseti.tasks.TaskBuilder",
+                        **job_args):
         pass
 
 
@@ -69,17 +71,34 @@ class AbsWorkflow(AbsJob):
         super().__init__()
 
     @abc.abstractmethod
-    def discover_task_metadata(self, initial_results: typing.List[typing.Any], **user_args) -> typing.List[dict]:
+    def discover_task_metadata(
+            self,
+            initial_results: typing.List[typing.Any],
+            **user_args
+    ) -> typing.List[dict]:
         pass
 
-    def completion_task(self, task_builder: forseti.tasks.TaskBuilder, results, **user_args) -> None:
+    def completion_task(
+            self,
+            task_builder: forseti.tasks.TaskBuilder,
+            results,
+            **user_args
+    ) -> None:
         pass
 
-    def initial_task(self, task_builder: forseti.tasks.TaskBuilder, **user_args) -> None:
+    def initial_task(
+            self,
+            task_builder: forseti.tasks.TaskBuilder,
+            **user_args
+    ) -> None:
         pass
 
     @classmethod
-    def generate_report(cls, results: typing.List[forseti.tasks.Result], **user_args) -> typing.Optional[str]:
+    def generate_report(
+            cls,
+            results: typing.List[forseti.tasks.Result],
+            **user_args
+    ) -> typing.Optional[str]:
         pass
 
     # @abc.abstractmethod
@@ -111,20 +130,33 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
     def base_class(self) -> typing.Type[AbsJob]:
         pass
 
-    def load(self, module_file) -> typing.Iterable[typing.Tuple[str, typing.Any]]:
+    def load(
+            self,
+            module_file
+    ) -> typing.Iterable[typing.Tuple[str, typing.Any]]:
+
         def class_member_filter(item):
             return inspect.isclass(item) and not inspect.isabstract(item)
 
         try:
-            module = importlib.import_module("{}.{}".format(self.package_name, os.path.splitext(module_file)[0]))
+            module = importlib.import_module(
+                "{}.{}".format(self.package_name,
+                               os.path.splitext(module_file)[0])
+            )
             members = inspect.getmembers(module, class_member_filter)
 
             for name_, module_class in members:
-                if issubclass(module_class, self.base_class) and module_class.active:
+
+                if issubclass(module_class, self.base_class) \
+                        and module_class.active:
+
                     yield module_class.name, module_class
 
         except ImportError as e:
-            print("Unable to load {}. Reason: {}".format(module_file, e), file=sys.stderr)
+            print(
+                "Unable to load {}. Reason: {}".format(module_file, e),
+                file=sys.stderr
+            )
 
     @property
     @abc.abstractmethod
@@ -196,7 +228,8 @@ class WorkflowFinder(AbsDynamicFinder):
 
 def available_workflows() -> dict:
     """
-    Locate all workflow class found in workflows subpackage with the workflow prefix
+    Locate all workflow class found in workflows subpackage with the workflow
+    prefix
 
     Returns: Dictionary of all workflow
 
