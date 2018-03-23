@@ -156,7 +156,7 @@ class PreTask(AbsSubtask):
 
     def log(self, message):
         self._parent_task_log_q.append(message)
-    #
+
     @property
     def task_result(self):
         return self._result
