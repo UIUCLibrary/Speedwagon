@@ -14,7 +14,6 @@ import sys
 from PyQt5 import QtCore, QtWidgets
 from collections import namedtuple
 import multiprocessing
-from forseti import job
 from forseti.tasks import AbsSubtask, QueueAdapter
 
 MessageLog = namedtuple("MessageLog", ("message",))
@@ -160,9 +159,9 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
     @classmethod
     def initialize_worker(cls, max_workers=1):
 
-        # self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)  # TODO: Fix this
-        cls.executor = concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)  # TODO: Fix this
-        # self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)  # TODO: Fix this
+        cls.executor = concurrent.futures.ProcessPoolExecutor(
+            max_workers=max_workers
+        )  # TODO: Fix this
 
     def cancel(self):
         # if hasattr(self, "executor"):
@@ -178,15 +177,15 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
         # fut.add_done_callback(self.complete_task)
         return fut
 
-    def add_job(self, job: typing.Type[ProcessJobWorker], **job_args):
+    def add_job(self, job: ProcessJobWorker, **job_args):
         new_job = JobPair(job, args=job_args)
         self._jobs_queue.put(new_job)
 
     def run_all_jobs(self):
 
         while self._jobs_queue.qsize() != 0:
-            job, args, message_queue = self._jobs_queue.get()
-            fut = self._exec_job(job, args, message_queue)
+            job_, args, message_queue = self._jobs_queue.get()
+            fut = self._exec_job(job_, args, message_queue)
             self._tasks.append(fut)
         # logging.debug("All jobs have been launched")
         for future in concurrent.futures.as_completed(self._tasks):
@@ -214,7 +213,12 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
 
 class ProgressMessageBoxLogHandler(logging.Handler):
 
-    def __init__(self, dialog_box: QtWidgets.QProgressDialog, level=logging.NOTSET) -> None:
+    def __init__(
+            self,
+            dialog_box: QtWidgets.QProgressDialog,
+            level=logging.NOTSET
+    ) -> None:
+
         super().__init__(level)
         self.dialog_box = dialog_box
 
@@ -276,7 +280,10 @@ class WorkRunnerExternal2(contextlib.AbstractContextManager):
         self.dialog.setModal(True)
         self.dialog.setLabelText("Initializing")
         self.dialog.setWindowTitle(self._tool.name)
-        self.progress_dialog_box_handler = ProgressMessageBoxLogHandler(self.dialog)
+
+        self.progress_dialog_box_handler = \
+            ProgressMessageBoxLogHandler(self.dialog)
+
         self.dialog.canceled.connect(self.abort)
         return self
 
@@ -306,7 +313,10 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         self.dialog.setModal(True)
         self.dialog.setLabelText("Initializing")
         # self.dialog.setWindowTitle("Running")
-        self.progress_dialog_box_handler = ProgressMessageBoxLogHandler(self.dialog)
+
+        self.progress_dialog_box_handler = \
+            ProgressMessageBoxLogHandler(self.dialog)
+
         self.dialog.canceled.connect(self.abort)
         return self
 
@@ -319,14 +329,14 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
     def __exit__(self, exc_type, exc_value, traceback):
         self.dialog.close()
 
-
-def _execute(job, **settings):
-    pass
+#
+# def _execute(job, **settings):
+#     pass
 
 
 class AbsJobManager(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def add_job(self, job, settings):
+    def add_job(self, new_job, settings):
         pass
 
     @abc.abstractmethod
@@ -342,7 +352,6 @@ class AbsJobManager(metaclass=abc.ABCMeta):
         pass
 
 
-
 class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
     def __init__(self, max_workers=1) -> None:
@@ -355,7 +364,11 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
     def __enter__(self):
         self._message_queue = self.manager.Queue()
-        self._executor = concurrent.futures.ProcessPoolExecutor(self._max_workers)
+
+        self._executor = concurrent.futures.ProcessPoolExecutor(
+            self._max_workers
+        )
+
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -367,16 +380,16 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
     def open(self, parent, runner=WorkRunnerExternal2, *args, **kwargs):
         return runner(*args, **kwargs, parent=parent)
 
-    def add_job(self, job: ProcessJobWorker, settings: dict) -> None:
+    def add_job(self, new_job: ProcessJobWorker, settings: dict) -> None:
 
-        self._pending_jobs.put(JobPair(job, settings))
+        self._pending_jobs.put(JobPair(new_job, settings))
 
     def start(self):
         self.active = True
         while not self._pending_jobs.empty():
-            job, settings = self._pending_jobs.get()
-            job.set_message_queue(self._message_queue)
-            fut = self._executor.submit(job.execute, **settings)
+            job_, settings = self._pending_jobs.get()
+            job_.set_message_queue(self._message_queue)
+            fut = self._executor.submit(job_.execute, **settings)
             fut.add_done_callback(fn=lambda x: self._pending_jobs.task_done())
             self.futures.append(fut)
 
@@ -402,9 +415,14 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         # TODO: set cancel dialog to force the cancellation of the future
 
         while True:
+
             try:
                 QtWidgets.QApplication.processEvents()
-                for i, future in enumerate(concurrent.futures.as_completed(still_running, timeout=.1)):
+
+                futures = concurrent.futures.as_completed(still_running,
+                                                          timeout=.1)
+
+                for i, future in enumerate(futures):
                     dialog.setValue(i + 1)
 
                 break
@@ -417,12 +435,13 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
     # TODO: refactor to use an overloaded method instead of a callback
     def get_results(self, timeout_callback=None):
-        # def get_results(self, timeout_callback=None) -> typing.Iterable["forseti.tasks.Result"]:
         total_jobs = len(self.futures)
         completed = 0
         while self.active:
             try:
-                for f in concurrent.futures.as_completed(self.futures, timeout=0.01):
+                for f in concurrent.futures.as_completed(self.futures,
+                                                         timeout=0.01):
+
                     if not f.cancelled():
                         result = f.result()
                         if f in self.futures:
@@ -463,19 +482,6 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         if self._pending_jobs.unfinished_tasks > 0:
             self.logger.warning("Pending jobs has unfinished tasks")
         self._pending_jobs.join()
-
-# class ToolJobManagerWithPreAndPost(ToolJobManager):
-#
-#     def __init__(self, max_workers=1) -> None:
-#         super().__init__(max_workers)
-#         self._startup_jobs: queue.Queue[forseti.tools.AbsTool] = queue.Queue()
-#         self._finalization_jobs: queue.Queue[forseti.tools.AbsTool] = queue.Queue()
-#
-#     def add_startup_job(self, job: ProcessJob, settings: dict) -> None:
-#         self._startup_jobs.put(JobPair(job, settings))
-#
-#     def add_finishup_job(self, job: ProcessJob, settings: dict) -> None:
-#         self._finalization_jobs.put(JobPair(job, settings))
 
 
 class AbsJobAdapter(metaclass=abc.ABCMeta):
