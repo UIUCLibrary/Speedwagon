@@ -170,7 +170,8 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             model=self.item_selection_model
         )
 
-        self.workspace, self.workspace_widgets, self.workspace_layout = self.create_workspace(self.tab_name, parent)
+        self.workspace, self.workspace_widgets, self.workspace_layout = \
+            self.create_workspace(self.tab_name, parent)
 
         self.item_form = self.create_form(self.parent,
                                           self.workspace_widgets,
