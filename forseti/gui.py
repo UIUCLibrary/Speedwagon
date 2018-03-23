@@ -10,9 +10,15 @@ from forseti.ui import main_window_shell_ui
 from forseti import worker
 from collections import namedtuple
 
-TAB_WIDGET_SIZE_POLICY = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Maximum)
+TAB_WIDGET_SIZE_POLICY = QtWidgets.QSizePolicy(
+    QtWidgets.QSizePolicy.MinimumExpanding,
+    QtWidgets.QSizePolicy.Maximum
+)
 
-CONSOLE_SIZE_POLICY = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
+CONSOLE_SIZE_POLICY = QtWidgets.QSizePolicy(
+    QtWidgets.QSizePolicy.MinimumExpanding,
+    QtWidgets.QSizePolicy.Minimum
+)
 
 PROJECT_NAME = "Forseti"
 
@@ -31,7 +37,10 @@ class ToolConsole(QtWidgets.QWidget):
         self.layout().addWidget(self._console)
 
         #  Use a monospaced font based on what's on system running
-        monospaced_font = QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
+        monospaced_font = QtGui.QFontDatabase.systemFont(
+            QtGui.QFontDatabase.FixedFont
+        )
+
         self._log = QtGui.QTextDocument()
         self._log.setDefaultFont(monospaced_font)
 
@@ -59,7 +68,12 @@ class ConsoleLogger(logging.Handler):
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
-    def __init__(self, work_manager: worker.ToolJobManager, tools, workflows) -> None:
+    def __init__(
+            self, work_manager: worker.ToolJobManager,
+            tools,
+            workflows
+    ) -> None:
+
         super().__init__()
         self._work_manager = work_manager
 
@@ -78,16 +92,22 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # Tabs
         ###########################################################
 
-        self.tools_tab = forseti.tabs.ToolTab(parent=self,
-                                 tools=tools,
-                                 work_manager=self._work_manager,
-                                 log_manager=self.log_manager)
+        self.tools_tab = forseti.tabs.ToolTab(
+            parent=self,
+            tools=tools,
+            work_manager=self._work_manager,
+            log_manager=self.log_manager
+        )
+
         self.tabWidget.addTab(self.tools_tab.tab, "Tools")
 
-        self.workflows_tab = forseti.tabs.WorkflowsTab(parent=self,
-                                          workflows=workflows,
-                                          work_manager=self._work_manager,
-                                          log_manager=self.log_manager)
+        self.workflows_tab = forseti.tabs.WorkflowsTab(
+            parent=self,
+            workflows=workflows,
+            work_manager=self._work_manager,
+            log_manager=self.log_manager
+        )
+
         self.tabWidget.addTab(self.workflows_tab.tab, "Workflows")
         # self.tabWidget.setMinimumHeight(100)
 
@@ -102,7 +122,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.console = self.create_console()
         self.console.setMinimumHeight(50)
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
-        # self.tabWidget.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Maximum))
         self.main_splitter.addWidget(self.console)
         self._handler = ConsoleLogger(self.console)
         self._handler.setLevel(logging.INFO)
@@ -151,12 +170,14 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     def show_about_window(self):
         forseti.about.about_dialog_box(parent=self)
 
-
-
     def start_workflow(self):
-        if len(self._workflow_selector_view.selectedIndexes()) != 1:
-            print("Invalid number of selected Indexes. Expected 1. Found {}".format(
-                len(self._workflow_selector_view.selectedIndexes())))
+
+        num_selected = self._workflow_selector_view.selectedIndexes()
+        if len(num_selected) != 1:
+            print(
+                "Invalid number of selected Indexes. "
+                "Expected 1. Found {}".format(num_selected)
+            )
             return
 
     def create_console(self):
@@ -166,6 +187,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
 
 def main():
+
     app = QtWidgets.QApplication(sys.argv)
     icon = pkg_resources.resource_stream(__name__, "favicon.ico")
     app.setWindowIcon(QtGui.QIcon(icon.name))
@@ -174,7 +196,11 @@ def main():
     tools = forseti.job.available_tools()
     workflows = forseti.job.available_workflows()
     with worker.ToolJobManager() as work_manager:
-        windows = MainWindow(work_manager=work_manager, tools=tools, workflows=workflows)
+
+        windows = MainWindow(work_manager=work_manager,
+                             tools=tools,
+                             workflows=workflows)
+
         windows.setWindowTitle("")
         # windows.setWindowTitle(f"Version {forseti.__version__}")
         rc = app.exec_()
