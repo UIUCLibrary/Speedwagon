@@ -334,7 +334,13 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 return results
             finally:
                 logger.removeHandler(runner.progress_dialog_box_handler)
+
     @staticmethod
-    def _get_additional_options(parent, job, options, pretask_results) -> typing.Optional[dict]:
+    def _get_additional_options(
+            parent,
+            job,
+            options,
+            pretask_results
+    ) -> typing.Optional[dict]:
 
         return job.get_additional_info(parent, options, pretask_results)
