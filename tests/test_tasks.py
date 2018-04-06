@@ -57,8 +57,9 @@ class SimpleTaskBuilder(forseti.tasks.BaseTaskBuilder):
 
 
 @pytest.fixture
-def simple_task_builder():
-    builder = TaskBuilder(SimpleTaskBuilder())
+def simple_task_builder(tmpdir_factory):
+    temp_path = tmpdir_factory.mktemp("test")
+    builder = TaskBuilder(SimpleTaskBuilder(), str(temp_path))
     builder.add_subtask(subtask=SimpleSubtask("got it"))
     return builder
 
@@ -109,8 +110,9 @@ def test_task_log_with_2_subtask(simple_task_builder):
     assert len(task.log_q) == 2
 
 
-def test_task_can_be_picked():
-    builder = TaskBuilder(SimpleTaskBuilder())
+def test_task_can_be_picked(tmpdir):
+    temp_path = tmpdir.mkdir("test")
+    builder = TaskBuilder(SimpleTaskBuilder(), temp_path)
     builder.add_subtask(subtask=SimpleSubtask(message="got it"))
 
     task_original = builder.build_task()
@@ -140,8 +142,9 @@ def test_task_as_concurrent_future(simple_task_builder):
 
 
 @pytest.fixture
-def simple_task_builder_with_2_subtasks():
-    builder = TaskBuilder(SimpleTaskBuilder())
+def simple_task_builder_with_2_subtasks(tmpdir_factory):
+    temp_path = tmpdir_factory.mktemp("test")
+    builder = TaskBuilder(SimpleTaskBuilder(), temp_path)
     builder.add_subtask(subtask=SimpleSubtask("First"))
     builder.add_subtask(subtask=SimpleSubtask("Second"))
     return builder
@@ -197,10 +200,13 @@ def test_adapter_logs(simple_task_builder_with_2_subtasks):
     assert logs[1].message == "processing"
 
 
-def test_pretask_builder():
+def test_pretask_builder(tmpdir):
+
+    temp_path = tmpdir.mkdir("test")
+
     pretask = SimplePreTask("Starting")
 
-    builder = TaskBuilder(SimpleTaskBuilder())
+    builder = TaskBuilder(SimpleTaskBuilder(), temp_path)
     builder.set_pretask(subtask=pretask)
     builder.add_subtask(subtask=SimpleSubtask("First"))
     builder.add_subtask(subtask=SimpleSubtask("Second"))
@@ -208,10 +214,13 @@ def test_pretask_builder():
     assert task.pretask == pretask
 
 
-def test_posttask_builder():
+def test_posttask_builder(tmpdir):
+
+    temp_path = tmpdir.mkdir("test")
+
     posttask = SimpleSubtask("ending")
 
-    builder = TaskBuilder(SimpleTaskBuilder())
+    builder = TaskBuilder(SimpleTaskBuilder(), temp_path)
     builder.add_subtask(subtask=SimpleSubtask("First"))
     builder.add_subtask(subtask=SimpleSubtask("Second"))
     builder.set_posttask(posttask)
@@ -220,10 +229,11 @@ def test_posttask_builder():
 
 
 @pytest.mark.adapter
-def test_adapter_results_with_pretask():
+def test_adapter_results_with_pretask(tmpdir):
+    temp_path = tmpdir.mkdir("test")
     pretask = SimplePreTask("Starting")
 
-    builder = TaskBuilder(SimpleTaskBuilder())
+    builder = TaskBuilder(SimpleTaskBuilder(), temp_path)
     builder.set_pretask(subtask=pretask)
     builder.add_subtask(subtask=SimpleSubtask("First"))
     builder.add_subtask(subtask=SimpleSubtask("Second"))
@@ -247,10 +257,11 @@ def test_adapter_results_with_pretask():
 
 
 @pytest.mark.adapter
-def test_adapter_results_with_posttask():
+def test_adapter_results_with_posttask(tmpdir):
+    temp_path = tmpdir.mkdir("test")
     post_task = SimpleSubtask("Ending")
 
-    builder = TaskBuilder(SimpleTaskBuilder())
+    builder = TaskBuilder(SimpleTaskBuilder(), temp_path)
     builder.set_posttask(subtask=post_task)
     builder.add_subtask(subtask=SimpleSubtask("First"))
     builder.add_subtask(subtask=SimpleSubtask("Second"))
