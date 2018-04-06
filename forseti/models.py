@@ -188,7 +188,7 @@ class ToolOptionsModel3(ToolOptionsModel):
 
     def __init__(
             self,
-            data: typing.List[options.UserOptionPythonDataType],
+            data: typing.List[options.UserOptionPythonDataType2],
             parent=None
     ) -> None:
 
@@ -196,7 +196,7 @@ class ToolOptionsModel3(ToolOptionsModel):
             raise NotImplementedError
         super().__init__(parent)
 
-        self._data: typing.List[options.UserOptionPythonDataType] = data
+        self._data: typing.List[options.UserOptionPythonDataType2] = data
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if index.isValid():

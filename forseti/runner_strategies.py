@@ -1,5 +1,6 @@
 import abc
 import logging
+import tempfile
 
 import typing
 
@@ -124,73 +125,85 @@ class UsingExternalManagerForAdapter(AbsRunner):
         if current == total:
             runner.dialog.accept()
 
-    def run(
-            self,
-            parent,
-            job: forseti.job.AbsJob,
-            options: dict,
-            logger: logging.Logger,
-            completion_callback=None
-    ) -> None:
+    def run(self, parent, job: forseti.job.AbsJob, options: dict,
+            logger: logging.Logger, completion_callback=None) -> None:
 
         results: typing.List[typing.Any] = []
-        if isinstance(job, forseti.job.AbsWorkflow):
 
-            try:
-                presults = self._run_pre_tasks(parent, job, options, logger)
-                results += presults
+        temp_dir = tempfile.TemporaryDirectory()
+        with temp_dir as build_dir:
+            if isinstance(job, forseti.job.AbsWorkflow):
 
-            except TaskFailed as e:
+                try:
+                    pre_results = self._run_pre_tasks(parent, job, options,
+                                                      build_dir, logger)
 
-                logger.error(
-                    "Job stopped during pre-task phase. Reason: {}".format(e)
-                )
+                    results += pre_results
 
-                return
+                    if isinstance(job, forseti.job.Workflow):
+                        new_options = self._get_additional_options(
+                            parent,
+                            job,
+                            options,
+                            pre_results
+                        )
 
-            try:
-                results += self._run_main_tasks(parent,
-                                                job,
-                                                options,
-                                                presults,
-                                                logger)
+                        if new_options:
+                            options = {**options, **new_options}
+                    else:
+                        new_options = {}
+                except forseti.job.JobCancelled:
+                    return
 
-            except TaskFailed as e:
+                except TaskFailed as e:
 
-                logger.error(
-                    "Job stopped during main tasks phase. Reason: {}".format(e)
-                )
+                    logger.error(
+                        "Job stopped during pre-task phase. "
+                        "Reason: {}".format(e)
+                    )
 
-                return
+                    return
 
-            try:
-                results += self._run_post_tasks(parent,
-                                                job,
-                                                options,
-                                                results,
-                                                logger)
+                try:
+                    results += self._run_main_tasks(parent,
+                                                    job,
+                                                    options,
+                                                    pre_results,
+                                                    new_options,
+                                                    build_dir,
+                                                    logger)
 
-            except TaskFailed as e:
+                except TaskFailed as e:
 
-                logger.error(
-                    "Job stopped during post-task phase. Reason: {}".format(e)
-                )
+                    logger.error(
+                        "Job stopped during main tasks phase. "
+                        "Reason: {}".format(e)
+                    )
 
-                return
+                    return
 
-            logger.debug("Generating report")
-            report = job.generate_report(results, **options)
-            if report:
-                logger.info(report)
+                try:
+                    results += self._run_post_tasks(parent, job, options,
+                                                    results, build_dir,
+                                                    logger)
 
-    def _run_main_tasks(
-            self,
-            parent,
-            job: forseti.job.AbsWorkflow,
-            options,
-            pretask_results,
-            logger
-    ) -> list:
+                except TaskFailed as e:
+
+                    logger.error(
+                        "Job stopped during post-task phase. "
+                        "Reason: {}".format(e)
+                    )
+
+                    return
+
+                logger.debug("Generating report")
+                report = job.generate_report(results, **options)
+                if report:
+                    logger.info(report)
+
+    def _run_main_tasks(self, parent, job: forseti.job.AbsWorkflow, options,
+                        pretask_results, additional_data, working_dir,
+                        logger) -> list:
 
         results = []
 
@@ -201,16 +214,19 @@ class UsingExternalManagerForAdapter(AbsRunner):
             i = -1
             runner.dialog.setRange(0, 0)
             runner.dialog.setWindowTitle(job.name)
+
             try:
                 logger.addHandler(runner.progress_dialog_box_handler)
 
                 # Run the main tasks. Keep track of the progress
                 for new_task_metadata \
                         in job.discover_task_metadata(pretask_results,
+                                                      additional_data,
                                                       **options):
 
                     main_task_builder = forseti.tasks.TaskBuilder(
-                        forseti.tasks.MultiStageTaskBuilder()
+                        forseti.tasks.MultiStageTaskBuilder(working_dir),
+                        working_dir
                     )
 
                     job.create_new_task(main_task_builder, **new_task_metadata)
@@ -247,7 +263,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 logger.removeHandler(runner.progress_dialog_box_handler)
             return results
 
-    def _run_post_tasks(self, parent, job, options, results, logger) -> list:
+    def _run_post_tasks(self, parent, job, options, results, working_dir,
+                        logger) -> list:
         _results = []
         with self._manager.open(parent=parent,
                                 runner=worker.WorkRunnerExternal3) as runner:
@@ -257,7 +274,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 logger.addHandler(runner.progress_dialog_box_handler)
 
                 finalization_task_builder = forseti.tasks.TaskBuilder(
-                    forseti.tasks.MultiStageTaskBuilder()
+                    forseti.tasks.MultiStageTaskBuilder(working_dir),
+                    working_dir
                 )
 
                 job.completion_task(finalization_task_builder,
@@ -286,7 +304,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
             finally:
                 logger.removeHandler(runner.progress_dialog_box_handler)
 
-    def _run_pre_tasks(self, parent, job, options, logger):
+    def _run_pre_tasks(self, parent, job, options, working_dir, logger):
         results = []
 
         with self._manager.open(parent=parent,
@@ -297,7 +315,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
 
             try:
                 task_builder = forseti.tasks.TaskBuilder(
-                    forseti.tasks.MultiStageTaskBuilder()
+                    forseti.tasks.MultiStageTaskBuilder(working_dir),
+                    working_dir
                 )
 
                 job.initial_task(task_builder, **options)
@@ -324,3 +343,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 return results
             finally:
                 logger.removeHandler(runner.progress_dialog_box_handler)
+
+    @staticmethod
+    def _get_additional_options(parent, job, options, pretask_results) -> dict:
+
+        return job.get_additional_info(parent, options, pretask_results)

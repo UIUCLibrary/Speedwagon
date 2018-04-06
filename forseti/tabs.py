@@ -1,4 +1,5 @@
 import abc
+import sys
 import traceback
 import enum
 import typing
@@ -503,6 +504,8 @@ class WorkflowsTab(ItemSelectionTab):
             msg.exec()
 
         except Exception as exc:
+            traceback.print_tb(exc.__traceback__)
+            print(exc, file=sys.stderr)
             msg = QtWidgets.QMessageBox(self.parent)
             msg.setIcon(QtWidgets.QMessageBox.Warning)
             msg.setWindowTitle(exc.__class__.__name__)

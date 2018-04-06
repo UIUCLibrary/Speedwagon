@@ -7,7 +7,11 @@ import typing
 import forseti.tasks
 import forseti.tools.options
 import forseti.worker
+from PyQt5 import QtWidgets
 
+
+class JobCancelled(Exception):
+    pass
 
 class AbsJob(metaclass=abc.ABCMeta):
     active = True
@@ -71,11 +75,8 @@ class AbsWorkflow(AbsJob):
         super().__init__()
 
     @abc.abstractmethod
-    def discover_task_metadata(
-            self,
-            initial_results: typing.List[typing.Any],
-            **user_args
-    ) -> typing.List[dict]:
+    def discover_task_metadata(self, initial_results: typing.List[typing.Any],
+                               additional_data, **user_args) -> typing.List[dict]:
         pass
 
     def completion_task(
@@ -104,6 +105,23 @@ class AbsWorkflow(AbsJob):
     # @abc.abstractmethod
     # def user_options(self):
     #     return {}
+
+
+class Workflow(AbsWorkflow):
+
+    def get_additional_info(self, parent: QtWidgets.QWidget,
+                            options: dict, pretask_results: list) -> dict:
+        """If a user needs to be prompted for more information, run this
+
+        Args:
+            parent: QtWidget to build off of
+            options:  Dictionary of existing user settings
+            pretask_results: results of the pretask, if any
+
+        Returns: Any additional configurations that needs to be added to a job
+
+        """
+        return dict()
 
 
 class AbsDynamicFinder(metaclass=abc.ABCMeta):
@@ -149,7 +167,6 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
 
                 if issubclass(module_class, self.base_class) \
                         and module_class.active:
-
                     yield module_class.name, module_class
 
         except ImportError as e:

@@ -1,4 +1,5 @@
 import abc
+import os
 
 import collections
 import enum
@@ -74,8 +75,20 @@ class Subtask(AbsSubtask):
         self._result: Result = None
         # TODO: refactor into state machine
         self._status = TaskStatus.IDLE
+        self._working_dir = ""
+        self.task_working_dir = ""
 
         self._parent_task_log_q: Deque[str] = None
+
+    @property
+    def subtask_working_dir(self):
+        if not os.path.exists(self._working_dir):
+            os.makedirs(self._working_dir)
+        return self._working_dir
+
+    @subtask_working_dir.setter
+    def subtask_working_dir(self, value):
+        self._working_dir = value
 
     @property  # type: ignore
     def parent_task_log_q(self) -> Deque[str]:
@@ -248,6 +261,7 @@ class MultiStageTask(Task):
         super().__init__()
         # Todo: use the results builder from validate
         self._main_subtasks: List[AbsSubtask] = []
+        self.working_dir = ""
 
     @property
     def main_subtasks(self):
@@ -368,7 +382,7 @@ class BaseTaskBuilder(AbsTaskBuilder):
         self._pretask: Optional[AbsSubtask] = None
         self._posttask: Optional[AbsSubtask] = None
 
-    def add_subtask(self, task: AbsSubtask) -> None:
+    def add_subtask(self, task: Subtask) -> None:
         self._main_subtasks.append(task)
 
     def build_task(self) -> MultiStageTask:
@@ -403,20 +417,90 @@ class BaseTaskBuilder(AbsTaskBuilder):
 
 class TaskBuilder:
     # The director
-    def __init__(self, builder: BaseTaskBuilder) -> None:
+    _task_counter = 0
+
+
+    def __init__(self, builder: BaseTaskBuilder, working_dir) -> None:
         self._builder = builder
+        self._working_dir = working_dir
+        self._subtask_counter = 0
+        TaskBuilder._task_counter += 1
+        self.task_id = TaskBuilder._task_counter
 
     def build_task(self) -> MultiStageTask:
         task = self._builder.build_task()
         return task
 
     def add_subtask(self, subtask: Subtask):
+        self._subtask_counter += 1
+
+        if subtask.name is not None:
+            task_type = subtask.name
+        else:
+            task_type = str(subtask.__class__.__name__)
+
+        task_id = str(self.task_id).zfill(3)
+        subtask_id = str(self._subtask_counter).zfill(3)
+
+        task_working_dir = self._build_task_working_path(self._working_dir, task_id)
+        subtask_working_dir = self._build_working_path2(task_working_dir, task_type, subtask_id)
+
+        subtask.subtask_working_dir = subtask_working_dir
+        subtask.task_working_dir = task_working_dir
         self._builder.add_subtask(subtask)
 
+    # @staticmethod
+    # def _build_working_path(temp_path, task_type, task_id, subtask_id):
+    #     working_dir = os.path.join(temp_path, task_id, task_type, str(subtask_id))
+    #     return working_dir
+
+    @staticmethod
+    def _build_working_path2(task_working_path, task_type, subtask_id):
+        working_dir = os.path.join(task_working_path, task_type, str(subtask_id))
+        return working_dir
+
+    @staticmethod
+    def _build_task_working_path(temp_path, task_id):
+        working_dir = os.path.join(temp_path, task_id)
+        return working_dir
+
+
     def set_pretask(self, subtask: Subtask):
+
+        self._subtask_counter += 1
+
+        if subtask.name is not None:
+            task_type = subtask.name
+        else:
+            task_type = str(subtask.__class__.__name__)
+
+        task_id = str(self.task_id).zfill(3)
+        subtask_id = str(self._subtask_counter).zfill(3)
+
+        task_working_dir = self._build_task_working_path(self._working_dir, task_id)
+        subtask_working_dir = self._build_working_path2(task_working_dir, task_type, subtask_id)
+
+        subtask.subtask_working_dir = subtask_working_dir
+        subtask.task_working_dir = task_working_dir
         self._builder.set_pretask(subtask)
 
     def set_posttask(self, subtask):
+        self._subtask_counter += 1
+
+        if subtask.name is not None:
+            task_type = subtask.name
+        else:
+            task_type = str(subtask.__class__.__name__)
+
+        task_id = str(self.task_id).zfill(3)
+        subtask_id = str(self._subtask_counter).zfill(3)
+
+        task_working_dir = self._build_task_working_path(self._working_dir, task_id)
+        subtask_working_dir = self._build_working_path2(task_working_dir, task_type, subtask_id)
+
+        subtask.subtask_working_dir = subtask_working_dir
+        subtask.task_working_dir = task_working_dir
+
         self._builder.set_posttask(subtask)
 
     @staticmethod
@@ -457,6 +541,12 @@ class QueueAdapter:
 
 class MultiStageTaskBuilder(BaseTaskBuilder):
 
+    def __init__(self, working_dir) -> None:
+        super().__init__()
+        self._working_dir = working_dir
+
     @property
     def task(self) -> MultiStageTask:
-        return MultiStageTask()
+        task = MultiStageTask()
+        task.working_dir = self._working_dir
+        return task

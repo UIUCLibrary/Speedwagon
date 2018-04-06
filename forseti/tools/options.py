@@ -62,17 +62,6 @@ class UserOption2(metaclass=abc.ABCMeta):
         pass
 
 
-class UserOptionPythonDataType(UserOption):
-    def __init__(self, label_text, data_type=str) -> None:
-        warnings.warn("Use UserOptionPythonDataType2 instead", DeprecationWarning)
-        super().__init__(label_text)
-        self.data_type = data_type
-        self.data = None
-
-    def is_valid(self) -> bool:
-        return isinstance(self.data, self.data_type)
-
-
 class UserOptionPythonDataType2(UserOption2):
     def __init__(self, label_text, data_type=str) -> None:
         super().__init__(label_text)
@@ -107,14 +96,24 @@ class AbsCustomData2(metaclass=abc.ABCMeta):
 
 
 class UserOptionCustomDataTypeWidgets(UserOption2):
-    def __init__(self, label_text, data_type: typing.Type[AbsCustomData2]) -> None:
+    def __init__(
+            self,
+            label_text,
+            data_type: typing.Type[AbsCustomData2]
+    ) -> None:
+
         super().__init__(label_text)
         self.data_type = data_type
         self.data = None
 
 
 class UserOptionCustomDataType(UserOption2):
-    def __init__(self, label_text, data_type: typing.Type[AbsCustomData2]) -> None:
+    def __init__(
+            self,
+            label_text,
+            data_type: typing.Type[AbsCustomData2]
+    ) -> None:
+
         super().__init__(label_text)
         self.data_type = data_type
         self.data = None

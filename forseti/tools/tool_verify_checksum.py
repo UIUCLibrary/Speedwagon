@@ -40,7 +40,10 @@ class JobValues(enum.Enum):
 
 class ChecksumFile(options.AbsBrowseableWidget):
     def browse_clicked(self):
-        selection = QtWidgets.QFileDialog.getOpenFileName(filter="Checksum files (*.md5)")
+        selection = QtWidgets.QFileDialog.getOpenFileName(
+            filter="Checksum files (*.md5)"
+        )
+
         if selection[0]:
             self.data = selection[0]
             self.editingFinished.emit()
@@ -78,8 +81,14 @@ class VerifyChecksum(forseti.job.AbsTool):
         if len(results_with_failures) > 0:
             messages = []
             for checksum_file, failed_files in results_with_failures.items():
-                status = f"{len(failed_files)} files failed checksum validation."
-                failed_files_bullets = [f"* {failure[ResultValues.FILENAME]}" for failure in failed_files]
+                status = \
+                    f"{len(failed_files)} files failed checksum validation."
+
+                failed_files_bullets = [
+                    f"* {failure[ResultValues.FILENAME]}"
+                    for failure in failed_files
+                ]
+
                 failure_list = "\n".join(failed_files_bullets)
                 single_message = f"{checksum_file}" \
                                  f"\n\n{status}" \
@@ -96,40 +105,63 @@ class VerifyChecksum(forseti.job.AbsTool):
         return report
 
     @classmethod
-    def sort_results(cls, results) -> typing.Dict[str, typing.List[typing.Dict[ResultValues, typing.Union[bool, str]]]]:
-        """ Sort the data and put it into a dictionary with the source as the key
+    def sort_results(
+            cls,
+            results
+    ) -> typing.Dict[str, typing.List[typing.Dict[ResultValues,
+                                                  typing.Union[bool, str]]]]:
+        """ Sort the data and put it into a dictionary with the source as the
+        key
 
         Args:
             results:
 
-        Returns: Dictionary of organized data where the source is the key and the value contains all the files updated
+        Returns: Dictionary of organized data where the source is the key and
+                 the value contains all the files updated
 
         """
-        new_results: typing.DefaultDict[str, list] = collections.defaultdict(list)
-        sorted_results = sorted(results, key=lambda it: it[ResultValues.CHECKSUM_REPORT_FILE])
-        for k, v in itertools.groupby(sorted_results, key=lambda it: it[ResultValues.CHECKSUM_REPORT_FILE]):
+        new_results: typing.DefaultDict[str, list] = \
+            collections.defaultdict(list)
+
+        sorted_results = sorted(
+            results, key=lambda it: it[ResultValues.CHECKSUM_REPORT_FILE]
+        )
+
+        for k, v in itertools.groupby(
+                sorted_results,
+                key=lambda it: it[ResultValues.CHECKSUM_REPORT_FILE]
+        ):
             for result_data in v:
                 new_results[k].append(result_data)
         return dict(new_results)
 
     @classmethod
-    def find_failed(cls, new_results: typing.Dict[str,
-                                                  typing.List[
-                                                      typing.Dict[ResultValues,
-                                                                  typing.Union[bool, str]]]]) -> dict:
+    def find_failed(
+            cls,
+            new_results: typing.Dict[
+                str,
+                typing.List[typing.Dict[ResultValues,
+                                        typing.Union[bool, str]]]]
+    ) -> dict:
+
         failed: typing.DefaultDict[str, list] = collections.defaultdict(list)
         for checksum_file, results in new_results.items():
 
-            for failed_item in filter(lambda it: not it[ResultValues.VALID], results):
+            for failed_item in \
+                    filter(lambda it: not it[ResultValues.VALID], results):
+
                 failed[checksum_file].append(failed_item)
         return dict(failed)
 
 
 class VerifyChecksumBatchSingle(VerifyChecksum):
     name = "Verify Checksum Batch [Single]"
-    description = "Verify checksum values in checksum batch file, report errors. " \
-                  "\n\nInput is a text file containing a list of multiple files and their md5 values. The listed files " \
-                  "are expected to be siblings to the checksum file."
+    description = "Verify checksum values in checksum batch file, report " \
+                  "errors. " \
+                  "\n" \
+                  "\nInput is a text file containing a list of multiple " \
+                  "files and their md5 values. The listed files are " \
+                  "expected to be siblings to the checksum file."
 
     @staticmethod
     def discover_task_metadata(**user_args):
@@ -137,7 +169,11 @@ class VerifyChecksumBatchSingle(VerifyChecksum):
         relative_path = os.path.dirname(user_args[UserArgs.INPUT.value])
         checksum_report_file = os.path.abspath(user_args[UserArgs.INPUT.value])
 
-        for report_md5_hash, filename in hathi_validate.process.extracts_checksums(checksum_report_file):
+        for report_md5_hash, filename in \
+                hathi_validate.process.extracts_checksums(
+                    checksum_report_file
+                ):
+
             new_job = {
                 JobValues.EXPECTED_HASH.value: report_md5_hash,
                 JobValues.ITEM_FILENAME.value: filename,
@@ -150,7 +186,8 @@ class VerifyChecksumBatchSingle(VerifyChecksum):
     @staticmethod
     def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            options.UserOptionCustomDataType(UserArgs.INPUT.value, ChecksumData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value,
+                                             ChecksumData),
 
         ]
 
@@ -159,16 +196,21 @@ class VerifyChecksumBatchSingle(VerifyChecksum):
         input_data = user_args[UserArgs.INPUT.value]
         if input_data is None:
             raise ValueError("Missing value in input")
-        if not os.path.exists(input_data) or not os.path.splitext(input_data)[1] == ".md5":
+        if not os.path.exists(input_data) \
+                or not os.path.splitext(input_data)[1] == ".md5":
             raise ValueError("Invalid user arguments")
 
 
 class VerifyChecksumBatchMultiple(VerifyChecksum):
     name = "Verify Checksum Batch [Multiple]"
-    description = "Verify checksum values in checksum batch file, report errors. " \
-                  "\n\nInput is path that contains subdirectory which a text file containing a " \
-                  "list of multiple files and their md5 values. The listed files are expected to be siblings to the " \
-                  "checksum file."
+    description = "Verify checksum values in checksum batch file, " \
+                  "report errors. " \
+                  "\n" \
+                  "\nInput is path that contains subdirectory which a text " \
+                  "file containing a list of multiple files and their md5 " \
+                  "values. The listed files are expected to be siblings to " \
+                  "the checksum file."
+
     active = False
 
     @staticmethod
@@ -181,7 +223,11 @@ class VerifyChecksumBatchMultiple(VerifyChecksum):
                     continue
 
                 checksum_report_file = os.path.join(root, file_)
-                for report_md5_hash, filename in hathi_validate.process.extracts_checksums(checksum_report_file):
+                for report_md5_hash, filename in \
+                        hathi_validate.process.extracts_checksums(
+                            checksum_report_file
+                        ):
+
                     new_job = {
                         JobValues.EXPECTED_HASH.value: report_md5_hash,
                         JobValues.ITEM_FILENAME.value: filename,
@@ -194,7 +240,8 @@ class VerifyChecksumBatchMultiple(VerifyChecksum):
     @staticmethod
     def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            options.UserOptionCustomDataType(UserArgs.INPUT.value, options.FolderData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value,
+                                             options.FolderData),
         ]
 
     @staticmethod
@@ -236,16 +283,16 @@ class ChecksumJob(forseti.worker.ProcessJobWorker):
         #     "path": kwargs['checksum_path'],
         # }
         if expected != actual_md5:
-            self.log(f"Hash mismatch for {filename}. Expected: {expected}. Actual: {actual_md5}")
+            self.log(
+                f"Hash mismatch for {filename}. "
+                f"Expected: {expected}. Actual: {actual_md5}"
+            )
+
             result[ResultValues.VALID] = False
         else:
             self.log("MD5 for {} matches".format(filename))
             result[ResultValues.VALID] = True
-        # if expected != actual_md5:
-        #     self.log(f"Hash mismatch for {filename}. Expected: {expected}. Actual: {actual_md5}")
-        #     task_result['valid'] = False
-        # else:
-        #     task_result['valid'] = True
+
         self.result = result
         self.logger.debug("Done validating {}".format(filename))
         # logging.debug("Done with {}".format(filename))

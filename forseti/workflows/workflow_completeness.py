@@ -52,6 +52,7 @@ class CompletenessWorkflow(AbsWorkflow):
         ]
 
     def discover_task_metadata(self, initial_results: typing.List[typing.Any],
+                               additional_data,
                                **user_args) -> typing.List[dict]:
         jobs = []
 
@@ -102,11 +103,8 @@ class CompletenessWorkflow(AbsWorkflow):
                 subtask=ValidateOCFilesUTF8Task(package_path))
 
     @classmethod
-    def generate_report(
-            cls,
-            results: typing.List[forseti.tasks.Result],
-            **user_args
-    ) -> typing.Optional[str]:
+    def generate_report(cls, results: typing.List[forseti.tasks.Result],
+                        **user_args) -> typing.Optional[str]:
 
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
         _result_grouped = itertools.groupby(results_sorted, lambda x: x.source)
