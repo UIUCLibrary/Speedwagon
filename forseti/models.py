@@ -1,3 +1,4 @@
+import sys
 import typing
 import warnings
 from abc import abstractmethod
@@ -7,7 +8,6 @@ from forseti.job import AbsJob
 from PyQt5 import QtCore
 
 from forseti.tools import options
-from forseti.tools.options import ToolOptionDataType
 
 
 class JobModelData(enum.Enum):
@@ -39,7 +39,8 @@ class ItemListModel(QtCore.QAbstractTableModel):
         return len(self.jobs)
 
     @staticmethod
-    def _extract_job_metadata(job:typing.Type[AbsJob], data_type: JobModelData):
+    def _extract_job_metadata(job: typing.Type[AbsJob],
+                              data_type: JobModelData):
         static_data_values: typing.Dict[JobModelData, typing.Any] = {
             JobModelData.NAME: job.name,
             JobModelData.DESCRIPTION: job.description
@@ -52,11 +53,20 @@ OptionPair = namedtuple("OptionPair", ("label", "data"))
 
 class ToolsListModel(ItemListModel):
 
-    def data(self, index, role=None) -> typing.Union[str, typing.Type[AbsJob], QtCore.QVariant]:
+    def data(
+            self,
+            index,
+            role=None
+    ) -> typing.Union[str, typing.Type[AbsJob], QtCore.QSize, QtCore.QVariant]:
+
         if index.isValid():
             data = self.jobs[index.row()]
             if role == QtCore.Qt.DisplayRole or role == QtCore.Qt.EditRole:
-                return self._extract_job_metadata(job=data, data_type=JobModelData(index.column()))
+                return self._extract_job_metadata(
+                    job=data,
+                    data_type=JobModelData(index.column())
+                )
+
             if role == QtCore.Qt.UserRole:
                 return self.jobs[index.row()]
             if role == QtCore.Qt.SizeHintRole:
@@ -66,11 +76,20 @@ class ToolsListModel(ItemListModel):
 
 class WorkflowListModel(ItemListModel):
 
-    def data(self, index, role=None) -> typing.Union[str, typing.Type[AbsJob], QtCore.QVariant]:
+    def data(
+            self,
+            index,
+            role=None
+    ) -> typing.Union[str, typing.Type[AbsJob], QtCore.QSize, QtCore.QVariant]:
+
         if index.isValid():
             data = self.jobs[index.row()]
             if role == QtCore.Qt.DisplayRole or role == QtCore.Qt.EditRole:
-                return self._extract_job_metadata(job=data, data_type=JobModelData(index.column()))
+                return self._extract_job_metadata(
+                    job=data,
+                    data_type=JobModelData(index.column())
+                )
+
             if role == QtCore.Qt.UserRole:
                 job = self.jobs[index.row()]
                 return job
@@ -103,8 +122,14 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
             return QtCore.Qt.ItemIsEnabled
 
         column = index.column()
+
         if column == 0:
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
+            return QtCore.Qt.ItemIsEnabled \
+                   | QtCore.Qt.ItemIsSelectable \
+                   | QtCore.Qt.ItemIsEditable
+
+        else:
+            print(column, file=sys.stderr)
 
 
 class ToolOptionsPairsModel(ToolOptionsModel):
@@ -146,54 +171,34 @@ class ToolOptionsPairsModel(ToolOptionsModel):
         return options
 
 
-class ToolOptionsModel2(ToolOptionsModel):
+def _lookup_constant(value: int) -> typing.List[str]:
+    res = []
+    for m in [
+        attr for attr in dir(QtCore.Qt)
+        if not callable(getattr(QtCore.Qt, attr)) and not attr.startswith("_")
+    ]:
 
-    def __init__(self, data: typing.List[ToolOptionDataType], parent=None) -> None:
-        warnings.warn("Use ToolOptionsModel3 instead", DeprecationWarning)
-        super().__init__(parent)
-        self._data: typing.List[ToolOptionDataType] = data
-
-    def data(self, index, role=None):
-        if index.isValid():
-            if role == QtCore.Qt.DisplayRole:
-                return str(self._data[index.row()].data)
-            if role == QtCore.Qt.EditRole:
-                return self._data[index.row()].data
-            if role == QtCore.Qt.UserRole:
-                return self._data[index.row()]
-        return QtCore.QVariant()
-
-    def get(self):
-        options = dict()
-        for data in self._data:
-            options[data.name] = data.data
-        return options
-
-    def headerData(self, index, Qt_Orientation, role=None):
-        if Qt_Orientation == QtCore.Qt.Vertical:
-            if role == QtCore.Qt.DisplayRole:
-                title = self._data[index].name
-                return str(title)
-        return QtCore.QVariant()
-
-    def setData(self, index, data, role=None):
-        if not index.isValid():
-            return False
-        existing_data = self._data[index.row()]
-        self._data[index.row()].data = data
-        return True
+        if getattr(QtCore.Qt, m) == value:
+            if "role" in m.lower():
+                res.append(m)
+    return res
 
 
 class ToolOptionsModel3(ToolOptionsModel):
 
-    def __init__(self, data: typing.List[options.UserOptionPythonDataType], parent=None) -> None:
+    def __init__(
+            self,
+            data: typing.List[options.UserOptionPythonDataType2],
+            parent=None
+    ) -> None:
+
         if data is None:
             raise NotImplementedError
         super().__init__(parent)
 
-        self._data: typing.List[options.UserOptionPythonDataType] = data
+        self._data: typing.List[options.UserOptionPythonDataType2] = data
 
-    def data(self, index, role=None):
+    def data(self, index, role=QtCore.Qt.DisplayRole):
         if index.isValid():
             if role == QtCore.Qt.DisplayRole:
                 data = self._data[index.row()].data
@@ -206,7 +211,8 @@ class ToolOptionsModel3(ToolOptionsModel):
             if role == QtCore.Qt.UserRole:
                 return self._data[index.row()]
             if role == QtCore.Qt.SizeHintRole:
-                return QtCore.QSize(10,25)
+                return QtCore.QSize(10, 25)
+
         return QtCore.QVariant()
 
     def get(self):
@@ -225,6 +231,6 @@ class ToolOptionsModel3(ToolOptionsModel):
     def setData(self, index, data, role=None):
         if not index.isValid():
             return False
-        existing_data = self._data[index.row()]
+        # existing_data = self._data[index.row()]
         self._data[index.row()].data = data
         return True

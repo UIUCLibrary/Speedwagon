@@ -25,10 +25,13 @@ class JobValues(enum.Enum):
 
 class ZipPackages(AbsTool):
     name = "Zip Packages"
-    description = "This tool takes a folder, usually of HathiTrust packages, zips each subfolder, and copies the " \
-                  " resultant tree to a different location. Input is a root folder, usually for a HathiTrust shipment, " \
-                  " containing multiple subfolders, each one a HathiTrust digitized item." \
-                  "\nOutput is a destination location for the newly generated files."
+    description = "This tool takes a folder, usually of HathiTrust packages," \
+                  " zips each subfolder, and copies the resultant tree to a " \
+                  "different location. Input is a root folder, usually for a" \
+                  " HathiTrust shipment, containing multiple subfolders, " \
+                  "each one a HathiTrust digitized item." \
+                  "\nOutput is a destination location for the newly " \
+                  "generated files."
 
     def __init__(self) -> None:
 
@@ -43,7 +46,11 @@ class ZipPackages(AbsTool):
         return ZipPackageJob
 
     @staticmethod
-    def discover_task_metadata(*args, **kwargs) -> typing.List[dict]:  # type: ignore
+    def discover_task_metadata(
+            *args,
+            **kwargs
+    ) -> typing.List[dict]:  # type: ignore
+
         source = kwargs[UserArgs.SOURCE.value]
         output = kwargs[UserArgs.OUTPUT.value]
         ZipPackages.validate_user_options(**kwargs)
@@ -68,14 +75,19 @@ class ZipPackages(AbsTool):
     def generate_report(cls, *args, **kwargs):
         if "kwargs" in kwargs:
             output = kwargs["kwargs"][UserArgs.OUTPUT.value]
-            return "Zipping complete. All files written to \"{}\".".format(output)
+            return \
+                "Zipping complete. All files written to \"{}\".".format(output)
+
         return "Zipping complete. All files written to output location"
 
     @staticmethod
     def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            options.UserOptionCustomDataType(UserArgs.SOURCE.value, options.FolderData),
-            options.UserOptionCustomDataType(UserArgs.OUTPUT.value, options.FolderData),
+            options.UserOptionCustomDataType(UserArgs.SOURCE.value,
+                                             options.FolderData),
+
+            options.UserOptionCustomDataType(UserArgs.OUTPUT.value,
+                                             options.FolderData),
         ]
 
 
@@ -94,7 +106,9 @@ class ZipPackageJob(ProcessJobWorker):
         my_logger.setLevel(logging.INFO)
         with self.log_config(my_logger):
             self.log("Zipping {}".format(source_path))
-            hathizip.process.compress_folder(path=source_path, dst=destination_path)
+            hathizip.process.compress_folder(path=source_path,
+                                             dst=destination_path)
+
             basename = os.path.basename(source_path)
             newfile = os.path.join(destination_path, f"{basename}.zip")
             self.log(f"Created {newfile}")

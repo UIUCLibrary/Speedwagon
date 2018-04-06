@@ -45,7 +45,7 @@ setup(
         "HathiValidate>=0.3.3",
         "pyhathiprep",
         "hathichecksumupdater",
-        "uiucprescon-packager>=0.1.0",
+        "uiucprescon-packager>=0.2.0",
         "uiucprescon-getmarc"
     ],
     packages=[
