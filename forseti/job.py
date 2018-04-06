@@ -10,6 +10,9 @@ import forseti.worker
 from PyQt5 import QtWidgets
 
 
+class JobCancelled(Exception):
+    pass
+
 class AbsJob(metaclass=abc.ABCMeta):
     active = True
     description: str = None
