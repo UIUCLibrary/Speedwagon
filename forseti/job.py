@@ -72,11 +72,8 @@ class AbsWorkflow(AbsJob):
         super().__init__()
 
     @abc.abstractmethod
-    def discover_task_metadata(
-            self,
-            initial_results: typing.List[typing.Any],
-            **user_args
-    ) -> typing.List[dict]:
+    def discover_task_metadata(self, initial_results: typing.List[typing.Any],
+                               additional_data, **user_args) -> typing.List[dict]:
         pass
 
     def completion_task(
@@ -109,12 +106,8 @@ class AbsWorkflow(AbsJob):
 
 class Workflow(AbsWorkflow):
 
-    def get_additional_info(
-            self,
-            parent: QtWidgets.QWidget,
-            options: dict,
-            pretask_results: list
-    ) -> dict:
+    def get_additional_info(self, parent: QtWidgets.QWidget,
+                            options: dict, pretask_results: list) -> dict:
         """If a user needs to be prompted for more information, run this
 
         Args:
@@ -125,7 +118,7 @@ class Workflow(AbsWorkflow):
         Returns: Any additional configurations that needs to be added to a job
 
         """
-        pass
+        return dict()
 
 
 class AbsDynamicFinder(metaclass=abc.ABCMeta):
