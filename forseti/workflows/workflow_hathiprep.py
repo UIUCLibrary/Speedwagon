@@ -160,11 +160,9 @@ class HathiPrepWorkflow(Workflow):
         return options.UserOptionCustomDataType("input",
                                                 options.FolderData),
 
-    def initial_task(
-            self,
-            task_builder: forseti.tasks.TaskBuilder,
-            **user_args
-    ) -> None:
+    def initial_task(self, task_builder: forseti.tasks.TaskBuilder,
+                     **user_args) -> None:
+
         root = user_args['input']
         task_builder.add_subtask(FindPackagesTask(root))
 
