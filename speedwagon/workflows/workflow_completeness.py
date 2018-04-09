@@ -8,14 +8,14 @@ from contextlib import contextmanager
 
 import hathi_validate
 
-import forseti
-from forseti.tasks import Subtask
-from forseti.tools import options
-from forseti.job import AbsWorkflow
+import speedwagon
+from speedwagon.tasks import Subtask
+from speedwagon.tools import options
+from speedwagon.job import AbsWorkflow
 from hathi_validate import manifest as validate_manifest
 from hathi_validate import report as hathi_reporter
 from hathi_validate import result as hathi_result
-from forseti.worker import GuiLogHandler
+from speedwagon.worker import GuiLogHandler
 from hathi_validate import process as validate_process
 from hathi_validate import validator
 
@@ -77,7 +77,7 @@ class CompletenessWorkflow(AbsWorkflow):
             )
         return jobs
 
-    def create_new_task(self, task_builder: "forseti.tasks.TaskBuilder",
+    def create_new_task(self, task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args):
         package_path = os.path.normcase(job_args['package_path'])
         request_ocr_validation = job_args['check_ocr_data']
@@ -103,7 +103,7 @@ class CompletenessWorkflow(AbsWorkflow):
                 subtask=ValidateOCFilesUTF8Task(package_path))
 
     @classmethod
-    def generate_report(cls, results: typing.List[forseti.tasks.Result],
+    def generate_report(cls, results: typing.List[speedwagon.tasks.Result],
                         **user_args) -> typing.Optional[str]:
 
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
@@ -141,7 +141,7 @@ class CompletenessWorkflow(AbsWorkflow):
 
     def initial_task(
             self,
-            task_builder: forseti.tasks.TaskBuilder,
+            task_builder: speedwagon.tasks.TaskBuilder,
             **user_args
     ) -> None:
 

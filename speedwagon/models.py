@@ -4,10 +4,10 @@ import warnings
 from abc import abstractmethod
 from collections import namedtuple
 import enum
-from forseti.job import AbsJob
+from .job import AbsJob
 from PyQt5 import QtCore
 
-from forseti.tools import options
+from .import tools
 
 
 class JobModelData(enum.Enum):
@@ -53,11 +53,9 @@ OptionPair = namedtuple("OptionPair", ("label", "data"))
 
 class ToolsListModel(ItemListModel):
 
-    def data(
-            self,
-            index,
-            role=None
-    ) -> typing.Union[str, typing.Type[AbsJob], QtCore.QSize, QtCore.QVariant]:
+    def data(self, index, role=None) -> \
+            typing.Union[str, typing.Type[AbsJob],
+                         QtCore.QSize, QtCore.QVariant]:
 
         if index.isValid():
             data = self.jobs[index.row()]
@@ -188,7 +186,7 @@ class ToolOptionsModel3(ToolOptionsModel):
 
     def __init__(
             self,
-            data: typing.List[options.UserOptionPythonDataType2],
+            data: typing.List[tools.options.UserOptionPythonDataType2],
             parent=None
     ) -> None:
 
@@ -196,7 +194,7 @@ class ToolOptionsModel3(ToolOptionsModel):
             raise NotImplementedError
         super().__init__(parent)
 
-        self._data: typing.List[options.UserOptionPythonDataType2] = data
+        self._data: typing.List[tools.options.UserOptionPythonDataType2] = data
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if index.isValid():

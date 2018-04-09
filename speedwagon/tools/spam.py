@@ -2,10 +2,10 @@ import random
 import time
 import typing
 
-from forseti.worker import ProcessJobWorker
-from forseti import worker
+from speedwagon.worker import ProcessJobWorker
+from speedwagon import worker
 # from frames.tool import SelectDirectory, DummyJob
-from forseti.tools.abstool import AbsTool
+from speedwagon.tools.abstool import AbsTool
 
 
 class Spam(AbsTool):

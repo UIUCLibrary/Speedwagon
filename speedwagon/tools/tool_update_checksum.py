@@ -6,11 +6,11 @@ import os
 import itertools
 from PyQt5 import QtWidgets
 
-from forseti.worker import ProcessJobWorker
-from forseti.job import AbsTool
+from speedwagon.worker import ProcessJobWorker
+from speedwagon.job import AbsTool
 # from .options import ToolOptionDataType
-from forseti.tools import options
-from forseti import worker
+from speedwagon.tools import options
+from speedwagon import worker
 # from pyhathiprep import checksum
 from hathi_checksum import checksum_report, update_report
 from hathi_checksum import utils as hathi_checksum_utils

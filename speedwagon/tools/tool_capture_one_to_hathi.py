@@ -4,10 +4,10 @@ from contextlib import contextmanager
 
 import os
 
-from forseti import worker
-from forseti.job import AbsTool
-from forseti.tools import options
-from forseti.worker import ProcessJobWorker, GuiLogHandler
+from speedwagon import worker
+from speedwagon.job import AbsTool
+from speedwagon.tools import options
+from speedwagon.worker import ProcessJobWorker, GuiLogHandler
 
 import uiucprescon.packager
 import uiucprescon.packager.packages

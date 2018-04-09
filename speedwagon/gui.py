@@ -1,13 +1,13 @@
 import logging
 import sys
 import traceback
-import forseti.about
+from . import about
 import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui
-import forseti.job
-import forseti.tabs
-from forseti.ui import main_window_shell_ui
-from forseti import worker
+from . import job, tabs
+import speedwagon.tabs
+from .ui import main_window_shell_ui
+from . import worker
 from collections import namedtuple
 
 TAB_WIDGET_SIZE_POLICY = QtWidgets.QSizePolicy(
@@ -20,7 +20,6 @@ CONSOLE_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.Minimum
 )
 
-PROJECT_NAME = "Forseti"
 
 Setting = namedtuple("Setting", ("label", "widget"))
 
@@ -92,7 +91,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # Tabs
         ###########################################################
 
-        self.tools_tab = forseti.tabs.ToolTab(
+        self.tools_tab = tabs.ToolTab(
             parent=self,
             tools=tools,
             work_manager=self._work_manager,
@@ -101,7 +100,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         self.tabWidget.addTab(self.tools_tab.tab, "Tools")
 
-        self.workflows_tab = forseti.tabs.WorkflowsTab(
+        self.workflows_tab = tabs.WorkflowsTab(
             parent=self,
             workflows=workflows,
             work_manager=self._work_manager,
@@ -168,7 +167,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         super().closeEvent(*args, **kwargs)
 
     def show_about_window(self):
-        forseti.about.about_dialog_box(parent=self)
+        about.about_dialog_box(parent=self)
 
     def start_workflow(self):
 
@@ -191,10 +190,10 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     icon = pkg_resources.resource_stream(__name__, "favicon.ico")
     app.setWindowIcon(QtGui.QIcon(icon.name))
-    app.setApplicationVersion(f"{forseti.__version__}")
-    app.setApplicationDisplayName(f"{forseti.__name__.title()}")
-    tools = forseti.job.available_tools()
-    workflows = forseti.job.available_workflows()
+    app.setApplicationVersion(f"{speedwagon.__version__}")
+    app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
+    tools = job.available_tools()
+    workflows = job.available_workflows()
     with worker.ToolJobManager() as work_manager:
 
         windows = MainWindow(work_manager=work_manager,
@@ -202,7 +201,7 @@ def main():
                              workflows=workflows)
 
         windows.setWindowTitle("")
-        # windows.setWindowTitle(f"Version {forseti.__version__}")
+        # windows.setWindowTitle(f"Version {speedwagon.__version__}")
         rc = app.exec_()
     sys.exit(rc)
 
