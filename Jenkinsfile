@@ -69,7 +69,7 @@ pipeline {
             steps {
                 parallel(
                     "PyTest": {
-                        node(label: "Windows&&DevPi") {
+                        node(label: "Windows&&Python3") {
                             checkout scm
                             // bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
                             bat "${tool 'Python3.6.3_Win64'} -m tox -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}" 
@@ -77,7 +77,7 @@ pipeline {
                          }
                     },
                     "Behave": {
-                        node(label: "Windows&&DevPi") {
+                        node(label: "Windows&&Python3") {
                             checkout scm
                             bat "${tool 'Python3.6.3_Win64'} -m tox -e bdd --  --junit --junit-directory reports" 
                             junit "reports/*.xml"
@@ -95,7 +95,7 @@ pipeline {
             steps {
                 parallel(
                         "Documentation": {
-                            node(label: "Windows&&DevPi") {
+                            node(label: "Windows&&Python3") {
                                 checkout scm
                                 bat "${tool 'Python3.6.3_Win64'} -m tox -e docs"
                                 script{
@@ -112,7 +112,7 @@ pipeline {
                             }
                         },
                         "MyPy": {
-                            node(label: "Windows&&DevPi") {
+                            node(label: "Windows&&Python3") {
                                 script {
                                     checkout scm
                                     def mypy_rc = bat returnStatus: true, script: "make test-mypy --html-report reports/mypy_report --junit-xml reports/mypy.xml"
