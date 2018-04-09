@@ -72,26 +72,33 @@ pipeline {
         stage("Unit tests") {
             when {
                 expression { params.UNIT_TESTS == true }
-            }
-            steps {
-                parallel(
-                    "PyTest": {
-                        node(label: "Windows&&Python3") {
-                            checkout scm
-                            // bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
-                            bat "${tool 'Python3.6.3_Win64'} -m tox -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}" 
-                            junit "reports/junit-${env.NODE_NAME}-pytest.xml"
-                         }
-                    },
-                    "Behave": {
-                        node(label: "Windows&&Python3") {
-                            checkout scm
-                            bat "${tool 'Python3.6.3_Win64'} -m tox -e bdd --  --junit --junit-directory reports" 
-                            junit "reports/*.xml"
+            }    
+            parallel{
+                stage("PyTest") {
+                    agent {
+                        node {
+                            label "Windows&&Python3"
                         }
                     }
-                )
-                
+                    steps{
+                        checkout scm
+                        // bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
+                        bat "${tool 'Python3.6.3_Win64'} -m tox -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}" 
+                        junit "reports/junit-${env.NODE_NAME}-pytest.xml"
+                        }
+                }
+                stage("Behave") {
+                    agent {
+                        node {
+                            label "Windows&&Python3"
+                        }
+                    }
+                    steps {
+                        checkout scm
+                        bat "${tool 'Python3.6.3_Win64'} -m tox -e bdd --  --junit --junit-directory reports" 
+                        junit "reports/*.xml"
+                    }
+                }
             }
         }
         stage("Additional tests") {
@@ -99,42 +106,51 @@ pipeline {
                 expression { params.ADDITIONAL_TESTS == true }
             }
 
-            steps {
-                parallel(
-                        "Documentation": {
-                            node(label: "Windows&&Python3") {
-                                checkout scm
-                                bat "${tool 'Python3.6.3_Win64'} -m tox -e docs"
-                                script{
-                                    // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
-                                    def alljob = env.JOB_NAME.tokenize("/") as String[]
-                                    def project_name = alljob[0]
-                                    dir('.tox/dist') {
-                                        zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,6)}.zip"
-                                        dir("html"){
-                                            stash includes: '**', name: "HTML Documentation"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "MyPy": {
-                            node(label: "Windows&&Python3") {
-                                script {
-                                    checkout scm
-                                    def mypy_rc = bat returnStatus: true, script: "make test-mypy --html-report reports/mypy_report --junit-xml reports/mypy.xml"
-                                    if (mypy_rc == 0) {
-                                        echo "MyPy found no issues"
-                                        
-                                    } else {
-                                        echo "MyPy complained with an exit code of ${mypy_rc}."
-                                    }
-                                    junit 'reports/mypy.xml'
+            parallel {
+                stage("Documentation"){
+                    agent {
+                        node {
+                            label "Windows&&Python3"
+                        }
+                    }
+                    steps {
+                        checkout scm
+                        bat "${tool 'Python3.6.3_Win64'} -m tox -e docs"
+                        script{
+                            // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
+                            def alljob = env.JOB_NAME.tokenize("/") as String[]
+                            def project_name = alljob[0]
+                            dir('.tox/dist') {
+                                zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,6)}.zip"
+                                dir("html"){
+                                    stash includes: '**', name: "HTML Documentation"
                                 }
                             }
                         }
-                )
+                    }
+                }
+                stage("MyPy") {
+                    agent {
+                        node {
+                            label "Windows&&Python3"
+                        }
+                    }
+                    steps{
+                        script {
+                            checkout scm
+                            def mypy_rc = bat returnStatus: true, script: "make test-mypy --html-report reports/mypy_report --junit-xml reports/mypy.xml"
+                            if (mypy_rc == 0) {
+                                echo "MyPy found no issues"
+                                
+                            } else {
+                                echo "MyPy complained with an exit code of ${mypy_rc}."
+                            }
+                            junit 'reports/mypy.xml'
+                        }
+                    }
+                }
             }
+
         }
 
         stage("Packaging") {
@@ -142,34 +158,44 @@ pipeline {
                 expression { params.PACKAGE == true }
             }
 
-            steps {
-                parallel(
-                        "Source and Wheel formats": {
-                            bat "call make.bat"
-                        },
-                        "Windows Standalone": {
-                            node(label: "Windows&&VS2015&&DevPi") {
-                                deleteDir()
-                                unstash "Source"
-                                bat "call make.bat standalone"
-                                dir("dist") {
-                                    stash includes: "*.msi", name: "msi"
-                                }
+            parallel {
+                stage("Source and Wheel formats"){
+                    steps{
+                        bat "call make.bat"
+                    }
+                    post {
+                        always {
+                            dir("dist") {
+                                archiveArtifacts artifacts: "*.whl", fingerprint: true
+                                archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
+                                archiveArtifacts artifacts: "*.zip", fingerprint: true
                             }
-                        }, 
-
-                )
-            }
-            post {
-              success {
-                  dir("dist"){
-                      unstash "msi"
-                      archiveArtifacts artifacts: "*.whl", fingerprint: true
-                      archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
-                      archiveArtifacts artifacts: "*.zip", fingerprint: true
-                      archiveArtifacts artifacts: "*.msi", fingerprint: true
+                        }
+                    }
                 }
-              }
+                stage("Windows Standalone"){
+                    agent {
+                        node {
+                            label "Windows&&VS2015&&DevPi"
+                        }
+                    }
+                    when { not { changeRequest() }}
+                    steps {
+                        deleteDir()
+                        unstash "Source"
+                        bat "call make.bat standalone"
+                        dir("dist") {
+                            stash includes: "*.msi", name: "msi"
+                        }
+                    }
+                    post {
+                        success {
+                            dir("dist") {
+                                archiveArtifacts artifacts: "*.msi", fingerprint: true
+                            }
+                        }
+                    }
+                }
             }
 
         }
@@ -199,55 +225,56 @@ pipeline {
             when {
                 expression { params.DEPLOY_DEVPI == true && (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev")}
             }
-            steps {
-                parallel(
-                        "Source Distribution: .tar.gz": {
-                            script {
-                                def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
-                                def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
-                                node("Windows&&DevPi") {
-                                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                        bat "${tool 'Python3.6.3_Win64'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                                        bat "${tool 'Python3.6.3_Win64'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                                        echo "Testing Source package in devpi"
-                                        bat "${tool 'Python3.6.3_Win64'} -m devpi test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s tar.gz"
-                                    }
+            parallel {
+                stage("Source Distribution: .tar.gz") {
+                    steps {
+                        script {
+                            def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
+                            def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
+                            node("Windows&&DevPi") {
+                                withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                                    bat "${tool 'Python3.6.3_Win64'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                                    bat "${tool 'Python3.6.3_Win64'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                                    echo "Testing Source package in devpi"
+                                    bat "${tool 'Python3.6.3_Win64'} -m devpi test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s tar.gz"
                                 }
-
-                            }
-                        },
-                        "Source Distribution: .zip": {
-                            script {
-                                def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
-                                def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
-                                node("Windows&&DevPi") {
-                                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                        bat "${tool 'Python3.6.3_Win64'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                                        bat "${tool 'Python3.6.3_Win64'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                                        echo "Testing Source package in devpi"
-                                        bat "${tool 'Python3.6.3_Win64'} -m devpi test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s zip"
-                                    }
-                                }
-
-                            }
-                        },
-                        "Built Distribution: .whl": {
-                            script {
-                                def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
-                                def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
-                                node("Windows&&DevPi") {
-                                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                        bat "${tool 'Python3.6.3_Win64'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                                        bat "${tool 'Python3.6.3_Win64'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                                        echo "Testing Whl package in devpi"
-                                        bat " ${tool 'Python3.6.3_Win64'} -m devpi test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s whl"
-                                    }
-                                }
-
                             }
                         }
-                )
+                    }
+                }
+                stage("Source Distribution: .zip") {
+                    steps {
+                        script {
+                            def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
+                            def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
+                            node("Windows&&DevPi") {
+                                withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                                    bat "${tool 'Python3.6.3_Win64'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                                    bat "${tool 'Python3.6.3_Win64'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                                    echo "Testing Source package in devpi"
+                                    bat "${tool 'Python3.6.3_Win64'} -m devpi test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s zip"
+                                }
+                            }
+                        }
+                    }
+                }
+                stage("Built Distribution: .whl") {
+                    steps {
+                        script {
+                            def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
+                            def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
+                            node("Windows&&DevPi") {
+                                withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                                    bat "${tool 'Python3.6.3_Win64'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                                    bat "${tool 'Python3.6.3_Win64'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                                    echo "Testing Whl package in devpi"
+                                    bat " ${tool 'Python3.6.3_Win64'} -m devpi test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s whl"
+                                }
+                            }
+                        }
 
+                    }
+                }
             }
             post {
                 success {
