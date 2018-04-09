@@ -34,6 +34,13 @@ pipeline {
     }
     
     stages {
+        stage("Dummy") {
+            agent any
+            when { changeRequest() }
+            steps {
+                echo "Change request triggered"
+            }
+        }
         stage("Testing Jira epic"){
             agent any
             when {
@@ -146,6 +153,9 @@ pipeline {
                 parallel(
                         "Source and Wheel formats": {
                             bat "call make.bat"
+                            archiveArtifacts artifacts: "*.whl", fingerprint: true
+                            archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
+                            archiveArtifacts artifacts: "*.zip", fingerprint: true
                         },
                         "Windows Standalone": {
                             node(label: "Windows&&VS2015&&DevPi") {
@@ -154,24 +164,13 @@ pipeline {
                                 bat "call make.bat standalone"
                                 dir("dist") {
                                     stash includes: "*.msi", name: "msi"
+                                    archiveArtifacts artifacts: "*.msi", fingerprint: true
                                 }
                             }
                         }, 
 
                 )
             }
-            post {
-              success {
-                  dir("dist"){
-                      unstash "msi"
-                      archiveArtifacts artifacts: "*.whl", fingerprint: true
-                      archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
-                      archiveArtifacts artifacts: "*.zip", fingerprint: true
-                      archiveArtifacts artifacts: "*.msi", fingerprint: true
-                }
-              }
-            }
-
         }
 
         stage("Deploying to Devpi") {
