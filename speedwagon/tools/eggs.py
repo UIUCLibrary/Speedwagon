@@ -2,11 +2,11 @@ import random
 import time
 import typing
 
-from forseti import worker
+from speedwagon import worker
 # from frames.tool import SelectDirectory, EggsJob
-from forseti.tools.abstool import AbsTool
+from speedwagon.tools.abstool import AbsTool
 
-from forseti.worker import ProcessJobWorker
+from speedwagon.worker import ProcessJobWorker
 class Eggs(AbsTool):
     name = "Eggs"
     description = "Sed odio sem, vestibulum a lacus sed, posuere porta neque. Ut urna arcu, dignissim a dolor ac, " \

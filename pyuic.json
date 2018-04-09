@@ -1,8 +1,8 @@
 {
     "files": [
         [
-            "forseti/ui/*.ui",
-            "forseti/ui"
+            "speedwagon/ui/*.ui",
+            "speedwagon/ui"
 
         ]
     ],

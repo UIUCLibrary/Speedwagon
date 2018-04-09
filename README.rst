@@ -1,7 +1,7 @@
 About
 =====
 
-Forseti
+Speedwagon
 
 Collection of tools and workflows for DS
 

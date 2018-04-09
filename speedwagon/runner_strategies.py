@@ -4,12 +4,9 @@ import tempfile
 
 import typing
 
-import forseti.job
-import forseti.worker
-import forseti.workflows
-import forseti.tasks
-from forseti import worker
-import forseti.gui
+from .job import AbsJob, AbsTool, AbsWorkflow, Workflow, JobCancelled
+from . import tasks
+from . import worker
 
 
 class TaskFailed(Exception):
@@ -19,14 +16,8 @@ class TaskFailed(Exception):
 class AbsRunner(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def run(
-            self,
-            parent,
-            job: forseti.job.AbsJob,
-            options: dict,
-            logger: logging.Logger,
-            completion_callback=None
-    ) -> None:
+    def run(self, parent, job: AbsJob, options: dict, logger: logging.Logger,
+            completion_callback=None) -> None:
         pass
 
 
@@ -37,7 +28,7 @@ class RunRunner:
     def run(
             self,
             parent,
-            tool: forseti.job.AbsJob,
+            tool: AbsJob,
             options: dict,
             logger: logging.Logger,
             completion_callback=None
@@ -60,7 +51,7 @@ class UsingExternalManager(AbsRunner):
 
     def run(self,
             parent,
-            job: forseti.job.AbsJob,
+            job: AbsJob,
             options: dict,
             logger: logging.Logger,
             completion_callback=None):
@@ -80,7 +71,7 @@ class UsingExternalManager(AbsRunner):
                     if current == total:
                         runner.dialog.accept()
 
-                if isinstance(job, forseti.job.AbsTool):
+                if isinstance(job, AbsTool):
                     runner.abort_callback = self.on_runner_aborted
                     logger.addHandler(runner.progress_dialog_box_handler)
                     runner.dialog.setRange(0, 0)
@@ -125,14 +116,14 @@ class UsingExternalManagerForAdapter(AbsRunner):
         if current == total:
             runner.dialog.accept()
 
-    def run(self, parent, job: forseti.job.AbsJob, options: dict,
+    def run(self, parent, job: AbsJob, options: dict,
             logger: logging.Logger, completion_callback=None) -> None:
 
         results: typing.List[typing.Any] = []
 
         temp_dir = tempfile.TemporaryDirectory()
         with temp_dir as build_dir:
-            if isinstance(job, forseti.job.AbsWorkflow):
+            if isinstance(job, AbsWorkflow):
 
                 try:
                     pre_results = self._run_pre_tasks(parent, job, options,
@@ -140,7 +131,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
 
                     results += pre_results
 
-                    if isinstance(job, forseti.job.Workflow):
+                    if isinstance(job, Workflow):
                         new_options = self._get_additional_options(
                             parent,
                             job,
@@ -152,7 +143,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                             options = {**options, **new_options}
                     else:
                         new_options = {}
-                except forseti.job.JobCancelled:
+                except JobCancelled:
                     return
 
                 except TaskFailed as e:
@@ -201,7 +192,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 if report:
                     logger.info(report)
 
-    def _run_main_tasks(self, parent, job: forseti.job.AbsWorkflow, options,
+    def _run_main_tasks(self, parent, job: AbsWorkflow, options,
                         pretask_results, additional_data, working_dir,
                         logger) -> list:
 
@@ -224,8 +215,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
                                                       additional_data,
                                                       **options):
 
-                    main_task_builder = forseti.tasks.TaskBuilder(
-                        forseti.tasks.MultiStageTaskBuilder(working_dir),
+                    main_task_builder = tasks.TaskBuilder(
+                        tasks.MultiStageTaskBuilder(working_dir),
                         working_dir
                     )
 
@@ -235,7 +226,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                     for subtask in new_task.subtasks:
                         i += 1
 
-                        adapted_tool = forseti.worker.SubtaskJobAdapter(
+                        adapted_tool = worker.SubtaskJobAdapter(
                             subtask
                         )
 
@@ -273,8 +264,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
             try:
                 logger.addHandler(runner.progress_dialog_box_handler)
 
-                finalization_task_builder = forseti.tasks.TaskBuilder(
-                    forseti.tasks.MultiStageTaskBuilder(working_dir),
+                finalization_task_builder = tasks.TaskBuilder(
+                    tasks.MultiStageTaskBuilder(working_dir),
                     working_dir
                 )
 
@@ -284,7 +275,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
 
                 task = finalization_task_builder.build_task()
                 for subtask in task.main_subtasks:
-                    adapted_tool = forseti.worker.SubtaskJobAdapter(subtask)
+                    adapted_tool = worker.SubtaskJobAdapter(subtask)
                     self._manager.add_job(adapted_tool, adapted_tool.settings)
                 self._manager.start()
 
@@ -314,8 +305,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
             logger.addHandler(runner.progress_dialog_box_handler)
 
             try:
-                task_builder = forseti.tasks.TaskBuilder(
-                    forseti.tasks.MultiStageTaskBuilder(working_dir),
+                task_builder = tasks.TaskBuilder(
+                    tasks.MultiStageTaskBuilder(working_dir),
                     working_dir
                 )
 
@@ -323,7 +314,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
 
                 task = task_builder.build_task()
                 for subtask in task.main_subtasks:
-                    adapted_tool = forseti.worker.SubtaskJobAdapter(subtask)
+                    adapted_tool = worker.SubtaskJobAdapter(subtask)
                     self._manager.add_job(adapted_tool, adapted_tool.settings)
 
                 self._manager.start()

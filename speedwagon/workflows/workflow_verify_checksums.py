@@ -5,9 +5,9 @@ from typing import DefaultDict, Iterable, Optional, Dict, List, Any, Union
 
 import hathi_validate.process
 
-from forseti.job import AbsWorkflow
-from forseti.tools import options
-import forseti.tasks
+from speedwagon.job import AbsWorkflow
+from speedwagon.tools import options
+import speedwagon.tasks
 import enum
 
 
@@ -79,7 +79,7 @@ class ChecksumWorkflow(AbsWorkflow):
             raise ValueError("Invalid user arguments")
 
     def initial_task(self,
-                     task_builder: forseti.tasks.TaskBuilder,
+                     task_builder: speedwagon.tasks.TaskBuilder,
                      **user_args) -> None:
         root = user_args['Input']
         for checksum_report_file in self._locate_checksum_files(root):
@@ -87,7 +87,7 @@ class ChecksumWorkflow(AbsWorkflow):
                 ReadChecksumReportTask(checksum_file=checksum_report_file))
 
     def create_new_task(self,
-                        task_builder: "forseti.tasks.TaskBuilder",
+                        task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args):
         filename = job_args['filename']
         file_path = job_args['path']
@@ -101,10 +101,10 @@ class ChecksumWorkflow(AbsWorkflow):
 
     @classmethod
     def generate_report(cls,
-                        results: List[forseti.tasks.Result],
+                        results: List[speedwagon.tasks.Result],
                         **user_args) -> Optional[str]:
         def validation_result_filter(
-                task_result: forseti.tasks.Result) -> bool:
+                task_result: speedwagon.tasks.Result) -> bool:
             if task_result.source != ValidateChecksumTask:
                 return False
             return True
@@ -175,7 +175,7 @@ class ChecksumWorkflow(AbsWorkflow):
         return dict(new_results)
 
 
-class ReadChecksumReportTask(forseti.tasks.Subtask):
+class ReadChecksumReportTask(speedwagon.tasks.Subtask):
 
     def __init__(self, checksum_file):
         super().__init__()
@@ -203,7 +203,7 @@ class ReadChecksumReportTask(forseti.tasks.Subtask):
         return True
 
 
-class ValidateChecksumTask(forseti.tasks.Subtask):
+class ValidateChecksumTask(speedwagon.tasks.Subtask):
 
     def __init__(self,
                  file_name,

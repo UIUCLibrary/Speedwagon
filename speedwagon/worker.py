@@ -1,9 +1,6 @@
 import concurrent.futures
 import traceback
 
-# import forseti.job
-# import forseti.tasks
-
 # from abc import ABCMeta, abstractmethod
 import contextlib
 import logging
@@ -14,7 +11,7 @@ import sys
 from PyQt5 import QtCore, QtWidgets
 from collections import namedtuple
 import multiprocessing
-from forseti.tasks import AbsSubtask, QueueAdapter
+from .tasks import AbsSubtask, QueueAdapter
 
 MessageLog = namedtuple("MessageLog", ("message",))
 
