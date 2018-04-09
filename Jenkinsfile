@@ -161,34 +161,43 @@ pipeline {
                 expression { params.PACKAGE == true }
             }
 
-            steps {
-                parallel(
-                        "Source and Wheel formats": {
-                            bat "call make.bat"
-                        },
-                        "Windows Standalone": {
-                            node(label: "Windows&&VS2015&&DevPi") {
-                                deleteDir()
-                                unstash "Source"
-                                bat "call make.bat standalone"
-                                dir("dist") {
-                                    stash includes: "*.msi", name: "msi"
-                                }
+            parallel {
+                stage("Source and Wheel formats"){
+                    steps{
+                        bat "call make.bat"
+                    }
+                    post {
+                        always {
+                            dir("dist") {
+                                archiveArtifacts artifacts: "*.whl", fingerprint: true
+                                archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
+                                archiveArtifacts artifacts: "*.zip", fingerprint: true
                             }
-                        }, 
-
-                )
-            }
-            post {
-              success {
-                  dir("dist"){
-                      unstash "msi"
-                      archiveArtifacts artifacts: "*.whl", fingerprint: true
-                      archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
-                      archiveArtifacts artifacts: "*.zip", fingerprint: true
-                      archiveArtifacts artifacts: "*.msi", fingerprint: true
+                        }
+                    }
                 }
-              }
+                stage("Windows Standalone"){
+                    agent {
+                        node {
+                            label "Windows&&VS2015&&DevPi"
+                        }
+                    }
+                    steps {
+                        deleteDir()
+                        unstash "Source"
+                        bat "call make.bat standalone"
+                        dir("dist") {
+                            stash includes: "*.msi", name: "msi"
+                        }
+                    }
+                    post {
+                        success {
+                            dir("dist") {
+                                archiveArtifacts artifacts: "*.msi", fingerprint: true
+                            }
+                        }
+                    }
+                }
             }
 
         }
