@@ -7,11 +7,11 @@ from PyQt5 import QtCore, QtWidgets
 
 import logging
 
-import forseti.models
-from forseti import worker
-import forseti.tools.tool_verify_checksum
-from forseti.job import AbsTool
-from forseti.tools import options
+import speedwagon.models
+from speedwagon import worker
+import speedwagon.tools.tool_verify_checksum
+from speedwagon.job import AbsTool
+from speedwagon.tools import options
 
 
 class EchoTool(AbsTool):
@@ -57,7 +57,7 @@ def test_model(qtbot):
     user_options = tool.get_user_options()
 
     assert isinstance(user_options, list)
-    model = forseti.models.ToolOptionsModel3(user_options)
+    model = speedwagon.models.ToolOptionsModel3(user_options)
     index = model.index(0, 0)
     model.setData(index, "hello world")
     d = model.get()
@@ -104,7 +104,7 @@ def test_work_runner(qtbot):
 
 @pytest.mark.skip("Local test only")
 def test_runner(qtbot):
-    tool = forseti.tools.tool_verify_checksum.VerifyChecksumBatchSingle()
+    tool = speedwagon.tools.tool_verify_checksum.VerifyChecksumBatchSingle()
     user_settings = {'Input': '/Users/hborcher/test_images/Brittle Books - Good/1251150/checksum.md5'}
     test_worker = worker.WorkerManager(title="test runner", tool=tool)
 

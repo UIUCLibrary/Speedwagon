@@ -8,11 +8,11 @@ import warnings
 from contextlib import contextmanager
 from functools import wraps
 
-from forseti import worker
-from forseti.job import AbsTool
+from speedwagon import worker
+from speedwagon.job import AbsTool
 # from .options import ToolOptionDataType
-from forseti.tools import options
-from forseti.worker import ProcessJobWorker, GuiLogHandler
+from speedwagon.tools import options
+from speedwagon.worker import ProcessJobWorker, GuiLogHandler
 from hathi_validate import process as validate_process
 from hathi_validate import validator
 from hathi_validate import manifest as validate_manifest

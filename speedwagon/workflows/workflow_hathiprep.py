@@ -6,9 +6,9 @@ import typing
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import Qt
 
-import forseti.tasks
-from forseti.job import Workflow, JobCancelled
-from forseti.tools import options as tool_options
+import speedwagon.tasks
+from speedwagon.job import Workflow, JobCancelled
+from speedwagon.tools import options as tool_options
 
 from uiucprescon.packager import PackageFactory
 import uiucprescon.packager.packages
@@ -178,7 +178,7 @@ class HathiPrepWorkflow(Workflow):
         return tool_options.UserOptionCustomDataType("input",
                                                      tool_options.FolderData),
 
-    def initial_task(self, task_builder: forseti.tasks.TaskBuilder,
+    def initial_task(self, task_builder: speedwagon.tasks.TaskBuilder,
                      **user_args) -> None:
         root = user_args['input']
         task_builder.add_subtask(FindPackagesTask(root))
@@ -197,7 +197,7 @@ class HathiPrepWorkflow(Workflow):
 
         return jobs
 
-    def create_new_task(self, task_builder: "forseti.tasks.TaskBuilder",
+    def create_new_task(self, task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args):
         title_page = job_args['title_page']
         source = job_args['source_path']
@@ -233,7 +233,7 @@ class HathiPrepWorkflow(Workflow):
         return extra
 
     @classmethod
-    def generate_report(cls, results: typing.List[forseti.tasks.Result],
+    def generate_report(cls, results: typing.List[speedwagon.tasks.Result],
                         **user_args) -> typing.Optional[str]:
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
         _result_grouped = itertools.groupby(results_sorted, lambda x: x.source)
@@ -268,7 +268,7 @@ class HathiPrepWorkflow(Workflow):
         return process_report
 
 
-class FindPackagesTask(forseti.tasks.Subtask):
+class FindPackagesTask(speedwagon.tasks.Subtask):
 
     def __init__(self, root) -> None:
         super().__init__()
@@ -293,7 +293,7 @@ class FindPackagesTask(forseti.tasks.Subtask):
         return True
 
 
-class MakeYamlTask(forseti.tasks.Subtask):
+class MakeYamlTask(speedwagon.tasks.Subtask):
     def __init__(self, package_id, source, title_page) -> None:
         super().__init__()
 
@@ -329,7 +329,7 @@ class MakeYamlTask(forseti.tasks.Subtask):
         return successful
 
 
-class GenerateChecksumTask(forseti.tasks.Subtask):
+class GenerateChecksumTask(speedwagon.tasks.Subtask):
 
     def __init__(self, package_id, source) -> None:
         super().__init__()
@@ -364,7 +364,7 @@ class GenerateChecksumTask(forseti.tasks.Subtask):
         return success
 
 
-class PrepTask(forseti.tasks.Subtask):
+class PrepTask(speedwagon.tasks.Subtask):
 
     def __init__(self, source, title_page) -> None:
         super().__init__()

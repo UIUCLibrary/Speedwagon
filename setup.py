@@ -49,19 +49,19 @@ setup(
         "uiucprescon-getmarc"
     ],
     packages=[
-        "forseti",
-        "forseti.tools",
-        "forseti.workflows",
-        "forseti.ui"
+        "speedwagon",
+        "speedwagon.tools",
+        "speedwagon.workflows",
+        "speedwagon.ui"
     ],
     setup_requires=['pytest-runner'],
     tests_require=['pytest', "behave", "pytest-qt"],
     python_requires=">=3.6",
     entry_points={
         "gui_scripts": [
-            'forseti = forseti.__main__:main'
+            'speedwagon = speedwagon.__main__:main'
         ]
     },
-    package_data={'forseti': ["favicon.ico"]},
+    package_data={'speedwagon': ["favicon.ico"]},
     cmdclass=cmdclass,
 )

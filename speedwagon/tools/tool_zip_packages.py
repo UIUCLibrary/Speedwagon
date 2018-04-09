@@ -5,10 +5,10 @@ import typing
 import os
 from contextlib import contextmanager
 
-from forseti import worker
-from forseti.job import AbsTool
-from forseti.worker import ProcessJobWorker, GuiLogHandler
-from forseti.tools import options
+from speedwagon import worker
+from speedwagon.job import AbsTool
+from speedwagon.worker import ProcessJobWorker, GuiLogHandler
+from speedwagon.tools import options
 import hathizip.process
 import hathizip
 

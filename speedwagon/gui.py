@@ -5,7 +5,7 @@ from . import about
 import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui
 from . import job, tabs
-import forseti.tabs
+import speedwagon.tabs
 from .ui import main_window_shell_ui
 from . import worker
 from collections import namedtuple
@@ -190,8 +190,8 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     icon = pkg_resources.resource_stream(__name__, "favicon.ico")
     app.setWindowIcon(QtGui.QIcon(icon.name))
-    app.setApplicationVersion(f"{forseti.__version__}")
-    app.setApplicationDisplayName(f"{forseti.__name__.title()}")
+    app.setApplicationVersion(f"{speedwagon.__version__}")
+    app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
     tools = job.available_tools()
     workflows = job.available_workflows()
     with worker.ToolJobManager() as work_manager:
@@ -201,7 +201,7 @@ def main():
                              workflows=workflows)
 
         windows.setWindowTitle("")
-        # windows.setWindowTitle(f"Version {forseti.__version__}")
+        # windows.setWindowTitle(f"Version {speedwagon.__version__}")
         rc = app.exec_()
     sys.exit(rc)
 

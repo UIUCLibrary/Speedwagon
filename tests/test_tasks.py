@@ -6,13 +6,13 @@ import typing
 import concurrent.futures
 import pytest
 import pickle
-import forseti.tasks
-import forseti.worker
-from forseti import worker
-from forseti.tasks import TaskBuilder
+import speedwagon.tasks
+import speedwagon.worker
+from speedwagon import worker
+from speedwagon.tasks import TaskBuilder
 
 
-class SimpleSubtask(forseti.tasks.Subtask):
+class SimpleSubtask(speedwagon.tasks.Subtask):
 
     def __init__(self, message):
         super().__init__()
@@ -28,7 +28,7 @@ class SimpleSubtask(forseti.tasks.Subtask):
         return {"r": "ad"}
 
 
-class SimplePreTask(forseti.tasks.Subtask):
+class SimplePreTask(speedwagon.tasks.Subtask):
 
     def __init__(self, message):
         super().__init__()
@@ -44,12 +44,12 @@ class SimplePreTask(forseti.tasks.Subtask):
         return {"r": "ad"}
 
 
-class SimpleMultistage(forseti.tasks.MultiStageTask):
+class SimpleMultistage(speedwagon.tasks.MultiStageTask):
     def process_subtask_results(self, subtask_results: typing.List[typing.Any]) -> typing.Any:
         return "\n".join(subtask_results)
 
 
-class SimpleTaskBuilder(forseti.tasks.BaseTaskBuilder):
+class SimpleTaskBuilder(speedwagon.tasks.BaseTaskBuilder):
 
     @property
     def task(self) -> SimpleMultistage:
@@ -67,7 +67,7 @@ def simple_task_builder(tmpdir_factory):
 def test_task_builder(simple_task_builder):
     task = simple_task_builder.build_task()
 
-    assert isinstance(task, forseti.tasks.MultiStageTask)
+    assert isinstance(task, speedwagon.tasks.MultiStageTask)
 
     assert len(task.main_subtasks) == 1
 
@@ -156,7 +156,7 @@ def test_adapter_results(simple_task_builder_with_2_subtasks):
 
     with worker.ToolJobManager() as manager:
         for subtask in new_task.main_subtasks:
-            adapted_tool = forseti.worker.SubtaskJobAdapter(subtask)
+            adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
             manager.add_job(adapted_tool, adapted_tool.settings)
         manager.start()
         results = list()
@@ -189,7 +189,7 @@ def test_adapter_logs(simple_task_builder_with_2_subtasks):
         manager.logger.addHandler(log_catcher)
 
         for subtask in new_task.main_subtasks:
-            adapted_tool = forseti.worker.SubtaskJobAdapter(subtask)
+            adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
             manager.add_job(adapted_tool, adapted_tool.settings)
         manager.start()
 
@@ -240,10 +240,10 @@ def test_adapter_results_with_pretask(tmpdir):
     new_task = builder.build_task()
 
     with worker.ToolJobManager() as manager:
-        # adapted_pretask_tool = forseti.tasks.SubtaskJobAdapter(new_task.pretask)
+        # adapted_pretask_tool = speedwagon.tasks.SubtaskJobAdapter(new_task.pretask)
         # manager.add_job(adapted_pretask_tool, adapted_pretask_tool.settings)
         for subtask in new_task.subtasks:
-            adapted_tool = forseti.worker.SubtaskJobAdapter(subtask)
+            adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
             manager.add_job(adapted_tool, adapted_tool.settings)
         manager.start()
         results = list()
@@ -268,10 +268,10 @@ def test_adapter_results_with_posttask(tmpdir):
     new_task = builder.build_task()
 
     with worker.ToolJobManager() as manager:
-        # adapted_pretask_tool = forseti.tasks.SubtaskJobAdapter(new_task.pretask)
+        # adapted_pretask_tool = speedwagon.tasks.SubtaskJobAdapter(new_task.pretask)
         # manager.add_job(adapted_pretask_tool, adapted_pretask_tool.settings)
         for subtask in new_task.subtasks:
-            adapted_tool = forseti.worker.SubtaskJobAdapter(subtask)
+            adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
             manager.add_job(adapted_tool, adapted_tool.settings)
         manager.start()
         results = list()
