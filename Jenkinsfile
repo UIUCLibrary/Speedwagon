@@ -5,6 +5,11 @@ pipeline {
     agent {
         label "Windows&&DevPi"
     }
+    
+    triggers {
+        cron('0 22 * * * ....')
+    }
+
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
     }
@@ -14,6 +19,7 @@ pipeline {
         build_number = VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
         // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
+
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "Speedwagon", description: "Name given to the project")
         booleanParam(name: "UPDATE_JIRA_EPIC", defaultValue: false, description: "Write a Update information on JIRA board")
@@ -26,6 +32,7 @@ pipeline {
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
+    
     stages {
         stage("Testing Jira epic"){
             agent any
