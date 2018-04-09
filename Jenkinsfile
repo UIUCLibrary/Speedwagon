@@ -121,7 +121,7 @@ pipeline {
                             }
                         }
                     }
-                },
+                }
                 stage("MyPy") {
                     agent {
                         node {
