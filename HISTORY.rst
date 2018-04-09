@@ -47,4 +47,5 @@ Dev
    * Added Workflow tab
    * Add Worflow API
 * Changes:
+   * Changed name to Speedwagon
    * Verify HathiTrust Package Completeness is now a Workflow (instead of a tool)
