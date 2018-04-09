@@ -4,9 +4,9 @@ import inspect
 import os
 import sys
 import typing
-import forseti.tasks
-import forseti.tools.options
-import forseti.worker
+from . import tasks
+from . import worker
+from .tools.options import UserOption2
 from PyQt5 import QtWidgets
 
 
@@ -30,7 +30,7 @@ class AbsJob(metaclass=abc.ABCMeta):
         return True
 
     def create_new_task(self,
-                        task_builder: "forseti.tasks.TaskBuilder",
+                        task_builder: tasks.TaskBuilder,
                         **job_args):
         pass
 
@@ -39,7 +39,7 @@ class AbsTool(AbsJob):
 
     @staticmethod
     @abc.abstractmethod
-    def new_job() -> typing.Type["forseti.worker.ProcessJobWorker"]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
         pass
 
     @staticmethod
@@ -48,7 +48,7 @@ class AbsTool(AbsJob):
 
     @staticmethod
     @abc.abstractmethod
-    def get_user_options() -> typing.List["forseti.tools.options.UserOption2"]:
+    def get_user_options() -> typing.List[UserOption2]:
         pass
 
     @staticmethod
@@ -81,7 +81,7 @@ class AbsWorkflow(AbsJob):
 
     def completion_task(
             self,
-            task_builder: forseti.tasks.TaskBuilder,
+            task_builder: tasks.TaskBuilder,
             results,
             **user_args
     ) -> None:
@@ -89,7 +89,7 @@ class AbsWorkflow(AbsJob):
 
     def initial_task(
             self,
-            task_builder: forseti.tasks.TaskBuilder,
+            task_builder: tasks.TaskBuilder,
             **user_args
     ) -> None:
         pass
@@ -97,7 +97,7 @@ class AbsWorkflow(AbsJob):
     @classmethod
     def generate_report(
             cls,
-            results: typing.List[forseti.tasks.Result],
+            results: typing.List[tasks.Result],
             **user_args
     ) -> typing.Optional[str]:
         pass
