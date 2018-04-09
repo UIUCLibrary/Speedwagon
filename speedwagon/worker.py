@@ -1,5 +1,6 @@
 import concurrent.futures
-import forseti.tools
+import traceback
+
 # from abc import ABCMeta, abstractmethod
 import contextlib
 import logging
@@ -7,14 +8,10 @@ import queue
 import typing
 import abc
 import sys
-import warnings
-from abc import abstractmethod, ABCMeta
 from PyQt5 import QtCore, QtWidgets
 from collections import namedtuple
 import multiprocessing
-
-
-JobPair = namedtuple("JobPair", ("job", "args"))
+from .tasks import AbsSubtask, QueueAdapter
 
 MessageLog = namedtuple("MessageLog", ("message",))
 
@@ -27,7 +24,8 @@ class NoWorkError(RuntimeError):
     pass
 
 
-class AbsJob(metaclass=QtMeta):
+class AbsJobWorker(metaclass=QtMeta):
+    name: str = None
 
     def __init__(self):
         self.result = None
@@ -60,14 +58,14 @@ class AbsJob(metaclass=QtMeta):
         new_job = job()
         new_job.set_message_queue(message_queue)
         new_job.execute(*args, **kwargs)
-        return new_job.result
-        # print(message_queue)
-        # print(job)
+        return new_job.task_result
+        # print(logger_queue)
+        # print(task)
         # print("HERER")
 
 
-class ProcessJob(AbsJob):
-    mq = None
+class ProcessJobWorker(AbsJobWorker):
+    _mq = None
 
     def __init__(self):
         super().__init__()
@@ -77,47 +75,51 @@ class ProcessJob(AbsJob):
     def process(self, *args, **kwargs):
         pass
 
-    # @classmethod
     def set_message_queue(self, value):
         pass
         self._mq = value
         # cls.mq = value
 
     def log(self, message):
-        if self.mq:
-            self.mq.put(message)
+        if self._mq:
+            self._mq.put(message)
 
 
-class WorkerMeta(type(QtCore.QObject), ABCMeta):  # type: ignore
+class JobPair(typing.NamedTuple):
+    task: ProcessJobWorker
+    args: dict
+
+
+class WorkerMeta(type(QtCore.QObject), abc.ABCMeta):  # type: ignore
     pass
 
 
-class Worker2(metaclass=ABCMeta):
+class Worker2(metaclass=abc.ABCMeta):
     @classmethod
-    @abstractmethod
+    @abc.abstractmethod
     def initialize_worker(cls) -> None:
         """Initialize the executor"""
         pass
 
 
-class Worker(metaclass=ABCMeta):
-    @abstractmethod
+class Worker(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
     def initialize_worker(self) -> None:
         """Initialize the executor"""
         pass
 
-    @abstractmethod
+    @abc.abstractmethod
     def cancel(self) -> None:
         """Shutdown the executor"""
         pass
 
-    @abstractmethod
+    @abc.abstractmethod
     def run_all_jobs(self):
         """Execute jobs in loaded in q"""
         pass
 
-    @abstractmethod
-    def add_job(self, job: typing.Type[ProcessJob], **job_args):
+    @abc.abstractmethod
+    def add_job(self, job: typing.Type[ProcessJobWorker], **job_args):
         """Load jobs into queue"""
         pass
 
@@ -154,9 +156,9 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
     @classmethod
     def initialize_worker(cls, max_workers=1):
 
-        # self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)  # TODO: Fix this
-        cls.executor = concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)  # TODO: Fix this
-        # self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)  # TODO: Fix this
+        cls.executor = concurrent.futures.ProcessPoolExecutor(
+            max_workers=max_workers
+        )  # TODO: Fix this
 
     def cancel(self):
         # if hasattr(self, "executor"):
@@ -165,22 +167,22 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
     @classmethod
     def _exec_job(cls, job, args, message_queue):
         new_job = job()
-        # new_job.set_message_queue(message_queue)
+        # new_job.set_message_queue(logger_queue)
         new_job.mq = message_queue
         fut = cls.executor.submit(new_job.execute, **args)
 
         # fut.add_done_callback(self.complete_task)
         return fut
 
-    def add_job(self, job: typing.Type[ProcessJob], **job_args):
+    def add_job(self, job: ProcessJobWorker, **job_args):
         new_job = JobPair(job, args=job_args)
         self._jobs_queue.put(new_job)
 
     def run_all_jobs(self):
 
         while self._jobs_queue.qsize() != 0:
-            job, args, message_queue = self._jobs_queue.get()
-            fut = self._exec_job(job, args, message_queue)
+            job_, args, message_queue = self._jobs_queue.get()
+            fut = self._exec_job(job_, args, message_queue)
             self._tasks.append(fut)
         # logging.debug("All jobs have been launched")
         for future in concurrent.futures.as_completed(self._tasks):
@@ -188,11 +190,11 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
             self.complete_task(future)
         self.on_completion(results=self._results)
 
-    @abstractmethod
+    @abc.abstractmethod
     def complete_task(self, fut: concurrent.futures.Future):
         pass
 
-    @abstractmethod
+    @abc.abstractmethod
     def on_completion(self, *args, **kwargs):
         pass
 
@@ -208,13 +210,21 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
 
 class ProgressMessageBoxLogHandler(logging.Handler):
 
-    def __init__(self, dialog_box: QtWidgets.QProgressDialog, level=logging.NOTSET) -> None:
+    def __init__(
+            self,
+            dialog_box: QtWidgets.QProgressDialog,
+            level=logging.NOTSET
+    ) -> None:
+
         super().__init__(level)
         self.dialog_box = dialog_box
 
     def emit(self, record):
-        self.dialog_box.setLabelText(record.msg)
-
+        try:
+            self.dialog_box.setLabelText(record.msg)
+        except RuntimeError as e:
+            print(record.msg, file=sys.stderr)
+            traceback.print_tb(e.__traceback__)
 
 
 class AbsObserver(metaclass=abc.ABCMeta):
@@ -253,8 +263,6 @@ class GuiLogHandler(logging.Handler):
         self.callback(record.msg)
 
 
-
-
 class WorkRunnerExternal2(contextlib.AbstractContextManager):
     def __init__(self, tool, options, parent):
         self.results = []
@@ -262,65 +270,131 @@ class WorkRunnerExternal2(contextlib.AbstractContextManager):
         self._options = options
         self._parent = parent
         self.abort_callback = None
-        self.jobs: queue.Queue[JobPair] = queue.Queue()
+        # self.jobs: queue.Queue[JobPair] = queue.Queue()
 
     def __enter__(self):
         self.dialog = QtWidgets.QProgressDialog(self._parent)
         self.dialog.setModal(True)
         self.dialog.setLabelText("Initializing")
         self.dialog.setWindowTitle(self._tool.name)
-        self.progress_dialog_box_handler = ProgressMessageBoxLogHandler(self.dialog)
+
+        self.progress_dialog_box_handler = \
+            ProgressMessageBoxLogHandler(self.dialog)
+
         self.dialog.canceled.connect(self.abort)
         return self
 
     def abort(self):
-        if self.abort_callback is not None:
-            self.abort_callback()
+        if self.dialog.result() == self.dialog.Accepted:
+            print("SUCESSS")
+        else:
+            if self.abort_callback is not None:
+                self.abort_callback()
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.dialog.hide()
 
 
-class ToolJobManager(contextlib.AbstractContextManager):
+class WorkRunnerExternal3(contextlib.AbstractContextManager):
+    def __init__(self, parent):
+        self.results = []
+        # self._tool = tool
+        # self._options = options
+        self._parent = parent
+        self.abort_callback = None
+        self.was_aborted = False
+        # self.jobs: queue.Queue[JobPair] = queue.Queue()
+
+    def __enter__(self):
+        self.dialog = QtWidgets.QProgressDialog(self._parent)
+        self.dialog.setModal(True)
+        self.dialog.setLabelText("Initializing")
+        # self.dialog.setWindowTitle("Running")
+
+        self.progress_dialog_box_handler = \
+            ProgressMessageBoxLogHandler(self.dialog)
+
+        self.dialog.canceled.connect(self.abort)
+        return self
+
+    def abort(self):
+        if self.dialog.result() == QtWidgets.QProgressDialog.Rejected:
+            self.was_aborted = True
+            if self.abort_callback is not None:
+                self.abort_callback()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.dialog.close()
+
+#
+# def _execute(job, **settings):
+#     pass
+
+
+class AbsJobManager(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def add_job(self, new_job, settings):
+        pass
+
+    @abc.abstractmethod
+    def start(self):
+        pass
+
+    @abc.abstractmethod
+    def flush_message_buffer(self):
+        pass
+
+    @abc.abstractmethod
+    def abort(self):
+        pass
+
+
+class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
     def __init__(self, max_workers=1) -> None:
         self.manager = multiprocessing.Manager()
         self._max_workers = max_workers
         self.active = False
-        self._pending_jobs: queue.Queue[forseti.tools.AbsTool] = queue.Queue()
+        self._pending_jobs: queue.Queue[JobPair] = queue.Queue()
         self.futures: typing.List[concurrent.futures.Future] = []
         self.logger = logging.getLogger(__name__)
 
     def __enter__(self):
         self._message_queue = self.manager.Queue()
-        self._executor = concurrent.futures.ProcessPoolExecutor(self._max_workers)
+
+        self._executor = concurrent.futures.ProcessPoolExecutor(
+            self._max_workers
+        )
+
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        print("Cleaning up")
+        self._cleanup()
+        print("Shutting down")
         self._executor.shutdown()
 
-    def open(self, options, tool, parent):
-        return WorkRunnerExternal2(tool=tool, options=options, parent=parent)
+    def open(self, parent, runner=WorkRunnerExternal2, *args, **kwargs):
+        return runner(*args, **kwargs, parent=parent)
 
-    def add_job(self, job, settings):
-        self._pending_jobs.put(JobPair(job, settings))
+    def add_job(self, new_job: ProcessJobWorker, settings: dict) -> None:
+
+        self._pending_jobs.put(JobPair(new_job, settings))
 
     def start(self):
         self.active = True
         while not self._pending_jobs.empty():
-            tool, settings = self._pending_jobs.get()
-            job_type = tool.new_job()
-            job = job_type()
-            job.mq = self._message_queue
-            fut = self._executor.submit(job.execute, **settings)
+            job_, settings = self._pending_jobs.get()
+            job_.set_message_queue(self._message_queue)
+            fut = self._executor.submit(job_.execute, **settings)
+            fut.add_done_callback(fn=lambda x: self._pending_jobs.task_done())
             self.futures.append(fut)
 
     def abort(self):
         self.active = False
         still_running = []
 
-        dialog = QtWidgets.QProgressDialog()
-        dialog.setWindowTitle("Canceling")
+        dialog = QtWidgets.QProgressDialog("Canceling", None, 0, 0)
         dialog.setModal(True)
 
         # while not self._pending_jobs.empty():
@@ -333,54 +407,66 @@ class ToolJobManager(contextlib.AbstractContextManager):
             self.futures.remove(future)
 
         dialog.setRange(0, len(still_running))
-        dialog.setWindowTitle("Canceling")
         dialog.setLabelText("Please wait")
         dialog.show()
         # TODO: set cancel dialog to force the cancellation of the future
 
         while True:
+
             try:
                 QtWidgets.QApplication.processEvents()
-                for i, future in enumerate(concurrent.futures.as_completed(still_running, timeout=.1)):
+
+                futures = concurrent.futures.as_completed(still_running,
+                                                          timeout=.1)
+
+                for i, future in enumerate(futures):
                     dialog.setValue(i + 1)
 
                 break
             except concurrent.futures.TimeoutError:
                 continue
+
         self.logger.info("Cancelled")
         self.flush_message_buffer()
         dialog.accept()
 
-    def get_results(self, timeout_callback=None) -> typing.Iterable[typing.Any]:
+    # TODO: refactor to use an overloaded method instead of a callback
+    def get_results(self, timeout_callback=None):
         total_jobs = len(self.futures)
         completed = 0
         while self.active:
             try:
-                for f in concurrent.futures.as_completed(self.futures, timeout=0.01):
+                for f in concurrent.futures.as_completed(self.futures,
+                                                         timeout=0.01):
+
                     if not f.cancelled():
                         result = f.result()
-                        self.futures.remove(f)
+                        if f in self.futures:
+                            self.futures.remove(f)
                         completed += 1
-                        self._pending_jobs.task_done()
+
                         self.flush_message_buffer()
-                        timeout_callback(completed, total_jobs)
-                        yield result
+                        if timeout_callback:
+                            timeout_callback(completed, total_jobs)
+                        if result is not None:
+                            yield result
 
                 if timeout_callback:
                     timeout_callback(completed, total_jobs)
 
                 self.active = False
                 self.futures.clear()
+                # self._pending_jobs.join()
                 self.flush_message_buffer()
 
             except concurrent.futures.TimeoutError:
                 self.flush_message_buffer()
-
                 if timeout_callback:
                     # completed = [f for f in self.futures if f.done()]
                     timeout_callback(completed, total_jobs)
                 QtWidgets.QApplication.processEvents()
-                continue
+                if self.active:
+                    continue
         self.flush_message_buffer()
         # return results
 
@@ -388,3 +474,62 @@ class ToolJobManager(contextlib.AbstractContextManager):
         while not self._message_queue.empty():
             self.logger.info(self._message_queue.get())
             self._message_queue.task_done()
+
+    def _cleanup(self):
+        if self._pending_jobs.unfinished_tasks > 0:
+            self.logger.warning("Pending jobs has unfinished tasks")
+        self._pending_jobs.join()
+
+
+class AbsJobAdapter(metaclass=abc.ABCMeta):
+    def __init__(self, adaptee):
+        self._adaptee = adaptee
+
+    @property
+    def adaptee(self):
+        return self._adaptee
+
+    @abc.abstractmethod
+    def process(self, *args, **kwargs):
+        pass
+
+    @abc.abstractmethod
+    def set_message_queue(self, value):
+        pass
+
+    @property
+    @abc.abstractmethod
+    def name(self) -> str:
+        pass
+
+
+class SubtaskJobAdapter(AbsJobAdapter,  # type: ignore
+                        ProcessJobWorker):
+
+    def __init__(self, adaptee: AbsSubtask) -> None:
+        AbsJobAdapter.__init__(self, adaptee)
+        ProcessJobWorker.__init__(self)
+        self.adaptee.parent_task_log_q = QueueAdapter()
+
+    @property
+    def queue_adapter(self):
+        return QueueAdapter()
+
+    def process(self, *args, **kwargs):
+        self.adaptee.exec()
+        self.result = self.adaptee.task_result
+
+    def set_message_queue(self, value):
+        self.adaptee.parent_task_log_q.set_message_queue(value)
+
+    @property
+    def settings(self) -> dict:
+        if self.adaptee.settings:
+            return self.adaptee.settings
+        else:
+            return {key: value for key, value in self.adaptee.__dict__.items()
+                    if key != "parent_task_log_q"}
+
+    @property
+    def name(self) -> str:  # type: ignore
+        return self.adaptee.name

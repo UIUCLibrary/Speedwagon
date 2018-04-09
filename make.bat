@@ -217,7 +217,7 @@ goto:eof
     call:_install-dev
     call:_update_gui
     setlocal
-    call venv\Scripts\activate.bat && mypy -p forseti %*
+    call venv\Scripts\activate.bat && mypy -p speedwagon %*
     endlocal
 goto:eof
 
@@ -262,7 +262,7 @@ goto:eof
 	if exist .mypy_cache rd /q /s .mypy_cache           && echo Removed .mypy_cache
 	if exist .eggs rd /q /s .eggs                       && echo Removed .eggs
 	if exist .tox rd /q /s .tox                         && echo Removed .tox
-	if exist forseti.egg-info rd /q /s forseti.egg-info && echo Removed forseti.egg-info
+	if exist speedwagon.egg-info rd /q /s speedwagon.egg-info && echo Removed speedwagon.egg-info
 	endlocal
 goto:eof
 

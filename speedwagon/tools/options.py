@@ -2,7 +2,6 @@ import abc
 import os
 import typing
 import warnings
-from abc import abstractmethod, ABCMeta
 
 from PyQt5 import QtWidgets, QtCore
 
@@ -63,17 +62,6 @@ class UserOption2(metaclass=abc.ABCMeta):
         pass
 
 
-class UserOptionPythonDataType(UserOption):
-    def __init__(self, label_text, data_type=str) -> None:
-        warnings.warn("Use UserOptionPythonDataType2 instead", DeprecationWarning)
-        super().__init__(label_text)
-        self.data_type = data_type
-        self.data = None
-
-    def is_valid(self) -> bool:
-        return isinstance(self.data, self.data_type)
-
-
 class UserOptionPythonDataType2(UserOption2):
     def __init__(self, label_text, data_type=str) -> None:
         super().__init__(label_text)
@@ -108,14 +96,24 @@ class AbsCustomData2(metaclass=abc.ABCMeta):
 
 
 class UserOptionCustomDataTypeWidgets(UserOption2):
-    def __init__(self, label_text, data_type: typing.Type[AbsCustomData2]) -> None:
+    def __init__(
+            self,
+            label_text,
+            data_type: typing.Type[AbsCustomData2]
+    ) -> None:
+
         super().__init__(label_text)
         self.data_type = data_type
         self.data = None
 
 
 class UserOptionCustomDataType(UserOption2):
-    def __init__(self, label_text, data_type: typing.Type[AbsCustomData2]) -> None:
+    def __init__(
+            self,
+            label_text,
+            data_type: typing.Type[AbsCustomData2]
+    ) -> None:
+
         super().__init__(label_text)
         self.data_type = data_type
         self.data = None
@@ -132,7 +130,6 @@ class UserOptionCustomDataType(UserOption2):
 
 
 class FileData(AbsCustomData, metaclass=abc.ABCMeta):
-
 
     def __init__(self) -> None:
         warnings.warn("Removing soon", DeprecationWarning)
@@ -173,10 +170,11 @@ class CustomItemWidget(QtWidgets.QWidget):
     def __init__(self, parent=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self._data = ""
-        self.layout = QtWidgets.QHBoxLayout(parent)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.layout)
-
+        self.inner_layout = QtWidgets.QHBoxLayout(parent)
+        self.inner_layout.setSpacing(3)
+        self.inner_layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.inner_layout)
+        self.setAutoFillBackground(True)
 
     @property
     def data(self):
@@ -193,10 +191,14 @@ class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
-        self.text_line = QtWidgets.QLineEdit()
-        self.browse_button = QtWidgets.QPushButton("Browse")
-        self.layout.addWidget(self.text_line)
-        self.layout.addWidget(self.browse_button)
+        self.text_line = QtWidgets.QLineEdit(self)
+        size_p = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                       QtWidgets.QSizePolicy.MinimumExpanding)
+        self.text_line.setSizePolicy(size_p)
+        self.browse_button = QtWidgets.QPushButton("Browse", parent=self)
+        # self.browse_button.setSizePolicy(size_p)
+        self.inner_layout.addWidget(self.text_line)
+        self.inner_layout.addWidget(self.browse_button)
         self.text_line.textEdited.connect(self._change_data)
         self.text_line.editingFinished.connect(self.editingFinished)
         # self.text_line.focus
@@ -207,8 +209,7 @@ class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
         # self.setFocusPolicy(QtCore.Qt.StrongFocus)
         # self.text_line.setFocusPolicy(QtCore.Qt.StrongFocus)
 
-
-    @abstractmethod
+    @abc.abstractmethod
     def browse_clicked(self):
         pass
 

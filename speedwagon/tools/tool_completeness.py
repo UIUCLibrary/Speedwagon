@@ -8,11 +8,11 @@ import warnings
 from contextlib import contextmanager
 from functools import wraps
 
-from forseti import worker
-from .abstool import AbsTool
-# from .tool_options import ToolOptionDataType
-from forseti.tools import tool_options
-from forseti.worker import ProcessJob, GuiLogHandler
+from speedwagon import worker
+from speedwagon.job import AbsTool
+# from .options import ToolOptionDataType
+from speedwagon.tools import options
+from speedwagon.worker import ProcessJobWorker, GuiLogHandler
 from hathi_validate import process as validate_process
 from hathi_validate import validator
 from hathi_validate import manifest as validate_manifest
@@ -23,6 +23,7 @@ import hathi_validate
 
 class HathiPackageCompleteness(AbsTool):
     name = "Verify HathiTrust Package Completeness"
+    active = False
     description = "This workflow takes as its input a directory of HathiTrust packages. It evaluates each subfolder " \
                   "as a HathiTrust package, and verifies its structural completeness (that it contains correctly " \
                   "named marc.xml, meta.yml, and checksum.md5 files); that its page files (image files, OCR, and " \
@@ -31,12 +32,14 @@ class HathiPackageCompleteness(AbsTool):
                   "(This workflow provides console feedback, but doesn’t write new files as output)."
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJob]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
+        warnings.warn("HathiPackageCompleteness is deprecated. Use CompletenessWorkflow instead", DeprecationWarning)
         return HathiPackageCompletenessJob
 
     @staticmethod
-    def discover_jobs(**user_args):
-        # HathiPackageCompleteness.validate_args(user_args['source'])
+    def discover_task_metadata(**user_args):
+        warnings.warn("HathiPackageCompleteness is deprecated. Use CompletenessWorkflow instead", DeprecationWarning)
+        # HathiPackageCompleteness.validate_user_options(user_args['source'])
         jobs = []
         for d in os.scandir(user_args['Source']):
             jobs.append({
@@ -49,30 +52,33 @@ class HathiPackageCompleteness(AbsTool):
         return jobs
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
-        check_page_data_option = tool_options.UserOptionPythonDataType2("Check for page_data in meta.yml", bool)
+    def get_user_options() -> typing.List[options.UserOption2]:
+        warnings.warn("HathiPackageCompleteness is deprecated. Use CompletenessWorkflow instead", DeprecationWarning)
+        check_page_data_option = options.UserOptionPythonDataType2("Check for page_data in meta.yml", bool)
         check_page_data_option.data = False
-        check_ocr_option = tool_options.UserOptionPythonDataType2("Check ALTO OCR xml files", bool)
-        check_ocr_utf8_option = tool_options.UserOptionPythonDataType2('Check OCR xml files are utf-8', bool)
+        check_ocr_option = options.UserOptionPythonDataType2("Check ALTO OCR xml files", bool)
+        check_ocr_utf8_option = options.UserOptionPythonDataType2('Check OCR xml files are utf-8', bool)
         check_ocr_utf8_option.data = False
         check_ocr_option.data = True
         return [
-            tool_options.UserOptionCustomDataType("Source", tool_options.FolderData),
+            options.UserOptionCustomDataType("Source", options.FolderData),
             check_page_data_option,
             check_ocr_option,
             check_ocr_utf8_option
         ]
 
     @staticmethod
-    def validate_args(Source, *args, **kwargs):
+    def validate_user_options(Source, *args, **kwargs):
+        warnings.warn("HathiPackageCompleteness is deprecated. Use CompletenessWorkflow instead", DeprecationWarning)
         src = Source
         if not src:
             raise ValueError("Missing value")
         if not os.path.exists(src) or not os.path.isdir(src):
             raise ValueError("Invalid source")
 
-    @staticmethod
-    def generate_report(*args, **kwargs):
+    @classmethod
+    def generate_report(cls, *args, **kwargs):
+        warnings.warn("HathiPackageCompleteness is deprecated. Use CompletenessWorkflow instead", DeprecationWarning)
         results = []
         user_args = kwargs['user_args']
         batch_root = user_args['Source']
@@ -97,13 +103,16 @@ class HathiPackageCompleteness(AbsTool):
                f"\n{error_report}"
 
 
-class HathiPackageCompletenessJob(ProcessJob):
+class HathiPackageCompletenessJob(ProcessJobWorker):
+    name = "Hathi Package Completeness"
 
     def __init__(self):
+        warnings.warn("HathiPackageCompletenessJob is deprecated. Use one of the CompletenessSubTasks instead", DeprecationWarning)
         super().__init__()
 
     @contextmanager
     def log_config(self, logger):
+        warnings.warn("HathiPackageCompletenessJob is deprecated. Use one of the CompletenessSubTasks instead", DeprecationWarning)
         gui_logger = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)
@@ -112,6 +121,7 @@ class HathiPackageCompletenessJob(ProcessJob):
             logger.removeHandler(gui_logger)
 
     def process(self, **kwargs):
+        warnings.warn("HathiPackageCompletenessJob is deprecated. Use one of the CompletenessSubTasks instead", DeprecationWarning)
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
 
@@ -156,6 +166,7 @@ class HathiPackageCompletenessJob(ProcessJob):
             self.log("Package completeness evaluation of {} completed".format(package_path))
 
     def _check_ocr(self, package_path) -> typing.List[hathi_result.ResultSummary]:
+        warnings.warn("HathiPackageCompletenessJob is deprecated. Use one of the CompletenessSubTasks instead", DeprecationWarning)
         errors = []
         ocr_errors = validate_process.run_validation(validator.ValidateOCRFiles(path=package_path))
         if ocr_errors:
@@ -167,6 +178,7 @@ class HathiPackageCompletenessJob(ProcessJob):
         return errors
 
     def _check_yaml(self, package_path) -> typing.List[hathi_result.ResultSummary]:
+        warnings.warn("HathiPackageCompletenessJob is deprecated. Use one of the CompletenessSubTasks instead", DeprecationWarning)
         yml_file = os.path.join(package_path, "meta.yml")
         errors = []
         report_builder = hathi_result.SummaryDirector(source=yml_file)
@@ -191,6 +203,7 @@ class HathiPackageCompletenessJob(ProcessJob):
         return errors
 
     def _check_marc(self, package_path) -> typing.List[hathi_result.ResultSummary]:
+        warnings.warn("HathiPackageCompletenessJob is deprecated. Use one of the CompletenessSubTasks instead", DeprecationWarning)
         marc_file = os.path.join(package_path, "marc.xml")
         result_builder = hathi_result.SummaryDirector(source=marc_file)
         errors = []
@@ -214,6 +227,7 @@ class HathiPackageCompletenessJob(ProcessJob):
         return errors
 
     def _check_checksums(self, package_path) -> typing.List[hathi_result.ResultSummary]:
+        warnings.warn("HathiPackageCompletenessJob is deprecated. Use one of the CompletenessSubTasks instead", DeprecationWarning)
         errors = []
         checksum_report = os.path.join(package_path, "checksum.md5")
         report_builder = hathi_result.SummaryDirector(source=checksum_report)
@@ -238,6 +252,7 @@ class HathiPackageCompletenessJob(ProcessJob):
         return errors
 
     def _check_extra_subdirectory(self, package_path) -> typing.List[hathi_result.ResultSummary]:
+        warnings.warn("HathiPackageCompletenessJob is deprecated. Use one of the CompletenessSubTasks instead", DeprecationWarning)
         errors = []
         extra_subdirectories_errors = validate_process.run_validation(
             validator.ValidateExtraSubdirectories(path=package_path))
@@ -251,6 +266,7 @@ class HathiPackageCompletenessJob(ProcessJob):
         return errors
 
     def _check_missing_package_files(self, package_path) -> typing.List[hathi_result.ResultSummary]:
+        warnings.warn("HathiPackageCompletenessJob is deprecated. Use one of the CompletenessSubTasks instead", DeprecationWarning)
         errors = []
         missing_files_errors = validate_process.run_validation(validator.ValidateMissingFiles(path=package_path))
         if missing_files_errors:
@@ -260,6 +276,7 @@ class HathiPackageCompletenessJob(ProcessJob):
         return errors
 
     def _check_missing_components(self, check_ocr: bool, package_path: str) -> typing.List[hathi_result.ResultSummary]:
+        warnings.warn("HathiPackageCompletenessJob is deprecated. Use one of the CompletenessSubTasks instead", DeprecationWarning)
         errors = []
         extensions = [".txt", ".jp2"]
         if check_ocr:
@@ -275,7 +292,7 @@ class HathiPackageCompletenessJob(ProcessJob):
         return errors
 
     def _check_ocr_utf8(self, package_path) -> typing.List[hathi_result.ResultSummary]:
-
+        warnings.warn("HathiPackageCompletenessJob is deprecated. Use one of the CompletenessSubTasks instead", DeprecationWarning)
         def filter_ocr_only(entry: os.DirEntry):
             if not entry.is_file():
                 return False

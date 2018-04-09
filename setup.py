@@ -45,21 +45,23 @@ setup(
         "HathiValidate>=0.3.3",
         "pyhathiprep",
         "hathichecksumupdater",
-        "uiucprescon-packager>=0.1.0",
+        "uiucprescon-packager>=0.2.0",
         "uiucprescon-getmarc"
     ],
     packages=[
-        "forseti",
-        "forseti.tools",
-        "forseti.ui"
+        "speedwagon",
+        "speedwagon.tools",
+        "speedwagon.workflows",
+        "speedwagon.ui"
     ],
     setup_requires=['pytest-runner'],
     tests_require=['pytest', "behave", "pytest-qt"],
     python_requires=">=3.6",
     entry_points={
         "gui_scripts": [
-            'forseti = forseti.__main__:main'
+            'speedwagon = speedwagon.__main__:main'
         ]
     },
+    package_data={'speedwagon': ["favicon.ico"]},
     cmdclass=cmdclass,
 )

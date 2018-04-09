@@ -3,10 +3,10 @@ import typing
 
 import os
 
-from forseti import worker
-from forseti.tools import tool_options
-from forseti.tools.abstool import AbsTool
-from forseti.worker import ProcessJob
+from speedwagon import worker
+from speedwagon.tools import options
+from speedwagon.job import AbsTool
+from speedwagon.worker import ProcessJobWorker
 from uiucprescon import pygetmarc
 
 
@@ -33,16 +33,16 @@ class GenerateMarcXMLFilesTool(AbsTool):
                   "Library’s catalog. "
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJob]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
         return MarcGenerator
 
     @staticmethod
-    def validate_args(**user_args):
+    def validate_user_options(**user_args):
         if not os.path.exists(user_args[UserArgs.INPUT.value]) or not os.path.isdir(user_args[UserArgs.INPUT.value]):
             raise ValueError("Invalid value in input ")
 
     @staticmethod
-    def discover_jobs(**user_args) -> typing.List[dict]:
+    def discover_task_metadata(**user_args) -> typing.List[dict]:
         jobs = []
 
         def filter_bib_id_folders(item: os.DirEntry):
@@ -63,9 +63,9 @@ class GenerateMarcXMLFilesTool(AbsTool):
         return jobs
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, tool_options.FolderData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value, options.FolderData),
         ]
 
     @classmethod
@@ -91,7 +91,7 @@ class GenerateMarcXMLFilesTool(AbsTool):
         return message
 
 
-class MarcGenerator(ProcessJob):
+class MarcGenerator(ProcessJobWorker):
 
     def process(self, *args, **kwargs):
         out_file_name = "MARC.XML"

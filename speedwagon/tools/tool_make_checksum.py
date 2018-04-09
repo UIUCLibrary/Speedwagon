@@ -6,11 +6,11 @@ import enum
 
 import itertools
 
-from forseti.worker import ProcessJob
-from .abstool import AbsTool
-from forseti.tools import tool_options
-# from .tool_options import ToolOptionDataType
-from forseti import worker
+from speedwagon.worker import ProcessJobWorker
+from speedwagon.job import AbsTool
+from speedwagon.tools import options
+# from .options import ToolOptionDataType
+from speedwagon import worker
 from pyhathiprep import checksum
 
 
@@ -76,7 +76,7 @@ class MakeChecksumBatchSingle(MakeChecksumBatch):
     #     super().__init__()
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJob]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
         return ChecksumJob
 
     @staticmethod
@@ -106,9 +106,9 @@ class MakeChecksumBatchSingle(MakeChecksumBatch):
             raise ValueError("Invalid user arguments")
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, tool_options.FolderData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value, options.FolderData),
         ]
 
 
@@ -118,7 +118,7 @@ class MakeChecksumBatchMultiple(MakeChecksumBatch):
                   "\nInput: Path to a root directory that contains subdirectories to generate checksum.md5 files"
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJob]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
         return ChecksumJob
 
     @staticmethod
@@ -153,9 +153,9 @@ class MakeChecksumBatchMultiple(MakeChecksumBatch):
         return jobs
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, tool_options.FolderData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value, options.FolderData),
         ]
 
     @staticmethod
@@ -168,7 +168,7 @@ class MakeChecksumBatchMultiple(MakeChecksumBatch):
             raise ValueError("Invalid user arguments")
 
 
-class ChecksumJob(ProcessJob):
+class ChecksumJob(ProcessJobWorker):
     def process(self, *args, **kwargs):
         item_path = kwargs[JobValues.SOURCE_PATH.value]
         item_file_name = kwargs[JobValues.FILENAME.value]
@@ -186,7 +186,7 @@ class ChecksumJob(ProcessJob):
 
         }
         #
-        # self.result = {
+        # self.task_result = {
         #     "filename": source_file,
         #     "checksum": checksum.calculate_md5_hash(os.path.join(source_path, source_file))
         # }

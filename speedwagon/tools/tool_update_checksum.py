@@ -6,11 +6,11 @@ import os
 import itertools
 from PyQt5 import QtWidgets
 
-from forseti.worker import ProcessJob
-from .abstool import AbsTool
-# from .tool_options import ToolOptionDataType
-from forseti.tools import tool_options
-from forseti import worker
+from speedwagon.worker import ProcessJobWorker
+from speedwagon.job import AbsTool
+# from .options import ToolOptionDataType
+from speedwagon.tools import options
+from speedwagon import worker
 # from pyhathiprep import checksum
 from hathi_checksum import checksum_report, update_report
 from hathi_checksum import utils as hathi_checksum_utils
@@ -26,9 +26,8 @@ class ResultValues(enum.Enum):
 class UserArgs(enum.Enum):
     INPUT = "Input"
 
-# import hathi_checksum
 
-class ChecksumFile(tool_options.AbsBrowseableWidget):
+class ChecksumFile(options.AbsBrowseableWidget):
     def browse_clicked(self):
         selection = QtWidgets.QFileDialog.getOpenFileName(filter="Checksum files (*.md5)")
         if selection[0]:
@@ -36,7 +35,7 @@ class ChecksumFile(tool_options.AbsBrowseableWidget):
             self.editingFinished.emit()
 
 
-class ChecksumData(tool_options.AbsCustomData2):
+class ChecksumData(options.AbsCustomData2):
 
     @classmethod
     def is_valid(cls, value) -> bool:
@@ -52,21 +51,6 @@ class ChecksumData(tool_options.AbsCustomData2):
         return ChecksumFile()
 
 
-# @staticmethod
-# def filename() -> str:
-#     return "checksum.md5"
-#
-# @staticmethod
-# def filter() -> str:
-#     return "Checksum files (*.md5)"
-#
-# def browse_clicked(self):
-#     selection = QtWidgets.QFileDialog()
-#     if selection:
-#         self.data = selection
-#         self.editingFinished.emit()
-
-
 def find_outdated(results: typing.List[typing.Dict[ResultValues, str]]):
     for result in results:
         if result[ResultValues.CHECKSUM_ACTUAL] != result[ResultValues.CHECKSUM_EXPECTED]:
@@ -76,9 +60,8 @@ def find_outdated(results: typing.List[typing.Dict[ResultValues, str]]):
 class UpdateChecksum(AbsTool):
     @classmethod
     def generate_report(cls, *args, **kwargs):
-        user_args = kwargs['user_args']
         results = kwargs['results']
-
+        user_args = kwargs['user_args']
         outdated_items = cls.sort_results(results)
 
         report_lines = []
@@ -105,7 +88,7 @@ class UpdateChecksum(AbsTool):
         outdated_items = sorted([
             (res[ResultValues.FILENAME], res[ResultValues.CHECKSUM_SOURCE]) for res in find_outdated(results)],
             # (res['filename'], res['checksum_source']) for res in find_outdated(results)],
-                                key=lambda it: it[1])
+            key=lambda it: it[1])
         outdated_items_data: typing.DefaultDict[str, list] = collections.defaultdict(list)
         for k, v in itertools.groupby(outdated_items, key=lambda it: it[1]):
             for file_ in v:
@@ -114,15 +97,11 @@ class UpdateChecksum(AbsTool):
 
     @staticmethod
     def on_completion(*args, **kwargs):
-        # source_path = kwargs["user_args"]['input']
         for outdated_result in find_outdated(kwargs['results']):
             update_report.update_hash_value(
                 outdated_result[ResultValues.CHECKSUM_SOURCE],
-                # outdated_result['checksum_source'],
                 outdated_result[ResultValues.FILENAME],
-                # outdated_result['filename'],
                 outdated_result[ResultValues.CHECKSUM_ACTUAL]
-                # outdated_result['checksum_actual']
             )
 
 
@@ -134,11 +113,11 @@ class UpdateChecksumBatchSingle(UpdateChecksum):
     # "\nInput: path to a root folder"
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJob]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
         return ChecksumJob
 
     @staticmethod
-    def discover_jobs(**user_args):
+    def discover_task_metadata(**user_args):
         jobs = []
         md5_report = user_args[UserArgs.INPUT.value]
         # md5_report = user_args['input']
@@ -156,7 +135,7 @@ class UpdateChecksumBatchSingle(UpdateChecksum):
         pass
 
     @staticmethod
-    def validate_args(**user_args):
+    def validate_user_options(**user_args):
         input_data = user_args[UserArgs.INPUT.value]
         # input_data = user_args["input"]
 
@@ -168,12 +147,10 @@ class UpdateChecksumBatchSingle(UpdateChecksum):
             raise ValueError("Selected input is not a checksum.md5 file")
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, ChecksumData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value, ChecksumData),
         ]
-
-    #     super().on_completion(*args, **kwargs)
 
 
 class UpdateChecksumBatchMultiple(UpdateChecksum):
@@ -182,11 +159,11 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
                   "\nInput: path to a root folder"
 
     @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJob]:
+    def new_job() -> typing.Type[worker.ProcessJobWorker]:
         return ChecksumJob
 
     @staticmethod
-    def discover_jobs(**user_args) -> typing.List[dict]:
+    def discover_task_metadata(**user_args) -> typing.List[dict]:
         jobs = []
         package_root = user_args[UserArgs.INPUT.value]
         # package_root = user_args['input']
@@ -195,7 +172,6 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
                 if file_.lower() == "checksum.md5":
                     report = os.path.join(root, file_)
                     for filename, report_md5_hash in UpdateChecksumBatchMultiple.locate_files(report):
-
                         job = {
                             "filename": filename,
                             "report_md5_hash": report_md5_hash,
@@ -206,13 +182,13 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
         return jobs
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value, tool_options.FolderData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value, options.FolderData),
         ]
 
     @staticmethod
-    def validate_args(**user_args):
+    def validate_user_options(**user_args):
         input_data = user_args[UserArgs.INPUT.value]
         # input_data = user_args["input"]
         if input_data is None:
@@ -227,7 +203,7 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
             yield filename, report_md5_hash
 
 
-class ChecksumJob(ProcessJob):
+class ChecksumJob(ProcessJobWorker):
     def process(self, *args, **kwargs):
         source_path = kwargs['location']
         source_file = kwargs['filename']

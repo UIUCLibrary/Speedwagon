@@ -6,11 +6,12 @@ import time
 from PyQt5 import QtCore, QtWidgets
 
 import logging
-from forseti import worker
-import forseti.tools.verify_checksum
-from forseti.tools.abstool import AbsTool
-from forseti.tools import tool_options
-import forseti.tool
+
+import speedwagon.models
+from speedwagon import worker
+import speedwagon.tools.tool_verify_checksum
+from speedwagon.job import AbsTool
+from speedwagon.tools import options
 
 
 class EchoTool(AbsTool):
@@ -23,11 +24,11 @@ class EchoTool(AbsTool):
                   "eget, auctor nibh. Vestibulum sollicitudin sem eget enim congue tristique. Cras sed purus ac diam " \
                   "pulvinar scelerisque et efficitur justo. Duis eu nunc arcu"
 
-    def new_job(self) -> typing.Type[worker.ProcessJob]:
+    def new_job(self) -> typing.Type[worker.ProcessJobWorker]:
         return EchoJob
 
     @staticmethod
-    def discover_jobs(**user_args) -> typing.List[dict]:
+    def discover_task_metadata(**user_args) -> typing.List[dict]:
         alt = user_args.copy()
         alt["message"] = "nope"
         return [
@@ -36,13 +37,13 @@ class EchoTool(AbsTool):
         ]
 
     @staticmethod
-    def get_user_options() -> typing.List[tool_options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            tool_options.UserOptionPythonDataType2("message")
+            options.UserOptionPythonDataType2("message")
         ]
 
 
-class EchoJob(worker.ProcessJob):
+class EchoJob(worker.ProcessJobWorker):
 
     def process(self, *args, **kwargs):
         self.result = {
@@ -56,7 +57,7 @@ def test_model(qtbot):
     user_options = tool.get_user_options()
 
     assert isinstance(user_options, list)
-    model = forseti.tool.ToolOptionsModel3(user_options)
+    model = speedwagon.models.ToolOptionsModel3(user_options)
     index = model.index(0, 0)
     model.setData(index, "hello world")
     d = model.get()
@@ -67,7 +68,7 @@ def test_work_runner(qtbot):
 
 
     # results in two jobs,
-    # the first job's result is the same message as the user settings
+    # the first job's task_result is the same message as the user settings
     # the second is the message "nope"
     tool = EchoTool()
 
@@ -83,7 +84,7 @@ def test_work_runner(qtbot):
 
         assert work_runner.jobs.qsize() == 2
         assert work_runner.dialog.windowTitle() == "test runner"
-        work_runner.start()
+        work_runner._start_tool()
         work_runner.finish()
         assert work_runner.dialog.minimum() == 0
         assert work_runner.dialog.maximum() == 2
@@ -103,7 +104,7 @@ def test_work_runner(qtbot):
 
 @pytest.mark.skip("Local test only")
 def test_runner(qtbot):
-    tool = forseti.tools.verify_checksum.VerifyChecksumBatchSingle()
+    tool = speedwagon.tools.tool_verify_checksum.VerifyChecksumBatchSingle()
     user_settings = {'Input': '/Users/hborcher/test_images/Brittle Books - Good/1251150/checksum.md5'}
     test_worker = worker.WorkerManager(title="test runner", tool=tool)
 
