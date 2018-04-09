@@ -7,12 +7,10 @@ from abc import ABCMeta, abstractmethod
 
 from PyQt5 import QtWidgets, QtCore
 
-import forseti.models
-import forseti.tools
-import forseti.job
-from forseti import runner_strategies
-from forseti.tools import options
-from forseti.job import AbsWorkflow
+from . import runner_strategies
+from . import models
+from .tools import options
+from .job import AbsWorkflow, AbsTool
 
 SELECTOR_VIEW_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.MinimumExpanding,
@@ -338,7 +336,7 @@ class ToolTab(ItemSelectionTab):
     def __init__(self, parent, tools, work_manager, log_manager):
         super().__init__("Tool",
                          parent,
-                         forseti.models.ToolsListModel(tools),
+                         models.ToolsListModel(tools),
                          work_manager,
                          log_manager)
 
@@ -361,7 +359,7 @@ class ToolTab(ItemSelectionTab):
             QtCore.Qt.UserRole
         )
 
-        if issubclass(item, forseti.job.AbsTool):
+        if issubclass(item, AbsTool):
             try:
                 options = self.options_model.get()
                 item.validate_user_options(**options)
@@ -438,7 +436,7 @@ class ToolTab(ItemSelectionTab):
         # QtWidgets.QMessageBox.about(self, "Finished", "Finished")
 
     def get_item_options_model(self, tool):
-        model = forseti.models.ToolOptionsModel3(tool.get_user_options())
+        model = models.ToolOptionsModel3(tool.get_user_options())
         return model
 
 
@@ -454,7 +452,7 @@ class WorkflowsTab(ItemSelectionTab):
 
         super().__init__("Workflow",
                          parent,
-                         forseti.models.WorkflowListModel(workflows),
+                         models.WorkflowListModel(workflows),
                          work_manager, log_manager)
 
     def is_ready_to_start(self) -> bool:
@@ -483,12 +481,6 @@ class WorkflowsTab(ItemSelectionTab):
                 manager=self.work_manager)
             runner = runner_strategies.RunRunner(manager_strat)
 
-            # task = new_workflow.create_new_task(**new_task_metadata)
-            # print(task)
-            # for subtask in task.main_subtasks:
-            #     adapted_tool = forseti.tasks.SubtaskJobAdapter(subtask)
-            #     print("** {}".format(subtask))
-            #     print(adapted_tool)
             print("starting")
 
             runner.run(self.parent,
@@ -527,7 +519,7 @@ class WorkflowsTab(ItemSelectionTab):
         print("failed")
 
     def get_item_options_model(self, workflow):
-        model = forseti.models.ToolOptionsModel3(workflow().user_options())
+        model = models.ToolOptionsModel3(workflow().user_options())
         return model
         # return tool_.ToolsListModel(tool)
 
