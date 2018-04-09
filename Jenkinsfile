@@ -179,6 +179,7 @@ pipeline {
                             label "Windows&&VS2015&&DevPi"
                         }
                     }
+                    when { not { changeRequest() }}
                     steps {
                         deleteDir()
                         unstash "Source"
