@@ -30,7 +30,9 @@ pipeline {
         booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
         booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 static analysis")
         booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
-        booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a package")
+        // booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a package")
+        booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
+        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         choice(choices: 'None\nRelease_to_devpi_only\nRelease_to_devpi_and_sccm\n', description: "Release the build to production. Only available in the Master branch", name: 'RELEASE')
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update online documentation")
@@ -117,9 +119,6 @@ pipeline {
             }
         }
         stage("Additional Tests") {
-            // when {
-            //     expression { params.ADDITIONAL_TESTS == true }
-            // }
 
             parallel {
                 stage("Documentation"){
@@ -127,7 +126,7 @@ pipeline {
                         expression { params.TEST_RUN_DOCTEST == true }
                     }
                     steps {
-                        // checkout scm
+                        
                         bat "${tool 'Python3.6.3_Win64'} -m tox -e docs"
                         script{
                             // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
@@ -175,12 +174,15 @@ pipeline {
         }
 
         stage("Packaging") {
-            when {
-                expression { params.PACKAGE == true }
-            }
+            // when {
+            //     expression { params.PACKAGE == true }
+            // }
 
             parallel {
                 stage("Source and Wheel formats"){
+                    when {
+                        expression { params.PACKAGE_PYTHON_FORMATS == true }
+                    }
                     steps{
                         bat "call make.bat"
                     }
@@ -200,7 +202,17 @@ pipeline {
                             label "Windows&&VS2015&&DevPi"
                         }
                     }
-                    when { not { changeRequest() }}
+                    // PACKAGE_WINDOWS_STANDALONE
+                    when { 
+                        anyof{
+                            expression { params.PACKAGE_WINDOWS_STANDALONE == true }
+                            not { 
+                                changeRequest() 
+                            }
+
+                        }
+                        
+                    }
                     steps {
                         deleteDir()
                         unstash "Source"
