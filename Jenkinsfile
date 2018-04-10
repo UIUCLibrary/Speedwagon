@@ -116,13 +116,13 @@ pipeline {
 
             parallel {
                 stage("Documentation"){
-                    agent {
-                        node {
-                            label "Windows&&Python3"
-                        }
-                    }
+                    // agent {
+                    //     node {
+                    //         label "Windows&&Python3"
+                    //     }
+                    // }
                     steps {
-                        checkout scm
+                        // checkout scm
                         bat "${tool 'Python3.6.3_Win64'} -m tox -e docs"
                         script{
                             // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
@@ -149,16 +149,8 @@ pipeline {
                     }
                 }
                 stage("Flake8") {
-                    // agent {
-                    //     node {
-                    //         label "Windows&&Python3"
-                    //     }
-                    // }
                     steps{
-                        // checkout scm
-                        // bat "${tool 'Python3.6.3_Win64'} -m venv venv"
-                        // bat 'mkdir "reports'
-                        // bat "venv\\Scripts\\pip.exe install flake8"
+
                         bat returnStatus: true, script: "venv\\Scripts\\flake8.exe speedwagon --output-file=reports\\flake8.txt --format=pylint"
                     } 
                     post{
