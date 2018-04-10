@@ -21,6 +21,7 @@ CONSOLE_SIZE_POLICY = QtWidgets.QSizePolicy(
 )
 
 
+
 Setting = namedtuple("Setting", ("label", "widget"))
 
 
