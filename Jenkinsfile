@@ -204,7 +204,7 @@ pipeline {
                     }
                     // PACKAGE_WINDOWS_STANDALONE
                     when { 
-                        anyof{
+                        anyOf{
                             expression { params.PACKAGE_WINDOWS_STANDALONE == true }
                             not { 
                                 changeRequest() 
