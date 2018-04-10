@@ -141,7 +141,7 @@ pipeline {
                         bat "venv\\Scripts\\pip.exe install mypy"
                         bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon > mypy.txt"
                         archiveArtifacts 'mypy.txt'
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[parserName: 'Pep8', pattern: 'mypy.txt']], unHealthy: ''
+                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[parserName: 'MyPy', pattern: 'mypy.txt']], unHealthy: ''
 
                         // script {
                             // checkout scm
