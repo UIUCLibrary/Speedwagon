@@ -23,11 +23,13 @@ pipeline {
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "Speedwagon", description: "Name given to the project")
         booleanParam(name: "UPDATE_JIRA_EPIC", defaultValue: false, description: "Write a Update information on JIRA board")
-        string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
-        // booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run automated unit tests")
+        string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')   
         booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests") 
-        booleanParam(name: "TEST_RUN_BEHAVE", defaultValue: true, description: "Run Behave unit tests") 
-        booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
+        booleanParam(name: "TEST_RUN_BEHAVE", defaultValue: true, description: "Run Behave unit tests")
+        // booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
+        booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
+        booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 static analysis")
+        booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
         booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a package")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         choice(choices: 'None\nRelease_to_devpi_only\nRelease_to_devpi_and_sccm\n', description: "Release the build to production. Only available in the Master branch", name: 'RELEASE')
@@ -80,9 +82,6 @@ pipeline {
         }
 
         stage("Unit Tests") {
-            // when {
-            //     expression { params.UNIT_TESTS == true }
-            // }    
             parallel{
                 stage("PyTest") {
                     agent {
@@ -118,17 +117,15 @@ pipeline {
             }
         }
         stage("Additional Tests") {
-            when {
-                expression { params.ADDITIONAL_TESTS == true }
-            }
+            // when {
+            //     expression { params.ADDITIONAL_TESTS == true }
+            // }
 
             parallel {
                 stage("Documentation"){
-                    // agent {
-                    //     node {
-                    //         label "Windows&&Python3"
-                    //     }
-                    // }
+                    when {
+                        expression { params.TEST_RUN_DOCTEST == true }
+                    }
                     steps {
                         // checkout scm
                         bat "${tool 'Python3.6.3_Win64'} -m tox -e docs"
@@ -146,6 +143,9 @@ pipeline {
                     }
                 }
                 stage("MyPy") {
+                    when {
+                        expression { params.TEST_RUN_MYPY == true }
+                    }
                     steps{
                         bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon --html-report reports\\mypy\\html\\ > reports/mypy/stdout/mypy.txt"
                     }
@@ -157,8 +157,10 @@ pipeline {
                     }
                 }
                 stage("Flake8") {
+                    when {
+                        expression { params.TEST_RUN_FLAKE8 == true }
+                    }
                     steps{
-
                         bat returnStatus: true, script: "venv\\Scripts\\flake8.exe speedwagon --output-file=reports\\flake8.txt --format=pylint"
                     } 
                     post{
