@@ -140,8 +140,12 @@ pipeline {
                         bat "${tool 'Python3.6.3_Win64'} -m venv venv"
                         bat "venv\\Scripts\\pip.exe install mypy lxml"
                         bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon --html-report reports/mypy/html/ > mypy.txt"
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[parserName: 'MyPy', pattern: 'mypy.txt']], unHealthy: ''
-                        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
+                    }
+                    post {
+                        always {
+                            warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[parserName: 'MyPy', pattern: 'mypy.txt']], unHealthy: ''
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
+                        }
                     }
                 }
                 stage("Flake8") {
@@ -155,7 +159,11 @@ pipeline {
                         bat "${tool 'Python3.6.3_Win64'} -m venv venv"
                         bat "venv\\Scripts\\pip.exe install flake8"
                         bat returnStatus: true, script: "venv\\Scripts\\flake8.exe speedwagon --output-file=flake8.txt --format=pylint"
-                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[parserName: 'PyLint', pattern: 'flake8.txt']], unHealthy: ''
+                    } 
+                    post{
+                        always {
+                            warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[parserName: 'PyLint', pattern: 'flake8.txt']], unHealthy: ''
+                        }                        
                     }
                 }
 
