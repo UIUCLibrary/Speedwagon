@@ -139,21 +139,9 @@ pipeline {
                         checkout scm
                         bat "${tool 'Python3.6.3_Win64'} -m venv venv"
                         bat "venv\\Scripts\\pip.exe install mypy"
-                        bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon > mypy.txt"
-                        archiveArtifacts 'mypy.txt'
+                        bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon --html-report reports/mypy/html/ > mypy.txt"
                         warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[parserName: 'MyPy', pattern: 'mypy.txt']], unHealthy: ''
-
-                        // script {
-                            // checkout scm
-                            // def mypy_rc = bat returnStatus: true, script: "make test-mypy --html-report reports/mypy_report --junit-xml reports/mypy.xml"
-                            // if (mypy_rc == 0) {
-                            //     echo "MyPy found no issues"
-                                
-                            // } else {
-                            //     echo "MyPy complained with an exit code of ${mypy_rc}."
-                            // }
-                            // junit 'reports/mypy.xml'
-                        // }
+                        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                     }
                 }
                 stage("Flake8") {
