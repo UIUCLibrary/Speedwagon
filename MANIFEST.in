@@ -1,7 +1,7 @@
 include LICENSE README.rst requirements.txt requirements-dev.txt Makefile tox.ini
 recursive-exclude speedwagon/ui *.py
 recursive-include speedwagon/ui *.ui
-include sppedwagon/ui/__init__.py
+include speedwagon/ui/__init__.py
 recursive-include tests *.py
 recursive-include features/steps *.py
 recursive-include features *.feature
