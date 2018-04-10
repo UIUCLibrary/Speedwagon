@@ -69,7 +69,7 @@ pipeline {
             }
 
         }
-        stage("Unit tests") {
+        stage("Unit Tests") {
             when {
                 expression { params.UNIT_TESTS == true }
             }    
@@ -101,7 +101,7 @@ pipeline {
                 }
             }
         }
-        stage("Additional tests") {
+        stage("Additional Tests") {
             when {
                 expression { params.ADDITIONAL_TESTS == true }
             }
