@@ -6,7 +6,7 @@ import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui
 from . import job, tabs
 import speedwagon.tabs
-from .ui import main_window_shell_ui
+from .ui import main_window_shell_ui  # type: ignore
 from . import worker
 from collections import namedtuple
 

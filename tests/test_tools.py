@@ -1,6 +1,5 @@
 import speedwagon.job
 import speedwagon.models
-import pytest
 
 
 def test_load_tools():

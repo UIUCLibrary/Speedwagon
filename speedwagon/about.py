@@ -17,6 +17,7 @@ def about_dialog_box(parent):
                   f"{summary}"
 
     except pkg_resources.DistributionNotFound:
-                message = f"{speedwagon.__name__.title()}: {speedwagon.__version__}"
+                message = \
+                    f"{speedwagon.__name__.title()}: {speedwagon.__version__}"
 
     QtWidgets.QMessageBox.about(parent, "About", message)

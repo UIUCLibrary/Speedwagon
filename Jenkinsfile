@@ -23,10 +23,16 @@ pipeline {
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "Speedwagon", description: "Name given to the project")
         booleanParam(name: "UPDATE_JIRA_EPIC", defaultValue: false, description: "Write a Update information on JIRA board")
-        string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
-        booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run automated unit tests")
-        booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
-        booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a package")
+        string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')   
+        booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests") 
+        booleanParam(name: "TEST_RUN_BEHAVE", defaultValue: true, description: "Run Behave unit tests")
+        // booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
+        booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
+        booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 static analysis")
+        booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
+        // booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a package")
+        booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
+        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         choice(choices: 'None\nRelease_to_devpi_only\nRelease_to_devpi_and_sccm\n', description: "Release the build to production. Only available in the Master branch", name: 'RELEASE')
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update online documentation")
@@ -69,16 +75,24 @@ pipeline {
             }
 
         }
-        stage("Unit tests") {
-            when {
-                expression { params.UNIT_TESTS == true }
-            }    
+        stage("Creating Development VirtualEnv"){
+            steps {
+                bat "${tool 'Python3.6.3_Win64'} -m venv venv"
+                bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
+                bat 'mkdir "reports/mypy/stdout"'
+            }
+        }
+
+        stage("Unit Tests") {
             parallel{
                 stage("PyTest") {
                     agent {
                         node {
                             label "Windows&&Python3"
                         }
+                    }
+                    when {
+                        expression { params.TEST_RUN_PYTEST == true }
                     }
                     steps{
                         checkout scm
@@ -93,6 +107,9 @@ pipeline {
                             label "Windows&&Python3"
                         }
                     }
+                    when {
+                        expression { params.TEST_RUN_BEHAVE == true }
+                    }
                     steps {
                         checkout scm
                         bat "${tool 'Python3.6.3_Win64'} -m tox -e bdd --  --junit --junit-directory reports" 
@@ -101,21 +118,16 @@ pipeline {
                 }
             }
         }
-        stage("Additional tests") {
-            when {
-                expression { params.ADDITIONAL_TESTS == true }
-            }
+        stage("Additional Tests") {
 
             parallel {
                 stage("Documentation"){
-                    agent {
-                        node {
-                            label "Windows&&Python3"
-                        }
+                    when {
+                        expression { params.TEST_RUN_DOCTEST == true }
                     }
                     steps {
-                        checkout scm
-                        bat "${tool 'Python3.6.3_Win64'} -m tox -e docs"
+                        
+                        bat "venv\\Scripts\\tox.exe -e docs"
                         script{
                             // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
                             def alljob = env.JOB_NAME.tokenize("/") as String[]
@@ -130,36 +142,47 @@ pipeline {
                     }
                 }
                 stage("MyPy") {
-                    agent {
-                        node {
-                            label "Windows&&Python3"
-                        }
+                    when {
+                        expression { params.TEST_RUN_MYPY == true }
                     }
                     steps{
-                        script {
-                            checkout scm
-                            def mypy_rc = bat returnStatus: true, script: "make test-mypy --html-report reports/mypy_report --junit-xml reports/mypy.xml"
-                            if (mypy_rc == 0) {
-                                echo "MyPy found no issues"
-                                
-                            } else {
-                                echo "MyPy complained with an exit code of ${mypy_rc}."
-                            }
-                            junit 'reports/mypy.xml'
+                        bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon --html-report reports\\mypy\\html\\ > reports/mypy/stdout/mypy.txt"
+                    }
+                    post {
+                        always {
+                            warnings parserConfigurations: [[parserName: 'MyPy', pattern: 'reports\\mypy\\stdout\\mypy.txt']], unHealthy: ''
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
                     }
                 }
+                stage("Flake8") {
+                    when {
+                        expression { params.TEST_RUN_FLAKE8 == true }
+                    }
+                    steps{
+                        bat returnStatus: true, script: "venv\\Scripts\\flake8.exe speedwagon --output-file=reports\\flake8.txt --format=pylint"
+                    } 
+                    post{
+                        always {
+                            warnings parserConfigurations: [[parserName: 'PyLint', pattern: 'reports/flake8.txt']], unHealthy: ''
+                        }                        
+                    }
+                }
+
             }
 
         }
 
         stage("Packaging") {
-            when {
-                expression { params.PACKAGE == true }
-            }
+            // when {
+            //     expression { params.PACKAGE == true }
+            // }
 
             parallel {
                 stage("Source and Wheel formats"){
+                    when {
+                        expression { params.PACKAGE_PYTHON_FORMATS == true }
+                    }
                     steps{
                         bat "call make.bat"
                     }
@@ -179,7 +202,12 @@ pipeline {
                             label "Windows&&VS2015&&DevPi"
                         }
                     }
-                    when { not { changeRequest() }}
+                    // PACKAGE_WINDOWS_STANDALONE
+                    when {
+                        not { changeRequest()}
+                        expression { params.PACKAGE_WINDOWS_STANDALONE == true }
+                        
+                    }
                     steps {
                         deleteDir()
                         unstash "Source"

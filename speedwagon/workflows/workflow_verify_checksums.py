@@ -47,7 +47,8 @@ class ChecksumWorkflow(AbsWorkflow):
                     continue
                 yield os.path.join(root, file_)
 
-    def discover_task_metadata(self, initial_results: List[Any], additional_data,
+    def discover_task_metadata(self, initial_results: List[Any],
+                               additional_data,
                                **user_args) -> List[dict]:
         jobs = []
         for result in initial_results:

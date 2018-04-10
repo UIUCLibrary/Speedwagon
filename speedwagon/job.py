@@ -13,6 +13,7 @@ from PyQt5 import QtWidgets
 class JobCancelled(Exception):
     pass
 
+
 class AbsJob(metaclass=abc.ABCMeta):
     active = True
     description: str = None
@@ -76,7 +77,8 @@ class AbsWorkflow(AbsJob):
 
     @abc.abstractmethod
     def discover_task_metadata(self, initial_results: typing.List[typing.Any],
-                               additional_data, **user_args) -> typing.List[dict]:
+                               additional_data, **user_args) \
+            -> typing.List[dict]:
         pass
 
     def completion_task(

@@ -1,11 +1,7 @@
-import io
 import logging
-import queue
-import time
 import typing
 import concurrent.futures
 import pytest
-import pickle
 import speedwagon.tasks
 import speedwagon.worker
 from speedwagon import worker
@@ -45,7 +41,10 @@ class SimplePreTask(speedwagon.tasks.Subtask):
 
 
 class SimpleMultistage(speedwagon.tasks.MultiStageTask):
-    def process_subtask_results(self, subtask_results: typing.List[typing.Any]) -> typing.Any:
+    def process_subtask_results(self,
+                                subtask_results: typing.List[typing.Any])\
+            -> typing.Any:
+
         return "\n".join(subtask_results)
 
 
@@ -240,8 +239,6 @@ def test_adapter_results_with_pretask(tmpdir):
     new_task = builder.build_task()
 
     with worker.ToolJobManager() as manager:
-        # adapted_pretask_tool = speedwagon.tasks.SubtaskJobAdapter(new_task.pretask)
-        # manager.add_job(adapted_pretask_tool, adapted_pretask_tool.settings)
         for subtask in new_task.subtasks:
             adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
             manager.add_job(adapted_tool, adapted_tool.settings)
@@ -268,8 +265,6 @@ def test_adapter_results_with_posttask(tmpdir):
     new_task = builder.build_task()
 
     with worker.ToolJobManager() as manager:
-        # adapted_pretask_tool = speedwagon.tasks.SubtaskJobAdapter(new_task.pretask)
-        # manager.add_job(adapted_pretask_tool, adapted_pretask_tool.settings)
         for subtask in new_task.subtasks:
             adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
             manager.add_job(adapted_tool, adapted_tool.settings)

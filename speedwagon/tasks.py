@@ -419,7 +419,6 @@ class TaskBuilder:
     # The director
     _task_counter = 0
 
-
     def __init__(self, builder: BaseTaskBuilder, working_dir) -> None:
         self._builder = builder
         self._working_dir = working_dir
@@ -442,28 +441,29 @@ class TaskBuilder:
         task_id = str(self.task_id).zfill(3)
         subtask_id = str(self._subtask_counter).zfill(3)
 
-        task_working_dir = self._build_task_working_path(self._working_dir, task_id)
-        subtask_working_dir = self._build_working_path2(task_working_dir, task_type, subtask_id)
+        task_working_dir = self._build_task_working_path(self._working_dir,
+                                                         task_id)
+
+        subtask_working_dir = self._build_working_path2(task_working_dir,
+                                                        task_type,
+                                                        subtask_id)
 
         subtask.subtask_working_dir = subtask_working_dir
         subtask.task_working_dir = task_working_dir
         self._builder.add_subtask(subtask)
 
-    # @staticmethod
-    # def _build_working_path(temp_path, task_type, task_id, subtask_id):
-    #     working_dir = os.path.join(temp_path, task_id, task_type, str(subtask_id))
-    #     return working_dir
-
     @staticmethod
     def _build_working_path2(task_working_path, task_type, subtask_id):
-        working_dir = os.path.join(task_working_path, task_type, str(subtask_id))
+
+        working_dir = os.path.join(task_working_path,
+                                   task_type,
+                                   str(subtask_id))
         return working_dir
 
     @staticmethod
     def _build_task_working_path(temp_path, task_id):
         working_dir = os.path.join(temp_path, task_id)
         return working_dir
-
 
     def set_pretask(self, subtask: Subtask):
 
@@ -477,8 +477,12 @@ class TaskBuilder:
         task_id = str(self.task_id).zfill(3)
         subtask_id = str(self._subtask_counter).zfill(3)
 
-        task_working_dir = self._build_task_working_path(self._working_dir, task_id)
-        subtask_working_dir = self._build_working_path2(task_working_dir, task_type, subtask_id)
+        task_working_dir = self._build_task_working_path(self._working_dir,
+                                                         task_id)
+
+        subtask_working_dir = self._build_working_path2(task_working_dir,
+                                                        task_type,
+                                                        subtask_id)
 
         subtask.subtask_working_dir = subtask_working_dir
         subtask.task_working_dir = task_working_dir
@@ -495,8 +499,12 @@ class TaskBuilder:
         task_id = str(self.task_id).zfill(3)
         subtask_id = str(self._subtask_counter).zfill(3)
 
-        task_working_dir = self._build_task_working_path(self._working_dir, task_id)
-        subtask_working_dir = self._build_working_path2(task_working_dir, task_type, subtask_id)
+        task_working_dir = self._build_task_working_path(self._working_dir,
+                                                         task_id)
+
+        subtask_working_dir = self._build_working_path2(task_working_dir,
+                                                        task_type,
+                                                        subtask_id)
 
         subtask.subtask_working_dir = subtask_working_dir
         subtask.task_working_dir = task_working_dir

@@ -31,8 +31,10 @@ class JobValues(enum.Enum):
 
 class CaptureOneToDLCompound(AbsTool):
     name = "Convert CaptureOne TIFF to Digital Library Compound Object"
-    description = "Input is a path to a folder of TIFF files all named with a bibID as a prefacing identifier, a " \
-                  "final delimiting underscore or dash, and a sequence consisting of padded zeroes and a number." \
+    description = "Input is a path to a folder of TIFF files all named with " \
+                  "a bibID as a prefacing identifier, a final delimiting " \
+                  "underscore or dash, and a sequence consisting of padded " \
+                  "zeroes and a number." \
                   "\n" \
                   "\nOutput is a directory to put the new packages." \
                   "\n" \
@@ -68,7 +70,9 @@ class CaptureOneToDLCompound(AbsTool):
         jobs = []
         source_input = user_args[UserArgs.INPUT.value]
         dest = user_args[UserArgs.OUTPUT.value]
-        package_factory = uiucprescon.packager.PackageFactory(uiucprescon.packager.packages.CaptureOnePackage())
+
+        package_factory = uiucprescon.packager.PackageFactory(
+            uiucprescon.packager.packages.CaptureOnePackage())
 
         for package in package_factory.locate_packages(source_input):
             jobs.append({
@@ -86,10 +90,12 @@ class CaptureOneToDLCompound(AbsTool):
     @staticmethod
     def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            options.UserOptionCustomDataType(UserArgs.INPUT.value, options.FolderData),
-            options.UserOptionCustomDataType(UserArgs.OUTPUT.value, options.FolderData),
-        ]
+            options.UserOptionCustomDataType(UserArgs.INPUT.value,
+                                             options.FolderData),
 
+            options.UserOptionCustomDataType(UserArgs.OUTPUT.value,
+                                             options.FolderData),
+        ]
 
 
 class PackageConverter(worker.ProcessJobWorker):
@@ -111,6 +117,11 @@ class PackageConverter(worker.ProcessJobWorker):
             new_package_root = kwargs[JobValues.OUTPUT.value]
             source_path = kwargs[JobValues.SOURCE_PATH.value]
             package_id = existing_package.metadata[Metadata.ID]
-            self.log(f"Converting {package_id} from {source_path} to a Hathi Trust Tiff package at {new_package_root}")
-            package_factory = uiucprescon.packager.PackageFactory(uiucprescon.packager.packages.DigitalLibraryCompound())
+
+            self.log(f"Converting {package_id} from {source_path} "
+                     f"to a Hathi Trust Tiff package at {new_package_root}")
+
+            package_factory = uiucprescon.packager.PackageFactory(
+                uiucprescon.packager.packages.DigitalLibraryCompound())
+
             package_factory.transform(existing_package, dest=new_package_root)

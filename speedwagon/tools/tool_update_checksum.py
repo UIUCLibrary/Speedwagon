@@ -29,7 +29,9 @@ class UserArgs(enum.Enum):
 
 class ChecksumFile(options.AbsBrowseableWidget):
     def browse_clicked(self):
-        selection = QtWidgets.QFileDialog.getOpenFileName(filter="Checksum files (*.md5)")
+        selection = QtWidgets.QFileDialog.getOpenFileName(
+            filter="Checksum files (*.md5)")
+
         if selection[0]:
             self.data = selection[0]
             self.editingFinished.emit()
@@ -53,7 +55,9 @@ class ChecksumData(options.AbsCustomData2):
 
 def find_outdated(results: typing.List[typing.Dict[ResultValues, str]]):
     for result in results:
-        if result[ResultValues.CHECKSUM_ACTUAL] != result[ResultValues.CHECKSUM_EXPECTED]:
+        if result[ResultValues.CHECKSUM_ACTUAL] != \
+                result[ResultValues.CHECKSUM_EXPECTED]:
+
             yield result
 
 
@@ -66,14 +70,17 @@ class UpdateChecksum(AbsTool):
 
         report_lines = []
         if outdated_items:
-            for checksum_report_name, outdated_files_ in outdated_items.items():
+            for checksum_report_name, outdated_files_ in \
+                    outdated_items.items():
                 report_lines.append(
-                    "Updated md5 entries for [{}] in {}".format(", ".join(outdated_files_), checksum_report_name))
+                    "Updated md5 entries for [{}] in {}".format(
+                        ", ".join(outdated_files_), checksum_report_name))
 
         if report_lines:
             return "\n".join(report_lines)
         else:
-            return "No outdated entries found in {}".format(user_args[UserArgs.INPUT.value])
+            return "No outdated entries found in {}".format(
+                user_args[UserArgs.INPUT.value])
 
     @classmethod
     def sort_results(cls, results) -> typing.Dict[str, typing.List[str]]:
@@ -82,14 +89,20 @@ class UpdateChecksum(AbsTool):
         Args:
             results:
 
-        Returns: Dictionary of organized data where the source is the key and the value contains all the files updated
+        Returns: Dictionary of organized data where the source is the key and
+        the value contains all the files updated
 
         """
-        outdated_items = sorted([
-            (res[ResultValues.FILENAME], res[ResultValues.CHECKSUM_SOURCE]) for res in find_outdated(results)],
-            # (res['filename'], res['checksum_source']) for res in find_outdated(results)],
+        outdated_items = sorted(
+            [
+                (res[ResultValues.FILENAME], res[ResultValues.CHECKSUM_SOURCE])
+                for res in find_outdated(results)
+            ],
             key=lambda it: it[1])
-        outdated_items_data: typing.DefaultDict[str, list] = collections.defaultdict(list)
+
+        outdated_items_data: typing.DefaultDict[str, list] = \
+            collections.defaultdict(list)
+
         for k, v in itertools.groupby(outdated_items, key=lambda it: it[1]):
             for file_ in v:
                 outdated_items_data[k].append(file_[0])
@@ -121,9 +134,12 @@ class UpdateChecksumBatchSingle(UpdateChecksum):
         jobs = []
         md5_report = user_args[UserArgs.INPUT.value]
         # md5_report = user_args['input']
-        path = os.path.dirname(os.path.abspath(user_args[UserArgs.INPUT.value]))
+        path = os.path.dirname(
+            os.path.abspath(user_args[UserArgs.INPUT.value]))
+
         # path = os.path.dirname(os.path.abspath(user_args['input']))
-        for report_md5_hash, filename in checksum_report.extracts_checksums(md5_report):
+        for report_md5_hash, filename in \
+                checksum_report.extracts_checksums(md5_report):
             job = {
                 "filename": filename,
                 "report_md5_hash": report_md5_hash,
@@ -149,13 +165,15 @@ class UpdateChecksumBatchSingle(UpdateChecksum):
     @staticmethod
     def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            options.UserOptionCustomDataType(UserArgs.INPUT.value, ChecksumData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value,
+                                             ChecksumData),
         ]
 
 
 class UpdateChecksumBatchMultiple(UpdateChecksum):
     name = "Update Checksum Batch [Multiple]"
-    description = "Updates the checksum hash in all checksum.md5 file found in a path" \
+    description = "Updates the checksum hash in all checksum.md5 file found " \
+                  "in a path" \
                   "\nInput: path to a root folder"
 
     @staticmethod
@@ -171,7 +189,8 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
             for file_ in files:
                 if file_.lower() == "checksum.md5":
                     report = os.path.join(root, file_)
-                    for filename, report_md5_hash in UpdateChecksumBatchMultiple.locate_files(report):
+                    for filename, report_md5_hash in \
+                            UpdateChecksumBatchMultiple.locate_files(report):
                         job = {
                             "filename": filename,
                             "report_md5_hash": report_md5_hash,
@@ -184,7 +203,8 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
     @staticmethod
     def get_user_options() -> typing.List[options.UserOption2]:
         return [
-            options.UserOptionCustomDataType(UserArgs.INPUT.value, options.FolderData),
+            options.UserOptionCustomDataType(UserArgs.INPUT.value,
+                                             options.FolderData),
         ]
 
     @staticmethod
@@ -199,7 +219,8 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
 
     @staticmethod
     def locate_files(report) -> typing.Iterable[typing.Tuple[str, str]]:
-        for report_md5_hash, filename in checksum_report.extracts_checksums(report):
+        for report_md5_hash, filename in \
+                checksum_report.extracts_checksums(report):
             yield filename, report_md5_hash
 
 
@@ -209,7 +230,9 @@ class ChecksumJob(ProcessJobWorker):
         source_file = kwargs['filename']
         report = kwargs['checksum_source']
         self.log(f"Calculating the md5 for {source_file}")
-        hash_value = hathi_checksum_utils.calculate_md5(os.path.join(source_path, source_file))
+        hash_value = hathi_checksum_utils.calculate_md5(
+            os.path.join(source_path, source_file))
+
         self.result = {
             ResultValues.FILENAME: source_file,
             ResultValues.CHECKSUM_ACTUAL: hash_value,

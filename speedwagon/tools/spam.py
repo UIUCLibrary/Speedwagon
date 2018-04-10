@@ -11,16 +11,23 @@ from speedwagon.tools.abstool import AbsTool
 class Spam(AbsTool):
     name = "Spam"
     active = False
-    description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ac diam id purus pretium " \
-                  "venenatis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia " \
-                  "Curae; Fusce laoreet fermentum lorem et pretium. Duis iaculis venenatis sagittis. Nulla tristique " \
-                  "tellus at dolor laoreet maximus. Aenean ac posuere augue, quis volutpat felis. Phasellus egestas " \
-                  "orci id erat fringilla, in euismod purus luctus. Proin faucibus condimentum imperdiet. Lorem " \
-                  "ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque porttitor eu erat at congue. " \
-                  "Quisque feugiat pulvinar eleifend. Nulla tincidunt nibh velit, non fermentum lorem pharetra at. " \
-                  "Sed eleifend sapien ut faucibus convallis. Orci varius natoque penatibus et magnis dis parturient " \
-                  "montes, nascetur ridiculus mus. Nullam lacinia sed augue quis iaculis. Aliquam commodo dictum mi, " \
-                  "non semper quam varius ut."
+    description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " \
+                  "Proin ac diam id purus pretium venenatis. Vestibulum " \
+                  "ante ipsum primis in faucibus orci luctus et ultrices " \
+                  "posuere cubilia Curae; Fusce laoreet fermentum lorem et " \
+                  "pretium. Duis iaculis venenatis sagittis. Nulla " \
+                  "tristique tellus at dolor laoreet maximus. Aenean ac " \
+                  "posuere augue, quis volutpat felis. Phasellus egestas " \
+                  "orci id erat fringilla, in euismod purus luctus. Proin " \
+                  "faucibus condimentum imperdiet. Lorem ipsum dolor sit " \
+                  "amet, consectetur adipiscing elit. Pellentesque " \
+                  "porttitor eu erat at congue. Quisque feugiat pulvinar " \
+                  "eleifend. Nulla tincidunt nibh velit, non fermentum " \
+                  "lorem pharetra at. Sed eleifend sapien ut faucibus " \
+                  "convallis. Orci varius natoque penatibus et magnis dis " \
+                  "parturient montes, nascetur ridiculus mus. Nullam " \
+                  "lacinia sed augue quis iaculis. Aliquam commodo dictum " \
+                  "mi, non semper quam varius ut."
 
     def __init__(self) -> None:
         super().__init__()
@@ -42,6 +49,7 @@ class Spam(AbsTool):
     def discover_task_metadata(*args, **kwargs):
         for x in range(100):
             yield {"num": x}
+
 
 class DummyJob(ProcessJobWorker):
     def process(self, num=0, *args):
