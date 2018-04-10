@@ -140,7 +140,7 @@ pipeline {
                         bat "${tool 'Python3.6.3_Win64'} -m venv venv"
                         bat "venv\\Scripts\\pip.exe install mypy lxml"
                         bat 'mkdir "reports/mypy/stdout"'
-                        bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon --html-report reports\\mypy\\html\\ > 'reports/mypy/stdout/mypy.txt"
+                        bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon --html-report reports\\mypy\\html\\ > reports/mypy/stdout/mypy.txt"
                     }
                     post {
                         always {
