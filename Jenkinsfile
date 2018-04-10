@@ -69,6 +69,13 @@ pipeline {
             }
 
         }
+        stage("Creating development virtualenv"){
+            steps {
+                bat "${tool 'Python3.6.3_Win64'} -m venv venv"
+                bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
+            }
+        }
+
         stage("Unit Tests") {
             when {
                 expression { params.UNIT_TESTS == true }
@@ -158,6 +165,7 @@ pipeline {
                     steps{
                         checkout scm
                         bat "${tool 'Python3.6.3_Win64'} -m venv venv"
+                        bat 'mkdir "reports'
                         bat "venv\\Scripts\\pip.exe install flake8"
                         bat returnStatus: true, script: "venv\\Scripts\\flake8.exe speedwagon --output-file=reports\\flake8.txt --format=pylint"
                     } 
