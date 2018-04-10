@@ -69,10 +69,11 @@ pipeline {
             }
 
         }
-        stage("Creating development virtualenv"){
+        stage("Creating Development VirtualEnv"){
             steps {
                 bat "${tool 'Python3.6.3_Win64'} -m venv venv"
                 bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
+                bat 'mkdir "reports/mypy/stdout"'
             }
         }
 
@@ -137,16 +138,16 @@ pipeline {
                     }
                 }
                 stage("MyPy") {
-                    agent {
-                        node {
-                            label "Windows&&Python3"
-                        }
-                    }
+                    // agent {
+                    //     node {
+                    //         label "Windows&&Python3"
+                    //     }
+                    // }
                     steps{
-                        checkout scm
-                        bat "${tool 'Python3.6.3_Win64'} -m venv venv"
-                        bat "venv\\Scripts\\pip.exe install mypy lxml"
-                        bat 'mkdir "reports/mypy/stdout"'
+                        // checkout scm
+                        // bat "${tool 'Python3.6.3_Win64'} -m venv venv"
+                        // bat "venv\\Scripts\\pip.exe install mypy lxml"
+                        // bat 'mkdir "reports/mypy/stdout"'
                         bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon --html-report reports\\mypy\\html\\ > reports/mypy/stdout/mypy.txt"
                     }
                     post {
