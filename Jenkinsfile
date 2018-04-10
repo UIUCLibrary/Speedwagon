@@ -204,10 +204,8 @@ pipeline {
                     }
                     // PACKAGE_WINDOWS_STANDALONE
                     when {
-                        not {
-                            changeRequest()
-                            expression { params.PACKAGE_WINDOWS_STANDALONE == false }
-                        }
+                        not { changeRequest()}
+                        expression { params.PACKAGE_WINDOWS_STANDALONE == true }
                         
                     }
                     steps {
