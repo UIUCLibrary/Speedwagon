@@ -24,8 +24,9 @@ pipeline {
         string(name: "PROJECT_NAME", defaultValue: "Speedwagon", description: "Name given to the project")
         booleanParam(name: "UPDATE_JIRA_EPIC", defaultValue: false, description: "Write a Update information on JIRA board")
         string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
-        booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run automated unit tests")
-        booleanParam(name: "RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests") 
+        // booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run automated unit tests")
+        booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests") 
+        booleanParam(name: "TEST_RUN_BEHAVE", defaultValue: true, description: "Run Behave unit tests") 
         booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
         booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a package")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
@@ -79,15 +80,18 @@ pipeline {
         }
 
         stage("Unit Tests") {
-            when {
-                expression { params.UNIT_TESTS == true }
-            }    
+            // when {
+            //     expression { params.UNIT_TESTS == true }
+            // }    
             parallel{
                 stage("PyTest") {
                     agent {
                         node {
                             label "Windows&&Python3"
                         }
+                    }
+                    when {
+                        expression { params.TEST_RUN_PYTEST == true }
                     }
                     steps{
                         checkout scm
@@ -101,6 +105,9 @@ pipeline {
                         node {
                             label "Windows&&Python3"
                         }
+                    }
+                    when {
+                        expression { params.TEST_RUN_BEHAVE == true }
                     }
                     steps {
                         checkout scm
