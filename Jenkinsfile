@@ -149,6 +149,20 @@ pipeline {
                         }
                     }
                 }
+                stage("Flake8") {
+                    agent {
+                        node {
+                            label "Windows&&Python3"
+                        }
+                    }
+                    steps{
+                        checkout scm
+                        bat "${tool 'Python3.6.3_Win64'} -m venv venv"
+                        bat "venv/Scripts/pip.exe install flake8"
+                        bat "venv/Scripts/flake8.exe speedwagon --output-file=flake8.txt --format=pylint"
+                        warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[parserName: 'PyLint', pattern: 'flake8.txt']], unHealthy: ''
+                    }
+
             }
 
         }
