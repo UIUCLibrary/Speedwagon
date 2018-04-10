@@ -139,11 +139,11 @@ pipeline {
                         checkout scm
                         bat "${tool 'Python3.6.3_Win64'} -m venv venv"
                         bat "venv\\Scripts\\pip.exe install mypy lxml"
-                        bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon --html-report reports/mypy/html/ > mypy.txt"
+                        bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon --html-report reports\\mypy\\html\\ > reports\\mypy\\stdout\\mypy.txt"
                     }
                     post {
                         always {
-                            warnings parserConfigurations: [[parserName: 'MyPy', pattern: 'mypy.txt']], unHealthy: ''
+                            warnings parserConfigurations: [[parserName: 'MyPy', pattern: 'reports\\mypy\\stdout\\mypy.txt']], unHealthy: ''
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
                     }
