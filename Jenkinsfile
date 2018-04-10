@@ -143,7 +143,7 @@ pipeline {
                     }
                     post {
                         always {
-                            warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[parserName: 'MyPy', pattern: 'mypy.txt']], unHealthy: ''
+                            warnings parserConfigurations: [[parserName: 'MyPy', pattern: 'mypy.txt']], unHealthy: ''
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
                     }
@@ -162,7 +162,7 @@ pipeline {
                     } 
                     post{
                         always {
-                            warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[parserName: 'PyLint', pattern: 'flake8.txt']], unHealthy: ''
+                            warnings parserConfigurations: [[parserName: 'PyLint', pattern: 'flake8.txt']], unHealthy: ''
                         }                        
                     }
                 }
