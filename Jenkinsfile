@@ -138,7 +138,7 @@ pipeline {
                     steps{
                         checkout scm
                         bat "${tool 'Python3.6.3_Win64'} -m venv venv"
-                        bat "venv\\Scripts\\pip.exe install mypy"
+                        bat "venv\\Scripts\\pip.exe install mypy lxml"
                         bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon --html-report reports/mypy/html/ > mypy.txt"
                         warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[parserName: 'MyPy', pattern: 'mypy.txt']], unHealthy: ''
                         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
