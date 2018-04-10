@@ -137,6 +137,9 @@ pipeline {
                     }
                     steps{
                         checkout scm
+                        dir('reports/mypy/stdout'){
+                            echo "Ensured path ./reports/mypy/stdout/"
+                        }
                         bat "${tool 'Python3.6.3_Win64'} -m venv venv"
                         bat "venv\\Scripts\\pip.exe install mypy lxml"
                         bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon --html-report reports\\mypy\\html\\ > reports\\mypy\\stdout\\mypy.txt"
