@@ -162,6 +162,7 @@ pipeline {
                         bat "venv/Scripts/flake8.exe speedwagon --output-file=flake8.txt --format=pylint"
                         warnings canComputeNew: false, canResolveRelativePaths: false, categoriesPattern: '', defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', messagesPattern: '', parserConfigurations: [[parserName: 'PyLint', pattern: 'flake8.txt']], unHealthy: ''
                     }
+                }
 
             }
 
