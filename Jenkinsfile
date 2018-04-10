@@ -138,16 +138,7 @@ pipeline {
                     }
                 }
                 stage("MyPy") {
-                    // agent {
-                    //     node {
-                    //         label "Windows&&Python3"
-                    //     }
-                    // }
                     steps{
-                        // checkout scm
-                        // bat "${tool 'Python3.6.3_Win64'} -m venv venv"
-                        // bat "venv\\Scripts\\pip.exe install mypy lxml"
-                        // bat 'mkdir "reports/mypy/stdout"'
                         bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon --html-report reports\\mypy\\html\\ > reports/mypy/stdout/mypy.txt"
                     }
                     post {
@@ -158,16 +149,16 @@ pipeline {
                     }
                 }
                 stage("Flake8") {
-                    agent {
-                        node {
-                            label "Windows&&Python3"
-                        }
-                    }
+                    // agent {
+                    //     node {
+                    //         label "Windows&&Python3"
+                    //     }
+                    // }
                     steps{
-                        checkout scm
-                        bat "${tool 'Python3.6.3_Win64'} -m venv venv"
-                        bat 'mkdir "reports'
-                        bat "venv\\Scripts\\pip.exe install flake8"
+                        // checkout scm
+                        // bat "${tool 'Python3.6.3_Win64'} -m venv venv"
+                        // bat 'mkdir "reports'
+                        // bat "venv\\Scripts\\pip.exe install flake8"
                         bat returnStatus: true, script: "venv\\Scripts\\flake8.exe speedwagon --output-file=reports\\flake8.txt --format=pylint"
                     } 
                     post{
