@@ -52,7 +52,7 @@ class ToolConsole(QtWidgets.QWidget):
 
 
 class ConsoleLogger(logging.Handler):
-    def __init__(self, console: ToolConsole, level=logging.NOTSET) -> int:
+    def __init__(self, console: ToolConsole, level=logging.NOTSET) -> None:
         super().__init__(level)
         self.console = console
         # self.callback = callback
