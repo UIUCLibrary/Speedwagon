@@ -159,11 +159,11 @@ pipeline {
                         checkout scm
                         bat "${tool 'Python3.6.3_Win64'} -m venv venv"
                         bat "venv\\Scripts\\pip.exe install flake8"
-                        bat returnStatus: true, script: "venv\\Scripts\\flake8.exe speedwagon --output-file=flake8.txt --format=pylint"
+                        bat returnStatus: true, script: "venv\\Scripts\\flake8.exe speedwagon --output-file=reports\\flake8.txt --format=pylint"
                     } 
                     post{
                         always {
-                            warnings parserConfigurations: [[parserName: 'PyLint', pattern: 'flake8.txt']], unHealthy: ''
+                            warnings parserConfigurations: [[parserName: 'PyLint', pattern: 'reports/flake8.txt']], unHealthy: ''
                         }                        
                     }
                 }
