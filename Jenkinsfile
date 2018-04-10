@@ -203,13 +203,10 @@ pipeline {
                         }
                     }
                     // PACKAGE_WINDOWS_STANDALONE
-                    when { 
-                        anyOf{
-                            expression { params.PACKAGE_WINDOWS_STANDALONE == true }
-                            not { 
-                                changeRequest() 
-                            }
-
+                    when {
+                        not {
+                            changeRequest()
+                            expression { params.PACKAGE_WINDOWS_STANDALONE == false }
                         }
                         
                     }
