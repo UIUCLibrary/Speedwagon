@@ -38,10 +38,10 @@ class ToolConsole(QtWidgets.QWidget):
         right_margin = default_style.pixelMetric(
             QtWidgets.QStyle.PM_LayoutRightMargin)
 
-        # bottom_margin = default_style.pixelMetric(
-        #     QtWidgets.QStyle.PM_LayoutBottomMargin)
+        bottom_margin = default_style.pixelMetric(
+            QtWidgets.QStyle.PM_LayoutBottomMargin)
 
-        layout.setContentsMargins(left_margin, 0, right_margin, 0)
+        layout.setContentsMargins(left_margin, 0, right_margin, bottom_margin)
 
         self.setLayout(layout)
 
@@ -119,13 +119,11 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         # self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
         self.setupUi(self)
+        self.mainLayout.setContentsMargins(0,0,0,0)
 
-        self.main_splitter = QtWidgets.QSplitter()
-        # self.mainLayout.setContentsMargins(10,10,10,10)
-        # self.centralwidget.setContentsMargins(10,10,10,10,)
+        self.main_splitter = QtWidgets.QSplitter(self.centralwidget)
         self.main_splitter.setOrientation(QtCore.Qt.Vertical)
         self.main_splitter.setChildrenCollapsible(False)
-        # self.main_splitter.setLayout(self.mainLayout)
 
         self.mainLayout.addWidget(self.main_splitter)
 
