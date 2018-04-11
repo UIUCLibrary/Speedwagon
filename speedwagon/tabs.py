@@ -70,6 +70,7 @@ class Tab(AbsTab):
         self.tab, self.tab_layout = self.create_tab()
         self.tab.setSizePolicy(WORKFLOW_SIZE_POLICY)
         self.tab.setMinimumHeight(300)
+        self.tab_layout.setSpacing(20)
         # self.tab.setFixedHeight(500)
 
     @staticmethod
