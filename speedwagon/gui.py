@@ -119,7 +119,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         # self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
         self.setupUi(self)
-        self.mainLayout.setContentsMargins(0,0,0,0)
+        self.mainLayout.setContentsMargins(0, 0, 0, 0)
 
         self.main_splitter = QtWidgets.QSplitter(self.centralwidget)
         self.main_splitter.setOrientation(QtCore.Qt.Vertical)
@@ -184,7 +184,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         file_menu = menu_bar.addMenu("File")
 
         # Create Exit button
-        exit_button = QtWidgets.QAction("Exit", self)
+        exit_button = QtWidgets.QAction(" &Exit", self)
         exit_button.triggered.connect(self.close)
 
         file_menu.addAction(exit_button)
@@ -193,7 +193,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         help_menu = menu_bar.addMenu("Help")
 
         # Create an About button
-        about_button = QtWidgets.QAction("About", self)
+        about_button = QtWidgets.QAction(" &About ", self)
         about_button.triggered.connect(self.show_about_window)
 
         help_menu.addAction(about_button)
