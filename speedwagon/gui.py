@@ -38,8 +38,8 @@ class ToolConsole(QtWidgets.QWidget):
         right_margin = default_style.pixelMetric(
             QtWidgets.QStyle.PM_LayoutRightMargin)
 
-        bottom_margin = default_style.pixelMetric(
-            QtWidgets.QStyle.PM_LayoutBottomMargin)
+        # bottom_margin = default_style.pixelMetric(
+        #     QtWidgets.QStyle.PM_LayoutBottomMargin)
 
         layout.setContentsMargins(left_margin, 0, right_margin, 0)
 
@@ -78,6 +78,7 @@ class ConsoleLogger(logging.Handler):
             print("Error: {}".format(e), file=sys.stderr)
             traceback.print_tb(e.__traceback__)
 
+
 class ItemTabsWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
@@ -104,6 +105,7 @@ class ItemTabsWidget(QtWidgets.QWidget):
 
     def addTab(self, w, name):
         self.tabs.addTab(w, name)
+
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
