@@ -3,7 +3,7 @@
 import org.ds.*
 pipeline {
     agent {
-        label "Windows&&DevPi"
+        label "Windows && DevPi"
     }
     
     triggers {
@@ -77,7 +77,7 @@ pipeline {
         }
         stage("Creating Development VirtualEnv"){
             steps {
-                bat "${tool 'Python3.6.3_Win64'} -m venv venv"
+                bat "${tool 'CPython-3.6'} -m venv venv"
                 bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
                 bat "venv\\Scripts\\pip.exe install devpi-client"
                 bat 'mkdir "reports/mypy/stdout"'
@@ -89,7 +89,7 @@ pipeline {
                 stage("PyTest") {
                     agent {
                         node {
-                            label "Windows&&Python3"
+                            label "Windows && Python3"
                         }
                     }
                     when {
@@ -97,7 +97,7 @@ pipeline {
                     }
                     steps{
                         checkout scm
-                        // bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
+                        // bat "${tool 'CPython-3.6'} -m tox -e py36"
                         bat "${tool 'CPython-3.6'} -m venv venv"
                         bat "venv\\Scripts\\pip.exe install tox" 
                         bat "venv\\Scripts\\pip.exe install setuptools>=30.3.0"
@@ -108,7 +108,7 @@ pipeline {
                 stage("Behave") {
                     agent {
                         node {
-                            label "Windows&&Python3"
+                            label "Windows && Python3"
                         }
                     }
                     when {
@@ -212,7 +212,7 @@ pipeline {
                 stage("Windows Standalone"){
                     agent {
                         node {
-                            label "Windows&&VS2015&&DevPi"
+                            label "Windows && VS2015 && DevPi"
                         }
                     }
                     // PACKAGE_WINDOWS_STANDALONE
@@ -270,8 +270,8 @@ pipeline {
                 stage("Source Distribution: .tar.gz") {
                     steps {
                         script {
-                            def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
-                            def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
+                            def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+                            def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                             node("Windows") {
                                 bat "${tool 'CPython-3.6'} -m venv venv"
                                 bat "venv\\Scripts\\pip.exe install tox devpi-client"
@@ -288,8 +288,8 @@ pipeline {
                 stage("Source Distribution: .zip") {
                     steps {
                         script {
-                            def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
-                            def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
+                            def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+                            def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                             node("Windows") {
                                 bat "${tool 'CPython-3.6'} -m venv venv"
                                 bat "venv\\Scripts\\pip.exe install tox devpi-client"
@@ -306,8 +306,8 @@ pipeline {
                 stage("Built Distribution: .whl") {
                     steps {
                         script {
-                            def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
-                            def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
+                            def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+                            def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                             node("Windows") {
                                 bat "${tool 'CPython-3.6'} -m venv venv"
                                 bat "venv\\Scripts\\pip.exe install tox devpi-client"
@@ -327,8 +327,8 @@ pipeline {
                 success {
                     echo "it Worked. Pushing file to ${env.BRANCH_NAME} index"
                     script {
-                        def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
-                        def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
+                        def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+                        def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                             bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                             bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
@@ -345,8 +345,8 @@ pipeline {
             }
             steps {
                 script {
-                    def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
-                    def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
+                    def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+                    def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                         bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                         bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
@@ -409,8 +409,8 @@ pipeline {
         always {
             script {
                 if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
-                    def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
-                    def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
+                    def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+                    def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                         bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                         bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
