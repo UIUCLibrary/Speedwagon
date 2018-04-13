@@ -97,7 +97,7 @@ pipeline {
                     }
                     steps{
                         checkout scm
-                        // bat "${tool 'CPython-3.6'} -m tox -e py36"
+                        // bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
                         bat "${tool 'CPython-3.6'} -m venv venv"
                         bat "venv\\Scripts\\pip.exe install tox" 
                         bat "venv\\Scripts\\pip.exe install setuptools>=30.3.0"
@@ -275,6 +275,7 @@ pipeline {
                             node("Windows") {
                                 bat "${tool 'CPython-3.6'} -m venv venv"
                                 bat "venv\\Scripts\\pip.exe install tox devpi-client"
+                                bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu"
                                 withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                                     bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                                     bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
@@ -293,6 +294,7 @@ pipeline {
                             node("Windows") {
                                 bat "${tool 'CPython-3.6'} -m venv venv"
                                 bat "venv\\Scripts\\pip.exe install tox devpi-client"
+                                bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu"
                                 withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                                     bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                                     bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
@@ -311,6 +313,7 @@ pipeline {
                             node("Windows") {
                                 bat "${tool 'CPython-3.6'} -m venv venv"
                                 bat "venv\\Scripts\\pip.exe install tox devpi-client"
+                                bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu"
                                 withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                                     bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                                     bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
