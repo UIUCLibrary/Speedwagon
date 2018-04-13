@@ -20,7 +20,6 @@ CONSOLE_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.Minimum
 )
 
-
 Setting = namedtuple("Setting", ("label", "widget"))
 
 
@@ -28,17 +27,32 @@ class ToolConsole(QtWidgets.QWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
-        layout = QtWidgets.QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout = QtWidgets.QVBoxLayout(self)
+
+        # set only the top margin to 0
+        default_style = self.style()
+
+        left_margin = default_style.pixelMetric(
+            QtWidgets.QStyle.PM_LayoutLeftMargin)
+
+        right_margin = default_style.pixelMetric(
+            QtWidgets.QStyle.PM_LayoutRightMargin)
+
+        bottom_margin = default_style.pixelMetric(
+            QtWidgets.QStyle.PM_LayoutBottomMargin)
+
+        layout.setContentsMargins(left_margin, 0, right_margin, bottom_margin)
+
         self.setLayout(layout)
+
         self._console = QtWidgets.QTextBrowser(self)
-        self._console.setContentsMargins(0, 0, 0, 0)
+        # self._console.setContentsMargins(0,0,0,0)
+
         self.layout().addWidget(self._console)
 
         #  Use a monospaced font based on what's on system running
-        monospaced_font = QtGui.QFontDatabase.systemFont(
-            QtGui.QFontDatabase.FixedFont
-        )
+        monospaced_font = \
+            QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
 
         self._log = QtGui.QTextDocument()
         self._log.setDefaultFont(monospaced_font)
@@ -65,23 +79,49 @@ class ConsoleLogger(logging.Handler):
             traceback.print_tb(e.__traceback__)
 
 
+class ItemTabsWidget(QtWidgets.QWidget):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        # QtWidgets.QTabWidget
+        layout = QtWidgets.QVBoxLayout(self)
+
+        default_style = self.style()
+
+        left_margin = default_style.pixelMetric(
+            QtWidgets.QStyle.PM_LayoutLeftMargin)
+
+        right_margin = default_style.pixelMetric(
+            QtWidgets.QStyle.PM_LayoutRightMargin)
+
+        top_margin = default_style.pixelMetric(
+            QtWidgets.QStyle.PM_LayoutTopMargin)
+
+        layout.setContentsMargins(left_margin, top_margin, right_margin, 0)
+
+        self.tabs = QtWidgets.QTabWidget()
+        self.setLayout(layout)
+        self.layout().addWidget(self.tabs)
+
+    def addTab(self, w, name):
+        self.tabs.addTab(w, name)
+
+
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
-    def __init__(
-            self, work_manager: worker.ToolJobManager,
-            tools,
-            workflows
-    ) -> None:
-
+    def __init__(self, work_manager: worker.ToolJobManager, tools,
+                 workflows) -> None:
         super().__init__()
         self._work_manager = work_manager
 
         self.log_manager = self._work_manager.logger
         self.log_manager.setLevel(logging.DEBUG)
 
+        # self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
         self.setupUi(self)
+        self.mainLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.main_splitter = QtWidgets.QSplitter(self.tabWidget)
+        self.main_splitter = QtWidgets.QSplitter(self.centralwidget)
         self.main_splitter.setOrientation(QtCore.Qt.Vertical)
         self.main_splitter.setChildrenCollapsible(False)
 
@@ -90,9 +130,14 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         ###########################################################
         # Tabs
         ###########################################################
+        # self.tabWidget
+        self.tabWidget = ItemTabsWidget(self.main_splitter)
+
+        # self.tabWidget
+        # self.tabWidget.setLayout(l)
 
         self.tools_tab = tabs.ToolTab(
-            parent=self,
+            parent=self.tabWidget,
             tools=tools,
             work_manager=self._work_manager,
             log_manager=self.log_manager
@@ -113,12 +158,13 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # Add the tabs widget as the first widget
         self.tabWidget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
         # self.main_splitter.setHandleWidth(10)
+        # self.tabWidget.setContentsMargins(0,0,10,0)
         self.main_splitter.addWidget(self.tabWidget)
 
         ###########################################################
         #  Console
         ###########################################################
-        self.console = self.create_console()
+        self.console = ToolConsole(self.main_splitter)
         self.console.setMinimumHeight(50)
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
@@ -138,7 +184,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         file_menu = menu_bar.addMenu("File")
 
         # Create Exit button
-        exit_button = QtWidgets.QAction("Exit", self)
+        exit_button = QtWidgets.QAction(" &Exit", self)
         exit_button.triggered.connect(self.close)
 
         file_menu.addAction(exit_button)
@@ -147,7 +193,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         help_menu = menu_bar.addMenu("Help")
 
         # Create an About button
-        about_button = QtWidgets.QAction("About", self)
+        about_button = QtWidgets.QAction(" &About ", self)
         about_button.triggered.connect(self.show_about_window)
 
         help_menu.addAction(about_button)
@@ -170,7 +216,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         about.about_dialog_box(parent=self)
 
     def start_workflow(self):
-
         num_selected = self._workflow_selector_view.selectedIndexes()
         if len(num_selected) != 1:
             print(
@@ -179,14 +224,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             )
             return
 
-    def create_console(self):
-        console = ToolConsole(self.main_splitter)
-
-        return console
-
 
 def main():
-
     app = QtWidgets.QApplication(sys.argv)
     icon = pkg_resources.resource_stream(__name__, "favicon.ico")
     app.setWindowIcon(QtGui.QIcon(icon.name))
@@ -195,7 +234,6 @@ def main():
     tools = job.available_tools()
     workflows = job.available_workflows()
     with worker.ToolJobManager() as work_manager:
-
         windows = MainWindow(work_manager=work_manager,
                              tools=tools,
                              workflows=workflows)

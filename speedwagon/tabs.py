@@ -70,6 +70,7 @@ class Tab(AbsTab):
         self.tab, self.tab_layout = self.create_tab()
         self.tab.setSizePolicy(WORKFLOW_SIZE_POLICY)
         self.tab.setMinimumHeight(300)
+        self.tab_layout.setSpacing(20)
         # self.tab.setFixedHeight(500)
 
     @staticmethod
@@ -178,7 +179,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
         self.actions_widgets, self.actions_layout = self.create_actions()
         self.compose_tab_layout()
-
         self.init_selection()
 
     def init_selection(self):
@@ -315,11 +315,10 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             warning_message_dialog.setText(message)
             warning_message_dialog.setDetailedText("".join(tb))
             layout = warning_message_dialog.layout()
-            layout.addItem(spanner,
-                           layout.rowCount(),
-                           0,
-                           1,
-                           layout.columnCount())
+
+            layout.addItem(
+                spanner, layout.rowCount(), 0, 1, layout.columnCount())
+
             warning_message_dialog.exec()
 
             self.log_manager.warning(message)
