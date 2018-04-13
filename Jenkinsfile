@@ -3,7 +3,7 @@
 import org.ds.*
 pipeline {
     agent {
-        label "Windows && Python3"
+        label "Windows && Docker"
     }
     
     triggers {
