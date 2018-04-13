@@ -3,7 +3,7 @@
 import org.ds.*
 pipeline {
     agent {
-        label "Windows && DevPi"
+        label "Windows && Python3"
     }
     
     triggers {
@@ -80,6 +80,7 @@ pipeline {
                 bat "${tool 'CPython-3.6'} -m venv venv"
                 bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
                 bat "venv\\Scripts\\pip.exe install devpi-client"
+                bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu"
                 bat 'mkdir "reports/mypy/stdout"'
             }
         }
