@@ -88,7 +88,7 @@ pipeline {
                 stage("PyTest") {
                     agent {
                         node {
-                            label "Windows&&Python3&&Docker"
+                            label "Windows&&Python3"
                         }
                     }
                     when {
