@@ -100,7 +100,7 @@ pipeline {
                         bat "${tool 'CPython-3.6'} -m venv venv"
                         bat "venv\\Scripts\\pip.exe install tox" 
                         bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
-                        bat "venv\\Scripts\\tox.exe -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}" 
+                        bat "venv\\Scripts\\python.exe -m tox -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}"
                         junit "reports/junit-${env.NODE_NAME}-pytest.xml"
                         }
                 }
@@ -118,7 +118,7 @@ pipeline {
                         bat "${tool 'CPython-3.6'} -m venv venv"
                         bat "venv\\Scripts\\pip.exe install tox"
                         bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
-                        bat "venv\\Scripts\\tox.exe -e bdd --  --junit --junit-directory reports" 
+                        bat "venv\\Scripts\\python.exe -m tox -e bdd --  --junit --junit-directory reports"
                         junit "reports/*.xml"
                     }
                 }
