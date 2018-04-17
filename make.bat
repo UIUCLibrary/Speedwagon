@@ -98,6 +98,7 @@ goto:eof
     setlocal
     REM Create a new virtualenv in the venv path
     py -m venv venv
+    venv\Scripts\python.exe -m pip install -U pip
     endlocal
 goto:eof
 
