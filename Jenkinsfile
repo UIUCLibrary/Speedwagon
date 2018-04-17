@@ -99,6 +99,7 @@ pipeline {
                         checkout scm
                         // bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
                         bat "${tool 'CPython-3.6'} -m venv venv"
+                        bat "venv\\Scripts\\python.exe -m pip install pip"
                         bat "venv\\Scripts\\pip.exe install tox" 
                         bat "venv\\Scripts\\pip.exe install setuptools>=30.3.0"
                         bat "venv\\Scripts\\tox.exe -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}" 
@@ -117,6 +118,7 @@ pipeline {
                     steps {
                         checkout scm
                         bat "${tool 'CPython-3.6'} -m venv venv"
+                        bat "venv\\Scripts\\python.exe -m pip install pipi"
                         bat "venv\\Scripts\\pip.exe install tox"
                         bat "venv\\Scripts\\pip.exe install setuptools>=30.3.0"
                         bat "venv\\Scripts\\tox.exe -e bdd --  --junit --junit-directory reports" 
