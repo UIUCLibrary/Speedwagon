@@ -76,8 +76,9 @@ pipeline {
         stage("Creating Development VirtualEnv"){
             steps {
                 bat "${tool 'CPython-3.6'} -m venv venv"
-                bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
+                bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
                 bat "venv\\Scripts\\pip.exe install devpi-client"
+                bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
                 bat 'mkdir "reports/mypy/stdout"'
             }
         }
