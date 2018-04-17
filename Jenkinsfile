@@ -1,6 +1,4 @@
 #!groovy
-@Library("ds-utils@v0.2.0") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
-import org.ds.*
 pipeline {
     agent {
         label "Windows && Python3"
