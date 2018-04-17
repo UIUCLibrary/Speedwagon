@@ -417,7 +417,12 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                         bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                         bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                        bat "venv\\Scripts\\devpi.exe remove -y ${name}==${version}"
+                        try {
+                            bat "venv\\Scripts\\devpi.exe remove -y ${name}==${version}"
+                        } catch (Exception ex) {
+                            echo "Failed to remove ${name}==${version} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                        }
+                        
                     }
                 }
             }
