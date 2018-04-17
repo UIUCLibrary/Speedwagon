@@ -98,7 +98,6 @@ goto:eof
     setlocal
     REM Create a new virtualenv in the venv path
     py -m venv venv
-    venv\Scripts\python.exe -m pip install -U pip
     endlocal
 goto:eof
 
@@ -190,7 +189,6 @@ goto:eof
     REM call:_build
     echo Creating a standalone distribution
     setlocal
-    venv\Scripts\python.exe -m pip install -U pip
     call venv\Scripts\activate.bat
     call windows_build\build_release.bat
     endlocal
