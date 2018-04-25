@@ -24,6 +24,7 @@ pipeline {
         string(name: "PROJECT_NAME", defaultValue: "Speedwagon", description: "Name given to the project")
         booleanParam(name: "UPDATE_JIRA_EPIC", defaultValue: false, description: "Write a Update information on JIRA board")
         string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')   
+        booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
         booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests") 
         booleanParam(name: "TEST_RUN_BEHAVE", defaultValue: true, description: "Run Behave unit tests")
         booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
@@ -74,108 +75,260 @@ pipeline {
                 bat 'mkdir "reports/mypy/stdout"'
             }
         }
-
-        stage("Unit Tests") {
-            parallel{
-                stage("PyTest") {
-                    agent {
-                        node {
-                            label "Windows && Python3"
-                        }
-                    }
-                    when {
-                        expression { params.TEST_RUN_PYTEST == true }
-                    }
-                    steps{
-                        checkout scm
-                        // bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
-                        bat "${tool 'CPython-3.6'} -m venv venv"
-                        bat "venv\\Scripts\\pip.exe install tox" 
-                        bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
-                        bat "venv\\Scripts\\tox.exe -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}" 
-                        junit "reports/junit-${env.NODE_NAME}-pytest.xml"
-                        }
-                }
-                stage("Behave") {
-                    agent {
-                        node {
-                            label "Windows && Python3"
-                        }
-                    }
-                    when {
-                        expression { params.TEST_RUN_BEHAVE == true }
-                    }
-                    steps {
-                        checkout scm
-                        bat "${tool 'CPython-3.6'} -m venv venv"
-                        bat "venv\\Scripts\\pip.exe install tox"
-                        bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
-                        bat "venv\\Scripts\\tox.exe -e bdd --  --junit --junit-directory reports" 
-                        junit "reports/*.xml"
-                    }
-                }
-            }
-        }
-        stage("Additional Tests") {
-
+        stage('Build') {
             parallel {
-                stage("Documentation"){
-                    when {
-                        expression { params.TEST_RUN_DOCTEST == true }
+                stage("Python Package"){
+                    environment {
+                        PATH = "${tool 'cmake_3.11.1'};$PATH"
                     }
                     steps {
-                        
-                        bat "venv\\Scripts\\tox.exe -e docs"
-                        script{
-                            // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
-                            def alljob = env.JOB_NAME.tokenize("/") as String[]
-                            def project_name = alljob[0]
-                            dir('.tox/dist') {
-                                zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,6)}.zip"
-                                dir("html"){
-                                    stash includes: '**', name: "HTML Documentation"
+                        tee('build.log') {
+                            bat "venv\\Scripts\\python.exe setup.py build"
+                        }
+                    }
+                    post{
+                        always{
+                            warnings parserConfigurations: [[parserName: 'Pep8', pattern: 'build.log']]
+                            archiveArtifacts artifacts: 'build.log'
+                        }
+                    }
+                }
+                stage("Sphinx documentation"){
+                    when {
+                        equals expected: true, actual: params.BUILD_DOCS
+                    }
+                    steps {
+                        tee('build_sphinx.log') {
+                            bat "venv\\Scripts\\python.exe setup.py build_sphinx"
+                        }
+                    }
+                    post{
+                        always {
+                            warnings parserConfigurations: [[parserName: 'Pep8', pattern: 'build_sphinx.log']]
+                        }
+                        success{
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
+                            script{
+                                // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
+                                def alljob = env.JOB_NAME.tokenize("/") as String[]
+                                def project_name = alljob[0]
+                                dir('build/docs/') {
+                                    zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,7)}.zip"
+                                    dir("html"){
+                                        stash includes: '**', name: "HTML Documentation"
+                                    }
                                 }
                             }
                         }
                     }
                 }
-                stage("MyPy") {
+            }
+        }
+        stage("Test") {
+            parallel {
+                stage("Run Behave BDD Tests") {
                     when {
-                        expression { params.TEST_RUN_MYPY == true }
+                       equals expected: true, actual: params.TEST_UNIT_TESTS
                     }
-                    steps{
-                        script{
-                            def has_warnings = bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon --html-report reports\\mypy\\html\\ > reports/mypy/stdout/mypy.txt"
-                            
-                            if(has_warnings) {
-                                warnings parserConfigurations: [[parserName: 'MyPy', pattern: 'reports\\mypy\\stdout\\mypy.txt']], unHealthy: ''
-                            }
-                        }   
+                    steps {
+                        bat "venv\\Scripts\\behave.exe --junit --junit-directory reports/behave"
                     }
                     post {
                         always {
+                            junit "reports/behave/*.xml"
+                        }
+                    }
+                }
+                stage("Run Pytest Unit Tests"){
+                    when {
+                       equals expected: true, actual: params.TEST_UNIT_TESTS
+                    }
+                    environment{
+                        junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
+                    }
+                    steps{
+                        bat "venv\\Scripts\\py.test.exe --junitxml=reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/pytestcoverage/ --cov=speedwagon"
+                    }
+                    post {
+                        always {
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/pytestcoverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                            junit "reports/pytest/${junit_filename}"
+                        }
+                    }
+                }
+                stage("Run Doctest Tests"){
+                    when {
+                       equals expected: true, actual: params.TEST_DOCTEST
+                    }
+                    steps {
+                        bat "venv\\Scripts\\sphinx-build.exe -b doctest -d build/docs/doctrees docs/source reports/doctest"
+                    }
+                    post{
+                        always {
+                            archiveArtifacts artifacts: 'reports/doctest/output.txt'
+                        }
+                    }
+                }
+                stage("Run MyPy Static Analysis") {
+                    when {
+                        equals expected: true, actual: params.TEST_RUN_MYPY
+                    }
+                    steps{
+                        script{
+                            try{
+                                tee('mypy.log') {
+                                    bat "venv\\Scripts\\mypy.exe -p speedwagon --html-report reports\\mypy\\html\\"
+                                }
+                            } catch (exc) {
+                                echo "MyPy found some warnings"
+                            }      
+                        }
+                    }
+                    post {
+                        always {
+                            warnings parserConfigurations: [[parserName: 'MyPy', pattern: 'mypy.log']], unHealthy: ''
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
                     }
                 }
-                stage("Flake8") {
+                stage("Run Tox test") {
+                    when{
+                        equals expected: true, actual: params.TEST_RUN_TOX
+                    }
+                    agent{
+                        label "Windows&&DevPi"
+                    }
+                    steps {
+                        bat "${tool 'CPython-3.6'} -m venv venv"
+                        bat 'venv\\Scripts\\python.exe -m pip install tox'
+                        bat "venv\\Scripts\\tox.exe"
+                    }
+                }
+                stage("Run Flake8 Static Analysis") {
                     when {
-                        expression { params.TEST_RUN_FLAKE8 == true }
+                        equals expected: true, actual: params.TEST_RUN_FLAKE8
                     }
                     steps{
-                        script {
-                            def has_warnings = bat returnStatus: true, script: "venv\\Scripts\\flake8.exe speedwagon --output-file=reports\\flake8.txt --format=pylint"
-                            
-                            if(has_warnings) {
-                                warnings parserConfigurations: [[parserName: 'PyLint', pattern: 'reports/flake8.txt']], unHealthy: ''
+                        script{
+                            try{
+                                tee('flake8.log') {
+                                    bat "venv\\Scripts\\flake8.exe speedwagon --format=pylint"
+                                }
+                            } catch (exc) {
+                                echo "flake8 found some warnings"
                             }
-                        }  
-                    } 
+                        }
+                    }
+                    post {
+                        always {
+                            warnings parserConfigurations: [[parserName: 'PyLint', pattern: 'flake8.log']], unHealthy: ''
+                        }
+                    }
                 }
-
             }
-
         }
+
+        // stage("Unit Tests") {
+        //     parallel{
+        //         stage("PyTest") {
+        //             agent {
+        //                 node {
+        //                     label "Windows && Python3"
+        //                 }
+        //             }
+        //             when {
+        //                 expression { params.TEST_RUN_PYTEST == true }
+        //             }
+        //             steps{
+        //                 checkout scm
+        //                 // bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
+        //                 bat "${tool 'CPython-3.6'} -m venv venv"
+        //                 bat "venv\\Scripts\\pip.exe install tox" 
+        //                 bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
+        //                 bat "venv\\Scripts\\tox.exe -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}" 
+        //                 junit "reports/junit-${env.NODE_NAME}-pytest.xml"
+        //                 }
+        //         }
+        //         stage("Behave") {
+        //             agent {
+        //                 node {
+        //                     label "Windows && Python3"
+        //                 }
+        //             }
+        //             when {
+        //                 expression { params.TEST_RUN_BEHAVE == true }
+        //             }
+        //             steps {
+        //                 checkout scm
+        //                 bat "${tool 'CPython-3.6'} -m venv venv"
+        //                 bat "venv\\Scripts\\pip.exe install tox"
+        //                 bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
+        //                 bat "venv\\Scripts\\tox.exe -e bdd --  --junit --junit-directory reports" 
+        //                 junit "reports/*.xml"
+        //             }
+        //         }
+        //     }
+        // }
+        // stage("Additional Tests") {
+
+        //     parallel {
+        //         stage("Documentation"){
+        //             when {
+        //                 expression { params.TEST_RUN_DOCTEST == true }
+        //             }
+        //             steps {
+                        
+        //                 bat "venv\\Scripts\\tox.exe -e docs"
+        //                 script{
+        //                     // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
+        //                     def alljob = env.JOB_NAME.tokenize("/") as String[]
+        //                     def project_name = alljob[0]
+        //                     dir('.tox/dist') {
+        //                         zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,6)}.zip"
+        //                         dir("html"){
+        //                             stash includes: '**', name: "HTML Documentation"
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //         stage("MyPy") {
+        //             when {
+        //                 expression { params.TEST_RUN_MYPY == true }
+        //             }
+        //             steps{
+        //                 script{
+        //                     def has_warnings = bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon --html-report reports\\mypy\\html\\ > reports/mypy/stdout/mypy.txt"
+                            
+        //                     if(has_warnings) {
+        //                         warnings parserConfigurations: [[parserName: 'MyPy', pattern: 'reports\\mypy\\stdout\\mypy.txt']], unHealthy: ''
+        //                     }
+        //                 }   
+        //             }
+        //             post {
+        //                 always {
+        //                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
+        //                 }
+        //             }
+        //         }
+        //         stage("Flake8") {
+        //             when {
+        //                 expression { params.TEST_RUN_FLAKE8 == true }
+        //             }
+        //             steps{
+        //                 script {
+        //                     def has_warnings = bat returnStatus: true, script: "venv\\Scripts\\flake8.exe speedwagon --output-file=reports\\flake8.txt --format=pylint"
+                            
+        //                     if(has_warnings) {
+        //                         warnings parserConfigurations: [[parserName: 'PyLint', pattern: 'reports/flake8.txt']], unHealthy: ''
+        //                     }
+        //                 }  
+        //             } 
+        //         }
+
+        //     }
+
+        // }
 
         stage("Packaging") {
             // when {
