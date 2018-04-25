@@ -329,17 +329,13 @@ pipeline {
         // }
 
         stage("Packaging") {
-            // when {
-            //     expression { params.PACKAGE == true }
-            // }
-
             parallel {
                 stage("Source and Wheel formats"){
                     when {
-                        expression { params.PACKAGE_PYTHON_FORMATS == true }
+                        equals expected: true, actual: params.PACKAGE_PYTHON_FORMATS
                     }
                     steps{
-                        bat "call make.bat"
+                        bat "venv\\Scripts\\python.exe setup.py bdist_wheel sdist"
                     }
                     post {
                         always {
@@ -360,11 +356,12 @@ pipeline {
                     // PACKAGE_WINDOWS_STANDALONE
                     when {
                         not { changeRequest()}
-                        expression { params.PACKAGE_WINDOWS_STANDALONE == true }
-                        
+                        equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
                     }
                     steps {
-                        bat "call make.bat standalone"
+                        tee('build_standalone.log') {
+                            bat "call make.bat standalone"
+                        }
                         dir("dist") {
                             stash includes: "*.msi", name: "msi"
                         }
@@ -372,6 +369,8 @@ pipeline {
                     post {
                         success {
                             dir("dist") {
+                                warnings parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
+                                archiveArtifacts artifacts: 'build_standalone.log'
                                 archiveArtifacts artifacts: "*.msi", fingerprint: true
                             }
                         }
@@ -381,9 +380,18 @@ pipeline {
 
         }
 
-        stage("Deploying to Devpi") {
+        stage("Deploy to Devpi Staging") {
+            // when {
+            //     expression { params.DEPLOY_DEVPI == true && (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev")}
+            // }
             when {
-                expression { params.DEPLOY_DEVPI == true && (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev")}
+                allOf{
+                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    anyOf {
+                        equals expected: "master", actual: env.BRANCH_NAME
+                        equals expected: "dev", actual: env.BRANCH_NAME
+                    }
+                }
             }
             steps {
                 bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu"
