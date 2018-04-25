@@ -79,8 +79,10 @@ class UsingExternalManager(AbsRunner):
                     i = -1
                     for i, new_setting in \
                             enumerate(job.discover_task_metadata(**options)):
+
                         new_job = job.new_job()
                         self._manager.add_job(new_job(), new_setting)
+
                     logger.info("Found {} jobs".format(i + 1))
                     runner.dialog.setMaximum(i)
 

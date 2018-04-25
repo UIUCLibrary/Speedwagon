@@ -14,13 +14,13 @@ from .job import AbsWorkflow, AbsTool
 
 SELECTOR_VIEW_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.MinimumExpanding,
-    QtWidgets.QSizePolicy.MinimumExpanding)
+    QtWidgets.QSizePolicy.Maximum)
 
+# There are correct
 WORKFLOW_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.MinimumExpanding,
-    QtWidgets.QSizePolicy.Minimum)
+    QtWidgets.QSizePolicy.Maximum)
 
-# This one is correct
 ITEM_SETTINGS_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.MinimumExpanding,
     QtWidgets.QSizePolicy.Maximum)
@@ -69,7 +69,7 @@ class Tab(AbsTab):
         self.work_manager = work_manager
         self.tab, self.tab_layout = self.create_tab()
         self.tab.setSizePolicy(WORKFLOW_SIZE_POLICY)
-        self.tab.setMinimumHeight(300)
+        self.tab.setMinimumHeight(400)
         self.tab_layout.setSpacing(20)
         # self.tab.setFixedHeight(500)
 
@@ -123,22 +123,18 @@ class Tab(AbsTab):
         return widgets, tool_config_layout
 
     @classmethod
-    def create_workspace(
-            cls,
-            title,
-            parent
-    ) -> typing.Tuple[QtWidgets.QWidget,
-                      typing.Dict[TabWidgets,
-                                  QtWidgets.QWidget],
-                      QtWidgets.QLayout]:
+    def create_workspace(cls, title, parent) -> \
+            typing.Tuple[QtWidgets.QWidget, typing.Dict[
+                TabWidgets, QtWidgets.QWidget], QtWidgets.QLayout]:
 
         tool_workspace = QtWidgets.QGroupBox()
 
         tool_workspace.setTitle(title)
+        tool_workspace.setMinimumHeight(100)
         workspace_widgets, layout = cls.create_workspace_layout(parent)
         tool_workspace.setLayout(layout)
         tool_workspace.setSizePolicy(WORKFLOW_SIZE_POLICY)
-        return (tool_workspace, workspace_widgets, layout)
+        return tool_workspace, workspace_widgets, layout
 
     @staticmethod
     def create_tab() -> typing.Tuple[QtWidgets.QWidget, QtWidgets.QLayout]:
@@ -150,14 +146,8 @@ class Tab(AbsTab):
 
 
 class ItemSelectionTab(Tab, metaclass=ABCMeta):
-    def __init__(
-            self,
-            name,
-            parent: QtWidgets.QWidget,
-            item_model,
-            work_manager,
-            log_manager
-    ) -> None:
+    def __init__(self, name, parent: QtWidgets.QWidget, item_model,
+                 work_manager, log_manager) -> None:
 
         super().__init__(parent, work_manager)
         self.log_manager = log_manager
@@ -332,12 +322,13 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
 
 class ToolTab(ItemSelectionTab):
-    def __init__(self, parent, tools, work_manager, log_manager):
+    def __init__(self, parent, tools, work_manager, log_manager) -> None:
         super().__init__("Tool",
                          parent,
                          models.ToolsListModel(tools),
                          work_manager,
                          log_manager)
+        self._tool: AbsTool = None
 
     def is_ready_to_start(self) -> bool:
         number_of_selected = self.item_selector_view.selectedIndexes()
@@ -392,8 +383,9 @@ class ToolTab(ItemSelectionTab):
 
     def _on_failed(self, exc):
         self.log_manager.error("Process failed. Reason: {}".format(exc))
-        print("************** {}".format(exc))
+        # print("************** {}".format(exc))
         if exc:
+            traceback.print_tb(exc.__traceback__)
             # self.log_manager.notify(str(exc))
             self.log_manager.warning(str(exc))
 
@@ -441,18 +433,12 @@ class ToolTab(ItemSelectionTab):
 
 class WorkflowsTab(ItemSelectionTab):
 
-    def __init__(
-            self,
-            parent: QtWidgets.QWidget,
-            workflows,
-            work_manager,
-            log_manager
-    ) -> None:
+    def __init__(self, parent: QtWidgets.QWidget, workflows, work_manager,
+                 log_manager) -> None:
 
-        super().__init__("Workflow",
-                         parent,
-                         models.WorkflowListModel(workflows),
-                         work_manager, log_manager)
+        super().__init__("Workflow", parent,
+                         models.WorkflowListModel(workflows),work_manager,
+                         log_manager)
 
     def is_ready_to_start(self) -> bool:
         if len(self.item_selector_view.selectedIndexes()) != 1:

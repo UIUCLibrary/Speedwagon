@@ -210,11 +210,8 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
 
 class ProgressMessageBoxLogHandler(logging.Handler):
 
-    def __init__(
-            self,
-            dialog_box: QtWidgets.QProgressDialog,
-            level=logging.NOTSET
-    ) -> None:
+    def __init__(self, dialog_box: QtWidgets.QProgressDialog,
+                 level=logging.NOTSET ) -> None:
 
         super().__init__(level)
         self.dialog_box = dialog_box
@@ -286,7 +283,7 @@ class WorkRunnerExternal2(contextlib.AbstractContextManager):
 
     def abort(self):
         if self.dialog.result() == self.dialog.Accepted:
-            print("SUCESSS")
+            print("SUCCESS")
         else:
             if self.abort_callback is not None:
                 self.abort_callback()

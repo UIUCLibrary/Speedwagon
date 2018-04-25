@@ -4,6 +4,7 @@ sphinx
 pytest
 pytest-runner
 pytest-qt
+pytest-cov
 behave
 tox
 lxml
