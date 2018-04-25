@@ -1,4 +1,6 @@
 #!groovy
+@Library("ds-utils@v0.2.0") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
+import org.ds.*
 pipeline {
     agent {
         label "Windows && Python3"
@@ -24,11 +26,9 @@ pipeline {
         string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')   
         booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests") 
         booleanParam(name: "TEST_RUN_BEHAVE", defaultValue: true, description: "Run Behave unit tests")
-        // booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
         booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
         booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 static analysis")
         booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
-        // booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a package")
         booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
@@ -63,22 +63,14 @@ pipeline {
 
             }
         }
-
-        stage("Cloning Source") {
+        stage("Configure Environment"){
             steps {
-                deleteDir()
-                checkout scm
                 stash includes: '**', name: "Source", useDefaultExcludes: false
                 stash includes: 'deployment.yml', name: "Deployment"
-            }
-
-        }
-        stage("Creating Development VirtualEnv"){
-            steps {
                 bat "${tool 'CPython-3.6'} -m venv venv"
+                bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
                 bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
                 bat "venv\\Scripts\\pip.exe install devpi-client"
-                bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
                 bat 'mkdir "reports/mypy/stdout"'
             }
         }
@@ -100,7 +92,7 @@ pipeline {
                         bat "${tool 'CPython-3.6'} -m venv venv"
                         bat "venv\\Scripts\\pip.exe install tox" 
                         bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
-                        bat "venv\\Scripts\\python.exe -m tox -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}"
+                        bat "venv\\Scripts\\tox.exe -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}" 
                         junit "reports/junit-${env.NODE_NAME}-pytest.xml"
                         }
                 }
@@ -118,7 +110,7 @@ pipeline {
                         bat "${tool 'CPython-3.6'} -m venv venv"
                         bat "venv\\Scripts\\pip.exe install tox"
                         bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
-                        bat "venv\\Scripts\\python.exe -m tox -e bdd --  --junit --junit-directory reports"
+                        bat "venv\\Scripts\\tox.exe -e bdd --  --junit --junit-directory reports" 
                         junit "reports/*.xml"
                     }
                 }
