@@ -34,6 +34,7 @@ pipeline {
         booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
+        booleanParam(name: "DEPLOY_SCCM", defaultValue: true, description: "Request deployment of MSI installer to SCCM")
         choice(choices: 'None\nRelease_to_devpi_only\nRelease_to_devpi_and_sccm\n', description: "Release the build to production. Only available in the Master branch", name: 'RELEASE')
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
@@ -362,6 +363,8 @@ pipeline {
                         tee('build_standalone.log') {
                             bat "call make.bat standalone"
                         }
+                        warnings parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
+                        archiveArtifacts artifacts: 'build_standalone.log'
                         dir("dist") {
                             stash includes: "*.msi", name: "msi"
                         }
@@ -369,8 +372,6 @@ pipeline {
                     post {
                         success {
                             dir("dist") {
-                                warnings parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
-                                archiveArtifacts artifacts: 'build_standalone.log'
                                 archiveArtifacts artifacts: "*.msi", fingerprint: true
                             }
                         }
@@ -490,94 +491,208 @@ pipeline {
                 }
             }
         }
-        stage("Release to DevPi production") {
+        stage("Deploy"){
             when {
-                expression { params.RELEASE != "None" && env.BRANCH_NAME == "master" }
+              branch "master"
             }
-            steps {
-                script {
-                    def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                    def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                        bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                        bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                        bat "venv\\Scripts\\devpi.exe push ${name}==${version} production/release"
+            parallel {
+                stage("Deploy Online Documentation") {
+                    when{
+                        equals expected: true, actual: params.DEPLOY_DOCS
                     }
-
-                }
-                node("Linux"){
-                    updateOnlineDocs url_subdomain: params.URL_SUBFOLDER, stash_name: "HTML Documentation"
-                }
-            }
-        }
-
-        stage("Deploy to SCCM") {
-            when {
-                expression { params.RELEASE == "Release_to_devpi_and_sccm"}
-            }
-
-            steps {
-                node("Linux"){
-                    unstash "msi"
-                    deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
-                    input("Deploy to production?")
-                    deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
-                }
-
-            }
-            post {
-                success {
-                    script{
-                        def  deployment_request = requestDeploy this, "deployment.yml"
-                        echo deployment_request
-                        writeFile file: "deployment_request.txt", text: deployment_request
-                        archiveArtifacts artifacts: "deployment_request.txt"
-                    }
-                }
-            }
-        }
-        stage("Update online documentation") {
-            agent {
-                label "Linux"
-            }
-            when {
-              expression {params.UPDATE_DOCS == true }
-            }
-            steps {
-                updateOnlineDocs url_subdomain: params.URL_SUBFOLDER, stash_name: "HTML Documentation"
-            }
-            post {
-                success {
-                    script {
-                        echo "https://www.library.illinois.edu/dccdocs/${params.URL_SUBFOLDER} updated successfully."
-                    }
-                }
-            }
-
-        }
-    }
-    post {
-        always {
-            script {
-                if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
-                    def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                    def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                        bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                        bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                        try {
-                            bat "venv\\Scripts\\devpi.exe remove -y ${name}==${version}"
-                        } catch (Exception ex) {
-                            echo "Failed to remove ${name}==${version} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                    steps{
+                        bat "venv\\Scripts\\python.exe setup.py build_sphinx"
+                        dir("build/docs/html/"){
+                            input 'Update project documentation?'
+                            sshPublisher(
+                                publishers: [
+                                    sshPublisherDesc(
+                                        configName: 'apache-ns - lib-dccuser-updater', 
+                                        sshLabel: [label: 'Linux'], 
+                                        transfers: [sshTransfer(excludes: '', 
+                                        execCommand: '', 
+                                        execTimeout: 120000, 
+                                        flatten: false, 
+                                        makeEmptyDirs: false, 
+                                        noDefaultExcludes: false, 
+                                        patternSeparator: '[, ]+', 
+                                        remoteDirectory: "${params.DEPLOY_DOCS_URL_SUBFOLDER}", 
+                                        remoteDirectorySDF: false, 
+                                        removePrefix: '', 
+                                        sourceFiles: '**')], 
+                                    usePromotionTimestamp: false, 
+                                    useWorkspaceInPromotion: false, 
+                                    verbose: true
+                                    )
+                                ]
+                            )
                         }
-                        
+                    }
+                }
+                stage("Deploy to DevPi Production") {
+                    when {
+                        allOf{
+                            equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+                            branch "master"
+                        }
+                    }
+                    steps {
+                        script {
+                            def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
+                            def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
+                            input "Release ${name} ${version} to DevPi Production?"
+                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                                bat "${tool 'Python3.6.3_Win64'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                                bat "${tool 'Python3.6.3_Win64'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                                bat "${tool 'Python3.6.3_Win64'} -m devpi push ${name}==${version} production/release"
+                            }
+                        }
+                    }
+                }
+                stage("Deploy to SCCM") {
+                    when {
+                        equals expected: true, actual: params.DEPLOY_SCCM
+                        // expression { params.RELEASE == "Release_to_devpi_and_sccm"}
+                    }
+
+                    steps {
+                        node("Linux"){
+                            unstash "msi"
+                            deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
+                            input("Deploy to production?")
+                            deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+                        }
+
+                    }
+                    post {
+                        success {
+                            script{
+                                def  deployment_request = requestDeploy this, "deployment.yml"
+                                echo deployment_request
+                                writeFile file: "deployment_request.txt", text: deployment_request
+                                archiveArtifacts artifacts: "deployment_request.txt"
+                            }
+                        }
                     }
                 }
             }
         }
-        success {
-            echo "Cleaning up workspace"
-            deleteDir()
+        // stage("Release to DevPi production") {
+        //     when {
+        //         expression { params.RELEASE != "None" && env.BRANCH_NAME == "master" }
+        //     }
+        //     steps {
+        //         script {
+        //             def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+        //             def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+        //             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+        //                 bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+        //                 bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+        //                 bat "venv\\Scripts\\devpi.exe push ${name}==${version} production/release"
+        //             }
+
+        //         }
+        //         node("Linux"){
+        //             updateOnlineDocs url_subdomain: params.URL_SUBFOLDER, stash_name: "HTML Documentation"
+        //         }
+        //     }
         }
-    }
+
+        // stage("Deploy to SCCM") {
+        //     when {
+        //         expression { params.RELEASE == "Release_to_devpi_and_sccm"}
+        //     }
+
+        //     steps {
+        //         node("Linux"){
+        //             unstash "msi"
+        //             deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
+        //             input("Deploy to production?")
+        //             deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+        //         }
+
+        //     }
+        //     post {
+        //         success {
+        //             script{
+        //                 def  deployment_request = requestDeploy this, "deployment.yml"
+        //                 echo deployment_request
+        //                 writeFile file: "deployment_request.txt", text: deployment_request
+        //                 archiveArtifacts artifacts: "deployment_request.txt"
+        //             }
+        //         }
+        //     }
+        // }
+        // stage("Update online documentation") {
+        //     agent {
+        //         label "Linux"
+        //     }
+        //     when {
+        //       expression {params.UPDATE_DOCS == true }
+        //     }
+        //     steps {
+        //         updateOnlineDocs url_subdomain: params.URL_SUBFOLDER, stash_name: "HTML Documentation"
+        //     }
+        //     post {
+        //         success {
+        //             script {
+        //                 echo "https://www.library.illinois.edu/dccdocs/${params.URL_SUBFOLDER} updated successfully."
+        //             }
+        //         }
+        //     }
+
+        // }
+    // }
+        post {
+            cleanup {
+                bat "venv\\Scripts\\python.exe setup.py clean --all"
+            
+                dir('dist') {
+                    deleteDir()
+                }
+                dir('build') {
+                    deleteDir()
+                }
+                script {
+                    if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
+                        def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+                        def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                            bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                            try {
+                                bat "venv\\Scripts\\devpi.exe remove -y ${name}==${version}"
+                            } catch (Exception ex) {
+                                echo "Failed to remove ${name}==${version} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                            }
+                            
+                        }
+                    }
+                }
+            }
+        }
+    // post {
+    //     always {
+    //         script {
+    //             if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
+    //                 def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+    //                 def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+    //                 withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+    //                     bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+    //                     bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+    //                     try {
+    //                         bat "venv\\Scripts\\devpi.exe remove -y ${name}==${version}"
+    //                     } catch (Exception ex) {
+    //                         echo "Failed to remove ${name}==${version} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+    //                     }
+                        
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     success {
+    //         echo "Cleaning up workspace"
+    //         deleteDir()
+    //     }
+    // }
 }
