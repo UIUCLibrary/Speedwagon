@@ -132,6 +132,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         ###########################################################
         # self.tabWidget
         self.tabWidget = ItemTabsWidget(self.main_splitter)
+        self.tabWidget.setMinimumHeight(400)
 
         # self.tabWidget
         # self.tabWidget.setLayout(l)
@@ -165,7 +166,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         #  Console
         ###########################################################
         self.console = ToolConsole(self.main_splitter)
-        self.console.setMinimumHeight(50)
+        self.console.setMinimumHeight(75)
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
         self._handler = ConsoleLogger(self.console)
