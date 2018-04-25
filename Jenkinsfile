@@ -196,10 +196,11 @@ pipeline {
                         equals expected: true, actual: params.TEST_RUN_TOX
                     }
                     agent{
-                        label "Windows&&DevPi"
+                        label "Windows && DevPi"
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv"
+                        bat 'venv\\Scripts\\python.exe -m pip install -U setuptools'
                         bat 'venv\\Scripts\\python.exe -m pip install tox'
                         bat "venv\\Scripts\\tox.exe"
                     }
