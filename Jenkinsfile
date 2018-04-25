@@ -30,6 +30,7 @@ pipeline {
         booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
         booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 static analysis")
         booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
+        booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
         booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
@@ -128,7 +129,7 @@ pipeline {
             parallel {
                 stage("Run Behave BDD Tests") {
                     when {
-                       equals expected: true, actual: params.TEST_UNIT_TESTS
+                       equals expected: true, actual: params.TEST_RUN_BEHAVE
                     }
                     steps {
                         bat "venv\\Scripts\\behave.exe --junit --junit-directory reports/behave"
@@ -141,7 +142,7 @@ pipeline {
                 }
                 stage("Run Pytest Unit Tests"){
                     when {
-                       equals expected: true, actual: params.TEST_UNIT_TESTS
+                       equals expected: true, actual: params.TEST_RUN_PYTEST
                     }
                     environment{
                         junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
@@ -158,7 +159,7 @@ pipeline {
                 }
                 stage("Run Doctest Tests"){
                     when {
-                       equals expected: true, actual: params.TEST_DOCTEST
+                       equals expected: true, actual: params.TEST_RUN_FLAKE8
                     }
                     steps {
                         bat "venv\\Scripts\\sphinx-build.exe -b doctest -d build/docs/doctrees docs/source reports/doctest"
@@ -366,8 +367,6 @@ pipeline {
                         
                     }
                     steps {
-                        deleteDir()
-                        unstash "Source"
                         bat "call make.bat standalone"
                         dir("dist") {
                             stash includes: "*.msi", name: "msi"
