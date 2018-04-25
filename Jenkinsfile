@@ -21,7 +21,7 @@ pipeline {
     }
 
     parameters {
-        string(name: "PROJECT_NAME", defaultValue: "Speedwagon", description: "Name given to the project")
+        // string(name: "PROJECT_NAME", defaultValue: "Speedwagon", description: "Name given to the project")
         booleanParam(name: "UPDATE_JIRA_EPIC", defaultValue: false, description: "Write a Update information on JIRA board")
         string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')   
         booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
@@ -35,8 +35,8 @@ pipeline {
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: true, description: "Request deployment of MSI installer to SCCM")
-        choice(choices: 'None\nRelease_to_devpi_only\nRelease_to_devpi_and_sccm\n', description: "Release the build to production. Only available in the Master branch", name: 'RELEASE')
-        booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update online documentation")
+        // choice(choices: 'None\nRelease_to_devpi_only\nRelease_to_devpi_and_sccm\n', description: "Release the build to production. Only available in the Master branch", name: 'RELEASE')
+        booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
     
@@ -44,7 +44,8 @@ pipeline {
         stage("Testing Jira epic"){
             agent any
             when {
-                expression {params.UPDATE_JIRA_EPIC == true}
+                equals expected: true, actual: params.UPDATE_JIRA_EPIC
+                // expression {params.UPDATE_JIRA_EPIC == true}
             }
             steps {
                 echo "Finding Jira epic"
@@ -226,109 +227,6 @@ pipeline {
                 }
             }
         }
-
-        // stage("Unit Tests") {
-        //     parallel{
-        //         stage("PyTest") {
-        //             agent {
-        //                 node {
-        //                     label "Windows && Python3"
-        //                 }
-        //             }
-        //             when {
-        //                 expression { params.TEST_RUN_PYTEST == true }
-        //             }
-        //             steps{
-        //                 checkout scm
-        //                 // bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
-        //                 bat "${tool 'CPython-3.6'} -m venv venv"
-        //                 bat "venv\\Scripts\\pip.exe install tox" 
-        //                 bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
-        //                 bat "venv\\Scripts\\tox.exe -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}" 
-        //                 junit "reports/junit-${env.NODE_NAME}-pytest.xml"
-        //                 }
-        //         }
-        //         stage("Behave") {
-        //             agent {
-        //                 node {
-        //                     label "Windows && Python3"
-        //                 }
-        //             }
-        //             when {
-        //                 expression { params.TEST_RUN_BEHAVE == true }
-        //             }
-        //             steps {
-        //                 checkout scm
-        //                 bat "${tool 'CPython-3.6'} -m venv venv"
-        //                 bat "venv\\Scripts\\pip.exe install tox"
-        //                 bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
-        //                 bat "venv\\Scripts\\tox.exe -e bdd --  --junit --junit-directory reports" 
-        //                 junit "reports/*.xml"
-        //             }
-        //         }
-        //     }
-        // }
-        // stage("Additional Tests") {
-
-        //     parallel {
-        //         stage("Documentation"){
-        //             when {
-        //                 expression { params.TEST_RUN_DOCTEST == true }
-        //             }
-        //             steps {
-                        
-        //                 bat "venv\\Scripts\\tox.exe -e docs"
-        //                 script{
-        //                     // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
-        //                     def alljob = env.JOB_NAME.tokenize("/") as String[]
-        //                     def project_name = alljob[0]
-        //                     dir('.tox/dist') {
-        //                         zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,6)}.zip"
-        //                         dir("html"){
-        //                             stash includes: '**', name: "HTML Documentation"
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //         stage("MyPy") {
-        //             when {
-        //                 expression { params.TEST_RUN_MYPY == true }
-        //             }
-        //             steps{
-        //                 script{
-        //                     def has_warnings = bat returnStatus: true, script: "venv\\Scripts\\mypy.exe speedwagon --html-report reports\\mypy\\html\\ > reports/mypy/stdout/mypy.txt"
-                            
-        //                     if(has_warnings) {
-        //                         warnings parserConfigurations: [[parserName: 'MyPy', pattern: 'reports\\mypy\\stdout\\mypy.txt']], unHealthy: ''
-        //                     }
-        //                 }   
-        //             }
-        //             post {
-        //                 always {
-        //                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
-        //                 }
-        //             }
-        //         }
-        //         stage("Flake8") {
-        //             when {
-        //                 expression { params.TEST_RUN_FLAKE8 == true }
-        //             }
-        //             steps{
-        //                 script {
-        //                     def has_warnings = bat returnStatus: true, script: "venv\\Scripts\\flake8.exe speedwagon --output-file=reports\\flake8.txt --format=pylint"
-                            
-        //                     if(has_warnings) {
-        //                         warnings parserConfigurations: [[parserName: 'PyLint', pattern: 'reports/flake8.txt']], unHealthy: ''
-        //                     }
-        //                 }  
-        //             } 
-        //         }
-
-        //     }
-
-        // }
-
         stage("Packaging") {
             parallel {
                 stage("Source and Wheel formats"){
@@ -413,8 +311,18 @@ pipeline {
         }
         stage("Test DevPi packages") {
             when {
-                expression { params.DEPLOY_DEVPI == true && (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev")}
+                allOf{
+                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    anyOf {
+                        equals expected: "master", actual: env.BRANCH_NAME
+                        equals expected: "dev", actual: env.BRANCH_NAME
+                    }
+                }
             }
+
+            // when {
+            //     expression { params.DEPLOY_DEVPI == true && (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev")}
+            // }
             parallel {
                 stage("Source Distribution: .tar.gz") {
                     steps {
@@ -558,11 +466,13 @@ pipeline {
                     steps {
                         node("Linux"){
                             unstash "msi"
-                            deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
-                            input("Deploy to production?")
-                            deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+                            script{
+                                def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
+                                deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
+                                input("Deploy to production?")
+                                deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+                            }
                         }
-
                     }
                     post {
                         success {
@@ -577,122 +487,34 @@ pipeline {
                 }
             }
         }
-        // stage("Release to DevPi production") {
-        //     when {
-        //         expression { params.RELEASE != "None" && env.BRANCH_NAME == "master" }
-        //     }
-        //     steps {
-        //         script {
-        //             def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-        //             def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-        //             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-        //                 bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-        //                 bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-        //                 bat "venv\\Scripts\\devpi.exe push ${name}==${version} production/release"
-        //             }
 
-        //         }
-        //         node("Linux"){
-        //             updateOnlineDocs url_subdomain: params.URL_SUBFOLDER, stash_name: "HTML Documentation"
-        //         }
-        //     }
-        }
-
-        // stage("Deploy to SCCM") {
-        //     when {
-        //         expression { params.RELEASE == "Release_to_devpi_and_sccm"}
-        //     }
-
-        //     steps {
-        //         node("Linux"){
-        //             unstash "msi"
-        //             deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
-        //             input("Deploy to production?")
-        //             deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
-        //         }
-
-        //     }
-        //     post {
-        //         success {
-        //             script{
-        //                 def  deployment_request = requestDeploy this, "deployment.yml"
-        //                 echo deployment_request
-        //                 writeFile file: "deployment_request.txt", text: deployment_request
-        //                 archiveArtifacts artifacts: "deployment_request.txt"
-        //             }
-        //         }
-        //     }
-        // }
-        // stage("Update online documentation") {
-        //     agent {
-        //         label "Linux"
-        //     }
-        //     when {
-        //       expression {params.UPDATE_DOCS == true }
-        //     }
-        //     steps {
-        //         updateOnlineDocs url_subdomain: params.URL_SUBFOLDER, stash_name: "HTML Documentation"
-        //     }
-        //     post {
-        //         success {
-        //             script {
-        //                 echo "https://www.library.illinois.edu/dccdocs/${params.URL_SUBFOLDER} updated successfully."
-        //             }
-        //         }
-        //     }
-
-        // }
-    // }
-        post {
-            cleanup {
-                bat "venv\\Scripts\\python.exe setup.py clean --all"
-            
-                dir('dist') {
-                    deleteDir()
-                }
-                dir('build') {
-                    deleteDir()
-                }
-                script {
-                    if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
-                        def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                        def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                            bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                            try {
-                                bat "venv\\Scripts\\devpi.exe remove -y ${name}==${version}"
-                            } catch (Exception ex) {
-                                echo "Failed to remove ${name}==${version} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                            }
-                            
+    }
+    post {
+        cleanup {
+            bat "venv\\Scripts\\python.exe setup.py clean --all"
+        
+            dir('dist') {
+                deleteDir()
+            }
+            dir('build') {
+                deleteDir()
+            }
+            script {
+                if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
+                    def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+                    def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                        bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                        bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                        try {
+                            bat "venv\\Scripts\\devpi.exe remove -y ${name}==${version}"
+                        } catch (Exception ex) {
+                            echo "Failed to remove ${name}==${version} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                         }
+                        
                     }
                 }
             }
         }
-    // post {
-    //     always {
-    //         script {
-    //             if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
-    //                 def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-    //                 def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-    //                 withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-    //                     bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-    //                     bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-    //                     try {
-    //                         bat "venv\\Scripts\\devpi.exe remove -y ${name}==${version}"
-    //                     } catch (Exception ex) {
-    //                         echo "Failed to remove ${name}==${version} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-    //                     }
-                        
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     success {
-    //         echo "Cleaning up workspace"
-    //         deleteDir()
-    //     }
-    // }
+    }
 }
