@@ -437,7 +437,7 @@ class WorkflowsTab(ItemSelectionTab):
                  log_manager) -> None:
 
         super().__init__("Workflow", parent,
-                         models.WorkflowListModel(workflows),work_manager,
+                         models.WorkflowListModel(workflows), work_manager,
                          log_manager)
 
     def is_ready_to_start(self) -> bool:

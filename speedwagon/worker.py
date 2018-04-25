@@ -211,7 +211,7 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
 class ProgressMessageBoxLogHandler(logging.Handler):
 
     def __init__(self, dialog_box: QtWidgets.QProgressDialog,
-                 level=logging.NOTSET ) -> None:
+                 level=logging.NOTSET) -> None:
 
         super().__init__(level)
         self.dialog_box = dialog_box
