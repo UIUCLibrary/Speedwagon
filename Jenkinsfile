@@ -67,7 +67,6 @@ pipeline {
         }
         stage("Configure Environment"){
             steps {
-                stash includes: '**', name: "Source", useDefaultExcludes: false
                 stash includes: 'deployment.yml', name: "Deployment"
                 bat "${tool 'CPython-3.6'} -m venv venv"
                 bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
@@ -79,9 +78,6 @@ pipeline {
         stage('Build') {
             parallel {
                 stage("Python Package"){
-                    environment {
-                        PATH = "${tool 'cmake_3.11.1'};$PATH"
-                    }
                     steps {
                         tee('build.log') {
                             bat "venv\\Scripts\\python.exe setup.py build"
