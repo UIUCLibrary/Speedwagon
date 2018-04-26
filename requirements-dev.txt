@@ -7,5 +7,4 @@ pytest-qt
 pytest-cov
 behave
 tox
-lxml
 flake8
