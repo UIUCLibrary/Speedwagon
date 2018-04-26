@@ -1,7 +1,9 @@
 import abc
 import enum
+import itertools
 import os
 import shutil
+import sys
 import typing
 from speedwagon import worker
 from speedwagon.tools import options
@@ -14,7 +16,9 @@ class UserArgs(enum.Enum):
 
 
 class ResultValues(enum.Enum):
-    FILENAME = "filename"
+    OUTPUT_FILENAME = "output_filename"
+    SOURCE_FILENAME = "source_filename"
+    SUCCESS = "success"
 
 
 class JobValues(enum.Enum):
@@ -48,6 +52,10 @@ class ProcessFile:
         return self._strategy.output
 
 
+class ProcessingException(Exception):
+    pass
+
+
 class ConvertFile(AbsProcessStrategy):
 
     def process(self, source_file, destination_path):
@@ -57,11 +65,19 @@ class ConvertFile(AbsProcessStrategy):
                                         basename + ".jp2"
                                         )
 
-        pykdu_compress.kdu_compress_cli(
+        rc = pykdu_compress.kdu_compress_cli(
             "-i {} " "-o {}".format(source_file, output_file_path))
 
+        if rc != 0:
+            raise ProcessingException("kdu_compress_cli returned "
+                                      "nonzero value: {}.".format(rc))
         self.output = output_file_path
         self.status = "Generated {}".format(output_file_path)
+
+
+def partition(pred, iterable):
+    t1, t2 = itertools.tee(iterable)
+    return itertools.filterfalse(pred, t1), filter(pred, t2)
 
 
 class CopyFile(AbsProcessStrategy):
@@ -114,18 +130,38 @@ class ConvertTiffPreservationToDLJp2(AbsTool):
 
     @staticmethod
     def generate_report(results, user_args):
+        failure = False
+        dest = None
+
+        def successful(result):
+            if not result[ResultValues.SUCCESS.value]:
+                return False
+            return True
+
+        failed_results, successful_results = partition(successful, results)
 
         dest_paths = set()
-        for result in results:
-            new_file = result[ResultValues.FILENAME.value]
+        for result in successful_results:
+            new_file = result[ResultValues.OUTPUT_FILENAME.value]
             dest_paths.add(os.path.dirname(new_file))
 
-        assert len(dest_paths) == 1
-        dest = dest_paths.pop()
+        if len(dest_paths) == 1:
+            dest = dest_paths.pop()
+        else:
+            failure = True
 
-        report = "Success! [{}] JP2 files written to \"{}\" folder".format(
-            len(results), dest)
+        if not failure:
+            report = "Success! [{}] JP2 files written to \"{}\" folder".format(
+                len(results), dest)
+        else:
+            failed_list = "* \n".join(
+                [result[ResultValues.SOURCE_FILENAME.value]
+                 for result in failed_results]
+            )
 
+            report = "Failed!\n" \
+                     "The following files failed to convert: \n" \
+                     "{}".format(failed_list)
         return report
 
     @staticmethod
@@ -172,10 +208,18 @@ class PackageImageConverter(worker.ProcessJobWorker):
             self.log("Created {}".format(des_path))
         except FileExistsError:
             pass
-        process_task.process(source_file_path, des_path)
+
+        try:
+            process_task.process(source_file_path, des_path)
+            success = True
+        except ProcessingException as e:
+            print(e, file=sys.stderr)
+            success = False
 
         self.result = {
-            ResultValues.FILENAME.value: process_task.output
+            ResultValues.OUTPUT_FILENAME.value: process_task.output,
+            ResultValues.SOURCE_FILENAME.value: source_file_path,
+            ResultValues.SUCCESS.value: success
         }
 
         self.log(process_task.status_message())
