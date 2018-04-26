@@ -237,7 +237,7 @@ pipeline {
                         bat "venv\\Scripts\\python.exe setup.py bdist_wheel sdist"
                     }
                     post {
-                        always {
+                        success {
                             dir("dist") {
                                 archiveArtifacts artifacts: "*.whl", fingerprint: true
                                 archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
