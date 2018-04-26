@@ -22,9 +22,9 @@ pipeline {
 
     parameters {
         // string(name: "PROJECT_NAME", defaultValue: "Speedwagon", description: "Name given to the project")
-        booleanParam(name: "UPDATE_JIRA_EPIC", defaultValue: false, description: "Write a Update information on JIRA board")
         string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')   
         booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
+        file description: 'Build with alternative requirements.txt file', name: 'requirements.txt'
         booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests") 
         booleanParam(name: "TEST_RUN_BEHAVE", defaultValue: true, description: "Run Behave unit tests")
         booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
@@ -35,8 +35,6 @@ pipeline {
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: true, description: "Request deployment of MSI installer to SCCM")
-        // choice(choices: 'None\nRelease_to_devpi_only\nRelease_to_devpi_and_sccm\n', description: "Release the build to production. Only available in the Master branch", name: 'RELEASE')
-        file description: 'Alternative requirements.txt file', name: 'requirements.txt'
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
@@ -265,13 +263,11 @@ pipeline {
                         }
                         warnings parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
                         archiveArtifacts artifacts: 'build_standalone.log'
-                        dir("dist") {
-                            stash includes: "*.msi", name: "msi"
-                        }
                     }
                     post {
                         success {
                             dir("dist") {
+                                stash includes: "*.msi", name: "msi"
                                 archiveArtifacts artifacts: "*.msi", fingerprint: true
                             }
                         }
