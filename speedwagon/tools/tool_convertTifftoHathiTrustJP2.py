@@ -47,7 +47,7 @@ class AbsProcessStrategy(metaclass=abc.ABCMeta):
 
 
 class ProcessFile:
-    def __init__(self, process_strategy: AbsProcessStrategy):
+    def __init__(self, process_strategy: AbsProcessStrategy) -> None:
         self._strategy = process_strategy
 
     def process(self, source_file, destination_path):
