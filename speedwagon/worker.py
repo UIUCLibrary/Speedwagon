@@ -384,6 +384,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
             job_, settings = self._pending_jobs.get()
             job_.set_message_queue(self._message_queue)
             fut = self._executor.submit(job_.execute, **settings)
+
             fut.add_done_callback(fn=lambda x: self._pending_jobs.task_done())
             self.futures.append(fut)
 
