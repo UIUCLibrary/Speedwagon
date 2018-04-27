@@ -133,7 +133,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                             parent,
                             job,
                             options,
-                            pre_results
+                            pre_results.copy()
                         )
 
                         if new_options:
