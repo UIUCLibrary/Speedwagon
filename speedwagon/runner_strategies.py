@@ -25,14 +25,9 @@ class RunRunner:
     def __init__(self, strategy: AbsRunner) -> None:
         self._strategy = strategy
 
-    def run(
-            self,
-            parent,
-            tool: AbsJob,
-            options: dict,
-            logger: logging.Logger,
-            completion_callback=None
-    ) -> None:
+    def run(self, parent, tool: AbsJob, options: dict, logger: logging.Logger,
+            completion_callback=None) -> None:
+
         self._strategy.run(parent, tool, options, logger, completion_callback)
 
 
