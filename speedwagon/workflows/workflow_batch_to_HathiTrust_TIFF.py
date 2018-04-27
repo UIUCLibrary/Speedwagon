@@ -31,7 +31,6 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         tasks_metadata = []
         if len(initial_results) == 1:
             packages = initial_results.pop()
-            print(packages)
             for package in packages.data:
 
                 bib_id = package.metadata[Metadata.ID]
