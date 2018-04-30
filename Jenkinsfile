@@ -24,7 +24,7 @@ pipeline {
         // string(name: "PROJECT_NAME", defaultValue: "Speedwagon", description: "Name given to the project")
         string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')   
         booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
-        file description: 'Build with alternative requirements.txt file', name: 'requirements.txt'
+        // file description: 'Build with alternative requirements.txt file', name: 'requirements.txt'
         booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests") 
         booleanParam(name: "TEST_RUN_BEHAVE", defaultValue: true, description: "Run Behave unit tests")
         booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
