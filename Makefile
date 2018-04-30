@@ -9,8 +9,8 @@ build: venv
 
 venv:
 	$(PYTHON) -m venv venv
-	@source venv/bin/activate && pip install -r requirements.txt
-	@source venv/bin/activate && pip install -r requirements-dev.txt
+	venv/bin/pip install pipenv
+	venv/bin/pip install $$(venv/bin/pipenv lock --requirements --dev)
 	@echo "Created a Python virtual environment in venv"
 
 dist: sdist wheel

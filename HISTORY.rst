@@ -49,3 +49,9 @@ Dev
 * Changes:
    * Changed name to Speedwagon
    * Verify HathiTrust Package Completeness is now a Workflow (instead of a tool)
+* New Tools:
+   * Convert TIFF to HathiTrust JP2
+   * Convert CaptureOne Preservation TIFF to Digital Library Access JP2
+   * Convert CaptureOne Preservation TIFF to Digital Library Compound Objects
+* New Workflows:
+   * CaptureOne Batch to HathiTrust TIFF Complete Package

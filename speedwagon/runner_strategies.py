@@ -25,14 +25,9 @@ class RunRunner:
     def __init__(self, strategy: AbsRunner) -> None:
         self._strategy = strategy
 
-    def run(
-            self,
-            parent,
-            tool: AbsJob,
-            options: dict,
-            logger: logging.Logger,
-            completion_callback=None
-    ) -> None:
+    def run(self, parent, tool: AbsJob, options: dict, logger: logging.Logger,
+            completion_callback=None) -> None:
+
         self._strategy.run(parent, tool, options, logger, completion_callback)
 
 
@@ -79,8 +74,10 @@ class UsingExternalManager(AbsRunner):
                     i = -1
                     for i, new_setting in \
                             enumerate(job.discover_task_metadata(**options)):
+
                         new_job = job.new_job()
                         self._manager.add_job(new_job(), new_setting)
+
                     logger.info("Found {} jobs".format(i + 1))
                     runner.dialog.setMaximum(i)
 
@@ -136,7 +133,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                             parent,
                             job,
                             options,
-                            pre_results
+                            pre_results.copy()
                         )
 
                         if new_options:

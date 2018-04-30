@@ -1,6 +1,9 @@
+import email
 import logging
 import sys
 import traceback
+import webbrowser
+
 from . import about
 import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -132,6 +135,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         ###########################################################
         # self.tabWidget
         self.tabWidget = ItemTabsWidget(self.main_splitter)
+        self.tabWidget.setMinimumHeight(400)
 
         # self.tabWidget
         # self.tabWidget.setLayout(l)
@@ -165,7 +169,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         #  Console
         ###########################################################
         self.console = ToolConsole(self.main_splitter)
-        self.console.setMinimumHeight(50)
+        self.console.setMinimumHeight(75)
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
         self._handler = ConsoleLogger(self.console)
@@ -192,6 +196,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # Help Menu
         help_menu = menu_bar.addMenu("Help")
 
+        help_button = QtWidgets.QAction(" &Help ", self)
+        help_button.triggered.connect(self.show_help)
+        help_menu.addAction(help_button)
+
         # Create an About button
         about_button = QtWidgets.QAction(" &About ", self)
         about_button.triggered.connect(self.show_about_window)
@@ -211,6 +219,19 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     def closeEvent(self, *args, **kwargs):
         self.log_manager.removeHandler(self._handler)
         super().closeEvent(*args, **kwargs)
+
+    def show_help(self):
+        print("help!!!")
+        try:
+            distribution = speedwagon.get_project_distribution()
+
+            metadata = dict(email.message_from_string(
+                distribution.get_metadata(distribution.PKG_INFO)))
+
+            webbrowser.open_new(metadata['Home-page'])
+        except Exception:
+            print("no help")
+        pass
 
     def show_about_window(self):
         about.about_dialog_box(parent=self)

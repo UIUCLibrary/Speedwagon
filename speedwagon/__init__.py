@@ -3,6 +3,9 @@ import setuptools.config
 import os
 import sys
 
+from .job import Workflow, JobCancelled
+from . import tasks
+
 
 def get_project_metadata(config_file):
     return setuptools.config.read_configuration(config_file)["metadata"]
@@ -42,3 +45,9 @@ def get_version():
 
 
 __version__ = get_version()
+
+__all__ = [
+    "Workflow",
+    "JobCancelled",
+    "tasks"
+]

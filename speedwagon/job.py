@@ -66,6 +66,10 @@ class AbsTool(AbsJob):
     def discover_task_metadata(self, **user_args) -> typing.List[dict]:
         return self.discover_jobs(**user_args)
 
+    @staticmethod
+    def generate_report(results, user_args):
+        return None
+
 
 class AbsWorkflow(AbsJob):
     active = True
@@ -89,19 +93,13 @@ class AbsWorkflow(AbsJob):
     ) -> None:
         pass
 
-    def initial_task(
-            self,
-            task_builder: tasks.TaskBuilder,
-            **user_args
-    ) -> None:
+    def initial_task(self, task_builder: tasks.TaskBuilder,
+                     **user_args) -> None:
         pass
 
     @classmethod
-    def generate_report(
-            cls,
-            results: typing.List[tasks.Result],
-            **user_args
-    ) -> typing.Optional[str]:
+    def generate_report(cls, results: typing.List[tasks.Result],
+                        **user_args) -> typing.Optional[str]:
         pass
 
     # @abc.abstractmethod
@@ -150,10 +148,8 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
     def base_class(self) -> typing.Type[AbsJob]:
         pass
 
-    def load(
-            self,
-            module_file
-    ) -> typing.Iterable[typing.Tuple[str, typing.Any]]:
+    def load(self, module_file) -> \
+            typing.Iterable[typing.Tuple[str, typing.Any]]:
 
         def class_member_filter(item):
             return inspect.isclass(item) and not inspect.isabstract(item)
