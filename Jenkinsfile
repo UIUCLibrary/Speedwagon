@@ -34,7 +34,7 @@ pipeline {
         booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
-        booleanParam(name: "DEPLOY_SCCM", defaultValue: true, description: "Request deployment of MSI installer to SCCM")
+        booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
@@ -461,13 +461,16 @@ pipeline {
                     }
 
                     steps {
-                        node("Linux"){
-                            unstash "msi"
-                            script{
-                                def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
-                                deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
-                                input("Deploy to production?")
-                                deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+                        script {
+                            def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
+                            node("Linux"){
+                                unstash "msi"
+                                script{
+                                    
+                                    deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
+                                    input("Deploy to production?")
+                                    deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+                                }
                             }
                         }
                     }
