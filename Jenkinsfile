@@ -1,5 +1,5 @@
 #!groovy
-@Library("ds-utils@v0.2.0") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
+@Library("ds-utils@v0.2.2") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
 import org.ds.*
 pipeline {
     agent {
@@ -454,9 +454,13 @@ pipeline {
                         }
                     }
                 }
-                stage("Deploy to SCCM") {
+                stage("Deploy Standalone Build to SCCM") {
                     when {
-                        equals expected: true, actual: params.DEPLOY_SCCM
+                        allOf{
+                            equals expected: true, actual: params.DEPLOY_SCCM
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
+                            branch "master"
+                        }
                         // expression { params.RELEASE == "Release_to_devpi_and_sccm"}
                     }
 
@@ -477,7 +481,8 @@ pipeline {
                     post {
                         success {
                             script{
-                                def  deployment_request = requestDeploy this, "deployment.yml"
+                                unstash "msi"
+                                def deployment_request = requestDeploy yaml: "deployment.yml"
                                 echo deployment_request
                                 writeFile file: "deployment_request.txt", text: deployment_request
                                 archiveArtifacts artifacts: "deployment_request.txt"
