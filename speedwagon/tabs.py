@@ -293,7 +293,9 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
                                             value=e,
                                             tb=e.__traceback__)
 
-            message = "Unable to use {}. Reason: {}".format(item.name, e)
+            message = "Unable to use {}. Reason: {}".format(
+                item.name, str(e.__class__.__name__))
+
             warning_message_dialog = QtWidgets.QMessageBox(self.parent)
             spanner = QtWidgets.QSpacerItem(300,
                                             0,
