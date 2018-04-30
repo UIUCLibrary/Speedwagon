@@ -2,6 +2,23 @@
 
 Release History
 ---------------
+
+0.1.1
++++++
+* General:
+   * Added Workflow tab
+   * Add Worflow API
+* Changes:
+   * Changed name to Speedwagon
+   * Verify HathiTrust Package Completeness is now a Workflow (instead of a tool)
+* New Tools:
+   * Convert TIFF to HathiTrust JP2
+   * Convert CaptureOne Preservation TIFF to Digital Library Access JP2
+   * Convert CaptureOne Preservation TIFF to Digital Library Compound Objects
+* New Workflows:
+   * CaptureOne Batch to HathiTrust TIFF Complete Package
+
+
 0.0.3
 +++++
 * Improved performance and responsiveness
@@ -43,15 +60,4 @@ Release History
 
 Dev
 +++
-* General:
-   * Added Workflow tab
-   * Add Worflow API
-* Changes:
-   * Changed name to Speedwagon
-   * Verify HathiTrust Package Completeness is now a Workflow (instead of a tool)
-* New Tools:
-   * Convert TIFF to HathiTrust JP2
-   * Convert CaptureOne Preservation TIFF to Digital Library Access JP2
-   * Convert CaptureOne Preservation TIFF to Digital Library Compound Objects
-* New Workflows:
-   * CaptureOne Batch to HathiTrust TIFF Complete Package
+
