@@ -488,8 +488,9 @@ pipeline {
                         unstash "msi"
                         script{
                             def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                            def deployment_request = requestDeploy yaml: "deployment.yml"
+                            def msi_files = findFiles glob: '*.msi'
 
+                            def deployment_request = requestDeploy yaml: "deployment.yml", file_name: msi_files[0]
                             
                             // deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
                             
