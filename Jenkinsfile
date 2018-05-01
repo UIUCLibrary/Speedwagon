@@ -484,28 +484,23 @@ pipeline {
                     }
 
                     steps {
-                        script {
+                        unstash "msi"
+                        script{
                             def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
-                            node("Linux"){
-                                unstash "msi"
-                                script{
-                                    
-                                    deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
-                                    input("Deploy to production?")
-                                    deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
-                                }
-                            }
+                            def deployment_request = requestDeploy yaml: "deployment.yml"
+
+                            
+                            // deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
+                            
+                            input("Deploy to production?")
+                            writeFile file: "deployment_request.txt", text: deployment_request
+                            echo deployment_request
+                            // deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
                         }
                     }
                     post {
                         success {
-                            script{
-                                unstash "msi"
-                                def deployment_request = requestDeploy yaml: "deployment.yml"
-                                echo deployment_request
-                                writeFile file: "deployment_request.txt", text: deployment_request
-                                archiveArtifacts artifacts: "deployment_request.txt"
-                            }
+                            archiveArtifacts artifacts: "deployment_request.txt"
                         }
                     }
                 }
