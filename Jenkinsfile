@@ -457,6 +457,7 @@ pipeline {
                     when {
                         allOf{
                             equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+                            equals expected: true, actual: params.DEPLOY_DEVPI
                             branch "master"
                         }
                     }
