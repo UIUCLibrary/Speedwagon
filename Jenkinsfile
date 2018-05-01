@@ -462,13 +462,13 @@ pipeline {
                     }
                     steps {
                         script {
-                            def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
-                            def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
+                            def name = bat(returnStdout: true, script: "venv\\Scripts\\python.exe setup.py --name").trim()
+                            def version = bat(returnStdout: true, script: "venv\\Scripts\\python.exe setup.py --version").trim()
                             input "Release ${name} ${version} to DevPi Production?"
                             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "${tool 'Python3.6.3_Win64'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                                bat "${tool 'Python3.6.3_Win64'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                                bat "${tool 'Python3.6.3_Win64'} -m devpi push ${name}==${version} production/release"
+                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                                bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                                bat "venv\\Scripts\\devpi.exe push ${name}==${version} production/release"
                             }
                         }
                     }
@@ -486,7 +486,7 @@ pipeline {
                     steps {
                         unstash "msi"
                         script{
-                            def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
+                            def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                             def deployment_request = requestDeploy yaml: "deployment.yml"
 
                             
