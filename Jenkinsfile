@@ -462,8 +462,8 @@ pipeline {
                     }
                     steps {
                         script {
-                            def name = bat(returnStdout: true, script: "venv\\Scripts\\python.exe setup.py --name").trim()
-                            def version = bat(returnStdout: true, script: "venv\\Scripts\\python.exe setup.py --version").trim()
+                            def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+                            def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                             input "Release ${name} ${version} to DevPi Production?"
                             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                                 bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
