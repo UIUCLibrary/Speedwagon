@@ -14,6 +14,7 @@
     <OutputName>Speedwagon-$(ProductVersion)$(BuildInformation)-$(ProcessorArchitecture)</OutputName>
     <OutputType>Package</OutputType>
     <BuildRoot>..\build\msi\</BuildRoot>
+    <DefineSolutionProperties>false</DefineSolutionProperties>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>
@@ -37,6 +38,7 @@
   <PropertyGroup>
     
     <DefineConstants>ItemDir=..\build\standalone;WiXProductVersion=$(ProductVersion)</DefineConstants>
+    <SuppressIces>ICE60</SuppressIces>
     <WixVariables>SourceDir=build\standalone</WixVariables>
   </PropertyGroup>
   <ItemGroup>

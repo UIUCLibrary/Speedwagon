@@ -257,14 +257,17 @@ pipeline {
                     }
                     // PACKAGE_WINDOWS_STANDALONE
                     when {
-                        not { changeRequest()}
+                        // not { changeRequest()}
                         equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
                     }
                     steps {
                         tee('build_standalone.log') {
-                            bat "call make.bat standalone"
+                            script {
+                                bat returnStatus: true, script: "call make.bat standalone"
+                                
+                            }
+                            
                         }
-                        warnings parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
                         archiveArtifacts artifacts: 'build_standalone.log'
                     }
                     post {
@@ -273,6 +276,10 @@ pipeline {
                                 stash includes: "*.msi", name: "msi"
                                 archiveArtifacts artifacts: "*.msi", fingerprint: true
                             }
+                        }
+                        always {
+                            warnings parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
+                            
                         }
                     }
                 }
