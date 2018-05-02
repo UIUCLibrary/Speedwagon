@@ -70,10 +70,13 @@ pipeline {
         stage("Configure Environment"){
             steps {
                 stash includes: 'deployment.yml', name: "Deployment"
-                bat "${tool 'CPython-3.6'} -m venv venv"
-                bat "venv\\Scripts\\pip.exe install -r requirements.txt -r requirements-dev.txt"
-                bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
-                bat "venv\\Scripts\\pip.exe install devpi-client"
+                bat "${tool 'CPython-3.6'} -m pip install pipenv"
+                bat "pipenv install --dev --pre"
+                // bat "${tool 'CPython-3.6'} -m venv venv"
+                // bat "venv\\Scripts\\pip.exe install -r requirements.txt -r requirements-dev.txt"
+                // bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
+                // bat "venv\\Scripts\\pip.exe install devpi-client"
+                error "HEre"
                 bat 'mkdir "reports/mypy/stdout"'
             }
         }
