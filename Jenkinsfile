@@ -78,6 +78,7 @@ pipeline {
                 // bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
                 // bat "venv\\Scripts\\pip.exe install devpi-client"
                 bat 'mkdir "reports/mypy/stdout"'
+                bat 'mkdir "build/docs/html"'
             }
         }
         stage('Build') {
@@ -546,6 +547,7 @@ pipeline {
                     }
                 }
             }
+            deleteDir()
         }
     }
 }
