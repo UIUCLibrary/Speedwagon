@@ -1,11 +1,9 @@
 [[source]]
-
 url = "https://devpi.library.illinois.edu/production/release/+simple/"
 verify_ssl = true
 name = "uiuclibrary"
 
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
@@ -19,6 +17,8 @@ pyhathiprep = "*"
 hathichecksumupdater = "*"
 uiucprescon-packager = ">=0.2.1b4"
 uiucprescon-getmarc = "*"
+devpi-client = "*"
+setuptools = ">=setuptools>=30.3.0"
 
 [dev-packages]
 mypy = "*"
@@ -27,8 +27,10 @@ pytest = "*"
 pytest-runner = "*"
 pytest-qt = "*"
 behave = "*"
+flake8 = "*"
 tox = "*"
 lxml = "*"
+
 
 [pipenv]
 allow_prereleases = true
