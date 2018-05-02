@@ -546,6 +546,7 @@ pipeline {
                     }
                 }
             }
+            deleteDir()
         }
     }
 }
