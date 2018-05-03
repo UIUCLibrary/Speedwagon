@@ -535,7 +535,7 @@ pipeline {
 
     }
     post {
-        cleanup {
+        always {
             bat "pipenv run setup.py clean --all"
         
             dir('dist') {
