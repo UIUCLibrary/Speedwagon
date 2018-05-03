@@ -90,7 +90,7 @@ pipeline {
                     }
                     post{
                         always{
-                            warnings parserConfigurations: [[parserName: 'Pep8', pattern: 'build.log']]
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'build.log']]
                             archiveArtifacts artifacts: 'build.log'
                         }
                     }
@@ -108,7 +108,7 @@ pipeline {
                     }
                     post{
                         always {
-                            warnings parserConfigurations: [[parserName: 'Pep8', pattern: 'build_sphinx.log']]
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'build_sphinx.log']]
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
@@ -191,7 +191,7 @@ pipeline {
                     }
                     post {
                         always {
-                            warnings parserConfigurations: [[parserName: 'MyPy', pattern: 'mypy.log']], unHealthy: ''
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'mypy.log']], unHealthy: ''
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
                     }
@@ -227,7 +227,7 @@ pipeline {
                     }
                     post {
                         always {
-                            warnings parserConfigurations: [[parserName: 'PyLint', pattern: 'flake8.log']], unHealthy: ''
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'flake8.log']], unHealthy: ''
                         }
                     }
                 }
@@ -283,7 +283,7 @@ pipeline {
                             }
                         }
                         always {
-                            warnings parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
                             
                         }
                     }
