@@ -265,6 +265,8 @@ pipeline {
                     }
                     steps {
                         tee('build_standalone.log') {
+                            bat script: "pipenv lock -r > requirements.txt"
+                            bat script: "pipenv lock -rd > requirements-dev.txt"                      
                             bat script: "call make.bat standalone"
                             // script {
                             //     def standalone_status = 
@@ -556,7 +558,6 @@ pipeline {
                     }
                 }
             }
-            deleteDir()
         }
     }
 }
