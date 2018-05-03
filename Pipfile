@@ -31,6 +31,7 @@ behave = "*"
 flake8 = "*"
 tox = "*"
 lxml = "*"
+wheel = ">=0.31.0"
 
 
 [pipenv]
