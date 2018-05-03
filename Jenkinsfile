@@ -239,6 +239,7 @@ pipeline {
                     }
                     steps{
                         bat "pipenv run setup.py bdist_wheel sdist"
+                        bat "dir dist"
                     }
                     post {
                         success {
