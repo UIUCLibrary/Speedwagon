@@ -270,12 +270,14 @@ pipeline {
                             // bat script: "call make.bat standalone"
                             script {
                                 def python_path =  bat(returnStdout: true, script: "pipenv --venv").trim()
+                                def build_command = "MSBuild windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path} /v:d"
+                                echo "build_command = ${build_command}"
                                 bat script: """
                                 mkdir build
                                 set "VSCMD_START_DIR=${env.WORKSPACE}"
                                 call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
                                 nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
-                                MSBuild windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path} /v:d
+                                ${build_command}
                                 """
 
                             }
