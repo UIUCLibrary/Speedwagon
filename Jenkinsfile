@@ -263,7 +263,7 @@ pipeline {
                     }
                     // PACKAGE_WINDOWS_STANDALONE
                     when {
-                        // not { changeRequest()}
+                        not { changeRequest()}
                         equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
                     }
                     steps {
