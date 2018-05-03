@@ -189,7 +189,7 @@ pipeline {
                         script{
                             try{
                                 tee('mypy.log') {
-                                    bat "pipenv run mypy -p speedwagon --html-report reports\\mypy\\html\\"
+                                    bat "pipenv run mypy -p speedwagon --html-report reports/mypy/html"
                                 }
                             } catch (exc) {
                                 echo "MyPy found some warnings"
