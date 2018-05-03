@@ -272,13 +272,13 @@ pipeline {
                             bat script: "pipenv lock -rd > requirements-dev.txt"                      
                             // bat script: "call make.bat standalone"
                             script {
-                                def python_path =  bat(returnStdout: true, script: "pipenv --py").trim()
+                                def python_path = bat(returnStdout: true, script: "pipenv --py").trim()
                                 echo "python_path = ${python_path}"
                                 bat script: """
                                 mkdir build
                                 call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
                                 nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
-                                MSBuild windows_build\\release.pyproj
+                                MSBuild windows_build\\release.pyproj /p:PYTHONPATH=${python_path}
                                 MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}
                                 """
 
