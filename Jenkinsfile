@@ -258,6 +258,9 @@ pipeline {
                             label "Windows && VS2015 && DevPi"
                         }
                     }
+                    environment {
+                        VSCMD_START_DIR = "${env.WORKSPACE}"
+                    }
                     // PACKAGE_WINDOWS_STANDALONE
                     when {
                         // not { changeRequest()}
@@ -273,10 +276,10 @@ pipeline {
                                 echo "python_path = ${python_path}"
                                 bat script: """
                                 mkdir build
-                                set "VSCMD_START_DIR=${env.WORKSPACE}"
+                                // set ""
                                 call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
                                 nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
-                                MSBuild windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}
+                                MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}
                                 """
 
                             }
