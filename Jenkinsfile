@@ -271,6 +271,7 @@ pipeline {
                             script {
                                 def python_path =  bat(returnStdout: true, script: "pipenv --venv").trim()
                                 bat script: """
+                                mkdir build
                                 set "VSCMD_START_DIR=%CD%"
                                 call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
                                 nuget install windows_build\\packages.config -OutputDirectory build\\nugetpackages
