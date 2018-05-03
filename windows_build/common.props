@@ -8,7 +8,7 @@
         <Python Include="python.exe"/>
     </ItemGroup>
         <ItemGroup Condition="'$(PYTHONPATH)' != ''">
-        <Python Include="$(PYTHONPATH)/scripts/python.exe"/>
+        <Python Include="$(PYTHONPATH)"/>
     </ItemGroup>
     <ItemGroup>
         <helpers_path Include="$(MSBuildThisFileDirectory)"/>
