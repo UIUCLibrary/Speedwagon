@@ -77,8 +77,7 @@ pipeline {
                 // bat "venv\\Scripts\\pip.exe install -r requirements.txt -r requirements-dev.txt"
                 // bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
                 // bat "venv\\Scripts\\pip.exe install devpi-client"
-                bat 'mkdir "reports/mypy/stdout"'
-                bat 'mkdir "build/docs/html"'
+                bat 'mkdir "build"'
             }
         }
         stage('Build') {
@@ -104,6 +103,7 @@ pipeline {
                         equals expected: true, actual: params.BUILD_DOCS
                     }
                     steps {
+                        bat 'mkdir "build/docs/html"'
                         tee('build_sphinx.log') {
                             script{
                                 def standalone_status = bat returnStatus: true, script: "pipenv run setup.py build_sphinx"
@@ -124,9 +124,9 @@ pipeline {
                                 def project_name = alljob[0]
                                 dir('build/docs/') {
                                     zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,7)}.zip"
-                                    dir("html"){
-                                        stash includes: '**', name: "HTML Documentation"
-                                    }
+                                    // dir("html"){
+                                    //     stash includes: '**', name: "HTML Documentation"
+                                    // }
                                 }
                             }
                         }
@@ -184,6 +184,7 @@ pipeline {
                         equals expected: true, actual: params.TEST_RUN_MYPY
                     }
                     steps{
+                        bat 'mkdir "reports\\mypy\\html"'
                         script{
                             try{
                                 tee('mypy.log') {
@@ -449,7 +450,12 @@ pipeline {
                         equals expected: true, actual: params.DEPLOY_DOCS
                     }
                     steps{
-                        bat "pipenv run setup.py build_sphinx"
+                        script {
+                            if(!params.BUILD_DOCS){
+                                bat "pipenv run setup.py build_sphinx"
+                            }
+                        }
+                        
                         dir("build/docs/html/"){
                             input 'Update project documentation?'
                             sshPublisher(
@@ -535,7 +541,7 @@ pipeline {
 
     }
     post {
-        always {
+        cleanup {
             bat "pipenv run setup.py clean --all"
         
             dir('dist') {
@@ -561,9 +567,6 @@ pipeline {
                 }
             }
             deleteDir()
-        }
-        cleanup {
-            echo "I'm in cleanup mode"
         }
     }
 }
