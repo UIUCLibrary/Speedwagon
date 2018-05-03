@@ -275,6 +275,7 @@ pipeline {
                                 set "VSCMD_START_DIR=${env.WORKSPACE}"
                                 call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
                                 nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
+                                dir ${env.WORKSPACE}\\build
                                 MSBuild windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=%CD% /p:PYTHONPATH=${python_path}
                                 """
 
