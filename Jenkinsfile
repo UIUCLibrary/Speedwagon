@@ -103,6 +103,7 @@ pipeline {
                         equals expected: true, actual: params.BUILD_DOCS
                     }
                     steps {
+                        echo "NODE_NAME = ${env.NODE_NAME}"
                         bat 'mkdir "build/docs/html"'
                         tee('build_sphinx.log') {
                             script{
