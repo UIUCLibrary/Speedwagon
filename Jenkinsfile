@@ -270,8 +270,7 @@ pipeline {
                             // bat script: "call make.bat standalone"
                             script {
                                 def python_path =  bat(returnStdout: true, script: "pipenv --py").trim()
-                                // def build_command = ""
-                                echo "build_command = ${build_command}"
+                                
                                 bat script: """
                                 mkdir build
                                 set "VSCMD_START_DIR=${env.WORKSPACE}"
