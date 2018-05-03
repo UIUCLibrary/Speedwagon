@@ -85,10 +85,7 @@ pipeline {
                 stage("Python Package"){
                     steps {
                         tee('build.log') {
-                            script{
-                                def standalone_status = bat returnStatus: true, script: "pipenv run setup.py build"
-                                echo "standlone status = ${standalone_status}"
-                            }
+                            bat script: "pipenv run setup.py build"
                         }
                     }
                     post{
@@ -103,14 +100,10 @@ pipeline {
                         equals expected: true, actual: params.BUILD_DOCS
                     }
                     steps {
-                        echo "NODE_NAME = ${env.NODE_NAME}"
                         bat 'mkdir "build/docs/html"'
+                        echo "Building docs on ${env.NODE_NAME}"
                         tee('build_sphinx.log') {
-                            script{
-                                def standalone_status = bat returnStatus: true, script: "pipenv run setup.py build_sphinx"
-                                echo "standlone status = ${standalone_status}"
-                            }
-                            
+                            bat script: "pipenv run setup.py build_sphinx"                            
                         }
                     }
                     post{
@@ -247,12 +240,7 @@ pipeline {
                         equals expected: true, actual: params.PACKAGE_PYTHON_FORMATS
                     }
                     steps{
-                        script {
-                            def standalone_status = bat returnStatus: true, script: "pipenv run setup.py bdist_wheel sdist"
-                            echo "standlone status = ${standalone_status}"
-                        }
-                        
-                        bat "dir dist"
+                        bat script: "pipenv run setup.py bdist_wheel sdist"
                     }
                     post {
                         success {
@@ -277,11 +265,12 @@ pipeline {
                     }
                     steps {
                         tee('build_standalone.log') {
-                            script {
-                                def standalone_status = bat returnStatus: true, script: "call make.bat standalone"
-                                echo "standlone status = ${standalone_status}"
+                            bat script: "call make.bat standalone"
+                            // script {
+                            //     def standalone_status = 
+                            //     echo "standlone status = ${standalone_status}"
                                 
-                            }
+                            // }
                             
                         }
                         archiveArtifacts artifacts: 'build_standalone.log'
