@@ -276,6 +276,7 @@ pipeline {
                                 echo "python_path = ${bat(returnStdout: true, script: "pipenv --py").trim()}"
                                 bat script: """
                                 mkdir build
+                                printenv
                                 call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
                                 nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
                                 MSBuild windows_build\\release.pyproj /p:PYTHONPATH=${python_path}
