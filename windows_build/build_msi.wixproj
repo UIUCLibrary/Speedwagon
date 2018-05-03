@@ -13,7 +13,7 @@
     <SchemaVersion >2.0</SchemaVersion>
     <OutputName>Speedwagon-$(ProductVersion)$(BuildInformation)-$(ProcessorArchitecture)</OutputName>
     <OutputType>Package</OutputType>
-    <BuildRoot>..\build\msi\</BuildRoot>
+    <BuildRoot>$(ProjectRoot)\build\msi\</BuildRoot>
     <DefineSolutionProperties>false</DefineSolutionProperties>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -32,12 +32,11 @@
     <IntermediateOutputPath>$(BuildRoot)obj\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
-    <OutputPath>..\dist\</OutputPath>
+    <OutputPath>$(ProjectRoot)\dist\</OutputPath>
     <IntermediateOutputPath>$(BuildRoot)obj\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup>
-    
-    <DefineConstants>ItemDir=..\build\standalone;WiXProductVersion=$(ProductVersion)</DefineConstants>
+    <DefineConstants>ItemDir=$(ProjectRoot)\build\standalone;WiXProductVersion=$(ProductVersion)</DefineConstants>
     <SuppressIces>ICE60</SuppressIces>
     <WixVariables>SourceDir=build\standalone</WixVariables>
   </PropertyGroup>
@@ -74,7 +73,7 @@
 	-->
   <Target Name="BeforeBuild">
     <ItemGroup>
-      <HarvestDirectory Include="..\build\standalone">
+      <HarvestDirectory Include="$(ProjectRoot)\build\standalone">
         <!--<DiretoryRefId>INSTALLFOLDER</DiretoryRefId>-->
         <DirectoryRefId>INSTALLFOLDER</DirectoryRefId>
         <SuppressRootDirectory>true</SuppressRootDirectory>
@@ -85,11 +84,11 @@
       </HarvestDirectory>
     </ItemGroup>
   </Target>
-  <Import Project="..\build\nugetpackages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets" Condition="Exists('..\build\nugetpackages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" />
+  <Import Project="$(ProjectRoot)\build\nugetpackages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets" Condition="Exists('$(ProjectRoot)\build\nugetpackages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\build\nugetpackages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\build\nugetpackages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets'))" />
+    <Error Condition="!Exists('$(ProjectRoot)\build\nugetpackages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(ProjectRoot)\build\nugetpackages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets'))" />
   </Target>
 </Project>
