@@ -267,12 +267,24 @@ pipeline {
                         tee('build_standalone.log') {
                             bat script: "pipenv lock -r > requirements.txt"
                             bat script: "pipenv lock -rd > requirements-dev.txt"                      
-                            bat script: "call make.bat standalone"
+                            // bat script: "call make.bat standalone"
+                            script {
+                                def python_path =  bat(returnStdout: true, script: "pipenv --venv").trim()
+                                bat script: """
+                                set "VSCMD_START_DIR=%CD%"
+                                call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
+                                nuget install windows_build\\packages.config -OutputDirectory build\\nugetpackages
+                                MSBuild windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=%CD% /p:PYTHONPATH=${python_path}
+                                """
+
+                            }
+
                             // script {
                             //     def standalone_status = 
                             //     echo "standlone status = ${standalone_status}"
                                 
                             // }
+
                             
                         }
                         archiveArtifacts artifacts: 'build_standalone.log'

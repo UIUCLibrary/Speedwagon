@@ -4,9 +4,14 @@
     <PropertyGroup>
         <ProjectRoot Condition="'$(ProjectRoot)' == ''">$(MSBuildProjectDirectory)</ProjectRoot>
     </PropertyGroup>
+    <ItemGroup Condition="'$(PYTHONPATH)' == ''">
+        <Python Include="python.exe"/>
+    </ItemGroup>
+        <ItemGroup Condition="'$(PYTHONPATH)' != ''">
+        <Python Include="$(PYTHONPATH)/scripts/python.exe"/>
+    </ItemGroup>
     <ItemGroup>
         <helpers_path Include="$(MSBuildThisFileDirectory)"/>
-        <Python Include="python.exe"/>
         <setuppy Include="$(ProjectRoot)\setup.py"/>
     </ItemGroup>
     <ItemGroup>
