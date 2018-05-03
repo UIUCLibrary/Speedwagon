@@ -86,7 +86,10 @@ pipeline {
                 stage("Python Package"){
                     steps {
                         tee('build.log') {
-                            bat "pipenv run setup.py build"
+                            script{
+                                def standalone_status = bat returnStatus: true, script: "pipenv run setup.py build"
+                                echo "standlone status = ${standalone_status}"
+                            }
                         }
                     }
                     post{
@@ -102,7 +105,11 @@ pipeline {
                     }
                     steps {
                         tee('build_sphinx.log') {
-                            bat "pipenv run setup.py build_sphinx"
+                            script{
+                                def standalone_status = bat returnStatus: true, script: "pipenv run setup.py build_sphinx"
+                                echo "standlone status = ${standalone_status}"
+                            }
+                            
                         }
                     }
                     post{
@@ -238,7 +245,11 @@ pipeline {
                         equals expected: true, actual: params.PACKAGE_PYTHON_FORMATS
                     }
                     steps{
-                        bat "pipenv run setup.py bdist_wheel sdist"
+                        script {
+                            def standalone_status = bat returnStatus: true, script: "pipenv run setup.py bdist_wheel sdist"
+                            echo "standlone status = ${standalone_status}"
+                        }
+                        
                         bat "dir dist"
                     }
                     post {
@@ -265,7 +276,8 @@ pipeline {
                     steps {
                         tee('build_standalone.log') {
                             script {
-                                bat returnStatus: true, script: "call make.bat standalone"
+                                def standalone_status = bat returnStatus: true, script: "call make.bat standalone"
+                                echo "standlone status = ${standalone_status}"
                                 
                             }
                             
