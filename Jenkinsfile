@@ -272,8 +272,8 @@ pipeline {
                             bat script: "pipenv lock -rd > requirements-dev.txt"                      
                             // bat script: "call make.bat standalone"
                             script {
-                                def python_path = bat(returnStdout: true, script: "pipenv --py").trim()
-                                echo "python_path = ${python_path}"
+                                // def python_path = 
+                                echo "python_path = ${bat(returnStdout: true, script: "pipenv --py").trim()}"
                                 bat script: """
                                 mkdir build
                                 call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
