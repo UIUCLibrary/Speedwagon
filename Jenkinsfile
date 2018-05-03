@@ -562,5 +562,8 @@ pipeline {
             }
             deleteDir()
         }
+        cleanup {
+            echo "I'm in cleanup mode"
+        }
     }
 }
