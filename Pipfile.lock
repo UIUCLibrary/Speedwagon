@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "24baffcb7f70ca41cd4afbea57e1e8a6ed8127011dd1a949b87a6cedab1073d0"
+            "sha256": "a09323d1f2c61aa4ebd72d52165fe955d7ea0b44fa1743f382a0827f1c67c848"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -469,6 +469,12 @@
             ],
             "version": "==4.5.1"
         },
+        "docopt": {
+            "hashes": [
+                "sha256:49b3a825280bd66b3aa83585ef59c4a8c82f2c8a522dbe754a8bc8d08c85c491"
+            ],
+            "version": "==0.6.2"
+        },
         "docutils": {
             "hashes": [
                 "sha256:02aec4bd92ab067f6ff27a38a38a41173bf01bed8f89157768c1573f53e474a6",
@@ -635,6 +641,14 @@
                 "sha256:fee43f17a9c4087e7ed1605bd6df994c6173c1e977d7ade7b651292fab2bd010"
             ],
             "version": "==2.2.0"
+        },
+        "pyqt-distutils": {
+            "hashes": [
+                "sha256:74ed14c5e41ef2941879c788a848c50b9288ea4e8d3e1abd669be4ed864c727f",
+                "sha256:ee5b8c30d3b0a473a5c23e43b2a29ce8e47fa7b48d8dc91816953da37bc053e8"
+            ],
+            "index": "uiuclibrary",
+            "version": "==0.7.3"
         },
         "pytest": {
             "hashes": [

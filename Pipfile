@@ -32,7 +32,7 @@ flake8 = "*"
 tox = "*"
 lxml = "*"
 wheel = ">=0.31.0"
-
+pyqt-distutils = ">=0.7.3"
 
 [pipenv]
 allow_prereleases = true
