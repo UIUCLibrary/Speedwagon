@@ -19,7 +19,7 @@ ruamel.yaml==0.15.37
 setuptools>=30.3.0
 sip==4.19.8
 tzlocal==1.5.1
-uiucprescon-packager>=0.2.1b4
+uiucprescon-packager>=0.2.1b5
 uiucprescon-getmarc
 yarl==1.1.1
-pykdu-compress>=0.0.3
+pykdu-compress>=0.0.4
