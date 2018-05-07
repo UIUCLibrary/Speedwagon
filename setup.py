@@ -45,7 +45,7 @@ setup(
         "HathiValidate>=0.3.3",
         "pyhathiprep",
         "hathichecksumupdater",
-        "uiucprescon-packager>=0.2.1b5",
+        "uiucprescon-packager[kdu]>=0.2.1b6",
         "pykdu-compress>=0.0.4",
     ],
     packages=[

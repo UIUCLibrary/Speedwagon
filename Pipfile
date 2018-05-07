@@ -15,7 +15,7 @@ hathizip = ">=0.1.3"
 hathivalidate = ">=0.3.3"
 pyhathiprep = "*"
 hathichecksumupdater = "*"
-uiucprescon-packager = ">=0.2.1b4"
+uiucprescon-packager = {version = ">=0.2.1b6", extras = ['kdu']}
 uiucprescon-getmarc = "*"
 devpi-client = "*"
 setuptools = ">=30.3.0"
