@@ -70,6 +70,7 @@ pipeline {
         }
         stage("Configure Environment"){
             steps {
+                echo "env.WORKSPACE = ${env.WORKSPACE}"
                 stash includes: 'deployment.yml', name: "Deployment"
                 bat "${tool 'CPython-3.6'} -m pip install pipenv"
                 bat "pipenv install --dev --pre"
