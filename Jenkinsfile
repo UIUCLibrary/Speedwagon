@@ -268,19 +268,13 @@ pipeline {
                     }
                     steps {
                         tee('build_standalone.log') {
-                            bat "pipenv install --dev --pre --verbose"
+                            bat "pipenv install --dev --pre"
                             bat script: "pipenv lock -r > requirements.txt"
                             bat script: "pipenv lock -rd > requirements-dev.txt"
                             script{
                                 def requirements = readFile 'requirements.txt'
                                 writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"
-                                // requirements = "${requirements}setuptools>=30.3.0\n"
-                            //     def requirements_dev = readFile 'requirements-dev.txt'
-                            //     // echo "requirements.txt"
-                            //     // echo "${requirements}"
-                            //     // echo "requirements-dev.txt"
-                            //     // echo "${requirements_dev}"
-                                
+                        
                             }
 
                                                   
@@ -294,7 +288,7 @@ pipeline {
                                 mkdir build
                                 call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
                                 nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
-                                pipenv run MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE}
+                                MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}
                                 """
 
                             }
