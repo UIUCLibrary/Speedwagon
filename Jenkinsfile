@@ -287,10 +287,7 @@ pipeline {
                             // bat script: "call make.bat standalone"
                             
                             script {
-                                def python_path = bat(
-                                        script: "pipenv --py",
-                                        returnStdout: true
-                                    ).trim()
+                                def python_path = powershell returnStdout: true, script: 'pipenv --py'.trim()
                                 // def python_path = "python.exe"
                                 echo "python_path = ${python_path}"
                                 bat script: """
