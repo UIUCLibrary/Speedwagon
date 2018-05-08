@@ -17,6 +17,7 @@ pipeline {
     environment {
         // mypy_args = "--junit-xml=mypy.xml"
         WORKON_HOME = "./venv"
+        PIPENV_CACHE_DIR="${USERPROFILE}\\.virtualenvs\\cache\\"
         build_number = VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
         // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
@@ -73,7 +74,7 @@ pipeline {
                 
                 stash includes: 'deployment.yml', name: "Deployment"
                 bat "${tool 'CPython-3.6'} -m pip install pipenv"
-                bat "pipenv install --dev --pre --verbose"
+                bat "pipenv sync --dev --verbose"
                 bat "pipenv install devpi-client"               
                 // bat "${tool 'CPython-3.6'} -m venv venv"
                 // bat "venv\\Scripts\\pip.exe install -r requirements.txt -r requirements-dev.txt"
@@ -270,7 +271,7 @@ pipeline {
                     }
                     steps {
                         tee('build_standalone.log') {
-                            bat "pipenv install --dev --pre"
+                            bat "pipenv sync --dev --verbose"
                             bat script: "pipenv lock -r > requirements.txt"
                             bat script: "pipenv lock -rd > requirements-dev.txt"
                             script{
