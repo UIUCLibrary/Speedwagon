@@ -16,7 +16,7 @@
     <Target Name="Wheel">
         <Message Text="Building wheel package $(ProjectRoot)"/>
         <Message Text="Building wheel package"/>
-        <Exec Command="@(Python) @(setuppy) build" WorkingDirectory="$(ProjectRoot)"/>
+        <Exec Command="@(Python) @(setuppy) build_py --no-compile" WorkingDirectory="$(ProjectRoot)"/>
         <Exec Command="@(Python) @(setuppy) bdist_wheel -d $(OutputPath) $(BuildInfo)" WorkingDirectory="$(ProjectRoot)"/>
     </Target>
     <Target Name="PythonRequirements">
