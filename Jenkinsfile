@@ -87,7 +87,7 @@ pipeline {
                 stage("Python Package"){
                     steps {
                         tee('build.log') {
-                            bat script: "pipenv run setup.py build"
+                            bat script: "pipenv run python setup.py build"
                         }
                     }
                     post{
@@ -105,7 +105,7 @@ pipeline {
                         bat 'mkdir "build/docs/html"'
                         echo "Building docs on ${env.NODE_NAME}"
                         tee('build_sphinx.log') {
-                            bat script: "pipenv run setup.py build_sphinx"                            
+                            bat script: "pipenv run python setup.py build_sphinx"                            
                         }
                     }
                     post{
@@ -167,7 +167,7 @@ pipeline {
                        equals expected: true, actual: params.TEST_RUN_FLAKE8
                     }
                     steps {
-                        bat "pipenv run sphinx-build -b doctest -d build/docs/doctrees docs/source reports/doctest"
+                        bat "pipenv run python setup.py sphinx-build -b doctest -d build/docs/doctrees docs/source reports/doctest"
                     }
                     post{
                         always {
@@ -242,7 +242,7 @@ pipeline {
                         equals expected: true, actual: params.PACKAGE_PYTHON_FORMATS
                     }
                     steps{
-                        bat script: "pipenv run setup.py bdist_wheel sdist"
+                        bat script: "pipenv run python setup.py bdist_wheel sdist"
                     }
                     post {
                         success {
@@ -484,7 +484,7 @@ MSBuild ${env.WORKSPACE}\\\\windows_build\\\\release.pyproj /nologo /t:msi /p:Pr
                     steps{
                         script {
                             if(!params.BUILD_DOCS){
-                                bat "pipenv run setup.py build_sphinx"
+                                bat "pipenv run python setup.py build_sphinx"
                             }
                         }
                         
@@ -574,7 +574,7 @@ MSBuild ${env.WORKSPACE}\\\\windows_build\\\\release.pyproj /nologo /t:msi /p:Pr
     }
     post {
         cleanup {
-            bat "pipenv run setup.py clean --all"
+            bat "pipenv run python setup.py clean --all"
         
             dir('dist') {
                 deleteDir()
