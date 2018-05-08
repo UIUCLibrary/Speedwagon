@@ -272,7 +272,7 @@ pipeline {
                     }
                     steps {
                         tee('build_standalone.log') {
-                            bat "pipenv sync --dev"
+                            bat "pipenv update --dev"
                             bat script: "pipenv lock -r > requirements.txt"
                             bat script: "pipenv lock -rd > requirements-dev.txt"
                             script{
