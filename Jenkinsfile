@@ -288,8 +288,8 @@ pipeline {
                             
                             script {
                                 def python_path = bat(
-                                        script: "pipenv --py"
-                                        returnStdout: true, 
+                                        script: "pipenv --py",
+                                        returnStdout: true
                                     ).trim()
                                 // def python_path = "python.exe"
                                 echo "python_path = ${python_path}"
