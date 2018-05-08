@@ -270,8 +270,19 @@ pipeline {
                         tee('build_standalone.log') {
                             bat "pipenv install --dev --pre --verbose"
                             bat script: "pipenv lock -r > requirements.txt"
-                            bat script: "pipenv lock -rd > requirements-dev.txt"                      
-                            bat script: "pipenv run make.bat standalone"
+                            bat script: "pipenv lock -rd > requirements-dev.txt"
+                            script{
+                                def requirements = readFile 'requirements.txt'
+                                def requirements_dev = readFile 'requirements-dev.txt'
+                                echo "requirements.txt"
+                                echo "${requirements}"
+                                echo "requirements-dev.txt"
+                                echo "${requirements_dev}"
+                                
+                            }
+
+                                                  
+                            bat script: "call make.bat standalone"
                             
                             // script {
                             //     // def python_path = 
