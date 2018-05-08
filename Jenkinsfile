@@ -262,6 +262,7 @@ pipeline {
                     }
                     environment {
                         VSCMD_START_DIR = "${env.WORKSPACE}"
+                        PIPENV_CACHE_DIR="${USERPROFILE}\\.virtualenvs\\cache\\"
                         WORKON_HOME = "./venv"
                     }
                     // PACKAGE_WINDOWS_STANDALONE
