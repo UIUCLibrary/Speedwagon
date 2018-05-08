@@ -74,12 +74,7 @@ pipeline {
                 stash includes: 'deployment.yml', name: "Deployment"
                 bat "${tool 'CPython-3.6'} -m pip install pipenv"
                 bat "pipenv install --dev --pre --verbose"
-                bat "pipenv install devpi-client"
-                cache(caches: [[$class: 'ArbitraryFileCache', excludes: '', includes: '**/*', path: "${WORKSPACE}/venv"]], maxCacheSize: 300) {
-
-                }
-
-                
+                bat "pipenv install devpi-client"               
                 // bat "${tool 'CPython-3.6'} -m venv venv"
                 // bat "venv\\Scripts\\pip.exe install -r requirements.txt -r requirements-dev.txt"
                 // bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
