@@ -73,7 +73,7 @@ pipeline {
             steps {
                 
                 stash includes: 'deployment.yml', name: "Deployment"
-                bat "${tool 'CPython-3.6'} -m pip install pipenv"
+                bat "${tool 'CPython-3.6'} -m pip install pipenv -U"
                 bat "pipenv sync --dev --verbose"
                 bat "pipenv install devpi-client"               
                 // bat "${tool 'CPython-3.6'} -m venv venv"
