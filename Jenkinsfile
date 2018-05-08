@@ -271,7 +271,7 @@ pipeline {
                             bat "pipenv install --dev --pre --verbose"
                             bat script: "pipenv lock -r > requirements.txt"
                             bat script: "pipenv lock -rd > requirements-dev.txt"                      
-                            bat script: "call make.bat standalone"
+                            bat script: "pipenv run make.bat standalone"
                             
                             // script {
                             //     // def python_path = 
