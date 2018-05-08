@@ -31,7 +31,7 @@ pipeline {
         booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
         booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 static analysis")
         booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
-        booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
+        booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
         booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
@@ -75,10 +75,6 @@ pipeline {
                 bat "${tool 'CPython-3.6'} -m pip install pipenv -U"
                 bat "pipenv sync --dev"
                 bat "pipenv install devpi-client"               
-                // bat "${tool 'CPython-3.6'} -m venv venv"
-                // bat "venv\\Scripts\\pip.exe install -r requirements.txt -r requirements-dev.txt"
-                // bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
-                // bat "venv\\Scripts\\pip.exe install devpi-client"
                 bat 'mkdir "build"'
             }
         }
@@ -120,9 +116,6 @@ pipeline {
                                 def project_name = alljob[0]
                                 dir('build/docs/') {
                                     zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,7)}.zip"
-                                    // dir("html"){
-                                    //     stash includes: '**', name: "HTML Documentation"
-                                    // }
                                 }
                             }
                         }
@@ -202,13 +195,7 @@ pipeline {
                     when{
                         equals expected: true, actual: params.TEST_RUN_TOX
                     }
-                    // agent{
-                    //     label "Windows && DevPi"
-                    // }
                     steps {
-                        // bat "${tool 'CPython-3.6'} -m venv venv"
-                        // bat 'venv\\Scripts\\python.exe -m pip install -U setuptools'
-                        // bat 'venv\\Scripts\\python.exe -m pip install tox'
                         bat "pipenv run tox"
                     }
                 }
@@ -289,19 +276,6 @@ pipeline {
                                 // def python_path = "python.exe"
                                 echo "python_path = ${python_path}"
                                 bat "mkdir build"
-//                                 powershell """pushd "\$Env:vs140comntools\\..\\..\\VC\\"
-// cmd /c "vcvarsall.bat x86_amd64 &set" |
-// foreach {
-//   if (\$_ -match "=") {
-//     \$v = \$_.split("="); set-item -force -path "ENV:\\$(\$v[0])"  -value "$(\$v[1])"
-//   }
-// }
-// popd
-
-// write-host "`nVisual Studio Command Prompt variables set." -ForegroundColor Yellow
-// nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
-// MSBuild ${env.WORKSPACE}\\\\windows_build\\\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}"""
-
                                 bat script: """call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
 nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
 MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}"""
