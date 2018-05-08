@@ -273,29 +273,31 @@ pipeline {
                             bat script: "pipenv lock -rd > requirements-dev.txt"
                             script{
                                 def requirements = readFile 'requirements.txt'
-                                def requirements_dev = readFile 'requirements-dev.txt'
-                                echo "requirements.txt"
-                                echo "${requirements}"
-                                echo "requirements-dev.txt"
-                                echo "${requirements_dev}"
+                                writeFile file: 'requirements.txt', text "${requirements}setuptools>=30.3.0\n"
+                                // requirements = "${requirements}setuptools>=30.3.0\n"
+                            //     def requirements_dev = readFile 'requirements-dev.txt'
+                            //     // echo "requirements.txt"
+                            //     // echo "${requirements}"
+                            //     // echo "requirements-dev.txt"
+                            //     // echo "${requirements_dev}"
                                 
                             }
 
                                                   
-                            bat script: "call make.bat standalone"
+                            // bat script: "call make.bat standalone"
                             
-                            // script {
+                            script {
                             //     // def python_path = 
-                            //     def python_path = "python.exe"
-                            //     echo "python_path = ${bat(returnStdout: true, script: "pipenv --py").trim()}"
-                            //     bat script: """
-                            //     mkdir build
-                            //     call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
-                            //     nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
-                            //     pipenv run MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE}
-                            //     """
+                                // def python_path = "python.exe"
+                                // echo "python_path = ${bat(returnStdout: true, script: "pipenv --py").trim()}"
+                                bat script: """
+                                mkdir build
+                                call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
+                                nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
+                                pipenv run MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE}
+                                """
 
-                            // }
+                            }
 
                             // script {
                             //     def standalone_status = 
