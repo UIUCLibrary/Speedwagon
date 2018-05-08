@@ -273,7 +273,7 @@ pipeline {
                             bat script: "pipenv lock -rd > requirements-dev.txt"
                             script{
                                 def requirements = readFile 'requirements.txt'
-                                writeFile file: 'requirements.txt', text "${requirements}setuptools>=30.3.0\n"
+                                writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"
                                 // requirements = "${requirements}setuptools>=30.3.0\n"
                             //     def requirements_dev = readFile 'requirements-dev.txt'
                             //     // echo "requirements.txt"
