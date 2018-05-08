@@ -167,7 +167,7 @@ pipeline {
                        equals expected: true, actual: params.TEST_RUN_FLAKE8
                     }
                     steps {
-                        bat "pipenv run python setup.py sphinx-build -b doctest -d build/docs/doctrees docs/source reports/doctest"
+                        bat "pipenv run sphinx-build -b doctest -d build/docs/doctrees docs/source reports/doctest"
                     }
                     post{
                         always {
