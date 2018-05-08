@@ -22,7 +22,7 @@ setuptools = ">=30.3.0"
 
 [dev-packages]
 mypy = "*"
-Sphinx = "*"
+sphinx = "*"
 pytest = "*"
 pytest-runner = "*"
 pytest-qt = "*"
