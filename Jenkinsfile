@@ -75,7 +75,7 @@ pipeline {
                 stash includes: 'deployment.yml', name: "Deployment"
                 bat "${tool 'CPython-3.6'} -m pip install pipenv -U"
                 bat "set"
-                bat "pipenv sync --dev --verbose"
+                bat "pipenv update --dev --python=3.6.4"
                 bat "pipenv install devpi-client"               
                 // bat "${tool 'CPython-3.6'} -m venv venv"
                 // bat "venv\\Scripts\\pip.exe install -r requirements.txt -r requirements-dev.txt"
