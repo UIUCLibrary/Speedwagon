@@ -287,9 +287,12 @@ pipeline {
                             // bat script: "call make.bat standalone"
                             
                             script {
-                            //     // def python_path = 
+                                def python_path = bat(
+                                        script: "pipenv --py"
+                                        returnStdout: true, 
+                                    ).trim()
                                 // def python_path = "python.exe"
-                                // echo "python_path = ${bat(returnStdout: true, script: "pipenv --py").trim()}"
+                                echo "python_path = ${python_path}"
                                 bat script: """
                                 mkdir build
                                 call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
