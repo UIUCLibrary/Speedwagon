@@ -287,7 +287,7 @@ pipeline {
                                 // def python_path = "python.exe"
                                 echo "python_path = ${python_path}"
                                 bat "mkdir build"
-                                powershell '''pushd "$Env:vs140comntools\\..\\..\\VC\\"
+                                powershell """pushd "$Env:vs140comntools\\..\\..\\VC\\"
 cmd /c "vcvarsall.bat x86_amd64 &set" |
 foreach {
   if ($_ -match "=") {
@@ -295,10 +295,10 @@ foreach {
   }
 }
 popd
-Get-ChildItem Env:
+
 write-host "`nVisual Studio Command Prompt variables set." -ForegroundColor Yellow
-nuget install windows_build\\\\packages.config -OutputDirectory ${env.WORKSPACE}\\\\build\\\\nugetpackages
-MSBuild ${env.WORKSPACE}\\\\windows_build\\\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}'''
+nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
+MSBuild ${env.WORKSPACE}\\\\windows_build\\\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}"""
 
                                 // bat script: """
                                 // call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
