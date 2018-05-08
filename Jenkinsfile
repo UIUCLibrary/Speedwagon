@@ -262,6 +262,7 @@ pipeline {
                     }
                     environment {
                         VSCMD_START_DIR = "${env.WORKSPACE}"
+                        WORKON_HOME = "./venv"
                     }
                     // PACKAGE_WINDOWS_STANDALONE
                     when {
