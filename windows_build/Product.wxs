@@ -25,7 +25,11 @@
                           Name="Speedwagon"
                           Description="Collection of tools and workflows for DS"
                           Target="[INSTALLFOLDER]pythonw.exe"
-                          WorkingDirectory="APPLICATIONROOTDIRECTORY" Arguments="-m speedwagon"/>
+                          WorkingDirectory="APPLICATIONROOTDIRECTORY"
+                          Arguments="-m speedwagon"
+                          Icon="SpeedwagonIcon">
+                    <Icon Id="SpeedwagonIcon" SourceFile="$(var.ItemDir)\Lib\site-packages\speedwagon\favicon.ico" />
+                </Shortcut>
                 <Shortcut Id="DocumentationStartMenuShortcut" Name="Documentation"
                           Description="My descriptions" Target="[INSTALLFOLDER]\docs\html\index.html"/>
                 <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
