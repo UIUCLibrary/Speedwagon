@@ -559,12 +559,52 @@ MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:Projec
                             def msi_files = findFiles glob: '*.msi'
 
                             def deployment_request = requestDeploy yaml: "deployment.yml", file_name: msi_files[0]
-                            
+                            cifsPublisher(
+                                publishers: [[
+                                    configName: 'SCCM Staging', 
+                                    transfers: [[
+                                        cleanRemote: false, 
+                                        excludes: '', 
+                                        flatten: false, 
+                                        makeEmptyDirs: false, 
+                                        noDefaultExcludes: false, 
+                                        patternSeparator: '[, ]+', 
+                                        remoteDirectory: '', 
+                                        remoteDirectorySDF: false, 
+                                        removePrefix: '', 
+                                        sourceFiles: '*.msi'
+                                        ]], 
+                                    usePromotionTimestamp: false, 
+                                    useWorkspaceInPromotion: false, 
+                                    verbose: false
+                                    ]]
+                                )
+
                             // deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
                             
                             input("Deploy to production?")
                             writeFile file: "deployment_request.txt", text: deployment_request
                             echo deployment_request
+                            cifsPublisher(
+                                publishers: [[
+                                    configName: 'SCCM Upload', 
+                                    transfers: [[
+                                        cleanRemote: false, 
+                                        excludes: '', 
+                                        flatten: false, 
+                                        makeEmptyDirs: false, 
+                                        noDefaultExcludes: false, 
+                                        patternSeparator: '[, ]+', 
+                                        remoteDirectory: '', 
+                                        remoteDirectorySDF: false, 
+                                        removePrefix: '', 
+                                        sourceFiles: '*.msi'
+                                        ]], 
+                                    usePromotionTimestamp: false, 
+                                    useWorkspaceInPromotion: false, 
+                                    verbose: false
+                                    ]]
+                            )
                             // deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
                         }
                     }
