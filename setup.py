@@ -45,9 +45,9 @@ setup(
         "HathiValidate>=0.3.3",
         "pyhathiprep",
         "hathichecksumupdater",
-        "uiucprescon-packager>=0.2.1b4",
-        "pykdu-compress>=0.0.3",
-        "uiucprescon-getmarc"
+        "uiucprescon-packager[kdu]>=0.2.1b6",
+        "pykdu-compress>=0.0.4",
+        "setuptools>=30.3.0",
     ],
     packages=[
         "speedwagon",

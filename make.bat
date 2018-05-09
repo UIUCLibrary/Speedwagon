@@ -257,6 +257,7 @@ goto:eof
 
 
 	if exist .cache rd /q /s .cache                     && echo Removed .cache
+	if exist .pytest_cache rd /q /s .pytest_cache       && echo Removed .pytest_cache
 	if exist .reports rd /q /s .reports                 && echo Removed .reports
 	if exist reports rd /q /s reports                   && echo Removed  reports
 	if exist .mypy_cache rd /q /s .mypy_cache           && echo Removed .mypy_cache
