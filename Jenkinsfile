@@ -36,6 +36,7 @@ pipeline {
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
+        booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to \\\\storage.library.illinois.edu\\HathiTrust\\Tools\\beta\\")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
@@ -297,7 +298,7 @@ MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:Projec
                             dir("dist") {
                                 stash includes: "*.msi", name: "msi"
                                 archiveArtifacts artifacts: "*.msi", fingerprint: true
-                                cifsPublisher(publishers: [[configName: 'hathitrust tools', transfers: [[cleanRemote: false, excludes: '', flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: 'beta', remoteDirectorySDF: false, removePrefix: '', sourceFiles: '*.msi']], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false]])
+                                
 
                             }
                         }
@@ -450,9 +451,6 @@ MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:Projec
             }
         }
         stage("Deploy"){
-            when {
-              branch "master"
-            }
             parallel {
                 stage("Deploy Online Documentation") {
                     when{
@@ -490,6 +488,37 @@ MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:Projec
                                 ]
                             )
                         }
+                    }
+                }
+                stage("Deploy standalone to Hathi tools Beta"){
+                    when {
+                        allOf{
+                            equals expected: true, actual: params.DEPLOY_HATHI_TOOL_BETA
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
+                        }
+                    }
+                    steps {
+                        unstash "msi"
+                        cifsPublisher(
+                                    publishers: [[
+                                        configName: 'hathitrust tools', 
+                                        transfers: [[
+                                            cleanRemote: false, 
+                                            excludes: '', 
+                                            flatten: false, 
+                                            makeEmptyDirs: false, 
+                                            noDefaultExcludes: false, 
+                                            patternSeparator: '[, ]+', 
+                                            remoteDirectory: 'beta', 
+                                            remoteDirectorySDF: false, 
+                                            removePrefix: '', 
+                                            sourceFiles: '*.msi'
+                                            ]], 
+                                        usePromotionTimestamp: false, 
+                                        useWorkspaceInPromotion: false, 
+                                        verbose: false
+                                        ]]
+                                )
                     }
                 }
                 stage("Deploy to DevPi Production") {
