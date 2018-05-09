@@ -297,6 +297,8 @@ MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:Projec
                             dir("dist") {
                                 stash includes: "*.msi", name: "msi"
                                 archiveArtifacts artifacts: "*.msi", fingerprint: true
+                                cifsPublisher(publishers: [[configName: 'hathitrust tools', transfers: [[cleanRemote: false, excludes: '', flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: 'beta', remoteDirectorySDF: false, removePrefix: '', sourceFiles: '*.msi']], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false]])
+
                             }
                         }
                         always {
