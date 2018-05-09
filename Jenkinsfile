@@ -499,6 +499,7 @@ MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:Projec
                     }
                     steps {
                         unstash "msi"
+                        input 'Update standalone to //storage.library.illinois.edu/HathiTrust/Tools/beta/?'
                         cifsPublisher(
                                     publishers: [[
                                         configName: 'hathitrust tools', 
