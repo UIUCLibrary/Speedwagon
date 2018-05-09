@@ -259,7 +259,7 @@ pipeline {
                     }
                     steps {
                         tee('build_standalone.log') {
-                            bat "pipenv install --skip-lock --dev"
+                            bat "pipenv install --dev"
                             bat script: "pipenv lock -r > requirements.txt"
                             bat script: "pipenv lock -rd > requirements-dev.txt"
                             script{
