@@ -79,7 +79,7 @@
                 "sha256:746e7dea3116547ae9586e53efd1d911533ed12b63ba00f04e3d2c0000830acd",
                 "sha256:ec7f338a557e50225f5d5c199facc732cd4f4dc550898aca00ef1196bd98a5cf"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==4.0.2"
         },
         "devpi-common": {
@@ -99,7 +99,7 @@
             "hashes": [
                 "sha256:35f9c5321495f349c74125026b28e1636c2219722712e5d00915ddc1ba63f3b9"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==0.1.0"
         },
         "hathivalidate": {
@@ -107,7 +107,7 @@
                 "sha256:ca61e1f1724f246cd1bd679715023c071df790e330b2edc43d532d2a7a225172",
                 "sha256:cb4a11bfa0b6f004d584cc94f4be8b041dedc4ef4ae98e327173486fc6b88f56"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==0.3.3"
         },
         "hathizip": {
@@ -116,7 +116,7 @@
                 "sha256:c7fb18a03d33c6826a68f80026d1cc2f7926d91e05be89cd2410b404c665b0f2",
                 "sha256:eb71407189f7cae19f58484cecb93308957f4c02a473ae6f8cae244fdc3ad302"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==0.1.3"
         },
         "idna": {
@@ -209,7 +209,7 @@
             "hashes": [
                 "sha256:ba0096f14033a45713eee3999751a1de3a05898f51ce38ed32b070e5ab461167"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==0.1.3"
         },
         "pykdu-compress": {
@@ -225,7 +225,7 @@
                 "sha256:74ed14c5e41ef2941879c788a848c50b9288ea4e8d3e1abd669be4ed864c727f",
                 "sha256:ee5b8c30d3b0a473a5c23e43b2a29ce8e47fa7b48d8dc91816953da37bc053e8"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==0.7.3"
         },
         "pyqt5": {
@@ -235,7 +235,7 @@
                 "sha256:9c17ab3974c1fc7bbb04cc1c9dae780522c0ebc158613f3025fccae82227b5f7",
                 "sha256:f6035baa009acf45e5f460cf88f73580ad5dc0e72330029acd99e477f20a5d61"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==5.10.1"
         },
         "pytz": {
@@ -335,7 +335,7 @@
                 "sha256:0382f67c9aa7bd633cc0aad54fe1d5b8e007a9eb59c244515cd6a9ab6695911c",
                 "sha256:0fea1f02d826ee877406eef17600bf9eef5da0a43324d145f754b71c12e169c4"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==0.0.1"
         },
         "uiucprescon-packager": {
@@ -344,7 +344,7 @@
                 "sha256:7895d18b10f402149d7e268f47fe9a1fb5deff0a8d180d8f1a9d0c1af2025545",
                 "sha256:938c4d3d2ca61a1cfef2bf985a38f18d29faa9d7be4e7435508313972cc4d502"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==0.2.1b6"
         },
         "urllib3": {
@@ -403,7 +403,7 @@
                 "sha256:b9662327aa53294c1351b0a9c369093ccec1d21026f050c3bd9b3e5cccf81a86",
                 "sha256:ebda1a6c9e5bfe95c5f9f0a2794e01c7098b3dde86c10a95d8621c5907ff6f1c"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==1.2.6"
         },
         "certifi": {
@@ -488,7 +488,7 @@
                 "sha256:7253265f7abd8b313e3892944044a365e3f4ac3fcdcfb4298f55ee9ddf188ba0",
                 "sha256:c7841163e2b576d435799169b78703ad6ac1bbb0f199994fc05f700b2a90ea37"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==3.5.0"
         },
         "idna": {
@@ -571,7 +571,7 @@
                 "sha256:01cf289838f266ae7c6550c813181ee77d21eac9459dbf067e7a95a0a2db9721",
                 "sha256:bc251cb31bc236d9fe4bcc442c994c45fff2541f7161ee52dc949741fe9ca3dd"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==0.600"
         },
         "packaging": {
@@ -647,7 +647,7 @@
                 "sha256:74ed14c5e41ef2941879c788a848c50b9288ea4e8d3e1abd669be4ed864c727f",
                 "sha256:ee5b8c30d3b0a473a5c23e43b2a29ce8e47fa7b48d8dc91816953da37bc053e8"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==0.7.3"
         },
         "pytest": {
@@ -655,7 +655,7 @@
                 "sha256:54713b26c97538db6ff0703a12b19aeaeb60b5e599de542e7fca0ec83b9038e8",
                 "sha256:829230122facf05a5f81a6d4dfe6454a04978ea3746853b2b84567ecf8e5c526"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==3.5.1"
         },
         "pytest-cov": {
@@ -663,7 +663,7 @@
                 "sha256:03aa752cf11db41d281ea1d807d954c4eda35cfa1b21d6971966cc041bbf6e2d",
                 "sha256:890fe5565400902b0c78b5357004aab1c814115894f4f21370e2433256a3eeec"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==2.5.1"
         },
         "pytest-qt": {
@@ -671,7 +671,7 @@
                 "sha256:47cc12b645d2bb9f597e2df6c8934fbc57bd932a7616247bed9b8407d57e340b",
                 "sha256:d54df3ae6db4fa02857b2ff8c53921b79bf02fa65aa452b65cf406ddf3f02457"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==2.3.1"
         },
         "pytest-runner": {
@@ -679,7 +679,7 @@
                 "sha256:d23f117be39919f00dd91bffeb4f15e031ec797501b717a245e377aee0f577be",
                 "sha256:d987fec1e31287592ffe1cb823a8c613c533db4c6aaca0ee1191dbc91e2fcc61"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==4.2"
         },
         "pytz": {
@@ -715,7 +715,7 @@
                 "sha256:2e7ad92e96eff1b2006cf9f0cdb2743dacbae63755458594e9e8238b0c3dc60b",
                 "sha256:e9b1a75a3eae05dded19c80eb17325be675e0698975baae976df603b6ed1eb10"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==1.7.4"
         },
         "sphinxcontrib-websupport": {
@@ -774,7 +774,7 @@
                 "sha256:1ae8153bed701cb062913b72429bcf854ba824f973735427681882a688cb55ce",
                 "sha256:9cdc8ab2cc9c3c2e2727a4b67c22881dbb0e1c503d592992594c5e131c867107"
             ],
-            "index": "pypi",
+            "index": "uiuclibrary",
             "version": "==0.31.0"
         }
     }
