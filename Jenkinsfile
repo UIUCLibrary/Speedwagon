@@ -276,10 +276,10 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                                 // def python_path = "python.exe"
                                 // echo "python_path = ${python_path}"
                                 bat "mkdir build"
-                                powershell """\$installationPath = & "\${env:ProgramFiles(x86)}\\Microsoft Visual Studio\\Installer\\vswhere.exe" -prerelease -latest -property installationPath
+                                powershell """\$installationPath = & \"\${env:ProgramFiles(x86)}\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -prerelease -latest -property installationPath
 echo \$installationPath
-if (\$installationPath -and (test-path "\$installationPath\\Common7\\Tools\\vsdevcmd.bat")) {
-  & "\${env:COMSPEC}\" /s /c "`"\$installationPath\\Common7\\Tools\\vsdevcmd.bat`" -no_logo -host_arch=amd64 && set" | foreach-object {
+if (\$installationPath -and (test-path \"\$installationPath\\Common7\\Tools\\vsdevcmd.bat\")) {
+  & "\${env:COMSPEC}\" /s /c \"`\"\$installationPath\\Common7\\Tools\\vsdevcmd.bat`\" -no_logo -host_arch=amd64 && set\" | foreach-object {
     \$name, \$value = \$_ -split \'=\', 2
     set-content env:\\"\$name" \$value
   }
