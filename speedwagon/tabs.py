@@ -330,7 +330,7 @@ class ToolTab(ItemSelectionTab):
                          models.ToolsListModel(tools),
                          work_manager,
                          log_manager)
-        self._tool: AbsTool = None
+        self._tool: typing.Optional[AbsTool] = None
 
     def is_ready_to_start(self) -> bool:
         number_of_selected = self.item_selector_view.selectedIndexes()

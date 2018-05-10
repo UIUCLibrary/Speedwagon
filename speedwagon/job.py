@@ -16,8 +16,8 @@ class JobCancelled(Exception):
 
 class AbsJob(metaclass=abc.ABCMeta):
     active = True
-    description: str = None
-    name: str = None
+    description: typing.Optional[str] = None
+    name: typing.Optional[str] = None
 
     def __init__(self):
         self.options = []  # type: ignore
@@ -73,8 +73,8 @@ class AbsTool(AbsJob):
 
 class AbsWorkflow(AbsJob):
     active = True
-    description: str = None
-    name: str = None
+    description: typing.Optional[str] = None
+    name: typing.Optional[str] = None
 
     def __init__(self) -> None:
         super().__init__()

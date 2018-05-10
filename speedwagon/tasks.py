@@ -17,7 +17,7 @@ class TaskStatus(enum.IntEnum):
 
 
 class AbsSubtask(metaclass=abc.ABCMeta):
-    name: str = None
+    name: Optional[str] = None
 
     @abc.abstractmethod
     def work(self) -> bool:
@@ -72,7 +72,7 @@ class Result(NamedTuple):
 class Subtask(AbsSubtask):
 
     def __init__(self) -> None:
-        self._result: Result = None
+        self._result: Optional[Result] = None
         # TODO: refactor into state machine
         self._status = TaskStatus.IDLE
         self._working_dir = ""
@@ -147,7 +147,7 @@ class PreTask(AbsSubtask):
     def __init__(self) -> None:
         self._status = TaskStatus.IDLE
         self._parent_task_log_q: Deque[str] = None
-        self._result: Result = None
+        self._result: Optional[Result] = None
 
     @property
     def status(self) -> TaskStatus:
