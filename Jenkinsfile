@@ -76,8 +76,7 @@ pipeline {
                 stash includes: 'deployment.yml', name: "Deployment"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv devpi-client --quiet"
-                bat "pipenv sync --dev --bare"
-                bat "pipenv install devpi-client"               
+                bat "pipenv sync --dev --bare"           
                 bat 'mkdir "build"'
             }
         }
@@ -264,7 +263,7 @@ pipeline {
                         tee('build_standalone.log') {
                             powershell """Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '--version' -Wait
 Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait 
-pipenv install --dev
+pipenv install --dev --verbose
 """
                             // bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
                             // bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv --quiet"
@@ -278,12 +277,12 @@ pipenv install --dev
                                 // def python_path = "python.exe"
                                 // echo "python_path = ${python_path}"
                                 bat "mkdir build"
-                                powershell """$installationPath = & "${env:ProgramFiles(x86)}\\Microsoft Visual Studio\\Installer\\vswhere.exe" -prerelease -latest -property installationPath
-echo $installationPath
-if ($installationPath -and (test-path "$installationPath\\Common7\\Tools\\vsdevcmd.bat")) {
-  & "\${env:COMSPEC}\" /s /c "`"$installationPath\\Common7\\Tools\\vsdevcmd.bat`" -no_logo -host_arch=amd64 && set" | foreach-object {
-    $name, $value = $_ -split \'=\', 2
-    set-content env:\\"$name" $value
+                                powershell """\$installationPath = & "\${env:ProgramFiles(x86)}\\Microsoft Visual Studio\\Installer\\vswhere.exe" -prerelease -latest -property installationPath
+echo \$installationPath
+if (\$installationPath -and (test-path "\$installationPath\\Common7\\Tools\\vsdevcmd.bat")) {
+  & "\${env:COMSPEC}\" /s /c "`"\$installationPath\\Common7\\Tools\\vsdevcmd.bat`" -no_logo -host_arch=amd64 && set" | foreach-object {
+    \$name, \$value = \$_ -split \'=\', 2
+    set-content env:\\"\$name" \$value
   }
 }
 else
@@ -291,10 +290,10 @@ else
     echo "Unable to set Visual studio"
     EXIT 1
 }
-$python_path = & pipenv --py
-echo "using python path $python_path"
-nuget install windows_build\\\\packages.config -OutputDirectory ${env.WORKSPACE}\\\\build\\\\nugetpackages
-MSBuild ${env.WORKSPACE}\\\\windows_build\\\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}"""
+\$python_path = & pipenv --py
+echo "using python path \$python_path"
+nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
+MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=\${python_path}"""
 
 //                                 bat script: """call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
 // nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
