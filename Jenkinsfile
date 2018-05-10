@@ -262,9 +262,12 @@ pipeline {
                     }
                     steps {
                         tee('build_standalone.log') {
-                            bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
-                            bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv --quiet"
-                            bat "pipenv install --dev --verbose"
+                            powershell "${tool 'CPython-3.6'} -m pip install --upgrade pip"
+                            powershell "${tool 'CPython-3.6'} -m pip install --upgrade pipenv --quiet"
+                            powershell "pipenv install --dev --verbose"
+                            // bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
+                            // bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv --quiet"
+                            // bat "pipenv install --dev --verbose"
                             bat script: "pipenv lock -r > requirements.txt"
                             bat script: "pipenv lock -rd > requirements-dev.txt"
                             script{
