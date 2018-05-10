@@ -282,7 +282,7 @@ pipenv sync --dev
                                 powershell """$installationPath = & "${env:ProgramFiles(x86)}\\Microsoft Visual Studio\\Installer\\vswhere.exe" -prerelease -latest -property installationPath
 echo $installationPath
 if ($installationPath -and (test-path "$installationPath\\Common7\\Tools\\vsdevcmd.bat")) {
-  & "${env:COMSPEC}" /s /c "`"$installationPath\\Common7\\Tools\\vsdevcmd.bat`" -no_logo -host_arch=amd64 && set" | foreach-object {
+  & "\${env:COMSPEC}\" /s /c "`"$installationPath\\Common7\\Tools\\vsdevcmd.bat`" -no_logo -host_arch=amd64 && set" | foreach-object {
     $name, $value = $_ -split \'=\', 2
     set-content env:\\"$name" $value
   }
@@ -293,6 +293,7 @@ else
     EXIT 1
 }
 $python_path = & pipenv --py
+echo "using python path $python_path"
 nuget install windows_build\\\\packages.config -OutputDirectory ${env.WORKSPACE}\\\\build\\\\nugetpackages
 MSBuild ${env.WORKSPACE}\\\\windows_build\\\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}"""
 
