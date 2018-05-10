@@ -252,8 +252,8 @@ pipeline {
                     }
                     environment {
                         VSCMD_START_DIR = "${env.WORKSPACE}"
-                        PIPENV_CACHE_DIR="${USERPROFILE}\\.virtualenvs\\cache\\"
-                        WORKON_HOME = "./venv"
+                        // PIPENV_CACHE_DIR="${USERPROFILE}\\.virtualenvs\\cache\\"
+                        // WORKON_HOME = "./venv"
                     }
                     // PACKAGE_WINDOWS_STANDALONE
                     when {
@@ -274,9 +274,9 @@ pipeline {
                             script{
                                 def requirements = readFile 'requirements.txt'
                                 writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"                       
-                                def python_path = powershell returnStdout: true, script: 'pipenv --py'.trim()
+                                // def python_path = powershell returnStdout: true, script: 'pipenv --py'.trim()
                                 // def python_path = "python.exe"
-                                echo "python_path = ${python_path}"
+                                // echo "python_path = ${python_path}"
                                 bat "mkdir build"
                                 powershell """$installationPath = & "${env:ProgramFiles(x86)}\\Microsoft Visual Studio\\Installer\\vswhere.exe" -prerelease -latest -property installationPath
 echo $installationPath
@@ -291,6 +291,7 @@ else
     echo "Unable to set Visual studio"
     EXIT 1
 }
+$python_path = & pipenv --py
 nuget install windows_build\\\\packages.config -OutputDirectory ${env.WORKSPACE}\\\\build\\\\nugetpackages
 MSBuild ${env.WORKSPACE}\\\\windows_build\\\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}"""
 
