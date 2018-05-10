@@ -1,5 +1,11 @@
 [[source]]
 
+url = "https://devpi.library.illinois.edu/root/pypi/+simple//"
+verify_ssl = true
+name = "devpi"
+
+[[source]]
+
 url = "https://devpi.library.illinois.edu/production/release/+simple/"
 verify_ssl = true
 name = "uiuclibrary"

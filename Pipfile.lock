@@ -1,11 +1,16 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "35e46d3a145df4c9d223dcfb492a38f44a244f9587f3d1fe70b9695247091fef"
+            "sha256": "479a15e4514210a669baf7e1d048cf379da079b303b65c7d0715610b78f3ea27"
         },
         "pipfile-spec": 6,
         "requires": {},
         "sources": [
+            {
+                "name": "devpi",
+                "url": "https://devpi.library.illinois.edu/root/pypi/+simple//",
+                "verify_ssl": true
+            },
             {
                 "name": "uiuclibrary",
                 "url": "https://devpi.library.illinois.edu/production/release/+simple/",
@@ -21,23 +26,23 @@
     "default": {
         "aiohttp": {
             "hashes": [
-                "sha256:1be3903fe6a36d20492e74efb326522dd4702bf32b45ffc7acbc0fb34ab240a6",
-                "sha256:233b9a7816d29700e4ae6e024e0cc5d9d6fbd2a9b0878d0c89b75fa708a8b204",
-                "sha256:424ad41a5434c25920fc8d0ce24c2f8d749965bce8996b86c9be0cd50f0051b2",
-                "sha256:46c004a3bd91c42caa1bb9c4d44ef156ccf0d7f56272590da8d066710e7c63be",
-                "sha256:4af32e7641f8029fd2cb6b3d3e51e92074ae0d42347d56e93b25fbb3f49a43bb",
-                "sha256:51652ba1310e5a71a20133976ae6cbe301edce3387c6d3df4a8451841af8c9c7",
-                "sha256:57854a9e1f0ed26acfd5765caa5522679b6e78a4dfcd137855cd058fdae5abe2",
-                "sha256:695dc053980c9ad73030d426de40d7d0c66f4226c698b1c68ae94b9b761f28bd",
-                "sha256:7dc80c5984613a30a6608718a401143598f69907770a46e5b6df87c7b9d06ce8",
-                "sha256:8aa12ad9cccbdf0f896dd3f1bbe78093b09eb1a456cbd7208080c2c0e9c338e1",
-                "sha256:af183773b170da552bfb1f78bc84647e3f7316ff5c77ae379e34362ffbafed0b",
-                "sha256:b034ab3a8e328705625467fe7b3a59e23da6952ba19b5a14b044aef206b653fa",
-                "sha256:b6abeb48f66ac26690fb681cc3c1f9eed1d2f9f29b7cd4f3e182d3276001f663",
-                "sha256:ee39b92c1dc2425784b424bd442bd255f31e272546be92a28035dabe9da3495e",
-                "sha256:ef885a19bcff2a20ae0362ab6b8f8ac62b8bd8490dd3e031f15933abbe41d2b2"
+                "sha256:0be9782f27f150acc18c20ddb035655625d054ead119eb6e906647eb9a94f6c4",
+                "sha256:1b95d53f8dac13898f0a3e4af76f6f36d540fbfaefc4f4c9f43e436fa0e53d22",
+                "sha256:1d62305fca4479b7f0a1254a78fa1e57e0440f5e9547a1d47e5f8dece264d414",
+                "sha256:294cf24187b8bcf3e9b368f2d67e1a6584b0a27667886612eff02d0cd3be460f",
+                "sha256:29cbcdf61b094140a10923ededcda6c961032d44518d64fc832cb602a5ff21e8",
+                "sha256:359d3e7dfe9f0f6d8c6105152d6fbc45027992f40bdf971484dbc5e7dc7c456f",
+                "sha256:43930d119cae96b1a743c2e542fe93bd8db48d8b0d041933bd0b008a29f286f2",
+                "sha256:862c5694a192a18cbcf3553fdff121aa9abe1b4edd65af7953b258211808437d",
+                "sha256:92b3aaa2896109be9a477f8a57314a144c9d56c6b7e16183e43e5fcad5e89da8",
+                "sha256:9ba1394d3eea2a3e2641e9a93a95b6d8b09478ef1d2ce2845e0ee1511a2937d2",
+                "sha256:a00d4115ae2f5dcf678f482e2235d89eea495e883297e5fd19db429aa1e64d43",
+                "sha256:a169c6d5173c7f60e70055a2ab71b93c90f2d693164e93502744b82ff7c0e282",
+                "sha256:bd2092d2c2cfdd3363e3815d473464b45c79e0794d60e7c4c89c2adc12ef64b4",
+                "sha256:d51800bdc01d9c1c70fa3ed394a1755f93464354b04039b41d48ce1308517e81",
+                "sha256:defc2afb61b9fd08b2d07e536a1497a50925f1078e598ebc7eba080d33cdd5f6"
             ],
-            "version": "==3.2.0"
+            "version": "==3.2.1"
         },
         "async-timeout": {
             "hashes": [
@@ -79,7 +84,7 @@
                 "sha256:746e7dea3116547ae9586e53efd1d911533ed12b63ba00f04e3d2c0000830acd",
                 "sha256:ec7f338a557e50225f5d5c199facc732cd4f4dc550898aca00ef1196bd98a5cf"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==4.0.2"
         },
         "devpi-common": {
@@ -99,7 +104,7 @@
             "hashes": [
                 "sha256:35f9c5321495f349c74125026b28e1636c2219722712e5d00915ddc1ba63f3b9"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==0.1.0"
         },
         "hathivalidate": {
@@ -107,7 +112,7 @@
                 "sha256:ca61e1f1724f246cd1bd679715023c071df790e330b2edc43d532d2a7a225172",
                 "sha256:cb4a11bfa0b6f004d584cc94f4be8b041dedc4ef4ae98e327173486fc6b88f56"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==0.3.3"
         },
         "hathizip": {
@@ -116,7 +121,7 @@
                 "sha256:c7fb18a03d33c6826a68f80026d1cc2f7926d91e05be89cd2410b404c665b0f2",
                 "sha256:eb71407189f7cae19f58484cecb93308957f4c02a473ae6f8cae244fdc3ad302"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==0.1.3"
         },
         "idna": {
@@ -209,7 +214,7 @@
             "hashes": [
                 "sha256:ba0096f14033a45713eee3999751a1de3a05898f51ce38ed32b070e5ab461167"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==0.1.3"
         },
         "pykdu-compress": {
@@ -225,7 +230,7 @@
                 "sha256:74ed14c5e41ef2941879c788a848c50b9288ea4e8d3e1abd669be4ed864c727f",
                 "sha256:ee5b8c30d3b0a473a5c23e43b2a29ce8e47fa7b48d8dc91816953da37bc053e8"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==0.7.3"
         },
         "pyqt5": {
@@ -235,7 +240,7 @@
                 "sha256:9c17ab3974c1fc7bbb04cc1c9dae780522c0ebc158613f3025fccae82227b5f7",
                 "sha256:f6035baa009acf45e5f460cf88f73580ad5dc0e72330029acd99e477f20a5d61"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==5.10.1"
         },
         "pytz": {
@@ -335,7 +340,7 @@
                 "sha256:0382f67c9aa7bd633cc0aad54fe1d5b8e007a9eb59c244515cd6a9ab6695911c",
                 "sha256:0fea1f02d826ee877406eef17600bf9eef5da0a43324d145f754b71c12e169c4"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==0.0.1"
         },
         "uiucprescon-packager": {
@@ -344,7 +349,7 @@
                 "sha256:997b0a58dbcf6d6f19c38983ecbea5da44835f26b9c0bd2c0e5bb084e0be0262",
                 "sha256:f500f5713cfa96ca5459bf4e6257d22e43a16e4429c08573a5c863aa93e29f89"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==0.2.1"
         },
         "urllib3": {
@@ -403,7 +408,7 @@
                 "sha256:b9662327aa53294c1351b0a9c369093ccec1d21026f050c3bd9b3e5cccf81a86",
                 "sha256:ebda1a6c9e5bfe95c5f9f0a2794e01c7098b3dde86c10a95d8621c5907ff6f1c"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==1.2.6"
         },
         "certifi": {
@@ -488,7 +493,7 @@
                 "sha256:7253265f7abd8b313e3892944044a365e3f4ac3fcdcfb4298f55ee9ddf188ba0",
                 "sha256:c7841163e2b576d435799169b78703ad6ac1bbb0f199994fc05f700b2a90ea37"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==3.5.0"
         },
         "idna": {
@@ -571,7 +576,7 @@
                 "sha256:01cf289838f266ae7c6550c813181ee77d21eac9459dbf067e7a95a0a2db9721",
                 "sha256:bc251cb31bc236d9fe4bcc442c994c45fff2541f7161ee52dc949741fe9ca3dd"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==0.600"
         },
         "packaging": {
@@ -647,7 +652,7 @@
                 "sha256:74ed14c5e41ef2941879c788a848c50b9288ea4e8d3e1abd669be4ed864c727f",
                 "sha256:ee5b8c30d3b0a473a5c23e43b2a29ce8e47fa7b48d8dc91816953da37bc053e8"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==0.7.3"
         },
         "pytest": {
@@ -655,7 +660,7 @@
                 "sha256:54713b26c97538db6ff0703a12b19aeaeb60b5e599de542e7fca0ec83b9038e8",
                 "sha256:829230122facf05a5f81a6d4dfe6454a04978ea3746853b2b84567ecf8e5c526"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==3.5.1"
         },
         "pytest-cov": {
@@ -663,7 +668,7 @@
                 "sha256:03aa752cf11db41d281ea1d807d954c4eda35cfa1b21d6971966cc041bbf6e2d",
                 "sha256:890fe5565400902b0c78b5357004aab1c814115894f4f21370e2433256a3eeec"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==2.5.1"
         },
         "pytest-qt": {
@@ -671,7 +676,7 @@
                 "sha256:47cc12b645d2bb9f597e2df6c8934fbc57bd932a7616247bed9b8407d57e340b",
                 "sha256:d54df3ae6db4fa02857b2ff8c53921b79bf02fa65aa452b65cf406ddf3f02457"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==2.3.1"
         },
         "pytest-runner": {
@@ -679,7 +684,7 @@
                 "sha256:d23f117be39919f00dd91bffeb4f15e031ec797501b717a245e377aee0f577be",
                 "sha256:d987fec1e31287592ffe1cb823a8c613c533db4c6aaca0ee1191dbc91e2fcc61"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==4.2"
         },
         "pytz": {
@@ -715,7 +720,7 @@
                 "sha256:2e7ad92e96eff1b2006cf9f0cdb2743dacbae63755458594e9e8238b0c3dc60b",
                 "sha256:e9b1a75a3eae05dded19c80eb17325be675e0698975baae976df603b6ed1eb10"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==1.7.4"
         },
         "sphinxcontrib-websupport": {
@@ -774,7 +779,7 @@
                 "sha256:1ae8153bed701cb062913b72429bcf854ba824f973735427681882a688cb55ce",
                 "sha256:9cdc8ab2cc9c3c2e2727a4b67c22881dbb0e1c503d592992594c5e131c867107"
             ],
-            "index": "uiuclibrary",
+            "index": "devpi",
             "version": "==0.31.0"
         }
     }
