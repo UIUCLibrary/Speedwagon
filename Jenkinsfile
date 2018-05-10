@@ -261,19 +261,12 @@ pipeline {
                     }
                     steps {
                         tee('build_standalone.log') {
-                            bat "pipenv install --dev"
+                            bat "pipenv install --dev --verbose"
                             bat script: "pipenv lock -r > requirements.txt"
                             bat script: "pipenv lock -rd > requirements-dev.txt"
                             script{
                                 def requirements = readFile 'requirements.txt'
-                                writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"
-                        
-                            }
-
-                                                  
-                            // bat script: "call make.bat standalone"
-                            
-                            script {
+                                writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"                       
                                 def python_path = powershell returnStdout: true, script: 'pipenv --py'.trim()
                                 // def python_path = "python.exe"
                                 echo "python_path = ${python_path}"
