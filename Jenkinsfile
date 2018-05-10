@@ -27,12 +27,12 @@ pipeline {
         string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')   
         booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
         // file description: 'Build with alternative requirements.txt file', name: 'requirements.txt'
-        booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests") 
-        booleanParam(name: "TEST_RUN_BEHAVE", defaultValue: true, description: "Run Behave unit tests")
-        booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
-        booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 static analysis")
-        booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
-        booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
+        booleanParam(name: "TEST_RUN_PYTEST", defaultValue: false, description: "Run PyTest unit tests") 
+        booleanParam(name: "TEST_RUN_BEHAVE", defaultValue: false, description: "Run Behave unit tests")
+        booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: false, description: "Test documentation")
+        booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: false, description: "Run Flake8 static analysis")
+        booleanParam(name: "TEST_RUN_MYPY", defaultValue: false, description: "Run MyPy static analysis")
+        booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
@@ -262,8 +262,8 @@ pipeline {
                     }
                     steps {
                         tee('build_standalone.log') {
-                            powershell "${tool 'CPython-3.6'} -m pip install --upgrade pip"
-                            powershell "${tool 'CPython-3.6'} -m pip install --upgrade pipenv --quiet"
+                            powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList \"-m pip install --upgrade pip\" -Wait" 
+                            powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList \"-m pip install --upgrade pipenv\" --quiet"
                             powershell "pipenv install --dev --verbose"
                             // bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
                             // bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv --quiet"
