@@ -24,11 +24,20 @@ class HathiPrepWorkflow(speedwagon.Workflow):
     description = "Something goes here later"
 
     def user_options(self):
-        return tool_options.UserOptionCustomDataType("input",
-                                                     tool_options.FolderData),
+        options = []
+        package_type = tool_options.ListSelection("Image File Type")
+        package_type.add_selection("JPEG 2000")
+        package_type.add_selection("TIFF")
+        input_option = tool_options.UserOptionCustomDataType(
+            "input", tool_options.FolderData)
+
+        options.append(input_option)
+        options.append(package_type)
+        return options
 
     def initial_task(self, task_builder: speedwagon.tasks.TaskBuilder,
                      **user_args) -> None:
+
         root = user_args['input']
         task_builder.add_subtask(FindPackagesTask(root))
 
@@ -60,12 +69,17 @@ class HathiPrepWorkflow(speedwagon.Workflow):
 
     def get_additional_info(self, parent: QtWidgets.QWidget, options: dict,
                             initial_results: list) -> dict:
-        # TODO: Generate a title page selection and return the user options
+        image_type = options['Image File Type']
 
         root_dir = options['input']
-
-        package_factory = PackageFactory(
-            uiucprescon.packager.packages.HathiTiff())
+        if image_type == "TIFF":
+            package_factory = PackageFactory(
+                uiucprescon.packager.packages.HathiTiff())
+        elif image_type == "JPEG 2000":
+            package_factory = PackageFactory(
+                uiucprescon.packager.packages.HathiJp2())
+        else:
+            raise ValueError("Unknown type {}".format(image_type))
 
         packages = [package for package in
                     package_factory.locate_packages(root_dir)]

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "068ceb213c156240bed8b51ab82af76854becd1a315ca10cd8800cb5ee41c1a8"
+            "sha256": "35e46d3a145df4c9d223dcfb492a38f44a244f9587f3d1fe70b9695247091fef"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -340,12 +340,12 @@
         },
         "uiucprescon-packager": {
             "hashes": [
-                "sha256:01dcdac0880244548376f20195340cf631516c678d9bab817c6761ddff0e419c",
-                "sha256:7895d18b10f402149d7e268f47fe9a1fb5deff0a8d180d8f1a9d0c1af2025545",
-                "sha256:938c4d3d2ca61a1cfef2bf985a38f18d29faa9d7be4e7435508313972cc4d502"
+                "sha256:8c442ab606539a442ed022c5865719548393f9addf2e21e1abb45674deac4075",
+                "sha256:997b0a58dbcf6d6f19c38983ecbea5da44835f26b9c0bd2c0e5bb084e0be0262",
+                "sha256:f500f5713cfa96ca5459bf4e6257d22e43a16e4429c08573a5c863aa93e29f89"
             ],
             "index": "uiuclibrary",
-            "version": "==0.2.1b6"
+            "version": "==0.2.1"
         },
         "urllib3": {
             "hashes": [
