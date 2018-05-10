@@ -265,7 +265,6 @@ pipeline {
                             bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
                             bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv --quiet"
                             bat "pipenv install --dev --verbose"
-                            echo "here"
                             bat script: "pipenv lock -r > requirements.txt"
                             bat script: "pipenv lock -rd > requirements-dev.txt"
                             script{
@@ -275,9 +274,25 @@ pipeline {
                                 // def python_path = "python.exe"
                                 echo "python_path = ${python_path}"
                                 bat "mkdir build"
-                                bat script: """call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
-nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
-MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}"""
+                                powershell """$installationPath = & "${env:ProgramFiles(x86)}\\Microsoft Visual Studio\\Installer\\vswhere.exe" -prerelease -latest -property installationPath
+echo $installationPath
+if ($installationPath -and (test-path "$installationPath\\Common7\\Tools\\vsdevcmd.bat")) {
+  & "${env:COMSPEC}" /s /c "`"$installationPath\\Common7\\Tools\\vsdevcmd.bat`" -no_logo -host_arch=amd64 && set" | foreach-object {
+    $name, $value = $_ -split \'=\', 2
+    set-content env:\\"$name" $value
+  }
+}
+else
+{
+    echo "Unable to set Visual studio"
+    EXIT 1
+}
+nuget install windows_build\\\\packages.config -OutputDirectory ${env.WORKSPACE}\\\\build\\\\nugetpackages
+MSBuild ${env.WORKSPACE}\\\\windows_build\\\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}"""
+
+//                                 bat script: """call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
+// nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
+// MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}"""
 
                             }
 
