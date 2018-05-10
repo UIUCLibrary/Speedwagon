@@ -263,7 +263,6 @@ pipeline {
                         tee('build_standalone.log') {
                             powershell """Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '--version' -Wait
 Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait 
-pipenv sync --dev --verbose
 """
                             // bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
                             // bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv --quiet"
