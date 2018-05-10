@@ -250,3 +250,39 @@ class FolderData(AbsCustomData2, metaclass=abc.ABCMeta):
     # @classmethod
     # def browse(cls):
     #     return QtWidgets.QLineEdit()
+
+
+class ListSelectionWidget(CustomItemWidget, metaclass=WidgetMeta):
+
+    def __init__(self, selections, *args, **kwargs):
+        super().__init__()
+        # super().__init__(parent, *args, **kwargs)
+        self._combobox = QtWidgets.QComboBox()
+        self._selections = selections
+
+        self._model = QtCore.QStringListModel()
+        self._model.setStringList(self._selections)
+        self._combobox.setModel(self._model)
+        self._combobox.currentIndexChanged.connect(self._update)
+        self.inner_layout.addWidget(self._combobox,
+                                    alignment=QtCore.Qt.AlignBaseline)
+
+    def _update(self):
+        self.data = self._combobox.currentText()
+
+
+class ListSelection(UserOption2):
+
+    def __init__(self, label_text):
+        super().__init__(label_text)
+        self._selections = []
+
+    def is_valid(self) -> bool:
+        return True
+
+    def edit_widget(self) -> QtWidgets.QWidget:
+        return ListSelectionWidget(self._selections)
+
+    def add_selection(self, text):
+        self._selections.append(text)
+        self.data = self._selections[0]
