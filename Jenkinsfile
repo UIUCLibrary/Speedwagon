@@ -265,6 +265,7 @@ pipeline {
                             bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
                             bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv --quiet"
                             bat "pipenv install --dev --verbose"
+                            echo "here"
                             bat script: "pipenv lock -r > requirements.txt"
                             bat script: "pipenv lock -rd > requirements-dev.txt"
                             script{
