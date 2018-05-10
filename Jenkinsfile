@@ -637,6 +637,10 @@ MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:Projec
 
     }
     post {
+        failure {
+            bat "pipenv uninstall --all"
+        }
+
         cleanup {
             bat "pipenv run python setup.py clean --all"
         
