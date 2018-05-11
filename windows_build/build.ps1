@@ -13,7 +13,7 @@ if ($installationPath -and (test-path "$installationPath\Common7\Tools\vsdevcmd.
 else
 {
     echo "Unable to set Visual studio"
-    Get-ChildItem Env:
+    Get-ChildItem Env: | Format-Table -Wrap
 
     EXIT 1
 }
