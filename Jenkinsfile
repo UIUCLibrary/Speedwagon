@@ -76,7 +76,7 @@ pipeline {
                 stash includes: 'deployment.yml', name: "Deployment"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv devpi-client --quiet"
-                bat "pipenv sync --dev --verbose"           
+                bat "pipenv sync --dev"           
                 bat 'mkdir "build"'
             }
         }
@@ -276,23 +276,24 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                                 // def python_path = "python.exe"
                                 // echo "python_path = ${python_path}"
                                 bat "mkdir build"
-                                powershell """\$installationPath = & vswhere.exe -prerelease -latest -property installationPath
-echo \$installationPath
-if (\$installationPath -and (test-path "\$installationPath\\Common7\\Tools\\vsdevcmd.bat")) {
-  & "\${env:COMSPEC}\" /s /c "`"\$installationPath\\Common7\\Tools\\vsdevcmd.bat`" -no_logo -host_arch=amd64 && set" | foreach-object {
-    \$name, \$value = \$_ -split \'=\', 2
-    set-content env:\\"\$name" \$value
-  }
-}
-else
-{
-    echo "Unable to set Visual studio"
-    EXIT 1
-}
-\$python_path = & pipenv --py
-echo "using python path \$python_path"
-nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
-MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=\${python_path}"""
+                                powershell "windows_build\\build.ps1"
+//                                 powershell """\$installationPath = & vswhere.exe -prerelease -latest -property installationPath
+// echo \$installationPath
+// if (\$installationPath -and (test-path "\$installationPath\\Common7\\Tools\\vsdevcmd.bat")) {
+//   & "\${env:COMSPEC}\" /s /c "`"\$installationPath\\Common7\\Tools\\vsdevcmd.bat`" -no_logo -host_arch=amd64 && set" | foreach-object {
+//     \$name, \$value = \$_ -split \'=\', 2
+//     set-content env:\\"\$name" \$value
+//   }
+// }
+// else
+// {
+//     echo "Unable to set Visual studio"
+//     EXIT 1
+// }
+// \$python_path = & pipenv --py
+// echo "using python path \$python_path"
+// nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
+// MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=\${python_path}"""
 
 //                                 bat script: """call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
 // nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
