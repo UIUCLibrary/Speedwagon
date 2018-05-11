@@ -76,7 +76,7 @@ pipeline {
                 stash includes: 'deployment.yml', name: "Deployment"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv devpi-client --quiet"
-                bat "pipenv sync --dev --verbose"           
+                bat "pipenv install --dev --verbose"           
                 bat 'mkdir "build"'
             }
         }
@@ -639,7 +639,7 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
     }
     post {
         failure {
-            bat "pipenv clean"
+            bat "pipenv uninstall --all"
         }
 
         cleanup {
