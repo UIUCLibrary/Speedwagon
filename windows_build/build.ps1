@@ -2,7 +2,7 @@
  [string]$python_path = (Get-Command python.exe).Path
 )
 
-$installationPath = & vswhere.exe -prerelease -latest -property installationPath
+$installationPath = & vswhere.exe -legacy -prerelease -latest -property installationPath
 $project_folder = & Get-Location
 
 echo "Visual Studio path = $installationPath"
