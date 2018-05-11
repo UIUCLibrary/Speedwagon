@@ -360,14 +360,14 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                 }
             }
             steps {
-                bat "pipenv run devpi use https://devpi.library.illinois.edu"
+                bat "devpi use https://devpi.library.illinois.edu"
                 withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                    bat "pipenv run devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                    bat "pipenv run devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                    bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                    bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                     script {
-                        bat "pipenv run devpi upload --from-dir dist"
+                        bat "devpi upload --from-dir dist"
                         try {
-                            bat "pipenv run devpi upload --only-docs"
+                            bat "devpi upload --only-docs"
                         } catch (exc) {
                             echo "Unable to upload to devpi with docs."
                         }
@@ -397,10 +397,10 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                             def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                             def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                    bat "pipenv run devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                                    bat "pipenv run devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                                    bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                                    bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                                     echo "Testing Source package in devpi"
-                                    bat "pipenv run devpi test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s tar.gz"
+                                    bat "devpi test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s tar.gz"
                             }
                             // node("Windows") {
                             //     bat "${tool 'CPython-3.6'} -m venv venv"
@@ -422,10 +422,10 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                             def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                             def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                    bat "pipenv run devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                                    bat "pipenv run devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                                    bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                                    bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                                     echo "Testing Source package in devpi"
-                                    bat "pipenv run devpi test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s zip"
+                                    bat "devpi test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s zip"
                                 }
                             // node("Windows") {
                             //     bat "${tool 'CPython-3.6'} -m venv venv"
@@ -447,10 +447,10 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                             def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                             def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "pipenv run devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                                bat "pipenv run devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                                bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                                bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                                 echo "Testing Whl package in devpi"
-                                bat "pipenv run devpi test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s whl"
+                                bat "devpi test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s whl"
                             }
                             // node("Windows") {
                             //     bat "${tool 'CPython-3.6'} -m venv venv"
@@ -475,9 +475,9 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                         def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                         def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                            bat "pipenv run devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                            bat "pipenv run devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                            bat "pipenv run devpi push ${name}==${version} ${DEVPI_USERNAME}/${env.BRANCH_NAME}"
+                            bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                            bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                            bat "devpi push ${name}==${version} ${DEVPI_USERNAME}/${env.BRANCH_NAME}"
                         }
 
                     }
@@ -570,9 +570,9 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                             def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                             input "Release ${name} ${version} to DevPi Production?"
                             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "pipenv run devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                                bat "pipenv run devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                                bat "pipenv run devpi push ${name}==${version} production/release"
+                                bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                                bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                                bat "devpi push ${name}==${version} production/release"
                             }
                         }
                     }
@@ -674,10 +674,10 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                     def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                     def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                        bat "pipenv run devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                        bat "pipenv run devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                        bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                        bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                         try {
-                            bat "pipenv run devpi remove -y ${name}==${version}"
+                            bat "devpi remove -y ${name}==${version}"
                         } catch (Exception ex) {
                             echo "Failed to remove ${name}==${version} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                         }
