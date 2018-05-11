@@ -273,10 +273,12 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
 """
                             // bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
                             // bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv --quiet"
-                            bat "pipenv lock"
-                            bat "pipenv install --dev --verbose --sequential"
+                            // bat "pipenv lock"
+                            // bat "pipenv install --dev --verbose --sequential"
                             bat script: "pipenv lock -r > requirements.txt"
                             bat script: "pipenv lock -rd > requirements-dev.txt"
+                            bat "${tool 'CPython-3.6'} -m venv venv"
+                            bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt setuptools>=30.3.0"
                             script{
                                 def requirements = readFile 'requirements.txt'
                                 writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"                       
@@ -284,9 +286,10 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                                 // def python_path = "python.exe"
                                 // echo "python_path = ${python_path}"
                                 bat "mkdir build"
-                                powershell '''$python_path = & pipenv --py
-                                windows_build\\build.ps1 -python_path $python_path
-                                '''
+                                bat "windows_build\\build.ps1 -python_path venv\\Scripts\\python.exe"
+                                // powershell '''$python_path = & pipenv --py
+                                // windows_build\\build.ps1 -python_path $python_path
+                                // '''
 //                                 powershell """\$pshost = get-host
 // \$pswindow = \$pshost.ui.rawui
 // \$newsize = \$pswindow.buffersize
