@@ -278,7 +278,9 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                                 // def python_path = "python.exe"
                                 // echo "python_path = ${python_path}"
                                 bat "mkdir build"
-                                powershell "windows_build\\build.ps1"
+                                powershell '''$python_path = & pipenv --py
+                                windows_build\\build.ps1 -python_path $python_path
+                                '''
 //                                 powershell """\$pshost = get-host
 // \$pswindow = \$pshost.ui.rawui
 // \$newsize = \$pswindow.buffersize
