@@ -17,7 +17,8 @@ pipeline {
 
     environment {
         // mypy_args = "--junit-xml=mypy.xml"
-        // PIPENV_CACHE_DIR="${USERPROFILE}\\.virtualenvs\\cache\\"
+        PIPENV_CACHE_DIR="${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}\\cache\\"
+        WORKON_HOME ="${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
         build_number = VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
         // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
@@ -72,7 +73,7 @@ pipeline {
         }
         stage("Configure Environment"){
             steps {
-                bat "dir ${WORKSPACE}\\.."
+                bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
                 stash includes: 'deployment.yml', name: "Deployment"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv devpi-client --quiet"
