@@ -13,10 +13,10 @@ if ($installationPath -and (test-path "$installationPath\Common7\Tools\vsdevcmd.
 else
 {
     echo "Unable to set Visual studio"
+    Get-ChildItem Env:
+
     EXIT 1
 }
 nuget install windows_build\packages.config -OutputDirectory build\nugetpackages
-
-Get-ChildItem Env:
 
 Start-Process -NoNewWindow -FilePath msbuild.exe -ArgumentList "windows_build\release.pyproj /nologo /t:msi /p:ProjectRoot=$project_folder" -Wait

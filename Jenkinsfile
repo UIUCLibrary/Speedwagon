@@ -639,7 +639,7 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
     }
     post {
         failure {
-            bat "pipenv uninstall --all"
+            bat "pipenv clean"
         }
 
         cleanup {
