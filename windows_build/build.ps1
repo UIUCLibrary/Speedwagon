@@ -1,4 +1,6 @@
-﻿$installationPath = & vswhere.exe -prerelease -latest -property installationPath
+﻿vswhere.exe
+
+$installationPath = & vswhere.exe -prerelease -latest -property installationPath
 $project_folder = & Get-Location
 
 echo "Visual Studio path = $installationPath"
