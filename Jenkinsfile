@@ -309,7 +309,6 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
 
                             
                         }
-                        archiveArtifacts artifacts: 'build_standalone.log'
                     }
                     post {
                         success {
@@ -321,6 +320,7 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                             }
                         }
                         always {
+                            archiveArtifacts artifacts: 'build_standalone.log'
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
                             
                         }
