@@ -278,6 +278,7 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                             bat script: "pipenv lock -r > requirements.txt"
                             bat script: "pipenv lock -rd > requirements-dev.txt"
                             bat "${tool 'CPython-3.6'} -m venv venv"
+                            bat "venv\\Scripts\\python.exe -m pip install -U pip"
                             bat "venv\\Scripts\\pip.exe install -U setuptools>=30.3.0"
                             bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
                             script{
@@ -337,6 +338,10 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                         }
                     }
                     post {
+                        failure {
+                            bat "pipenv uninstall --all"
+                            bat "pipenv run pipenv-resolver --clear"
+                        }
                         success {
                             dir("dist") {
                                 stash includes: "*.msi", name: "msi"
