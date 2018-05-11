@@ -382,7 +382,7 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                     script {
                         bat "${tool 'CPython-3.6'} -m devpi upload --from-dir dist"
                         try {
-                            bat "${tool 'CPython-3.6'} -m devpi upload --only-docs"
+                            bat "${tool 'CPython-3.6'} -m devpi upload --only-docs --from-dir dist"
                         } catch (exc) {
                             echo "Unable to upload to devpi with docs."
                         }
