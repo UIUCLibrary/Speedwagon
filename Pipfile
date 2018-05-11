@@ -6,7 +6,7 @@ name = "devpi"
 
 [[source]]
 
-url = "https://devpi.library.illinois.edu/production/release/+simple/"
+url = "https://devpi.library.illinois.edu/production/release/+simple"
 verify_ssl = true
 name = "uiuclibrary"
 
