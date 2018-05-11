@@ -257,7 +257,7 @@ pipeline {
                         VSCMD_START_DIR = "${env.WORKSPACE}"
                         PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\cache\\"
                         // PIPENV_VENV_IN_PROJECT="True"
-                        // WORKON_HOME ="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}"
+                        WORKON_HOME ="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}"
                         // PIPENV_CACHE_DIR="${USERPROFILE}\\.virtualenvs\\cache\\"
                         // WORKON_HOME = "./venv"
                     }
