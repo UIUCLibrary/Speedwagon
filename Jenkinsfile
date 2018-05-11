@@ -72,7 +72,7 @@ pipeline {
         }
         stage("Configure Environment"){
             steps {
-                echo "JENKINS_HOME = ${JENKINS_HOME}"
+                echo "WORKSPACE = ${WORKSPACE}"
                 stash includes: 'deployment.yml', name: "Deployment"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv devpi-client --quiet"
