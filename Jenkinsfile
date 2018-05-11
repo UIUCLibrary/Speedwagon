@@ -20,6 +20,7 @@ pipeline {
         PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}\\cache\\"
         WORKON_HOME ="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}"
         build_number = VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
+        PIPENV_NOSPIN = "True"
         // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
 
@@ -255,7 +256,8 @@ pipeline {
                     environment {
                         VSCMD_START_DIR = "${env.WORKSPACE}"
                         PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}\\cache\\"
-                        WORKON_HOME ="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}"
+                        PIPENV_VENV_IN_PROJECT="True"
+                        // WORKON_HOME ="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}"
                         // PIPENV_CACHE_DIR="${USERPROFILE}\\.virtualenvs\\cache\\"
                         // WORKON_HOME = "./venv"
                     }
