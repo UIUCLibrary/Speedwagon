@@ -278,7 +278,8 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                             bat script: "pipenv lock -r > requirements.txt"
                             bat script: "pipenv lock -rd > requirements-dev.txt"
                             bat "${tool 'CPython-3.6'} -m venv venv"
-                            bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt setuptools>=30.3.0"
+                            bat "venv\\Scripts\\pip.exe install -U setuptools>=30.3.0"
+                            bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
                             script{
                                 def requirements = readFile 'requirements.txt'
                                 writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"                       
