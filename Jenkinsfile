@@ -254,6 +254,8 @@ pipeline {
                     }
                     environment {
                         VSCMD_START_DIR = "${env.WORKSPACE}"
+                        PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}\\cache\\"
+                        WORKON_HOME ="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}"
                         // PIPENV_CACHE_DIR="${USERPROFILE}\\.virtualenvs\\cache\\"
                         // WORKON_HOME = "./venv"
                     }
@@ -269,7 +271,7 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
 """
                             // bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
                             // bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv --quiet"
-                            // bat "pipenv install --dev --verbose"
+                            bat "pipenv install --dev --verbose"
                             bat script: "pipenv lock -r > requirements.txt"
                             bat script: "pipenv lock -rd > requirements-dev.txt"
                             script{
