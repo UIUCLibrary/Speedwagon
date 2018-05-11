@@ -276,19 +276,19 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                                 // def python_path = "python.exe"
                                 // echo "python_path = ${python_path}"
                                 bat "mkdir build"
-                                powershell """\$pshost = get-host
-\$pswindow = \$pshost.ui.rawui
-\$newsize = \$pswindow.buffersize
-\$newsize.height = 3000
-\$newsize.width = 128
-\$pswindow.buffersize = \$newsize
-\$newsize = \$pswindow.windowsize
-\$newsize.height = 62
-\$newsize.width = 128
-\$pswindow.windowsize = \$newsize
-Get-Command *
-windows_build\\build.ps1
-"""
+                                powershell "windows_build\\build.ps1"
+//                                 powershell """\$pshost = get-host
+// \$pswindow = \$pshost.ui.rawui
+// \$newsize = \$pswindow.buffersize
+// \$newsize.height = 3000
+// \$newsize.width = 128
+// \$pswindow.buffersize = \$newsize
+// \$newsize = \$pswindow.windowsize
+// \$newsize.height = 62
+// \$newsize.width = 128
+// \$pswindow.windowsize = \$newsize
+// windows_build\\build.ps1
+// """
 //                                 powershell """\$installationPath = & vswhere.exe -prerelease -latest -property installationPath
 // echo \$installationPath
 // if (\$installationPath -and (test-path "\$installationPath\\Common7\\Tools\\vsdevcmd.bat")) {
