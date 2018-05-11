@@ -77,9 +77,9 @@ pipeline {
                 // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
                 stash includes: 'deployment.yml', name: "Deployment"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
-                bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv devpi-client --quiet"
+                bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
                 timeout(5) {
-                    bat "${tool 'CPython-3.6'} -m pipenv install --dev --verbose"
+                    bat "${tool 'CPython-3.6'} -m pipenv install --dev"
                 }
                 bat 'mkdir "build"'
             }
