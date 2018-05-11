@@ -286,6 +286,7 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
 \$newsize.height = 62
 \$newsize.width = 128
 \$pswindow.windowsize = \$newsize
+Get-Command *
 windows_build\\build.ps1
 """
 //                                 powershell """\$installationPath = & vswhere.exe -prerelease -latest -property installationPath
