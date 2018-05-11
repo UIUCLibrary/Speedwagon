@@ -79,7 +79,7 @@ pipeline {
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv devpi-client --quiet"
                 timeout(5) {
-                    bat "pipenv install --dev --verbose"
+                    bat "${tool 'CPython-3.6'} -m pipenv install --dev --verbose"
                 }
                 bat 'mkdir "build"'
             }
@@ -89,7 +89,7 @@ pipeline {
                 stage("Python Package"){
                     steps {
                         tee('build.log') {
-                            bat script: "pipenv run python setup.py build"
+                            bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build"
                         }
                     }
                     post{
