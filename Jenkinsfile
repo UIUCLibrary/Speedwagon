@@ -72,9 +72,9 @@ pipeline {
         }
         stage("Configure Environment"){
             steps {
-                echo "WORKSPACE = ${WORKSPACE}"
+                bat "dir ${WORKSPACE}\\.."
                 stash includes: 'deployment.yml', name: "Deployment"
-                bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
+                bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv devpi-client --quiet"
                 timeout(5) {
                     bat "pipenv install --dev --verbose"
