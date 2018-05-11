@@ -73,7 +73,7 @@ pipeline {
         }
         stage("Configure Environment"){
             steps {
-                bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
+                // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
                 stash includes: 'deployment.yml', name: "Deployment"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv devpi-client --quiet"
