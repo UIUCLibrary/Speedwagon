@@ -652,6 +652,8 @@ windows_build\\build.ps1
     post {
         failure {
             bat "pipenv uninstall --all"
+            bat "pipenv run pipenv-resolver --clear"
+
         }
 
         cleanup {
