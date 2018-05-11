@@ -1,19 +1,19 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "479a15e4514210a669baf7e1d048cf379da079b303b65c7d0715610b78f3ea27"
+            "sha256": "7e507590076c719fd04174fa8cd632806ac63856ad8cacbe1d1613133fe0e471"
         },
         "pipfile-spec": 6,
         "requires": {},
         "sources": [
             {
                 "name": "devpi",
-                "url": "https://devpi.library.illinois.edu/root/pypi/+simple//",
+                "url": "https://devpi.library.illinois.edu/root/pypi/+simple",
                 "verify_ssl": true
             },
             {
                 "name": "uiuclibrary",
-                "url": "https://devpi.library.illinois.edu/production/release/+simple/",
+                "url": "https://devpi.library.illinois.edu/production/release/+simple",
                 "verify_ssl": true
             },
             {
