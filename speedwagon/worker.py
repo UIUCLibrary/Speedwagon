@@ -25,7 +25,7 @@ class NoWorkError(RuntimeError):
 
 
 class AbsJobWorker(metaclass=QtMeta):
-    name: str = None
+    name: typing.Optional[str] = None
 
     def __init__(self):
         self.result = None

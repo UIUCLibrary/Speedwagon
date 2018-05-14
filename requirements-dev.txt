@@ -8,3 +8,4 @@ pytest-cov
 behave
 tox
 flake8
+pyqt_distutils

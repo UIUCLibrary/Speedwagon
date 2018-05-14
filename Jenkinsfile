@@ -12,11 +12,15 @@ pipeline {
 
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
+        timeout(20)  // Timeout after 20 minutes. This shouldn't take this long but it hangs for some reason
     }
 
     environment {
         // mypy_args = "--junit-xml=mypy.xml"
+        PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\cache\\"
+        WORKON_HOME ="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}"
         build_number = VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
+        PIPENV_NOSPIN = "True"
         // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
 
@@ -35,6 +39,7 @@ pipeline {
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
+        booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to \\\\storage.library.illinois.edu\\HathiTrust\\Tools\\beta\\")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
@@ -69,12 +74,14 @@ pipeline {
         }
         stage("Configure Environment"){
             steps {
+                // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
                 stash includes: 'deployment.yml', name: "Deployment"
-                bat "${tool 'CPython-3.6'} -m venv venv"
-                bat "venv\\Scripts\\pip.exe install -r requirements.txt -r requirements-dev.txt"
-                bat 'venv\\Scripts\\pip.exe install "setuptools>=30.3.0"'
-                bat "venv\\Scripts\\pip.exe install devpi-client"
-                bat 'mkdir "reports/mypy/stdout"'
+                bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
+                bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
+                timeout(5) {
+                    bat "${tool 'CPython-3.6'} -m pipenv install --dev"
+                }
+                bat 'mkdir "build"'
             }
         }
         stage('Build') {
@@ -82,12 +89,12 @@ pipeline {
                 stage("Python Package"){
                     steps {
                         tee('build.log') {
-                            bat "venv\\Scripts\\python.exe setup.py build"
+                            bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build"
                         }
                     }
                     post{
                         always{
-                            warnings parserConfigurations: [[parserName: 'Pep8', pattern: 'build.log']]
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'build.log']]
                             archiveArtifacts artifacts: 'build.log'
                         }
                     }
@@ -97,13 +104,15 @@ pipeline {
                         equals expected: true, actual: params.BUILD_DOCS
                     }
                     steps {
+                        bat 'mkdir "build/docs/html"'
+                        echo "Building docs on ${env.NODE_NAME}"
                         tee('build_sphinx.log') {
-                            bat "venv\\Scripts\\python.exe setup.py build_sphinx"
+                            bat script: "pipenv run python setup.py build_sphinx"                            
                         }
                     }
                     post{
                         always {
-                            warnings parserConfigurations: [[parserName: 'Pep8', pattern: 'build_sphinx.log']]
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'build_sphinx.log']]
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
@@ -113,9 +122,6 @@ pipeline {
                                 def project_name = alljob[0]
                                 dir('build/docs/') {
                                     zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,7)}.zip"
-                                    dir("html"){
-                                        stash includes: '**', name: "HTML Documentation"
-                                    }
                                 }
                             }
                         }
@@ -130,7 +136,7 @@ pipeline {
                        equals expected: true, actual: params.TEST_RUN_BEHAVE
                     }
                     steps {
-                        bat "venv\\Scripts\\behave.exe --junit --junit-directory reports/behave"
+                        bat "pipenv run behave --junit --junit-directory reports/behave"
                     }
                     post {
                         always {
@@ -146,7 +152,7 @@ pipeline {
                         junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
                     }
                     steps{
-                        bat "venv\\Scripts\\py.test.exe --junitxml=reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/pytestcoverage/ --cov=speedwagon"
+                        bat "pipenv run py.test --junitxml=reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/pytestcoverage/ --cov=speedwagon"
                     }
                     post {
                         always {
@@ -160,7 +166,7 @@ pipeline {
                        equals expected: true, actual: params.TEST_RUN_FLAKE8
                     }
                     steps {
-                        bat "venv\\Scripts\\sphinx-build.exe -b doctest -d build/docs/doctrees docs/source reports/doctest"
+                        bat "pipenv run sphinx-build -b doctest -d build/docs/doctrees docs/source reports/doctest"
                     }
                     post{
                         always {
@@ -173,10 +179,11 @@ pipeline {
                         equals expected: true, actual: params.TEST_RUN_MYPY
                     }
                     steps{
+                        bat 'mkdir "reports\\mypy\\html"'
                         script{
                             try{
                                 tee('mypy.log') {
-                                    bat "venv\\Scripts\\mypy.exe -p speedwagon --html-report reports\\mypy\\html\\"
+                                    bat "pipenv run mypy -p speedwagon --html-report reports/mypy/html"
                                 }
                             } catch (exc) {
                                 echo "MyPy found some warnings"
@@ -185,7 +192,7 @@ pipeline {
                     }
                     post {
                         always {
-                            warnings parserConfigurations: [[parserName: 'MyPy', pattern: 'mypy.log']], unHealthy: ''
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'mypy.log']], unHealthy: ''
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
                     }
@@ -194,14 +201,8 @@ pipeline {
                     when{
                         equals expected: true, actual: params.TEST_RUN_TOX
                     }
-                    agent{
-                        label "Windows && DevPi"
-                    }
                     steps {
-                        bat "${tool 'CPython-3.6'} -m venv venv"
-                        bat 'venv\\Scripts\\python.exe -m pip install -U setuptools'
-                        bat 'venv\\Scripts\\python.exe -m pip install tox'
-                        bat "venv\\Scripts\\tox.exe"
+                        bat "pipenv run tox"
                     }
                 }
                 stage("Run Flake8 Static Analysis") {
@@ -212,7 +213,7 @@ pipeline {
                         script{
                             try{
                                 tee('flake8.log') {
-                                    bat "venv\\Scripts\\flake8.exe speedwagon --format=pylint"
+                                    bat "pipenv run flake8 speedwagon --format=pylint"
                                 }
                             } catch (exc) {
                                 echo "flake8 found some warnings"
@@ -221,7 +222,7 @@ pipeline {
                     }
                     post {
                         always {
-                            warnings parserConfigurations: [[parserName: 'PyLint', pattern: 'flake8.log']], unHealthy: ''
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'flake8.log']], unHealthy: ''
                         }
                     }
                 }
@@ -234,7 +235,7 @@ pipeline {
                         equals expected: true, actual: params.PACKAGE_PYTHON_FORMATS
                     }
                     steps{
-                        bat "venv\\Scripts\\python.exe setup.py bdist_wheel sdist"
+                        bat script: "pipenv run python setup.py bdist_wheel sdist"
                     }
                     post {
                         success {
@@ -252,6 +253,14 @@ pipeline {
                             label "Windows && VS2015 && DevPi"
                         }
                     }
+                    environment {
+                        VSCMD_START_DIR = "${env.WORKSPACE}"
+                        PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\cache\\"
+                        // PIPENV_VENV_IN_PROJECT="True"
+                        WORKON_HOME ="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}"
+                        // PIPENV_CACHE_DIR="${USERPROFILE}\\.virtualenvs\\cache\\"
+                        // WORKON_HOME = "./venv"
+                    }
                     // PACKAGE_WINDOWS_STANDALONE
                     when {
                         not { changeRequest()}
@@ -259,17 +268,92 @@ pipeline {
                     }
                     steps {
                         tee('build_standalone.log') {
-                            bat "call make.bat standalone"
+                            powershell """Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '--version' -Wait
+Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait 
+"""
+                            // bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
+                            // bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv --quiet"
+                            // bat "pipenv lock"
+                            // bat "pipenv install --dev --verbose --sequential"
+                            bat script: "pipenv lock -r > requirements.txt"
+                            bat script: "pipenv lock -rd > requirements-dev.txt"
+                            bat "${tool 'CPython-3.6'} -m venv venv"
+                            bat "venv\\Scripts\\python.exe -m pip install -U pip"
+                            bat "venv\\Scripts\\pip.exe install -U setuptools>=30.3.0"
+                            bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
+                            script{
+                                def requirements = readFile 'requirements.txt'
+                                writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"                       
+                                // def python_path = powershell returnStdout: true, script: 'pipenv --py'.trim()
+                                // def python_path = "python.exe"
+                                // echo "python_path = ${python_path}"
+                                bat "mkdir build"
+                                powershell "windows_build\\build.ps1 -python_path venv\\Scripts\\python.exe"
+                                // powershell '''$python_path = & pipenv --py
+                                // windows_build\\build.ps1 -python_path $python_path
+                                // '''
+//                                 powershell """\$pshost = get-host
+// \$pswindow = \$pshost.ui.rawui
+// \$newsize = \$pswindow.buffersize
+// \$newsize.height = 3000
+// \$newsize.width = 128
+// \$pswindow.buffersize = \$newsize
+// \$newsize = \$pswindow.windowsize
+// \$newsize.height = 62
+// \$newsize.width = 128
+// \$pswindow.windowsize = \$newsize
+// windows_build\\build.ps1
+// """
+//                                 powershell """\$installationPath = & vswhere.exe -prerelease -latest -property installationPath
+// echo \$installationPath
+// if (\$installationPath -and (test-path "\$installationPath\\Common7\\Tools\\vsdevcmd.bat")) {
+//   & "\${env:COMSPEC}\" /s /c "`"\$installationPath\\Common7\\Tools\\vsdevcmd.bat`" -no_logo -host_arch=amd64 && set" | foreach-object {
+//     \$name, \$value = \$_ -split \'=\', 2
+//     set-content env:\\"\$name" \$value
+//   }
+// }
+// else
+// {
+//     echo "Unable to set Visual studio"
+//     EXIT 1
+// }
+// \$python_path = & pipenv --py
+// echo "using python path \$python_path"
+// nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
+// MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=\${python_path}"""
+
+//                                 bat script: """call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
+// nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
+// MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}"""
+
+                            }
+
+                            // script {
+                            //     def standalone_status = 
+                            //     echo "standlone status = ${standalone_status}"
+                                
+                            // }
+
+                            
                         }
-                        warnings parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
-                        archiveArtifacts artifacts: 'build_standalone.log'
                     }
                     post {
+                        failure {
+                            bat "pipenv uninstall --all"
+                            bat "pipenv run pipenv-resolver --clear"
+                        }
                         success {
                             dir("dist") {
                                 stash includes: "*.msi", name: "msi"
                                 archiveArtifacts artifacts: "*.msi", fingerprint: true
+                                
+
                             }
+                        }
+                        always {
+                            archiveArtifacts artifacts: 'build_standalone.log'
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
+                            
                         }
                     }
                 }
@@ -291,14 +375,14 @@ pipeline {
                 }
             }
             steps {
-                bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu"
+                bat "devpi use https://devpi.library.illinois.edu"
                 withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                    bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                    bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                    bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                    bat "${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                     script {
-                        bat "venv\\Scripts\\devpi.exe upload --from-dir dist"
+                        bat "${tool 'CPython-3.6'} -m devpi upload --from-dir dist"
                         try {
-                            bat "venv\\Scripts\\devpi.exe upload --only-docs"
+                            bat "${tool 'CPython-3.6'} -m devpi upload --only-docs --from-dir dist"
                         } catch (exc) {
                             echo "Unable to upload to devpi with docs."
                         }
@@ -328,10 +412,10 @@ pipeline {
                             def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                             def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                    bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                                    bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                                    bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                                    bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                                     echo "Testing Source package in devpi"
-                                    bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s tar.gz"
+                                    bat "devpi test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s tar.gz"
                             }
                             // node("Windows") {
                             //     bat "${tool 'CPython-3.6'} -m venv venv"
@@ -353,10 +437,10 @@ pipeline {
                             def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                             def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                    bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                                    bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                                    bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                                    bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                                     echo "Testing Source package in devpi"
-                                    bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s zip"
+                                    bat "devpi test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s zip"
                                 }
                             // node("Windows") {
                             //     bat "${tool 'CPython-3.6'} -m venv venv"
@@ -378,10 +462,10 @@ pipeline {
                             def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                             def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                                bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                                bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                                bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                                 echo "Testing Whl package in devpi"
-                                bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s whl"
+                                bat "devpi test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s whl"
                             }
                             // node("Windows") {
                             //     bat "${tool 'CPython-3.6'} -m venv venv"
@@ -406,9 +490,9 @@ pipeline {
                         def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                         def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                            bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                            bat "venv\\Scripts\\devpi.exe push ${name}==${version} ${DEVPI_USERNAME}/${env.BRANCH_NAME}"
+                            bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                            bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                            bat "devpi push ${name}==${version} ${DEVPI_USERNAME}/${env.BRANCH_NAME}"
                         }
 
                     }
@@ -416,16 +500,18 @@ pipeline {
             }
         }
         stage("Deploy"){
-            when {
-              branch "master"
-            }
             parallel {
                 stage("Deploy Online Documentation") {
                     when{
                         equals expected: true, actual: params.DEPLOY_DOCS
                     }
                     steps{
-                        bat "venv\\Scripts\\python.exe setup.py build_sphinx"
+                        script {
+                            if(!params.BUILD_DOCS){
+                                bat "pipenv run python setup.py build_sphinx"
+                            }
+                        }
+                        
                         dir("build/docs/html/"){
                             input 'Update project documentation?'
                             sshPublisher(
@@ -453,6 +539,38 @@ pipeline {
                         }
                     }
                 }
+                stage("Deploy standalone to Hathi tools Beta"){
+                    when {
+                        allOf{
+                            equals expected: true, actual: params.DEPLOY_HATHI_TOOL_BETA
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
+                        }
+                    }
+                    steps {
+                        unstash "msi"
+                        input 'Update standalone to //storage.library.illinois.edu/HathiTrust/Tools/beta/?'
+                        cifsPublisher(
+                                    publishers: [[
+                                        configName: 'hathitrust tools', 
+                                        transfers: [[
+                                            cleanRemote: false, 
+                                            excludes: '', 
+                                            flatten: false, 
+                                            makeEmptyDirs: false, 
+                                            noDefaultExcludes: false, 
+                                            patternSeparator: '[, ]+', 
+                                            remoteDirectory: 'beta', 
+                                            remoteDirectorySDF: false, 
+                                            removePrefix: '', 
+                                            sourceFiles: '*.msi'
+                                            ]], 
+                                        usePromotionTimestamp: false, 
+                                        useWorkspaceInPromotion: false, 
+                                        verbose: false
+                                        ]]
+                                )
+                    }
+                }
                 stage("Deploy to DevPi Production") {
                     when {
                         allOf{
@@ -467,9 +585,9 @@ pipeline {
                             def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                             input "Release ${name} ${version} to DevPi Production?"
                             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                                bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                                bat "venv\\Scripts\\devpi.exe push ${name}==${version} production/release"
+                                bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                                bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                                bat "devpi push ${name}==${version} production/release"
                             }
                         }
                     }
@@ -488,14 +606,55 @@ pipeline {
                         unstash "msi"
                         script{
                             def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                            def deployment_request = requestDeploy yaml: "deployment.yml"
+                            def msi_files = findFiles glob: '*.msi'
 
-                            
+                            def deployment_request = requestDeploy yaml: "deployment.yml", file_name: msi_files[0]
+                            cifsPublisher(
+                                publishers: [[
+                                    configName: 'SCCM Staging', 
+                                    transfers: [[
+                                        cleanRemote: false, 
+                                        excludes: '', 
+                                        flatten: false, 
+                                        makeEmptyDirs: false, 
+                                        noDefaultExcludes: false, 
+                                        patternSeparator: '[, ]+', 
+                                        remoteDirectory: '', 
+                                        remoteDirectorySDF: false, 
+                                        removePrefix: '', 
+                                        sourceFiles: '*.msi'
+                                        ]], 
+                                    usePromotionTimestamp: false, 
+                                    useWorkspaceInPromotion: false, 
+                                    verbose: false
+                                    ]]
+                                )
+
                             // deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
                             
                             input("Deploy to production?")
                             writeFile file: "deployment_request.txt", text: deployment_request
                             echo deployment_request
+                            cifsPublisher(
+                                publishers: [[
+                                    configName: 'SCCM Upload', 
+                                    transfers: [[
+                                        cleanRemote: false, 
+                                        excludes: '', 
+                                        flatten: false, 
+                                        makeEmptyDirs: false, 
+                                        noDefaultExcludes: false, 
+                                        patternSeparator: '[, ]+', 
+                                        remoteDirectory: '', 
+                                        remoteDirectorySDF: false, 
+                                        removePrefix: '', 
+                                        sourceFiles: '*.msi'
+                                        ]], 
+                                    usePromotionTimestamp: false, 
+                                    useWorkspaceInPromotion: false, 
+                                    verbose: false
+                                    ]]
+                            )
                             // deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
                         }
                     }
@@ -510,8 +669,15 @@ pipeline {
 
     }
     post {
+        failure {
+            bat "failed!"
+            // bat "pipenv uninstall --all"
+            // bat "pipenv run pipenv-resolver --clear"
+
+        }
+
         cleanup {
-            bat "venv\\Scripts\\python.exe setup.py clean --all"
+            bat "pipenv run python setup.py clean --all"
         
             dir('dist') {
                 deleteDir()
@@ -524,10 +690,10 @@ pipeline {
                     def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                     def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                        bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                        bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                        bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                        bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                         try {
-                            bat "venv\\Scripts\\devpi.exe remove -y ${name}==${version}"
+                            bat "devpi remove -y ${name}==${version}"
                         } catch (Exception ex) {
                             echo "Failed to remove ${name}==${version} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                         }
