@@ -175,7 +175,7 @@ pipeline {
                     }
                     steps {
                         dir("source"){
-                            bat "pipenv run behave --junit --junit-directory ${WORKSPACE}/reports/behave"
+                            bat "pipenv run behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
                         }
                         
                     }
@@ -210,7 +210,7 @@ pipeline {
                     }
                     steps {
                         dir("source"){
-                            bat "pipenv run sphinx-build -b doctest -d ${WORKSPACE}/build/docs/doctrees ${WORKSPACE}/docs/source ${WORKSPACE}/reports/doctest"
+                            bat "pipenv run sphinx-build -b doctest -d ${WORKSPACE}\\build\\docs\\doctrees docs\\source ${WORKSPACE}\\reports\\doctest"
                         }
                     }
                     post{
