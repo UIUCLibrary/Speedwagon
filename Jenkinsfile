@@ -96,11 +96,11 @@ pipeline {
                         version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                     }
                     tee("pippackages_system_${NODE_NAME}.log") {
-                    bat "${tool 'CPython-3.6'} -m pip list"
+                        bat "${tool 'CPython-3.6'} -m pip list"
                     }
                     
                     timeout(5) {
-                        bat "${tool 'CPython-3.6'} -m pipenv install --dev"
+                        bat "${tool 'CPython-3.6'} -m pipenv install --dev --verbose"
                     }
 
                     tee("pippackages_pipenv_${NODE_NAME}.log") {
@@ -109,7 +109,9 @@ pipeline {
                 
                 }
 
-                bat 'mkdir "build"'
+                dir("build"){
+                    bat "dir"
+                }
             }
             post{
                 always{
