@@ -121,16 +121,17 @@ pipeline {
             parallel {
                 stage("Python Package"){
                     steps {
-                        dir("source"){
-                            tee('build.log') {
-                                bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b build"
+                        
+                        tee('build.log') {
+                            dir("source"){
+                                bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
                             }
                         }
                     }
                     post{
                         always{
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'source\\build.log']]
-                            archiveArtifacts artifacts: 'source\\build.log'
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'build.log']]
+                            archiveArtifacts artifacts: 'build.log'
                         }
                     }
                 }
@@ -139,25 +140,25 @@ pipeline {
                         equals expected: true, actual: params.BUILD_DOCS
                     }
                     steps {
-                        dir("source"){
-                            bat 'mkdir "build/docs/html"'
-                            echo "Building docs on ${env.NODE_NAME}"
-                            tee('build_sphinx.log') {
-                                bat script: "pipenv run python setup.py build_sphinx"                            
-                            }
+                        // bat 'mkdir "build/docs/html"'
+                        echo "Building docs on ${env.NODE_NAME}"
+                        tee('build_sphinx.log') {
+                            dir("source"){
+                                bat script: "pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs"  
+                            }   
                         }
                     }
                     post{
                         always {
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'source\\build_sphinx.log']]
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'build_sphinx.log']]
                         }
                         success{
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'source/build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                             script{
                                 // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
                                 def alljob = env.JOB_NAME.tokenize("/") as String[]
                                 def project_name = alljob[0]
-                                dir('source/build/docs/') {
+                                dir('build/docs/') {
                                     zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,7)}.zip"
                                 }
                             }
@@ -174,13 +175,13 @@ pipeline {
                     }
                     steps {
                         dir("source"){
-                            bat "pipenv run behave --junit --junit-directory reports/behave"
+                            bat "pipenv run behave --junit --junit-directory ${WORKSPACE}/reports/behave"
                         }
                         
                     }
                     post {
                         always {
-                            junit "source/reports/behave/*.xml"
+                            junit "${WORKSPACE}/reports/behave/*.xml"
                         }
                     }
                 }
@@ -193,13 +194,13 @@ pipeline {
                     }
                     steps{
                         dir("source"){
-                            bat "pipenv run py.test --junitxml=reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/pytestcoverage/ --cov=speedwagon"    
+                            bat "pipenv run py.test --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/pytestcoverage/ --cov=speedwagon"    
                         }                    
                     }
                     post {
                         always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'source/reports/pytestcoverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                            junit "source/reports/pytest/${junit_filename}"
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "${WORKSPACE}/reports/pytestcoverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                            junit "${WORKSPACE}/reports/pytest/${junit_filename}"
                         }
                     }
                 }
@@ -209,12 +210,12 @@ pipeline {
                     }
                     steps {
                         dir("source"){
-                            bat "pipenv run sphinx-build -b doctest -d build/docs/doctrees docs/source reports/doctest"
+                            bat "pipenv run sphinx-build -b doctest -d ${WORKSPACE}/build/docs/doctrees ${WORKSPACE}/docs/source ${WORKSPACE}/reports/doctest"
                         }
                     }
                     post{
                         always {
-                            archiveArtifacts artifacts: 'source/reports/doctest/output.txt'
+                            archiveArtifacts artifacts: "${WORKSPACE}/reports/doctest/output.txt"
                         }
                     }
                 }
@@ -224,11 +225,13 @@ pipeline {
                     }
                     steps{
                         dir("source"){
-                            bat 'mkdir "reports\\mypy\\html"'
+                            bat "mkdir ${WORKSPACE}\\reports\\mypy\\html"
                             script{
                                 try{
-                                    tee('mypy.log') {
-                                        bat "pipenv run mypy -p speedwagon --html-report reports/mypy/html"
+                                    tee('reports\\mypy.log') {
+                                        dir("source"){
+                                            bat "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}/reports/mypy/html"
+                                        }
                                     }
                                 } catch (exc) {
                                     echo "MyPy found some warnings"
@@ -238,8 +241,8 @@ pipeline {
                     }
                     post {
                         always {
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'source/mypy.log']], unHealthy: ''
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'source/reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'reports/mypy.log']], unHealthy: ''
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
                     }
                 }
@@ -258,21 +261,21 @@ pipeline {
                         equals expected: true, actual: params.TEST_RUN_FLAKE8
                     }
                     steps{
-                        dir("source"){
-                            script{
-                                try{
-                                    tee('flake8.log') {
+                        script{
+                            try{
+                                tee('reports/flake8.log') {
+                                    dir("source"){
                                         bat "pipenv run flake8 speedwagon --format=pylint"
                                     }
-                                } catch (exc) {
-                                    echo "flake8 found some warnings"
                                 }
+                            } catch (exc) {
+                                echo "flake8 found some warnings"
                             }
                         }
                     }
                     post {
                         always {
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'source/flake8.log']], unHealthy: ''
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'reports/flake8.log']], unHealthy: ''
                         }
                     }
                 }
@@ -287,13 +290,13 @@ pipeline {
                     
                     steps{
                         dir("source"){
-                            bat script: "pipenv run python setup.py bdist_wheel sdist"
+                            bat script: "pipenv run python setup.py bdist_wheel sdist -d ${WORKSPACE}\\dist"
                         }
                     }
                     
                     post {
                         success {
-                            dir("source/dist") {
+                            dir("dist") {
                                 archiveArtifacts artifacts: "*.whl", fingerprint: true
                                 archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
                                 archiveArtifacts artifacts: "*.zip", fingerprint: true
@@ -438,9 +441,9 @@ pipeline {
                         bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                         bat "${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                         script {
-                            bat "${tool 'CPython-3.6'} -m devpi upload --from-dir dist"
+                            bat "${tool 'CPython-3.6'} -m devpi upload --from-dir ${WORKSPACE}\\dist"
                             try {
-                                bat "${tool 'CPython-3.6'} -m devpi upload --only-docs --from-dir dist"
+                                bat "${tool 'CPython-3.6'} -m devpi upload --only-docs --from-dir ${WORKSPACE}\\dist"
                             } catch (exc) {
                                 echo "Unable to upload to devpi with docs."
                             }
@@ -578,7 +581,7 @@ pipeline {
                             }
                         }
                         
-                        dir("source/build/docs/html/"){
+                        dir("build/docs/html/"){
                             input 'Update project documentation?'
                             sshPublisher(
                                 publishers: [
