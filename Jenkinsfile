@@ -23,7 +23,7 @@ pipeline {
     environment {
         // mypy_args = "--junit-xml=mypy.xml"
         PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\cache\\"
-        WORKON_HOME ="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}"
+        WORKON_HOME ="${WORKSPACE}\\pipenv\\"
         build_number = VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
         PIPENV_NOSPIN = "True"
         // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
@@ -122,14 +122,16 @@ pipeline {
             parallel {
                 stage("Python Package"){
                     steps {
-                        tee('build.log') {
-                            bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build"
+                        dir("source"){
+                            tee('build.log') {
+                                bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build"
+                            }
                         }
                     }
                     post{
                         always{
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'build.log']]
-                            archiveArtifacts artifacts: 'build.log'
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'source\\build.log']]
+                            archiveArtifacts artifacts: 'source\\build.log'
                         }
                     }
                 }
@@ -138,23 +140,25 @@ pipeline {
                         equals expected: true, actual: params.BUILD_DOCS
                     }
                     steps {
-                        bat 'mkdir "build/docs/html"'
-                        echo "Building docs on ${env.NODE_NAME}"
-                        tee('build_sphinx.log') {
-                            bat script: "pipenv run python setup.py build_sphinx"                            
+                        dir("source"){
+                            bat 'mkdir "build/docs/html"'
+                            echo "Building docs on ${env.NODE_NAME}"
+                            tee('build_sphinx.log') {
+                                bat script: "pipenv run python setup.py build_sphinx"                            
+                            }
                         }
                     }
                     post{
                         always {
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'build_sphinx.log']]
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'source\\build_sphinx.log']]
                         }
                         success{
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'source/build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                             script{
                                 // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
                                 def alljob = env.JOB_NAME.tokenize("/") as String[]
                                 def project_name = alljob[0]
-                                dir('build/docs/') {
+                                dir('source/build/docs/') {
                                     zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,7)}.zip"
                                 }
                             }
@@ -170,11 +174,14 @@ pipeline {
                        equals expected: true, actual: params.TEST_RUN_BEHAVE
                     }
                     steps {
-                        bat "pipenv run behave --junit --junit-directory reports/behave"
+                        dir("source"){
+                            bat "pipenv run behave --junit --junit-directory reports/behave"
+                        }
+                        
                     }
                     post {
                         always {
-                            junit "reports/behave/*.xml"
+                            junit "source/reports/behave/*.xml"
                         }
                     }
                 }
@@ -186,12 +193,14 @@ pipeline {
                         junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
                     }
                     steps{
-                        bat "pipenv run py.test --junitxml=reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/pytestcoverage/ --cov=speedwagon"
+                        dir("source"){
+                            bat "pipenv run py.test --junitxml=reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/pytestcoverage/ --cov=speedwagon"    
+                        }                    
                     }
                     post {
                         always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/pytestcoverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                            junit "reports/pytest/${junit_filename}"
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'source/reports/pytestcoverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                            junit "source/reports/pytest/${junit_filename}"
                         }
                     }
                 }
@@ -200,11 +209,13 @@ pipeline {
                        equals expected: true, actual: params.TEST_RUN_DOCTEST
                     }
                     steps {
-                        bat "pipenv run sphinx-build -b doctest -d build/docs/doctrees docs/source reports/doctest"
+                        dir("source"){
+                            bat "pipenv run sphinx-build -b doctest -d build/docs/doctrees docs/source reports/doctest"
+                        }
                     }
                     post{
                         always {
-                            archiveArtifacts artifacts: 'reports/doctest/output.txt'
+                            archiveArtifacts artifacts: 'source/reports/doctest/output.txt'
                         }
                     }
                 }
@@ -213,21 +224,23 @@ pipeline {
                         equals expected: true, actual: params.TEST_RUN_MYPY
                     }
                     steps{
-                        bat 'mkdir "reports\\mypy\\html"'
-                        script{
-                            try{
-                                tee('mypy.log') {
-                                    bat "pipenv run mypy -p speedwagon --html-report reports/mypy/html"
-                                }
-                            } catch (exc) {
-                                echo "MyPy found some warnings"
-                            }      
+                        dir("source"){
+                            bat 'mkdir "reports\\mypy\\html"'
+                            script{
+                                try{
+                                    tee('mypy.log') {
+                                        bat "pipenv run mypy -p speedwagon --html-report reports/mypy/html"
+                                    }
+                                } catch (exc) {
+                                    echo "MyPy found some warnings"
+                                }      
+                            }
                         }
                     }
                     post {
                         always {
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'mypy.log']], unHealthy: ''
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'source/mypy.log']], unHealthy: ''
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'source/reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
                     }
                 }
@@ -236,7 +249,9 @@ pipeline {
                         equals expected: true, actual: params.TEST_RUN_TOX
                     }
                     steps {
-                        bat "pipenv run tox"
+                        dir("source"){
+                            bat "pipenv run tox"
+                        }
                     }
                 }
                 stage("Run Flake8 Static Analysis") {
@@ -244,19 +259,21 @@ pipeline {
                         equals expected: true, actual: params.TEST_RUN_FLAKE8
                     }
                     steps{
-                        script{
-                            try{
-                                tee('flake8.log') {
-                                    bat "pipenv run flake8 speedwagon --format=pylint"
+                        dir("source"){
+                            script{
+                                try{
+                                    tee('flake8.log') {
+                                        bat "pipenv run flake8 speedwagon --format=pylint"
+                                    }
+                                } catch (exc) {
+                                    echo "flake8 found some warnings"
                                 }
-                            } catch (exc) {
-                                echo "flake8 found some warnings"
                             }
                         }
                     }
                     post {
                         always {
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'flake8.log']], unHealthy: ''
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'source/flake8.log']], unHealthy: ''
                         }
                     }
                 }
@@ -268,12 +285,16 @@ pipeline {
                     when {
                         equals expected: true, actual: params.PACKAGE_PYTHON_FORMATS
                     }
+                    
                     steps{
-                        bat script: "pipenv run python setup.py bdist_wheel sdist"
+                        dir("source"){
+                            bat script: "pipenv run python setup.py bdist_wheel sdist"
+                        }
                     }
+                    
                     post {
                         success {
-                            dir("dist") {
+                            dir("source/dist") {
                                 archiveArtifacts artifacts: "*.whl", fingerprint: true
                                 archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
                                 archiveArtifacts artifacts: "*.zip", fingerprint: true
@@ -301,74 +322,77 @@ pipeline {
                         equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
                     }
                     steps {
-                        tee('build_standalone.log') {
-                            powershell """Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '--version' -Wait
-Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait 
-"""
-                            // bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
-                            // bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv --quiet"
-                            // bat "pipenv lock"
-                            // bat "pipenv install --dev --verbose --sequential"
-                            bat script: "pipenv lock -r > requirements.txt"
-                            bat script: "pipenv lock -rd > requirements-dev.txt"
-                            bat "${tool 'CPython-3.6'} -m venv venv"
-                            bat "venv\\Scripts\\python.exe -m pip install -U pip"
-                            bat "venv\\Scripts\\pip.exe install -U setuptools>=30.3.0"
-                            bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
-                            script{
-                                def requirements = readFile 'requirements.txt'
-                                writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"                       
-                                // def python_path = powershell returnStdout: true, script: 'pipenv --py'.trim()
-                                // def python_path = "python.exe"
-                                // echo "python_path = ${python_path}"
-                                bat "mkdir build"
-                                powershell "windows_build\\build.ps1 -python_path venv\\Scripts\\python.exe"
-                                // powershell '''$python_path = & pipenv --py
-                                // windows_build\\build.ps1 -python_path $python_path
-                                // '''
-//                                 powershell """\$pshost = get-host
-// \$pswindow = \$pshost.ui.rawui
-// \$newsize = \$pswindow.buffersize
-// \$newsize.height = 3000
-// \$newsize.width = 128
-// \$pswindow.buffersize = \$newsize
-// \$newsize = \$pswindow.windowsize
-// \$newsize.height = 62
-// \$newsize.width = 128
-// \$pswindow.windowsize = \$newsize
-// windows_build\\build.ps1
-// """
-//                                 powershell """\$installationPath = & vswhere.exe -prerelease -latest -property installationPath
-// echo \$installationPath
-// if (\$installationPath -and (test-path "\$installationPath\\Common7\\Tools\\vsdevcmd.bat")) {
-//   & "\${env:COMSPEC}\" /s /c "`"\$installationPath\\Common7\\Tools\\vsdevcmd.bat`" -no_logo -host_arch=amd64 && set" | foreach-object {
-//     \$name, \$value = \$_ -split \'=\', 2
-//     set-content env:\\"\$name" \$value
-//   }
-// }
-// else
-// {
-//     echo "Unable to set Visual studio"
-//     EXIT 1
-// }
-// \$python_path = & pipenv --py
-// echo "using python path \$python_path"
-// nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
-// MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=\${python_path}"""
-
-//                                 bat script: """call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
-// nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
-// MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}"""
-
-                            }
-
-                            // script {
-                            //     def standalone_status = 
-                            //     echo "standlone status = ${standalone_status}"
-                                
-                            // }
-
+                        dir("source"){
                             
+                            tee('build_standalone.log') {
+                                powershell """Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '--version' -Wait
+    Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait 
+    """
+                                // bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
+                                // bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv --quiet"
+                                // bat "pipenv lock"
+                                // bat "pipenv install --dev --verbose --sequential"
+                                bat script: "pipenv lock -r > requirements.txt"
+                                bat script: "pipenv lock -rd > requirements-dev.txt"
+                                bat "${tool 'CPython-3.6'} -m venv venv"
+                                bat "venv\\Scripts\\python.exe -m pip install -U pip"
+                                bat "venv\\Scripts\\pip.exe install -U setuptools>=30.3.0"
+                                bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
+                                script{
+                                    def requirements = readFile 'requirements.txt'
+                                    writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"                       
+                                    // def python_path = powershell returnStdout: true, script: 'pipenv --py'.trim()
+                                    // def python_path = "python.exe"
+                                    // echo "python_path = ${python_path}"
+                                    bat "mkdir build"
+                                    powershell "windows_build\\build.ps1 -python_path venv\\Scripts\\python.exe"
+                                    // powershell '''$python_path = & pipenv --py
+                                    // windows_build\\build.ps1 -python_path $python_path
+                                    // '''
+    //                                 powershell """\$pshost = get-host
+    // \$pswindow = \$pshost.ui.rawui
+    // \$newsize = \$pswindow.buffersize
+    // \$newsize.height = 3000
+    // \$newsize.width = 128
+    // \$pswindow.buffersize = \$newsize
+    // \$newsize = \$pswindow.windowsize
+    // \$newsize.height = 62
+    // \$newsize.width = 128
+    // \$pswindow.windowsize = \$newsize
+    // windows_build\\build.ps1
+    // """
+    //                                 powershell """\$installationPath = & vswhere.exe -prerelease -latest -property installationPath
+    // echo \$installationPath
+    // if (\$installationPath -and (test-path "\$installationPath\\Common7\\Tools\\vsdevcmd.bat")) {
+    //   & "\${env:COMSPEC}\" /s /c "`"\$installationPath\\Common7\\Tools\\vsdevcmd.bat`" -no_logo -host_arch=amd64 && set" | foreach-object {
+    //     \$name, \$value = \$_ -split \'=\', 2
+    //     set-content env:\\"\$name" \$value
+    //   }
+    // }
+    // else
+    // {
+    //     echo "Unable to set Visual studio"
+    //     EXIT 1
+    // }
+    // \$python_path = & pipenv --py
+    // echo "using python path \$python_path"
+    // nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
+    // MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=\${python_path}"""
+
+    //                                 bat script: """call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
+    // nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
+    // MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}"""
+
+                                }
+
+                                // script {
+                                //     def standalone_status = 
+                                //     echo "standlone status = ${standalone_status}"
+                                    
+                                // }
+
+                                
+                            }
                         }
                     }
                     post {
@@ -377,7 +401,7 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                             bat "pipenv run pipenv-resolver --clear"
                         }
                         success {
-                            dir("dist") {
+                            dir("source/dist") {
                                 stash includes: "*.msi", name: "msi"
                                 archiveArtifacts artifacts: "*.msi", fingerprint: true
                                 
@@ -385,8 +409,8 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                             }
                         }
                         always {
-                            archiveArtifacts artifacts: 'build_standalone.log'
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
+                            archiveArtifacts artifacts: 'source/build_standalone.log'
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'source/build_standalone.log']]
                             
                         }
                     }
@@ -409,20 +433,21 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                 }
             }
             steps {
-                bat "devpi use https://devpi.library.illinois.edu"
-                withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                    bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                    bat "${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                    script {
-                        bat "${tool 'CPython-3.6'} -m devpi upload --from-dir dist"
-                        try {
-                            bat "${tool 'CPython-3.6'} -m devpi upload --only-docs --from-dir dist"
-                        } catch (exc) {
-                            echo "Unable to upload to devpi with docs."
+                dir("source"){
+                    bat "devpi use https://devpi.library.illinois.edu"
+                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                        bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                        bat "${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                        script {
+                            bat "${tool 'CPython-3.6'} -m devpi upload --from-dir dist"
+                            try {
+                                bat "${tool 'CPython-3.6'} -m devpi upload --only-docs --from-dir dist"
+                            } catch (exc) {
+                                echo "Unable to upload to devpi with docs."
+                            }
                         }
                     }
                 }
-
             }
         }
         stage("Test DevPi packages") {
@@ -554,7 +579,7 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                             }
                         }
                         
-                        dir("build/docs/html/"){
+                        dir("source/build/docs/html/"){
                             input 'Update project documentation?'
                             sshPublisher(
                                 publishers: [
@@ -731,16 +756,18 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
                 if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
                     // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                     // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                        bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                        bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                        try {
-                            bat "devpi remove -y ${name}==${version}"
-                        } catch (Exception ex) {
-                            echo "Failed to remove ${name}==${version} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                    dir("source"){
+                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                            bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                            bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                            try {
+                                bat "devpi remove -y ${name}==${version}"
+                            } catch (Exception ex) {
+                                echo "Failed to remove ${name}==${version} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                            }   
                         }
-                        
                     }
+
                 }
             }
         }
