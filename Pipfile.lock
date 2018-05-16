@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "3174a4cdd2a4de72f210c1224111229394451743a83e45743c0a92d3e252749e"
+            "sha256": "1df21207311fbb51d827ef564ba92421cd48dc01dd6f98e90a2dab57fc04915f"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -58,41 +58,12 @@
             ],
             "version": "==18.1.0"
         },
-        "certifi": {
-            "hashes": [
-                "sha256:13e698f54293db9f89122b0581843a782ad0934a4fe0172d2a980ba77fc61bb7",
-                "sha256:9fa520c1bacfb634fa7af20a76bcbd3d5fb390481724c597da32c719a7dca4b0"
-            ],
-            "version": "==2018.4.16"
-        },
         "chardet": {
             "hashes": [
                 "sha256:84ab92ed1c4d4f16916e05906b6b75a6c0fb5db821cc65e70cbd64a3e2a5eaae",
                 "sha256:fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691"
             ],
             "version": "==3.0.4"
-        },
-        "check-manifest": {
-            "hashes": [
-                "sha256:44e3cf4b0833a55460046bf7a3600eaadbcae5e9d13baf0c9d9789dd5c2c6452",
-                "sha256:728edbaccadaa86db0b8f876afac1fb90bce9452234753dfe4ef8fe786dcc2f1"
-            ],
-            "version": "==0.37"
-        },
-        "devpi-client": {
-            "hashes": [
-                "sha256:746e7dea3116547ae9586e53efd1d911533ed12b63ba00f04e3d2c0000830acd",
-                "sha256:ec7f338a557e50225f5d5c199facc732cd4f4dc550898aca00ef1196bd98a5cf"
-            ],
-            "index": "devpi",
-            "version": "==4.0.2"
-        },
-        "devpi-common": {
-            "hashes": [
-                "sha256:7053a067ae2d762abd279bfa7aea1221d615b6fa101c4ed52668e41c11a27e94",
-                "sha256:d2ecae3a92b2da62ecc6586d1c40d265e61bce70d7f1be2327e8b98598ba2687"
-            ],
-            "version": "==3.2.3"
         },
         "docopt": {
             "hashes": [
@@ -188,28 +159,6 @@
             ],
             "version": "==4.3.1"
         },
-        "pkginfo": {
-            "hashes": [
-                "sha256:5878d542a4b3f237e359926384f1dde4e099c9f5525d236b1840cf704fa8d474",
-                "sha256:a39076cb3eb34c333a0dd390b568e9e1e881c7bf2cc0aee12120636816f55aee"
-            ],
-            "version": "==1.4.2"
-        },
-        "pluggy": {
-            "hashes": [
-                "sha256:7f8ae7f5bdf75671a718d2daf0a64b7885f74510bcd98b1a0bb420eb9a9d0cff",
-                "sha256:d345c8fe681115900d6da8d048ba67c25df42973bda370783cd58826442dcd7c",
-                "sha256:e160a7fcf25762bb60efc7e171d4497ff1d8d2d75a3d0df7a21b76821ecbf5c5"
-            ],
-            "version": "==0.6.0"
-        },
-        "py": {
-            "hashes": [
-                "sha256:29c9fab495d7528e80ba1e343b958684f4ace687327e6f789a94bf3d1915f881",
-                "sha256:983f77f3331356039fdd792e9220b7b8ee1aa6bd2b25f567a963ff1de5a64f6a"
-            ],
-            "version": "==1.5.3"
-        },
         "pyhathiprep": {
             "hashes": [
                 "sha256:ba0096f14033a45713eee3999751a1de3a05898f51ce38ed32b070e5ab461167"
@@ -269,13 +218,6 @@
             ],
             "version": "==3.12"
         },
-        "requests": {
-            "hashes": [
-                "sha256:6a1b267aa90cac58ac3a765d067950e7dbbf75b1da07e895d1f594193a40a38b",
-                "sha256:9c443e7324ba5b85070c4a818ade28bfabedf16ea10206da1132edaa6dda237e"
-            ],
-            "version": "==2.18.4"
-        },
         "ruamel.yaml": {
             "hashes": [
                 "sha256:039bb5b50a2f3b17c969ed1d381e050bca851e3c13fe8c2a9ad18f605ca111a5",
@@ -315,20 +257,6 @@
             ],
             "version": "==4.19.8"
         },
-        "six": {
-            "hashes": [
-                "sha256:70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9",
-                "sha256:832dc0e10feb1aa2c68dcc57dbb658f1c7e65b9b61af69048abc87a2db00a0eb"
-            ],
-            "version": "==1.11.0"
-        },
-        "tox": {
-            "hashes": [
-                "sha256:96efa09710a3daeeb845561ebbe1497641d9cef2ee0aea30db6969058b2bda2f",
-                "sha256:9ee7de958a43806402a38c0d2aa07fa8553f4d2c20a15b140e9f771c2afeade0"
-            ],
-            "version": "==3.0.0"
-        },
         "tzlocal": {
             "hashes": [
                 "sha256:4ebeb848845ac898da6519b9b31879cf13b6626f7184c496037b818e238f2c4e"
@@ -351,20 +279,6 @@
             ],
             "index": "devpi",
             "version": "==0.2.1"
-        },
-        "urllib3": {
-            "hashes": [
-                "sha256:06330f386d6e4b195fbfc736b297f58c5a892e4440e54d294d7004e3a9bbea1b",
-                "sha256:cc44da8e1145637334317feebd728bd869a35285b93cbb4cca2577da7e62db4f"
-            ],
-            "version": "==1.22"
-        },
-        "virtualenv": {
-            "hashes": [
-                "sha256:1d7e241b431e7afce47e77f8843a276f652699d1fa4f93b9d8ce0076fd7b0b54",
-                "sha256:e8e05d4714a1c51a2f5921e62f547fcb0f713ebbe959e0a7f585cc8bef71d11f"
-            ],
-            "version": "==15.2.0"
         },
         "yarl": {
             "hashes": [
@@ -673,11 +587,11 @@
         },
         "pytest-qt": {
             "hashes": [
-                "sha256:47cc12b645d2bb9f597e2df6c8934fbc57bd932a7616247bed9b8407d57e340b",
-                "sha256:d54df3ae6db4fa02857b2ff8c53921b79bf02fa65aa452b65cf406ddf3f02457"
+                "sha256:8e57ca1845d0baafd765ff083b0eef51266f9f35cf1b41d560715b8f5cb54869",
+                "sha256:ac0e8f483f1592fdbba5658313d1ac352fd46b5b1e9648dda861428a2f65dab0"
             ],
             "index": "devpi",
-            "version": "==2.3.1"
+            "version": "==2.3.2"
         },
         "pytest-runner": {
             "hashes": [
@@ -735,6 +649,7 @@
                 "sha256:96efa09710a3daeeb845561ebbe1497641d9cef2ee0aea30db6969058b2bda2f",
                 "sha256:9ee7de958a43806402a38c0d2aa07fa8553f4d2c20a15b140e9f771c2afeade0"
             ],
+            "index": "devpi",
             "version": "==3.0.0"
         },
         "typed-ast": {
@@ -776,11 +691,11 @@
         },
         "wheel": {
             "hashes": [
-                "sha256:1ae8153bed701cb062913b72429bcf854ba824f973735427681882a688cb55ce",
-                "sha256:9cdc8ab2cc9c3c2e2727a4b67c22881dbb0e1c503d592992594c5e131c867107"
+                "sha256:0a2e54558a0628f2145d2fc822137e322412115173e8a2ddbe1c9024338ae83c",
+                "sha256:80044e51ec5bbf6c894ba0bc48d26a8c20a9ba629f4ca19ea26ecfcf87685f5f"
             ],
             "index": "devpi",
-            "version": "==0.31.0"
+            "version": "==0.31.1"
         }
     }
 }
