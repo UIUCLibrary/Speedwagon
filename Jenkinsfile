@@ -328,8 +328,8 @@ pipeline {
                         equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
                     }
                     steps {
+                        bat "${tool 'CPython-3.6'} -m venv venv"
                         dir("source"){
-                            
                             tee('build_standalone.log') {
                                 powershell """Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '--version' -Wait
     Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait 
@@ -340,10 +340,10 @@ pipeline {
                                 // bat "pipenv install --dev --verbose --sequential"
                                 bat script: "pipenv lock -r > requirements.txt"
                                 bat script: "pipenv lock -rd > requirements-dev.txt"
-                                bat "${tool 'CPython-3.6'} -m venv venv"
+                                
                                 // bat "venv\\Scripts\\python.exe -m pip install -U pip"
-                                bat "venv\\Scripts\\pip.exe install -U setuptools>=30.3.0"
-                                bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
+                                bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -U setuptools>=30.3.0"
+                                bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -r requirements-dev.txt"
                                 script{
                                     def requirements = readFile 'requirements.txt'
                                     writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"                       
@@ -351,7 +351,7 @@ pipeline {
                                     // def python_path = "python.exe"
                                     // echo "python_path = ${python_path}"
                                     bat "mkdir build"
-                                    powershell "windows_build\\build.ps1 -python_path venv\\Scripts\\python.exe"
+                                    powershell "windows_build\\build.ps1 -python_path ${WORKSPACE}\\venv\\Scripts\\python.exe"
                                     // powershell '''$python_path = & pipenv --py
                                     // windows_build\\build.ps1 -python_path $python_path
                                     // '''
@@ -779,6 +779,7 @@ pipeline {
 
                 }
             }
+            bat "dir"
         }
     }
 }
