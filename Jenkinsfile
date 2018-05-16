@@ -79,11 +79,13 @@ pipeline {
         }
         stage("Configure Environment"){
             steps {
+                
                 // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
                 stash includes: 'deployment.yml', name: "Deployment"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
                 bat "${tool 'CPython-3.6'} -m pip --version"
+                deleteDir()
                 bat "dir"
                 bat "dir source"
 
@@ -710,7 +712,6 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
     post {
         failure {
             bat "failed!"
-            deleteDir()
             // bat "pipenv uninstall --all"
             // bat "pipenv run pipenv-resolver --clear"
 
