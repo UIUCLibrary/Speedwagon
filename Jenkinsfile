@@ -81,33 +81,35 @@ pipeline {
             steps {
                 // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
                 stash includes: 'deployment.yml', name: "Deployment"
-                script {
-                    name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                    version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                }
-
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
                 bat "${tool 'CPython-3.6'} -m pip --version"
-                
-                tee("pippackages_system_${NODE_NAME}.log") {
+
+                dir("source") {
+                    script {
+                        name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} source\\setup.py --name").trim()
+                        version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+                    }
+                    tee("pippackages_system_${NODE_NAME}.log") {
                     bat "${tool 'CPython-3.6'} -m pip list"
-                }
+                    }
+                    
+                    timeout(5) {
+                        bat "${tool 'CPython-3.6'} -m pipenv install --dev"
+                    }
+
+                    tee("pippackages_pipenv_${NODE_NAME}.log") {
+                        bat "${tool 'CPython-3.6'} -m pipenv run pip list"
+                    }
                 
-                timeout(5) {
-                    bat "${tool 'CPython-3.6'} -m pipenv install --dev"
                 }
 
-                tee("pippackages_pipenv_${NODE_NAME}.log") {
-                    bat "${tool 'CPython-3.6'} -m pipenv run pip list"
-                }
-                
                 bat 'mkdir "build"'
             }
             post{
                 always{
-                    archiveArtifacts artifacts: "pippackages_system_${NODE_NAME}.log"
-                    archiveArtifacts artifacts: "pippackages_pipenv_${NODE_NAME}.log"
+                    archiveArtifacts artifacts: "source\\pippackages_system_${NODE_NAME}.log"
+                    archiveArtifacts artifacts: "source\\pippackages_pipenv_${NODE_NAME}.log"
                 }
             }
         }
