@@ -199,8 +199,9 @@ pipeline {
                     }
                     post {
                         always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "${WORKSPACE}/reports/pytestcoverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                            junit "${WORKSPACE}/reports/pytest/${junit_filename}"
+                            bat "dir reports"
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/pytestcoverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                            junit "reports/pytest/${junit_filename}"
                         }
                     }
                 }
