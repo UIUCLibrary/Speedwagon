@@ -181,7 +181,8 @@ pipeline {
                     }
                     post {
                         always {
-                            junit "${WORKSPACE}/reports/behave/*.xml"
+                            bat "dir reports"
+                            junit "reports/behave/*.xml"
                         }
                     }
                 }
@@ -199,7 +200,6 @@ pipeline {
                     }
                     post {
                         always {
-                            bat "dir reports"
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/pytestcoverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
                             junit "reports/pytest/${junit_filename}"
                         }
