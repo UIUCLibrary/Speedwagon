@@ -78,6 +78,8 @@ pipeline {
                 stash includes: 'deployment.yml', name: "Deployment"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
+                bat "${tool 'CPython-3.6'} -m pip --version"
+                bat "${tool 'CPython-3.6'} -m pip list"
                 timeout(5) {
                     bat "${tool 'CPython-3.6'} -m pipenv install --dev"
                 }
@@ -163,7 +165,7 @@ pipeline {
                 }
                 stage("Run Doctest Tests"){
                     when {
-                       equals expected: true, actual: params.TEST_RUN_FLAKE8
+                       equals expected: true, actual: params.TEST_RUN_DOCTEST
                     }
                     steps {
                         bat "pipenv run sphinx-build -b doctest -d build/docs/doctrees docs/source reports/doctest"
