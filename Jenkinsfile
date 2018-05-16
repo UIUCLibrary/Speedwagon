@@ -743,7 +743,7 @@ pipeline {
     }
     post {
         failure {
-            bat "failed!"
+            echo "failed!"
             // bat "pipenv uninstall --all"
             // bat "pipenv run pipenv-resolver --clear"
 
