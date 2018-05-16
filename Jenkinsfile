@@ -295,7 +295,7 @@ pipeline {
                     
                     steps{
                         dir("source"){
-                            bat script: "pipenv run python setup.py bdist_wheel sdist -d ${WORKSPACE}\\dist"
+                            bat script: "pipenv run python setup.py sdist -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
                         }
                     }
                     
