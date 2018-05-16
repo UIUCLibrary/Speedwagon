@@ -92,7 +92,7 @@ pipeline {
                         name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                         version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                     }
-                    tee("pippackages_system_${NODE_NAME}.log") {
+                    tee("${WORKSPACE}/pippackages_system_${NODE_NAME}.log") {
                         bat "${tool 'CPython-3.6'} -m pip list"
                     }
                     
@@ -100,7 +100,7 @@ pipeline {
                         bat "${tool 'CPython-3.6'} -m pipenv install --dev"
                     }
 
-                    tee("pippackages_pipenv_${NODE_NAME}.log") {
+                    tee("${WORKSPACE}/pippackages_pipenv_${NODE_NAME}.log") {
                         bat "${tool 'CPython-3.6'} -m pipenv run pip list"
                     }
                 
@@ -112,8 +112,8 @@ pipeline {
             }
             post{
                 always{
-                    archiveArtifacts artifacts: "source\\pippackages_system_${NODE_NAME}.log"
-                    archiveArtifacts artifacts: "source\\pippackages_pipenv_${NODE_NAME}.log"
+                    archiveArtifacts artifacts: "pippackages_system_${NODE_NAME}.log"
+                    archiveArtifacts artifacts: "pippackages_pipenv_${NODE_NAME}.log"
                 }
             }
         }
@@ -124,7 +124,8 @@ pipeline {
                         
                         tee('build.log') {
                             dir("source"){
-                                bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
+                                powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pipenv run python setup.py build -b ${WORKSPACE}\\build' -Wait"
+                                // bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
                             }
                         }
                     }
@@ -570,7 +571,8 @@ pipeline {
                         }
                         bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
                         echo "Testing Whl package in devpi"
-                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${name} -s whl"
+                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${name} -s whl --verbose"
+                        echo "Done Testing Whl DevPu package"
                     }
                 }
             }
