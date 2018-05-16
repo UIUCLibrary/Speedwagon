@@ -252,7 +252,7 @@ pipeline {
                     }
                     steps {
                         dir("source"){
-                            bat "pipenv run tox"
+                            bat "pipenv run tox --workdir ${WORKSPACE}\\.tox"
                         }
                     }
                 }
