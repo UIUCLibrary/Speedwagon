@@ -337,7 +337,7 @@ pipeline {
                                 bat script: "pipenv lock -r > requirements.txt"
                                 bat script: "pipenv lock -rd > requirements-dev.txt"
                                 bat "${tool 'CPython-3.6'} -m venv venv"
-                                bat "venv\\Scripts\\python.exe -m pip install -U pip"
+                                // bat "venv\\Scripts\\python.exe -m pip install -U pip"
                                 bat "venv\\Scripts\\pip.exe install -U setuptools>=30.3.0"
                                 bat "venv\\Scripts\\pip.exe install -r requirements-dev.txt"
                                 script{
@@ -746,7 +746,10 @@ pipeline {
         }
 
         cleanup {
-            bat "pipenv run python setup.py clean --all"
+            dir("source"){
+                bat "pipenv run python setup.py clean --all"
+            }
+            
         
             dir('dist') {
                 deleteDir()
