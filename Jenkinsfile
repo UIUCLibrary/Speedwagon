@@ -92,7 +92,7 @@ pipeline {
                 dir("source") {
                     stash includes: 'deployment.yml', name: "Deployment"
                     script {
-                        name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} source\\setup.py --name").trim()
+                        name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                         version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                     }
                     tee("pippackages_system_${NODE_NAME}.log") {
