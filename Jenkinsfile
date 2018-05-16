@@ -17,6 +17,7 @@ pipeline {
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
         timeout(20)  // Timeout after 20 minutes. This shouldn't take this long but it hangs for some reason
+        checkoutToSubdirectory("source")
     }
 
     environment {
