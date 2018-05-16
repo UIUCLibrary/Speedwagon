@@ -81,7 +81,7 @@ pipeline {
             steps {
                 
                 // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
-                stash includes: 'deployment.yml', name: "Deployment"
+                
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
                 bat "${tool 'CPython-3.6'} -m pip --version"
@@ -90,6 +90,7 @@ pipeline {
                 bat "dir source"
 
                 dir("source") {
+                    stash includes: 'deployment.yml', name: "Deployment"
                     script {
                         name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} source\\setup.py --name").trim()
                         version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
