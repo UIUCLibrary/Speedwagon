@@ -79,17 +79,25 @@ pipeline {
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
                 bat "${tool 'CPython-3.6'} -m pip --version"
-                tee("pippackages_${NODE_NAME}.log") {
+                
+                tee("pippackages_system_${NODE_NAME}.log") {
                     bat "${tool 'CPython-3.6'} -m pip list"
                 }
+                
                 timeout(5) {
                     bat "${tool 'CPython-3.6'} -m pipenv install --dev"
                 }
+
+                tee("pippackages_pipenv_${NODE_NAME}.log") {
+                    bat "${tool 'CPython-3.6'} -m pipenv run pip list"
+                }
+                
                 bat 'mkdir "build"'
             }
             post{
                 always{
-                    archiveArtifacts artifacts: "pippackages_${NODE_NAME}.log"
+                    archiveArtifacts artifacts: "pippackages_system_${NODE_NAME}.log"
+                    archiveArtifacts artifacts: "pippackages_pipenv_${NODE_NAME}.log"
                 }
             }
         }
