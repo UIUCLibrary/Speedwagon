@@ -97,7 +97,7 @@ pipeline {
                     }
                     
                     timeout(5) {
-                        bat "${tool 'CPython-3.6'} -m pipenv install --dev --verbose"
+                        bat "${tool 'CPython-3.6'} -m pipenv install --dev"
                     }
 
                     tee("pippackages_pipenv_${NODE_NAME}.log") {
@@ -121,16 +121,16 @@ pipeline {
             parallel {
                 stage("Python Package"){
                     steps {
-                        // dir("source"){
-                        tee('build.log') {
-                            bat script: "${tool 'CPython-3.6'} -m pipenv run python source\\setup.py build -b source\\build"
+                        dir("source"){
+                            tee('build.log') {
+                                bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b build"
+                            }
                         }
-                        // }
                     }
                     post{
                         always{
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'build.log']]
-                            archiveArtifacts artifacts: 'build.log'
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'source\\build.log']]
+                            archiveArtifacts artifacts: 'source\\build.log'
                         }
                     }
                 }
