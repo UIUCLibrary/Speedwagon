@@ -225,13 +225,16 @@ pipeline {
                         equals expected: true, actual: params.TEST_RUN_MYPY
                     }
                     steps{
+                        dir("reports\\mypy\\html"){
+                            bat "dir"
+                        }
                         dir("source"){
-                            bat "mkdir ${WORKSPACE}\\reports\\mypy\\html"
+                            
                             script{
                                 try{
                                     tee('reports\\mypy.log') {
                                         dir("source"){
-                                            bat "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}/reports/mypy/html"
+                                            bat "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html"
                                         }
                                     }
                                 } catch (exc) {
