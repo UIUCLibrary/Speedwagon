@@ -86,9 +86,6 @@ pipeline {
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
                 bat "${tool 'CPython-3.6'} -m pip --version"
                 
-                bat "dir"
-                bat "dir source"
-
                 dir("source") {
                     stash includes: 'deployment.yml', name: "Deployment"
                     script {
@@ -124,16 +121,16 @@ pipeline {
             parallel {
                 stage("Python Package"){
                     steps {
-                        dir("source"){
-                            tee('build.log') {
-                                bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build"
-                            }
+                        // dir("source"){
+                        tee('build.log') {
+                            bat script: "${tool 'CPython-3.6'} -m pipenv run python source\\setup.py build -b source\\build"
                         }
+                        // }
                     }
                     post{
                         always{
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'source\\build.log']]
-                            archiveArtifacts artifacts: 'source\\build.log'
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'build.log']]
+                            archiveArtifacts artifacts: 'build.log'
                         }
                     }
                 }
