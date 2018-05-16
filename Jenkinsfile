@@ -710,6 +710,7 @@ Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip
     post {
         failure {
             bat "failed!"
+            deleteDir()
             // bat "pipenv uninstall --all"
             // bat "pipenv run pipenv-resolver --clear"
 
