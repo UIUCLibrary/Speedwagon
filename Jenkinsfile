@@ -134,6 +134,9 @@ pipeline {
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'build.log']]
                             archiveArtifacts artifacts: 'build.log'
                         }
+                        failure{
+                            echo "Failed to build Python package"
+                        }
                     }
                 }
                 stage("Sphinx documentation"){
