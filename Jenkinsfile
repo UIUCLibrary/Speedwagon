@@ -243,14 +243,16 @@ pipenv virtual environments are located in pipenv/
                                 echo "Cleaning doctest reports directory"
                                 deleteDir()
                             }
-                            bat "pipenv run sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}\\reports\\doctests"
+                            bat "pipenv run sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees"
+                            
                         }
+                        bat "move build\\docs\\output.txt ${WORKSPACE}\\reports\\doctest.txt"
                     }
                     post{
                         always {
                             bat "dir ${WORKSPACE}\\reports"
                             
-                            archiveArtifacts artifacts: "${WORKSPACE}/reports/doctests/output.txt"
+                            archiveArtifacts artifacts: "${WORKSPACE}/reports/doctest.txt"
                         }
                     }
                 }
