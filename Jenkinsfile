@@ -120,6 +120,10 @@ pipeline {
                     echo "Source from the repository is located in ./source."
                     echo "pipenv cache is located in ./pipenv."
                 }
+                cleanup{
+                    bat "del pippackages_system_${NODE_NAME}.log"
+                    bat "del pippackages_pipenv_${NODE_NAME}.log"
+                }
             }
         }
         stage('Build') {
@@ -783,6 +787,7 @@ pipeline {
     post {
         failure {
             echo "failed!"
+            cleanWs(patterns: [[pattern: 'source', type: 'EXCLUDE']])
             // bat "pipenv uninstall --all"
             // bat "pipenv run pipenv-resolver --clear"
 
@@ -804,16 +809,15 @@ pipeline {
                 if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
                     // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                     // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                    dir("source"){
-                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                            bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                            bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                            try {
-                                bat "devpi remove -y ${name}==${version}"
-                            } catch (Exception ex) {
-                                echo "Failed to remove ${name}==${version} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                            }   
-                        }
+                    
+                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                        bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                        bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                        try {
+                            bat "devpi remove -y ${name}==${version}"
+                        } catch (Exception ex) {
+                            echo "Failed to remove ${name}==${version} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                        }   
                     }
 
                 }
