@@ -80,12 +80,15 @@ pipeline {
         stage("Configure Environment"){
             steps {
                 dir("logs"){
-                    deleteDir()
                     bat "dir"
                     // echo "Cleaning out logs directory"
                     // bat "del *.log"
                 }
                 
+                dir("build"){
+                    echo "Cleaning out build directory"
+                    deleteDir()
+                }
                 // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
                 
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
@@ -110,15 +113,7 @@ pipeline {
                         bat "${tool 'CPython-3.6'} -m pipenv run pip list"
                     }
                 
-                }
-                
-                dir("build"){
-                    echo "Cleaning out build directory"
-                    deleteDir()
-                    bat "dir"
-                }
-
-
+                }            
             }
             post{
                 always{
@@ -270,8 +265,9 @@ pipenv virtual environments are located in pipenv/
                             
                             script{
                                 try{
-                                    tee('reports\\mypy.log') {
+                                    tee('logs/mypy.log') {
                                         dir("source"){
+                                            bat "dir"
                                             bat "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html"
                                         }
                                     }
@@ -283,8 +279,8 @@ pipenv virtual environments are located in pipenv/
                     }
                     post {
                         always {
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'reports/mypy.log']], unHealthy: ''
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'logs/mypy.log']], unHealthy: ''
+                            publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
                     }
                 }
