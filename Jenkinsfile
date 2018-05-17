@@ -107,7 +107,7 @@ pipeline {
                 }
 
                 dir("build"){
-                    bat "dir"
+                    echo "Creating build directory"
                 }
             }
             post{
@@ -787,8 +787,9 @@ pipeline {
     }
     post {
         failure {
-            echo "failed!"
-            cleanWs(patterns: [[pattern: 'source', type: 'EXCLUDE']])
+            echo "Failed! Purging workspace"
+            deleteDir()
+            // cleanWs(patterns: [[pattern: 'source', type: 'EXCLUDE'], [pattern: 'pipenv', type: 'EXCLUDE']])
             // bat "pipenv uninstall --all"
             // bat "pipenv run pipenv-resolver --clear"
 
