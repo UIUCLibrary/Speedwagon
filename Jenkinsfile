@@ -79,20 +79,26 @@ pipeline {
         }
         stage("Configure Environment"){
             steps {
+                dir("logs"){
+                    deleteDir()
+                    bat "dir"
+                    // echo "Cleaning out logs directory"
+                    // bat "del *.log"
+                }
                 
                 // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
                 
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
                 bat "${tool 'CPython-3.6'} -m pip --version"
-                
+                                
                 dir("source") {
                     stash includes: 'deployment.yml', name: "Deployment"
                     script {
                         name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                         version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                     }
-                    tee("${WORKSPACE}/pippackages_system_${NODE_NAME}.log") {
+                    tee("${WORKSPACE}/logs/pippackages_system_${NODE_NAME}.log") {
                         bat "${tool 'CPython-3.6'} -m pip list"
                     }
                     
@@ -100,30 +106,34 @@ pipeline {
                         bat "${tool 'CPython-3.6'} -m pipenv install --dev"
                     }
 
-                    tee("${WORKSPACE}/pippackages_pipenv_${NODE_NAME}.log") {
+                    tee("${WORKSPACE}/logs/pippackages_pipenv_${NODE_NAME}.log") {
                         bat "${tool 'CPython-3.6'} -m pipenv run pip list"
                     }
                 
                 }
-
+                
                 dir("build"){
-                    echo "Creating build directory"
+                    echo "Cleaning out build directory"
+                    deleteDir()
+                    bat "dir"
                 }
+
+
             }
             post{
                 always{
-                    archiveArtifacts artifacts: "pippackages_system_${NODE_NAME}.log"
-                    archiveArtifacts artifacts: "pippackages_pipenv_${NODE_NAME}.log"
+                    archiveArtifacts artifacts: "logs/*.log"
                 }
                 success{
                     echo "Successfully configured build environment."
                     echo "Source from the repository is located in ./source."
+                    echo "logs are located in ./source."
                     echo "pipenv cache is located in ./pipenv."
                 }
-                cleanup{
-                    bat "del pippackages_system_${NODE_NAME}.log"
-                    bat "del pippackages_pipenv_${NODE_NAME}.log"
-                }
+                // cleanup{
+                //     bat "del pippackages_system_${NODE_NAME}.log"
+                //     bat "del pippackages_pipenv_${NODE_NAME}.log"
+                // }
             }
         }
         stage('Build') {
@@ -131,7 +141,7 @@ pipeline {
                 stage("Python Package"){
                     steps {
                         
-                        tee('build.log') {
+                        tee('logs/build.log') {
                             dir("source"){
                                 powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pipenv run python setup.py build -b ${WORKSPACE}\\build' -Wait"
                                 // bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
@@ -140,9 +150,9 @@ pipeline {
                     }
                     post{
                         always{
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'build.log']]
-                            archiveArtifacts artifacts: 'build.log'
-                            bat "dir build"
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
+                            archiveArtifacts artifacts: "logs/*.log"
+                            // bat "dir build"
                         }
                         failure{
                             echo "Failed to build Python package"
@@ -159,7 +169,7 @@ pipeline {
                     steps {
                         // bat 'mkdir "build/docs/html"'
                         echo "Building docs on ${env.NODE_NAME}"
-                        tee('build_sphinx.log') {
+                        tee('logs/build_sphinx.log') {
                             dir("source"){
                                 bat script: "pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs"  
                             }   
@@ -168,6 +178,7 @@ pipeline {
                     post{
                         always {
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'build_sphinx.log']]
+                            archiveArtifacts artifacts: 'build_sphinx.log'
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
@@ -796,9 +807,9 @@ pipeline {
         }
 
         cleanup {
-            dir("source"){
-                bat "pipenv run python setup.py clean --all"
-            }
+            // dir("source"){
+            //     bat "pipenv run python setup.py clean --all"
+            // }
             
         
             dir('dist') {
