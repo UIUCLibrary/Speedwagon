@@ -365,8 +365,8 @@ pipenv virtual environments are located in pipenv/
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv"
-                        dir("source"){
-                            tee('build_standalone.log') {
+                        tee('build_standalone.log') {
+                            dir("source"){
                                 powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
 
                                 bat script: "pipenv lock -r > requirements.txt"
@@ -401,8 +401,8 @@ pipenv virtual environments are located in pipenv/
                             }
                         }
                         always {
-                            archiveArtifacts artifacts: 'source/build_standalone.log'
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'source/build_standalone.log']]
+                            archiveArtifacts artifacts: 'build_standalone.log'
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
                             
                         }
                     }
