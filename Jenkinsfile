@@ -177,8 +177,8 @@ pipeline {
                     }
                     post{
                         always {
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'build_sphinx.log']]
-                            archiveArtifacts artifacts: 'build_sphinx.log'
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build_sphinx.log']]
+                            archiveArtifacts artifacts: 'logs/build_sphinx.log'
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
@@ -798,8 +798,8 @@ pipeline {
     }
     post {
         failure {
-            echo "Failed! Purging workspace"
-            deleteDir()
+            echo "Failed!"
+            // deleteDir()
             // cleanWs(patterns: [[pattern: 'source', type: 'EXCLUDE'], [pattern: 'pipenv', type: 'EXCLUDE']])
             // bat "pipenv uninstall --all"
             // bat "pipenv run pipenv-resolver --clear"
