@@ -236,6 +236,7 @@ pipeline {
                     }
                     post{
                         always {
+                            bat "dir ${WORKSPACE}/reports/"
                             archiveArtifacts artifacts: "${WORKSPACE}/reports/doctest/output.txt"
                         }
                     }
