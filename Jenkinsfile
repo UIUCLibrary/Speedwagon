@@ -82,8 +82,6 @@ pipeline {
                 dir("logs"){
                     echo "Cleaning out logs directory"
                     deleteDir()
-                    bat "dir"
-                    // bat "del *.log"
                 }
                 
                 dir("build"){
@@ -252,7 +250,7 @@ pipenv virtual environments are located in pipenv/
                         always {
                             bat "dir ${WORKSPACE}\\reports"
                             
-                            archiveArtifacts artifacts: "${WORKSPACE}/reports/doctest.txt"
+                            archiveArtifacts artifacts: "reports/doctest.txt"
                         }
                     }
                 }
