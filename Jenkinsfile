@@ -80,8 +80,9 @@ pipeline {
         stage("Configure Environment"){
             steps {
                 dir("logs"){
+                    echo "Cleaning out logs directory"
+                    deleteDir()
                     bat "dir"
-                    // echo "Cleaning out logs directory"
                     // bat "del *.log"
                 }
                 
@@ -261,20 +262,18 @@ pipenv virtual environments are located in pipenv/
                         dir("reports\\mypy\\html"){
                             bat "dir"
                         }
-                        dir("source"){
-                            
-                            script{
-                                try{
-                                    tee('logs/mypy.log') {
-                                        dir("source"){
-                                            bat "dir"
-                                            bat "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html"
-                                        }
+                        script{
+                            try{
+                                tee('logs/mypy.log') {
+                                    dir("source"){
+                                        bat "dir"
+                                        bat "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html"
                                     }
-                                } catch (exc) {
-                                    echo "MyPy found some warnings"
-                                }      
-                            }
+                                }
+                            } catch (exc) {
+                                echo "MyPy found some warnings"
+                            }      
+                    
                         }
                     }
                     post {
