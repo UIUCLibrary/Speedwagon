@@ -125,10 +125,11 @@ pipeline {
                     archiveArtifacts artifacts: "logs/*.log"
                 }
                 success{
-                    echo "Successfully configured build environment."
-                    echo "Source from the repository is located in ./source."
-                    echo "logs are located in ./source."
-                    echo "pipenv cache is located in ./pipenv."
+                    echo """Successfully configured build environment.
+Source from the repository is located in source/
+log files are located in logs/
+pipenv virtual environments are located in pipenv/
+"""
                 }
                 // cleanup{
                 //     bat "del pippackages_system_${NODE_NAME}.log"
@@ -242,13 +243,18 @@ pipeline {
                     }
                     steps {
                         dir("source"){
-                            bat "pipenv run sphinx-build -b doctest -d ${WORKSPACE}\\build\\docs\\doctrees docs\\source ${WORKSPACE}\\reports\\doctest"
+                            dir("reports/doctests"){
+                                echo "Cleaning doctest reports directory"
+                                deleteDir()
+                            }
+                            bat "pipenv run sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}\\reports\\doctests"
                         }
                     }
                     post{
                         always {
                             bat "dir ${WORKSPACE}/reports/"
-                            archiveArtifacts artifacts: "${WORKSPACE}/reports/doctest/output.txt"
+                            
+                            archiveArtifacts artifacts: "${WORKSPACE}/reports/doctests/output.txt"
                         }
                     }
                 }
