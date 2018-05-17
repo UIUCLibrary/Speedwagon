@@ -248,7 +248,7 @@ pipenv virtual environments are located in pipenv/
                     }
                     post{
                         always {
-                            bat "dir ${WORKSPACE}/reports/"
+                            bat "dir ${WORKSPACE}\\reports"
                             
                             archiveArtifacts artifacts: "${WORKSPACE}/reports/doctests/output.txt"
                         }
