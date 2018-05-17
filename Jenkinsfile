@@ -307,6 +307,9 @@ pipeline {
                                 archiveArtifacts artifacts: "*.zip", fingerprint: true
                             }
                         }
+                        failure {
+                            echo "Failed to package."
+                        }
                     }
                 }
                 stage("Windows Standalone"){
