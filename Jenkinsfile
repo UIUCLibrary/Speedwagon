@@ -41,7 +41,7 @@ pipeline {
         booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
         booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
-        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: false, description: "Windows Standalone")
+        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
         booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to \\\\storage.library.illinois.edu\\HathiTrust\\Tools\\beta\\")
@@ -367,13 +367,8 @@ pipenv virtual environments are located in pipenv/
                         bat "${tool 'CPython-3.6'} -m venv venv"
                         dir("source"){
                             tee('build_standalone.log') {
-                                powershell """Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '--version' -Wait
-    Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait 
-    """
-                                // bat "${tool 'CPython-3.6'} -m pip install --upgrade pip"
-                                // bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv --quiet"
-                                // bat "pipenv lock"
-                                // bat "pipenv install --dev --verbose --sequential"
+                                powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
+
                                 bat script: "pipenv lock -r > requirements.txt"
                                 bat script: "pipenv lock -rd > requirements-dev.txt"
                                 
@@ -388,52 +383,7 @@ pipenv virtual environments are located in pipenv/
                                     // echo "python_path = ${python_path}"
                                     bat "mkdir build"
                                     powershell "windows_build\\build.ps1 -python_path ${WORKSPACE}\\venv\\Scripts\\python.exe"
-                                    // powershell '''$python_path = & pipenv --py
-                                    // windows_build\\build.ps1 -python_path $python_path
-                                    // '''
-    //                                 powershell """\$pshost = get-host
-    // \$pswindow = \$pshost.ui.rawui
-    // \$newsize = \$pswindow.buffersize
-    // \$newsize.height = 3000
-    // \$newsize.width = 128
-    // \$pswindow.buffersize = \$newsize
-    // \$newsize = \$pswindow.windowsize
-    // \$newsize.height = 62
-    // \$newsize.width = 128
-    // \$pswindow.windowsize = \$newsize
-    // windows_build\\build.ps1
-    // """
-    //                                 powershell """\$installationPath = & vswhere.exe -prerelease -latest -property installationPath
-    // echo \$installationPath
-    // if (\$installationPath -and (test-path "\$installationPath\\Common7\\Tools\\vsdevcmd.bat")) {
-    //   & "\${env:COMSPEC}\" /s /c "`"\$installationPath\\Common7\\Tools\\vsdevcmd.bat`" -no_logo -host_arch=amd64 && set" | foreach-object {
-    //     \$name, \$value = \$_ -split \'=\', 2
-    //     set-content env:\\"\$name" \$value
-    //   }
-    // }
-    // else
-    // {
-    //     echo "Unable to set Visual studio"
-    //     EXIT 1
-    // }
-    // \$python_path = & pipenv --py
-    // echo "using python path \$python_path"
-    // nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
-    // MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=\${python_path}"""
-
-    //                                 bat script: """call "%vs140comntools%..\\..\\VC\\vcvarsall.bat" x86_amd64
-    // nuget install windows_build\\packages.config -OutputDirectory ${env.WORKSPACE}\\build\\nugetpackages
-    // MSBuild ${env.WORKSPACE}\\windows_build\\release.pyproj /nologo /t:msi /p:ProjectRoot=${env.WORKSPACE} /p:PYTHONPATH=${python_path}"""
-
                                 }
-
-                                // script {
-                                //     def standalone_status = 
-                                //     echo "standlone status = ${standalone_status}"
-                                    
-                                // }
-
-                                
                             }
                         }
                     }
@@ -526,17 +476,6 @@ pipenv virtual environments are located in pipenv/
                                     echo "Testing Source package in devpi"
                                     bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s tar.gz"
                             }
-                            // node("Windows") {
-                            //     bat "${tool 'CPython-3.6'} -m venv venv"
-                            //     bat "venv\\Scripts\\pip.exe install tox devpi-client"
-                            //     bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu"
-                            //     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                            //         bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                            //         bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                            //         echo "Testing Source package in devpi"
-                            //         bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s tar.gz"
-                            //     }
-                            // }
                         }
                     }
                 }
@@ -562,17 +501,6 @@ pipenv virtual environments are located in pipenv/
                             bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
                             echo "Testing Source package in devpi"
                             bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${name} -s zip"
-                            // node("Windows") {
-                            //     bat "${tool 'CPython-3.6'} -m venv venv"
-                            //     bat "venv\\Scripts\\pip.exe install tox devpi-client"
-                            //     bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu"
-                            //     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                            //         bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                            //         bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                            //         echo "Testing Source package in devpi"
-                            //         bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s zip"
-                            //     }
-                            // }
                         }
                     }
                 }
@@ -592,22 +520,10 @@ pipenv virtual environments are located in pipenv/
                             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                                 bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                             }
-                            // node("Windows") {
-                            //     bat "${tool 'CPython-3.6'} -m venv venv"
-                            //     bat "venv\\Scripts\\pip.exe install tox devpi-client"
-                            //     bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu"
-                            //     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                            //         bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                            //         bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                            //         echo "Testing Whl package in devpi"
-                            //         bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s whl"
-                            //     }
-                            // }
                         }
                         bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
                         echo "Testing Whl package in devpi"
                         bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${name} -s whl --verbose"
-                        echo "Done Testing Whl DevPu package"
                     }
                 }
             }
