@@ -115,6 +115,11 @@ pipeline {
                     archiveArtifacts artifacts: "pippackages_system_${NODE_NAME}.log"
                     archiveArtifacts artifacts: "pippackages_pipenv_${NODE_NAME}.log"
                 }
+                success{
+                    echo "Successfully configured build environment."
+                    echo "Source from the repository is located in ./source."
+                    echo "pipenv cache is located in ./pipenv."
+                }
             }
         }
         stage('Build') {
@@ -133,10 +138,13 @@ pipeline {
                         always{
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'build.log']]
                             archiveArtifacts artifacts: 'build.log'
-                            bat "dir"
+                            bat "dir build"
                         }
                         failure{
                             echo "Failed to build Python package"
+                        }
+                        success{
+                            echo "Successfully built project is ./build."
                         }
                     }
                 }
