@@ -378,9 +378,9 @@ pipenv virtual environments are located in pipenv/
 
                         script{
                             try{
-                                bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -U pip"
+                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe -m pip install -U pip"
                             } catch (exc) {
-                                bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -U pip --no-cache-dir"
+                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
                             }
                         }
                         
