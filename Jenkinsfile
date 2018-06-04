@@ -362,21 +362,26 @@ pipenv virtual environments are located in pipenv/
                         equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
                     }
                     steps {
+                        
+                        script{
+                            lock("system_python_${NODE_NAME}"){
+                                    def powershell_command = "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
+                                    echo "${powershell_command}"
+                                    powershell "${powershell_command}"
+                            }                        
+                        }
                         bat "${tool 'CPython-3.6'} -m venv venv"
-                        bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -U pip"
+
+                        script{
+                            try{
+                                bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -U pip"
+                            } catch (exc) {
+                                bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -U pip --no-cache-dir"
+                            }
+                        }
+                        
                         tee('build_standalone.log') {
                             dir("source"){
-                                script{
-                                    lock("system_python_${NODE_NAME}"){
-                                        def powershell_command = "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
-                                        echo "${powershell_command}"
-                                        powershell "${powershell_command}"
-                                    }
-                                    
-                                    
-                                
-                                }
-    
                                 bat script: "${tool 'CPython-3.6'} -m pipenv lock -r"
                                 bat script: "${tool 'CPython-3.6'} -m pipenv lock -r > requirements.txt"
                                 bat script: "${tool 'CPython-3.6'} -m pipenv lock -rd > requirements-dev.txt"
