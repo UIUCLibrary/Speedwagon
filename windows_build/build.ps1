@@ -6,12 +6,12 @@ $PYTHON_HOME = (Resolve-Path $PYTHON_HOME)
 $installationPath = & vswhere.exe -legacy -prerelease -latest -property installationPath
 $project_folder = & Get-Location
 
-& (Resolve-Path ${PYTHON_HOME}\Scripts\python.exe) --version
 
 echo "Visual Studio path = $installationPath"
 echo "Project Folder     = $project_folder"
 echo "python home        = $PYTHON_HOME"
 
+& (Resolve-Path ${PYTHON_HOME}\Scripts\python.exe) --version
 
 
 if ($installationPath -and (test-path "$installationPath\Common7\Tools\vsdevcmd.bat")) {

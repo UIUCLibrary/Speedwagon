@@ -401,7 +401,7 @@ pipenv virtual environments are located in pipenv/
                                     // echo "python_path = ${python_path}"
                                     bat "mkdir build"
                                     // powershell "windows_build\\build.ps1 -python_path ${WORKSPACE}\\venv\\Scripts\\python.exe"
-                                    powershell "windows_build\\build.ps1"
+                                    powershell "windows_build\\build.ps1 -PYTHON_HOME ${WORKSPACE}\\venv"
                                 }
                             }
                         }
