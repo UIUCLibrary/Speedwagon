@@ -79,7 +79,6 @@ pipeline {
         }
         stage("Configure Environment"){
             steps {
-                echo "hello world"
                 dir("logs"){
                     echo "Cleaning out logs directory"
                     deleteDir()
@@ -371,12 +370,12 @@ pipenv virtual environments are located in pipenv/
                         
                         script{
                             lock("system_python_${NODE_NAME}"){
-                                    def powershell_command = "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
-                                    echo "${powershell_command}"
-                                    powershell "${powershell_command}"
+                                def powershell_command = "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
+                                echo "${powershell_command}"
+                                powershell "${powershell_command}"
+                                
                             }                        
-                        }
-                        bat "${tool 'CPython-3.6'} -m pip install pyqt5"
+                        }                        
                         bat "${tool 'CPython-3.6'} -m venv venv"
 
                         script{
