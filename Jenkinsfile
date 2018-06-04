@@ -363,6 +363,7 @@ pipenv virtual environments are located in pipenv/
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv"
+                        bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -U pip"
                         tee('build_standalone.log') {
                             dir("source"){
                                 script{
@@ -371,6 +372,7 @@ pipenv virtual environments are located in pipenv/
                                         echo "${powershell_command}"
                                         powershell "${powershell_command}"
                                     }
+                                    
                                     
                                 
                                 }
