@@ -10,8 +10,8 @@ $project_folder = & Get-Location
 echo "Visual Studio path = $installationPath"
 echo "Project Folder     = $project_folder"
 echo "python home        = $PYTHON_HOME"
-
-& (Resolve-Path ${PYTHON_HOME}\Scripts\python.exe) --version
+& (Resolve-Path ${PYTHON_HOME}\Scripts\Activate.ps1)
+& python.exe --version
 
 
 if ($installationPath -and (test-path "$installationPath\Common7\Tools\vsdevcmd.bat")) {
