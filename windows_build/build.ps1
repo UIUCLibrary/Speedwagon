@@ -2,14 +2,17 @@
  [string]$PYTHON_HOME = "venv"
 # [string]$python_path = (Get-Command python.exe).Path
 )
-
+$PYTHON_HOME = (Resolve-Path $PYTHON_HOME)
 $installationPath = & vswhere.exe -legacy -prerelease -latest -property installationPath
 $project_folder = & Get-Location
 
+& (Resolve-Path ${PYTHON_HOME}\Scripts\python.exe) --version
+
 echo "Visual Studio path = $installationPath"
 echo "Project Folder     = $project_folder"
-echo "PYTHON_HOME = $PYTHON_HOME"
-#echo "Python path        = $python_path"
+echo "python home        = $PYTHON_HOME"
+
+
 
 if ($installationPath -and (test-path "$installationPath\Common7\Tools\vsdevcmd.bat")) {
   & "${env:COMSPEC}" /s /c "`"$installationPath\Common7\Tools\vsdevcmd.bat`" -no_logo -host_arch=amd64 && set" | foreach-object {
