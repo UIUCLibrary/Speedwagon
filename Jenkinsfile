@@ -88,6 +88,7 @@ pipeline {
                     echo "Cleaning out build directory"
                     deleteDir()
                 }
+                
                 // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
                 echo "Building on: ${NODE_NAME}."
                 lock("system_python_${NODE_NAME}"){
@@ -171,7 +172,7 @@ pipenv virtual environments are located in pipenv/
                         tee('logs/build_sphinx.log') {
                             dir("source"){
                                 lock("system_pipenv_${NODE_NAME}"){
-                                    bat script: "pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs"  
+                                    bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs"  
                                 }
                             }   
                         }
