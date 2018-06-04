@@ -363,7 +363,13 @@ pipenv virtual environments are located in pipenv/
                         bat "${tool 'CPython-3.6'} -m venv venv"
                         tee('build_standalone.log') {
                             dir("source"){
-                                powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
+                                script{
+                                    def powershell_command = "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
+                                    echo "${powershell_command}"
+                                    powershell "${powershell_command}"
+                                    
+                                }
+                                
 
                                 bat script: "pipenv lock -r > requirements.txt"
                                 bat script: "pipenv lock -rd > requirements-dev.txt"
