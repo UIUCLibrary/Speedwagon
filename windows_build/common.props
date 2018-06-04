@@ -3,12 +3,20 @@
     xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectRoot Condition="'$(ProjectRoot)' == ''">$(MSBuildProjectDirectory)</ProjectRoot>
+        <PYTHONHOME Condition="'$(PYTHONHOME)' == ''">venv</PYTHONHOME>
     </PropertyGroup>
-    <ItemGroup Condition="'$(PYTHONPATH)' == ''">
+    <ItemGroup Condition="'$(PYTHONHOME)' == ''">
         <Python Include="python.exe"/>
     </ItemGroup>
-        <ItemGroup Condition="'$(PYTHONPATH)' != ''">
-        <Python Include="$(PYTHONPATH)"/>
+    <!--<ItemGroup Condition="'$(PYTHONPATH)' == ''">-->
+        <!--<Python Include="python.exe"/>-->
+    <!--</ItemGroup>-->
+        <!--<ItemGroup Condition="'$(PYTHONPATH)' != ''">-->
+        <!--<Python Include="$(PYTHONPATH)"/>-->
+    <!--</ItemGroup>-->
+    <!--</ItemGroup>-->
+    <ItemGroup Condition="'$(PYTHONHOME)' != ''">
+        <Python Include="$(PYTHONHOME)\Scripts\python.exe"/>
     </ItemGroup>
     <ItemGroup>
         <helpers_path Include="$(MSBuildThisFileDirectory)"/>

@@ -88,10 +88,13 @@ pipeline {
                     echo "Cleaning out build directory"
                     deleteDir()
                 }
-                // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
                 
-                bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
-                bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
+                // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
+                echo "Building on: ${NODE_NAME}."
+                lock("system_python_${NODE_NAME}"){
+                    bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
+                    bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
+                }
                 bat "${tool 'CPython-3.6'} -m pip --version"
                                 
                 dir("source") {
@@ -138,7 +141,9 @@ pipenv virtual environments are located in pipenv/
                         
                         tee('logs/build.log') {
                             dir("source"){
-                                powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pipenv run python setup.py build -b ${WORKSPACE}\\build' -Wait"
+                                lock("system_pipenv_${NODE_NAME}"){
+                                    powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pipenv run python setup.py build -b ${WORKSPACE}\\build' -Wait"
+                                }
                                 // bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
                             }
                         }
@@ -166,7 +171,9 @@ pipenv virtual environments are located in pipenv/
                         echo "Building docs on ${env.NODE_NAME}"
                         tee('logs/build_sphinx.log') {
                             dir("source"){
-                                bat script: "pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs"  
+                                lock("system_pipenv_${NODE_NAME}"){
+                                    bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs"  
+                                }
                             }   
                         }
                     }
@@ -259,14 +266,10 @@ pipenv virtual environments are located in pipenv/
                         equals expected: true, actual: params.TEST_RUN_MYPY
                     }
                     steps{
-                        dir("reports\\mypy\\html"){
-                            bat "dir"
-                        }
                         script{
                             try{
                                 tee('logs/mypy.log') {
                                     dir("source"){
-                                        bat "dir"
                                         bat "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html"
                                     }
                                 }
@@ -364,13 +367,30 @@ pipenv virtual environments are located in pipenv/
                         equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
                     }
                     steps {
+                        
+                        script{
+                            lock("system_python_${NODE_NAME}"){
+                                def powershell_command = "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
+                                echo "${powershell_command}"
+                                powershell "${powershell_command}"
+                                
+                            }                        
+                        }                        
                         bat "${tool 'CPython-3.6'} -m venv venv"
+
+                        script{
+                            try{
+                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe -m pip install -U pip"
+                            } catch (exc) {
+                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
+                            }
+                        }
+                        
                         tee('build_standalone.log') {
                             dir("source"){
-                                powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
-
-                                bat script: "pipenv lock -r > requirements.txt"
-                                bat script: "pipenv lock -rd > requirements-dev.txt"
+                                bat script: "${tool 'CPython-3.6'} -m pipenv lock -r"
+                                bat script: "${tool 'CPython-3.6'} -m pipenv lock -r > requirements.txt"
+                                bat script: "${tool 'CPython-3.6'} -m pipenv lock -rd > requirements-dev.txt"
                                 
                                 // bat "venv\\Scripts\\python.exe -m pip install -U pip"
                                 bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -U setuptools>=30.3.0"
@@ -382,7 +402,8 @@ pipenv virtual environments are located in pipenv/
                                     // def python_path = "python.exe"
                                     // echo "python_path = ${python_path}"
                                     bat "mkdir build"
-                                    powershell "windows_build\\build.ps1 -python_path ${WORKSPACE}\\venv\\Scripts\\python.exe"
+                                    // powershell "windows_build\\build.ps1 -python_path ${WORKSPACE}\\venv\\Scripts\\python.exe"
+                                    powershell "windows_build\\build.ps1 -PYTHON_HOME ${WORKSPACE}\\venv"
                                 }
                             }
                         }

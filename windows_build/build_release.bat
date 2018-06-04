@@ -10,6 +10,6 @@ REM install required Nuget packages
 nuget install windows_build\packages.config -OutputDirectory build\nugetpackages
 
 REM Run the MSBuild script for creating the msi
-MSBuild windows_build\release.pyproj /maxcpucount:%NUMBER_OF_PROCESSORS% /nologo /t:msi /p:ProjectRoot=%CD%
+MSBuild windows_build\release.pyproj /maxcpucount:%NUMBER_OF_PROCESSORS% /nologo /t:msi /p:ProjectRoot=%CD% /p:PYTHONHOME=%CD%\venv
 
 endlocal
