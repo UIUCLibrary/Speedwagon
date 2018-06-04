@@ -79,6 +79,7 @@ pipeline {
         }
         stage("Configure Environment"){
             steps {
+                echo "hello world"
                 dir("logs"){
                     echo "Cleaning out logs directory"
                     deleteDir()
