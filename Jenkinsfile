@@ -90,8 +90,10 @@ pipeline {
                 }
                 // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
                 echo "Building on: ${NODE_NAME}."
-                bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
-                bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
+                lock("system_python_${NODE_NAME}"){
+                    bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
+                    bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
+                }
                 bat "${tool 'CPython-3.6'} -m pip --version"
                                 
                 dir("source") {
@@ -364,15 +366,18 @@ pipenv virtual environments are located in pipenv/
                         tee('build_standalone.log') {
                             dir("source"){
                                 script{
-                                    def powershell_command = "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
-                                    echo "${powershell_command}"
-                                    powershell "${powershell_command}"
+                                    lock("system_python_${NODE_NAME}"){
+                                        def powershell_command = "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
+                                        echo "${powershell_command}"
+                                        powershell "${powershell_command}"
+                                    }
                                     
+                                
                                 }
-
-                                bat script: "pipenv lock -r"
-                                bat script: "pipenv lock -r > requirements.txt"
-                                bat script: "pipenv lock -rd > requirements-dev.txt"
+    
+                                bat script: "${tool 'CPython-3.6'} -m pipenv lock -r"
+                                bat script: "${tool 'CPython-3.6'} -m pipenv lock -r > requirements.txt"
+                                bat script: "${tool 'CPython-3.6'} -m pipenv lock -rd > requirements-dev.txt"
                                 
                                 // bat "venv\\Scripts\\python.exe -m pip install -U pip"
                                 bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -U setuptools>=30.3.0"
