@@ -375,6 +375,7 @@ pipenv virtual environments are located in pipenv/
                                     powershell "${powershell_command}"
                             }                        
                         }
+                        bat "${tool 'CPython-3.6'} -m pip install pyqt5"
                         bat "${tool 'CPython-3.6'} -m venv venv"
 
                         script{
