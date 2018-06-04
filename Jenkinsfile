@@ -89,7 +89,7 @@ pipeline {
                     deleteDir()
                 }
                 // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
-                
+                echo "Building on: ${NODE_NAME}."
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
                 bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
                 bat "${tool 'CPython-3.6'} -m pip --version"
@@ -259,14 +259,10 @@ pipenv virtual environments are located in pipenv/
                         equals expected: true, actual: params.TEST_RUN_MYPY
                     }
                     steps{
-                        dir("reports\\mypy\\html"){
-                            bat "dir"
-                        }
                         script{
                             try{
                                 tee('logs/mypy.log') {
                                     dir("source"){
-                                        bat "dir"
                                         bat "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html"
                                     }
                                 }
