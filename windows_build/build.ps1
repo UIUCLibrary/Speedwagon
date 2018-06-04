@@ -24,4 +24,5 @@ else
 }
 nuget install windows_build\packages.config -OutputDirectory build\nugetpackages
 
-Start-Process -NoNewWindow -FilePath msbuild.exe -ArgumentList "windows_build\release.pyproj /nologo /t:msi /p:ProjectRoot=$project_folder /p:PYTHONPATH=$python_path" -Wait
+Start-Process -NoNewWindow -FilePath msbuild.exe -ArgumentList "windows_build\release.pyproj /nologo /t:msi /p:ProjectRoot=$project_folder /p:PYTHONHOME=venv" -Wait
+#Start-Process -NoNewWindow -FilePath msbuild.exe -ArgumentList "windows_build\release.pyproj /nologo /t:msi /p:ProjectRoot=$project_folder /p:PYTHONPATH=$python_path" -Wait
