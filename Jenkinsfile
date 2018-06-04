@@ -369,8 +369,8 @@ pipenv virtual environments are located in pipenv/
                                     powershell "${powershell_command}"
                                     
                                 }
-                                
 
+                                bat script: "pipenv lock -r"
                                 bat script: "pipenv lock -r > requirements.txt"
                                 bat script: "pipenv lock -rd > requirements-dev.txt"
                                 
