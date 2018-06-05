@@ -4,7 +4,7 @@ import sys
 import traceback
 import webbrowser
 
-from . import about
+from . import about, system_info
 import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui
 from . import job, tabs
@@ -23,7 +23,7 @@ CONSOLE_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.Minimum
 )
 
-Setting = namedtuple("Setting", ("label", "widget"))
+Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 
 
 class ToolConsole(QtWidgets.QWidget):
@@ -200,6 +200,11 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         help_button.triggered.connect(self.show_help)
         help_menu.addAction(help_button)
 
+        # Create a system info menu item
+        system_info_menu_item = QtWidgets.QAction("System Info", self)
+        system_info_menu_item.triggered.connect(self.show_system_info)
+        help_menu.addAction(system_info_menu_item)
+
         # Create an About button
         about_button = QtWidgets.QAction(" &About ", self)
         about_button.triggered.connect(self.show_about_window)
@@ -235,6 +240,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
     def show_about_window(self):
         about.about_dialog_box(parent=self)
+
+    def show_system_info(self) -> None:
+        system_info_dialog = system_info.SystemInfoDialog(self)
+        system_info_dialog.exec()
 
     def start_workflow(self):
         num_selected = self._workflow_selector_view.selectedIndexes()
