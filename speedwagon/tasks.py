@@ -78,7 +78,7 @@ class Subtask(AbsSubtask):
         self._working_dir = ""
         self.task_working_dir = ""
 
-        self._parent_task_log_q: Deque[str] = None
+        self._parent_task_log_q: Optional[Deque[str]] = None
 
     @property
     def subtask_working_dir(self):
@@ -90,8 +90,10 @@ class Subtask(AbsSubtask):
     def subtask_working_dir(self, value):
         self._working_dir = value
 
-    @property  # type: ignore
+    @property
     def parent_task_log_q(self) -> Deque[str]:
+        if self._parent_task_log_q is None:
+            raise RuntimeError("Property parent_task_log_q has not be set")
         return self._parent_task_log_q
 
     @parent_task_log_q.setter
@@ -146,7 +148,7 @@ class PreTask(AbsSubtask):
 
     def __init__(self) -> None:
         self._status = TaskStatus.IDLE
-        self._parent_task_log_q: Deque[str] = None
+        self._parent_task_log_q: Optional[Deque[str]] = None
         self._result: Optional[Result] = None
 
     @property
@@ -155,6 +157,8 @@ class PreTask(AbsSubtask):
 
     @property
     def parent_task_log_q(self) -> Deque[str]:
+        if self._parent_task_log_q is None:
+            raise RuntimeError("Property parent_task_log_q has not be set")
         return self._parent_task_log_q
 
     @parent_task_log_q.setter
@@ -538,7 +542,7 @@ class QueueAdapter:
 
     def __init__(self) -> None:
         super().__init__()
-        self._queue: queue.Queue = None
+        self._queue: Optional[queue.Queue] = None
 
     def append(self, item):
         self._queue.put(item)
