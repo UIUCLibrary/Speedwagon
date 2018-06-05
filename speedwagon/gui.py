@@ -196,6 +196,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # Help Menu
         help_menu = menu_bar.addMenu("Help")
 
+        # Create a Help menu item
         help_button = QtWidgets.QAction(" &Help ", self)
         help_button.triggered.connect(self.show_help)
         help_menu.addAction(help_button)
@@ -205,6 +206,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         system_info_menu_item.triggered.connect(self.show_system_info)
         help_menu.addAction(system_info_menu_item)
 
+        help_menu.addSeparator()
         # Create an About button
         about_button = QtWidgets.QAction(" &About ", self)
         about_button.triggered.connect(self.show_about_window)
@@ -234,7 +236,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                 distribution.get_metadata(distribution.PKG_INFO)))
 
             webbrowser.open_new(metadata['Home-page'])
-        except Exception:
+        except Exception as e:
             print("no help")
         pass
 
