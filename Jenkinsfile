@@ -431,7 +431,11 @@ pipenv virtual environments are located in pipenv/
             }
 
         }
-
+        stage("Test CMake build") {
+            steps {
+                ctest arguments: '-S ci/build_standalone.cmake -D "Visual Studio 14 2015 Win64" -VV', installation: 'cmake3.11.2'
+            }
+        }
         stage("Deploy to Devpi Staging") {
             // when {
             //     expression { params.DEPLOY_DEVPI == true && (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev")}
