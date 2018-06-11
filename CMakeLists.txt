@@ -25,8 +25,17 @@ function(install_venv_deps python_exe requirements_files)
     execute_process(COMMAND ${python_exe} -m pip install -r ${requirements_files})
 endfunction(install_venv_deps)
 
+function(create_dep_wheels python_exe requirements_files)
+    execute_process(COMMAND ${python_exe} -m pip wheel -r ${requirements_files} --wheel-dir ${PROJECT_BINARY_DIR}/deps)
+endfunction(create_dep_wheels)
+
+
 create_virtual_env()
-install_venv_deps(${VENV_PYTHON} ${PROJECT_SOURCE_DIR}/requirements.txt)
+execute_process(COMMAND ${VENV_PYTHON} -m pip install wheel)
+create_dep_wheels(${VENV_PYTHON} ${PROJECT_SOURCE_DIR}/requirements.txt)
+execute_process(COMMAND ${VENV_PYTHON} -m pip install --find-links=${PROJECT_BINARY_DIR}/deps/ -r ${PROJECT_SOURCE_DIR}/requirements.txt)
+# execute_process(COMMAND ${VENV_PYTHON} -m pip install --no-index --find-links=${PROJECT_BINARY_DIR}/deps/ -r ${PROJECT_SOURCE_DIR}/requirements.txt)
+# install_venv_deps(${VENV_PYTHON} ${PROJECT_SOURCE_DIR}/requirements.txt)
 install_venv_deps(${VENV_PYTHON} ${PROJECT_SOURCE_DIR}/requirements-dev.txt)
 
 message(STATUS "VENV_PYTHON = ${VENV_PYTHON}")
