@@ -7,7 +7,9 @@ macro(create_virtual_env)
     execute_process(COMMAND ${PYTHON_EXECUTABLE} -m venv ${PROJECT_BINARY_DIR}/venv)
     find_program(VENV_PYTHON 
         NAMES python
-        PATHS ${PROJECT_BINARY_DIR}/venv/Scripts/
+        PATHS 
+            ${PROJECT_BINARY_DIR}/venv/Scripts/
+            ${PROJECT_BINARY_DIR}/venv/bin/
         NO_DEFAULT_PATH 
     )
     if(VENV_PYTHON)
