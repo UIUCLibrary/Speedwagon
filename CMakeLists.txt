@@ -20,7 +20,7 @@ endmacro()
 
 function(install_venv_deps python_exe requirements_files)
     # TODO: make requirements_files a list so that multiple files can installed at the same time
-    execute_process(COMMAND ${python_exe} -m pip install -r ${requirements_files})
+    execute_process(COMMAND ${python_exe} -m pip install -r ${requirements_files} --upgrade-strategy only-if-needed)
 endfunction(install_venv_deps)
 
 create_virtual_env()
