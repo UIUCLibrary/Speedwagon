@@ -350,7 +350,7 @@ pipenv virtual environments are located in pipenv/
                 stage("Windows Standalone"){
                     agent {
                         node {
-                            label "Windows && VS2015 && DevPi"
+                            label "Windows && VS2015"
                         }
                     }
                     environment {
