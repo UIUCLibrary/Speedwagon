@@ -123,5 +123,29 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py
     MAIN_DEPENDENCY setup.py
 )
 
+add_custom_target(docs
+    DEPENDS ${PROJECT_BINARY_DIR}/docs
+    )
+add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/docs
+    COMMAND ${VENV_PYTHON} setup.py build_sphinx -b html --build-dir=${PROJECT_BINARY_DIR}/docs    
+    COMMAND ${VENV_PYTHON} setup.py build_sphinx -b qthelp --build-dir=${PROJECT_BINARY_DIR}/docs
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
 
-# add_custom_target(venv )
+add_custom_target(standalone
+    ALL
+    DEPENDS ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages/speedwagon
+    
+    )
+add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages/speedwagon
+    DEPENDS wheel
+    COMMAND ${VENV_PYTHON} -m pip install ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py3-none-any.whl -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${speedwagon_PythonDepsCache}
+    )
+    # set_property(DIRECTORY ${PROJECT_BINARY_DIR}/standalone PROPERTY ADDITIONAL_MAKE_CLEAN_FILES Lib)
+include(CTest)
+add_test(NAME "unittests" 
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    COMMAND ${VENV_PYTHON} -m pytest ${PROJECT_SOURCE_DIR}/tests --rootdir=${PROJECT_BINARY_DIR}/standalone
+    )
+# TODO: install embedded Python
+# TODO: Fix up Python PTH file to point to the standalone directory
