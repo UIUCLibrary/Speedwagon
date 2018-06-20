@@ -4,7 +4,7 @@ find_package(PythonInterp REQUIRED)
 message(STATUS "Using Python ${PYTHON_VERSION_STRING} located at \"${PYTHON_EXECUTABLE}\".")
 
 set(speedwagon_PythonDepsCache ${PROJECT_BINARY_DIR}/deps CACHE PATH "location to put Python deps")
-set(speedwagon_venv_path ${PROJECT_BINARY_DIR}/venv CACHE PATH "Location for Python virtual enivronment needed for building")
+set(speedwagon_venv_path ${PROJECT_BINARY_DIR}/venv CACHE PATH "Location for Python virtual environment needed for building")
 
 macro(create_virtual_env)
     execute_process(COMMAND ${PYTHON_EXECUTABLE} -m venv ${speedwagon_venv_path})
