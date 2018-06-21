@@ -2,10 +2,12 @@ cmake_minimum_required(VERSION 3.11)
 project(speedwagon LANGUAGES NONE
     VERSION 0.0.0)
 
+include(FetchContent)
+
 find_package(PythonInterp REQUIRED)
 message(STATUS "Using Python ${PYTHON_VERSION_STRING} located at \"${PYTHON_EXECUTABLE}\".")
 
-set(speedwagon_PythonDepsCache ${PROJECT_BINARY_DIR}/deps CACHE PATH "location to put Python deps")
+set(speedwagon_PythonDepsCache ${PROJECT_BINARY_DIR}/_deps/python_wheels CACHE PATH "location to put Python deps")
 set(speedwagon_venv_path ${PROJECT_BINARY_DIR}/venv CACHE PATH "Location for Python virtual environment needed for building")
 
 function(get_python_version SETUP_PY)
@@ -16,7 +18,9 @@ function(get_python_version SETUP_PY)
         OUTPUT_VARIABLE PYTHON_PACKAGE_VERSION
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         )
-        string(STRIP ${PYTHON_PACKAGE_VERSION} PYTHON_PACKAGE_VERSION)
+
+    string(STRIP ${PYTHON_PACKAGE_VERSION} PYTHON_PACKAGE_VERSION)
+
     if(NOT PYTHON_PACKAGE_VERSION MATCHES "^[0-9]\\.[0-9]\\.[0-9](a|b|r)?$")
             message(WARNING "Unable to extract version information from the Python project")
         else()
@@ -63,8 +67,7 @@ function(install_venv_deps)
         list(APPEND requirement_file_args "-r")
         list(APPEND requirement_file_args "${requirements_file}")
     endforeach()
-    message(STATUS "running: ${VENV_PYTHON_EXE} -m pip install ${requirement_file_args} --upgrade-strategy only-if-needed")
-    execute_process(COMMAND ${VENV_PYTHON_EXE} -m pip install ${requirement_file_args} --upgrade-strategy only-if-needed)
+    execute_process(COMMAND ${VENV_PYTHON_EXE} -m pip install ${requirement_file_args} --upgrade-strategy only-if-needed -f ${speedwagon_PythonDepsCache})
     message(STATUS "FINISHED installing venv deps")
 endfunction(install_venv_deps)
 
@@ -75,12 +78,60 @@ function(create_dep_wheels)
         list(APPEND requirement_file_args "-r")
         list(APPEND requirement_file_args "${requirements_file}")
     endforeach()
-
-    execute_process(COMMAND ${VENV_PYTHON_EXE} -m pip wheel ${requirement_file_args} --wheel-dir ${speedwagon_PythonDepsCache})
+    message(STATUS "Syncing dependency cache")
+    execute_process(COMMAND ${VENV_PYTHON_EXE} -m pip wheel ${requirement_file_args} --wheel-dir ${speedwagon_PythonDepsCache} -f ${speedwagon_PythonDepsCache} --quiet)
 endfunction(create_dep_wheels)
 
-# Set project Version number based on the metadata
+function(get_embedded_python_url)
+    if(NOT WIN32)
+        message(FATAL_ERROR "Embeded Python distributions are currently only available for Windows")
+    endif()
 
+    cmake_parse_arguments(EMBEDDED_PYTHON "" "VERSION;URL_VAR" "" ${ARGN})
+    string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} PROCESSOR_TYPE)
+    
+    set(${EMBEDDED_PYTHON_URL_VAR} "https://www.python.org/ftp/python/${EMBEDDED_PYTHON_VERSION}/python-${EMBEDDED_PYTHON_VERSION}-embed-${PROCESSOR_TYPE}.zip" PARENT_SCOPE)
+endfunction(get_embedded_python_url)
+
+
+get_embedded_python_url(
+    VERSION ${PYTHON_VERSION_STRING} 
+    URL_VAR EMBEDDED_PYTHON_URL
+    )
+
+
+FetchContent_Declare(embedded_python
+    URL ${EMBEDDED_PYTHON_URL} 
+    SOURCE_DIR ${EMBEDDED_PYTHON_DESTINATION}
+)
+FetchContent_GetProperties(embedded_python)
+
+if (NOT embedded_python_POPULATED)
+    message(STATUS "Fetching Python version ${PYTHON_VERSION_STRING} for ${CMAKE_SYSTEM_PROCESSOR}")
+    FetchContent_Populate(embedded_python)
+    find_file(PYTHON_EMBEDDED_PTH_FILE
+        NAMES python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth
+        HINTS ${embedded_python_SOURCE_DIR}
+        NO_DEFAULT_PATH
+    )
+    file(READ ${PYTHON_EMBEDDED_PTH_FILE} PYTHON_EMBEDDED_PTH_DATA)
+    string(APPEND PYTHON_EMBEDDED_PTH_DATA "\n@EXTRA_PYTHON_LIBRARY_PATHS@\n")
+    
+    set(python_pth_template_file "${PROJECT_BINARY_DIR}/templates/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth.in")
+    file(WRITE ${python_pth_template_file} ${PYTHON_EMBEDDED_PTH_DATA})
+    set(EXTRA_PYTHON_LIBRARY_PATHS "./Lib/site-packages")
+    set(PYTHON_INSTALL_CONFIG_PTH_FILE "${PROJECT_BINARY_DIR}/configs/install/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth")
+    configure_file(${python_pth_template_file} ${PYTHON_INSTALL_CONFIG_PTH_FILE} @ONLY)
+    string(APPEND EXTRA_PYTHON_LIBRARY_PATHS "\n./pytest")
+    
+    set(PYTHON_TEST_CONFIG_PTH_FILE "${PROJECT_BINARY_DIR}/configs/test/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth" )
+    configure_file(${python_pth_template_file} ${PYTHON_TEST_CONFIG_PTH_FILE} @ONLY)
+
+endif()
+
+# message(FATAL_ERROR "REMOVE when done, ${PYTHON_EMBEDDED_PTH_FILE}.")
+
+# Set project Version number based on the metadata
 get_python_version(
     ${PROJECT_SOURCE_DIR}/setup.py
     MAJOR PROJECT_VERSION_MAJOR
@@ -134,18 +185,33 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/docs
 
 add_custom_target(standalone
     ALL
-    DEPENDS ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages/speedwagon
-    
+    DEPENDS ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages/speedwagon ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
+    # COMMAND ${CMAKE_COMMAND} -E copy_directory ${embedded_python_SOURCE_DIR}/ ${PROJECT_BINARY_DIR}/standalone/
     )
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages/speedwagon
     DEPENDS wheel
     COMMAND ${VENV_PYTHON} -m pip install ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py3-none-any.whl -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${speedwagon_PythonDepsCache}
     )
-    # set_property(DIRECTORY ${PROJECT_BINARY_DIR}/standalone PROPERTY ADDITIONAL_MAKE_CLEAN_FILES Lib)
-include(CTest)
-add_test(NAME "unittests" 
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMAND ${VENV_PYTHON} -m pytest ${PROJECT_SOURCE_DIR}/tests --rootdir=${PROJECT_BINARY_DIR}/standalone
+add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
+    DEPENDS wheel
+    COMMAND ${VENV_PYTHON} -m pip install pytest -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${speedwagon_PythonDepsCache}
     )
-# TODO: install embedded Python
-# TODO: Fix up Python PTH file to point to the standalone directory
+    # set_property(DIRECTORY ${PROJECT_BINARY_DIR}/standalone PROPERTY ADDITIONAL_MAKE_CLEAN_FILES Lib)
+
+# install embedded Python to standalone build path
+add_custom_command(TARGET standalone PRE_BUILD 
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${embedded_python_SOURCE_DIR}/ ${PROJECT_BINARY_DIR}/standalone/
+    )
+    
+
+include(CTest)
+add_custom_command(TARGET standalone POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PYTHON_TEST_CONFIG_PTH_FILE} ${PROJECT_BINARY_DIR}/standalone/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth
+    COMMENT "Fixing up python36._pth"
+)
+
+add_test(NAME unittests
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
+    COMMAND python -m pytest ${PROJECT_SOURCE_DIR}/tests --rootdir=${PROJECT_BINARY_DIR}/standalone
+    )
+set_tests_properties(unittests PROPERTIES ENVIRONMENT PYTHONPATH=${PROJECT_BINARY_DIR}/standalone/test/)
