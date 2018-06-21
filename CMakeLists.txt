@@ -53,6 +53,7 @@ macro(create_virtual_env)
     )
     mark_as_advanced(VENV_PYTHON)
     if(VENV_PYTHON)
+        execute_process(COMMAND ${VENV_PYTHON} -m pip install --upgrade pip)
         execute_process(COMMAND ${VENV_PYTHON} -m pip install --upgrade setuptools)
         set(VENV_PYTHON ${VENV_PYTHON} CACHE BOOL "Python Virtual environment for building.")
     endif(VENV_PYTHON)
@@ -78,13 +79,13 @@ function(create_dep_wheels)
         list(APPEND requirement_file_args "-r")
         list(APPEND requirement_file_args "${requirements_file}")
     endforeach()
-    message(STATUS "Syncing dependency cache")
+    message(STATUS "Syncing Python dependency .whl cache")
     execute_process(COMMAND ${VENV_PYTHON_EXE} -m pip wheel ${requirement_file_args} --wheel-dir ${speedwagon_PythonDepsCache} -f ${speedwagon_PythonDepsCache} --quiet)
 endfunction(create_dep_wheels)
 
 function(get_embedded_python_url)
     if(NOT WIN32)
-        message(FATAL_ERROR "Embeded Python distributions are currently only available for Windows")
+        message(FATAL_ERROR "Embedded Python distributions are currently only available for Windows")
     endif()
 
     cmake_parse_arguments(EMBEDDED_PYTHON "" "VERSION;URL_VAR" "" ${ARGN})
@@ -107,7 +108,7 @@ FetchContent_Declare(embedded_python
 FetchContent_GetProperties(embedded_python)
 
 if (NOT embedded_python_POPULATED)
-    message(STATUS "Fetching Python version ${PYTHON_VERSION_STRING} for ${CMAKE_SYSTEM_PROCESSOR}")
+    message(STATUS "Fetching Embedded Distribution of Python version ${PYTHON_VERSION_STRING} for ${CMAKE_SYSTEM_PROCESSOR}.")
     FetchContent_Populate(embedded_python)
     find_file(PYTHON_EMBEDDED_PTH_FILE
         NAMES python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth
@@ -119,11 +120,12 @@ if (NOT embedded_python_POPULATED)
     
     set(python_pth_template_file "${PROJECT_BINARY_DIR}/templates/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth.in")
     file(WRITE ${python_pth_template_file} ${PYTHON_EMBEDDED_PTH_DATA})
+
     set(EXTRA_PYTHON_LIBRARY_PATHS "./Lib/site-packages")
     set(PYTHON_INSTALL_CONFIG_PTH_FILE "${PROJECT_BINARY_DIR}/configs/install/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth")
     configure_file(${python_pth_template_file} ${PYTHON_INSTALL_CONFIG_PTH_FILE} @ONLY)
+
     string(APPEND EXTRA_PYTHON_LIBRARY_PATHS "\n./pytest")
-    
     set(PYTHON_TEST_CONFIG_PTH_FILE "${PROJECT_BINARY_DIR}/configs/test/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth" )
     configure_file(${python_pth_template_file} ${PYTHON_TEST_CONFIG_PTH_FILE} @ONLY)
 
@@ -197,7 +199,8 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
     COMMAND ${VENV_PYTHON} -m pip install pytest -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${speedwagon_PythonDepsCache}
     )
     # set_property(DIRECTORY ${PROJECT_BINARY_DIR}/standalone PROPERTY ADDITIONAL_MAKE_CLEAN_FILES Lib)
-
+set(SPEEDWAGON_PYTHON_INTERP pythonw.exe)
+configure_file(templates/speedwagon.bat.in standalone/speedwagon.bat @ONLY)
 # install embedded Python to standalone build path
 add_custom_command(TARGET standalone PRE_BUILD 
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${embedded_python_SOURCE_DIR}/ ${PROJECT_BINARY_DIR}/standalone/
@@ -207,11 +210,15 @@ add_custom_command(TARGET standalone PRE_BUILD
 include(CTest)
 add_custom_command(TARGET standalone POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PYTHON_TEST_CONFIG_PTH_FILE} ${PROJECT_BINARY_DIR}/standalone/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth
-    COMMENT "Fixing up python36._pth"
+    COMMENT "Fixing up python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth"
 )
-
+install(DIRECTORY ${PROJECT_BINARY_DIR}/standalone/
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    PATTERN "pytest" EXCLUDE
+    PATTERN "python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth" EXCLUDE
+    )
+install(FILES ${PYTHON_INSTALL_CONFIG_PTH_FILE} DESTINATION ${CMAKE_INSTALL_PREFIX})
 add_test(NAME unittests
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
     COMMAND python -m pytest ${PROJECT_SOURCE_DIR}/tests --rootdir=${PROJECT_BINARY_DIR}/standalone
     )
-set_tests_properties(unittests PROPERTIES ENVIRONMENT PYTHONPATH=${PROJECT_BINARY_DIR}/standalone/test/)
