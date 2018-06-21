@@ -190,7 +190,9 @@ add_custom_target(standalone
     DEPENDS ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages/speedwagon ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
     # COMMAND ${CMAKE_COMMAND} -E copy_directory ${embedded_python_SOURCE_DIR}/ ${PROJECT_BINARY_DIR}/standalone/
     )
-add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages/speedwagon
+add_custom_command(
+    OUTPUT
+        ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages/speedwagon
     DEPENDS wheel
     COMMAND ${VENV_PYTHON} -m pip install ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py3-none-any.whl -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${speedwagon_PythonDepsCache}
     )
@@ -212,13 +214,30 @@ add_custom_command(TARGET standalone POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PYTHON_TEST_CONFIG_PTH_FILE} ${PROJECT_BINARY_DIR}/standalone/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth
     COMMENT "Fixing up python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth"
 )
+install(FILES ${PYTHON_INSTALL_CONFIG_PTH_FILE} DESTINATION bin)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/standalone/
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    DESTINATION bin
     PATTERN "pytest" EXCLUDE
     PATTERN "python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth" EXCLUDE
     )
-install(FILES ${PYTHON_INSTALL_CONFIG_PTH_FILE} DESTINATION ${CMAKE_INSTALL_PREFIX})
 add_test(NAME unittests
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
     COMMAND python -m pytest ${PROJECT_SOURCE_DIR}/tests --rootdir=${PROJECT_BINARY_DIR}/standalone
     )
+
+set(CPACK_PACKAGE_VENDOR "University Library at The University of Illinois at Urbana Champaign: Preservation Services")
+set(CPACK_WIX_UPGRADE_GUID C81EC876-C4BD-11E7-9268-005056C00008)
+#message(FATAL_ERROR "CMAKE_SYSTEM_PROCESSOR = ${CMAKE_SYSTEM_PROCESSOR} AMD64")
+if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "AMD64")
+    set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
+#    set(CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_INSTALL_DIRECTORY} (Win64)")
+    set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${CPACK_PACKAGE_NAME} ${CPACK_PACKAGE_VERSION} (Win64)")
+else()
+    set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES")
+#    set(CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_INSTALL_DIRECTORY}")
+    set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${CPACK_PACKAGE_NAME} ${CPACK_PACKAGE_VERSION}")
+endif()
+set(CPACK_SYSTEM_NAME ${CMAKE_SYSTEM_PROCESSOR})
+set(CPACK_TOPLEVEL_TAG ${CMAKE_SYSTEM_PROCESSOR})
+set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
+include(CPack)
