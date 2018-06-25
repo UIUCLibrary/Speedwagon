@@ -137,6 +137,7 @@ if (NOT embedded_python_POPULATED)
     set(PYTHON_INSTALL_CONFIG_PTH_FILE "${PROJECT_BINARY_DIR}/configs/install/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth")
     configure_file(${python_pth_template_file} ${PYTHON_INSTALL_CONFIG_PTH_FILE} @ONLY)
 
+    set(EXTRA_PYTHON_LIBRARY_PATHS "./Lib/site-packages")
     string(APPEND EXTRA_PYTHON_LIBRARY_PATHS "\n./pytest")
     set(PYTHON_TEST_CONFIG_PTH_FILE "${PROJECT_BINARY_DIR}/configs/test/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth" )
     configure_file(${python_pth_template_file} ${PYTHON_TEST_CONFIG_PTH_FILE} @ONLY)
