@@ -434,7 +434,7 @@ pipenv virtual environments are located in pipenv/
         stage("Test CMake build") {
             agent {
                 node {
-                    label "Windows && VS2015 && DevPi"
+                    label "Windows && VS2015 && longfilenames"
                 }
             }
             // options {
