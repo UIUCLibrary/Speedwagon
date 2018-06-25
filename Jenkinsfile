@@ -435,7 +435,7 @@ pipenv virtual environments are located in pipenv/
                         dir("build"){
                             cmake arguments: "${WORKSPACE}/source", installation: 'cmake3.11.2', workingDir: 'build'
                             cmake arguments: "--build . --config Release", installation: 'cmake3.11.2', workingDir: 'build'
-                            cpack arguments: '-C Release -G WIX', installation: 'cmake3.11.2', workingDir: 'build'                            
+                            cpack arguments: '-C Release -G WIX', installation: 'cmake3.11.2'
                         }
                     }
                 }
