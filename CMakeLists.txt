@@ -56,7 +56,7 @@ macro(create_virtual_env)
     mark_as_advanced(VENV_PYTHON)
     if(VENV_PYTHON)
         execute_process(COMMAND ${VENV_PYTHON} -m pip install --upgrade pip)
-        execute_process(COMMAND ${VENV_PYTHON} -m pip install --upgrade setuptools)
+        execute_process(COMMAND ${VENV_PYTHON} -m pip install --upgrade setuptools wheel)
         set(VENV_PYTHON ${VENV_PYTHON} CACHE BOOL "Python Virtual environment for building.")
     endif(VENV_PYTHON)
     
