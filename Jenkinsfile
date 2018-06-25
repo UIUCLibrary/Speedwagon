@@ -417,14 +417,25 @@ pipenv virtual environments are located in pipenv/
                             dir("source/dist") {
                                 stash includes: "*.msi", name: "msi"
                                 archiveArtifacts artifacts: "*.msi", fingerprint: true
-                                
-
                             }
                         }
                         always {
                             archiveArtifacts artifacts: 'build_standalone.log'
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
-                            
+                        }
+                    }
+                }
+                stage("Windows CMake Standalone"){
+                    agent {
+                        node {
+                            label "Windows && VS2015 && longfilenames"
+                        }
+                    }
+                    steps {
+                        dir("build"){
+                            cmake arguments: '../source', installation: 'cmake3.11.2'
+                            cmake arguments: "--build . --config Release", installation: 'cmake3.11.2'
+                            cpack arguments: '-C Release -G WIX', installation: 'cmake3.11.2'                            
                         }
                     }
                 }
