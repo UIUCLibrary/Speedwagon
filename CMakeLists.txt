@@ -1,12 +1,14 @@
 cmake_minimum_required(VERSION 3.11)
-project(speedwagon LANGUAGES NONE
+project(Speedwagon
+LANGUAGES NONE
     VERSION 0.0.0)
 
 include(FetchContent)
-
 find_package(PythonInterp REQUIRED)
-message(STATUS "Using Python ${PYTHON_VERSION_STRING} located at \"${PYTHON_EXECUTABLE}\".")
 
+message(STATUS "Using Python ${PYTHON_VERSION_STRING} located at \"${PYTHON_EXECUTABLE}\".")
+option(speedwagon_CACHE_PYTHON_WHEEL_DEPENDENCIES "Cache python whl dependencies to a folder for reuse" ON)
+option(speedwagon_SYNC_PYTHON_BUILD_VENV "SYNC installed python packages in build virtual environment" ON)
 set(speedwagon_PythonDepsCache ${PROJECT_BINARY_DIR}/_deps/python_wheels CACHE PATH "location to put Python deps")
 set(speedwagon_venv_path ${PROJECT_BINARY_DIR}/venv CACHE PATH "Location for Python virtual environment needed for building")
 
@@ -36,7 +38,7 @@ function(get_python_version SETUP_PY)
                 list(GET PYTHON_PACKAGE_VERSION 2 py_patch)
                 set(${PYTHON_MAJOR} ${py_major} PARENT_SCOPE)
                 set(${PYTHON_MINOR} ${py_minor} PARENT_SCOPE)
-                set(${PYTHON_PATH} ${py_patch} PARENT_SCOPE)
+                set(${PYTHON_PATCH} ${py_patch} PARENT_SCOPE)
             endif()
 
     endif()
@@ -110,6 +112,16 @@ FetchContent_GetProperties(embedded_python)
 if (NOT embedded_python_POPULATED)
     message(STATUS "Fetching Embedded Distribution of Python version ${PYTHON_VERSION_STRING} for ${CMAKE_SYSTEM_PROCESSOR}.")
     FetchContent_Populate(embedded_python)
+
+    # Get pointer size. Used for CPack and deciding if the version of Python
+    # used is 32 bit or 64 bit
+    execute_process(
+        COMMAND python  -c "import struct;import sys;sys ;sys.exit(struct.calcsize('P'))"
+        WORKING_DIRECTORY embedded_python_SOURCE_DIR
+        RESULTS_VARIABLE  PYTHON_EMBEDDED_P_SIZE
+    )
+    set(CMAKE_SIZEOF_VOID_P ${PYTHON_EMBEDDED_P_SIZE})
+
     find_file(PYTHON_EMBEDDED_PTH_FILE
         NAMES python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth
         HINTS ${embedded_python_SOURCE_DIR}
@@ -121,7 +133,7 @@ if (NOT embedded_python_POPULATED)
     set(python_pth_template_file "${PROJECT_BINARY_DIR}/templates/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth.in")
     file(WRITE ${python_pth_template_file} ${PYTHON_EMBEDDED_PTH_DATA})
 
-    set(EXTRA_PYTHON_LIBRARY_PATHS "./Lib/site-packages")
+    set(EXTRA_PYTHON_LIBRARY_PATHS "../Lib/site-packages")
     set(PYTHON_INSTALL_CONFIG_PTH_FILE "${PROJECT_BINARY_DIR}/configs/install/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth")
     configure_file(${python_pth_template_file} ${PYTHON_INSTALL_CONFIG_PTH_FILE} @ONLY)
 
@@ -131,39 +143,40 @@ if (NOT embedded_python_POPULATED)
 
 endif()
 
-# message(FATAL_ERROR "REMOVE when done, ${PYTHON_EMBEDDED_PTH_FILE}.")
-
 # Set project Version number based on the metadata
 get_python_version(
     ${PROJECT_SOURCE_DIR}/setup.py
-    MAJOR PROJECT_VERSION_MAJOR
-    MINOR PROJECT_VERSION_MINOR
-    PATCH PROJECT_VERSION_PATCH
+    MAJOR CMAKE_PROJECT_VERSION_MAJOR
+    MINOR CMAKE_PROJECT_VERSION_MINOR
+    PATCH CMAKE_PROJECT_VERSION_PATCH
     VERSION PROJECT_VERSION
     )
 get_python_version(
     ${PROJECT_SOURCE_DIR}/setup.py
     MAJOR ${PROJECT_NAME}_VERSION_MAJOR
     MINOR ${PROJECT_NAME}_VERSION_MINOR
-    PATCH {PROJECT_NAME}_VERSION_PATCH
-    VERSION {PROJECT_NAME}_VERSION
+    PATCH ${PROJECT_NAME}_VERSION_PATCH
+    VERSION ${PROJECT_NAME}_VERSION
     )
-
 create_virtual_env()
 execute_process(COMMAND ${VENV_PYTHON} -m pip install wheel)
-create_dep_wheels(
-    PYTHON_EXE ${VENV_PYTHON}
-    REQUIREMENTS_FILES
-        ${PROJECT_SOURCE_DIR}/requirements.txt
-        ${PROJECT_SOURCE_DIR}/requirements-dev.txt
-    )
+if(speedwagon_CACHE_PYTHON_WHEEL_DEPENDENCIES)
+    create_dep_wheels(
+        PYTHON_EXE ${VENV_PYTHON}
+        REQUIREMENTS_FILES
+            ${PROJECT_SOURCE_DIR}/requirements.txt
+            ${PROJECT_SOURCE_DIR}/requirements-dev.txt
+        )
+endif()
 
-install_venv_deps(
-    PYTHON_EXE ${VENV_PYTHON}
-    REQUIREMENTS_FILES
-        ${PROJECT_SOURCE_DIR}/requirements-dev.txt
-        ${PROJECT_SOURCE_DIR}/requirements.txt
-)
+if(speedwagon_SYNC_PYTHON_BUILD_VENV)
+    install_venv_deps(
+        PYTHON_EXE ${VENV_PYTHON}
+        REQUIREMENTS_FILES
+            ${PROJECT_SOURCE_DIR}/requirements-dev.txt
+            ${PROJECT_SOURCE_DIR}/requirements.txt
+    )
+endif()
 
 add_custom_target(wheel
    DEPENDS ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py3-none-any.whl
@@ -190,6 +203,7 @@ add_custom_target(standalone
     DEPENDS ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages/speedwagon ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
     # COMMAND ${CMAKE_COMMAND} -E copy_directory ${embedded_python_SOURCE_DIR}/ ${PROJECT_BINARY_DIR}/standalone/
     )
+
 add_custom_command(
     OUTPUT
         ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages/speedwagon
@@ -202,12 +216,14 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
     )
     # set_property(DIRECTORY ${PROJECT_BINARY_DIR}/standalone PROPERTY ADDITIONAL_MAKE_CLEAN_FILES Lib)
 set(SPEEDWAGON_PYTHON_INTERP pythonw.exe)
+
 configure_file(templates/speedwagon.bat.in standalone/speedwagon.bat @ONLY)
 # install embedded Python to standalone build path
 add_custom_command(TARGET standalone PRE_BUILD 
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${embedded_python_SOURCE_DIR}/ ${PROJECT_BINARY_DIR}/standalone/
     )
-    
+
+configure_file(${PROJECT_SOURCE_DIR}/LICENSE ${PROJECT_BINARY_DIR}/LICENSE.txt)
 
 include(CTest)
 add_custom_command(TARGET standalone POST_BUILD
@@ -218,8 +234,20 @@ install(FILES ${PYTHON_INSTALL_CONFIG_PTH_FILE} DESTINATION bin)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/standalone/
     DESTINATION bin
     PATTERN "pytest" EXCLUDE
+    PATTERN "Lib" EXCLUDE
+    PATTERN "python.exe" EXCLUDE
+    PATTERN "pythonw.exe" EXCLUDE
     PATTERN "python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth" EXCLUDE
     )
+
+install(PROGRAMS ${PROJECT_BINARY_DIR}/standalone/python.exe ${PROJECT_BINARY_DIR}/standalone/pythonw.exe
+    DESTINATION bin
+    )
+
+install(DIRECTORY ${PROJECT_BINARY_DIR}/standalone/Lib/
+    DESTINATION Lib
+    )
+
 add_test(NAME unittests
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
     COMMAND python -m pytest ${PROJECT_SOURCE_DIR}/tests --rootdir=${PROJECT_BINARY_DIR}/standalone
@@ -227,17 +255,14 @@ add_test(NAME unittests
 
 set(CPACK_PACKAGE_VENDOR "University Library at The University of Illinois at Urbana Champaign: Preservation Services")
 set(CPACK_WIX_UPGRADE_GUID C81EC876-C4BD-11E7-9268-005056C00008)
-#message(FATAL_ERROR "CMAKE_SYSTEM_PROCESSOR = ${CMAKE_SYSTEM_PROCESSOR} AMD64")
-if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "AMD64")
-    set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
-#    set(CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_INSTALL_DIRECTORY} (Win64)")
-    set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${CPACK_PACKAGE_NAME} ${CPACK_PACKAGE_VERSION} (Win64)")
-else()
-    set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES")
-#    set(CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_INSTALL_DIRECTORY}")
-    set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${CPACK_PACKAGE_NAME} ${CPACK_PACKAGE_VERSION}")
-endif()
-set(CPACK_SYSTEM_NAME ${CMAKE_SYSTEM_PROCESSOR})
-set(CPACK_TOPLEVEL_TAG ${CMAKE_SYSTEM_PROCESSOR})
-set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
+set(CPACK_PACKAGE_VERSION_MAJOR ${CMAKE_PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${CMAKE_PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${CMAKE_PROJECT_VERSION_PATCH})
+set(CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/speedwagon/favicon.ico")
+set(CPACK_PACKAGE_NAME Speedwagon)
+set(CPACK_WIX_PROGRAM_MENU_FOLDER Speedwagon)
+set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_BINARY_DIR}/LICENSE.txt")
+set(CPACK_WIX_EXTRA_SOURCES ${PROJECT_BINARY_DIR}/configs/install/wix_start_menu.wxs)
+set(CPACK_WIX_PATCH_FILE ${PROJECT_SOURCE_DIR}/extra/patch.xml)
+configure_file(templates/wix_start_menu.wvs.in configs/install/wix_start_menu.wxs @ONLY)
 include(CPack)
