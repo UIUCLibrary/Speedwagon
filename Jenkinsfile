@@ -428,7 +428,7 @@ pipenv virtual environments are located in pipenv/
                 stage("Windows CMake Standalone"){
                     agent {
                         node {
-                            label "Windows && VS2015 && longfilenames"
+                            label "Windows && VS2015 && longfilenames && Wix"
                         }
                     }
                     steps {
