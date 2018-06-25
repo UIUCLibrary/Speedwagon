@@ -426,10 +426,14 @@ pipenv virtual environments are located in pipenv/
                     }
                 }
                 stage("Windows CMake Standalone"){
-                    steps { 
-                        cmake arguments: "${WORKSPACE}/source", installation: 'cmake3.11.2', workingDir: 'build'
-                        cmake arguments: "--build . --config Release", installation: 'cmake3.11.2', workingDir: 'build'
-                        cpack arguments: '-C Release -G WIX -V', installation: 'cmake3.11.2', workingDir: 'build'                            
+                    steps {
+                        dir("build") {
+                            cmake arguments: "${WORKSPACE}/source", installation: 'cmake3.11.2'
+                            cmake arguments: "--build . --config Release", installation: 'cmake3.11.2'
+                            cpack arguments: '-C Release -G WIX -V', installation: 'cmake3.11.2'
+
+
+                        }
                         
                     }
                 }
