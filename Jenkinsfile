@@ -436,6 +436,17 @@ pipenv virtual environments are located in pipenv/
                         }
                         
                     }
+                    post{
+                        failure {
+                            script{
+                                try{
+                                    def error_message = readFile("build/_CPack_Packages/win64/WIX/wix.log}")
+                                } catch (exc) {
+                                    echo "read the wix logs."
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
