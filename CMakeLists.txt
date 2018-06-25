@@ -158,6 +158,12 @@ get_python_version(
     PATCH ${PROJECT_NAME}_VERSION_PATCH
     VERSION ${PROJECT_NAME}_VERSION
     )
+# if build_number is set. make that the PROJECT_VERSION tweek
+if(DEFINED ENV{build_number})
+    set(CMAKE_PROJECT_VERSION_TWEAK $ENV{build_number})
+    set(${PROJECT_NAME}_VERSION_TWEAK $ENV{build_number})
+endif()
+
 create_virtual_env()
 execute_process(COMMAND ${VENV_PYTHON} -m pip install wheel)
 if(speedwagon_CACHE_PYTHON_WHEEL_DEPENDENCIES)
@@ -259,10 +265,17 @@ set(CPACK_PACKAGE_VERSION_MAJOR ${CMAKE_PROJECT_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${CMAKE_PROJECT_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${CMAKE_PROJECT_VERSION_PATCH})
 set(CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/speedwagon/favicon.ico")
+set(CPACK_WIX_PRODUCT_ICON "${PROJECT_SOURCE_DIR}/speedwagon/favicon.ico")
 set(CPACK_PACKAGE_NAME Speedwagon)
 set(CPACK_WIX_PROGRAM_MENU_FOLDER Speedwagon)
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_BINARY_DIR}/LICENSE.txt")
 set(CPACK_WIX_EXTRA_SOURCES ${PROJECT_BINARY_DIR}/configs/install/wix_start_menu.wxs)
 set(CPACK_WIX_PATCH_FILE ${PROJECT_SOURCE_DIR}/extra/patch.xml)
+
+if(DEFINED ENV{build_number})
+    string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} PROCESSOR_TYPE)
+    set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}-$ENV{build_number}-${PROCESSOR_TYPE})
+endif()
+
 configure_file(templates/wix_start_menu.wvs.in configs/install/wix_start_menu.wxs @ONLY)
 include(CPack)
