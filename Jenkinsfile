@@ -7,7 +7,7 @@ def version = "unknown"
 
 pipeline {
     agent {
-        label "Windows && Python3"
+        label "Windows && Python3 && longfilenames && Wix"
     }
     
     triggers {
@@ -426,13 +426,7 @@ pipenv virtual environments are located in pipenv/
                     }
                 }
                 stage("Windows CMake Standalone"){
-                    agent {
-                        node {
-                            label "Windows && VS2015 && longfilenames && Wix"
-                        }
-                    }
-                    steps {
-                        
+                    steps { 
                         cmake arguments: "${WORKSPACE}/source", installation: 'cmake3.11.2', workingDir: 'build'
                         cmake arguments: "--build . --config Release", installation: 'cmake3.11.2', workingDir: 'build'
                         cpack arguments: '-C Release -G WIX -V', installation: 'cmake3.11.2', workingDir: 'build'                            
