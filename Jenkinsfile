@@ -433,7 +433,7 @@ pipenv virtual environments are located in pipenv/
                     }
                     steps {
                         dir("build"){
-                            cmake arguments: '../source', installation: 'cmake3.11.2', workingDir: 'build'
+                            cmake arguments: "${WORKSPACE}/source", installation: 'cmake3.11.2', workingDir: 'build'
                             cmake arguments: "--build . --config Release", installation: 'cmake3.11.2', workingDir: 'build'
                             cpack arguments: '-C Release -G WIX', installation: 'cmake3.11.2', workingDir: 'build'                            
                         }
@@ -447,6 +447,10 @@ pipenv virtual environments are located in pipenv/
                 node {
                     label "Windows && VS2015 && longfilenames"
                 }
+            }
+            when {
+                not { changeRequest()}
+                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
             }
             // options {
             //     skipDefaultCheckout(true)
