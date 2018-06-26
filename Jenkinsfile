@@ -428,7 +428,7 @@ pipenv virtual environments are located in pipenv/
                 stage("Windows CMake Standalone"){
                     steps {
                         dir("build") {
-                            cmake arguments: "${WORKSPACE}/source", installation: 'cmake3.11.2'
+                            cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_CACHE_PYTHON_WHEEL_DEPENDENCIES=${WORKSPACE}/python_deps", installation: 'cmake3.11.2'
                             cmake arguments: "--build . --config Release", installation: 'cmake3.11.2'
                             cpack arguments: '-C Release -G WIX -V', installation: 'cmake3.11.2'
 
