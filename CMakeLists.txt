@@ -65,13 +65,14 @@ endmacro()
 
 function(install_venv_deps)
     cmake_parse_arguments(VENV "" "PYTHON_EXE" "REQUIREMENTS_FILES" ${ARGN})
+    message(STATUS "Installing Python dependencies to environment")
 
     foreach(requirements_file ${VENV_REQUIREMENTS_FILES})
         list(APPEND requirement_file_args "-r")
         list(APPEND requirement_file_args "${requirements_file}")
     endforeach()
     execute_process(COMMAND ${VENV_PYTHON_EXE} -m pip install ${requirement_file_args} --upgrade-strategy only-if-needed -f ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE})
-    message(STATUS "FINISHED installing venv deps")
+    message(STATUS "Installing Python dependencies to environment done")
 endfunction(install_venv_deps)
 
 function(create_dep_wheels)
