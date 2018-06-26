@@ -435,6 +435,7 @@ pipenv virtual environments are located in pipenv/
                     steps {
                         tee('build_standalone_cmake.log') {
                             dir("cmake_build") {
+                                bat "dir"
                                 cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
                                 // TODO: When upgrading to CMAKE 3.12 use the generic build parallel argument
                                 cmake arguments: "--build . --config Release -- /maxcpucount:${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
@@ -471,7 +472,7 @@ pipenv virtual environments are located in pipenv/
                         failure {
                             script{
                                 try{
-                                    def error_message = readFile("build/_CPack_Packages/win64/WIX/wix.log")
+                                    def error_message = readFile("cmake_build/_CPack_Packages/win64/WIX/wix.log")
                                     echo "${error_message}"
                                 } catch (exc) {
                                     echo "read the wix logs."
