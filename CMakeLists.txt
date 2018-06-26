@@ -11,6 +11,7 @@ option(SPEEDWAGON_CACHE_PYTHON_WHEEL_DEPENDENCIES "Cache python whl dependencies
 option(SPEEDWAGON_SYNC_PYTHON_BUILD_VENV "SYNC installed python packages in build virtual environment" ON)
 set(SPEEDWAGON_PYTHON_DEPENDENCY_CACHE ${PROJECT_BINARY_DIR}/_deps/python_wheels CACHE PATH "location to put Python deps")
 set(SPEEDWAGON_VENV_PATH ${PROJECT_BINARY_DIR}/venv CACHE PATH "Location for Python virtual environment needed for building")
+set(SPEEDWAGON_EXTRA_REQUIREMENTS_FILE "" CACHE FILEPATH "Extra requirements file to install to standalone build")
 
 function(get_python_version SETUP_PY)
     cmake_parse_arguments(PYTHON "" "VERSION;MAJOR;MINOR;PATCH" "" ${ARGN})
@@ -239,6 +240,16 @@ add_custom_command(
     DEPENDS wheel
     COMMAND ${VENV_PYTHON} -m pip install ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py3-none-any.whl -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
     )
+if(EXISTS ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE})
+    message(STATUS "Include dependencies in ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE} to build")
+    add_custom_command(
+    TARGET standalone POST_BUILD
+    COMMAND ${VENV_PYTHON} -m pip install -r ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE} -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
+    )
+else()
+    message(WARNING "Unable to located SPEEDWAGON_EXTRA_REQUIREMENTS_FILE value \"${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE}\"")
+endif()
+
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
     DEPENDS wheel
     COMMAND ${VENV_PYTHON} -m pip install pytest -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
