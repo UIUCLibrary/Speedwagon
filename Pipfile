@@ -1,25 +1,19 @@
 [[source]]
-
 url = "https://devpi.library.illinois.edu/root/pypi/+simple/"
 verify_ssl = true
 name = "devpi"
 
 [[source]]
-
 url = "https://devpi.library.illinois.edu/production/release/+simple/"
 verify_ssl = true
 name = "uiuclibrary"
 
-
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [packages]
-
 "pyqt5" = "*"
 pyqt-distutils = "*"
 hathizip = ">=0.1.3"
@@ -29,10 +23,9 @@ hathichecksumupdater = "*"
 uiucprescon-packager = {version = ">=0.2.1", extras = ['kdu']}
 uiucprescon-getmarc = "*"
 setuptools = ">=30.3.0"
-
+pykdu-compress = "*"
 
 [dev-packages]
-
 mypy = "*"
 sphinx = "*"
 pytest = "*"
@@ -43,10 +36,7 @@ behave = "*"
 "flake8" = "*"
 tox = "*"
 lxml = "*"
-wheel = ">=0.31.0"
 pyqt-distutils = "*"
 
-
 [pipenv]
-
 allow_prereleases = true
