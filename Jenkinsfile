@@ -439,7 +439,7 @@ pipenv virtual environments are located in pipenv/
                                 cpack arguments: '-C Release -G WIX -V', installation: 'cmake3.11.2'
                                 script {
                                     def msi_files = findFiles glob: '*.msi'
-                                    echo "installer ${installer}"
+                                    echo "installer ${msi_files}"
                                     msi_files.each { msi_file ->
                                         echo "msi_file = ${msi_file}"
                                     }
