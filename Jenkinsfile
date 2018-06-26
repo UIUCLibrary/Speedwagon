@@ -429,6 +429,12 @@ pipenv virtual environments are located in pipenv/
                 //     }
                 // }
                 stage("Windows Standalone"){
+                    agent {
+                        node {
+                            label "Windows && Python3 && longfilenames && Wix"
+                            customWorkspace "c:/Jenkins/temp/${JOB_NAME}"
+                        }
+                    }
                     options{
                         retry(2)
                     }
