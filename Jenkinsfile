@@ -434,6 +434,10 @@ pipenv virtual environments are located in pipenv/
                                 cmake arguments: "--build . --config Release -- /maxcpucount:${NUMBER_OF_PROCESSORS}", installation: 'cmake3.11.2'
                                 ctest arguments: '-C Release --output-on-failure', installation: 'cmake3.11.2'
                                 cpack arguments: '-C Release -G WIX -V', installation: 'cmake3.11.2'
+                                script {
+                                    def installer = findFiles glob: '*.msi'
+                                    echo "installer ${installer}"
+                                }
                             }
                         }
                     }
