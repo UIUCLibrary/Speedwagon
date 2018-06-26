@@ -97,7 +97,9 @@ pipeline {
                     bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
                 }
                 bat "${tool 'CPython-3.6'} -m pip --version"
-                                
+                dir("python_deps"){
+                    bat "dir"
+                }
                 dir("source") {
                     stash includes: 'deployment.yml', name: "Deployment"
                     script {
