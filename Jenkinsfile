@@ -463,6 +463,9 @@ pipenv virtual environments are located in pipenv/
                             archiveArtifacts artifacts: 'build_standalone_cmake.log', allowEmptyArchive: true
                             dir("cmake_build") {
                                 bat "dir"
+                                dir("Testing"){
+                                    bat "dir"
+                                }
                                 archiveArtifacts 'Testing/**/Test.xml'
                             }
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone_cmake.log']]
