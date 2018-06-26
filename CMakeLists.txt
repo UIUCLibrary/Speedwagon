@@ -240,21 +240,25 @@ add_custom_command(
     DEPENDS wheel
     COMMAND ${VENV_PYTHON} -m pip install ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py3-none-any.whl -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
     )
-if(EXISTS ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE})
-    message(STATUS "Include dependencies in ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE} to build")
-    add_custom_command(
-    TARGET standalone POST_BUILD
-    COMMAND ${VENV_PYTHON} -m pip install -r ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE} -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
-    )
-else()
-    message(WARNING "Unable to located SPEEDWAGON_EXTRA_REQUIREMENTS_FILE value \"${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE}\"")
-endif()
+
+# If an extra requirements file is requested to be installed, include them in
+# the build
+if(SPEEDWAGON_EXTRA_REQUIREMENTS_FILE)
+    if(EXISTS ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE})
+        message(STATUS "Include dependencies in ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE} to build")
+        add_custom_command(
+        TARGET standalone POST_BUILD
+        COMMAND ${VENV_PYTHON} -m pip install -r ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE} -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
+        )
+    else()
+        message(WARNING "Unable to located SPEEDWAGON_EXTRA_REQUIREMENTS_FILE value \"${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE}\"")
+    endif()
+endif(SPEEDWAGON_EXTRA_REQUIREMENTS_FILE)
 
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
     DEPENDS wheel
     COMMAND ${VENV_PYTHON} -m pip install pytest -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
     )
-    # set_property(DIRECTORY ${PROJECT_BINARY_DIR}/standalone PROPERTY ADDITIONAL_MAKE_CLEAN_FILES Lib)
 set(SPEEDWAGON_PYTHON_INTERP pythonw.exe)
 
 configure_file(templates/speedwagon.bat.in standalone/speedwagon.bat @ONLY)
