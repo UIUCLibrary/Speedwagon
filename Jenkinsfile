@@ -439,7 +439,7 @@ pipenv virtual environments are located in pipenv/
                                 cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
                                 // TODO: When upgrading to CMAKE 3.12 use the generic build parallel argument
                                 cmake arguments: "--build . --config Release -- /maxcpucount:${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
-                                ctest arguments: '-C Release --output-on-failure', installation: "${CMAKE_VERSION}"
+                                ctest arguments: '-C Release --output-on-failure -C Release --no-compress-output -T test', installation: "${CMAKE_VERSION}"
                                 cpack arguments: '-C Release -G WIX -V', installation: "${CMAKE_VERSION}"
                                 script {
                                     def msi_files = findFiles glob: '*.msi'
