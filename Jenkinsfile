@@ -420,17 +420,19 @@ pipenv virtual environments are located in pipenv/
                             }
                         }
                         always {
-                            archiveArtifacts artifacts: 'build_standalone.log'
+                            archiveArtifacts artifacts: 'build_standalone.log', allowEmptyArchive: true
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
                         }
                     }
                 }
                 stage("Windows CMake Standalone"){
                     steps {
-                        dir("build") {
-                            cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: 'cmake3.11.2'
-                            cmake arguments: "--build . --config Release", installation: 'cmake3.11.2'
-                            cpack arguments: '-C Release -G WIX -V', installation: 'cmake3.11.2'
+                        tee('build_standalone_cmake.log') {
+                            dir("build") {
+                                cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: 'cmake3.11.2'
+                                cmake arguments: "--build . --config Release", installation: 'cmake3.11.2'
+                                cpack arguments: '-C Release -G WIX -V', installation: 'cmake3.11.2'
+                            }
                         }
                         
                     }
@@ -441,6 +443,10 @@ pipenv virtual environments are located in pipenv/
                                 bat "del *.msi"
                             }
                             
+                        }
+                        always {
+                            archiveArtifacts artifacts: 'build_standalone_cmake.log', allowEmptyArchive: true
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone_cmake.log']]
                         }
                         success {
                             dir("build") {
