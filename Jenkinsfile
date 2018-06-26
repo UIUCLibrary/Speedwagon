@@ -430,7 +430,8 @@ pipenv virtual environments are located in pipenv/
                         tee('build_standalone_cmake.log') {
                             dir("build") {
                                 cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: 'cmake3.11.2'
-                                cmake arguments: "--build . --config Release", installation: 'cmake3.11.2'
+                                // TODO: When upgrading to CMAKE 3.12 use the generic build parallel argument
+                                cmake arguments: "--build . --config Release -- /maxcpucount:${NUMBER_OF_PROCESSORS}", installation: 'cmake3.11.2'
                                 ctest arguments: '-C Release --output-on-failure', installation: 'cmake3.11.2'
                                 cpack arguments: '-C Release -G WIX -V', installation: 'cmake3.11.2'
                             }
