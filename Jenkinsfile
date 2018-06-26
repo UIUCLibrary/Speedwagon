@@ -4,10 +4,11 @@ import org.ds.*
 
 def name = "unknown"
 def version = "unknown"
+def CMAKE_VERSION = "cmake3.11.2"
 
 pipeline {
     agent {
-        label "Windows && Python3"
+        label "Windows && Python3 && longfilenames && Wix"
     }
     
     triggers {
@@ -96,7 +97,9 @@ pipeline {
                     bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
                 }
                 bat "${tool 'CPython-3.6'} -m pip --version"
-                                
+                dir("python_deps"){
+                    bat "dir"
+                }
                 dir("source") {
                     stash includes: 'deployment.yml', name: "Deployment"
                     script {
@@ -347,91 +350,205 @@ pipenv virtual environments are located in pipenv/
                         }
                     }
                 }
+                // stage("Windows Standalone"){
+                //     agent {
+                //         node {
+                //             label "Windows && VS2015 && DevPi"
+                //         }
+                //     }
+                //     environment {
+                //         VSCMD_START_DIR = "${env.WORKSPACE}"
+                //         PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\cache\\"
+                //         // PIPENV_VENV_IN_PROJECT="True"
+                //         WORKON_HOME ="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}"
+                //         // PIPENV_CACHE_DIR="${USERPROFILE}\\.virtualenvs\\cache\\"
+                //         // WORKON_HOME = "./venv"
+                //     }
+                //     // PACKAGE_WINDOWS_STANDALONE
+                //     when {
+                //         not { changeRequest()}
+                //         equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
+                //     }
+                //     steps {
+
+                //         script{
+                //             lock("system_python_${NODE_NAME}"){
+                //                 def powershell_command = "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
+                //                 echo "${powershell_command}"
+                //                 powershell "${powershell_command}"
+
+                //             }
+                //         }
+                //         bat "${tool 'CPython-3.6'} -m venv venv"
+
+                //         script{
+                //             try{
+                //                 bat "${WORKSPACE}\\venv\\Scripts\\python.exe -m pip install -U pip"
+                //             } catch (exc) {
+                //                 bat "${WORKSPACE}\\venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
+                //             }
+                //         }
+
+                //         tee('build_standalone.log') {
+                //             dir("source"){
+                //                 bat script: "${tool 'CPython-3.6'} -m pipenv lock -r"
+                //                 bat script: "${tool 'CPython-3.6'} -m pipenv lock -r > requirements.txt"
+                //                 bat script: "${tool 'CPython-3.6'} -m pipenv lock -rd > requirements-dev.txt"
+
+                //                 // bat "venv\\Scripts\\python.exe -m pip install -U pip"
+                //                 bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -U setuptools>=30.3.0"
+                //                 bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -r requirements-dev.txt"
+                //                 script{
+                //                     def requirements = readFile 'requirements.txt'
+                //                     writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"
+                //                     // def python_path = powershell returnStdout: true, script: 'pipenv --py'.trim()
+                //                     // def python_path = "python.exe"
+                //                     // echo "python_path = ${python_path}"
+                //                     bat "mkdir build"
+                //                     // powershell "windows_build\\build.ps1 -python_path ${WORKSPACE}\\venv\\Scripts\\python.exe"
+                //                     powershell "windows_build\\build.ps1 -PYTHON_HOME ${WORKSPACE}\\venv"
+                //                 }
+                //             }
+                //         }
+                //     }
+                //     post {
+                //         failure {
+                //             bat "pipenv uninstall --all"
+                //             bat "pipenv run pipenv-resolver --clear"
+                //         }
+                //         success {
+                //             dir("source/dist") {
+                //                 stash includes: "*.msi", name: "msi"
+                //                 archiveArtifacts artifacts: "*.msi", fingerprint: true
+                //             }
+                //         }
+                //         always {
+                //             archiveArtifacts artifacts: 'build_standalone.log', allowEmptyArchive: true
+                //             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
+                //         }
+                //     }
+                // }
                 stage("Windows Standalone"){
                     agent {
                         node {
-                            label "Windows && VS2015"
+                            label "Windows && Python3 && longfilenames && Wix"
+                            customWorkspace "c:/Jenkins/temp/${JOB_NAME}"
                         }
                     }
-                    environment {
-                        VSCMD_START_DIR = "${env.WORKSPACE}"
-                        PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\cache\\"
-                        // PIPENV_VENV_IN_PROJECT="True"
-                        WORKON_HOME ="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}"
-                        // PIPENV_CACHE_DIR="${USERPROFILE}\\.virtualenvs\\cache\\"
-                        // WORKON_HOME = "./venv"
-                    }
-                    // PACKAGE_WINDOWS_STANDALONE
-                    when {
-                        not { changeRequest()}
-                        equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
+                    options{
+                        retry(2)
                     }
                     steps {
-                        
-                        script{
-                            lock("system_python_${NODE_NAME}"){
-                                def powershell_command = "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
-                                echo "${powershell_command}"
-                                powershell "${powershell_command}"
-                                
-                            }                        
-                        }                        
-                        bat "${tool 'CPython-3.6'} -m venv venv"
+                        tee('build_standalone_cmake.log') {
+                            dir("cmake_build") {
+                                bat "dir"
+                                cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
+                                // TODO: When upgrading to CMAKE 3.12 use the generic build parallel argument
+                                cmake arguments: "--build . --config Release -- /maxcpucount:${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
+                                ctest arguments: '-C Release --output-on-failure -C Release --no-compress-output -T test', installation: "${CMAKE_VERSION}"
+                                cpack arguments: '-C Release -G WIX -V', installation: "${CMAKE_VERSION}"
+                                script {
+                                    def msi_files = findFiles glob: '*.msi'
+                                    msi_files.each { msi_file ->
+                                        echo "Found ${msi_file}"
+                                        archiveArtifacts artifacts: "${msi_file}", fingerprint: true
+                                    }
 
-                        script{
-                            try{
-                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe -m pip install -U pip"
-                            } catch (exc) {
-                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
-                            }
-                        }
-                        
-                        tee('build_standalone.log') {
-                            dir("source"){
-                                bat script: "${tool 'CPython-3.6'} -m pipenv lock -r"
-                                bat script: "${tool 'CPython-3.6'} -m pipenv lock -r > requirements.txt"
-                                bat script: "${tool 'CPython-3.6'} -m pipenv lock -rd > requirements-dev.txt"
-                                
-                                // bat "venv\\Scripts\\python.exe -m pip install -U pip"
-                                bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -U setuptools>=30.3.0"
-                                bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -r requirements-dev.txt"
-                                script{
-                                    def requirements = readFile 'requirements.txt'
-                                    writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"                       
-                                    // def python_path = powershell returnStdout: true, script: 'pipenv --py'.trim()
-                                    // def python_path = "python.exe"
-                                    // echo "python_path = ${python_path}"
-                                    bat "mkdir build"
-                                    // powershell "windows_build\\build.ps1 -python_path ${WORKSPACE}\\venv\\Scripts\\python.exe"
-                                    powershell "windows_build\\build.ps1 -PYTHON_HOME ${WORKSPACE}\\venv"
                                 }
                             }
                         }
                     }
-                    post {
-                        failure {
-                            bat "pipenv uninstall --all"
-                            bat "pipenv run pipenv-resolver --clear"
-                        }
-                        success {
-                            dir("source/dist") {
-                                stash includes: "*.msi", name: "msi"
-                                archiveArtifacts artifacts: "*.msi", fingerprint: true
-                                
-
+                    post{
+                        cleanup{
+                            dir("cmake_build"){
+                                bat "del *.msi"
+                                 script {
+                                    def ctest_results = findFiles glob: 'Testing/**/Test.xml'
+                                    ctest_results.each{ ctest_result ->
+                                        echo "Found ${ctest_result}"
+                                        archiveArtifacts artifacts: "${ctest_result}", fingerprint: true
+                                        bat "del ${ctest_result}"
+                                    }
+                                 }
                             }
+
                         }
                         always {
-                            archiveArtifacts artifacts: 'build_standalone.log'
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
-                            
+                            script {
+                                def wix_logs = findFiles glob: "**/wix.log"
+                                wix_logs.each { wix_log ->
+                                    archiveArtifacts artifacts: "${wix_log}" 
+                                }
+                            }
+                            archiveArtifacts artifacts: 'build_standalone_cmake.log', allowEmptyArchive: true
+                            dir("cmake_build") {
+                                archiveArtifacts 'Testing/**/Test.xml'
+                                xunit testTimeMargin: '3000',
+                                    thresholdMode: 1,
+                                    thresholds: [
+                                        failed(),
+                                        skipped()
+                                    ],
+                                    tools: [
+                                        CTest(
+                                            deleteOutputFiles: true,
+                                            failIfNotNew: true,
+                                            pattern: 'Testing/**/Test.xml',
+                                            skipNoTestFiles: false,
+                                            stopProcessingIfError: true
+                                            )
+                                        ]
+                                        
+                            }
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone_cmake.log']]
+                        }
+                        success {
+                            dir("cmake_build") {
+                                stash includes: "*.msi", name: "msi"
+                            }
+                        }
+                        failure {
+                            script{
+                                try{
+                                    def wix_logs = findFiles glob: "**/wix.log"
+                                    wix_logs.each { wix_log ->
+                                        def error_message = readFile("${wix_log}")
+                                        echo "${error_message}"
+                                    }
+                                    // def error_message = readFile("cmake_build/_CPack_Packages/win64/WIX/wix.log")
+                                    // echo "${error_message}"
+                                } catch (exc) {
+                                    echo "read the wix logs."
+                                }
+                                dir("cmake_build"){
+                                    cmake arguments: "--build . --target clean", installation: "${CMAKE_VERSION}"
+                                }
+                            }
                         }
                     }
                 }
             }
 
         }
-
+        // stage("Test CMake build") {
+        //     agent {
+        //         node {
+        //             label "Windows && VS2015 && longfilenames"
+        //         }
+        //     }
+        //     when {
+        //         not { changeRequest()}
+        //         equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
+        //     }
+        //     // options {
+        //     //     skipDefaultCheckout(true)
+        //     // }
+        //     steps {
+        //         dir("source"){
+        //             ctest arguments: "-S ci/build_standalone.cmake -DCTEST_CMAKE_GENERATOR=\"Visual Studio 14 2015 Win64\" -VV", installation: "${CMAKE_VERSION}"
+        //         }
+        //     }
+        // }
         stage("Deploy to Devpi Staging") {
             // when {
             //     expression { params.DEPLOY_DEVPI == true && (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev")}

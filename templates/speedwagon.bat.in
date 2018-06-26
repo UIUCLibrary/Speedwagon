@@ -1,0 +1,2 @@
+@echo off
+@SPEEDWAGON_PYTHON_INTERP@ -m speedwagon
