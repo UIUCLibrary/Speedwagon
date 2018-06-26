@@ -456,6 +456,14 @@ pipenv virtual environments are located in pipenv/
                         cleanup{
                             dir("cmake_build"){
                                 bat "del *.msi"
+                                 script {
+                                    def ctest_results = findFiles glob: 'Testing/**/Test.xml'
+                                    ctest_results.each{ ctest_result ->
+                                        echo "Found ${ctest_result}"
+                                        archiveArtifacts artifacts: "${ctest_result}", fingerprint: true
+                                        bat "del ${ctest_result}"
+                                    }
+                                 }
                             }
 
                         }
