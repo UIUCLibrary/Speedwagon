@@ -437,7 +437,7 @@ pipenv virtual environments are located in pipenv/
                     post{
                         cleanup{
                             dir("build"){
-                                cmake arguments: "--build . --clean", installation: 'cmake3.11.2'
+                                cmake arguments: "--build . --target clean", installation: 'cmake3.11.2'
                                 bat "del *.msi"
                             }
                             
