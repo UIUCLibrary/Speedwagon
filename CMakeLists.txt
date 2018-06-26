@@ -91,8 +91,9 @@ function(create_dep_wheels)
         list(APPEND requirement_file_args "-r")
         list(APPEND requirement_file_args "${requirements_file}")
     endforeach()
-    message(STATUS "Syncing Python dependency .whl cache")
+
     if(requirement_file_args)
+        message(STATUS "Syncing Python dependency .whl cache")
         execute_process(
             COMMAND ${VENV_PYTHON_EXE} -m pip wheel ${requirement_file_args} --wheel-dir ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE} -f ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
             )
