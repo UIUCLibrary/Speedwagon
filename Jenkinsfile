@@ -4,6 +4,7 @@ import org.ds.*
 
 def name = "unknown"
 def version = "unknown"
+def CMAKE_VERSION = "cmake3.11.2"
 
 pipeline {
     agent {
@@ -432,11 +433,11 @@ pipenv virtual environments are located in pipenv/
                     steps {
                         tee('build_standalone_cmake.log') {
                             dir("build") {
-                                cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: 'cmake3.11.2'
+                                cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
                                 // TODO: When upgrading to CMAKE 3.12 use the generic build parallel argument
-                                cmake arguments: "--build . --config Release -- /maxcpucount:${NUMBER_OF_PROCESSORS}", installation: 'cmake3.11.2'
-                                ctest arguments: '-C Release --output-on-failure', installation: 'cmake3.11.2'
-                                cpack arguments: '-C Release -G WIX -V', installation: 'cmake3.11.2'
+                                cmake arguments: "--build . --config Release -- /maxcpucount:${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
+                                ctest arguments: '-C Release --output-on-failure', installation: "${CMAKE_VERSION}"
+                                cpack arguments: '-C Release -G WIX -V', installation: "${CMAKE_VERSION}"
                                 script {
                                     def msi_files = findFiles glob: '*.msi'
                                     msi_files.each { msi_file ->
@@ -474,7 +475,7 @@ pipenv virtual environments are located in pipenv/
                                     echo "read the wix logs."
                                 }
                                 dir("build"){
-                                    cmake arguments: "--build . --target clean", installation: 'cmake3.11.2'
+                                    cmake arguments: "--build . --target clean", installation: "${CMAKE_VERSION}"
                                 }
                             }
                         }
@@ -498,7 +499,7 @@ pipenv virtual environments are located in pipenv/
         //     // }
         //     steps {
         //         dir("source"){
-        //             ctest arguments: "-S ci/build_standalone.cmake -DCTEST_CMAKE_GENERATOR=\"Visual Studio 14 2015 Win64\" -VV", installation: 'cmake3.11.2'                    
+        //             ctest arguments: "-S ci/build_standalone.cmake -DCTEST_CMAKE_GENERATOR=\"Visual Studio 14 2015 Win64\" -VV", installation: "${CMAKE_VERSION}"
         //         }
         //     }
         // }
