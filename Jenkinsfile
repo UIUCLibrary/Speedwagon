@@ -469,7 +469,7 @@ pipenv virtual environments are located in pipenv/
                         }
                         always {
                             script {
-                                def wix_log = findFiles glob: "wix.log"
+                                def wix_log = findFiles glob: "**/wix.log"
                                 echo "wix_log = ${wix_log}"
                             }
                             archiveArtifacts artifacts: 'build_standalone_cmake.log', allowEmptyArchive: true
