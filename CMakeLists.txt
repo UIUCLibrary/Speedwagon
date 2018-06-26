@@ -79,11 +79,26 @@ function(create_dep_wheels)
     cmake_parse_arguments(VENV "" "PYTHON_EXE" "REQUIREMENTS_FILES" ${ARGN})
 
     foreach(requirements_file ${VENV_REQUIREMENTS_FILES})
+        # Create a hash of the requirements file and update cache if
+        # the requirements file has changed
+        file(SHA1 ${requirements_file} file_hash)
+        if("${file_hash}" STREQUAL "${${requirements_file}_hash}")
+            message(STATUS "No changed detected from ${requirements_file}")
+            continue()
+        else()
+            set(${requirements_file}_hash ${file_hash} CACHE INTERNAL "SHA1 hash for ${requirements_file}")
+        endif()
         list(APPEND requirement_file_args "-r")
         list(APPEND requirement_file_args "${requirements_file}")
     endforeach()
     message(STATUS "Syncing Python dependency .whl cache")
-    execute_process(COMMAND ${VENV_PYTHON_EXE} -m pip wheel ${requirement_file_args} --wheel-dir ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE} -f ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE} --quiet)
+    if(requirement_file_args)
+        execute_process(
+            COMMAND ${VENV_PYTHON_EXE} -m pip wheel ${requirement_file_args} --wheel-dir ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE} -f ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
+            )
+        else()
+            message(STATUS "Python dependency .whl cache already up to date")
+    endif()
 endfunction(create_dep_wheels)
 
 function(get_embedded_python_url)
@@ -168,6 +183,11 @@ endif()
 
 create_virtual_env()
 execute_process(COMMAND ${VENV_PYTHON} -m pip install wheel)
+#set_property(DIRECTORY PROPERTY CMAKE_CONFIGURE_DEPENDS "requirements.txt;requirements-dev.txt")
+
+#file(TIMESTAMP ${PROJECT_SOURCE_DIR}/requirements.txt requirements_TS)
+#message(FATAL_ERROR "requirements_TS = ${requirements_TS}")
+
 if(SPEEDWAGON_CACHE_PYTHON_WHEEL_DEPENDENCIES)
     create_dep_wheels(
         PYTHON_EXE ${VENV_PYTHON}
@@ -269,6 +289,7 @@ set(CPACK_PACKAGE_VERSION_PATCH ${CMAKE_PROJECT_VERSION_PATCH})
 set(CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/speedwagon/favicon.ico")
 set(CPACK_WIX_PRODUCT_ICON "${PROJECT_SOURCE_DIR}/speedwagon/favicon.ico")
 set(CPACK_PACKAGE_NAME Speedwagon)
+set(CPACK_PACKAGE_INSTALL_DIRECTORY Speedwagon)
 set(CPACK_WIX_PROGRAM_MENU_FOLDER Speedwagon)
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_BINARY_DIR}/LICENSE.txt")
 set(CPACK_WIX_EXTRA_SOURCES ${PROJECT_BINARY_DIR}/configs/install/wix_start_menu.wxs)
