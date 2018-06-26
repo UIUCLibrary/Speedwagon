@@ -7,8 +7,8 @@ include(FetchContent)
 find_package(PythonInterp REQUIRED)
 
 message(STATUS "Using Python ${PYTHON_VERSION_STRING} located at \"${PYTHON_EXECUTABLE}\".")
-option(speedwagon_CACHE_PYTHON_WHEEL_DEPENDENCIES "Cache python whl dependencies to a folder for reuse" ON)
-option(speedwagon_SYNC_PYTHON_BUILD_VENV "SYNC installed python packages in build virtual environment" ON)
+option(SPEEDWAGON_CACHE_PYTHON_WHEEL_DEPENDENCIES "Cache python whl dependencies to a folder for reuse" ON)
+option(SPEEDWAGON_SYNC_PYTHON_BUILD_VENV "SYNC installed python packages in build virtual environment" ON)
 set(speedwagon_PythonDepsCache ${PROJECT_BINARY_DIR}/_deps/python_wheels CACHE PATH "location to put Python deps")
 set(speedwagon_venv_path ${PROJECT_BINARY_DIR}/venv CACHE PATH "Location for Python virtual environment needed for building")
 
@@ -167,7 +167,7 @@ endif()
 
 create_virtual_env()
 execute_process(COMMAND ${VENV_PYTHON} -m pip install wheel)
-if(speedwagon_CACHE_PYTHON_WHEEL_DEPENDENCIES)
+if(SPEEDWAGON_CACHE_PYTHON_WHEEL_DEPENDENCIES)
     create_dep_wheels(
         PYTHON_EXE ${VENV_PYTHON}
         REQUIREMENTS_FILES
@@ -176,7 +176,7 @@ if(speedwagon_CACHE_PYTHON_WHEEL_DEPENDENCIES)
         )
 endif()
 
-if(speedwagon_SYNC_PYTHON_BUILD_VENV)
+if(SPEEDWAGON_SYNC_PYTHON_BUILD_VENV)
     install_venv_deps(
         PYTHON_EXE ${VENV_PYTHON}
         REQUIREMENTS_FILES
@@ -215,11 +215,11 @@ add_custom_command(
     OUTPUT
         ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages/speedwagon
     DEPENDS wheel
-    COMMAND ${VENV_PYTHON} -m pip install ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py3-none-any.whl -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${speedwagon_PythonDepsCache}
+    COMMAND ${VENV_PYTHON} -m pip install ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py3-none-any.whl -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHONDEPENDENCYCACHE}
     )
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
     DEPENDS wheel
-    COMMAND ${VENV_PYTHON} -m pip install pytest -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${speedwagon_PythonDepsCache}
+    COMMAND ${VENV_PYTHON} -m pip install pytest -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${SPEEDWAGON_PYTHONDEPENDENCYCACHE}
     )
     # set_property(DIRECTORY ${PROJECT_BINARY_DIR}/standalone PROPERTY ADDITIONAL_MAKE_CLEAN_FILES Lib)
 set(SPEEDWAGON_PYTHON_INTERP pythonw.exe)
