@@ -469,8 +469,10 @@ pipenv virtual environments are located in pipenv/
                         }
                         always {
                             script {
-                                def wix_log = findFiles glob: "**/wix.log"
-                                echo "wix_log = ${wix_log}"
+                                def wix_logs = findFiles glob: "**/wix.log"
+                                wix_logs.each { wix_log ->
+                                    archiveArtifacts artifacts: "${wix_log}" 
+                                }
                             }
                             archiveArtifacts artifacts: 'build_standalone_cmake.log', allowEmptyArchive: true
                             dir("cmake_build") {
@@ -502,9 +504,13 @@ pipenv virtual environments are located in pipenv/
                         failure {
                             script{
                                 try{
-                                    
-                                    def error_message = readFile("cmake_build/_CPack_Packages/win64/WIX/wix.log")
-                                    echo "${error_message}"
+                                    def wix_logs = findFiles glob: "**/wix.log"
+                                    wix_logs.each { wix_log ->
+                                        def error_message = readFile("${wix_log}")
+                                        echo "${error_message}"
+                                    }
+                                    // def error_message = readFile("cmake_build/_CPack_Packages/win64/WIX/wix.log")
+                                    // echo "${error_message}"
                                 } catch (exc) {
                                     echo "read the wix logs."
                                 }
