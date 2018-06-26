@@ -347,85 +347,85 @@ pipenv virtual environments are located in pipenv/
                         }
                     }
                 }
-                stage("Windows Standalone"){
-                    agent {
-                        node {
-                            label "Windows && VS2015 && DevPi"
-                        }
-                    }
-                    environment {
-                        VSCMD_START_DIR = "${env.WORKSPACE}"
-                        PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\cache\\"
-                        // PIPENV_VENV_IN_PROJECT="True"
-                        WORKON_HOME ="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}"
-                        // PIPENV_CACHE_DIR="${USERPROFILE}\\.virtualenvs\\cache\\"
-                        // WORKON_HOME = "./venv"
-                    }
-                    // PACKAGE_WINDOWS_STANDALONE
-                    when {
-                        not { changeRequest()}
-                        equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
-                    }
-                    steps {
+                // stage("Windows Standalone"){
+                //     agent {
+                //         node {
+                //             label "Windows && VS2015 && DevPi"
+                //         }
+                //     }
+                //     environment {
+                //         VSCMD_START_DIR = "${env.WORKSPACE}"
+                //         PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\cache\\"
+                //         // PIPENV_VENV_IN_PROJECT="True"
+                //         WORKON_HOME ="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}"
+                //         // PIPENV_CACHE_DIR="${USERPROFILE}\\.virtualenvs\\cache\\"
+                //         // WORKON_HOME = "./venv"
+                //     }
+                //     // PACKAGE_WINDOWS_STANDALONE
+                //     when {
+                //         not { changeRequest()}
+                //         equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
+                //     }
+                //     steps {
                         
-                        script{
-                            lock("system_python_${NODE_NAME}"){
-                                def powershell_command = "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
-                                echo "${powershell_command}"
-                                powershell "${powershell_command}"
+                //         script{
+                //             lock("system_python_${NODE_NAME}"){
+                //                 def powershell_command = "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
+                //                 echo "${powershell_command}"
+                //                 powershell "${powershell_command}"
                                 
-                            }                        
-                        }                        
-                        bat "${tool 'CPython-3.6'} -m venv venv"
+                //             }                        
+                //         }                        
+                //         bat "${tool 'CPython-3.6'} -m venv venv"
 
-                        script{
-                            try{
-                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe -m pip install -U pip"
-                            } catch (exc) {
-                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
-                            }
-                        }
+                //         script{
+                //             try{
+                //                 bat "${WORKSPACE}\\venv\\Scripts\\python.exe -m pip install -U pip"
+                //             } catch (exc) {
+                //                 bat "${WORKSPACE}\\venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
+                //             }
+                //         }
                         
-                        tee('build_standalone.log') {
-                            dir("source"){
-                                bat script: "${tool 'CPython-3.6'} -m pipenv lock -r"
-                                bat script: "${tool 'CPython-3.6'} -m pipenv lock -r > requirements.txt"
-                                bat script: "${tool 'CPython-3.6'} -m pipenv lock -rd > requirements-dev.txt"
+                //         tee('build_standalone.log') {
+                //             dir("source"){
+                //                 bat script: "${tool 'CPython-3.6'} -m pipenv lock -r"
+                //                 bat script: "${tool 'CPython-3.6'} -m pipenv lock -r > requirements.txt"
+                //                 bat script: "${tool 'CPython-3.6'} -m pipenv lock -rd > requirements-dev.txt"
                                 
-                                // bat "venv\\Scripts\\python.exe -m pip install -U pip"
-                                bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -U setuptools>=30.3.0"
-                                bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -r requirements-dev.txt"
-                                script{
-                                    def requirements = readFile 'requirements.txt'
-                                    writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"                       
-                                    // def python_path = powershell returnStdout: true, script: 'pipenv --py'.trim()
-                                    // def python_path = "python.exe"
-                                    // echo "python_path = ${python_path}"
-                                    bat "mkdir build"
-                                    // powershell "windows_build\\build.ps1 -python_path ${WORKSPACE}\\venv\\Scripts\\python.exe"
-                                    powershell "windows_build\\build.ps1 -PYTHON_HOME ${WORKSPACE}\\venv"
-                                }
-                            }
-                        }
-                    }
-                    post {
-                        failure {
-                            bat "pipenv uninstall --all"
-                            bat "pipenv run pipenv-resolver --clear"
-                        }
-                        success {
-                            dir("source/dist") {
-                                stash includes: "*.msi", name: "msi"
-                                archiveArtifacts artifacts: "*.msi", fingerprint: true
-                            }
-                        }
-                        always {
-                            archiveArtifacts artifacts: 'build_standalone.log', allowEmptyArchive: true
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
-                        }
-                    }
-                }
-                stage("Windows CMake Standalone"){
+                //                 // bat "venv\\Scripts\\python.exe -m pip install -U pip"
+                //                 bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -U setuptools>=30.3.0"
+                //                 bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -r requirements-dev.txt"
+                //                 script{
+                //                     def requirements = readFile 'requirements.txt'
+                //                     writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"                       
+                //                     // def python_path = powershell returnStdout: true, script: 'pipenv --py'.trim()
+                //                     // def python_path = "python.exe"
+                //                     // echo "python_path = ${python_path}"
+                //                     bat "mkdir build"
+                //                     // powershell "windows_build\\build.ps1 -python_path ${WORKSPACE}\\venv\\Scripts\\python.exe"
+                //                     powershell "windows_build\\build.ps1 -PYTHON_HOME ${WORKSPACE}\\venv"
+                //                 }
+                //             }
+                //         }
+                //     }
+                //     post {
+                //         failure {
+                //             bat "pipenv uninstall --all"
+                //             bat "pipenv run pipenv-resolver --clear"
+                //         }
+                //         success {
+                //             dir("source/dist") {
+                //                 stash includes: "*.msi", name: "msi"
+                //                 archiveArtifacts artifacts: "*.msi", fingerprint: true
+                //             }
+                //         }
+                //         always {
+                //             archiveArtifacts artifacts: 'build_standalone.log', allowEmptyArchive: true
+                //             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
+                //         }
+                //     }
+                // }
+                stage("Windows Standalone"){
                     options{
                         retry(2)
                     }
@@ -439,9 +439,9 @@ pipenv virtual environments are located in pipenv/
                                 cpack arguments: '-C Release -G WIX -V', installation: 'cmake3.11.2'
                                 script {
                                     def msi_files = findFiles glob: '*.msi'
-                                    echo "installer ${msi_files}"
                                     msi_files.each { msi_file ->
-                                        echo "msi_file = ${msi_file}"
+                                        echo "Found ${msi_file}"
+                                        archiveArtifacts artifacts: "${msi_file}", fingerprint: true
                                     }
 
                                 }
@@ -451,7 +451,6 @@ pipenv virtual environments are located in pipenv/
                     post{
                         cleanup{
                             dir("build"){
-                                cmake arguments: "--build . --target clean", installation: 'cmake3.11.2'
                                 bat "del *.msi"
                             }
                             
@@ -473,6 +472,9 @@ pipenv virtual environments are located in pipenv/
                                     echo "${error_message}"
                                 } catch (exc) {
                                     echo "read the wix logs."
+                                }
+                                dir("build"){
+                                    cmake arguments: "--build . --target clean", installation: 'cmake3.11.2'
                                 }
                             }
                         }
