@@ -440,7 +440,8 @@ pipenv virtual environments are located in pipenv/
                         failure {
                             script{
                                 try{
-                                    def error_message = readFile("build/_CPack_Packages/win64/WIX/wix.log}")
+                                    def error_message = readFile("build/_CPack_Packages/win64/WIX/wix.log")
+                                    echo "${error_message}"
                                 } catch (exc) {
                                     echo "read the wix logs."
                                 }
