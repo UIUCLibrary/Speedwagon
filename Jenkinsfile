@@ -434,7 +434,7 @@ pipenv virtual environments are located in pipenv/
                     }
                     steps {
                         tee('build_standalone_cmake.log') {
-                            dir("build") {
+                            dir("cmake_build") {
                                 cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
                                 // TODO: When upgrading to CMAKE 3.12 use the generic build parallel argument
                                 cmake arguments: "--build . --config Release -- /maxcpucount:${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
@@ -453,7 +453,7 @@ pipenv virtual environments are located in pipenv/
                     }
                     post{
                         cleanup{
-                            dir("build"){
+                            dir("cmake_build"){
                                 bat "del *.msi"
                             }
                             
@@ -463,7 +463,7 @@ pipenv virtual environments are located in pipenv/
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone_cmake.log']]
                         }
                         success {
-                            dir("build") {
+                            dir("cmake_build") {
                                 stash includes: "*.msi", name: "msi"
                                 archiveArtifacts artifacts: "*.msi", fingerprint: true
                             }
@@ -476,7 +476,7 @@ pipenv virtual environments are located in pipenv/
                                 } catch (exc) {
                                     echo "read the wix logs."
                                 }
-                                dir("build"){
+                                dir("cmake_build"){
                                     cmake arguments: "--build . --target clean", installation: "${CMAKE_VERSION}"
                                 }
                             }
