@@ -426,6 +426,9 @@ pipenv virtual environments are located in pipenv/
                     }
                 }
                 stage("Windows CMake Standalone"){
+                    options{
+                        retry(2)
+                    }
                     steps {
                         tee('build_standalone_cmake.log') {
                             dir("build") {
@@ -437,7 +440,7 @@ pipenv virtual environments are located in pipenv/
                                 script {
                                     def msi_files = findFiles glob: '*.msi'
                                     echo "installer ${installer}"
-                                    for (msi_file in msi_files){
+                                    msi_files.each { msi_file ->
                                         echo "msi_file = ${msi_file}"
                                     }
 
