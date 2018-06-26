@@ -468,6 +468,10 @@ pipenv virtual environments are located in pipenv/
 
                         }
                         always {
+                            script {
+                                def wix_log = findFiles glob: "wix.log"
+                                echo "wix_log = ${wix_log}"
+                            }
                             archiveArtifacts artifacts: 'build_standalone_cmake.log', allowEmptyArchive: true
                             dir("cmake_build") {
                                 archiveArtifacts 'Testing/**/Test.xml'
@@ -498,6 +502,7 @@ pipenv virtual environments are located in pipenv/
                         failure {
                             script{
                                 try{
+                                    
                                     def error_message = readFile("cmake_build/_CPack_Packages/win64/WIX/wix.log")
                                     echo "${error_message}"
                                 } catch (exc) {
