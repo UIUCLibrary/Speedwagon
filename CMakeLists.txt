@@ -9,8 +9,8 @@ find_package(PythonInterp REQUIRED)
 message(STATUS "Using Python ${PYTHON_VERSION_STRING} located at \"${PYTHON_EXECUTABLE}\".")
 option(SPEEDWAGON_CACHE_PYTHON_WHEEL_DEPENDENCIES "Cache python whl dependencies to a folder for reuse" ON)
 option(SPEEDWAGON_SYNC_PYTHON_BUILD_VENV "SYNC installed python packages in build virtual environment" ON)
-set(speedwagon_PythonDepsCache ${PROJECT_BINARY_DIR}/_deps/python_wheels CACHE PATH "location to put Python deps")
-set(speedwagon_venv_path ${PROJECT_BINARY_DIR}/venv CACHE PATH "Location for Python virtual environment needed for building")
+set(SPEEDWAGON_PYTHON_DEPENDENCY_CACHE ${PROJECT_BINARY_DIR}/_deps/python_wheels CACHE PATH "location to put Python deps")
+set(SPEEDWAGON_VENV_PATH ${PROJECT_BINARY_DIR}/venv CACHE PATH "Location for Python virtual environment needed for building")
 
 function(get_python_version SETUP_PY)
     cmake_parse_arguments(PYTHON "" "VERSION;MAJOR;MINOR;PATCH" "" ${ARGN})
@@ -45,12 +45,12 @@ function(get_python_version SETUP_PY)
 endfunction(get_python_version)
 
 macro(create_virtual_env)
-    execute_process(COMMAND ${PYTHON_EXECUTABLE} -m venv ${speedwagon_venv_path})
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} -m venv ${SPEEDWAGON_VENV_PATH})
     find_program(VENV_PYTHON 
         NAMES python
         PATHS 
-            ${speedwagon_venv_path}/Scripts/
-            ${speedwagon_venv_path}/bin/
+            ${SPEEDWAGON_VENV_PATH}/Scripts/
+            ${SPEEDWAGON_VENV_PATH}/bin/
         NO_DEFAULT_PATH 
     )
     mark_as_advanced(VENV_PYTHON)
@@ -70,7 +70,7 @@ function(install_venv_deps)
         list(APPEND requirement_file_args "-r")
         list(APPEND requirement_file_args "${requirements_file}")
     endforeach()
-    execute_process(COMMAND ${VENV_PYTHON_EXE} -m pip install ${requirement_file_args} --upgrade-strategy only-if-needed -f ${speedwagon_PythonDepsCache})
+    execute_process(COMMAND ${VENV_PYTHON_EXE} -m pip install ${requirement_file_args} --upgrade-strategy only-if-needed -f ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE})
     message(STATUS "FINISHED installing venv deps")
 endfunction(install_venv_deps)
 
@@ -82,7 +82,7 @@ function(create_dep_wheels)
         list(APPEND requirement_file_args "${requirements_file}")
     endforeach()
     message(STATUS "Syncing Python dependency .whl cache")
-    execute_process(COMMAND ${VENV_PYTHON_EXE} -m pip wheel ${requirement_file_args} --wheel-dir ${speedwagon_PythonDepsCache} -f ${speedwagon_PythonDepsCache} --quiet)
+    execute_process(COMMAND ${VENV_PYTHON_EXE} -m pip wheel ${requirement_file_args} --wheel-dir ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE} -f ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE} --quiet)
 endfunction(create_dep_wheels)
 
 function(get_embedded_python_url)
@@ -215,11 +215,11 @@ add_custom_command(
     OUTPUT
         ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages/speedwagon
     DEPENDS wheel
-    COMMAND ${VENV_PYTHON} -m pip install ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py3-none-any.whl -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHONDEPENDENCYCACHE}
+    COMMAND ${VENV_PYTHON} -m pip install ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py3-none-any.whl -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
     )
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
     DEPENDS wheel
-    COMMAND ${VENV_PYTHON} -m pip install pytest -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${SPEEDWAGON_PYTHONDEPENDENCYCACHE}
+    COMMAND ${VENV_PYTHON} -m pip install pytest -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
     )
     # set_property(DIRECTORY ${PROJECT_BINARY_DIR}/standalone PROPERTY ADDITIONAL_MAKE_CLEAN_FILES Lib)
 set(SPEEDWAGON_PYTHON_INTERP pythonw.exe)
