@@ -370,15 +370,15 @@ pipenv virtual environments are located in pipenv/
                 //         equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
                 //     }
                 //     steps {
-                        
+
                 //         script{
                 //             lock("system_python_${NODE_NAME}"){
                 //                 def powershell_command = "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
                 //                 echo "${powershell_command}"
                 //                 powershell "${powershell_command}"
-                                
-                //             }                        
-                //         }                        
+
+                //             }
+                //         }
                 //         bat "${tool 'CPython-3.6'} -m venv venv"
 
                 //         script{
@@ -388,19 +388,19 @@ pipenv virtual environments are located in pipenv/
                 //                 bat "${WORKSPACE}\\venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
                 //             }
                 //         }
-                        
+
                 //         tee('build_standalone.log') {
                 //             dir("source"){
                 //                 bat script: "${tool 'CPython-3.6'} -m pipenv lock -r"
                 //                 bat script: "${tool 'CPython-3.6'} -m pipenv lock -r > requirements.txt"
                 //                 bat script: "${tool 'CPython-3.6'} -m pipenv lock -rd > requirements-dev.txt"
-                                
+
                 //                 // bat "venv\\Scripts\\python.exe -m pip install -U pip"
                 //                 bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -U setuptools>=30.3.0"
                 //                 bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -r requirements-dev.txt"
                 //                 script{
                 //                     def requirements = readFile 'requirements.txt'
-                //                     writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"                       
+                //                     writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"
                 //                     // def python_path = powershell returnStdout: true, script: 'pipenv --py'.trim()
                 //                     // def python_path = "python.exe"
                 //                     // echo "python_path = ${python_path}"
@@ -457,7 +457,7 @@ pipenv virtual environments are located in pipenv/
                             dir("cmake_build"){
                                 bat "del *.msi"
                             }
-                            
+
                         }
                         always {
                             archiveArtifacts artifacts: 'build_standalone_cmake.log', allowEmptyArchive: true
