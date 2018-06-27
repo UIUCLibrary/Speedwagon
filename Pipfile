@@ -35,7 +35,7 @@ pytest-cov = "*"
 behave = "*"
 "flake8" = "*"
 tox = "*"
-lxml = "*"
+lxml = "lxml<=4.2.1"
 pyqt-distutils = "*"
 
 [pipenv]
