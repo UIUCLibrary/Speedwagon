@@ -480,7 +480,7 @@ pipenv virtual environments are located in pipenv/
                                 }
                             }
                         }
-                        stage("CTest Build"){
+                        stage("CTest"){
                             steps {
                                 tee('test_standalone_cmake.log') {
                                     dir("cmake_build") {
@@ -490,32 +490,34 @@ pipenv virtual environments are located in pipenv/
                             }
                             post{
                                 always {
-                                    script {
-                                        def ctest_results = findFiles glob: 'Testing/**/Test.xml'
-                                        ctest_results.each{ ctest_result ->
-                                            echo "Found ${ctest_result}"
-                                            archiveArtifacts artifacts: "${ctest_result}", fingerprint: true
-                                            xunit testTimeMargin: '3000',
-                                                thresholdMode: 1,
-                                                thresholds: [
-                                                    failed(),
-                                                    skipped()
-                                                ],
-                                                tools: [
-                                                    CTest(
-                                                        deleteOutputFiles: true,
-                                                        failIfNotNew: true,
-                                                        pattern: "${ctest_result}",
-                                                        skipNoTestFiles: false,
-                                                        stopProcessingIfError: true
-                                                        )
-                                                    ]
-                                            bat "del ${ctest_result}"
+                                    dir("cmake_build") {
+                                        script {
+                                            def ctest_results = findFiles glob: 'Testing/**/Test.xml'
+                                            ctest_results.each{ ctest_result ->
+                                                echo "Found ${ctest_result}"
+                                                archiveArtifacts artifacts: "${ctest_result}", fingerprint: true
+                                                xunit testTimeMargin: '3000',
+                                                    thresholdMode: 1,
+                                                    thresholds: [
+                                                        failed(),
+                                                        skipped()
+                                                    ],
+                                                    tools: [
+                                                        CTest(
+                                                            deleteOutputFiles: true,
+                                                            failIfNotNew: true,
+                                                            pattern: "${ctest_result}",
+                                                            skipNoTestFiles: false,
+                                                            stopProcessingIfError: true
+                                                            )
+                                                        ]
+                                                bat "del ${ctest_result}"
+                                            }
+                                            
                                         }
-                                        
+                                        archiveArtifacts artifacts: 'test_standalone_cmake.log', allowEmptyArchive: true
+                                        warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'test_standalone_cmake.log']]
                                     }
-                                    archiveArtifacts artifacts: 'test_standalone_cmake.log', allowEmptyArchive: true
-                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'test_standalone_cmake.log']]
                                 }
                             }
                         }
