@@ -552,98 +552,43 @@ pipenv virtual environments are located in pipenv/
                          
                             }
                         }
+                        stage("CPack NSIS"){
+                            steps {
+                                dir("cmake_build") {
+                                    cpack arguments: '-C Release -G NSIS -V', installation: "${CMAKE_VERSION}"
+                                }
+                            }
+                            post {
+                                success{
+                                    dir("cmake_build") {
+                                        script{   
+                                            def install_files = findFiles glob: "Speedwagon*.exe"
+                                            install_files.each { installer_file ->
+                                                echo "Found ${installer_file}"
+                                                archiveArtifacts artifacts: "${installer_file}", fingerprint: true
+                                            }
+                                        }
+                                    }
+                                }                               
+                                failure {
+                                    dir("cmake_build"){
+                                        cmake arguments: "--build . --target clean", installation: "${CMAKE_VERSION}"
+                                    }
+                                }
+                                cleanup{
+                                   dir("cmake_build"){
+                                       bat "del *.msi"
+                                   }
+                                }
+                         
+                            }
+                        }
                     }
-                    // post{
-                    //     // cleanup{
-                    //     //     dir("cmake_build"){
-                    //     //         bat "del *.msi"
-                    //     //         //  script {
-                    //     //         //     def ctest_results = findFiles glob: 'Testing/**/Test.xml'
-                    //     //         //     ctest_results.each{ ctest_result ->
-                    //     //         //         echo "Found ${ctest_result}"
-                    //     //         //         archiveArtifacts artifacts: "${ctest_result}", fingerprint: true
-                    //     //         //         bat "del ${ctest_result}"
-                    //     //         //     }
-                    //     //         //  }
-                    //     //     }
-
-                    //     // }
-                    //     // always {
-                    //     //     // script {
-                    //     //     //     def wix_logs = findFiles glob: "**/wix.log"
-                    //     //     //     wix_logs.each { wix_log ->
-                    //     //     //         archiveArtifacts artifacts: "${wix_log}" 
-                    //     //     //     }
-                    //     //     // }
-                    //     //     // archiveArtifacts artifacts: 'build_standalone_cmake.log', allowEmptyArchive: true
-                    //     //     dir("cmake_build") {
-                    //     //         archiveArtifacts 'Testing/**/Test.xml'
-                    //     //         xunit testTimeMargin: '3000',
-                    //     //             thresholdMode: 1,
-                    //     //             thresholds: [
-                    //     //                 failed(),
-                    //     //                 skipped()
-                    //     //             ],
-                    //     //             tools: [
-                    //     //                 CTest(
-                    //     //                     deleteOutputFiles: true,
-                    //     //                     failIfNotNew: true,
-                    //     //                     pattern: 'Testing/**/Test.xml',
-                    //     //                     skipNoTestFiles: false,
-                    //     //                     stopProcessingIfError: true
-                    //     //                     )
-                    //     //                 ]
-                                        
-                    //     //     }
-                    //     //     // warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone_cmake.log']]
-                    //     // }
-                    //     // success {
-                    //     //     dir("cmake_build") {
-                    //     //         stash includes: "*.msi", name: "msi"
-                    //     //     }
-                    //     // }
-                    //     failure {
-                    //         script{
-                    //             try{
-                    //                 def wix_logs = findFiles glob: "**/wix.log"
-                    //                 wix_logs.each { wix_log ->
-                    //                     def error_message = readFile("${wix_log}")
-                    //                     echo "${error_message}"
-                    //                 }
-                    //                 // def error_message = readFile("cmake_build/_CPack_Packages/win64/WIX/wix.log")
-                    //                 // echo "${error_message}"
-                    //             } catch (exc) {
-                    //                 echo "read the wix logs."
-                    //             }
-                    //             dir("cmake_build"){
-                    //                 cmake arguments: "--build . --target clean", installation: "${CMAKE_VERSION}"
-                    //             }
-                    //         }
-                    //     }
-                    // }
                 }
             }
 
         }
-        // stage("Test CMake build") {
-        //     agent {
-        //         node {
-        //             label "Windows && VS2015 && longfilenames"
-        //         }
-        //     }
-        //     when {
-        //         not { changeRequest()}
-        //         equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
-        //     }
-        //     // options {
-        //     //     skipDefaultCheckout(true)
-        //     // }
-        //     steps {
-        //         dir("source"){
-        //             ctest arguments: "-S ci/build_standalone.cmake -DCTEST_CMAKE_GENERATOR=\"Visual Studio 14 2015 Win64\" -VV", installation: "${CMAKE_VERSION}"
-        //         }
-        //     }
-        // }
+        
         stage("Deploy to Devpi Staging") {
             // when {
             //     expression { params.DEPLOY_DEVPI == true && (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev")}
