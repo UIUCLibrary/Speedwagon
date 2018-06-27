@@ -43,7 +43,6 @@ pipeline {
         booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
         booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
-        choice(name: 'PACKAGE_WINDOWS_CPACK_GENERATOR', choices: ['WIX', 'NSIS'], description: 'Installer type')
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
         booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to \\\\storage.library.illinois.edu\\HathiTrust\\Tools\\beta\\")
@@ -432,7 +431,7 @@ pipenv virtual environments are located in pipenv/
                 stage("Windows Standalone"){
                     agent {
                         node {
-                            label "Windows && Python3 && longfilenames && ${PACKAGE_WINDOWS_CPACK_GENERATOR}"
+                            label "Windows && Python3 && longfilenames && WIX"
                             customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
                         }
                     }
@@ -447,19 +446,19 @@ pipenv virtual environments are located in pipenv/
                                 // TODO: When upgrading to CMAKE 3.12 use the generic build parallel argument
                                 cmake arguments: "--build . --config Release -- /maxcpucount:${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
                                 ctest arguments: '-C Release --output-on-failure -C Release --no-compress-output -T test', installation: "${CMAKE_VERSION}"
-                                cpack arguments: '-C Release -G ${PACKAGE_WINDOWS_CPACK_GENERATOR} -V', installation: "${CMAKE_VERSION}"
+                                cpack arguments: '-C Release -G WIX -V', installation: "${CMAKE_VERSION}"
                                 script {
-                                    def installer_regex = "*.exe"
+                                    // def installer_regex = "*.exe"
 
-                                    if("${PACKAGE_WINDOWS_CPACK_GENERATOR}" == "WIX"){
-                                        installer_regex = "*.msi"
-                                    }
-                                    if("${PACKAGE_WINDOWS_CPACK_GENERATOR}" == "NSIS"){
-                                        installer_regex = "Speedwagon*.exe"
-                                    }
+                                    // if("${PACKAGE_WINDOWS_CPACK_GENERATOR}" == "WIX"){
+                                        
+                                    // }
+                                    // if("${PACKAGE_WINDOWS_CPACK_GENERATOR}" == "NSIS"){
+                                    //     installer_regex = "Speedwagon*.exe"
+                                    // }
 
 
-                                    def install_files = findFiles glob: "${installer_regex}"
+                                    def install_files = findFiles glob: "*.msi"
                                     install_files.each { installer_file ->
                                         echo "Found ${installer_file}"
                                         archiveArtifacts artifacts: "${installer_file}", fingerprint: true
