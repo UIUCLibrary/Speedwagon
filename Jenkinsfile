@@ -295,10 +295,12 @@ pipenv virtual environments are located in pipenv/
                     }
                     steps {
                         dir("source"){
-                            try{
-                                bat "pipenv run tox --workdir ${WORKSPACE}\\.tox"
-                            } catch (exc) {
-                                bat "pipenv run tox --workdir ${WORKSPACE}\\.tox --recreate"
+                            script{
+                                try{
+                                    bat "pipenv run tox --workdir ${WORKSPACE}\\.tox"
+                                } catch (exc) {
+                                    bat "pipenv run tox --workdir ${WORKSPACE}\\.tox --recreate"
+                                }
                             }
                             
                         }
