@@ -24,6 +24,7 @@ uiucprescon-packager = {version = ">=0.2.1", extras = ['kdu']}
 uiucprescon-getmarc = "*"
 setuptools = ">=30.3.0"
 pykdu-compress = "*"
+lxml = "==4.2.2"
 
 [dev-packages]
 mypy = "*"
@@ -35,7 +36,7 @@ pytest-cov = "*"
 behave = "*"
 "flake8" = "*"
 tox = "*"
-lxml = "<=4.2.1"
+
 pyqt-distutils = "*"
 
 [pipenv]
