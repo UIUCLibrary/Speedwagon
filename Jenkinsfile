@@ -549,9 +549,14 @@ pipenv virtual environments are located in pipenv/
                                     }
                                 }
                                 cleanup{
-                                   dir("cmake_build"){
-                                       bat "del *.msi"
-                                   }
+                                   dir("cmake_build") {
+                                        script{   
+                                            def install_files = findFiles glob: "*.msi"
+                                            install_files.each { installer_file ->
+                                                bat "del ${installer_file}"
+                                            }
+                                        }
+                                    }
                                 }
                          
                             }
@@ -583,9 +588,14 @@ pipenv virtual environments are located in pipenv/
                                     }
                                 }
                                 cleanup{
-                                   dir("cmake_build"){
-                                       bat "del *.msi"
-                                   }
+                                   dir("cmake_build") {
+                                        script{   
+                                            def install_files = findFiles glob: "Speedwagon*.exe"
+                                            install_files.each { installer_file ->
+                                                bat "del ${installer_file}"
+                                            }
+                                        }
+                                    }
                                 }
                          
                             }
