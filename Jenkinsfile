@@ -43,6 +43,7 @@ pipeline {
         booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
         booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
+        choice choices: ['WIX', 'NSIS'], description: 'The type of installer package create', name: 'PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR'
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
         booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to \\\\storage.library.illinois.edu\\HathiTrust\\Tools\\beta\\")
@@ -498,6 +499,9 @@ pipenv virtual environments are located in pipenv/
                             }
                         }
                         stage("CPack WIX"){
+                            when{
+                                equals expected: "WIX", actual: params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR
+                            }
                             steps {
                                 dir("cmake_build") {
                                     cpack arguments: '-C Release -G WIX -V', installation: "${CMAKE_VERSION}"
@@ -553,6 +557,9 @@ pipenv virtual environments are located in pipenv/
                             }
                         }
                         stage("CPack NSIS"){
+                            when{
+                                equals expected: "NSIS", actual: params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR
+                            }
                             steps {
                                 dir("cmake_build") {
                                     cpack arguments: '-C Release -G NSIS -V', installation: "${CMAKE_VERSION}"
