@@ -461,7 +461,9 @@ pipenv virtual environments are located in pipenv/
                         }
                         stage("CPack WIX"){
                             steps {
-                                cpack arguments: '-C Release -G WIX -V', installation: "${CMAKE_VERSION}"
+                                dir("cmake_build") {
+                                    cpack arguments: '-C Release -G WIX -V', installation: "${CMAKE_VERSION}"
+                                }
                                         // script {
                                             // def installer_regex = "*.exe"
 
@@ -484,11 +486,13 @@ pipenv virtual environments are located in pipenv/
                             }
                             post {
                                 success{
-                                    script{   
-                                        def install_files = findFiles glob: "*.msi"
-                                        install_files.each { installer_file ->
-                                            echo "Found ${installer_file}"
-                                            archiveArtifacts artifacts: "${installer_file}", fingerprint: true
+                                    dir("cmake_build") {
+                                        script{   
+                                            def install_files = findFiles glob: "*.msi"
+                                            install_files.each { installer_file ->
+                                                echo "Found ${installer_file}"
+                                                archiveArtifacts artifacts: "${installer_file}", fingerprint: true
+                                            }
                                         }
                                     }
                                 }
