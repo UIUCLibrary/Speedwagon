@@ -454,8 +454,46 @@ pipenv virtual environments are located in pipenv/
                                         cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
                                         // TODO: When upgrading to CMAKE 3.12 use the generic build parallel argument
                                         cmake arguments: "--build . --config Release -- /maxcpucount:${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
+                                    }
+                                }
+                            }
+                        }
+                        stage("CTest Build"){
+                            steps {
+                                tee('test_standalone_cmake.log') {
+                                    dir("cmake_build") {
                                         ctest arguments: '-C Release --output-on-failure -C Release --no-compress-output -T test', installation: "${CMAKE_VERSION}"
                                     }
+                                }
+                            }
+                            post{
+                                always {
+                                    script {
+                                        def ctest_results = findFiles glob: 'Testing/**/Test.xml'
+                                        ctest_results.each{ ctest_result ->
+                                            echo "Found ${ctest_result}"
+                                            archiveArtifacts artifacts: "${ctest_result}", fingerprint: true
+                                            xunit testTimeMargin: '3000',
+                                                thresholdMode: 1,
+                                                thresholds: [
+                                                    failed(),
+                                                    skipped()
+                                                ],
+                                                tools: [
+                                                    CTest(
+                                                        deleteOutputFiles: true,
+                                                        failIfNotNew: true,
+                                                        pattern: "${ctest_result}",
+                                                        skipNoTestFiles: false,
+                                                        stopProcessingIfError: true
+                                                        )
+                                                    ]
+                                            bat "del ${ctest_result}"
+                                        }
+                                        
+                                    }
+                                    archiveArtifacts artifacts: 'build_standalone_cmake.log', allowEmptyArchive: true
+                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone_cmake.log']]
                                 }
                             }
                         }
@@ -464,25 +502,6 @@ pipenv virtual environments are located in pipenv/
                                 dir("cmake_build") {
                                     cpack arguments: '-C Release -G WIX -V', installation: "${CMAKE_VERSION}"
                                 }
-                                        // script {
-                                            // def installer_regex = "*.exe"
-
-                                            // if("${PACKAGE_WINDOWS_CPACK_GENERATOR}" == "WIX"){
-                                                
-                                            // }
-                                            // if("${PACKAGE_WINDOWS_CPACK_GENERATOR}" == "NSIS"){
-                                            //     installer_regex = "Speedwagon*.exe"
-                                            // }
-                                        // }
-                                        // cpack arguments: '-C Release -G NSIS -V', installation: "${CMAKE_VERSION}"
-                                        // script {
-                                        //     def nsis_files = findFiles glob: 'Speedwagon*.exe'
-                                        //     nsis_files.each { nsis_file ->
-                                        //         echo "Found ${nsis_file}"
-                                        //         archiveArtifacts artifacts: "${nsis_file}", fingerprint: true
-                                        //     }
-
-                                        // }
                             }
                             post {
                                 success{
@@ -494,79 +513,114 @@ pipenv virtual environments are located in pipenv/
                                                 archiveArtifacts artifacts: "${installer_file}", fingerprint: true
                                             }
                                         }
+                                        stash includes: "*.msi", name: "msi"
                                     }
                                 }
+                                always{
+                                    dir("cmake_build"){
+                                        script {
+                                            def wix_logs = findFiles glob: "**/wix.log"
+                                            wix_logs.each { wix_log ->
+                                                archiveArtifacts artifacts: "${wix_log}" 
+                                            }
+                                        }
+                                    }
+                                }
+                                failure {
+                                    script{
+                                        try{
+                                            def wix_logs = findFiles glob: "**/wix.log"
+                                            wix_logs.each { wix_log ->
+                                                def error_message = readFile("${wix_log}")
+                                                echo "${error_message}"
+                                            }
+                                            // def error_message = readFile("cmake_build/_CPack_Packages/win64/WIX/wix.log")
+                                            // echo "${error_message}"
+                                        } catch (exc) {
+                                            echo "read the wix logs."
+                                        }
+                                        dir("cmake_build"){
+                                            cmake arguments: "--build . --target clean", installation: "${CMAKE_VERSION}"
+                                        }
+                                    }
+                                }
+                                cleanup{
+                                   dir("cmake_build"){
+                                       bat "del *.msi"
+                                   }
+                                }
+                         
                             }
                         }
                     }
-                    post{
-                        cleanup{
-                            dir("cmake_build"){
-                                bat "del *.msi"
-                                 script {
-                                    def ctest_results = findFiles glob: 'Testing/**/Test.xml'
-                                    ctest_results.each{ ctest_result ->
-                                        echo "Found ${ctest_result}"
-                                        archiveArtifacts artifacts: "${ctest_result}", fingerprint: true
-                                        bat "del ${ctest_result}"
-                                    }
-                                 }
-                            }
+                    // post{
+                    //     // cleanup{
+                    //     //     dir("cmake_build"){
+                    //     //         bat "del *.msi"
+                    //     //         //  script {
+                    //     //         //     def ctest_results = findFiles glob: 'Testing/**/Test.xml'
+                    //     //         //     ctest_results.each{ ctest_result ->
+                    //     //         //         echo "Found ${ctest_result}"
+                    //     //         //         archiveArtifacts artifacts: "${ctest_result}", fingerprint: true
+                    //     //         //         bat "del ${ctest_result}"
+                    //     //         //     }
+                    //     //         //  }
+                    //     //     }
 
-                        }
-                        always {
-                            script {
-                                def wix_logs = findFiles glob: "**/wix.log"
-                                wix_logs.each { wix_log ->
-                                    archiveArtifacts artifacts: "${wix_log}" 
-                                }
-                            }
-                            archiveArtifacts artifacts: 'build_standalone_cmake.log', allowEmptyArchive: true
-                            dir("cmake_build") {
-                                archiveArtifacts 'Testing/**/Test.xml'
-                                xunit testTimeMargin: '3000',
-                                    thresholdMode: 1,
-                                    thresholds: [
-                                        failed(),
-                                        skipped()
-                                    ],
-                                    tools: [
-                                        CTest(
-                                            deleteOutputFiles: true,
-                                            failIfNotNew: true,
-                                            pattern: 'Testing/**/Test.xml',
-                                            skipNoTestFiles: false,
-                                            stopProcessingIfError: true
-                                            )
-                                        ]
+                    //     // }
+                    //     // always {
+                    //     //     // script {
+                    //     //     //     def wix_logs = findFiles glob: "**/wix.log"
+                    //     //     //     wix_logs.each { wix_log ->
+                    //     //     //         archiveArtifacts artifacts: "${wix_log}" 
+                    //     //     //     }
+                    //     //     // }
+                    //     //     // archiveArtifacts artifacts: 'build_standalone_cmake.log', allowEmptyArchive: true
+                    //     //     dir("cmake_build") {
+                    //     //         archiveArtifacts 'Testing/**/Test.xml'
+                    //     //         xunit testTimeMargin: '3000',
+                    //     //             thresholdMode: 1,
+                    //     //             thresholds: [
+                    //     //                 failed(),
+                    //     //                 skipped()
+                    //     //             ],
+                    //     //             tools: [
+                    //     //                 CTest(
+                    //     //                     deleteOutputFiles: true,
+                    //     //                     failIfNotNew: true,
+                    //     //                     pattern: 'Testing/**/Test.xml',
+                    //     //                     skipNoTestFiles: false,
+                    //     //                     stopProcessingIfError: true
+                    //     //                     )
+                    //     //                 ]
                                         
-                            }
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone_cmake.log']]
-                        }
-                        success {
-                            dir("cmake_build") {
-                                stash includes: "*.msi", name: "msi"
-                            }
-                        }
-                        failure {
-                            script{
-                                try{
-                                    def wix_logs = findFiles glob: "**/wix.log"
-                                    wix_logs.each { wix_log ->
-                                        def error_message = readFile("${wix_log}")
-                                        echo "${error_message}"
-                                    }
-                                    // def error_message = readFile("cmake_build/_CPack_Packages/win64/WIX/wix.log")
-                                    // echo "${error_message}"
-                                } catch (exc) {
-                                    echo "read the wix logs."
-                                }
-                                dir("cmake_build"){
-                                    cmake arguments: "--build . --target clean", installation: "${CMAKE_VERSION}"
-                                }
-                            }
-                        }
-                    }
+                    //     //     }
+                    //     //     // warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone_cmake.log']]
+                    //     // }
+                    //     // success {
+                    //     //     dir("cmake_build") {
+                    //     //         stash includes: "*.msi", name: "msi"
+                    //     //     }
+                    //     // }
+                    //     failure {
+                    //         script{
+                    //             try{
+                    //                 def wix_logs = findFiles glob: "**/wix.log"
+                    //                 wix_logs.each { wix_log ->
+                    //                     def error_message = readFile("${wix_log}")
+                    //                     echo "${error_message}"
+                    //                 }
+                    //                 // def error_message = readFile("cmake_build/_CPack_Packages/win64/WIX/wix.log")
+                    //                 // echo "${error_message}"
+                    //             } catch (exc) {
+                    //                 echo "read the wix logs."
+                    //             }
+                    //             dir("cmake_build"){
+                    //                 cmake arguments: "--build . --target clean", installation: "${CMAKE_VERSION}"
+                    //             }
+                    //         }
+                    //     }
+                    // }
                 }
             }
 
