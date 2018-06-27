@@ -128,7 +128,7 @@ FetchContent_Declare(embedded_python
 FetchContent_GetProperties(embedded_python)
 
 if (NOT embedded_python_POPULATED)
-    message(STATUS "Fetching Embedded Distribution of Python version ${PYTHON_VERSION_STRING} for ${CMAKE_SYSTEM_PROCESSOR}.")
+    message(STATUS "Fetching Embedded Distribution of Python version ${PYTHON_VERSION_STRING} for ${CMAKE_SYSTEM_PROCESSOR}")
     FetchContent_Populate(embedded_python)
 
     # Get pointer size. Used for CPack and deciding if the version of Python
@@ -138,6 +138,7 @@ if (NOT embedded_python_POPULATED)
         WORKING_DIRECTORY embedded_python_SOURCE_DIR
         RESULTS_VARIABLE  PYTHON_EMBEDDED_P_SIZE
     )
+    message(STATUS "Fetching Embedded Distribution of Python version ${PYTHON_VERSION_STRING} for ${CMAKE_SYSTEM_PROCESSOR} - Done")
     set(CMAKE_SIZEOF_VOID_P ${PYTHON_EMBEDDED_P_SIZE})
 
     find_file(PYTHON_EMBEDDED_PTH_FILE
@@ -302,7 +303,6 @@ set(CPACK_WIX_UPGRADE_GUID C81EC876-C4BD-11E7-9268-005056C00008)
 set(CPACK_PACKAGE_VERSION_MAJOR ${CMAKE_PROJECT_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${CMAKE_PROJECT_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${CMAKE_PROJECT_VERSION_PATCH})
-set(CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/speedwagon/favicon.ico")
 set(CPACK_WIX_PRODUCT_ICON "${PROJECT_SOURCE_DIR}/speedwagon/favicon.ico")
 set(CPACK_PACKAGE_NAME Speedwagon)
 set(CPACK_PACKAGE_INSTALL_DIRECTORY Speedwagon)
@@ -310,7 +310,19 @@ set(CPACK_WIX_PROGRAM_MENU_FOLDER Speedwagon)
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_BINARY_DIR}/LICENSE.txt")
 set(CPACK_WIX_EXTRA_SOURCES ${PROJECT_BINARY_DIR}/configs/install/wix_start_menu.wxs)
 set(CPACK_WIX_PATCH_FILE ${PROJECT_SOURCE_DIR}/extra/patch.xml)
+set(CPACK_NSIS_MENU_LINKS
+    "http://www.library.illinois.edu/dccdocs/speedwagon;Documentation"
+    )
+set(CPACK_NSIS_CREATE_ICONS_EXTRA
+    "CreateShortCut '$SMPROGRAMS\\\\Speedwagon\\\\Speedwagon.lnk' '$INSTDIR\\\\bin\\\\pythonw.exe' '-m speedwagon' '$INSTDIR\\\\Lib\\\\site-packages\\\\Speedwagon\\\\favicon.ico'"
+    )
 
+set(CPACK_NSIS_DELETE_ICONS_EXTRA
+    "Delete '$SMPROGRAMS\\\\Speedwagon\\\\Speedwagon.lnk'"
+    )
+set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\bin\\\\python.exe\\\" -m compileall -f $INSTDIR\\\\Lib'")
+set(CPACK_NSIS_HELP_LINK "http://www.library.illinois.edu/dccdocs/speedwagon")
+set(CPACK_NSIS_EXECUTABLES_DIRECTORY bin)
 if(DEFINED ENV{build_number})
     string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} PROCESSOR_TYPE)
     set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}-$ENV{build_number}-${PROCESSOR_TYPE})
