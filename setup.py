@@ -40,7 +40,7 @@ except ImportError:
 setup(
     test_suite="tests",
     install_requires=[
-        "pyqt5",
+        "PyQt5",
         "hathizip",
         "HathiValidate>=0.3.3",
         "pyhathiprep",
@@ -48,6 +48,7 @@ setup(
         "uiucprescon-packager[kdu]>=0.2.1b6",
         "pykdu-compress>=0.0.4",
         "setuptools>=30.3.0",
+        'lxml<=4.2.2;platform_system=="Windows"'
     ],
     packages=[
         "speedwagon",
