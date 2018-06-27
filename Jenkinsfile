@@ -438,43 +438,49 @@ pipenv virtual environments are located in pipenv/
                     options{
                         retry(2)
                     }
-                    steps {
-                        tee('build_standalone_cmake.log') {
-                            dir("cmake_build") {
-                                bat "dir"
-                                cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
-                                // TODO: When upgrading to CMAKE 3.12 use the generic build parallel argument
-                                cmake arguments: "--build . --config Release -- /maxcpucount:${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
-                                ctest arguments: '-C Release --output-on-failure -C Release --no-compress-output -T test', installation: "${CMAKE_VERSION}"
-                                cpack arguments: '-C Release -G WIX -V', installation: "${CMAKE_VERSION}"
-                                script {
-                                    // def installer_regex = "*.exe"
+                    stages{
+                        stage("CMake"){
 
-                                    // if("${PACKAGE_WINDOWS_CPACK_GENERATOR}" == "WIX"){
-                                        
-                                    // }
-                                    // if("${PACKAGE_WINDOWS_CPACK_GENERATOR}" == "NSIS"){
-                                    //     installer_regex = "Speedwagon*.exe"
-                                    // }
+                            steps {
+                                tee('build_standalone_cmake.log') {
+                                    dir("cmake_build") {
+                                        bat "dir"
+                                        cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
+                                        // TODO: When upgrading to CMAKE 3.12 use the generic build parallel argument
+                                        cmake arguments: "--build . --config Release -- /maxcpucount:${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
+                                        ctest arguments: '-C Release --output-on-failure -C Release --no-compress-output -T test', installation: "${CMAKE_VERSION}"
+                                        cpack arguments: '-C Release -G WIX -V', installation: "${CMAKE_VERSION}"
+                                        script {
+                                            // def installer_regex = "*.exe"
+
+                                            // if("${PACKAGE_WINDOWS_CPACK_GENERATOR}" == "WIX"){
+                                                
+                                            // }
+                                            // if("${PACKAGE_WINDOWS_CPACK_GENERATOR}" == "NSIS"){
+                                            //     installer_regex = "Speedwagon*.exe"
+                                            // }
 
 
-                                    def install_files = findFiles glob: "*.msi"
-                                    install_files.each { installer_file ->
-                                        echo "Found ${installer_file}"
-                                        archiveArtifacts artifacts: "${installer_file}", fingerprint: true
+                                            def install_files = findFiles glob: "*.msi"
+                                            install_files.each { installer_file ->
+                                                echo "Found ${installer_file}"
+                                                archiveArtifacts artifacts: "${installer_file}", fingerprint: true
+                                            }
+
+                                        }
+                                        // cpack arguments: '-C Release -G NSIS -V', installation: "${CMAKE_VERSION}"
+                                        // script {
+                                        //     def nsis_files = findFiles glob: 'Speedwagon*.exe'
+                                        //     nsis_files.each { nsis_file ->
+                                        //         echo "Found ${nsis_file}"
+                                        //         archiveArtifacts artifacts: "${nsis_file}", fingerprint: true
+                                        //     }
+
+                                        // }
                                     }
-
                                 }
-                                // cpack arguments: '-C Release -G NSIS -V', installation: "${CMAKE_VERSION}"
-                                // script {
-                                //     def nsis_files = findFiles glob: 'Speedwagon*.exe'
-                                //     nsis_files.each { nsis_file ->
-                                //         echo "Found ${nsis_file}"
-                                //         archiveArtifacts artifacts: "${nsis_file}", fingerprint: true
-                                //     }
-
-                                // }
                             }
+
                         }
                     }
                     post{
