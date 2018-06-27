@@ -455,6 +455,15 @@ pipenv virtual environments are located in pipenv/
                                     }
 
                                 }
+                                cpack arguments: '-C Release -G NSIS -V', installation: "${CMAKE_VERSION}"
+                                script {
+                                    def nsis_files = findFiles glob: 'Speedwagon*.exe'
+                                    nsis_files.each { nsis_file ->
+                                        echo "Found ${nsis_file}"
+                                        archiveArtifacts artifacts: "${nsis_file}", fingerprint: true
+                                    }
+
+                                }
                             }
                         }
                     }
