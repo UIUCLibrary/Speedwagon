@@ -447,15 +447,36 @@ pipenv virtual environments are located in pipenv/
                         retry(2)
                     }
                     stages{
+                        stage("CMake Configure"){
+                            steps {
+                                tee('configure_standalone_cmake.log') {
+                                    dir("cmake_build") {
+                                        bat "dir"
+                                        cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
+                                                                               
+                                    }
+                                }
+                            }
+                            post{
+                                always{
+                                    archiveArtifacts artifacts: 'configure_standalone_cmake.log', allowEmptyArchive: true
+                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'configure_standalone_cmake.log']]
+                                }
+                            }
+                        }
                         stage("CMake Build"){
                             steps {
                                 tee('build_standalone_cmake.log') {
                                     dir("cmake_build") {
-                                        bat "dir"
-                                        cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
                                         // TODO: When upgrading to CMAKE 3.12 use the generic build parallel argument
                                         cmake arguments: "--build . --config Release -- /maxcpucount:${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
                                     }
+                                }
+                            }
+                            post{
+                                always{
+                                    archiveArtifacts artifacts: 'build_standalone_cmake.log', allowEmptyArchive: true
+                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone_cmake.log']]
                                 }
                             }
                         }
@@ -493,8 +514,8 @@ pipenv virtual environments are located in pipenv/
                                         }
                                         
                                     }
-                                    archiveArtifacts artifacts: 'build_standalone_cmake.log', allowEmptyArchive: true
-                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone_cmake.log']]
+                                    archiveArtifacts artifacts: 'test_standalone_cmake.log', allowEmptyArchive: true
+                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'test_standalone_cmake.log']]
                                 }
                             }
                         }
