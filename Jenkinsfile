@@ -8,7 +8,7 @@ def CMAKE_VERSION = "cmake3.11.2"
 
 pipeline {
     agent {
-        label "Windows && Python3 && longfilenames && Wix"
+        label "Windows && Python3 && longfilenames && WIX"
     }
     
     triggers {
