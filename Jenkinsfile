@@ -624,6 +624,11 @@ pipenv virtual environments are located in pipenv/
                             }
                         }
                     }
+                    post{
+                        cleanup{
+                            deleteDir()
+                        }
+                    }
                 }
             }
 

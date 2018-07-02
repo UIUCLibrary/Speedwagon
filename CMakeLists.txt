@@ -262,7 +262,8 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
     )
 set(SPEEDWAGON_PYTHON_INTERP pythonw.exe)
 
-configure_file(templates/speedwagon.bat.in standalone/speedwagon.bat @ONLY)
+#configure_file(templates/speedwagon.bat.in standalone/speedwagon.bat @ONLY)
+configure_file(templates/speedwagon.bat.in ${PROJECT_BINARY_DIR}/speedwagon.bat @ONLY)
 # install embedded Python to standalone build path
 add_custom_command(TARGET standalone PRE_BUILD 
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${embedded_python_SOURCE_DIR}/ ${PROJECT_BINARY_DIR}/standalone/
@@ -284,7 +285,10 @@ install(DIRECTORY ${PROJECT_BINARY_DIR}/standalone/
     PATTERN "pythonw.exe" EXCLUDE
     PATTERN "python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth" EXCLUDE
     )
-
+install(FILES
+        ${PROJECT_BINARY_DIR}/speedwagon.bat
+        ${PROJECT_BINARY_DIR}/LICENSE.txt
+    DESTINATION .)
 install(PROGRAMS ${PROJECT_BINARY_DIR}/standalone/python.exe ${PROJECT_BINARY_DIR}/standalone/pythonw.exe
     DESTINATION bin
     )
