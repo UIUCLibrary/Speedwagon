@@ -14,30 +14,26 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-"pyqt5" = "*"
-pyqt-distutils = "*"
-hathizip = ">=0.1.3"
-hathivalidate = ">=0.3.3"
-pyhathiprep = "*"
 hathichecksumupdater = "*"
-uiucprescon-packager = {version = ">=0.2.1", extras = ['kdu']}
-uiucprescon-getmarc = "*"
-setuptools = ">=30.3.0"
-pykdu-compress = "*"
+hathivalidate = ">=0.3.3"
+hathizip = ">=0.1.3"
 lxml = "*"
+pyhathiprep = "*"
+pykdu-compress = "*"
+"pyqt5" = "*"
+setuptools = ">=30.3.0"
+uiucprescon-getmarc = "*"
+uiucprescon-imagevalidate = "*"
+uiucprescon-packager = {version = ">=0.2.1", extras = ['kdu']}
 
 [dev-packages]
-mypy = "*"
-sphinx = "*"
-pytest = "*"
-pytest-runner = "*"
-pytest-qt = "*"
-pytest-cov = "*"
 behave = "*"
 "flake8" = "*"
-tox = "*"
-
+mypy = "*"
+pytest = "*"
+pytest-cov = "*"
+pytest-qt = "*"
 pyqt-distutils = "*"
-
-[pipenv]
-allow_prereleases = true
+pytest-runner = "*"
+sphinx = "*"
+tox = "*"
