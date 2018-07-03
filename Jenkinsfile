@@ -154,13 +154,13 @@ pipeline {
                 }
                 stage("Setting Project Metadata"){
                     steps{
-                        dir("source") {
+//                        dir("source") {
                             bat "dir"
 //                            script {
 //                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
 //                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
 //                            }
-                        }
+//                        }
                     }
                 }
                 stage("installing python packages in pipenv"){
