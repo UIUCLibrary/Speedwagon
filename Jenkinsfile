@@ -107,6 +107,11 @@ pipeline {
                         }
                     }
                 }
+                stage("Setting project metadata variables"){
+                    steps {
+                        echo "hello"
+                    }
+                }
                 stage("Install Python system dependencies"){
                     steps {
 
@@ -140,7 +145,7 @@ pipeline {
                         }
                     }
                 }
-//                stage("Setting project metadata variables"){
+
 //                    steps{
 ////                        dir("source") {
 ////                            script {
