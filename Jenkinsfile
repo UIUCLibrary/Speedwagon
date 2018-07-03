@@ -160,13 +160,6 @@ Version  = ${PKG_VERSION}"""
                             bat "pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log"
 
                         }
-//                        bat "type logs\\pippackages_pipenv_${NODE_NAME}.log"
-//                        }
-//                        tee("logs/pippackages_pipenv_${NODE_NAME}.log") {
-//                            dir("source"){
-//                                bat "pipenv run pip list"
-//                            }
-//                        }
                     }
                   
                     post{
@@ -176,7 +169,6 @@ Version  = ${PKG_VERSION}"""
                                     def log_files = findFiles glob: '**/pippackages_pipenv_*.log'
                                     log_files.each { log_file ->
                                         echo "Found ${log_file}"
-                                        readFile "${log_file}"
                                         archiveArtifacts artifacts: "${log_file}"
                                         bat "del ${log_file}"
                                     }
