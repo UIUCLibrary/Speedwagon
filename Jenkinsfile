@@ -153,16 +153,15 @@ pipeline {
 //                          DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
 
 //                          junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
+                        }
                     }
-                  }
-                  post{
-                    always{
-                      echo """Name     = ${PKG_NAME}
+                    post{
+                        always{
+                            echo """Name     = ${PKG_NAME}
 Version  = ${PKG_VERSION}"""
 //        documentation zip file = ${DOC_ZIP_FILENAME}"""
-
+                        }
                     }
-                  }
                 }
                 stage("Installing Pipfile"){
                     options{
