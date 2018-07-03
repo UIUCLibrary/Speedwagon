@@ -178,16 +178,6 @@ Version  = ${PKG_VERSION}"""
                     }
                 }
             }
-            post{
-//
-                success{
-                    echo "Successfully configured build environment."
-//Source from the repository is located in source/
-//log files are located in logs/
-//pipenv virtual environments are located in pipenv/
-//"""
-                }
-            }
         }
 
 //
