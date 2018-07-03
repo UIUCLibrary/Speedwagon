@@ -162,7 +162,6 @@ Version  = ${PKG_VERSION}"""
 
                         }
                         bat "type logs\\pippackages_pipenv_${NODE_NAME}.log"
-//                            bat "pipenv install --dev --deploy"
 //                        }
 //                        tee("logs/pippackages_pipenv_${NODE_NAME}.log") {
 //                            dir("source"){
