@@ -166,7 +166,7 @@ Version  = ${PKG_VERSION}"""
 //                            dir("source"){
 //                                bat "pipenv run pip list"
 //                            }
-                        }
+//                        }
                     }
                   
                     post{
