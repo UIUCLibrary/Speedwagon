@@ -157,8 +157,8 @@ pipeline {
                   }
                   post{
                     always{
-                      echo """Name                   = ${PKG_NAME}
-        Version                = ${PKG_VERSION}"""
+                      echo """Name     = ${PKG_NAME}
+Version  = ${PKG_VERSION}"""
 //        documentation zip file = ${DOC_ZIP_FILENAME}"""
 
                     }
