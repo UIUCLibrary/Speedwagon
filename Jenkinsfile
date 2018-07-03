@@ -104,6 +104,10 @@ pipeline {
                         }
                         dir("source") {
                             stash includes: 'deployment.yml', name: "Deployment"
+                            script{
+                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+                            }
                         }
                     }
                 }
@@ -127,8 +131,7 @@ pipeline {
 
                         script {
 //                            dir("source") {
-                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+
 //                            }
                         }
 //                        }
