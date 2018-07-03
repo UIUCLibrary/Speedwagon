@@ -54,32 +54,6 @@ pipeline {
     }
     
     stages {
-        stage("Testing Jira epic"){
-            agent any
-            when {
-                equals expected: true, actual: params.UPDATE_JIRA_EPIC
-                // expression {params.UPDATE_JIRA_EPIC == true}
-            }
-            steps {
-                echo "Finding Jira epic"
-                script {
-                    // def result = jiraSearch "issue = $params.JIRA_ISSUE"
-                    // jiraComment body: 'Just a test', issueKey: 'PSR-83'
-                    def result = jiraGetIssue idOrKey: 'PSR-83', site: 'https://bugs.library.illinois.edu'
-                    echo "result = ${result}"
-                    // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
-                    // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
-                    // if(result.isEmpty()){
-                    //     echo "Jira issue not found"
-                    //     error("Jira issue not found")
-
-                    // } else {
-                    //     echo "Located ${result}"
-                    // }
-                }
-
-            }
-        }
         stage("Configure"){
             stages{
                 stage("Purge all existing data in workspace"){
@@ -90,6 +64,32 @@ pipeline {
                         deleteDir()
                         checkout scm
                     }
+                }
+                stage("Testing Jira epic"){
+                    agent any
+                    when {
+                        equals expected: true, actual: params.UPDATE_JIRA_EPIC
+                        // expression {params.UPDATE_JIRA_EPIC == true}
+                    }
+                    steps {
+                        echo "Finding Jira epic"
+                        script {
+                            // def result = jiraSearch "issue = $params.JIRA_ISSUE"
+                            // jiraComment body: 'Just a test', issueKey: 'PSR-83'
+                            def result = jiraGetIssue idOrKey: 'PSR-83', site: 'https://bugs.library.illinois.edu'
+                            echo "result = ${result}"
+                            // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
+                            // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
+                            // if(result.isEmpty()){
+                            //     echo "Jira issue not found"
+                            //     error("Jira issue not found")
+
+                            // } else {
+                            //     echo "Located ${result}"
+                            // }
+                        }
+                    }
+
                 }
                 stage("cleanup"){
                     steps {
