@@ -116,15 +116,15 @@ pipeline {
                         lock("system_python_${NODE_NAME}"){
                             bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
                             bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
-                            tee("${WORKSPACE}/logs/pippackages_system_${NODE_NAME}.log") {
-                               bat "${tool 'CPython-3.6'} -m pip list"
-                            }
-                        }
-                        bat "${tool 'CPython-3.6'} -m pip --version"
-                        dir("python_deps"){
-                            bat "dir"
-                        }
 
+                        }
+                        tee("${WORKSPACE}/logs/pippackages_system_${NODE_NAME}.log") {
+                           bat "${tool 'CPython-3.6'} -m pip list"
+                        }
+//                        bat "${tool 'CPython-3.6'} -m pip --version"
+//                        dir("python_deps"){
+//                            bat "dir"
+//                        }
                     }
                     post{
                         always{
@@ -141,17 +141,16 @@ pipeline {
                         }
                     }
                 }
-
-//                    steps{
-////                        dir("source") {
-////                            script {
-//                                bat "dir"
-////                                name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-////                                version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-////                            }
-////                        }
-//                    }
-//                }
+                stage("Setting project variables"){
+                    steps{
+                        dir("source") {
+                            script {
+                                name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+                                version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+                            }
+                        }
+                    }
+                }
                 stage("installing python packages in pipenv"){
                     steps{
                         dir("source") {
