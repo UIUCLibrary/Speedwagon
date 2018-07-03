@@ -158,7 +158,7 @@ Version  = ${PKG_VERSION}"""
                         dir("source"){
                             bat "dir"
                             bat "pipenv install --dev --deploy"
-
+                            bat "pipenv run pip list"
                         }
 //                            bat "pipenv install --dev --deploy"
 //                        }
