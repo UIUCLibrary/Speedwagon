@@ -79,63 +79,67 @@ pipeline {
 
             }
         }
-        stage("Configure Environment"){
-            steps {
-                dir("logs"){
-                    echo "Cleaning out logs directory"
-                    deleteDir()
-                }
-                
-                dir("build"){
-                    echo "Cleaning out build directory"
-                    deleteDir()
-                }
-                
-                // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
-                echo "Building on: ${NODE_NAME}."
-                lock("system_python_${NODE_NAME}"){
-                    bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
-                    bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
-                }
-                bat "${tool 'CPython-3.6'} -m pip --version"
-                dir("python_deps"){
-                    bat "dir"
-                }
-                dir("source") {
-                    stash includes: 'deployment.yml', name: "Deployment"
-                    script {
-                        name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                        version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                    }
-                    tee("${WORKSPACE}/logs/pippackages_system_${NODE_NAME}.log") {
-                        bat "${tool 'CPython-3.6'} -m pip list"
-                    }
-                    
-                    timeout(5) {
-                        bat "${tool 'CPython-3.6'} -m pipenv install --dev"
-                    }
+        stage("Configure"){
+            stages{
+                stage("Configure Environment"){
+                    steps {
+                        dir("logs"){
+                            echo "Cleaning out logs directory"
+                            deleteDir()
+                        }
 
-                    tee("${WORKSPACE}/logs/pippackages_pipenv_${NODE_NAME}.log") {
-                        bat "${tool 'CPython-3.6'} -m pipenv run pip list"
+                        dir("build"){
+                            echo "Cleaning out build directory"
+                            deleteDir()
+                        }
+
+                        // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
+                        echo "Building on: ${NODE_NAME}."
+                        lock("system_python_${NODE_NAME}"){
+                            bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
+                            bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
+                        }
+                        bat "${tool 'CPython-3.6'} -m pip --version"
+                        dir("python_deps"){
+                            bat "dir"
+                        }
+                        dir("source") {
+                            stash includes: 'deployment.yml', name: "Deployment"
+                            script {
+                                name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+                                version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+                            }
+                            tee("${WORKSPACE}/logs/pippackages_system_${NODE_NAME}.log") {
+                                bat "${tool 'CPython-3.6'} -m pip list"
+                            }
+
+                            timeout(5) {
+                                bat "${tool 'CPython-3.6'} -m pipenv install --dev"
+                            }
+
+                            tee("${WORKSPACE}/logs/pippackages_pipenv_${NODE_NAME}.log") {
+                                bat "${tool 'CPython-3.6'} -m pipenv run pip list"
+                            }
+
+                        }
                     }
-                
-                }            
-            }
-            post{
-                always{
-                    archiveArtifacts artifacts: "logs/*.log"
+                    post{
+                        always{
+                            archiveArtifacts artifacts: "logs/*.log"
+                        }
+                        success{
+                            echo """Successfully configured build environment.
+        Source from the repository is located in source/
+        log files are located in logs/
+        pipenv virtual environments are located in pipenv/
+        """
+                        }
+                        // cleanup{
+                        //     bat "del pippackages_system_${NODE_NAME}.log"
+                        //     bat "del pippackages_pipenv_${NODE_NAME}.log"
+                        // }
+                    }
                 }
-                success{
-                    echo """Successfully configured build environment.
-Source from the repository is located in source/
-log files are located in logs/
-pipenv virtual environments are located in pipenv/
-"""
-                }
-                // cleanup{
-                //     bat "del pippackages_system_${NODE_NAME}.log"
-                //     bat "del pippackages_pipenv_${NODE_NAME}.log"
-                // }
             }
         }
         stage('Build') {
