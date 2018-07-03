@@ -129,11 +129,11 @@ pipeline {
 //                            bat "dir"
 //                        }
 
-                        script {
-//                            dir("source") {
-
-//                            }
-                        }
+//                        script {
+////                            dir("source") {
+//
+////                            }
+//                        }
 //                        }
                     }
                     post{
