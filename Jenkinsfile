@@ -91,7 +91,7 @@ pipeline {
                     }
 
                 }
-                stage("cleanup"){
+                stage("Cleanup"){
                     steps {
                         dir("logs"){
                             echo "Cleaning out logs directory"
@@ -109,6 +109,16 @@ pipeline {
                                 PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                                 PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                             }
+                        }
+                    }
+                }
+                stage("Install Python system dependencies"){
+                    steps{
+                        lock("system_python_${NODE_NAME}"){
+                          bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
+                        }
+                        tee("logs/pippackages_system_${NODE_NAME}.log") {
+                            bat "${tool 'CPython-3.6'} -m pip list"
                         }
                     }
                 }
