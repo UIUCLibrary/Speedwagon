@@ -2,8 +2,8 @@
 @Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
 import org.ds.*
 
-def name = "unknown"
-def version = "unknown"
+def PKG_VERSION = "unknown"
+def PKG_NAME = "unknown"
 def CMAKE_VERSION = "cmake3.11.2"
 
 pipeline {
@@ -31,6 +31,7 @@ pipeline {
     }
 
     parameters {
+        booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         // string(name: "PROJECT_NAME", defaultValue: "Speedwagon", description: "Name given to the project")
         string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')   
         booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
@@ -53,89 +54,129 @@ pipeline {
     }
     
     stages {
-        stage("Testing Jira epic"){
-            agent any
-            when {
-                equals expected: true, actual: params.UPDATE_JIRA_EPIC
-                // expression {params.UPDATE_JIRA_EPIC == true}
-            }
-            steps {
-                echo "Finding Jira epic"
-                script {
-                    // def result = jiraSearch "issue = $params.JIRA_ISSUE"
-                    // jiraComment body: 'Just a test', issueKey: 'PSR-83'
-                    def result = jiraGetIssue idOrKey: 'PSR-83', site: 'https://bugs.library.illinois.edu'
-                    echo "result = ${result}"
-                    // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
-                    // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
-                    // if(result.isEmpty()){
-                    //     echo "Jira issue not found"
-                    //     error("Jira issue not found")
-
-                    // } else {
-                    //     echo "Located ${result}"
-                    // }
-                }
-
-            }
-        }
-        stage("Configure Environment"){
-            steps {
-                dir("logs"){
-                    echo "Cleaning out logs directory"
-                    deleteDir()
-                }
-                
-                dir("build"){
-                    echo "Cleaning out build directory"
-                    deleteDir()
-                }
-                
-                // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
-                echo "Building on: ${NODE_NAME}."
-                lock("system_python_${NODE_NAME}"){
-                    bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
-                    bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
-                }
-                bat "${tool 'CPython-3.6'} -m pip --version"
-                dir("python_deps"){
-                    bat "dir"
-                }
-                dir("source") {
-                    stash includes: 'deployment.yml', name: "Deployment"
-                    script {
-                        name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                        version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+        stage("Configure"){
+            stages{
+                stage("Purge all existing data in workspace"){
+                    when{
+                        equals expected: true, actual: params.FRESH_WORKSPACE
                     }
-                    tee("${WORKSPACE}/logs/pippackages_system_${NODE_NAME}.log") {
-                        bat "${tool 'CPython-3.6'} -m pip list"
+                    steps{
+                        deleteDir()
+                        checkout scm
                     }
-                    
-                    timeout(5) {
-                        bat "${tool 'CPython-3.6'} -m pipenv install --dev"
+                }
+                stage("Testing Jira epic"){
+                    agent any
+                    when {
+                        equals expected: true, actual: params.UPDATE_JIRA_EPIC
+                        // expression {params.UPDATE_JIRA_EPIC == true}
+                    }
+                    steps {
+                        echo "Finding Jira epic"
+                        script {
+                            // def result = jiraSearch "issue = $params.JIRA_ISSUE"
+                            // jiraComment body: 'Just a test', issueKey: 'PSR-83'
+                            def result = jiraGetIssue idOrKey: 'PSR-83', site: 'https://bugs.library.illinois.edu'
+                            echo "result = ${result}"
+                            // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
+                            // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
+                            // if(result.isEmpty()){
+                            //     echo "Jira issue not found"
+                            //     error("Jira issue not found")
+
+                            // } else {
+                            //     echo "Located ${result}"
+                            // }
+                        }
                     }
 
-                    tee("${WORKSPACE}/logs/pippackages_pipenv_${NODE_NAME}.log") {
-                        bat "${tool 'CPython-3.6'} -m pipenv run pip list"
+                }
+                stage("Cleanup"){
+                    steps {
+                        dir("logs"){
+                            echo "Cleaning out logs directory"
+                            deleteDir()
+                        }
+
+                        dir("build"){
+                            echo "Cleaning out build directory"
+                            deleteDir()
+                        }
+                        dir("source") {
+                            stash includes: 'deployment.yml', name: "Deployment"
+                        }
                     }
-                
-                }            
-            }
-            post{
-                always{
-                    archiveArtifacts artifacts: "logs/*.log"
                 }
-                success{
-                    echo """Successfully configured build environment.
-Source from the repository is located in source/
-log files are located in logs/
-pipenv virtual environments are located in pipenv/
-"""
+                stage("Install Python system dependencies"){
+                    steps{
+                        lock("system_python_${NODE_NAME}"){
+                          bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
+                        }
+                        tee("logs/pippackages_system_${NODE_NAME}.log") {
+                            bat "${tool 'CPython-3.6'} -m pip list"
+                        }
+                    }
+                    post{
+                        always{
+                            dir("logs"){
+                                script{
+                                    def log_files = findFiles glob: '**/pippackages_system_*.log'
+                                    log_files.each { log_file ->
+                                        echo "Found ${log_file}"
+                                        archiveArtifacts artifacts: "${log_file}"
+                                        bat "del ${log_file}"
+                                    }
+                                }
+                            }
+                        }
+                        failure {
+                            deleteDir()
+                        }
+                    }
                 }
-                // cleanup{
-                //     bat "del pippackages_system_${NODE_NAME}.log"
-                //     bat "del pippackages_pipenv_${NODE_NAME}.log"
-                // }
+                stage("Setting project metadata variables"){
+                    steps{
+                        script {
+                            dir("source"){
+                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}  setup.py --name").trim()
+                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+                            }
+                        }
+                    }
+                    post{
+                        success{
+                            echo """Name     = ${PKG_NAME}
+Version  = ${PKG_VERSION}"""
+                        }
+                    }
+                }
+                stage("Installing Pipfile"){
+                    options{
+                        timeout(5)
+                    }
+                    steps {
+                        dir("source"){
+                            bat "pipenv install --dev --deploy"
+                            bat "pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log"
+
+                        }
+                    }
+                  
+                    post{
+                        always{
+                            dir("logs"){
+                                script{
+                                    def log_files = findFiles glob: '**/pippackages_pipenv_*.log'
+                                    log_files.each { log_file ->
+                                        echo "Found ${log_file}"
+                                        archiveArtifacts artifacts: "${log_file}"
+                                        bat "del ${log_file}"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         stage('Build') {
@@ -358,84 +399,6 @@ pipenv virtual environments are located in pipenv/
                         }
                     }
                 }
-                // stage("Windows Standalone"){
-                //     agent {
-                //         node {
-                //             label "Windows && VS2015 && DevPi"
-                //         }
-                //     }
-                //     environment {
-                //         VSCMD_START_DIR = "${env.WORKSPACE}"
-                //         PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\cache\\"
-                //         // PIPENV_VENV_IN_PROJECT="True"
-                //         WORKON_HOME ="${WORKSPACE}\\..\\.virtualenvs\\${JOB_NAME}\\${NODE_NAME}"
-                //         // PIPENV_CACHE_DIR="${USERPROFILE}\\.virtualenvs\\cache\\"
-                //         // WORKON_HOME = "./venv"
-                //     }
-                //     // PACKAGE_WINDOWS_STANDALONE
-                //     when {
-                //         not { changeRequest()}
-                //         equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
-                //     }
-                //     steps {
-
-                //         script{
-                //             lock("system_python_${NODE_NAME}"){
-                //                 def powershell_command = "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pip install --upgrade pip pipenv' -Wait"
-                //                 echo "${powershell_command}"
-                //                 powershell "${powershell_command}"
-
-                //             }
-                //         }
-                //         bat "${tool 'CPython-3.6'} -m venv venv"
-
-                //         script{
-                //             try{
-                //                 bat "${WORKSPACE}\\venv\\Scripts\\python.exe -m pip install -U pip"
-                //             } catch (exc) {
-                //                 bat "${WORKSPACE}\\venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
-                //             }
-                //         }
-
-                //         tee('build_standalone.log') {
-                //             dir("source"){
-                //                 bat script: "${tool 'CPython-3.6'} -m pipenv lock -r"
-                //                 bat script: "${tool 'CPython-3.6'} -m pipenv lock -r > requirements.txt"
-                //                 bat script: "${tool 'CPython-3.6'} -m pipenv lock -rd > requirements-dev.txt"
-
-                //                 // bat "venv\\Scripts\\python.exe -m pip install -U pip"
-                //                 bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -U setuptools>=30.3.0"
-                //                 bat "${WORKSPACE}\\venv\\Scripts\\pip.exe install -r requirements-dev.txt"
-                //                 script{
-                //                     def requirements = readFile 'requirements.txt'
-                //                     writeFile file: 'requirements.txt', text: "${requirements}setuptools>=30.3.0\n"
-                //                     // def python_path = powershell returnStdout: true, script: 'pipenv --py'.trim()
-                //                     // def python_path = "python.exe"
-                //                     // echo "python_path = ${python_path}"
-                //                     bat "mkdir build"
-                //                     // powershell "windows_build\\build.ps1 -python_path ${WORKSPACE}\\venv\\Scripts\\python.exe"
-                //                     powershell "windows_build\\build.ps1 -PYTHON_HOME ${WORKSPACE}\\venv"
-                //                 }
-                //             }
-                //         }
-                //     }
-                //     post {
-                //         failure {
-                //             bat "pipenv uninstall --all"
-                //             bat "pipenv run pipenv-resolver --clear"
-                //         }
-                //         success {
-                //             dir("source/dist") {
-                //                 stash includes: "*.msi", name: "msi"
-                //                 archiveArtifacts artifacts: "*.msi", fingerprint: true
-                //             }
-                //         }
-                //         always {
-                //             archiveArtifacts artifacts: 'build_standalone.log', allowEmptyArchive: true
-                //             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone.log']]
-                //         }
-                //     }
-                // }
                 stage("Windows Standalone"){
                     agent {
                         node {
@@ -452,7 +415,7 @@ pipenv virtual environments are located in pipenv/
                                 tee('configure_standalone_cmake.log') {
                                     dir("cmake_build") {
                                         bat "dir"
-                                        cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
+                                        cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${TEMP}/Speegwagon/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
                                                                                
                                     }
                                 }
@@ -697,7 +660,7 @@ pipenv virtual environments are located in pipenv/
                                     bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                                     bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                                     echo "Testing Source package in devpi"
-                                    bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s tar.gz"
+                                    bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${PKG_NAME} -s tar.gz"
                             }
                         }
                     }
@@ -723,7 +686,7 @@ pipenv virtual environments are located in pipenv/
 
                             bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
                             echo "Testing Source package in devpi"
-                            bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${name} -s zip"
+                            bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip"
                         }
                     }
                 }
@@ -746,7 +709,7 @@ pipenv virtual environments are located in pipenv/
                         }
                         bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
                         echo "Testing Whl package in devpi"
-                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${name} -s whl --verbose"
+                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose"
                     }
                 }
             }
@@ -762,7 +725,7 @@ pipenv virtual environments are located in pipenv/
                         }
                     }
                     bat "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                    bat "devpi push ${name}==${version} DS_Jenkins/${env.BRANCH_NAME}"
+                    bat "devpi push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
 
                 }
             }
@@ -851,11 +814,11 @@ pipenv virtual environments are located in pipenv/
                         script {
                             // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                             // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                            input "Release ${name} ${version} to DevPi Production?"
+                            input "Release ${PKG_NAME} ${PKG_VERSION} to DevPi Production?"
                             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                                 bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                                 bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                                bat "devpi push ${name}==${version} production/release"
+                                bat "devpi push ${PKG_NAME}==${PKG_VERSION} production/release"
                             }
                         }
                     }
@@ -967,10 +930,10 @@ pipenv virtual environments are located in pipenv/
                         bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                         bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                         try {
-                            bat "devpi remove -y ${name}==${version}"
+                            bat "devpi remove -y ${PKG_NAME}==${PKG_VERSION}"
                         } catch (Exception ex) {
-                            echo "Failed to remove ${name}==${version} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                        }   
+                            echo "Failed to remove ${PKG_NAME}==${PKG_VERSION} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                        }
                     }
 
                 }

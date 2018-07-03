@@ -214,7 +214,7 @@ class GenerateMarcTask(tasks.Subtask):
     def work(self) -> bool:
         self.log(f"Retrieving marc record for {self._bib_id}")
         marc_file = os.path.join(self._destination, "marc.xml")
-        result = {}
+        result: typing.Dict[str, typing.Optional[typing.Union[str, bool]]] = {}
 
         try:
             marc = pygetmarc.get_marc(int(self._bib_id))
@@ -229,7 +229,6 @@ class GenerateMarcTask(tasks.Subtask):
             self.log(
                 f"Error! Could not retrieve marc record for {self._bib_id}"
             )
-
             success = False
             result['location'] = None
 
