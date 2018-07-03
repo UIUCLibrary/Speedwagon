@@ -104,6 +104,7 @@ pipeline {
                         }
                         dir("source") {
                             stash includes: 'deployment.yml', name: "Deployment"
+                            bat "dir"
                             script{
                                 PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                                 PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
@@ -205,7 +206,7 @@ pipeline {
 //                // }
 //            }
 
-        }
+//        }
         stage('Build') {
             parallel {
                 stage("Python Package"){
