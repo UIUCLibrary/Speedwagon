@@ -112,85 +112,87 @@ pipeline {
                         }
                     }
                 }
+            }
+        }
 
-
-                stage("Install Python system dependencies"){
-                    steps {
-
-                        // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
-                        echo "Building on: ${NODE_NAME}."
-                        lock("system_python_${NODE_NAME}"){
-                            bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
-                            bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
-
-                        }
-                        tee("${WORKSPACE}/logs/pippackages_system_${NODE_NAME}.log") {
-                           bat "${tool 'CPython-3.6'} -m pip list"
-                        }
-//                        dir("source") {
-//                            bat "dir"
-//                        }
-
-//                        script {
-////                            dir("source") {
 //
-////                            }
+//                stage("Install Python system dependencies"){
+//                    steps {
+//
+//                        // bat "dir ${WORKSPACE}\\..\\${JOB_BASE_NAME}\\${NODE_NAME}"
+//                        echo "Building on: ${NODE_NAME}."
+//                        lock("system_python_${NODE_NAME}"){
+//                            bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
+//                            bat "${tool 'CPython-3.6'} -m pip install --upgrade pipenv sphinx devpi-client --quiet"
+//
 //                        }
+//                        tee("${WORKSPACE}/logs/pippackages_system_${NODE_NAME}.log") {
+//                           bat "${tool 'CPython-3.6'} -m pip list"
 //                        }
-                    }
-                    post{
-                        always{
-                            dir("logs"){
-                                script{
-                                    def log_files = findFiles glob: '**/pippackages_pipenv_*.log'
-                                    log_files.each { log_file ->
-                                        echo "Found ${log_file}"
-                                        archiveArtifacts artifacts: "${log_file}"
-                                        bat "del ${log_file}"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                stage("Setting Project Metadata"){
-                    steps{
-//                        dir("source") {
-                            bat "dir"
-//                            script {
-//                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-//                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+////                        dir("source") {
+////                            bat "dir"
+////                        }
+//
+////                        script {
+//////                            dir("source") {
+////
+//////                            }
+////                        }
+////                        }
+//                    }
+//                    post{
+//                        always{
+//                            dir("logs"){
+//                                script{
+//                                    def log_files = findFiles glob: '**/pippackages_pipenv_*.log'
+//                                    log_files.each { log_file ->
+//                                        echo "Found ${log_file}"
+//                                        archiveArtifacts artifacts: "${log_file}"
+//                                        bat "del ${log_file}"
+//                                    }
+//                                }
 //                            }
 //                        }
-                    }
-                }
-                stage("installing python packages in pipenv"){
-                    steps{
-                        dir("source") {
-                            timeout(5) {
-                                bat "${tool 'CPython-3.6'} -m pipenv install --dev"
-                            }
-                            tee("${WORKSPACE}/logs/pippackages_pipenv_${NODE_NAME}.log") {
-                                bat "${tool 'CPython-3.6'} -m pipenv run pip list"
-                            }
-                        }
-                    }
-                    post{
-                        always{
-                            dir("logs"){
-                                script{
-                                    def log_files = findFiles glob: '**/pippackages_pipenv_*.log'
-                                    log_files.each { log_file ->
-                                        echo "Found ${log_file}"
-                                        archiveArtifacts artifacts: "${log_file}"
-                                        bat "del ${log_file}"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+//                    }
+//                }
+//                stage("Setting Project Metadata"){
+//                    steps{
+////                        dir("source") {
+//                            bat "dir"
+////                            script {
+////                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+////                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+////                            }
+////                        }
+//                    }
+//                }
+//                stage("installing python packages in pipenv"){
+//                    steps{
+//                        dir("source") {
+//                            timeout(5) {
+//                                bat "${tool 'CPython-3.6'} -m pipenv install --dev"
+//                            }
+//                            tee("${WORKSPACE}/logs/pippackages_pipenv_${NODE_NAME}.log") {
+//                                bat "${tool 'CPython-3.6'} -m pipenv run pip list"
+//                            }
+//                        }
+//                    }
+//                    post{
+//                        always{
+//                            dir("logs"){
+//                                script{
+//                                    def log_files = findFiles glob: '**/pippackages_pipenv_*.log'
+//                                    log_files.each { log_file ->
+//                                        echo "Found ${log_file}"
+//                                        archiveArtifacts artifacts: "${log_file}"
+//                                        bat "del ${log_file}"
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            }
 //            post{
 //
 //                success{
