@@ -156,11 +156,11 @@ Version  = ${PKG_VERSION}"""
                     }
                     steps {
                         dir("source"){
-                            bat "dir"
                             bat "pipenv install --dev --deploy"
                             bat "pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log"
 
                         }
+                        bat "type logs\\pippackages_pipenv_${NODE_NAME}.log"
 //                        }
 //                        tee("logs/pippackages_pipenv_${NODE_NAME}.log") {
 //                            dir("source"){
