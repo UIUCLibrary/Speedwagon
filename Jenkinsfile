@@ -176,6 +176,7 @@ Version  = ${PKG_VERSION}"""
                                     def log_files = findFiles glob: '**/pippackages_pipenv_*.log'
                                     log_files.each { log_file ->
                                         echo "Found ${log_file}"
+                                        readFile "${log_file}"
                                         archiveArtifacts artifacts: "${log_file}"
                                         bat "del ${log_file}"
                                     }
