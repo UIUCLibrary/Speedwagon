@@ -163,11 +163,11 @@ Version  = ${PKG_VERSION}"""
                         dir("source"){
                             bat "pipenv install --dev --deploy"
                         }
-                        tee("logs/pippackages_pipenv_${NODE_NAME}.log") {
-                            dir("source"){
-                                bat "pipenv run pip list"
-                            }
-                        }
+//                        tee("logs/pippackages_pipenv_${NODE_NAME}.log") {
+//                            dir("source"){
+//                                bat "pipenv run pip list"
+//                            }
+//                        }
                     }
                   
                     post{
