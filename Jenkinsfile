@@ -160,9 +160,10 @@ Version  = ${PKG_VERSION}"""
 //                        timeout(5)
 //                    }
                     steps {
-                        dir("source"){
-                            bat "pipenv install --dev --deploy"
-                        }
+                        bat "dir"
+//                        dir("source"){
+//                            bat "pipenv install --dev --deploy"
+//                        }
 //                        tee("logs/pippackages_pipenv_${NODE_NAME}.log") {
 //                            dir("source"){
 //                                bat "pipenv run pip list"
