@@ -161,7 +161,6 @@ Version  = ${PKG_VERSION}"""
                             bat "pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log"
 
                         }
-                        bat "type logs\\pippackages_pipenv_${NODE_NAME}.log"
 //                        }
 //                        tee("logs/pippackages_pipenv_${NODE_NAME}.log") {
 //                            dir("source"){
