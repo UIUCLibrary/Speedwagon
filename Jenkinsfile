@@ -121,9 +121,9 @@ pipeline {
                         tee("${WORKSPACE}/logs/pippackages_system_${NODE_NAME}.log") {
                            bat "${tool 'CPython-3.6'} -m pip list"
                         }
-                        dir("source") {
-                            bat "dir"
-                        }
+//                        dir("source") {
+//                            bat "dir"
+//                        }
 
                         script {
 //                            dir("source") {
