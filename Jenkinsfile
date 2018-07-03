@@ -146,27 +146,19 @@ pipeline {
                                 PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}  setup.py --name").trim()
                                 PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                             }
-
-//                          // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
-//                          def alljob = env.JOB_NAME.tokenize("/") as String[]
-//                          def project_name = alljob[0]
-//                          DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
-
-//                          junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
                         }
                     }
                     post{
                         always{
                             echo """Name     = ${PKG_NAME}
 Version  = ${PKG_VERSION}"""
-//        documentation zip file = ${DOC_ZIP_FILENAME}"""
                         }
                     }
                 }
                 stage("Installing Pipfile"){
-                    options{
-                        timeout(5)
-                    }
+//                    options{
+//                        timeout(5)
+//                    }
                     steps {
                         dir("source"){
                             bat "pipenv install --dev --deploy"
