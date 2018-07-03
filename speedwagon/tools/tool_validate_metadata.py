@@ -34,6 +34,9 @@ class TiffFileCheckData(options.AbsCustomData2):
 
     @classmethod
     def is_valid(cls, value) -> bool:
+        if not value:
+            return False
+
         if not os.path.exists(value):
             return False
         if os.path.splitext(value)[1].lower() == ".tif":
@@ -47,7 +50,7 @@ class TiffFileCheckData(options.AbsCustomData2):
 
 
 class ValidateImageMetadata(AbsTool):
-    name = "Validate Tiff Image Metadata for Hathi Trust"
+    name = "Validate Tiff Image Metadata for HathiTrust"
     description = "Validate the metadata located within a tiff file."
 
     @staticmethod
@@ -68,6 +71,19 @@ class ValidateImageMetadata(AbsTool):
             JobValues.SOURCE_FILE.value: source_input
         })
         return jobs
+
+    @staticmethod
+    def validate_user_options(**user_args):
+        file_path = user_args[UserArgs.INPUT.value]
+
+        if not file_path:
+            raise ValueError("No image selected")
+
+        if not os.path.exists(file_path):
+            raise ValueError(f"Unable to locate {file_path}")
+
+        if not os.path.isfile(file_path):
+            raise ValueError(f"Invalid input selection")
 
 
 class MetadataValidator(ProcessJobWorker):
