@@ -1,6 +1,6 @@
 #!groovy
-//@Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
-//import org.ds.*
+@Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
+import org.ds.*
 
 def PKG_VERSION = "unknown"
 def PKG_NAME = "unknown"
@@ -148,12 +148,12 @@ pipeline {
                             }
                         }
                     }
-                    post{
-                        always{
-                            echo """Name     = ${PKG_NAME}
-Version  = ${PKG_VERSION}"""
-                        }
-                    }
+//                    post{
+//                        always{
+//                            echo """Name     = ${PKG_NAME}
+//Version  = ${PKG_VERSION}"""
+//                        }
+//                    }
                 }
                 stage("Installing Pipfile"){
 //                    options{
