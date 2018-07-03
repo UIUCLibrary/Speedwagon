@@ -151,9 +151,9 @@ Version  = ${PKG_VERSION}"""
                     }
                 }
                 stage("Installing Pipfile"){
-//                    options{
-//                        timeout(5)
-//                    }
+                    options{
+                        timeout(5)
+                    }
                     steps {
                         bat "dir"
 //                        dir("source"){
