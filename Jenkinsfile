@@ -121,12 +121,12 @@ pipeline {
                         tee("${WORKSPACE}/logs/pippackages_system_${NODE_NAME}.log") {
                            bat "${tool 'CPython-3.6'} -m pip list"
                         }
-                        dir("source") {
-                            script {
-                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                            }
+//                        dir("source") {
+                        script {
+                            PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+                            PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                         }
+//                        }
                     }
                     post{
                         always{
