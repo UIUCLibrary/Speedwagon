@@ -82,7 +82,6 @@ class ValidateMetadataWorkflow(AbsWorkflow):
     def generate_report(cls,
                         results: List[speedwagon.tasks.Result],
                         **user_args) -> Optional[str]:
-        total_results = len(results)
 
         def validation_result_filter(
                 task_result: speedwagon.tasks.Result) -> bool:
@@ -91,26 +90,39 @@ class ValidateMetadataWorkflow(AbsWorkflow):
             return True
 
         def filter_only_invalid(task_result):
-            return not task_result[ResultValues.VALID]
+            if task_result[ResultValues.VALID]:
+                return False
+            else:
+                return True
 
         def invalid_messages(task_result):
-            message = task_result[ResultValues.REPORT]
+            source = task_result[ResultValues.FILENAME]
+            messages = task_result[ResultValues.REPORT]
+            message = "\n".join([
+                f"{source}",
+                messages
+            ])
             return message
 
-        data = map(lambda x: x.data, filter(validation_result_filter, results))
-        data = filter(filter_only_invalid, data)
-        data_points = list(map(invalid_messages, data))
+        data = [i for i in map(
+            lambda x: x.data, filter(validation_result_filter, results))]
+
         line_sep = "\n" + "-" * 60
-        report_data = "\n\n".join(list(data_points))
+        total_results = len(data)
+        filtered_data = filter(filter_only_invalid, data)
+        data_points = list(map(invalid_messages, filtered_data))
+
+        report_data = "\n\n".join(data_points)
 
         summary = "\n".join([
+            f"Validated files located in: {user_args[UserArgs.INPUT.value]}",
             f"Total files checked: {total_results}",
 
         ])
 
         report = f"\n{line_sep}\n".join(
             [
-                "\nReport\n",
+                "\nReport:",
                 summary,
                 report_data,
                 "\n"
@@ -150,7 +162,7 @@ class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
         try:
             report = hathi_tiff_profile.validate(self._filename)
             is_valid = report.valid
-            report_text = str(report)
+            report_text = "\n* ".join(report.issues())
         except RuntimeError as e:
             is_valid = False
             report_text = str(e)
@@ -159,7 +171,7 @@ class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
         result = {
             ResultValues.FILENAME: self._filename,
             ResultValues.VALID: is_valid,
-            ResultValues.REPORT: report_text
+            ResultValues.REPORT: f"* {report_text}"
         }
 
         self.set_results(result)
