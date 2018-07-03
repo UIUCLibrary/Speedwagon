@@ -104,11 +104,6 @@ pipeline {
                         }
                         dir("source") {
                             stash includes: 'deployment.yml', name: "Deployment"
-                            bat "dir"
-                            script{
-                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                            }
                         }
                     }
                 }
@@ -139,22 +134,22 @@ pipeline {
                         }
                     }
                 }
-//                stage("Setting project metadata variables"){
-//                    steps{
-//                        script {
-//                            dir("source"){
-//                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}  setup.py --name").trim()
-//                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-//                            }
+                stage("Setting project metadata variables"){
+                    steps{
+                        script {
+                            dir("source"){
+                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}  setup.py --name").trim()
+                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+                            }
+                        }
+                    }
+//                    post{
+//                        always{
+//                            echo """Name     = ${PKG_NAME}
+//Version  = ${PKG_VERSION}"""
 //                        }
 //                    }
-////                    post{
-////                        always{
-////                            echo """Name     = ${PKG_NAME}
-////Version  = ${PKG_VERSION}"""
-////                        }
-////                    }
-//                }
+                }
                 stage("Installing Pipfile"){
 //                    options{
 //                        timeout(5)
