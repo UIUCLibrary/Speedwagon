@@ -143,11 +143,11 @@ pipeline {
                 stage("Setting project metadata variables"){
                     steps{
                         dir("source") {
-                            script {
+//                            script {
                                 bat "dir"
 //                                name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
 //                                version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                            }
+//                            }
                         }
                     }
                 }
