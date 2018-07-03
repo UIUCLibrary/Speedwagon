@@ -107,7 +107,7 @@ pipeline {
                         }
                     }
                 }
-                stage("Setting project metadata variables"){
+                stage("dummy"){
                     steps {
                         echo "hello"
                     }
