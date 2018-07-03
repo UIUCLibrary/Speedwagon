@@ -82,15 +82,15 @@ pipeline {
         }
         stage("Configure"){
             stages{
-                stage("Purge all existing data in workspace"){
-                    when{
-                        equals expected: true, actual: params.FRESH_WORKSPACE
-                    }
-                    steps{
-                        deleteDir()
-                        checkout scm
-                    }
-                }
+//                stage("Purge all existing data in workspace"){
+//                    when{
+//                        equals expected: true, actual: params.FRESH_WORKSPACE
+//                    }
+//                    steps{
+//                        deleteDir()
+//                        checkout scm
+//                    }
+//                }
                 stage("Configure Environment"){
                     steps {
                         dir("logs"){
