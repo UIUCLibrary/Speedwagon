@@ -82,7 +82,6 @@ class ValidateMetadataWorkflow(AbsWorkflow):
                         results: List[speedwagon.tasks.Result],
                         **user_args) -> Optional[str]:
         total_results = len(results)
-        summary = f"Total files checked: {total_results}"
 
         def validation_result_filter(
                 task_result: speedwagon.tasks.Result) -> bool:
@@ -102,6 +101,11 @@ class ValidateMetadataWorkflow(AbsWorkflow):
         data_points = list(map(invalid_messages, data))
         line_sep = "\n" + "-" * 60
         report_data = "\n\n".join(list(data_points))
+
+        summary = "\n".join([
+            f"Total files checked: {total_results}",
+
+        ])
 
         report = f"\n{line_sep}\n".join(
             [
@@ -132,14 +136,11 @@ class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
             report_text = str(e)
         self.log(f"Validating {self._filename} -- {is_valid}")
 
-        #
-        #
         result = {
             ResultValues.FILENAME: self._filename,
             ResultValues.VALID: is_valid,
             ResultValues.REPORT: report_text
         }
-        #
+
         self.set_results(result)
-        #
         return True
