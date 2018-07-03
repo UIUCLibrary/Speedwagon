@@ -2,6 +2,7 @@ import os
 from typing import Iterable, Optional, List, Any
 
 from uiucprescon import imagevalidate
+from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
 from speedwagon.tools import options
 import speedwagon.tasks
@@ -42,19 +43,19 @@ class ValidateMetadataWorkflow(AbsWorkflow):
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data,
                                **user_args) -> List[dict]:
-        def locate_tiffs(root_dir):
-            for root, dirs, files in os.walk(root_dir):
-                for file_name in files:
-                    base, ext = os.path.splitext(file_name)
-                    if not ext.lower() == ".tif":
-                        continue
-                    yield os.path.join(root, file_name)
-        tasks = []
-        for image_file in locate_tiffs(user_args[UserArgs.INPUT.value]):
-            tasks.append({
+        new_tasks = []
+
+        for image_file in initial_results[0].data:
+            new_tasks .append({
                 JobValues.ITEM_FILENAME.value: image_file
             })
-        return tasks
+        return new_tasks
+
+    def initial_task(self, task_builder: tasks.TaskBuilder,
+                     **user_args) -> None:
+
+        task_builder.add_subtask(
+            LocateTiffImageTask(user_args[UserArgs.INPUT.value]))
 
     def user_options(self):
         return options.UserOptionCustomDataType(UserArgs.INPUT.value,
@@ -116,6 +117,25 @@ class ValidateMetadataWorkflow(AbsWorkflow):
             ]
         )
         return report
+
+
+class LocateTiffImageTask(speedwagon.tasks.Subtask):
+    def __init__(self, root) -> None:
+        super().__init__()
+        self._root = root
+
+    def work(self) -> bool:
+        tiff_files = []
+        for root, dirs, files in os.walk(self._root):
+            for file_name in files:
+                base, ext = os.path.splitext(file_name)
+                if not ext.lower() == ".tif":
+                    continue
+                tiff_file = os.path.join(root, file_name)
+                self.log(f"Found {tiff_file}")
+                tiff_files.append(tiff_file)
+        self.set_results(tiff_files)
+        return True
 
 
 class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
