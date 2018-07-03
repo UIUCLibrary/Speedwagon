@@ -165,33 +165,34 @@ Version  = ${PKG_VERSION}"""
                   }
                 }
                 stage("Installing Pipfile"){
-                  options{
-                    timeout(5)
-                  }
-                  steps {
-                    dir("source"){
-                      bat "pipenv install --dev --deploy"
+                    options{
+                        timeout(5)
                     }
-                    tee("logs/pippackages_pipenv_${NODE_NAME}.log") {
-                      dir("source"){
-                        bat "pipenv run pip list"
-                      }
-                    }
-                  }
-                  post{
-                    always{
-                      dir("logs"){
-                        script{
-                          def log_files = findFiles glob: '**/pippackages_pipenv_*.log'
-                          log_files.each { log_file ->
-                            echo "Found ${log_file}"
-                            archiveArtifacts artifacts: "${log_file}"
-                            bat "del ${log_file}"
-                          }
+                    steps {
+                        dir("source"){
+                            bat "pipenv install --dev --deploy"
                         }
-                      }
+                        tee("logs/pippackages_pipenv_${NODE_NAME}.log") {
+                            dir("source"){
+                                bat "pipenv run pip list"
+                            }
+                        }
                     }
-                  }
+                  
+                    post{
+                        always{
+                            dir("logs"){
+                                script{
+                                    def log_files = findFiles glob: '**/pippackages_pipenv_*.log'
+                                    log_files.each { log_file ->
+                                        echo "Found ${log_file}"
+                                        archiveArtifacts artifacts: "${log_file}"
+                                        bat "del ${log_file}"
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
