@@ -33,11 +33,11 @@ class Spam(AbsTool):
         super().__init__()
 
         # input_data = SelectDirectory()
-        # input_data.label = "Input"
+        # input_data.installed_packages_title = "Input"
         # self.options.append(input_data)
         #
         # output_data = SelectDirectory()
-        # output_data.label = "Output"
+        # output_data.installed_packages_title = "Output"
         # self.options.append(output_data)
 
     @staticmethod

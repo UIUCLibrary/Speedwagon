@@ -82,16 +82,16 @@ pipeline {
         }
         stage("Configure"){
             stages{
-//                stage("Purge all existing data in workspace"){
-//                    when{
-//                        equals expected: true, actual: params.FRESH_WORKSPACE
-//                    }
-//                    steps{
-//                        deleteDir()
-//                        checkout scm
-//                    }
-//                }
-                stage("Configure Environment"){
+                stage("Purge all existing data in workspace"){
+                    when{
+                        equals expected: true, actual: params.FRESH_WORKSPACE
+                    }
+                    steps{
+                        deleteDir()
+                        checkout scm
+                    }
+                }
+                stage("cleanup"){
                     steps {
                         dir("logs"){
                             echo "Cleaning out logs directory"
@@ -107,11 +107,7 @@ pipeline {
                         }
                     }
                 }
-                stage("dummy"){
-                    steps {
-                        echo "hello"
-                    }
-                }
+
                 stage("Install Python system dependencies"){
                     steps {
 
