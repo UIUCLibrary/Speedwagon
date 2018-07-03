@@ -143,12 +143,12 @@ pipeline {
                             }
                         }
                     }
-//                    post{
-//                        always{
-//                            echo """Name     = ${PKG_NAME}
-//Version  = ${PKG_VERSION}"""
-//                        }
-//                    }
+                    post{
+                        success{
+                            echo """Name     = ${PKG_NAME}
+Version  = ${PKG_VERSION}"""
+                        }
+                    }
                 }
                 stage("Installing Pipfile"){
 //                    options{
