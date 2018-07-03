@@ -91,5 +91,6 @@ class MetadataValidator(ProcessJobWorker):
         source_file = kwargs[JobValues.SOURCE_FILE.value]
         hathi_tiff_profile = imagevalidate.Profile(
             imagevalidate.profiles.HathiTiff())
+
         report = hathi_tiff_profile.validate(source_file)
         self.log(str(report))
