@@ -122,8 +122,9 @@ pipeline {
                            bat "${tool 'CPython-3.6'} -m pip list"
                         }
 //                        dir("source") {
-                        dir("source") {
-                            script {
+
+                        script {
+                            dir("source") {
                                 PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                                 PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                             }
