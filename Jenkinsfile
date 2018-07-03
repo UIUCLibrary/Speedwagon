@@ -158,9 +158,7 @@ Version  = ${PKG_VERSION}"""
                         dir("source"){
                             bat "dir"
                             bat "pipenv install --dev --deploy"
-                            tee("../logs/pippackages_pipenv_${NODE_NAME}.log"){
-                                bat "pipenv run pip list"
-                            }
+                            bat "pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log"
 
                         }
 //                            bat "pipenv install --dev --deploy"
