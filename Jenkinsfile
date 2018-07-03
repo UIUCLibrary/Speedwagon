@@ -152,7 +152,7 @@ pipeline {
                         }
                     }
                 }
-                stage("Setting Project Metadata")
+                stage("Setting Project Metadata"){
                     steps{
                         dir("source") {
                             bat "dir"
@@ -162,7 +162,7 @@ pipeline {
 //                            }
                         }
                     }
-//                }
+                }
                 stage("installing python packages in pipenv"){
                     steps{
                         dir("source") {
