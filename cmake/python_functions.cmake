@@ -62,6 +62,25 @@ function(install_venv_deps)
     message(STATUS "Installing Python dependencies to environment done")
 endfunction(install_venv_deps)
 
+function(create_pth_configure_file)
+    cmake_parse_arguments(CONFIG "" "SOURCE_PTH_FILE;OUTPUT" "PYTHON_PATHS" ${ARGN})
+#    message(STATUS "CONFIG_OUTPUT: ${CONFIG_OUTPUT}")
+#    message(STATUS "PYTHON_PATHS: ${CONFIG_PYTHON_PATHS}")
+#    message(STATUS "CONFIG_SOURCE_PTH_FILE: ${CONFIG_SOURCE_PTH_FILE}")
+
+    file(READ ${CONFIG_SOURCE_PTH_FILE} PYTHON_PTH_DATA)
+
+    foreach(python_path ${CONFIG_PYTHON_PATHS})
+        string(APPEND PYTHON_PTH_DATA "\n${python_path}")
+    endforeach()
+
+    string(APPEND PYTHON_PTH_DATA "\n")
+
+    file(WRITE ${CONFIG_OUTPUT} ${PYTHON_PTH_DATA})
+
+endfunction(create_pth_configure_file)
+
+
 function(create_dep_wheels)
     cmake_parse_arguments(VENV "" "PYTHON_EXE" "REQUIREMENTS_FILES" ${ARGN})
 

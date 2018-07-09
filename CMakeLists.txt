@@ -27,6 +27,7 @@ FetchContent_Declare(embedded_python
 )
 FetchContent_GetProperties(embedded_python)
 
+
 if (NOT embedded_python_POPULATED)
     message(STATUS "Fetching Embedded Distribution of Python version ${PYTHON_VERSION_STRING} for ${CMAKE_SYSTEM_PROCESSOR}")
     FetchContent_Populate(embedded_python)
@@ -38,28 +39,31 @@ if (NOT embedded_python_POPULATED)
         WORKING_DIRECTORY embedded_python_SOURCE_DIR
         RESULTS_VARIABLE  PYTHON_EMBEDDED_P_SIZE
     )
-    message(STATUS "Fetching Embedded Distribution of Python version ${PYTHON_VERSION_STRING} for ${CMAKE_SYSTEM_PROCESSOR} - Done")
     set(CMAKE_SIZEOF_VOID_P ${PYTHON_EMBEDDED_P_SIZE})
+    message(STATUS "Fetching Embedded Distribution of Python version ${PYTHON_VERSION_STRING} for ${CMAKE_SYSTEM_PROCESSOR} - Done")
 
     find_file(PYTHON_EMBEDDED_PTH_FILE
         NAMES python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth
         HINTS ${embedded_python_SOURCE_DIR}
         NO_DEFAULT_PATH
     )
-    file(READ ${PYTHON_EMBEDDED_PTH_FILE} PYTHON_EMBEDDED_PTH_DATA)
-    string(APPEND PYTHON_EMBEDDED_PTH_DATA "\n@EXTRA_PYTHON_LIBRARY_PATHS@\n")
-    
-    set(python_pth_template_file "${PROJECT_BINARY_DIR}/templates/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth.in")
-    file(WRITE ${python_pth_template_file} ${PYTHON_EMBEDDED_PTH_DATA})
 
-    set(EXTRA_PYTHON_LIBRARY_PATHS "../Lib/site-packages")
     set(PYTHON_INSTALL_CONFIG_PTH_FILE "${PROJECT_BINARY_DIR}/configs/install/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth")
-    configure_file(${python_pth_template_file} ${PYTHON_INSTALL_CONFIG_PTH_FILE} @ONLY)
+    set(PYTHON_TEST_CONFIG_PTH_FILE "${PROJECT_BINARY_DIR}/configs/test/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth")
 
-    set(EXTRA_PYTHON_LIBRARY_PATHS "./Lib/site-packages")
-    string(APPEND EXTRA_PYTHON_LIBRARY_PATHS "\n./pytest")
-    set(PYTHON_TEST_CONFIG_PTH_FILE "${PROJECT_BINARY_DIR}/configs/test/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth" )
-    configure_file(${python_pth_template_file} ${PYTHON_TEST_CONFIG_PTH_FILE} @ONLY)
+    create_pth_configure_file(
+        SOURCE_PTH_FILE "${PYTHON_EMBEDDED_PTH_FILE}"
+        OUTPUT "${PYTHON_INSTALL_CONFIG_PTH_FILE}"
+        PYTHON_PATHS "../Lib/site-packages"
+        )
+
+    create_pth_configure_file(
+        SOURCE_PTH_FILE "${PYTHON_EMBEDDED_PTH_FILE}"
+        OUTPUT "${PYTHON_TEST_CONFIG_PTH_FILE}"
+        PYTHON_PATHS
+             ./Lib/site-packages
+            ./pytest
+        )
 
 endif()
 
@@ -80,7 +84,7 @@ get_python_version(
     VERSION ${PROJECT_NAME}_VERSION
     )
 
-# if build_number is set. make that the PROJECT_VERSION tweek
+# if build_number is set. make that the PROJECT_VERSION tweak
 if(DEFINED ENV{build_number})
     set(CMAKE_PROJECT_VERSION_TWEAK $ENV{build_number})
     set(${PROJECT_NAME}_VERSION_TWEAK $ENV{build_number})
@@ -130,7 +134,6 @@ add_custom_target(docs
 add_custom_command(
     OUTPUT
         docs/html/index.html
-
     COMMAND ${VENV_PYTHON} setup.py build_sphinx -b html --build-dir=${PROJECT_BINARY_DIR}/docs    
     COMMAND ${VENV_PYTHON} setup.py build_sphinx -b qthelp --build-dir=${PROJECT_BINARY_DIR}/docs
     DEPENDS
@@ -192,47 +195,54 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
     )
 set(SPEEDWAGON_PYTHON_INTERP pythonw.exe)
 
-configure_file(templates/speedwagon.bat.in ${PROJECT_BINARY_DIR}/speedwagon.bat @ONLY)
-# install embedded Python to standalone build path
-add_custom_command(TARGET standalone PRE_BUILD 
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${embedded_python_SOURCE_DIR}/ ${PROJECT_BINARY_DIR}/standalone/
-    COMMENT "Adding Python standalone distribution to build"
+if(WIN32)
+    configure_file(templates/speedwagon.bat.in ${PROJECT_BINARY_DIR}/speedwagon.bat @ONLY)
+    list(APPEND TOP_LEVEL_FILES ${PROJECT_BINARY_DIR}/speedwagon.bat)
+    # install embedded Python to standalone build path
+    add_custom_command(TARGET standalone PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${embedded_python_SOURCE_DIR}/ ${PROJECT_BINARY_DIR}/standalone/
+        COMMENT "Adding Python standalone distribution to build"
+        )
+    add_custom_command(TARGET standalone POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PYTHON_TEST_CONFIG_PTH_FILE} ${PROJECT_BINARY_DIR}/standalone/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth
+        COMMENT "Fixing up python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth"
     )
+    install(FILES ${PYTHON_INSTALL_CONFIG_PTH_FILE} DESTINATION bin)
+    install(PROGRAMS ${PROJECT_BINARY_DIR}/standalone/python.exe ${PROJECT_BINARY_DIR}/standalone/pythonw.exe
+        DESTINATION bin
+    )
+
+    install(DIRECTORY ${PROJECT_BINARY_DIR}/standalone/Lib/
+        DESTINATION Lib
+        )
+
+    add_test(NAME unittests
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
+        COMMAND python -m pytest ${PROJECT_SOURCE_DIR}/tests --rootdir=${PROJECT_BINARY_DIR}/standalone
+        )
+
+    include(cmake/packaging.cmake)
+
+    install(DIRECTORY ${PROJECT_BINARY_DIR}/standalone/
+        DESTINATION bin
+        PATTERN "pytest" EXCLUDE
+        PATTERN "Lib" EXCLUDE
+        PATTERN "python.exe" EXCLUDE
+        PATTERN "pythonw.exe" EXCLUDE
+        PATTERN "python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth" EXCLUDE
+        )
+
+endif()
 
 configure_file(${PROJECT_SOURCE_DIR}/LICENSE ${PROJECT_BINARY_DIR}/LICENSE.txt)
 
 include(CTest)
-add_custom_command(TARGET standalone POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PYTHON_TEST_CONFIG_PTH_FILE} ${PROJECT_BINARY_DIR}/standalone/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth
-    COMMENT "Fixing up python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth"
-)
-install(FILES ${PYTHON_INSTALL_CONFIG_PTH_FILE} DESTINATION bin)
-install(DIRECTORY ${PROJECT_BINARY_DIR}/standalone/
-    DESTINATION bin
-    PATTERN "pytest" EXCLUDE
-    PATTERN "Lib" EXCLUDE
-    PATTERN "python.exe" EXCLUDE
-    PATTERN "pythonw.exe" EXCLUDE
-    PATTERN "python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth" EXCLUDE
-    )
+
 
 install(FILES
-        ${PROJECT_BINARY_DIR}/speedwagon.bat
+        "${TOP_LEVEL_FILES}"
         ${PROJECT_BINARY_DIR}/LICENSE.txt
     DESTINATION .)
 
-install(PROGRAMS ${PROJECT_BINARY_DIR}/standalone/python.exe ${PROJECT_BINARY_DIR}/standalone/pythonw.exe
-    DESTINATION bin
-    )
 
-install(DIRECTORY ${PROJECT_BINARY_DIR}/standalone/Lib/
-    DESTINATION Lib
-    )
-
-add_test(NAME unittests
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
-    COMMAND python -m pytest ${PROJECT_SOURCE_DIR}/tests --rootdir=${PROJECT_BINARY_DIR}/standalone
-    )
-
-include(cmake/packaging.cmake)
 include(CPack)
