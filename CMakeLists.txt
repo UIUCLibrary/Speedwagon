@@ -175,10 +175,10 @@ add_custom_command(
 # the build
 if(SPEEDWAGON_EXTRA_REQUIREMENTS_FILE)
     if(EXISTS ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE})
-        message(STATUS "Include dependencies in ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE} to build")
         add_custom_command(
             TARGET standalone POST_BUILD
             COMMAND ${VENV_PYTHON} -m pip install -r ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE} -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
+            COMMENT "Installing dependencies in ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE} to build"
         )
     else()
         message(WARNING "Unable to located SPEEDWAGON_EXTRA_REQUIREMENTS_FILE value \"${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE}\"")
@@ -188,14 +188,15 @@ endif(SPEEDWAGON_EXTRA_REQUIREMENTS_FILE)
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
     DEPENDS wheel
     COMMAND ${VENV_PYTHON} -m pip install pytest -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
+    COMMENT "Adding pytest to standalone virtual environment"
     )
 set(SPEEDWAGON_PYTHON_INTERP pythonw.exe)
 
-#configure_file(templates/speedwagon.bat.in standalone/speedwagon.bat @ONLY)
 configure_file(templates/speedwagon.bat.in ${PROJECT_BINARY_DIR}/speedwagon.bat @ONLY)
 # install embedded Python to standalone build path
 add_custom_command(TARGET standalone PRE_BUILD 
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${embedded_python_SOURCE_DIR}/ ${PROJECT_BINARY_DIR}/standalone/
+    COMMENT "Adding Python standalone distribution to build"
     )
 
 configure_file(${PROJECT_SOURCE_DIR}/LICENSE ${PROJECT_BINARY_DIR}/LICENSE.txt)
