@@ -221,11 +221,37 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py
 )
 
 add_custom_target(docs
-    DEPENDS ${PROJECT_BINARY_DIR}/docs
+    DEPENDS
+        docs/html/index.html
+        docs/qthelp/index.html
     )
-add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/docs
+add_custom_command(
+    OUTPUT
+        docs/html/index.html
+
     COMMAND ${VENV_PYTHON} setup.py build_sphinx -b html --build-dir=${PROJECT_BINARY_DIR}/docs    
     COMMAND ${VENV_PYTHON} setup.py build_sphinx -b qthelp --build-dir=${PROJECT_BINARY_DIR}/docs
+    DEPENDS
+        ${PROJECT_SOURCE_DIR}/docs/source/conf.py
+        ${PROJECT_SOURCE_DIR}/docs/source/about.rst
+        ${PROJECT_SOURCE_DIR}/docs/source/history.rst
+        ${PROJECT_SOURCE_DIR}/docs/source/index.rst
+        ${PROJECT_SOURCE_DIR}/HISTORY.rst
+    COMMENT "Generating HTML project documentation"
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
+
+add_custom_command(
+    OUTPUT
+        docs/qthelp/index.html
+    COMMAND ${VENV_PYTHON} setup.py build_sphinx -b qthelp --build-dir=${PROJECT_BINARY_DIR}/docs
+    DEPENDS
+        ${PROJECT_SOURCE_DIR}/docs/source/conf.py
+        ${PROJECT_SOURCE_DIR}/docs/source/about.rst
+        ${PROJECT_SOURCE_DIR}/docs/source/history.rst
+        ${PROJECT_SOURCE_DIR}/docs/source/index.rst
+        ${PROJECT_SOURCE_DIR}/HISTORY.rst
+    COMMENT "Generating QtHelp project documentation"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
 
