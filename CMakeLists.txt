@@ -177,8 +177,8 @@ if(SPEEDWAGON_EXTRA_REQUIREMENTS_FILE)
     if(EXISTS ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE})
         message(STATUS "Include dependencies in ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE} to build")
         add_custom_command(
-        TARGET standalone POST_BUILD
-        COMMAND ${VENV_PYTHON} -m pip install -r ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE} -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
+            TARGET standalone POST_BUILD
+            COMMAND ${VENV_PYTHON} -m pip install -r ${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE} -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
         )
     else()
         message(WARNING "Unable to located SPEEDWAGON_EXTRA_REQUIREMENTS_FILE value \"${SPEEDWAGON_EXTRA_REQUIREMENTS_FILE}\"")
