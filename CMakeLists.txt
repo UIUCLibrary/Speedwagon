@@ -71,6 +71,7 @@ get_python_version(
     PATCH CMAKE_PROJECT_VERSION_PATCH
     VERSION PROJECT_VERSION
     )
+
 get_python_version(
     ${PROJECT_SOURCE_DIR}/setup.py
     MAJOR ${PROJECT_NAME}_VERSION_MAJOR
@@ -78,6 +79,7 @@ get_python_version(
     PATCH ${PROJECT_NAME}_VERSION_PATCH
     VERSION ${PROJECT_NAME}_VERSION
     )
+
 # if build_number is set. make that the PROJECT_VERSION tweek
 if(DEFINED ENV{build_number})
     set(CMAKE_PROJECT_VERSION_TWEAK $ENV{build_number})
