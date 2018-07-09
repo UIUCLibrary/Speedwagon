@@ -835,6 +835,7 @@ Version  = ${PKG_VERSION}"""
 
                     steps {
                         unstash "msi"
+                        unstash "Deployment"
                         script{
                             // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                             def msi_files = findFiles glob: '*.msi'
