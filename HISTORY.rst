@@ -75,7 +75,7 @@ Dev
    * Able to support the following distribution packages:
        * msi installer
        * exe installer
-       * zip portable (Not an installer. Program runs without needing to install it)
+       * zip portable (Not an installer. Program runs without installing)
 
 * Bug fixes:
     * Creating jp2 files no longer opens a command shell window during processing
