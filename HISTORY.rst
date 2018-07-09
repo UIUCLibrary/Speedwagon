@@ -2,6 +2,28 @@
 
 Release History
 ---------------
+0.1.2
++++++
+* New Tools:
+   * Validate Tiff Image Metadata for HathiTrust
+* New Workflows:
+   * Validate Metadata
+* Improvements:
+   * Generated MARC records are now enhanced with a 955 field
+   * Jp2 files can be selected for title page in HathiPrep
+* API Changes:
+    * Combobox UI widget added to options
+* Distribution:
+   * Use CMake to generate standalone distribution installer packages.
+   * Able to support the following Windows distribution packages:
+       * msi installer
+       * exe installer
+       * zip portable (Not an installer. Program runs without installing)
+
+* Bug fixes:
+    * Creating jp2 files no longer opens a command shell window during processing
+    * Error message returned by jp2 converter are decoded correctly
+    * Compatibility with white spaces in file path no longer breaks jp2 conversion
 
 0.1.1
 +++++
@@ -61,23 +83,3 @@ Release History
 Dev
 +++
 
-* New Tools:
-   * Validate Tiff Image Metadata for HathiTrust
-* New Workflows:
-   * Validate Metadata
-* Improvements:
-   * Generated MARC records are now enhanced with a 955 field
-   * Jp2 files can be selected for title page in HathiPrep
-* API Changes:
-    * Combobox UI widget added to options
-* Distribution:
-   * Use CMake to generate standalone distribution installer packages.
-   * Able to support the following Windows distribution packages:
-       * msi installer
-       * exe installer
-       * zip portable (Not an installer. Program runs without installing)
-
-* Bug fixes:
-    * Creating jp2 files no longer opens a command shell window during processing
-    * Error message returned by jp2 converter are decoded correctly
-    * Compatibility with white spaces in file path no longer breaks jp2 conversion
