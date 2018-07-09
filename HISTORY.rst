@@ -72,7 +72,7 @@ Dev
     * Combobox UI widget added to options
 * Distribution:
    * Use CMake to generate standalone distribution installer packages.
-   * Able to support the following distribution packages:
+   * Able to support the following Windows distribution packages:
        * msi installer
        * exe installer
        * zip portable (Not an installer. Program runs without installing)
