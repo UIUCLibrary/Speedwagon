@@ -478,9 +478,9 @@ Version  = ${PKG_VERSION}"""
                                             }
                                             
                                         }
-                                        archiveArtifacts artifacts: 'test_standalone_cmake.log', allowEmptyArchive: true
-                                        warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'test_standalone_cmake.log']]
                                     }
+                                    archiveArtifacts artifacts: 'test_standalone_cmake.log', allowEmptyArchive: true
+                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'test_standalone_cmake.log']]
                                 }
                             }
                         }
