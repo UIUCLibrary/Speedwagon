@@ -586,30 +586,30 @@ Version  = ${PKG_VERSION}"""
                          
                             }
                         }
-//                        stage("CPack ZIP"){
-//                            when{
-//                                equals expected: "ZIP", actual: params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR
-//                            }
-//                            steps {
-//                                dir("cmake_build") {
-//                                    cpack arguments: '-C Release -G ZIP -V', installation: "${CMAKE_VERSION}"
-//                                }
-//                            }
-//                            post {
-//                                success{
-//                                    dir("cmake_build") {
-//                                        script{
-//                                            def install_files = findFiles glob: "*.zip"
-//                                            install_files.each { installer_file ->
-//                                                echo "Found ${installer_file}"
-//                                                archiveArtifacts artifacts: "${installer_file}", fingerprint: true
-//                                            }
-//                                        }
-//                                        stash includes: "*.zip", name: "standalone_installer"
-//                                    }
-//                                }
-//                            }
-//                        }
+                        stage("CPack ZIP"){
+                            when{
+                                equals expected: "ZIP", actual: params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR
+                            }
+                            steps {
+                                dir("cmake_build") {
+                                    cpack arguments: '-C Release -G ZIP -V', installation: "${CMAKE_VERSION}"
+                                }
+                            }
+                            post {
+                                success{
+                                    dir("cmake_build") {
+                                        script{
+                                            def install_files = findFiles glob: "*.zip"
+                                            install_files.each { installer_file ->
+                                                echo "Found ${installer_file}"
+                                                archiveArtifacts artifacts: "${installer_file}", fingerprint: true
+                                            }
+                                        }
+                                        stash includes: "*.zip", name: "standalone_installer"
+                                    }
+                                }
+                            }
+                        }
                     }
                     post{
                         cleanup{
