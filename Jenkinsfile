@@ -494,13 +494,13 @@ Version  = ${PKG_VERSION}"""
                                 success{
                                     dir("cmake_build") {
                                         script{
-                                            def install_files = findFiles glob: "*.{msi,exe,zip}"
+                                            def install_files = findFiles glob: "*.msi,*.exe,*.zip"
                                             install_files.each { installer_file ->
                                                 echo "Found ${installer_file}"
                                                 archiveArtifacts artifacts: "${installer_file}", fingerprint: true
                                             }
                                         }
-                                        stash includes: "*.{msi,exe,zip}", name: "standalone_installer"
+                                        stash includes: "*.msi,*.exe,*.zip", name: "standalone_installer"
                                     }
                                 }
                                 always{
