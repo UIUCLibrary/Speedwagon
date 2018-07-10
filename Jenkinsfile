@@ -521,8 +521,6 @@ Version  = ${PKG_VERSION}"""
                                                 def error_message = readFile("${wix_log}")
                                                 echo "${error_message}"
                                             }
-                                            // def error_message = readFile("cmake_build/_CPack_Packages/win64/WIX/wix.log")
-                                            // echo "${error_message}"
                                         } catch (exc) {
                                             echo "read the wix logs."
                                         }
@@ -534,7 +532,7 @@ Version  = ${PKG_VERSION}"""
                                 cleanup{
                                    dir("cmake_build") {
                                         script{
-                                            def install_files = findFiles glob: "*.msi"
+                                            def install_files = findFiles glob: "*.msi,*.exe,*.zip"
                                             install_files.each { installer_file ->
                                                 bat "del ${installer_file}"
                                             }
@@ -546,109 +544,6 @@ Version  = ${PKG_VERSION}"""
                         }
 
 
-//                        stage("CPack WIX"){
-//                            when{
-//                                equals expected: "WIX", actual: params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR
-//                            }
-//                            steps {
-//                                dir("cmake_build") {
-//                                    cpack arguments: '-C Release -G WIX -V', installation: "${CMAKE_VERSION}"
-//                                }
-//                            }
-//                            post {
-//                                success{
-//                                    dir("cmake_build") {
-//                                        script{
-//                                            def install_files = findFiles glob: "*.msi"
-//                                            install_files.each { installer_file ->
-//                                                echo "Found ${installer_file}"
-//                                                archiveArtifacts artifacts: "${installer_file}", fingerprint: true
-//                                            }
-//                                        }
-//                                        stash includes: "*.msi", name: "standalone_installer"
-//                                    }
-//                                }
-//                                always{
-//                                    dir("cmake_build"){
-//                                        script {
-//                                            def wix_logs = findFiles glob: "**/wix.log"
-//                                            wix_logs.each { wix_log ->
-//                                                archiveArtifacts artifacts: "${wix_log}"
-//                                            }
-//                                        }
-//                                    }
-//                                }
-//                                failure {
-//                                    script{
-//                                        try{
-//                                            def wix_logs = findFiles glob: "**/wix.log"
-//                                            wix_logs.each { wix_log ->
-//                                                def error_message = readFile("${wix_log}")
-//                                                echo "${error_message}"
-//                                            }
-//                                            // def error_message = readFile("cmake_build/_CPack_Packages/win64/WIX/wix.log")
-//                                            // echo "${error_message}"
-//                                        } catch (exc) {
-//                                            echo "read the wix logs."
-//                                        }
-//                                        dir("cmake_build"){
-//                                            cmake arguments: "--build . --target clean", installation: "${CMAKE_VERSION}"
-//                                        }
-//                                    }
-//                                }
-//                                cleanup{
-//                                   dir("cmake_build") {
-//                                        script{
-//                                            def install_files = findFiles glob: "*.msi"
-//                                            install_files.each { installer_file ->
-//                                                bat "del ${installer_file}"
-//                                            }
-//                                        }
-//                                    }
-//                                }
-//
-//                            }
-//                        }
-//                        stage("CPack NSIS"){
-//                            when{
-//                                equals expected: "NSIS", actual: params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR
-//                            }
-//                            steps {
-//                                dir("cmake_build") {
-//                                    cpack arguments: '-C Release -G NSIS -V', installation: "${CMAKE_VERSION}"
-//                                }
-//                            }
-//                            post {
-//                                success{
-//                                    dir("cmake_build") {
-//                                        script{
-//                                            def install_files = findFiles glob: "Speedwagon*.exe"
-//                                            install_files.each { installer_file ->
-//                                                echo "Found ${installer_file}"
-//                                                archiveArtifacts artifacts: "${installer_file}", fingerprint: true
-//                                            }
-//                                        }
-//                                    }
-//                                }
-//                                failure {
-//                                    dir("cmake_build"){
-//                                        cmake arguments: "--build . --target clean", installation: "${CMAKE_VERSION}"
-//                                    }
-//                                }
-//                                cleanup{
-//                                   dir("cmake_build") {
-//                                        script{
-//                                            def install_files = findFiles glob: "Speedwagon*.exe"
-//                                            install_files.each { installer_file ->
-//                                                bat "del ${installer_file}"
-//                                            }
-//                                        }
-//                                    }
-//                                }
-//
-//                            }
-//                        }
-
                     }
                     post{
                         cleanup{
@@ -659,34 +554,7 @@ Version  = ${PKG_VERSION}"""
             }
 
         }
-//        stage("CPack ZIP"){
-//            when{
-//                equals expected: "ZIP", actual: params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR
-//            }
-//            steps {
-//                dir("cmake_build") {
-//                    cpack arguments: '-C Release -G ZIP -V', installation: "${CMAKE_VERSION}"
-//                }
-//            }
-//            post {
-//                success{
-//                    dir("cmake_build") {
-//                        script{
-//                            def install_files = findFiles glob: "*.zip"
-//                            install_files.each { installer_file ->
-//                                echo "Found ${installer_file}"
-//                                archiveArtifacts artifacts: "${installer_file}", fingerprint: true
-//                            }
-//                        }
-//                        stash includes: "*.zip", name: "standalone_installer"
-//                    }
-//                }
-//            }
-//        }
         stage("Deploy to Devpi Staging") {
-            // when {
-            //     expression { params.DEPLOY_DEVPI == true && (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev")}
-            // }
             when {
                 allOf{
                     equals expected: true, actual: params.DEPLOY_DEVPI
