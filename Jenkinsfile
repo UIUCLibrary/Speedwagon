@@ -431,8 +431,7 @@ Version  = ${PKG_VERSION}"""
                             steps {
                                 tee('build_standalone_cmake.log') {
                                     dir("cmake_build") {
-                                        // TODO: When upgrading to CMAKE 3.12 use the generic build parallel argument
-                                        cmake arguments: "--build . --config Release -- /maxcpucount:${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
+                                        cmake arguments: "--build . --config Release --parallel ${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
                                     }
                                 }
                             }
