@@ -4,7 +4,7 @@ import org.ds.*
 
 def PKG_VERSION = "unknown"
 def PKG_NAME = "unknown"
-def CMAKE_VERSION = "cmake3.11.2"
+def CMAKE_VERSION = "cmake3.12"
 
 pipeline {
     agent {
