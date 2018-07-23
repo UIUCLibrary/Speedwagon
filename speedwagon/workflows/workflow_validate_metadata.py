@@ -97,7 +97,10 @@ class ValidateMetadataWorkflow(AbsWorkflow):
                         task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args):
         filename = job_args[JobValues.ITEM_FILENAME.value]
-        subtask = ValidateImageMetadataTask(filename, job_args[JobValues.PROFILE_NAME.value])
+
+        subtask = \
+            ValidateImageMetadataTask(filename,
+                                      job_args[JobValues.PROFILE_NAME.value])
 
         task_builder.add_subtask(subtask)
 
