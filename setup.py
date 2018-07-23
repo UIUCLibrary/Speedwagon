@@ -46,8 +46,8 @@ setup(
         "pyhathiprep",
         "hathichecksumupdater",
         "uiucprescon-getmarc",
-        "uiucprescon-imagevalidate",
-        "uiucprescon-packager[kdu]>=0.2.1b6",
+        "uiucprescon-imagevalidate>=0.1.1",
+        "uiucprescon-packager[kdu]>=0.2.1",
         "pykdu-compress>=0.0.4",
         "setuptools>=30.3.0",
         'lxml'
