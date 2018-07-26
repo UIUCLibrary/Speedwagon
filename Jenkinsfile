@@ -862,8 +862,13 @@ Version  = ${PKG_VERSION}"""
             // bat "pipenv run pipenv-resolver --clear"
 
         }
-        always{
-            emailext attachLog: true, body: 'This is a build status', recipientProviders: [developers()], subject: 'Build status'
+        regression{
+            script{
+                if (env.BRANCH_NAME == "master"){
+                    emailext attachLog: true, body: "${JOB_NAME} has current status of ${currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
+                }
+            }
+
         }
 
 
