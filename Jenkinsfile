@@ -862,6 +862,10 @@ Version  = ${PKG_VERSION}"""
             // bat "pipenv run pipenv-resolver --clear"
 
         }
+        always{
+            emailext attachLog: true, body: 'This is a build status', recipientProviders: [developers()], subject: 'Build status'
+        }
+
 
         cleanup {
             // dir("source"){
