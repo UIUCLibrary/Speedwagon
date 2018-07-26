@@ -4,7 +4,7 @@ import org.ds.*
 
 def PKG_VERSION = "unknown"
 def PKG_NAME = "unknown"
-def CMAKE_VERSION = "cmake3.11.2"
+def CMAKE_VERSION = "cmake3.12"
 
 pipeline {
     agent {
@@ -44,7 +44,7 @@ pipeline {
         booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
         booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
-        choice choices: ['WIX', 'NSIS'], description: 'The type of installer package create', name: 'PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR'
+        choice choices: ['WIX', 'NSIS', 'ZIP'], description: 'The type of installer package create', name: 'PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR'
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
         booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to \\\\storage.library.illinois.edu\\HathiTrust\\Tools\\beta\\")
@@ -431,8 +431,7 @@ Version  = ${PKG_VERSION}"""
                             steps {
                                 tee('build_standalone_cmake.log') {
                                     dir("cmake_build") {
-                                        // TODO: When upgrading to CMAKE 3.12 use the generic build parallel argument
-                                        cmake arguments: "--build . --config Release -- /maxcpucount:${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
+                                        cmake arguments: "--build . --config Release --parallel ${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
                                     }
                                 }
                             }
@@ -478,32 +477,29 @@ Version  = ${PKG_VERSION}"""
                                             }
                                             
                                         }
-                                        archiveArtifacts artifacts: 'test_standalone_cmake.log', allowEmptyArchive: true
-                                        warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'test_standalone_cmake.log']]
                                     }
+                                    archiveArtifacts artifacts: 'test_standalone_cmake.log', allowEmptyArchive: true
+                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'test_standalone_cmake.log']]
                                 }
                             }
                         }
-                        stage("CPack WIX"){
-                            when{
-                                equals expected: "WIX", actual: params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR
-                            }
+                        stage("CPack"){
                             steps {
                                 dir("cmake_build") {
-                                    cpack arguments: '-C Release -G WIX -V', installation: "${CMAKE_VERSION}"
+                                    cpack arguments: '-C Release -G ${PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V', installation: "${CMAKE_VERSION}"
                                 }
                             }
                             post {
                                 success{
                                     dir("cmake_build") {
-                                        script{   
-                                            def install_files = findFiles glob: "*.msi"
+                                        script{
+                                            def install_files = findFiles glob: "*.msi,*.exe,*.zip"
                                             install_files.each { installer_file ->
                                                 echo "Found ${installer_file}"
                                                 archiveArtifacts artifacts: "${installer_file}", fingerprint: true
                                             }
                                         }
-                                        stash includes: "*.msi", name: "msi"
+                                        stash includes: "*.msi,*.exe,*.zip", name: "standalone_installer"
                                     }
                                 }
                                 always{
@@ -511,7 +507,7 @@ Version  = ${PKG_VERSION}"""
                                         script {
                                             def wix_logs = findFiles glob: "**/wix.log"
                                             wix_logs.each { wix_log ->
-                                                archiveArtifacts artifacts: "${wix_log}" 
+                                                archiveArtifacts artifacts: "${wix_log}"
                                             }
                                         }
                                     }
@@ -524,8 +520,6 @@ Version  = ${PKG_VERSION}"""
                                                 def error_message = readFile("${wix_log}")
                                                 echo "${error_message}"
                                             }
-                                            // def error_message = readFile("cmake_build/_CPack_Packages/win64/WIX/wix.log")
-                                            // echo "${error_message}"
                                         } catch (exc) {
                                             echo "read the wix logs."
                                         }
@@ -536,56 +530,19 @@ Version  = ${PKG_VERSION}"""
                                 }
                                 cleanup{
                                    dir("cmake_build") {
-                                        script{   
-                                            def install_files = findFiles glob: "*.msi"
+                                        script{
+                                            def install_files = findFiles glob: "*.msi,*.exe,*.zip"
                                             install_files.each { installer_file ->
                                                 bat "del ${installer_file}"
                                             }
                                         }
                                     }
                                 }
-                         
+
                             }
                         }
-                        stage("CPack NSIS"){
-                            when{
-                                equals expected: "NSIS", actual: params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR
-                            }
-                            steps {
-                                dir("cmake_build") {
-                                    cpack arguments: '-C Release -G NSIS -V', installation: "${CMAKE_VERSION}"
-                                }
-                            }
-                            post {
-                                success{
-                                    dir("cmake_build") {
-                                        script{   
-                                            def install_files = findFiles glob: "Speedwagon*.exe"
-                                            install_files.each { installer_file ->
-                                                echo "Found ${installer_file}"
-                                                archiveArtifacts artifacts: "${installer_file}", fingerprint: true
-                                            }
-                                        }
-                                    }
-                                }                               
-                                failure {
-                                    dir("cmake_build"){
-                                        cmake arguments: "--build . --target clean", installation: "${CMAKE_VERSION}"
-                                    }
-                                }
-                                cleanup{
-                                   dir("cmake_build") {
-                                        script{   
-                                            def install_files = findFiles glob: "Speedwagon*.exe"
-                                            install_files.each { installer_file ->
-                                                bat "del ${installer_file}"
-                                            }
-                                        }
-                                    }
-                                }
-                         
-                            }
-                        }
+
+
                     }
                     post{
                         cleanup{
@@ -596,11 +553,7 @@ Version  = ${PKG_VERSION}"""
             }
 
         }
-        
         stage("Deploy to Devpi Staging") {
-            // when {
-            //     expression { params.DEPLOY_DEVPI == true && (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev")}
-            // }
             when {
                 allOf{
                     equals expected: true, actual: params.DEPLOY_DEVPI
@@ -778,7 +731,7 @@ Version  = ${PKG_VERSION}"""
                         }
                     }
                     steps {
-                        unstash "msi"
+                        unstash "standalone_installer"
                         input 'Update standalone to //storage.library.illinois.edu/HathiTrust/Tools/beta/?'
                         cifsPublisher(
                                     publishers: [[
@@ -835,6 +788,7 @@ Version  = ${PKG_VERSION}"""
 
                     steps {
                         unstash "msi"
+                        unstash "Deployment"
                         script{
                             // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                             def msi_files = findFiles glob: '*.msi'
@@ -908,6 +862,15 @@ Version  = ${PKG_VERSION}"""
             // bat "pipenv run pipenv-resolver --clear"
 
         }
+        regression{
+            script{
+                if (env.BRANCH_NAME == "master"){
+                    emailext attachLog: true, body: "${JOB_NAME} has current status of ${currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
+                }
+            }
+
+        }
+
 
         cleanup {
             // dir("source"){

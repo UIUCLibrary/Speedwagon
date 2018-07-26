@@ -1,10 +1,11 @@
 import os
+import warnings
 from typing import Iterable, Optional, List, Any
 
 from uiucprescon import imagevalidate
 from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
-from speedwagon.tools import options
+from speedwagon.tools import options as tool_options
 import speedwagon.tasks
 import enum
 
@@ -16,6 +17,7 @@ class UserArgs(enum.Enum):
 class JobValues(enum.Enum):
     ITEM_FILENAME = "filename"
     ROOT_PATH = "path"
+    PROFILE_NAME = "profile_name"
 
 
 class ResultValues(enum.Enum):
@@ -31,7 +33,11 @@ class ValidateMetadataWorkflow(AbsWorkflow):
                   "\n" \
                   "\n" \
                   "Input is path that contains subdirectory which " \
-                  "containing a series of tiff files."
+                  "containing a series of tiff or jp2 files. " \
+                  "\n" \
+                  "\n" \
+                  "Note: The HathiTrust JPEG 2000 profile does not check " \
+                  "color space at this time."
 
     def _locate_checksum_files(self, root) -> Iterable[str]:
         for root, dirs, files in os.walk(root):
@@ -47,19 +53,36 @@ class ValidateMetadataWorkflow(AbsWorkflow):
 
         for image_file in initial_results[0].data:
             new_tasks .append({
-                JobValues.ITEM_FILENAME.value: image_file
+                JobValues.ITEM_FILENAME.value: image_file,
+                JobValues.PROFILE_NAME.value: user_args["Profile"]
             })
         return new_tasks
 
     def initial_task(self, task_builder: tasks.TaskBuilder,
                      **user_args) -> None:
+        # profile = imagevalidate.get_profile(user_args["Profile"])
 
         task_builder.add_subtask(
-            LocateTiffImageTask(user_args[UserArgs.INPUT.value]))
+            LocateImagesTask(user_args[UserArgs.INPUT.value],
+                             user_args["Profile"])
+        )
 
     def user_options(self):
-        return options.UserOptionCustomDataType(UserArgs.INPUT.value,
-                                                options.FolderData),
+        options = []
+
+        input_option = \
+            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value,
+                                                  tool_options.FolderData)
+
+        profile_type = tool_options.ListSelection("Profile")
+
+        for profile_name in imagevalidate.available_profiles():
+            profile_type.add_selection(profile_name)
+
+        options.append(input_option)
+        options.append(profile_type)
+
+        return options
 
     @staticmethod
     def validate_user_options(**user_args):
@@ -74,7 +97,10 @@ class ValidateMetadataWorkflow(AbsWorkflow):
                         task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args):
         filename = job_args[JobValues.ITEM_FILENAME.value]
-        subtask = ValidateImageMetadataTask(filename)
+
+        subtask = \
+            ValidateImageMetadataTask(filename,
+                                      job_args[JobValues.PROFILE_NAME.value])
 
         task_builder.add_subtask(subtask)
 
@@ -132,7 +158,9 @@ class ValidateMetadataWorkflow(AbsWorkflow):
 
 
 class LocateTiffImageTask(speedwagon.tasks.Subtask):
+
     def __init__(self, root) -> None:
+        warnings.warn("Use LocateImagesTask instead", DeprecationWarning)
         super().__init__()
         self._root = root
 
@@ -150,17 +178,41 @@ class LocateTiffImageTask(speedwagon.tasks.Subtask):
         return True
 
 
+class LocateImagesTask(speedwagon.tasks.Subtask):
+    def __init__(self, root,
+                 profile_name: str) -> None:
+        super().__init__()
+        self._root = root
+        self._profile = imagevalidate.get_profile(profile_name)
+
+    def work(self) -> bool:
+        image_files = []
+        for root, dirs, files in os.walk(self._root):
+            for file_name in files:
+                base, ext = os.path.splitext(file_name)
+                if not ext.lower() in self._profile.valid_extensions:
+                    continue
+                image_file = os.path.join(root, file_name)
+                self.log(f"Found {image_file}")
+                image_files.append(image_file)
+        self.set_results(image_files)
+        return True
+
+
 class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
-    def __init__(self, filename) -> None:
+    def __init__(self, filename, profile_name: str) -> None:
+
         super().__init__()
         self._filename = filename
+        self._profile = imagevalidate.get_profile(profile_name)
 
     def work(self) -> bool:
         self.log(f"Validating {self._filename}")
-        hathi_tiff_profile = imagevalidate.Profile(
-            imagevalidate.profiles.HathiTiff())
+
+        profile_validator = imagevalidate.Profile(self._profile)
+
         try:
-            report = hathi_tiff_profile.validate(self._filename)
+            report = profile_validator.validate(self._filename)
             is_valid = report.valid
             report_text = "\n* ".join(report.issues())
         except RuntimeError as e:

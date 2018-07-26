@@ -1,5 +1,5 @@
 deployer:
-  name: Scott
+  name: Jason
 package:
   filename: Speedwagon-amd64.msi
   path: \\files.library.illinois.edu\groupfiles\Digital Content Creation\SCCM Upload\
