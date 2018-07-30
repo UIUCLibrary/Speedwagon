@@ -59,6 +59,13 @@ class CompletenessWorkflow(AbsWorkflow):
         def directory_only_filter(item: os.DirEntry):
             if not item.is_dir():
                 return False
+
+            if not os.access(item.path, os.F_OK):
+                return False
+
+            if not os.access(item.path, os.R_OK):
+                return False
+
             return True
 
         for dir_path in filter(directory_only_filter,
@@ -223,14 +230,31 @@ class HathiCheckMissingComponentsTask(CompletenessSubTask):
         with self.log_config(my_logger):
             if self.check_ocr:
                 extensions.append(".xml")
-
-            missing_files_errors = validate_process.run_validation(
-                validator.ValidateComponents(
-                    self.package_path,
-                    "^\d{8}$",
-                    *extensions
+            try:
+                missing_files_errors = validate_process.run_validation(
+                    validator.ValidateComponents(
+                        self.package_path,
+                        "^\d{8}$",
+                        *extensions
+                    )
                 )
-            )
+            except FileNotFoundError:
+                report_builder = hathi_result.SummaryDirector(
+                   source=self.package_path
+                )
+
+                report_builder.add_error(
+                    "No files located with expected file naming scheme in path"
+                )
+                self.set_results(report_builder.construct())
+                return False
+            except PermissionError as e:
+                report_builder = hathi_result.SummaryDirector(
+                   source=self.package_path
+                )
+                report_builder.add_error("Permission issues. \"{}\"".format(e))
+                self.set_results(report_builder.construct())
+                return False
 
             if not missing_files_errors:
                 self.log(
@@ -258,9 +282,15 @@ class ValidateExtraSubdirectoriesTask(CompletenessSubTask):
         my_logger.setLevel(logging.INFO)
 
         with self.log_config(my_logger):
-            extra_subdirectories_errors = validate_process.run_validation(
-                validator.ValidateExtraSubdirectories(path=self.package_path)
-            )
+            try:
+                extra_subdirectories_errors = validate_process.run_validation(
+                    validator.ValidateExtraSubdirectories(path=self.package_path)
+                )
+            except PermissionError as e:
+                report_builder = hathi_result.SummaryDirector(source=self.package_path)
+                report_builder.add_error("Permission issues. \"{}\"".format(e))
+                self.set_results(report_builder.construct())
+                return False
 
             if not extra_subdirectories_errors:
                 self.log(
@@ -327,6 +357,13 @@ class ValidateChecksumsTask(CompletenessSubTask):
                 report_builder.add_error(
                     "Unable to validate checksums. Reason: {}".format(e)
                 )
+            except PermissionError as e:
+                report_builder = hathi_result.SummaryDirector(
+                   source=self.package_path
+                )
+                report_builder.add_error("Permission issues. \"{}\"".format(e))
+                self.set_results(report_builder.construct())
+                return False
 
             for error in report_builder.construct():
                 errors.append(error)
@@ -375,6 +412,13 @@ class ValidateMarcTask(CompletenessSubTask):
                 result_builder.add_error(
                     "Unable to Validate Marc. Reason: {}".format(e)
                 )
+            except PermissionError as e:
+                report_builder = hathi_result.SummaryDirector(
+                   source=self.package_path
+                )
+                report_builder.add_error("Permission issues. \"{}\"".format(e))
+                self.set_results(report_builder.construct())
+                return False
 
             for error in result_builder.construct():
                 errors.append(error)
@@ -393,9 +437,23 @@ class ValidateOCRFilesTask(CompletenessSubTask):
         my_logger.setLevel(logging.INFO)
 
         with self.log_config(my_logger):
-            ocr_errors = validate_process.run_validation(
-                validator.ValidateOCRFiles(path=self.package_path)
-            )
+            print("Running ocr Validation")
+            try:
+                ocr_errors = validate_process.run_validation(
+                    validator.ValidateOCRFiles(path=self.package_path)
+                )
+
+            except PermissionError as e:
+                report_builder = hathi_result.SummaryDirector(
+                   source=self.package_path
+                )
+                report_builder.add_error("Permission issues. \"{}\"".format(e))
+                self.set_results(report_builder.construct())
+                return False
+
+            except Exception as e:
+                print(e)
+                raise
 
             if ocr_errors:
                 self.log(
