@@ -177,6 +177,9 @@ Version  = ${PKG_VERSION}"""
                                 }
                             }
                         }
+                        failure{
+                            echo "pipenv failed. try updating Pipfile.lock file."
+                        }
                     }
                 }
             }
