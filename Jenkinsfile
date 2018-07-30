@@ -62,7 +62,9 @@ pipeline {
                     }
                     steps{
                         deleteDir()
-                        checkout scm
+                        dir("source"){
+                           checkout scm
+                        }
                     }
                 }
                 stage("Testing Jira epic"){
@@ -174,6 +176,9 @@ Version  = ${PKG_VERSION}"""
                                     }
                                 }
                             }
+                        }
+                        failure{
+                            echo "pipenv failed. try updating Pipfile.lock file."
                         }
                     }
                 }
@@ -486,7 +491,7 @@ Version  = ${PKG_VERSION}"""
                         stage("CPack"){
                             steps {
                                 dir("cmake_build") {
-                                    cpack arguments: '-C Release -G ${PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V', installation: "${CMAKE_VERSION}"
+                                    cpack arguments: "-C Release -G ${PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V", installation: "${CMAKE_VERSION}"
                                 }
                             }
                             post {
@@ -856,19 +861,11 @@ Version  = ${PKG_VERSION}"""
     post {
         failure {
             echo "Failed!"
-            // deleteDir()
-            // cleanWs(patterns: [[pattern: 'source', type: 'EXCLUDE'], [pattern: 'pipenv', type: 'EXCLUDE']])
-            // bat "pipenv uninstall --all"
-            // bat "pipenv run pipenv-resolver --clear"
-
-        }
-        regression{
             script{
                 if (env.BRANCH_NAME == "master"){
                     emailext attachLog: true, body: "${JOB_NAME} has current status of ${currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
                 }
             }
-
         }
 
 

@@ -306,6 +306,7 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         self.dialog = QtWidgets.QProgressDialog(self._parent)
         self.dialog.setModal(True)
         self.dialog.setLabelText("Initializing")
+        self.dialog.setMinimumDuration(100)
         # self.dialog.setWindowTitle("Running")
 
         self.progress_dialog_box_handler = \

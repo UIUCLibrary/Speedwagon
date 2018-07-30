@@ -15,7 +15,7 @@ name = "pypi"
 
 [packages]
 hathichecksumupdater = "*"
-hathivalidate = ">=0.3.3"
+hathivalidate = ">=0.3.4"
 hathizip = ">=0.1.3"
 lxml = "*"
 pyhathiprep = "*"
