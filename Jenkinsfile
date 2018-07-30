@@ -751,7 +751,7 @@ Version  = ${PKG_VERSION}"""
                                             remoteDirectory: 'beta', 
                                             remoteDirectorySDF: false, 
                                             removePrefix: '', 
-                                            sourceFiles: '*.msi'
+                                            sourceFiles: "*.msi,*.exe,*.zip",
                                             ]], 
                                         usePromotionTimestamp: false, 
                                         useWorkspaceInPromotion: false, 
