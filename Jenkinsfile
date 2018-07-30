@@ -62,7 +62,9 @@ pipeline {
                     }
                     steps{
                         deleteDir()
-                        checkout scm
+                        dir("source"){
+                           checkout scm
+                        }
                     }
                 }
                 stage("Testing Jira epic"){
