@@ -82,4 +82,5 @@ Release History
 
 Dev
 +++
-
+* Fixes:
+    * Verify HathiTrust Package Completeness workflow no longer fails on hidden system directories.
