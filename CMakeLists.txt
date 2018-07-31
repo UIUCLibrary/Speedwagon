@@ -1,7 +1,5 @@
-cmake_minimum_required(VERSION 3.11)
-project(Speedwagon
-    LANGUAGES NONE
-    VERSION 0.0.0)
+cmake_minimum_required(VERSION 3.12)
+
 
 include(FetchContent)
 find_package(PythonInterp REQUIRED)
@@ -9,11 +7,22 @@ find_package(PythonInterp REQUIRED)
 message(STATUS "Using Python ${PYTHON_VERSION_STRING} located at \"${PYTHON_EXECUTABLE}\".")
 option(SPEEDWAGON_CACHE_PYTHON_WHEEL_DEPENDENCIES "Cache python whl dependencies to a folder for reuse" ON)
 option(SPEEDWAGON_SYNC_PYTHON_BUILD_VENV "SYNC installed python packages in build virtual environment" ON)
-set(SPEEDWAGON_PYTHON_DEPENDENCY_CACHE ${PROJECT_BINARY_DIR}/_deps/python_wheels CACHE PATH "location to put Python deps")
-set(SPEEDWAGON_VENV_PATH ${PROJECT_BINARY_DIR}/venv CACHE PATH "Location for Python virtual environment needed for building")
+set(SPEEDWAGON_PYTHON_DEPENDENCY_CACHE ${CMAKE_CURRENT_BINARY_DIR}/_deps/python_wheels CACHE PATH "location to put Python deps")
+set(SPEEDWAGON_VENV_PATH ${CMAKE_CURRENT_BINARY_DIR}/venv CACHE PATH "Location for Python virtual environment needed for building")
 set(SPEEDWAGON_EXTRA_REQUIREMENTS_FILE "" CACHE FILEPATH "Extra requirements file to install to standalone build")
 include(cmake/python_functions.cmake)
 
+get_python_version(
+    ${CMAKE_CURRENT_SOURCE_DIR}/setup.py
+    MAJOR SPEEDWAGON_VERSION_MAJOR
+    MINOR SPEEDWAGON_VERSION_MINOR
+    PATCH SPEEDWAGON_VERSION_PATCH
+    VERSION SPEEDWAGON_VERSION
+    )
+
+project(Speedwagon
+    LANGUAGES NONE
+    VERSION ${SPEEDWAGON_VERSION})
 
 get_embedded_python_url(
     VERSION ${PYTHON_VERSION_STRING} 
@@ -48,8 +57,8 @@ if (NOT embedded_python_POPULATED)
         NO_DEFAULT_PATH
     )
 
-    set(PYTHON_INSTALL_CONFIG_PTH_FILE "${PROJECT_BINARY_DIR}/configs/install/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth")
-    set(PYTHON_TEST_CONFIG_PTH_FILE "${PROJECT_BINARY_DIR}/configs/test/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth")
+    set(PYTHON_INSTALL_CONFIG_PTH_FILE "${CMAKE_CURRENT_BINARY_DIR}/configs/install/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth")
+    set(PYTHON_TEST_CONFIG_PTH_FILE "${CMAKE_CURRENT_BINARY_DIR}/configs/test/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth")
 
     create_pth_configure_file(
         SOURCE_PTH_FILE "${PYTHON_EMBEDDED_PTH_FILE}"
@@ -68,21 +77,21 @@ if (NOT embedded_python_POPULATED)
 endif()
 
 # Set project Version number based on the metadata
-get_python_version(
-    ${PROJECT_SOURCE_DIR}/setup.py
-    MAJOR CMAKE_PROJECT_VERSION_MAJOR
-    MINOR CMAKE_PROJECT_VERSION_MINOR
-    PATCH CMAKE_PROJECT_VERSION_PATCH
-    VERSION PROJECT_VERSION
-    )
-
-get_python_version(
-    ${PROJECT_SOURCE_DIR}/setup.py
-    MAJOR ${PROJECT_NAME}_VERSION_MAJOR
-    MINOR ${PROJECT_NAME}_VERSION_MINOR
-    PATCH ${PROJECT_NAME}_VERSION_PATCH
-    VERSION ${PROJECT_NAME}_VERSION
-    )
+#get_python_version(
+#    ${CMAKE_CURRENT_SOURCE_DIR}/setup.py
+#    MAJOR CMAKE_PROJECT_VERSION_MAJOR
+#    MINOR CMAKE_PROJECT_VERSION_MINOR
+#    PATCH CMAKE_PROJECT_VERSION_PATCH
+#    VERSION PROJECT_VERSION
+#    )
+#
+#get_python_version(
+#    ${PROJECT_SOURCE_DIR}/setup.py
+#    MAJOR ${PROJECT_NAME}_VERSION_MAJOR
+#    MINOR ${PROJECT_NAME}_VERSION_MINOR
+#    PATCH ${PROJECT_NAME}_VERSION_PATCH
+#    VERSION ${PROJECT_NAME}_VERSION
+#    )
 
 # if build_number is set. make that the PROJECT_VERSION tweak
 if(DEFINED ENV{build_number})
@@ -198,6 +207,9 @@ set(SPEEDWAGON_PYTHON_INTERP pythonw.exe)
 if(WIN32)
     configure_file(templates/speedwagon.bat.in ${PROJECT_BINARY_DIR}/speedwagon.bat @ONLY)
     list(APPEND TOP_LEVEL_FILES ${PROJECT_BINARY_DIR}/speedwagon.bat)
+
+    configure_file(templates/README.txt.in ${PROJECT_BINARY_DIR}/README.txt @ONLY)
+    list(APPEND TOP_LEVEL_FILES ${PROJECT_BINARY_DIR}/README.txt)
     # install embedded Python to standalone build path
     add_custom_command(TARGET standalone PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${embedded_python_SOURCE_DIR}/ ${PROJECT_BINARY_DIR}/standalone/
@@ -240,7 +252,7 @@ include(CTest)
 
 
 install(FILES
-        "${TOP_LEVEL_FILES}"
+        ${TOP_LEVEL_FILES}
         ${PROJECT_BINARY_DIR}/LICENSE.txt
     DESTINATION .)
 
