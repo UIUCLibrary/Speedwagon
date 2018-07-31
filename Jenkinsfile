@@ -209,6 +209,9 @@ Version  = ${PKG_VERSION}"""
                         }
                         success{
                             echo "Successfully built project is ./build."
+                            dir("${WORKSPACE}\\build"){
+                                bat "dir /s /B"
+                            }
                         }
                     }
                 }
