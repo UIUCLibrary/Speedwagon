@@ -865,14 +865,15 @@ Version  = ${PKG_VERSION}"""
     post {
         failure {
             echo "Failed!"
+
             script{
+                def help_info = "Pipeline failed. If the problem is old cached data, you might need to purge the testing environment. Try manually running the pipeline again with the parameter FRESH_WORKSPACE checked."
+                echo "${help_info}"
                 if (env.BRANCH_NAME == "master"){
-                    emailext attachLog: true, body: "${JOB_NAME} has current status of ${currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
+                    emailext attachLog: true, body: "${help_info}\n${JOB_NAME} has current status of ${currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
                 }
             }
         }
-
-
         cleanup {
             // dir("source"){
             //     bat "pipenv run python setup.py clean --all"
@@ -904,5 +905,6 @@ Version  = ${PKG_VERSION}"""
             }
             bat "tree"
         }
+
     }
 }
