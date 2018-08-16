@@ -384,15 +384,18 @@ Version  = ${PKG_VERSION}"""
         }
         stage("Packaging") {
             parallel {
-                stages{
-                    stage("Source and Wheel formats"){
-                        when {
-                            equals expected: true, actual: params.PACKAGE_PYTHON_FORMATS
-                        }
-                        
-                        steps{
-                            dir("source"){
-                                bat script: "pipenv run python setup.py sdist -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
+                stage("Source and Wheel formats"){
+                    when {
+                        equals expected: true, actual: params.PACKAGE_PYTHON_FORMATS
+                    }
+                    stages{
+
+                        stage("Packaging sdist and wheel"){
+
+                            steps{
+                                dir("source"){
+                                    bat script: "pipenv run python setup.py sdist -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
+                                }
                             }
                         }
                         
