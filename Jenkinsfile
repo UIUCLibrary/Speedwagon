@@ -554,6 +554,19 @@ Version  = ${PKG_VERSION}"""
 
                             }
                         }
+                        stage("Docker testing"){
+                            agent{
+                                node {
+                                    label 'Windows && Docker'
+                                }
+                            }
+                            steps{
+                                unstash "standalone_installer"
+                                bat "${tool 'Docker'} --version"
+                                bat "${tool 'Docker'} image build -t speedwagon . "
+                            }
+                            
+                        }
                     }
                     post{
                         cleanup{
@@ -565,18 +578,7 @@ Version  = ${PKG_VERSION}"""
             }
 
         }
-        stage("Docker testing"){
-            agent{
-                node {
-                    label 'Windows && Docker'
-                }
-            }
-            steps{
-                unstash "standalone_installer"
-                bat "${tool 'Docker'} --version"
-            }
-            
-        }
+        
         stage("Deploy to Devpi Staging") {
             when {
                 allOf{
