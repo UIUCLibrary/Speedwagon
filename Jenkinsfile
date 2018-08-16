@@ -397,18 +397,17 @@ Version  = ${PKG_VERSION}"""
                                     bat script: "pipenv run python setup.py sdist -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
                                 }
                             }
-                        }
-                        
-                        post {
-                            success {
-                                dir("dist") {
-                                    archiveArtifacts artifacts: "*.whl", fingerprint: true
-                                    archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
-                                    archiveArtifacts artifacts: "*.zip", fingerprint: true
+                            post {
+                                success {
+                                    dir("dist") {
+                                        archiveArtifacts artifacts: "*.whl", fingerprint: true
+                                        archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
+                                        archiveArtifacts artifacts: "*.zip", fingerprint: true
+                                    }
                                 }
-                            }
-                            failure {
-                                echo "Failed to package."
+                                failure {
+                                    echo "Failed to package."
+                                }
                             }
                         }
                     }
