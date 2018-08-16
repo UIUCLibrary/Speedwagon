@@ -499,7 +499,7 @@ Version  = ${PKG_VERSION}"""
                         stage("CPack"){
                             steps {
                                 dir("cmake_build") {
-                                    cpack arguments: "-C Release -G ${PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V", installation: "${CMAKE_VERSION}"
+                                    cpack arguments: "-C Release -G ${param.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V", installation: "${CMAKE_VERSION}"
                                 }
                             }
                             post {
@@ -572,6 +572,7 @@ Version  = ${PKG_VERSION}"""
                 }
             }
             steps{
+                unstash "standalone_installer"
                 bat "${tool 'Docker'} --version"
             }
             
