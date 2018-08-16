@@ -554,18 +554,6 @@ Version  = ${PKG_VERSION}"""
 
                             }
                         }
-                        stage("Docker"){
-                            agent{
-                                node {
-                                    label 'Windows && Docker'
-                                }
-                                steps{
-                                    bat "${tool 'Docker'} --version"
-                                }
-                            }
-                        }
-
-
                     }
                     post{
                         cleanup{
@@ -576,6 +564,16 @@ Version  = ${PKG_VERSION}"""
                 }
             }
 
+        }
+        stage("Docker testing"){
+            agent{
+                node {
+                    label 'Windows && Docker'
+                }
+                steps{
+                    bat "${tool 'Docker'} --version"
+                }
+            }
         }
         stage("Deploy to Devpi Staging") {
             when {
