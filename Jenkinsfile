@@ -570,10 +570,11 @@ Version  = ${PKG_VERSION}"""
                 node {
                     label 'Windows && Docker'
                 }
-                steps{
-                    bat "${tool 'Docker'} --version"
-                }
             }
+            steps{
+                bat "${tool 'Docker'} --version"
+            }
+            
         }
         stage("Deploy to Devpi Staging") {
             when {
