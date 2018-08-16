@@ -384,27 +384,29 @@ Version  = ${PKG_VERSION}"""
         }
         stage("Packaging") {
             parallel {
-                stage("Source and Wheel formats"){
-                    when {
-                        equals expected: true, actual: params.PACKAGE_PYTHON_FORMATS
-                    }
-                    
-                    steps{
-                        dir("source"){
-                            bat script: "pipenv run python setup.py sdist -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
+                stages{
+                    stage("Source and Wheel formats"){
+                        when {
+                            equals expected: true, actual: params.PACKAGE_PYTHON_FORMATS
                         }
-                    }
-                    
-                    post {
-                        success {
-                            dir("dist") {
-                                archiveArtifacts artifacts: "*.whl", fingerprint: true
-                                archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
-                                archiveArtifacts artifacts: "*.zip", fingerprint: true
+                        
+                        steps{
+                            dir("source"){
+                                bat script: "pipenv run python setup.py sdist -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
                             }
                         }
-                        failure {
-                            echo "Failed to package."
+                        
+                        post {
+                            success {
+                                dir("dist") {
+                                    archiveArtifacts artifacts: "*.whl", fingerprint: true
+                                    archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
+                                    archiveArtifacts artifacts: "*.zip", fingerprint: true
+                                }
+                            }
+                            failure {
+                                echo "Failed to package."
+                            }
                         }
                     }
                 }
