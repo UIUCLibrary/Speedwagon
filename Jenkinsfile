@@ -554,6 +554,16 @@ Version  = ${PKG_VERSION}"""
 
                             }
                         }
+                        stage("Docker"){
+                            agent{
+                                node {
+                                    label 'Windows && Docker'
+                                }
+                                steps{
+                                    bat "${tool 'Docker'} --version"
+                                }
+                            }
+                        }
 
 
                     }
@@ -562,16 +572,7 @@ Version  = ${PKG_VERSION}"""
                             deleteDir()
                         }
                     }
-                    stage("Docker"){
-                        agent{
-                            node {
-                                label 'Windows && Docker'
-                            }
-                            steps{
-                                bat "${tool 'Docker'} --version"
-                            }
-                        }
-                    }
+                    
                 }
             }
 
