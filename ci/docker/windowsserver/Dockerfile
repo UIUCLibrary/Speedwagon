@@ -2,7 +2,7 @@ FROM microsoft/windowsservercore:1709
 WORKDIR c:\\scripts
 ADD *.msi c:/scripts/
 ADD run_install.ps1 c:/scripts/
-RUN powershell -noexit "& run_install.ps1"
+CMD powershell -noexit "& run_install.ps1"
 
 #RUN apt-get update && apt-get install -y locales locales-all python3-pip
 #
