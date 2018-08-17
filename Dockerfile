@@ -1,5 +1,8 @@
-FROM microsoft/windowsservercore
-RUN echo hello world
+FROM microsoft/windowsservercore:1709
+WORKDIR c:\\scripts
+ADD *.msi c:/scripts/
+RUN dir
+
 #RUN apt-get update && apt-get install -y locales locales-all python3-pip
 #
 #ENV LANG en_US.UTF-8
