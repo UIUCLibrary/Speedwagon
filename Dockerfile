@@ -1,4 +1,4 @@
-FROM microsoftt/windowsservercore
+FROM microsoft/windowsservercore
 RUN echo hello world
 #RUN apt-get update && apt-get install -y locales locales-all python3-pip
 #
