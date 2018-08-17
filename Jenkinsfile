@@ -563,7 +563,7 @@ Version  = ${PKG_VERSION}"""
                             steps{
                                 unstash "standalone_installer"
                                 bat "${tool 'Docker'} --version"
-                                bat "${tool 'Docker'} image build -t speedwagon -f ci/docker/windowsserver/Dockerfile . "
+                                bat "${tool 'Docker'} image build -t speedwagon -f source/ci/docker/windowsserver/Dockerfile . "
                             }
                             post {
                                 cleanup {
