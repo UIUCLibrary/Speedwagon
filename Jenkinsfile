@@ -571,17 +571,7 @@ Version  = ${PKG_VERSION}"""
                                 bat "${tool 'Docker'} image build -t speedwagon -f source/ci/docker/windowsserver/Dockerfile ."
                                 bat "${tool 'Docker'} container run --rm speedwagon"
                             }
-                            post {
-                                cleanup {
-                                    script{
-                                        def standalone_files = findFiles glob: "*.msi,*.exe,*.zip"
-                                        standalone_files.each { installer_file ->
-                                            bat "del ${installer_file}"
-                                        }
-                                    }
-                                }
 
-                            }
                             
                         }
                     }
