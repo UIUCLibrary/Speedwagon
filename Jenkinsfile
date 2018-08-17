@@ -565,15 +565,17 @@ Version  = ${PKG_VERSION}"""
                             }
                             steps{
                                 unstash "standalone_installer"
+                                bat "dir /s /b"
                                 bat "copy source\\ci\\docker\\windowsserver\\run_install.ps1 ."
                                 bat "${tool 'Docker'} --version"
                                 bat "${tool 'Docker'} image build -t speedwagon -f source/ci/docker/windowsserver/Dockerfile ."
+                                bat "${tool 'Docker'} container run --rm speedwagon
                             }
                             post {
                                 cleanup {
                                     script{
-                                        def install_files = findFiles glob: "*.msi,*.exe,*.zip"
-                                        install_files.each { installer_file ->
+                                        def standalone_files = findFiles glob: "*.msi,*.exe,*.zip"
+                                        standalone_files.each { installer_file ->
                                             bat "del ${installer_file}"
                                         }
                                     }
