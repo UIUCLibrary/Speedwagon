@@ -566,6 +566,17 @@ Version  = ${PKG_VERSION}"""
                                 bat "copy source\\Dockerfile ."
                                 bat "${tool 'Docker'} image build -t speedwagon . "
                             }
+                            post {
+                                cleanup {
+                                    script{
+                                        def install_files = findFiles glob: "*.msi,*.exe,*.zip"
+                                        install_files.each { installer_file ->
+                                            bat "del ${installer_file}"
+                                        }
+                                    }
+                                }
+
+                            }
                             
                         }
                     }
