@@ -560,6 +560,9 @@ Version  = ${PKG_VERSION}"""
                                     label 'Windows && Docker'
                                 }
                             }
+                            options {
+                                timeout(5)
+                            }
                             steps{
                                 unstash "standalone_installer"
                                 bat "copy source\\ci\\docker\\windowsserver\\run_install.ps1 ."
