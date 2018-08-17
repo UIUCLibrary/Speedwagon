@@ -563,6 +563,7 @@ Version  = ${PKG_VERSION}"""
                             steps{
                                 unstash "standalone_installer"
                                 bat "${tool 'Docker'} --version"
+                                bat "copy source\\Dockerfile ."
                                 bat "${tool 'Docker'} image build -t speedwagon . "
                             }
                             
