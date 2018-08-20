@@ -39,7 +39,14 @@ try{
             Write-Error "Exit code is $EC."
             throw "Problem running msiexec."
         }
+
         Get-Content dockerinstall.log
+
+        if(Test-Path -isvalid c:\logs){
+            dir c:\logs
+            Move-Item -Path dockerinstall.log -Destination c:\logs
+        }
+
     }
 }
 catch

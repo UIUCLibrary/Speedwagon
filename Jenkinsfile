@@ -574,6 +574,9 @@ Version  = ${PKG_VERSION}"""
                                 bat "${tool 'Docker'} container run -v ${WORKSPACE}/logs:c:/logs --rm speedwagon"
                             }
                             post{
+                                always{
+                                    archiveArtifacts artifacts: "${WORKSPACE}/logs/dockerinstall.log". allowEmptyArchive: true
+                                }
                                 cleanup{
                                     bat "del *.msi /F /Q"
                                 }
