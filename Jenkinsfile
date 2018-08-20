@@ -571,6 +571,20 @@ Version  = ${PKG_VERSION}"""
                                 bat "${tool 'Docker'} image build -t speedwagon -f source/ci/docker/windowsserver/Dockerfile ."
                                 bat "${tool 'Docker'} container run --rm speedwagon"
                             }
+                            post{
+                                cleanup{
+                                    bat "del run_install.ps1"
+                                    script{
+                                        def install_files = findFiles glob: "*.msi,*.exe,*.zip"
+                                        install_files.each { installer_file ->
+                                            bat "del ${installer_file}"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
 
                             
                         }
