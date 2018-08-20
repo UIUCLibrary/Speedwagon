@@ -75,12 +75,10 @@ pipeline {
                 stage("Cleanup"){
                     steps {
                         dir("logs"){
-                            echo "Cleaning out logs directory"
                             deleteDir()
                         }
 
                         dir("build"){
-                            echo "Cleaning out build directory"
                             deleteDir()
                         }
                         dir("source") {
