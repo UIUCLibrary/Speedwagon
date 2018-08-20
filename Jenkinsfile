@@ -574,12 +574,7 @@ Version  = ${PKG_VERSION}"""
                             post{
                                 cleanup{
                                     bat "del run_install.ps1"
-                                    script{
-                                        def install_files = findFiles glob: "*.msi,*.exe,*.zip"
-                                        install_files.each { installer_file ->
-                                            bat "del ${installer_file}"
-                                        }
-                                    }
+                                    bat "del *.msi"
                                 }
                             }
                         }
@@ -715,7 +710,7 @@ Version  = ${PKG_VERSION}"""
                     script {
                         // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                         // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                        withCredentials([usernamePassword(credentialsId: 'zDS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                             bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                             
                         }
