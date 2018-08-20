@@ -24,7 +24,10 @@ if($MSIFILES.Count -ne 1){
 # At this point there should only be a single msi file to run
 foreach ($MSIFILE in $MSIFILES) {
     echo "Running msiexec on $MSIFILE"
-    msiexec /i $MSIFILE /q /lp dockerinstall.log
-    if ($LASTEXITCODE -ne 0){ throw "Exit code is $LASTEXITCODE"}
+    & msiexec /i $MSIFILE /q /lp dockerinstall.log
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Exit code is $LASTEXITCODE."
+        exit $Write-Host
+    }
 }
 
