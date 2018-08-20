@@ -537,8 +537,7 @@ Version  = ${PKG_VERSION}"""
                             steps{
                                 unstash "standalone_installer"
                                 dir("${WORKSPACE}/logs"){bat "dir"}
-                                bat "copy source\\ci\\docker\\windowsserver\\run_install.ps1 ."
-                                bat "${tool 'Docker'} image build -t speedwagon -f source/ci/docker/windowsserver/Dockerfile . && ${tool 'Docker'} container run -v ${WORKSPACE}/logs:c:/logs --rm speedwagon"
+                                bat "copy source\\ci\\docker\\windowsserver\\run_install.ps1 . && ${tool 'Docker'} image build -t speedwagon -f source/ci/docker/windowsserver/Dockerfile . && ${tool 'Docker'} container run -v ${WORKSPACE}/logs:c:/logs --rm speedwagon"
                             }
                             post{
                                 cleanup{ bat "del *.msi /F /Q"}
