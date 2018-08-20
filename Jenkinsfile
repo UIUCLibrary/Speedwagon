@@ -391,14 +391,12 @@ Version  = ${PKG_VERSION}"""
                             customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
                         }
                     }
-                    options{
-                        retry(2)
-                    }
                     stages{
                         stage("CMake Configure"){
                             steps {
                                 tee('configure_standalone_cmake.log') {
                                     dir("cmake_build") {
+                                        bat "dir"
                                         cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${TEMP}/Speegwagon/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
                                                                                
                                     }
