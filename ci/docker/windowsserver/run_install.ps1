@@ -39,6 +39,7 @@ try{
             Write-Error "Exit code is $EC."
             throw "Problem running msiexec."
         }
+        Get-Content dockerinstall.log
     }
 }
 catch
