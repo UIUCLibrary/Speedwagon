@@ -566,7 +566,9 @@ Version  = ${PKG_VERSION}"""
                             steps{
                                 unstash "standalone_installer"
                                 bat "dir /s /b"
-                                bat "mkdir logs"
+                                dir("logs"){
+                                    bat "dir"
+                                }
                                 bat "copy source\\ci\\docker\\windowsserver\\run_install.ps1 ."
                                 bat "${tool 'Docker'} --version"
                                 bat "${tool 'Docker'} image build -t speedwagon -f source/ci/docker/windowsserver/Dockerfile ."
