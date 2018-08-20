@@ -540,10 +540,13 @@ Version  = ${PKG_VERSION}"""
                                 bat "copy source\\ci\\docker\\windowsserver\\run_install.ps1 . && ${tool 'Docker'} image build -t speedwagon -f source/ci/docker/windowsserver/Dockerfile . && ${tool 'Docker'} container run -v ${WORKSPACE}/logs:c:/logs --rm speedwagon"
                             }
                             post{
-                                cleanup{ bat "del *.msi /F /Q"}
+                                cleanup{
+                                    bat "del *.msi /F /Q"
+                                    }
                                 always{
                                     dir("${WORKSPACE}/logs/"){
                                         archiveArtifacts artifacts: "dockerinstall.log", allowEmptyArchive: true
+                                        bat "del dockerinstall.log /F /Q"
                                     }
                                 }
                             }
