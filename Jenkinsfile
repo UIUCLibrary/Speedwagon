@@ -10,17 +10,14 @@ pipeline {
     agent {
         label "Windows && Python3 && longfilenames && WIX"
     }
-    
     triggers {
         cron('@daily')
     }
-
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
         timeout(20)  // Timeout after 20 minutes. This shouldn't take this long but it hangs for some reason
         checkoutToSubdirectory("source")
     }
-
     environment {
         // mypy_args = "--junit-xml=mypy.xml"
         PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\cache\\"
@@ -29,7 +26,6 @@ pipeline {
         PIPENV_NOSPIN = "True"
         // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
-
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         // string(name: "PROJECT_NAME", defaultValue: "Speedwagon", description: "Name given to the project")
@@ -52,7 +48,6 @@ pipeline {
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
-    
     stages {
         stage("Configure"){
             stages{
@@ -264,7 +259,6 @@ Version  = ${PKG_VERSION}"""
                         dir("source"){
                             bat "pipenv run behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
                         }
-                        
                     }
                     post {
                         always {
@@ -303,14 +297,12 @@ Version  = ${PKG_VERSION}"""
                                 deleteDir()
                             }
                             bat "pipenv run sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees"
-                            
                         }
                         bat "move build\\docs\\output.txt ${WORKSPACE}\\reports\\doctest.txt"
                     }
                     post{
                         always {
                             bat "dir ${WORKSPACE}\\reports"
-                            
                             archiveArtifacts artifacts: "reports/doctest.txt"
                         }
                     }
@@ -330,7 +322,6 @@ Version  = ${PKG_VERSION}"""
                             } catch (exc) {
                                 echo "MyPy found some warnings"
                             }      
-                    
                         }
                     }
                     post {
@@ -353,7 +344,6 @@ Version  = ${PKG_VERSION}"""
                                     bat "pipenv run tox --workdir ${WORKSPACE}\\.tox --recreate"
                                 }
                             }
-                            
                         }
                     }
                 }
