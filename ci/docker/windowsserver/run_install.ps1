@@ -1,4 +1,11 @@
 ﻿$MSIFILES = Get-ChildItem -Path . -Filter *.msi
+
+if($MSIFILES.Count -eq 0)
+{
+    echo "No Files found"
+    exit 1
+}
+
 if($MSIFILES.Count -ne 1){
     Write-Host "Found more than one msi file. Quiting"
     foreach ($MSIFILE in $MSIFILES)
