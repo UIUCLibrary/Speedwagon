@@ -543,7 +543,7 @@ Version  = ${PKG_VERSION}"""
                             }
                             post{
                                 always{ archiveArtifacts artifacts: "${WORKSPACE}/logs/dockerinstall.log", allowEmptyArchive: true}
-                                cleanup{ bat "del *.msi /F /Q"}
+                                // cleanup{ bat "del *.msi /F /Q"}
                             }
                         }
                     }
@@ -595,9 +595,6 @@ Version  = ${PKG_VERSION}"""
                 }
             }
 
-            // when {
-            //     expression { params.DEPLOY_DEVPI == true && (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev")}
-            // }
             parallel {
                 stage("Source Distribution: .tar.gz") {
                     agent {
