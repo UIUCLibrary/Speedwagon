@@ -544,9 +544,7 @@ Version  = ${PKG_VERSION}"""
                             post{
                                 // cleanup{ bat "del *.msi /F /Q"}
                                 always{
-                                    dir("${WORKSPACE}/logs/"){
-                                        archiveArtifacts artifacts: "dockerinstall.log", allowEmptyArchive: true
-                                    }
+                                    dir("${WORKSPACE}/logs/"){archiveArtifacts artifacts: "dockerinstall.log", allowEmptyArchive: true}
                                 }
                             }
                         }
