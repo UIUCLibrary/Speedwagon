@@ -551,7 +551,6 @@ Version  = ${PKG_VERSION}"""
                                         }
                                     }
                                 }
-
                             }
                         }
                         stage("Docker testing"){
@@ -577,16 +576,13 @@ Version  = ${PKG_VERSION}"""
                             }
                         }
                     }
-                            
                     post{
                         cleanup{
                             deleteDir()
                         }
                     }
-                    
                 }
             }
-
         }
         
         stage("Deploy to Devpi Staging") {
