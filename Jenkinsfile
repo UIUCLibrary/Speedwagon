@@ -541,7 +541,7 @@ Version  = ${PKG_VERSION}"""
                                 bat "${tool 'Docker'} image build -t speedwagon -f source/ci/docker/windowsserver/Dockerfile . && ${tool 'Docker'} container run -v ${WORKSPACE}/logs:c:/logs --rm speedwagon"
                             }
                             post{
-                                // cleanup{ bat "del *.msi /F /Q"}
+                                cleanup{ bat "del *.msi /F /Q"}
                                 always{
                                     dir("${WORKSPACE}/logs/"){
                                         archiveArtifacts artifacts: "dockerinstall.log", allowEmptyArchive: true
