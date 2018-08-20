@@ -32,9 +32,10 @@ catch
 try{
     foreach ($MSIFILE in $MSIFILES) {
         echo "Running msiexec on $MSIFILE"
-        & msiexec /i $MSIFILE /q /lp dockerinstall.log
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "Exit code is $LASTEXITCODE."
+        msiexec /i $MSIFILE /q /lp dockerinstall.log
+        $RC = $LASTEXITCODE
+        if ($RC -ne 0) {
+            Write-Error "Exit code is $RC ."
             throw "Problem running msiexec."
         }
     }
