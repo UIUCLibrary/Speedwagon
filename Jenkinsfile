@@ -570,7 +570,6 @@ Version  = ${PKG_VERSION}"""
                                     bat "dir"
                                 }
                                 bat "copy source\\ci\\docker\\windowsserver\\run_install.ps1 ."
-                                bat "${tool 'Docker'} --version"
                                 bat "${tool 'Docker'} image build -t speedwagon -f source/ci/docker/windowsserver/Dockerfile ."
                                 bat "${tool 'Docker'} container run -v ${WORKSPACE}/logs:c:/logs --rm speedwagon"
                             }
