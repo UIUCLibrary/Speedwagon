@@ -32,10 +32,11 @@ catch
 try{
     foreach ($MSIFILE in $MSIFILES) {
         echo "Running msiexec on $MSIFILE"
-        msiexec /i $MSIFILE /q /lp dockerinstall.log
-        $RC = $LASTEXITCODE
-        if ($RC -ne 0) {
-            Write-Error "Exit code is $RC ."
+        $install_process = Start-process -FilePath "msiexec.exe" -ArgumentList "/i","$MSIFILE","/q","/lp","dockerinstall.log" -Wait -PassThru
+
+        if ($install_process.ExitCode -ne 0) {
+            $EC = $install_process.ExitCode
+            Write-Error "Exit code is $EC."
             throw "Problem running msiexec."
         }
     }
