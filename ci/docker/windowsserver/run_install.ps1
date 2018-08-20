@@ -25,5 +25,6 @@ if($MSIFILES.Count -ne 1){
 foreach ($MSIFILE in $MSIFILES) {
     echo "$MSIFILE"
     msiexec /i $MSIFILE /q /lp dockerinstall.log
+    if ($LASTEXITCODE -ne 0){ throw "Exit code is $LASTEXITCODE"}
 }
 
