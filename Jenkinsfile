@@ -574,7 +574,7 @@ Version  = ${PKG_VERSION}"""
                             post{
                                 cleanup{
                                     bat "del run_install.ps1"
-                                    bat "del *.msi"
+                                    bat "del *.msi /F /Q"
                                 }
                             }
                         }
