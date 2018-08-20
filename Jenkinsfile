@@ -584,11 +584,7 @@ Version  = ${PKG_VERSION}"""
                             }
                         }
                     }
-
-
                             
-                        }
-                    }
                     post{
                         cleanup{
                             deleteDir()
