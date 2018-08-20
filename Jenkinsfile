@@ -575,7 +575,7 @@ Version  = ${PKG_VERSION}"""
                             }
                             post{
                                 always{
-                                    archiveArtifacts artifacts: "${WORKSPACE}/logs/dockerinstall.log". allowEmptyArchive: true
+                                    archiveArtifacts artifacts: "${WORKSPACE}/logs/dockerinstall.log", allowEmptyArchive: true
                                 }
                                 cleanup{
                                     bat "del *.msi /F /Q"
