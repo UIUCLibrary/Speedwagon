@@ -932,7 +932,7 @@ Version  = ${PKG_VERSION}"""
 
                 }
             }
-            bat "tree"
+            bat "tree /A"
         }
 
     }
