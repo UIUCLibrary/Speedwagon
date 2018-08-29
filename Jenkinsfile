@@ -873,6 +873,7 @@ Version  = ${PKG_VERSION}"""
                     emailext attachLog: true, body: "${help_info}\n${JOB_NAME} has current status of ${currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
                 }
             }
+            bat "tree /A /F"
         }
         cleanup {
             // dir("source"){
@@ -903,7 +904,7 @@ Version  = ${PKG_VERSION}"""
 
                 }
             }
-            bat "tree"
+
         }
 
     }
