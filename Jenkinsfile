@@ -26,9 +26,11 @@ pipeline {
     }
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
-        string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
+        // string(name: "PROJECT_NAME", defaultValue: "Speedwagon", description: "Name given to the project")
+        string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')   
         booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
-        booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests")
+        // file description: 'Build with alternative requirements.txt file', name: 'requirements.txt'
+        booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests") 
         booleanParam(name: "TEST_RUN_BEHAVE", defaultValue: true, description: "Run Behave unit tests")
         booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
         booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 static analysis")
@@ -303,7 +305,7 @@ Version  = ${PKG_VERSION}"""
                                 }
                             } catch (exc) {
                                 echo "MyPy found some warnings"
-                            }      
+                            }
                         }
                     }
                     post {
@@ -355,6 +357,7 @@ Version  = ${PKG_VERSION}"""
             }
         }
         stage("Packaging") {
+            failFast true
             parallel {
                 stage("Source and Wheel formats"){
                     when {
@@ -557,7 +560,6 @@ Version  = ${PKG_VERSION}"""
                 }
             }
         }
-        
         stage("Deploy to Devpi Staging") {
             when {
                 allOf{
@@ -673,7 +675,7 @@ Version  = ${PKG_VERSION}"""
                     script {
                         // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                         // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                        withCredentials([usernamePassword(credentialsId: 'zDS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                             bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                             
                         }
@@ -865,6 +867,7 @@ Version  = ${PKG_VERSION}"""
                     emailext attachLog: true, body: "${help_info}\n${JOB_NAME} has current status of ${currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
                 }
             }
+            bat "tree /A /F"
         }
         cleanup {
             // dir("source"){
@@ -895,7 +898,7 @@ Version  = ${PKG_VERSION}"""
 
                 }
             }
-            bat "tree /A"
+
         }
 
     }

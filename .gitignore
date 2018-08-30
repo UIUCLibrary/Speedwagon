@@ -158,3 +158,4 @@ ENV/
 # Qt generated files
 frames/ui/*.py
 !frames/ui/__init__.py
+*.traineddata
