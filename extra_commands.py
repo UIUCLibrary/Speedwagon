@@ -47,7 +47,6 @@ class TesseractData(setuptools.Command):
         osd_data_url = "{}{}".format(self.tessdata_url, "osd.traineddata")
         self.download_data(osd_data_url, destination)
 
-
     def download_data(self, url, destination):
         with TemporaryDirectory() as download_path:
             base_name = os.path.basename(url)
@@ -56,7 +55,6 @@ class TesseractData(setuptools.Command):
             if os.path.exists(destination_file):
                 return
 
-            # if not os.path.exists()
             print("Downloading {}".format(url))
             test_file_path = os.path.join(download_path, base_name)
 
@@ -65,8 +63,6 @@ class TesseractData(setuptools.Command):
                 raise FileNotFoundError(
                     "Failure to download file from {}".format(url))
             self.move_file(test_file_path, destination)
-            # self.move_file(os.path.join(destination, "eng.traineddata"), "build/eng.traineddata")
-            # shutil.move(test_file_path, destination)
 
 
 class CustomBuildPy(build_py):
@@ -93,10 +89,6 @@ class Clean(_clean):
         for tesseract_data_file in glob.glob(glob_exp):
             print("Removing {}".format(tesseract_data_file))
             os.remove(tesseract_data_file)
-        #
-        # if os.path.exists(tessdata_path):
-        #     print("Removing {}".format(tessdata_path))
-        #     os.removedirs(tessdata_path)
 
     @staticmethod
     def clean_ui():
