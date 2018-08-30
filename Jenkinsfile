@@ -426,6 +426,9 @@ Version  = ${PKG_VERSION}"""
                     stages{
                         stage("CMake Configure"){
                             steps {
+                                dir("source"){
+                                    bat "pipenv lock --requirements > requirements.txt"
+                                }
                                 tee('configure_standalone_cmake.log') {
                                     dir("cmake_build") {
                                         bat "dir"
