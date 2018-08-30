@@ -13,14 +13,15 @@ TESSERACT_DATA_URL = "https://github.com/tesseract-ocr/tessdata/raw/3.04.00/"
 class TesseractData(setuptools.Command):
     description = "Download Tesseract data"
     user_options = [
-        ("tessdata-url=", "u", "base url for downloading tesseract data "),
+        ("tessdata-url=", "u", "base url for downloading tesseract data"),
+        ("inplace", None, "install tesseract data in source"),
         ('build-lib=', 'd', "directory to \"build\" (copy) to"),
     ]
 
     def initialize_options(self):
-        self.package_dir = None
-        self.build_lib = None
         self.tessdata_url = None
+        self.inplace = False
+        self.build_lib = None
 
 
     def finalize_options(self):
@@ -29,6 +30,7 @@ class TesseractData(setuptools.Command):
                                    ('force', 'force'))
 
         self.package_data = self.distribution.package_data
+        self.inplace = bool(self.inplace)
         if self.tessdata_url is None:
             self.tessdata_url = TESSERACT_DATA_URL
 
@@ -36,7 +38,12 @@ class TesseractData(setuptools.Command):
         self.add_tesseract_data()
 
     def add_tesseract_data(self):
-        destination = os.path.join(self.build_lib, "speedwagon", "workflows", "tessdata")
+
+        tessdata_path = os.path.join("speedwagon", "workflows", "tessdata")
+        if self.inplace:
+            destination = tessdata_path
+        else:
+            destination = os.path.join(self.build_lib, tessdata_path)
 
         if not os.path.exists(destination):
             self.mkpath(destination)
