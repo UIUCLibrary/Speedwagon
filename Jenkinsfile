@@ -496,7 +496,7 @@ Version  = ${PKG_VERSION}"""
                         stage("CPack"){
                             steps {
                                 dir("cmake_build") {
-                                    cpack arguments: "-C Release -G ${PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V", installation: "${CMAKE_VERSION}"
+                                    cpack arguments: "-C Release -G ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V", installation: "${CMAKE_VERSION}"
                                 }
                             }
                             post {
