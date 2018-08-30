@@ -383,6 +383,7 @@ Version  = ${PKG_VERSION}"""
             }
         }
         stage("Packaging") {
+            failFast true
             parallel {
                 stage("Source and Wheel formats"){
                     when {
