@@ -8,4 +8,4 @@ recursive-include features *.feature
 recursive-include docs *
 
 prune *.traineddata
-prune speedwagon/workflows/tessdata
+
