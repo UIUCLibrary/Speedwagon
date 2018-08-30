@@ -15,7 +15,13 @@ def locate_tessdata()->str:
 
 class OCRWorkflow(speedwagon.Workflow):
     name = "Generate OCR Files"
-    description = "Something goes here later"
+    description = "Create OCR text files for images. \n" \
+                  "\n" \
+                  "Note: This currently only uses the English data set.\n" \
+                  "\n" \
+                  "Parameters: \n" \
+                  "    Path: contains contains tiff or jp2 files\n" \
+                  "    Image File Type: The type of Image file to use\n"
 
     SUPPORTED_IMAGE_TYPES = {
         "JPEG 2000": ".jp2",
@@ -68,7 +74,6 @@ class OCRWorkflow(speedwagon.Workflow):
 
     @classmethod
     def get_file_extension(cls, file_type: str) -> str:
-        # file_extension = ".jp2"
         return cls.SUPPORTED_IMAGE_TYPES[file_type]
 
     def user_options(self):
@@ -77,9 +82,13 @@ class OCRWorkflow(speedwagon.Workflow):
         package_type = tool_options.ListSelection("Image File Type")
         for file_type in OCRWorkflow.SUPPORTED_IMAGE_TYPES.keys():
             package_type.add_selection(file_type)
-        # package_type.add_selection("JPEG 2000")
-        # package_type.add_selection("TIFF")
         options.append(package_type)
+
+        language_type = tool_options.ListSelection("Language")
+
+        # TODO: dynamically add language files based on datafiles found on path
+        language_type.add_selection("eng")
+        options.append(language_type)
 
         package_root_option = tool_options.UserOptionCustomDataType(
             "Path", tool_options.FolderData)
