@@ -1,4 +1,4 @@
-include LICENSE README.rst requirements.txt requirements-dev.txt Makefile tox.ini
+include LICENSE README.rst requirements.txt requirements-dev.txt Makefile tox.ini extra_commands.py
 recursive-exclude speedwagon/ui *.py
 recursive-include speedwagon/ui *.ui
 include speedwagon/ui/__init__.py
@@ -9,4 +9,4 @@ recursive-include docs *
 recursive-include speedwagon/tools *.txt
 
 prune *.traineddata
-prune speedwagon/workflows/tessdata
+prune speedwagon/workflows/tessdata/
