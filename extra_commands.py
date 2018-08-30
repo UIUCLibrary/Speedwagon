@@ -13,10 +13,8 @@ TESSERACT_DATA_URL = "https://github.com/tesseract-ocr/tessdata/raw/3.04.00/"
 class TesseractData(setuptools.Command):
     description = "Download Tesseract data"
     user_options = [
-        ("tessdata-dir=", "t", "Directory to save tesseract data "),
         ("tessdata-url=", "u", "base url for downloading tesseract data "),
         ('build-lib=', 'd', "directory to \"build\" (copy) to"),
-        # ('build-lib=', 'd', "directory to \"build\" (copy) to"),
     ]
 
     def initialize_options(self):
@@ -39,6 +37,9 @@ class TesseractData(setuptools.Command):
 
     def add_tesseract_data(self):
         destination = os.path.join(self.build_lib, "speedwagon", "workflows", "tessdata")
+
+        if not os.path.exists(destination):
+            self.mkpath(destination)
 
         english_data_url = "{}{}".format(self.tessdata_url, "eng.traineddata")
         self.download_data(english_data_url, destination)
