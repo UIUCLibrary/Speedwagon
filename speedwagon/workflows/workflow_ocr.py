@@ -157,4 +157,3 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
         }
         self.set_results(result)
         return True
-
