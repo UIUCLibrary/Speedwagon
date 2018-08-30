@@ -427,7 +427,10 @@ Version  = ${PKG_VERSION}"""
                         stage("CMake Configure"){
                             steps {
                                 dir("source"){
+                                    bat "python -m venv ${WORKSPACE}/standalone_venv"
                                     bat "pipenv lock --requirements > requirements.txt"
+                                    bat "pipenv lock --requirements --dev> requirements-dev.txt"
+                                    bat "${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
                                 }
                                 tee('configure_standalone_cmake.log') {
                                     dir("cmake_build") {
