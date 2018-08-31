@@ -94,7 +94,6 @@ pipeline {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         // string(name: "PROJECT_NAME", defaultValue: "Speedwagon", description: "Name given to the project")
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
-        booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
         // file description: 'Build with alternative requirements.txt file', name: 'requirements.txt'
         booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests")
         booleanParam(name: "TEST_RUN_BEHAVE", defaultValue: true, description: "Run Behave unit tests")
@@ -241,11 +240,7 @@ Version  = ${PKG_VERSION}"""
                     }
                 }
                 stage("Sphinx documentation"){
-                    when {
-                        equals expected: true, actual: params.BUILD_DOCS
-                    }
                     steps {
-                        // bat 'mkdir "build/docs/html"'
                         echo "Building docs on ${env.NODE_NAME}"
                         tee('logs/build_sphinx.log') {
                             dir("source"){
