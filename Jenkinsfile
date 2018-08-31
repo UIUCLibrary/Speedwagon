@@ -436,9 +436,6 @@ Version  = ${PKG_VERSION}"""
                                         archiveArtifacts artifacts: "*.whl,*.tar.gz,*.zip", fingerprint: true
                                     }
                                 }
-                                failure {
-                                    echo "Failed to package."
-                                }
                             }
                         }
                     }
