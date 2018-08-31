@@ -782,7 +782,11 @@ Version  = ${PKG_VERSION}"""
                     when {
                         allOf{
                             equals expected: true, actual: params.DEPLOY_HATHI_TOOL_BETA
-                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
+                            anyOf{
+                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+                            }
                         }
                     }
                     steps {
