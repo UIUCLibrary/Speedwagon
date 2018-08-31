@@ -33,13 +33,11 @@ def check_jira(){
         // }
     }
 }
-
+def generate_cpack_arguments(BuildWix, BuildNSIS, BuildZip){
+    return "asdfasdfasdfasd"
+}
 def CPackBuild(){
-    dir("cmake_build") {
-        script{
-            cpack arguments: "-C Release -G ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V", installation: "${CMAKE_VERSION}"
-        }
-    }
+    
 }
 pipeline {
     agent {
@@ -109,6 +107,7 @@ pipeline {
                 stage("Testing Jira epic"){
                     agent any
                     steps {
+                        echo generate_cpack_arguments()
                         echo "Finding Jira epic ${params.JIRA_ISSUE_VALUE}"
                         check_jira()
 
@@ -525,8 +524,11 @@ Version  = ${PKG_VERSION}"""
                         }
                         stage("CPack"){
                             steps {
-                                CPackBuild()
-
+                                dir("cmake_build") {
+                                    script{
+                                        cpack arguments: "-C Release -G ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V", installation: "${CMAKE_VERSION}"
+                                    }
+                                }
                             }
                             post {
                                 success{
