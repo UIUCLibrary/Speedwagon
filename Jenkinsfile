@@ -14,7 +14,7 @@ def JIRA_ISSUE = ""
 ////                                        echo "${generator_list.toString()}"
 //                                        def generator_argument = ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR}
 //                                    }
-void check_jira(){
+def check_jira(){
     script {
         // def result = jiraSearch "issue = $params.JIRA_ISSUE"
         // jiraComment body: 'Just a test', issueKey: 'PSR-83'
@@ -34,7 +34,7 @@ void check_jira(){
     }
 }
 
-void CPackBuild(){
+def CPackBuild(){
     dir("cmake_build") {
         cpack arguments: "-C Release -G ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V", installation: "${CMAKE_VERSION}"
     }
