@@ -47,14 +47,9 @@ def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
         if(BuildZip){
             cpack_generators << "ZIP"
         }
-        echo "${cpack_generators.join(";")}"
+        return "${cpack_generators.join(";")}"
     }
-    echo "${BuildWix}"
-    echo "${BuildNSIS}"
-    echo "${BuildZip}"
-    
 
-    return "asdfasdfasdfasd"
 }
 pipeline {
     agent {
@@ -124,7 +119,6 @@ pipeline {
                 stage("Testing Jira epic"){
                     agent any
                     steps {
-                        echo generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)
                         echo "Finding Jira epic ${params.JIRA_ISSUE_VALUE}"
                         check_jira()
 
@@ -543,7 +537,7 @@ Version  = ${PKG_VERSION}"""
                             steps {
                                 dir("cmake_build") {
                                     script{
-                                        cpack arguments: "-C Release -G ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V", installation: "${CMAKE_VERSION}"
+                                        cpack arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} -V", installation: "${CMAKE_VERSION}"
                                     }
                                 }
                             }
