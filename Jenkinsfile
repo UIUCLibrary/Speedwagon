@@ -34,9 +34,25 @@ def check_jira(){
     }
 }
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
+    script{
+        def cpack_generators = []
+        
+        if(BuildWix){
+            cpack_generators << "WIX"
+        }
+        
+        if(BuildNSIS){
+            cpack_generators << "NSIS"
+        }
+        if(BuildZip){
+            cpack_generators << "ZIP"
+        }
+        echo "${cpack_generators.join(";")}"
+    }
     echo "${BuildWix}"
     echo "${BuildNSIS}"
     echo "${BuildZip}"
+    
 
     return "asdfasdfasdfasd"
 }
