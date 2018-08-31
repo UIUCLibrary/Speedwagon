@@ -88,7 +88,7 @@ pipeline {
         booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
-        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
+        // booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
         // choice choices: ['WIX', 'NSIS', 'ZIP'], description: 'The type of installer package create', name: 'PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR'
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: true, description: "Create a standalone wix based .msi installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: false, description: "Create a standalone NULLSOFT NSIS based .exe installer")
@@ -843,7 +843,12 @@ Version  = ${PKG_VERSION}"""
                     when {
                         allOf{
                             equals expected: true, actual: params.DEPLOY_SCCM
-                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
+                            // equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
+                            anyOf{
+                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+                            }
                             branch "master"
                         }
                         // expression { params.RELEASE == "Release_to_devpi_and_sccm"}
