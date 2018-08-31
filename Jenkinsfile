@@ -104,7 +104,7 @@ pipeline {
                 stage("Testing Jira epic"){
                     agent any
                     steps {
-                        echo "${generate_cpack_arguments()}"
+                        echo generate_cpack_arguments()
                         echo "Finding Jira epic ${params.JIRA_ISSUE_VALUE}"
                         check_jira()
 
