@@ -77,7 +77,7 @@ pipeline {
                             // jiraComment body: 'Just a test', issueKey: 'PSR-83'
                             def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
                             echo "result = ${jira_project}"
-                            JIRA_ISSUE = jiraGetIssue idOrKey: "${JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
+                            JIRA_ISSUE = jiraGetIssue idOrKey: "${param.JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
                             echo "result = ${JIRA_ISSUE}"
                             // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
                             // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
