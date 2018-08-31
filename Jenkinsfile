@@ -277,7 +277,6 @@ Version  = ${PKG_VERSION}"""
                                 def project_name = alljob[0]
                                 dir('build/docs/') {
                                     zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,7)}.zip"
-                                    bat "dir /s /B"
                                 }
                             }
                         }
