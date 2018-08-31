@@ -82,5 +82,7 @@ Release History
 
 Dev
 +++
+* New Workflows:
+   * Generate OCR Files
 * Fixes:
     * Verify HathiTrust Package Completeness workflow no longer fails on hidden system directories.
