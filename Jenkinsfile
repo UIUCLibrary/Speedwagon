@@ -97,7 +97,7 @@ pipeline {
         booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to \\\\storage.library.illinois.edu\\HathiTrust\\Tools\\beta\\")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
-        string(name: 'URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
+        string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
     
     stages {
@@ -765,6 +765,11 @@ Version  = ${PKG_VERSION}"""
                             )
                         }
                     }
+                    post{
+                        success{
+                            jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                        }
+                    }
                 }
                 stage("Deploy standalone to Hathi tools Beta"){
                     when {
@@ -830,6 +835,11 @@ Version  = ${PKG_VERSION}"""
                             }
                         }
                     }
+                    post{
+                        success{
+                            jiraComment body: "Version ${PKG_VERSION} was added to https://devpi.library.illinois.edu/production/release index.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                        }
+                    }
                 }
                 stage("Deploy Standalone Build to SCCM") {
                     when {
@@ -876,7 +886,7 @@ Version  = ${PKG_VERSION}"""
                                 )
 
                             // deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
-                            
+                            jiraComment body: "Version ${PKG_VERSION} sent to staging for user testing.", issueKey: "${params.JIRA_ISSUE_VALUE}"
                             input("Deploy to production?")
                             writeFile file: "deployment_request.txt", text: deployment_request
                             echo deployment_request
@@ -905,6 +915,7 @@ Version  = ${PKG_VERSION}"""
                     }
                     post {
                         success {
+                            jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
                             archiveArtifacts artifacts: "deployment_request.txt"
                         }
                     }
@@ -944,9 +955,9 @@ Version  = ${PKG_VERSION}"""
                     // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                     
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                        bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                        bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                         try {
+                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                            bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                             bat "devpi remove -y ${PKG_NAME}==${PKG_VERSION}"
                         } catch (Exception ex) {
                             echo "Failed to remove ${PKG_NAME}==${PKG_VERSION} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
