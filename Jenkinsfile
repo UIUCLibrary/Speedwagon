@@ -69,10 +69,6 @@ pipeline {
                 }
                 stage("Testing Jira epic"){
                     agent any
-                    when {
-                        equals expected: true, actual: params.UPDATE_JIRA_EPIC
-                        // expression {params.UPDATE_JIRA_EPIC == true}
-                    }
                     steps {
                         echo "Finding Jira epic"
                         script {
