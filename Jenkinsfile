@@ -718,8 +718,10 @@ Version  = ${PKG_VERSION}"""
                             bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                             
                         }
+                        bat "venv\\Scripts\\devpi.exe use http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging"
+                        bat "venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
                     }
-                    bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} /DS_Jenkins/${env.BRANCH_NAME}"
+//                    bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} /DS_Jenkins/${env.BRANCH_NAME}"
 
                 }
             }
