@@ -33,7 +33,7 @@ def check_jira(){
         // }
     }
 }
-def generate_cpack_arguments(BuildWix, BuildNSIS, BuildZip){
+def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
     return "asdfasdfasdfasd"
 }
 pipeline {
