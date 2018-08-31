@@ -450,6 +450,13 @@ Version  = ${PKG_VERSION}"""
                             customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
                         }
                     }
+                    when{
+                        anyOf{
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+                        }
+                    }
 //                    options{
 //                        retry(2)
 //                    }
