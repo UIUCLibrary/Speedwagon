@@ -1,6 +1,10 @@
+import io
 import os
-import typing
+# import typing
+import sys
 
+from typing import List, Any, Optional
+import contextlib
 import speedwagon
 from speedwagon import tasks
 from speedwagon.tools import options as tool_options
@@ -17,10 +21,13 @@ class OCRWorkflow(speedwagon.Workflow):
     name = "Generate OCR Files"
     description = "Create OCR text files for images. \n" \
                   "\n" \
-                  "Note: This currently only uses the English data set.\n" \
+                  "Note:\n" \
+                  "    * This currently only uses the English data set.\n" \
+                  "    * The Path setting will search subdirectories for " \
+                  "image files.\n" \
                   "\n" \
-                  "Parameters: \n" \
-                  "    Path: contains contains tiff or jp2 files\n" \
+                  "Settings: \n" \
+                  "    Path: Path containing tiff or jp2 files. \n" \
                   "    Image File Type: The type of Image file to use\n"
 
     SUPPORTED_IMAGE_TYPES = {
@@ -28,16 +35,14 @@ class OCRWorkflow(speedwagon.Workflow):
         "TIFF": ".tif"
     }
 
-    def discover_task_metadata(self, initial_results: typing.List[typing.Any],
-                               additional_data, **user_args) \
-            -> typing.List[dict]:
+    def discover_task_metadata(self, initial_results: List[Any],
+                               additional_data, **user_args) -> List[dict]:
 
         new_tasks = []
 
         for result in initial_results:
             for image_file in result.data:
                 image_path = os.path.dirname(image_file)
-                print(image_file)
                 base_name = os.path.splitext(os.path.basename(image_file))[0]
                 ocr_file_name = "{}.txt".format(base_name)
 
@@ -109,6 +114,31 @@ class OCRWorkflow(speedwagon.Workflow):
             raise ValueError(
                 "Input not a valid directory {}.".format(path))
 
+    @classmethod
+    def generate_report(cls, results: List[tasks.Result],
+                        **user_args) -> Optional[str]:
+        amount = len(cls._get_ocr_tasks(results))
+
+        report = \
+            "*************************************\n" \
+            "Report\n" \
+            "*************************************\n" \
+            "Completed generating OCR {} files.\n" \
+            "\n" \
+            "*************************************\n" \
+            "Done\n".format(amount)
+        return report
+
+    @staticmethod
+    def _get_ocr_tasks(results: List[tasks.Result])->List[tasks.Result]:
+
+        def filter_ocr_gen_tasks(result: tasks.Result)->bool:
+            if result.source != GenerateOCRFileTask:
+                return False
+            return True
+
+        return [r for r in filter(filter_ocr_gen_tasks, results)]
+
 
 class FindImagesTask(speedwagon.tasks.Subtask):
 
@@ -150,12 +180,27 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
         super().__init__()
         self._source = source_image
         self._output_text_file = out_text_file
+        # Use the english language file for now
+        self._lang = "eng"
 
     def work(self) -> bool:
-        print(self._source)
-        reader = GenerateOCRFileTask.engine.get_reader("eng")
+
+        # Get the ocr text reader for the proper language
+        reader = GenerateOCRFileTask.engine.get_reader(self._lang)
         self.log("Reading {}".format(self._source))
-        resulting_text = reader.read(self._source)
+
+        f = io.StringIO()
+
+        with contextlib.redirect_stderr(f):
+            # Capture the warning messages
+            resulting_text = reader.read(self._source)
+
+        stderr_messages = f.getvalue()
+        if stderr_messages:
+            # Log any error messages
+            self.log(stderr_messages.strip())
+
+        # Generate a text file from the text data extracted from the image
         self.log("Writing to {}".format(self._output_text_file))
         with open(self._output_text_file, "w", encoding="utf8") as wf:
             wf.write(resulting_text)
