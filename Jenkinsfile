@@ -710,9 +710,7 @@ Version  = ${PKG_VERSION}"""
                                 bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                             }
                         }
-                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                        echo "Testing Whl package in devpi"
-                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose"
+                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose"
                     }
                 }
             }
@@ -727,8 +725,7 @@ Version  = ${PKG_VERSION}"""
                             
                         }
                     }
-                    bat "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                    bat "devpi push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
+                    bat "venv\\Scripts\\devpi.ex use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.ex push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
 
                 }
             }
