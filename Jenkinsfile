@@ -445,9 +445,10 @@ Version  = ${PKG_VERSION}"""
                         stage("CMake Configure"){
                             steps {
                                 dir("source"){
-//                                    bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv"
-//                                    bat "pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev> requirements-dev.txt"
-                                    bat "${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
+                                    bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv"
+                                    bat "pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev> requirements-dev.txt"
+                                    bat "${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade"
+                                    //${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
                                 }
                                 tee('configure_standalone_cmake.log') {
                                     dir("cmake_build") {
