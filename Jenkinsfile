@@ -47,7 +47,7 @@ pipeline {
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
         choice choices: ['WIX', 'NSIS', 'ZIP'], description: 'The type of installer package create', name: 'PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR'
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: true, description: "Create a standalone wix based .msi installer")
-        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: true, description: "Create a standalonea NULLSOFT NSIS based .exe installer")
+        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: true, description: "Create a standalone NULLSOFT NSIS based .exe installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_ZIP", defaultValue: true, description: "Create a standalone portable package")
 
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
@@ -506,7 +506,10 @@ Version  = ${PKG_VERSION}"""
                         stage("CPack"){
                             steps {
                                 dir("cmake_build") {
-                                    cpack arguments: "-C Release -G ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V", installation: "${CMAKE_VERSION}"
+                                    script{
+                                        def generator_argument = ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR}
+                                        cpack arguments: "-C Release -G ${generator_argument} -V", installation: "${CMAKE_VERSION}"
+                                    }
                                 }
                             }
                             post {
@@ -519,7 +522,7 @@ Version  = ${PKG_VERSION}"""
                                                 archiveArtifacts artifacts: "${installer_file}", fingerprint: true
                                             }
                                         }
-                                        stash includes: "*.msi,*.exe,*.zip", name: "standalone_installer"
+                                        stash includes: "*.msi,*.exe,*.zip", name: "standalone_installers"
                                     }
                                 }
                                 always{
@@ -751,7 +754,7 @@ Version  = ${PKG_VERSION}"""
                         }
                     }
                     steps {
-                        unstash "standalone_installer"
+                        unstash "standalone_installers"
                         input 'Update standalone to //storage.library.illinois.edu/HathiTrust/Tools/beta/?'
                         script{
                             def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
