@@ -433,9 +433,7 @@ Version  = ${PKG_VERSION}"""
                             post {
                                 success {
                                     dir("dist") {
-                                        archiveArtifacts artifacts: "*.whl", fingerprint: true
-                                        archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
-                                        archiveArtifacts artifacts: "*.zip", fingerprint: true
+                                        archiveArtifacts artifacts: "*.whl,*.tar.gz,*.zip", fingerprint: true
                                     }
                                 }
                                 failure {
