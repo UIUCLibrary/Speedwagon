@@ -681,8 +681,7 @@ Version  = ${PKG_VERSION}"""
                         skipDefaultCheckout(true)
                     }
                     steps {
-                        bat "${tool 'CPython-3.6'} -m venv venv"
-                        bat "venv\\Scripts\\pip.exe install tox devpi-client"
+                        bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
                         script {
                             // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                             // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
@@ -690,9 +689,7 @@ Version  = ${PKG_VERSION}"""
                                 bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                             }
 
-                            bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                            echo "Testing Source package in devpi"
-                            bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip"
+                            bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip"
                         }
                     }
                 }
