@@ -88,8 +88,6 @@ pipeline {
         booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
-        // booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
-        // choice choices: ['WIX', 'NSIS', 'ZIP'], description: 'The type of installer package create', name: 'PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR'
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: true, description: "Create a standalone wix based .msi installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: false, description: "Create a standalone NULLSOFT NSIS based .exe installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_ZIP", defaultValue: false, description: "Create a standalone portable package")
@@ -464,9 +462,9 @@ Version  = ${PKG_VERSION}"""
                         stage("CMake Configure"){
                             steps {
                                 dir("source"){
-                                    bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv"
+                                    bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv && ${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade"
                                     bat "pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev> requirements-dev.txt"
-                                    bat "${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade"
+                                    
                                     //${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
                                 }
                                 tee('configure_standalone_cmake.log') {
