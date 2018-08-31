@@ -238,15 +238,6 @@ Version  = ${PKG_VERSION}"""
                             archiveArtifacts artifacts: "logs/*.log"
                             // bat "dir build"
                         }
-                        failure{
-                            echo "Failed to build Python package"
-                        }
-                        success{
-                            echo "Successfully built project is ./build."
-                            dir("${WORKSPACE}\\build"){
-                                bat "dir /s /B"
-                            }
-                        }
                     }
                 }
                 stage("Sphinx documentation"){
@@ -454,9 +445,6 @@ Version  = ${PKG_VERSION}"""
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
                         }
                     }
-//                    options{
-//                        retry(2)
-//                    }
                     stages{
                         stage("CMake Configure"){
                             steps {
