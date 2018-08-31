@@ -157,8 +157,7 @@ Version  = ${PKG_VERSION}"""
                     }
                     steps {
                         dir("source"){
-                            bat "pipenv install --dev --deploy"
-                            bat "pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log"
+                            bat "pipenv install --dev --deploy && pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log"
 
                         }
                     }
@@ -267,7 +266,6 @@ Version  = ${PKG_VERSION}"""
                     }
                     post {
                         always {
-                            bat "dir reports"
                             junit "reports/behave/*.xml"
                         }
                     }
@@ -428,8 +426,7 @@ Version  = ${PKG_VERSION}"""
                                 dir("source"){
                                     bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv"
                                     bat "pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev> requirements-dev.txt"
-                                    bat "${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade"
-                                    bat "${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
+                                    bat "${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
                                 }
                                 tee('configure_standalone_cmake.log') {
                                     dir("cmake_build") {
