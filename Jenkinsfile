@@ -506,11 +506,15 @@ Version  = ${PKG_VERSION}"""
                         stage("CPack"){
                             steps {
                                 dir("cmake_build") {
-                                    script{
-
-                                        def generator_argument = ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR}
-                                        cpack arguments: "-C Release -G ${generator_argument} -V", installation: "${CMAKE_VERSION}"
-                                    }
+//                                    script{
+////                                        def generator_list = []
+////                                        if(params.PACKAGE_WINDOWS_STANDALONE_MSI){
+////                                            generator_list << "WIX"
+////                                        }
+////                                        echo "${generator_list.toString()}"
+//                                        def generator_argument = ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR}
+//                                    }
+                                        cpack arguments: "-C Release -G ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V", installation: "${CMAKE_VERSION}"
                                 }
                             }
                             post {
