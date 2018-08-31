@@ -76,7 +76,7 @@ pipeline {
                             // def result = jiraSearch "issue = $params.JIRA_ISSUE"
                             // jiraComment body: 'Just a test', issueKey: 'PSR-83'
                             def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
-                            echo "result = ${jira_project}"
+                            echo "result = ${jira_project.data.toString()}"
                             JIRA_ISSUE = jiraGetIssue idOrKey: "${params.JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
                             echo "result = ${JIRA_ISSUE}"
                             // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
