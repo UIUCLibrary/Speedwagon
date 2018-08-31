@@ -33,6 +33,12 @@ void check_jira(){
         // }
     }
 }
+
+void CPackBuild(){
+    dir("cmake_build") {
+        cpack arguments: "-C Release -G ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V", installation: "${CMAKE_VERSION}"
+    }
+}
 pipeline {
     agent {
         label "Windows && Python3 && longfilenames && WIX"
@@ -103,23 +109,7 @@ pipeline {
                     steps {
                         echo "Finding Jira epic ${params.JIRA_ISSUE_VALUE}"
                         check_jira()
-//                        script {
-//                            // def result = jiraSearch "issue = $params.JIRA_ISSUE"
-//                            // jiraComment body: 'Just a test', issueKey: 'PSR-83'
-//                            def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
-//                            echo "result = ${jira_project.data.toString()}"
-//                            JIRA_ISSUE = jiraGetIssue idOrKey: "${params.JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
-//                            echo "result = ${JIRA_ISSUE}"
-//                            // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
-//                            // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
-//                            // if(result.isEmpty()){
-//                            //     echo "Jira issue not found"
-//                            //     error("Jira issue not found")
-//
-//                            // } else {
-//                            //     echo "Located ${result}"
-//                            // }
-//                        }
+
                     }
 
                 }
@@ -532,9 +522,8 @@ Version  = ${PKG_VERSION}"""
                         }
                         stage("CPack"){
                             steps {
-                                dir("cmake_build") {
-                                    cpack arguments: "-C Release -G ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V", installation: "${CMAKE_VERSION}"
-                                }
+                                CPackBuild()
+
                             }
                             post {
                                 success{
