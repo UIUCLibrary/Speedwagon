@@ -51,6 +51,21 @@ def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
     }
 
 }
+def cleanup_workspace(){
+    dir("logs"){
+        echo "Cleaning out logs directory"
+        deleteDir()
+    }
+
+    dir("build"){
+        echo "Cleaning out build directory"
+        deleteDir()
+    }
+    dir("source") {
+        stash includes: 'deployment.yml', name: "Deployment"
+    }
+}
+
 pipeline {
     agent {
         label "Windows && Python3 && longfilenames && WIX"
@@ -125,18 +140,7 @@ pipeline {
                 }
                 stage("Cleanup"){
                     steps {
-                        dir("logs"){
-                            echo "Cleaning out logs directory"
-                            deleteDir()
-                        }
-
-                        dir("build"){
-                            echo "Cleaning out build directory"
-                            deleteDir()
-                        }
-                        dir("source") {
-                            stash includes: 'deployment.yml', name: "Deployment"
-                        }
+                        cleanup_workspace()
                     }
                 }
                 stage("Install Python system dependencies"){
