@@ -89,7 +89,7 @@ pipeline {
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
-        choice choices: ['WIX', 'NSIS', 'ZIP'], description: 'The type of installer package create', name: 'PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR'
+        // choice choices: ['WIX', 'NSIS', 'ZIP'], description: 'The type of installer package create', name: 'PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR'
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: true, description: "Create a standalone wix based .msi installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: false, description: "Create a standalone NULLSOFT NSIS based .exe installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_ZIP", defaultValue: false, description: "Create a standalone portable package")
@@ -448,6 +448,13 @@ Version  = ${PKG_VERSION}"""
                         node {
                             label "Windows && Python3 && longfilenames && WIX"
                             customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
+                        }
+                    }
+                    when{
+                        anyOf{
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
                         }
                     }
 //                    options{
