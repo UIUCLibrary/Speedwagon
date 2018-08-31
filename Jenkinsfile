@@ -5,6 +5,7 @@ import org.ds.*
 def PKG_VERSION = "unknown"
 def PKG_NAME = "unknown"
 def CMAKE_VERSION = "cmake3.12"
+def JIRA_ISSUE = ""
 
 pipeline {
     agent {
@@ -33,7 +34,7 @@ pipeline {
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         // string(name: "PROJECT_NAME", defaultValue: "Speedwagon", description: "Name given to the project")
-        string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')   
+        string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
         booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
         // file description: 'Build with alternative requirements.txt file', name: 'requirements.txt'
         booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests") 
@@ -76,8 +77,8 @@ pipeline {
                             // jiraComment body: 'Just a test', issueKey: 'PSR-83'
                             def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
                             echo "result = ${jira_project}"
-                            def result = jiraGetIssue idOrKey: "${JIRA_ISSUE}, site: 'https://bugs.library.illinois.edu'
-                            echo "result = ${result}"
+                            def JIRA_ISSUE = jiraGetIssue idOrKey: "${JIRA_ISSUE_VALUE}, site: 'https://bugs.library.illinois.edu'
+                            echo "result = ${JIRA_ISSUE}"
                             // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
                             // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
                             // if(result.isEmpty()){
