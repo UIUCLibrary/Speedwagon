@@ -77,7 +77,7 @@ pipeline {
                             // jiraComment body: 'Just a test', issueKey: 'PSR-83'
                             def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
                             echo "result = ${jira_project}"
-                            def JIRA_ISSUE = jiraGetIssue idOrKey: "${JIRA_ISSUE_VALUE}, site: 'https://bugs.library.illinois.edu'
+                            JIRA_ISSUE = jiraGetIssue idOrKey: "${JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
                             echo "result = ${JIRA_ISSUE}"
                             // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
                             // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
@@ -752,26 +752,33 @@ Version  = ${PKG_VERSION}"""
                     steps {
                         unstash "standalone_installer"
                         input 'Update standalone to //storage.library.illinois.edu/HathiTrust/Tools/beta/?'
-                        cifsPublisher(
-                                    publishers: [[
-                                        configName: 'hathitrust tools', 
-                                        transfers: [[
-                                            cleanRemote: false, 
-                                            excludes: '', 
-                                            flatten: false, 
-                                            makeEmptyDirs: false, 
-                                            noDefaultExcludes: false, 
-                                            patternSeparator: '[, ]+', 
-                                            remoteDirectory: 'beta', 
-                                            remoteDirectorySDF: false, 
-                                            removePrefix: '', 
-                                            sourceFiles: "*.msi,*.exe,*.zip",
-                                            ]], 
-                                        usePromotionTimestamp: false, 
-                                        useWorkspaceInPromotion: false, 
-                                        verbose: false
-                                        ]]
-                                )
+                        script{
+                            def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
+                            cifsPublisher(
+                                publishers: [[
+                                    configName: 'hathitrust tools',
+                                    transfers: [[
+                                        cleanRemote: false,
+                                        excludes: '',
+                                        flatten: false,
+                                        makeEmptyDirs: false,
+                                        noDefaultExcludes: false,
+                                        patternSeparator: '[, ]+',
+                                        remoteDirectory: 'beta',
+                                        remoteDirectorySDF: false,
+                                        removePrefix: '',
+                                        sourceFiles: "${installer_files}",
+//                                            sourceFiles: "*.msi,*.exe,*.zip",
+                                        ]],
+                                    usePromotionTimestamp: false,
+                                    useWorkspaceInPromotion: false,
+                                    verbose: false
+                                    ]]
+                            )
+                            jiraComment body: "Added \"${installer_files}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${param.JIRA_ISSUE_VALUE}"
+                        }
+
+
                     }
                 }
                 stage("Deploy to DevPi Production") {
