@@ -18,7 +18,9 @@ ruamel.yaml==0.15.37
 setuptools>=30.3.0
 sip==4.19.8
 tzlocal==1.5.1
+uiucprescon-imagevalidate
 uiucprescon-packager[kdu]>=0.2.1b6
 uiucprescon-getmarc
+uiucprescon-ocr
 yarl==1.1.1
 pykdu-compress>=0.0.4

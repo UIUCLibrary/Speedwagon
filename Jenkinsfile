@@ -209,6 +209,9 @@ Version  = ${PKG_VERSION}"""
                         }
                         success{
                             echo "Successfully built project is ./build."
+                            dir("${WORKSPACE}\\build"){
+                                bat "dir /s /B"
+                            }
                         }
                     }
                 }
@@ -240,6 +243,7 @@ Version  = ${PKG_VERSION}"""
                                 def project_name = alljob[0]
                                 dir('build/docs/') {
                                     zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,7)}.zip"
+                                    bat "dir /s /B"
                                 }
                             }
                         }
@@ -379,28 +383,33 @@ Version  = ${PKG_VERSION}"""
             }
         }
         stage("Packaging") {
+            failFast true
             parallel {
                 stage("Source and Wheel formats"){
                     when {
                         equals expected: true, actual: params.PACKAGE_PYTHON_FORMATS
                     }
-                    
-                    steps{
-                        dir("source"){
-                            bat script: "pipenv run python setup.py sdist -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
-                        }
-                    }
-                    
-                    post {
-                        success {
-                            dir("dist") {
-                                archiveArtifacts artifacts: "*.whl", fingerprint: true
-                                archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
-                                archiveArtifacts artifacts: "*.zip", fingerprint: true
+                    stages{
+
+                        stage("Packaging sdist and wheel"){
+
+                            steps{
+                                dir("source"){
+                                    bat script: "pipenv run python setup.py sdist -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
+                                }
                             }
-                        }
-                        failure {
-                            echo "Failed to package."
+                            post {
+                                success {
+                                    dir("dist") {
+                                        archiveArtifacts artifacts: "*.whl", fingerprint: true
+                                        archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
+                                        archiveArtifacts artifacts: "*.zip", fingerprint: true
+                                    }
+                                }
+                                failure {
+                                    echo "Failed to package."
+                                }
+                            }
                         }
                     }
                 }
@@ -417,6 +426,12 @@ Version  = ${PKG_VERSION}"""
                     stages{
                         stage("CMake Configure"){
                             steps {
+                                dir("source"){
+                                    bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv"
+                                    bat "pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev> requirements-dev.txt"
+                                    bat "${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade"
+                                    bat "${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
+                                }
                                 tee('configure_standalone_cmake.log') {
                                     dir("cmake_build") {
                                         bat "dir"
@@ -491,7 +506,7 @@ Version  = ${PKG_VERSION}"""
                         stage("CPack"){
                             steps {
                                 dir("cmake_build") {
-                                    cpack arguments: "-C Release -G ${PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V", installation: "${CMAKE_VERSION}"
+                                    cpack arguments: "-C Release -G ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V", installation: "${CMAKE_VERSION}"
                                 }
                             }
                             post {
@@ -861,14 +876,16 @@ Version  = ${PKG_VERSION}"""
     post {
         failure {
             echo "Failed!"
+
             script{
+                def help_info = "Pipeline failed. If the problem is old cached data, you might need to purge the testing environment. Try manually running the pipeline again with the parameter FRESH_WORKSPACE checked."
+                echo "${help_info}"
                 if (env.BRANCH_NAME == "master"){
-                    emailext attachLog: true, body: "${JOB_NAME} has current status of ${currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
+                    emailext attachLog: true, body: "${help_info}\n${JOB_NAME} has current status of ${currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
                 }
             }
+            bat "tree /A /F"
         }
-
-
         cleanup {
             // dir("source"){
             //     bat "pipenv run python setup.py clean --all"
@@ -898,7 +915,8 @@ Version  = ${PKG_VERSION}"""
 
                 }
             }
-            bat "dir"
+
         }
+
     }
 }

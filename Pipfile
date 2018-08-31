@@ -25,6 +25,9 @@ setuptools = ">=30.3.0"
 uiucprescon-getmarc = "*"
 uiucprescon-imagevalidate = ">=0.1.1"
 uiucprescon-packager = {version = ">=0.2.1", extras = ['kdu']}
+uiucprescon-ocr = ">=0.0.1"
+importlib-resources = {version = "*", markers="python_version < '3.7'"}
+pluggy = "*"
 
 [dev-packages]
 behave = "*"
@@ -37,3 +40,6 @@ pyqt-distutils = "*"
 pytest-runner = "*"
 sphinx = "*"
 tox = "*"
+
+[pipenv]
+allow_prereleases = true

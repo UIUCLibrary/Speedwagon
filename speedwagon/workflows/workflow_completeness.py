@@ -284,10 +284,13 @@ class ValidateExtraSubdirectoriesTask(CompletenessSubTask):
         with self.log_config(my_logger):
             try:
                 extra_subdirectories_errors = validate_process.run_validation(
-                    validator.ValidateExtraSubdirectories(path=self.package_path)
+                    validator.ValidateExtraSubdirectories(
+                        path=self.package_path)
                 )
             except PermissionError as e:
-                report_builder = hathi_result.SummaryDirector(source=self.package_path)
+                report_builder = hathi_result.SummaryDirector(
+                    source=self.package_path)
+
                 report_builder.add_error("Permission issues. \"{}\"".format(e))
                 self.set_results(report_builder.construct())
                 return False
