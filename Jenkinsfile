@@ -772,7 +772,7 @@ Version  = ${PKG_VERSION}"""
                                     verbose: false
                                     ]]
                             )
-                            jiraComment body: "Added \"${installer_files}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${param.JIRA_ISSUE_VALUE}"
+                            jiraComment body: "Added \"${installer_files}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${params.JIRA_ISSUE_VALUE}"
                         }
 
 
