@@ -6,7 +6,33 @@ def PKG_VERSION = "unknown"
 def PKG_NAME = "unknown"
 def CMAKE_VERSION = "cmake3.12"
 def JIRA_ISSUE = ""
+//                                    script{
+////                                        def generator_list = []
+////                                        if(params.PACKAGE_WINDOWS_STANDALONE_MSI){
+////                                            generator_list << "WIX"
+////                                        }
+////                                        echo "${generator_list.toString()}"
+//                                        def generator_argument = ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR}
+//                                    }
+void check_jira(){
+    script {
+        // def result = jiraSearch "issue = $params.JIRA_ISSUE"
+        // jiraComment body: 'Just a test', issueKey: 'PSR-83'
+        def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
+        echo "result = ${jira_project.data.toString()}"
+        JIRA_ISSUE = jiraGetIssue idOrKey: "${params.JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
+        echo "result = ${JIRA_ISSUE}"
+        // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
+        // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
+        // if(result.isEmpty()){
+        //     echo "Jira issue not found"
+        //     error("Jira issue not found")
 
+        // } else {
+        //     echo "Located ${result}"
+        // }
+    }
+}
 pipeline {
     agent {
         label "Windows && Python3 && longfilenames && WIX"
@@ -76,23 +102,24 @@ pipeline {
                     agent any
                     steps {
                         echo "Finding Jira epic ${params.JIRA_ISSUE_VALUE}"
-                        script {
-                            // def result = jiraSearch "issue = $params.JIRA_ISSUE"
-                            // jiraComment body: 'Just a test', issueKey: 'PSR-83'
-                            def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
-                            echo "result = ${jira_project.data.toString()}"
-                            JIRA_ISSUE = jiraGetIssue idOrKey: "${params.JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
-                            echo "result = ${JIRA_ISSUE}"
-                            // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
-                            // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
-                            // if(result.isEmpty()){
-                            //     echo "Jira issue not found"
-                            //     error("Jira issue not found")
-
-                            // } else {
-                            //     echo "Located ${result}"
-                            // }
-                        }
+                        check_jira()
+//                        script {
+//                            // def result = jiraSearch "issue = $params.JIRA_ISSUE"
+//                            // jiraComment body: 'Just a test', issueKey: 'PSR-83'
+//                            def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
+//                            echo "result = ${jira_project.data.toString()}"
+//                            JIRA_ISSUE = jiraGetIssue idOrKey: "${params.JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
+//                            echo "result = ${JIRA_ISSUE}"
+//                            // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
+//                            // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
+//                            // if(result.isEmpty()){
+//                            //     echo "Jira issue not found"
+//                            //     error("Jira issue not found")
+//
+//                            // } else {
+//                            //     echo "Located ${result}"
+//                            // }
+//                        }
                     }
 
                 }
