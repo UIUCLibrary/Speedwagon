@@ -149,14 +149,14 @@ pipeline {
                     post{
                         always{
                             dir("logs"){
-//                                script{
-//                                    def log_files = findFiles glob: '**/pippackages_system_*.log'
-//                                    log_files.each { log_file ->
-//                                        echo "Found ${log_file}"
-//                                        archiveArtifacts artifacts: "${log_file}"
-//                                        bat "del ${log_file}"
-//                                    }
-//                                }
+                                script{
+                                    def log_files = findFiles glob: '**/pippackages_system_*.log'
+                                    log_files.each { log_file ->
+                                        echo "Found ${log_file}"
+                                        archiveArtifacts artifacts: "${log_file}"
+                                        bat "del ${log_file}"
+                                    }
+                                }
                             }
                         }
                         failure {
@@ -936,13 +936,13 @@ Version  = ${PKG_VERSION}"""
             //     bat "pipenv run python setup.py clean --all"
             // }
             
-        
-            dir('dist') {
-                deleteDir()
-            }
-            dir('build') {
-                deleteDir()
-            }
+//
+//            dir('dist') {
+//                deleteDir()
+//            }
+//            dir('build') {
+//                deleteDir()
+//            }
             script {
                 if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
                     // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
