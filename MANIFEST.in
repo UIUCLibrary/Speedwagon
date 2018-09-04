@@ -6,7 +6,6 @@ recursive-include tests *.py
 recursive-include features/steps *.py
 recursive-include features *.feature
 recursive-include docs *
-recursive-include speedwagon/tools *.txt
 
 prune *.traineddata
-prune speedwagon/workflows/tessdata/
+

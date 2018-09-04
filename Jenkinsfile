@@ -5,6 +5,66 @@ import org.ds.*
 def PKG_VERSION = "unknown"
 def PKG_NAME = "unknown"
 def CMAKE_VERSION = "cmake3.12"
+def JIRA_ISSUE = ""
+//                                    script{
+////                                        def generator_list = []
+////                                        if(params.PACKAGE_WINDOWS_STANDALONE_MSI){
+////                                            generator_list << "WIX"
+////                                        }
+////                                        echo "${generator_list.toString()}"
+//                                        def generator_argument = ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR}
+//                                    }
+def check_jira(){
+    script {
+        // def result = jiraSearch "issue = $params.JIRA_ISSUE"
+        // jiraComment body: 'Just a test', issueKey: 'PSR-83'
+        def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
+        echo "result = ${jira_project.data.toString()}"
+        JIRA_ISSUE = jiraGetIssue idOrKey: "${params.JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
+        echo "result = ${JIRA_ISSUE}"
+        // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
+        // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
+        // if(result.isEmpty()){
+        //     echo "Jira issue not found"
+        //     error("Jira issue not found")
+
+        // } else {
+        //     echo "Located ${result}"
+        // }
+    }
+}
+def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
+    script{
+        def cpack_generators = []
+
+        if(BuildWix){
+            cpack_generators << "WIX"
+        }
+
+        if(BuildNSIS){
+            cpack_generators << "NSIS"
+        }
+        if(BuildZip){
+            cpack_generators << "ZIP"
+        }
+        return "${cpack_generators.join(";")}"
+    }
+
+}
+def cleanup_workspace(){
+    dir("logs"){
+        echo "Cleaning out logs directory"
+        deleteDir()
+    }
+
+    dir("build"){
+        echo "Cleaning out build directory"
+        deleteDir()
+    }
+    dir("source") {
+        stash includes: 'deployment.yml', name: "Deployment"
+    }
+}
 
 pipeline {
     agent {
@@ -27,25 +87,27 @@ pipeline {
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         // string(name: "PROJECT_NAME", defaultValue: "Speedwagon", description: "Name given to the project")
-        string(name: 'JIRA_ISSUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')   
-        booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
+        string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
         // file description: 'Build with alternative requirements.txt file', name: 'requirements.txt'
-        booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests") 
+        booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests")
         booleanParam(name: "TEST_RUN_BEHAVE", defaultValue: true, description: "Run Behave unit tests")
         booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
         booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 static analysis")
         booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
         booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
-        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE", defaultValue: true, description: "Windows Standalone")
-        choice choices: ['WIX', 'NSIS', 'ZIP'], description: 'The type of installer package create', name: 'PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR'
+        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: true, description: "Create a standalone wix based .msi installer")
+        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: false, description: "Create a standalone NULLSOFT NSIS based .exe installer")
+        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_ZIP", defaultValue: false, description: "Create a standalone portable package")
+
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
         booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to \\\\storage.library.illinois.edu\\HathiTrust\\Tools\\beta\\")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
-        string(name: 'URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
+        string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
+    
     stages {
         stage("Configure"){
             stages{
@@ -62,30 +124,16 @@ pipeline {
                 }
                 stage("Testing Jira epic"){
                     agent any
-                    when {
-                        equals expected: true, actual: params.UPDATE_JIRA_EPIC
-                    }
                     steps {
-                        echo "Finding Jira epic"
-                        script {
-                            def result = jiraGetIssue idOrKey: 'PSR-83', site: 'https://bugs.library.illinois.edu'
-                            echo "result = ${result}"
-                        }
+                        echo "Finding Jira epic ${params.JIRA_ISSUE_VALUE}"
+                        check_jira()
+
                     }
 
                 }
                 stage("Cleanup"){
                     steps {
-                        dir("logs"){
-                            deleteDir()
-                        }
-
-                        dir("build"){
-                            deleteDir()
-                        }
-                        dir("source") {
-                            stash includes: 'deployment.yml', name: "Deployment"
-                        }
+                        cleanup_workspace()
                     }
                 }
                 stage("Install Python system dependencies"){
@@ -96,6 +144,7 @@ pipeline {
                         tee("logs/pippackages_system_${NODE_NAME}.log") {
                             bat "${tool 'CPython-3.6'} -m pip list"
                         }
+                        bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
                     }
                     post{
                         always{
@@ -137,8 +186,7 @@ Version  = ${PKG_VERSION}"""
                     }
                     steps {
                         dir("source"){
-                            bat "pipenv install --dev --deploy"
-                            bat "pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log"
+                            bat "pipenv install --dev --deploy && pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log"
 
                         }
                     }
@@ -183,23 +231,10 @@ Version  = ${PKG_VERSION}"""
                             archiveArtifacts artifacts: "logs/*.log"
                             // bat "dir build"
                         }
-                        failure{
-                            echo "Failed to build Python package"
-                        }
-                        success{
-                            echo "Successfully built project is ./build."
-                            dir("${WORKSPACE}\\build"){
-                                bat "dir /s /B"
-                            }
-                        }
                     }
                 }
                 stage("Sphinx documentation"){
-                    when {
-                        equals expected: true, actual: params.BUILD_DOCS
-                    }
                     steps {
-                        // bat 'mkdir "build/docs/html"'
                         echo "Building docs on ${env.NODE_NAME}"
                         tee('logs/build_sphinx.log') {
                             dir("source"){
@@ -222,7 +257,6 @@ Version  = ${PKG_VERSION}"""
                                 def project_name = alljob[0]
                                 dir('build/docs/') {
                                     zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,7)}.zip"
-                                    bat "dir /s /B"
                                 }
                             }
                         }
@@ -246,7 +280,6 @@ Version  = ${PKG_VERSION}"""
                     }
                     post {
                         always {
-                            bat "dir reports"
                             junit "reports/behave/*.xml"
                         }
                     }
@@ -375,13 +408,8 @@ Version  = ${PKG_VERSION}"""
                             post {
                                 success {
                                     dir("dist") {
-                                        archiveArtifacts artifacts: "*.whl", fingerprint: true
-                                        archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
-                                        archiveArtifacts artifacts: "*.zip", fingerprint: true
+                                        archiveArtifacts artifacts: "*.whl,*.tar.gz,*.zip", fingerprint: true
                                     }
-                                }
-                                failure {
-                                    echo "Failed to package."
                                 }
                             }
                         }
@@ -394,9 +422,22 @@ Version  = ${PKG_VERSION}"""
                             customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
                         }
                     }
+                    when{
+                        anyOf{
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+                        }
+                    }
                     stages{
                         stage("CMake Configure"){
                             steps {
+                                dir("source"){
+                                    bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv && ${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade"
+                                    bat "pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev > requirements-dev.txt"
+
+                                    //${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
+                                }
                                 tee('configure_standalone_cmake.log') {
                                     dir("cmake_build") {
                                         bat "dir"
@@ -471,7 +512,9 @@ Version  = ${PKG_VERSION}"""
                         stage("CPack"){
                             steps {
                                 dir("cmake_build") {
-                                    cpack arguments: "-C Release -G ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR} -V", installation: "${CMAKE_VERSION}"
+                                    script{
+                                        cpack arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} -V", installation: "${CMAKE_VERSION}"
+                                    }
                                 }
                             }
                             post {
@@ -484,7 +527,7 @@ Version  = ${PKG_VERSION}"""
                                                 archiveArtifacts artifacts: "${installer_file}", fingerprint: true
                                             }
                                         }
-                                        stash includes: "*.msi,*.exe,*.zip", name: "standalone_installer"
+                                        stash includes: "*.msi,*.exe,*.zip", name: "standalone_installers"
                                     }
                                 }
                                 always{
@@ -609,14 +652,10 @@ Version  = ${PKG_VERSION}"""
                         skipDefaultCheckout(true)
                     }
                     steps {
-                        bat "${tool 'CPython-3.6'} -m venv venv"
-                        bat "venv\\Scripts\\pip.exe install tox devpi-client"
+                        bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
                         script {
                             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                    bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                                    bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                                    echo "Testing Source package in devpi"
-                                    bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${PKG_NAME} -s tar.gz"
+                                    bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${PKG_NAME} -s tar.gz"
                             }
                         }
                     }
@@ -631,8 +670,7 @@ Version  = ${PKG_VERSION}"""
                         skipDefaultCheckout(true)
                     }
                     steps {
-                        bat "${tool 'CPython-3.6'} -m venv venv"
-                        bat "venv\\Scripts\\pip.exe install tox devpi-client"
+                        bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
                         script {
                             // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                             // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
@@ -640,9 +678,7 @@ Version  = ${PKG_VERSION}"""
                                 bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                             }
 
-                            bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                            echo "Testing Source package in devpi"
-                            bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip"
+                            bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip"
                         }
                     }
                 }
@@ -656,16 +692,13 @@ Version  = ${PKG_VERSION}"""
                         skipDefaultCheckout(true)
                     }
                     steps {
-                        bat "${tool 'CPython-3.6'} -m venv venv"
-                        bat "venv\\Scripts\\pip.exe install tox devpi-client"
+                        bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
                         script {
                             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                                 bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                             }
                         }
-                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                        echo "Testing Whl package in devpi"
-                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose"
+                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose"
                     }
                 }
             }
@@ -679,9 +712,10 @@ Version  = ${PKG_VERSION}"""
                             bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                             
                         }
+                        bat "venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging"
+                        bat "venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
                     }
-                    bat "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                    bat "devpi push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
+//                    bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} /DS_Jenkins/${env.BRANCH_NAME}"
 
                 }
             }
@@ -725,37 +759,56 @@ Version  = ${PKG_VERSION}"""
                             )
                         }
                     }
+                    post{
+                        success{
+                            jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                        }
+                    }
                 }
                 stage("Deploy standalone to Hathi tools Beta"){
                     when {
                         allOf{
                             equals expected: true, actual: params.DEPLOY_HATHI_TOOL_BETA
-                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
+                            anyOf{
+                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+                            }
                         }
                     }
                     steps {
-                        unstash "standalone_installer"
+                        unstash "standalone_installers"
                         input 'Update standalone to //storage.library.illinois.edu/HathiTrust/Tools/beta/?'
-                        cifsPublisher(
+                        script{
+                            def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
+                            installer_files.each { installer_file ->
+
+                                cifsPublisher(
                                     publishers: [[
-                                        configName: 'hathitrust tools', 
+                                        configName: 'hathitrust tools',
                                         transfers: [[
-                                            cleanRemote: false, 
-                                            excludes: '', 
-                                            flatten: false, 
-                                            makeEmptyDirs: false, 
-                                            noDefaultExcludes: false, 
-                                            patternSeparator: '[, ]+', 
-                                            remoteDirectory: 'beta', 
-                                            remoteDirectorySDF: false, 
-                                            removePrefix: '', 
-                                            sourceFiles: "*.msi,*.exe,*.zip",
-                                            ]], 
-                                        usePromotionTimestamp: false, 
-                                        useWorkspaceInPromotion: false, 
+                                            cleanRemote: false,
+                                            excludes: '',
+                                            flatten: false,
+                                            makeEmptyDirs: false,
+                                            noDefaultExcludes: false,
+                                            patternSeparator: '[, ]+',
+                                            remoteDirectory: 'beta',
+                                            remoteDirectorySDF: false,
+                                            removePrefix: '',
+                                            sourceFiles: "${installer_file}",
+    //                                            sourceFiles: "*.msi,*.exe,*.zip",
+                                            ]],
+                                        usePromotionTimestamp: false,
+                                        useWorkspaceInPromotion: false,
                                         verbose: false
                                         ]]
                                 )
+                                jiraComment body: "Added \"${installer_file}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                            }
+                        }
+
+
                     }
                 }
                 stage("Deploy to DevPi Production") {
@@ -772,10 +825,13 @@ Version  = ${PKG_VERSION}"""
                             // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                             input "Release ${PKG_NAME} ${PKG_VERSION} to DevPi Production?"
                             withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                                bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                                bat "devpi push ${PKG_NAME}==${PKG_VERSION} production/release"
+                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} production/release"
                             }
+                        }
+                    }
+                    post{
+                        success{
+                            jiraComment body: "Version ${PKG_VERSION} was added to https://devpi.library.illinois.edu/production/release index.", issueKey: "${params.JIRA_ISSUE_VALUE}"
                         }
                     }
                 }
@@ -783,7 +839,12 @@ Version  = ${PKG_VERSION}"""
                     when {
                         allOf{
                             equals expected: true, actual: params.DEPLOY_SCCM
-                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
+                            // equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
+                            anyOf{
+                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+                            }
                             branch "master"
                         }
                         // expression { params.RELEASE == "Release_to_devpi_and_sccm"}
@@ -819,7 +880,7 @@ Version  = ${PKG_VERSION}"""
                                 )
 
                             // deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
-                            
+                            jiraComment body: "Version ${PKG_VERSION} sent to staging for user testing.", issueKey: "${params.JIRA_ISSUE_VALUE}"
                             input("Deploy to production?")
                             writeFile file: "deployment_request.txt", text: deployment_request
                             echo deployment_request
@@ -848,6 +909,7 @@ Version  = ${PKG_VERSION}"""
                     }
                     post {
                         success {
+                            jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
                             archiveArtifacts artifacts: "deployment_request.txt"
                         }
                     }
@@ -887,10 +949,8 @@ Version  = ${PKG_VERSION}"""
                     // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                     
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                        bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                        bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                         try {
-                            bat "devpi remove -y ${PKG_NAME}==${PKG_VERSION}"
+                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging && devpi remove -y ${PKG_NAME}==${PKG_VERSION}"
                         } catch (Exception ex) {
                             echo "Failed to remove ${PKG_NAME}==${PKG_VERSION} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                         }

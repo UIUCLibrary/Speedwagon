@@ -1,3 +1,4 @@
+import sys
 import urllib.request
 from tempfile import TemporaryDirectory
 from distutils.command.clean import clean as _clean
@@ -5,8 +6,11 @@ from distutils.command.build_py import build_py
 import setuptools.command
 import os
 import glob
+try:
+    from pyqt_distutils.config import Config
+except ModuleNotFoundError as e:
+    print("pyqt_distutils not installed. Unable to run special commands", file=sys.stderr)
 
-from pyqt_distutils.config import Config
 TESSERACT_DATA_URL = "https://github.com/tesseract-ocr/tessdata/raw/3.04.00/"
 
 
