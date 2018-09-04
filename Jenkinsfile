@@ -512,9 +512,9 @@ Version  = ${PKG_VERSION}"""
                         stage("CPack"){
                             steps {
                                 dir("cmake_build") {
-                                    script{
+//                                    script{
                                         cpack arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} -V", installation: "${CMAKE_VERSION}"
-                                    }
+//                                    }
                                 }
                             }
                             post {
