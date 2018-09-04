@@ -720,202 +720,202 @@ Version  = ${PKG_VERSION}"""
                 }
             }
         }
-        stage("Deploy"){
-            parallel {
-                stage("Deploy Online Documentation") {
-                    when{
-                        equals expected: true, actual: params.DEPLOY_DOCS
-                    }
-                    steps{
-                        script {
-                            if(!params.BUILD_DOCS){
-                                bat "pipenv run python setup.py build_sphinx"
-                            }
-                        }
-                        
-                        dir("build/docs/html/"){
-                            input 'Update project documentation?'
-                            sshPublisher(
-                                publishers: [
-                                    sshPublisherDesc(
-                                        configName: 'apache-ns - lib-dccuser-updater', 
-                                        sshLabel: [label: 'Linux'], 
-                                        transfers: [sshTransfer(excludes: '', 
-                                        execCommand: '', 
-                                        execTimeout: 120000, 
-                                        flatten: false, 
-                                        makeEmptyDirs: false, 
-                                        noDefaultExcludes: false, 
-                                        patternSeparator: '[, ]+', 
-                                        remoteDirectory: "${params.DEPLOY_DOCS_URL_SUBFOLDER}", 
-                                        remoteDirectorySDF: false, 
-                                        removePrefix: '', 
-                                        sourceFiles: '**')], 
-                                    usePromotionTimestamp: false, 
-                                    useWorkspaceInPromotion: false, 
-                                    verbose: true
-                                    )
-                                ]
-                            )
-                        }
-                    }
-                    post{
-                        success{
-                            jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                        }
-                    }
-                }
-                stage("Deploy standalone to Hathi tools Beta"){
-                    when {
-                        allOf{
-                            equals expected: true, actual: params.DEPLOY_HATHI_TOOL_BETA
-                            anyOf{
-                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
-                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
-                            }
-                        }
-                    }
-                    steps {
-                        unstash "standalone_installers"
-                        input 'Update standalone to //storage.library.illinois.edu/HathiTrust/Tools/beta/?'
-                        script{
-                            def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
-                            installer_files.each { installer_file ->
-
-                                cifsPublisher(
-                                    publishers: [[
-                                        configName: 'hathitrust tools',
-                                        transfers: [[
-                                            cleanRemote: false,
-                                            excludes: '',
-                                            flatten: false,
-                                            makeEmptyDirs: false,
-                                            noDefaultExcludes: false,
-                                            patternSeparator: '[, ]+',
-                                            remoteDirectory: 'beta',
-                                            remoteDirectorySDF: false,
-                                            removePrefix: '',
-                                            sourceFiles: "${installer_file}",
-    //                                            sourceFiles: "*.msi,*.exe,*.zip",
-                                            ]],
-                                        usePromotionTimestamp: false,
-                                        useWorkspaceInPromotion: false,
-                                        verbose: false
-                                        ]]
-                                )
-                                jiraComment body: "Added \"${installer_file}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                            }
-                        }
-
-
-                    }
-                }
-                stage("Deploy to DevPi Production") {
-                    when {
-                        allOf{
-                            equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
-                            equals expected: true, actual: params.DEPLOY_DEVPI
-                            branch "master"
-                        }
-                    }
-                    steps {
-                        script {
-                            // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                            // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                            input "Release ${PKG_NAME} ${PKG_VERSION} to DevPi Production?"
-                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} production/release"
-                            }
-                        }
-                    }
-                    post{
-                        success{
-                            jiraComment body: "Version ${PKG_VERSION} was added to https://devpi.library.illinois.edu/production/release index.", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                        }
-                    }
-                }
-                stage("Deploy Standalone Build to SCCM") {
-                    when {
-                        allOf{
-                            equals expected: true, actual: params.DEPLOY_SCCM
-                            // equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
-                            anyOf{
-                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
-                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
-                            }
-                            branch "master"
-                        }
-                        // expression { params.RELEASE == "Release_to_devpi_and_sccm"}
-                    }
-
-                    steps {
-                        unstash "msi"
-                        unstash "Deployment"
-                        script{
-                            // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                            def msi_files = findFiles glob: '*.msi'
-
-                            def deployment_request = requestDeploy yaml: "deployment.yml", file_name: msi_files[0]
-                            cifsPublisher(
-                                publishers: [[
-                                    configName: 'SCCM Staging', 
-                                    transfers: [[
-                                        cleanRemote: false, 
-                                        excludes: '', 
-                                        flatten: false, 
-                                        makeEmptyDirs: false, 
-                                        noDefaultExcludes: false, 
-                                        patternSeparator: '[, ]+', 
-                                        remoteDirectory: '', 
-                                        remoteDirectorySDF: false, 
-                                        removePrefix: '', 
-                                        sourceFiles: '*.msi'
-                                        ]], 
-                                    usePromotionTimestamp: false, 
-                                    useWorkspaceInPromotion: false, 
-                                    verbose: false
-                                    ]]
-                                )
-
-                            // deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
-                            jiraComment body: "Version ${PKG_VERSION} sent to staging for user testing.", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                            input("Deploy to production?")
-                            writeFile file: "deployment_request.txt", text: deployment_request
-                            echo deployment_request
-                            cifsPublisher(
-                                publishers: [[
-                                    configName: 'SCCM Upload', 
-                                    transfers: [[
-                                        cleanRemote: false, 
-                                        excludes: '', 
-                                        flatten: false, 
-                                        makeEmptyDirs: false, 
-                                        noDefaultExcludes: false, 
-                                        patternSeparator: '[, ]+', 
-                                        remoteDirectory: '', 
-                                        remoteDirectorySDF: false, 
-                                        removePrefix: '', 
-                                        sourceFiles: '*.msi'
-                                        ]], 
-                                    usePromotionTimestamp: false, 
-                                    useWorkspaceInPromotion: false, 
-                                    verbose: false
-                                    ]]
-                            )
-                            // deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
-                        }
-                    }
-                    post {
-                        success {
-                            jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                            archiveArtifacts artifacts: "deployment_request.txt"
-                        }
-                    }
-                }
-            }
-        }
+//        stage("Deploy"){
+//            parallel {
+//                stage("Deploy Online Documentation") {
+//                    when{
+//                        equals expected: true, actual: params.DEPLOY_DOCS
+//                    }
+//                    steps{
+//                        script {
+//                            if(!params.BUILD_DOCS){
+//                                bat "pipenv run python setup.py build_sphinx"
+//                            }
+//                        }
+//
+//                        dir("build/docs/html/"){
+//                            input 'Update project documentation?'
+//                            sshPublisher(
+//                                publishers: [
+//                                    sshPublisherDesc(
+//                                        configName: 'apache-ns - lib-dccuser-updater',
+//                                        sshLabel: [label: 'Linux'],
+//                                        transfers: [sshTransfer(excludes: '',
+//                                        execCommand: '',
+//                                        execTimeout: 120000,
+//                                        flatten: false,
+//                                        makeEmptyDirs: false,
+//                                        noDefaultExcludes: false,
+//                                        patternSeparator: '[, ]+',
+//                                        remoteDirectory: "${params.DEPLOY_DOCS_URL_SUBFOLDER}",
+//                                        remoteDirectorySDF: false,
+//                                        removePrefix: '',
+//                                        sourceFiles: '**')],
+//                                    usePromotionTimestamp: false,
+//                                    useWorkspaceInPromotion: false,
+//                                    verbose: true
+//                                    )
+//                                ]
+//                            )
+//                        }
+//                    }
+//                    post{
+//                        success{
+//                            jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: "${params.JIRA_ISSUE_VALUE}"
+//                        }
+//                    }
+//                }
+//                stage("Deploy standalone to Hathi tools Beta"){
+//                    when {
+//                        allOf{
+//                            equals expected: true, actual: params.DEPLOY_HATHI_TOOL_BETA
+//                            anyOf{
+//                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+//                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+//                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+//                            }
+//                        }
+//                    }
+//                    steps {
+//                        unstash "standalone_installers"
+//                        input 'Update standalone to //storage.library.illinois.edu/HathiTrust/Tools/beta/?'
+//                        script{
+//                            def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
+//                            installer_files.each { installer_file ->
+//
+//                                cifsPublisher(
+//                                    publishers: [[
+//                                        configName: 'hathitrust tools',
+//                                        transfers: [[
+//                                            cleanRemote: false,
+//                                            excludes: '',
+//                                            flatten: false,
+//                                            makeEmptyDirs: false,
+//                                            noDefaultExcludes: false,
+//                                            patternSeparator: '[, ]+',
+//                                            remoteDirectory: 'beta',
+//                                            remoteDirectorySDF: false,
+//                                            removePrefix: '',
+//                                            sourceFiles: "${installer_file}",
+//    //                                            sourceFiles: "*.msi,*.exe,*.zip",
+//                                            ]],
+//                                        usePromotionTimestamp: false,
+//                                        useWorkspaceInPromotion: false,
+//                                        verbose: false
+//                                        ]]
+//                                )
+//                                jiraComment body: "Added \"${installer_file}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${params.JIRA_ISSUE_VALUE}"
+//                            }
+//                        }
+//
+//
+//                    }
+//                }
+//                stage("Deploy to DevPi Production") {
+//                    when {
+//                        allOf{
+//                            equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+//                            equals expected: true, actual: params.DEPLOY_DEVPI
+//                            branch "master"
+//                        }
+//                    }
+//                    steps {
+//                        script {
+//                            // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+//                            // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+//                            input "Release ${PKG_NAME} ${PKG_VERSION} to DevPi Production?"
+//                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+//                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} production/release"
+//                            }
+//                        }
+//                    }
+//                    post{
+//                        success{
+//                            jiraComment body: "Version ${PKG_VERSION} was added to https://devpi.library.illinois.edu/production/release index.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+//                        }
+//                    }
+//                }
+//                stage("Deploy Standalone Build to SCCM") {
+//                    when {
+//                        allOf{
+//                            equals expected: true, actual: params.DEPLOY_SCCM
+//                            // equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
+//                            anyOf{
+//                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+//                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+//                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+//                            }
+//                            branch "master"
+//                        }
+//                        // expression { params.RELEASE == "Release_to_devpi_and_sccm"}
+//                    }
+//
+//                    steps {
+//                        unstash "msi"
+//                        unstash "Deployment"
+//                        script{
+//                            // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+//                            def msi_files = findFiles glob: '*.msi'
+//
+//                            def deployment_request = requestDeploy yaml: "deployment.yml", file_name: msi_files[0]
+//                            cifsPublisher(
+//                                publishers: [[
+//                                    configName: 'SCCM Staging',
+//                                    transfers: [[
+//                                        cleanRemote: false,
+//                                        excludes: '',
+//                                        flatten: false,
+//                                        makeEmptyDirs: false,
+//                                        noDefaultExcludes: false,
+//                                        patternSeparator: '[, ]+',
+//                                        remoteDirectory: '',
+//                                        remoteDirectorySDF: false,
+//                                        removePrefix: '',
+//                                        sourceFiles: '*.msi'
+//                                        ]],
+//                                    usePromotionTimestamp: false,
+//                                    useWorkspaceInPromotion: false,
+//                                    verbose: false
+//                                    ]]
+//                                )
+//
+//                            // deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
+//                            jiraComment body: "Version ${PKG_VERSION} sent to staging for user testing.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+//                            input("Deploy to production?")
+//                            writeFile file: "deployment_request.txt", text: deployment_request
+//                            echo deployment_request
+//                            cifsPublisher(
+//                                publishers: [[
+//                                    configName: 'SCCM Upload',
+//                                    transfers: [[
+//                                        cleanRemote: false,
+//                                        excludes: '',
+//                                        flatten: false,
+//                                        makeEmptyDirs: false,
+//                                        noDefaultExcludes: false,
+//                                        patternSeparator: '[, ]+',
+//                                        remoteDirectory: '',
+//                                        remoteDirectorySDF: false,
+//                                        removePrefix: '',
+//                                        sourceFiles: '*.msi'
+//                                        ]],
+//                                    usePromotionTimestamp: false,
+//                                    useWorkspaceInPromotion: false,
+//                                    verbose: false
+//                                    ]]
+//                            )
+//                            // deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+//                        }
+//                    }
+//                    post {
+//                        success {
+//                            jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+//                            archiveArtifacts artifacts: "deployment_request.txt"
+//                        }
+//                    }
+//                }
+//            }
+//        }
 
     }
     post {
@@ -936,13 +936,13 @@ Version  = ${PKG_VERSION}"""
             //     bat "pipenv run python setup.py clean --all"
             // }
             
-//
-//            dir('dist') {
-//                deleteDir()
-//            }
-//            dir('build') {
-//                deleteDir()
-//            }
+
+            dir('dist') {
+                deleteDir()
+            }
+            dir('build') {
+                deleteDir()
+            }
             script {
                 if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
                     // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
