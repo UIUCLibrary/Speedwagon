@@ -635,7 +635,7 @@ Version  = ${PKG_VERSION}"""
                                 timeout(5)
                             }
                             steps{
-                                unstash "standalone_installer"
+                                unstash "standalone_installers"
                                 dir("${WORKSPACE}/logs"){bat "dir"}
                                 bat "copy source\\ci\\docker\\windowsserver\\run_install.ps1 . && ${tool 'Docker'} image build -t speedwagon -f source/ci/docker/windowsserver/Dockerfile . && ${tool 'Docker'} container run -v ${WORKSPACE}/logs:c:/logs --rm speedwagon"
                             }
