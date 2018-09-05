@@ -14,7 +14,7 @@ import speedwagon.worker
 import speedwagon.job
 # from speedwagon import worker, job
 import hathi_validate
-
+from speedwagon.workflows import workflow_verify_checksums
 from hathi_validate import process
 
 import enum
@@ -278,20 +278,27 @@ class ChecksumJob(speedwagon.worker.ProcessJobWorker):
             ResultValues.PATH: checksum_path,
             ResultValues.CHECKSUM_REPORT_FILE: source_report
         }
-        # task_result = {
-        #     "filename": filename,
-        #     "path": kwargs['checksum_path'],
-        # }
-        if expected != actual_md5:
-            self.log(
-                f"Hash mismatch for {filename}. "
-                f"Expected: {expected}. Actual: {actual_md5}"
-            )
 
-            result[ResultValues.VALID] = False
-        else:
-            self.log("MD5 for {} matches".format(filename))
+        standard_comparison = \
+            workflow_verify_checksums.CaseSensitiveComparison()
+
+        valid_but_warnable_strategy = \
+            workflow_verify_checksums.CaseInsensitiveComparison()
+
+        if standard_comparison.compare(actual_md5, expected):
             result[ResultValues.VALID] = True
+
+            # if actual_md5 != self._expected_hash:
+
+        elif valid_but_warnable_strategy.compare(actual_md5, expected):
+            result[ResultValues.VALID] = True
+            self.log(f"Hash for {filename} is valid but is presented"
+                     f"in a different format than expected."
+                     f"Expected: {expected}. Actual: {actual_md5}")
+        else:
+            self.log(f"Hash mismatch for {filename}. "
+                     f"Expected: {expected}. Actual: {actual_md5}")
+            result[ResultValues.VALID] = False
 
         self.result = result
         self.logger.debug("Done validating {}".format(filename))
