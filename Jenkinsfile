@@ -618,7 +618,7 @@ Version  = ${PKG_VERSION}"""
                                 echo "Unable to upload to devpi with docs."
                             }
                         }
-                    }
+//                    }
                 }
             }
         }
