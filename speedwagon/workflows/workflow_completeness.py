@@ -610,7 +610,7 @@ class HathiManifestGenerationTask(CompletenessSubTask):
 
 
 class FileNamingConvention(CompletenessSubTask):
-    FILE_NAMING_CONVENTION_REGEX = "^\d*([m|v|i]\d*)?(_[1-9])?$"
+    FILE_NAMING_CONVENTION_REGEX = "^\d*([m|v|i]\d{2,})?(_[1-9])?"
 
     def __init__(self, package_path):
         super().__init__()
