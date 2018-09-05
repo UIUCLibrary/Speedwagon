@@ -92,6 +92,9 @@ class CompletenessWorkflow(AbsWorkflow):
         request_ocr_utf8_validation = job_args['_check_ocr_utf8']
 
         task_builder.add_subtask(
+            subtask=PackageNamingConventionTask(package_path))
+
+        task_builder.add_subtask(
             subtask=HathiCheckMissingPackageFilesTask(package_path))
         task_builder.add_subtask(
             subtask=HathiCheckMissingComponentsTask(request_ocr_validation,
@@ -102,7 +105,6 @@ class CompletenessWorkflow(AbsWorkflow):
         task_builder.add_subtask(subtask=ValidateChecksumsTask(package_path))
         task_builder.add_subtask(subtask=ValidateMarcTask(package_path))
         task_builder.add_subtask(subtask=ValidateYMLTask(package_path))
-        task_builder.add_subtask(subtask=FileNamingConvention(package_path))
 
         if request_ocr_validation:
             task_builder.add_subtask(
@@ -609,22 +611,24 @@ class HathiManifestGenerationTask(CompletenessSubTask):
 # TODO Check names so that the match the following regular expression
 
 
-class FileNamingConvention(CompletenessSubTask):
-    FILE_NAMING_CONVENTION_REGEX = "^\d*([m|v|i]\d{2,})?(_[1-9])?"
+class PackageNamingConventionTask(CompletenessSubTask):
+    FILE_NAMING_CONVENTION_REGEX = "^\d*([m|v|i]\d{2,})?(_[1-9])?([m|v|i]\d)?$"
 
     def __init__(self, package_path):
         super().__init__()
         self.package_path = package_path
 
         self._validator = \
-            re.compile(FileNamingConvention.FILE_NAMING_CONVENTION_REGEX)
+            re.compile(PackageNamingConventionTask.FILE_NAMING_CONVENTION_REGEX)
 
     def work(self) -> bool:
         if not os.path.isdir(self.package_path):
             raise FileNotFoundError("Unable to locate \"{}\".".format(os.path.abspath(self.package_path)))
-        if not self._validator.match(os.path.split(self.package_path)[-1]):
 
+        package_name = os.path.split(self.package_path)[-1]
+        if not self._validator.match(package_name):
             self.log("Warning: {} is an invalid naming scheme".format(self.package_path))
+
         return True
         # return super().work()
 #
