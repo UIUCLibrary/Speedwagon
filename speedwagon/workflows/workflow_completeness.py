@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import sys
 import typing
 
@@ -97,9 +98,12 @@ class CompletenessWorkflow(AbsWorkflow):
                                                     package_path))
         task_builder.add_subtask(
             subtask=ValidateExtraSubdirectoriesTask(package_path))
+
         task_builder.add_subtask(subtask=ValidateChecksumsTask(package_path))
         task_builder.add_subtask(subtask=ValidateMarcTask(package_path))
         task_builder.add_subtask(subtask=ValidateYMLTask(package_path))
+        task_builder.add_subtask(subtask=FileNamingConvention(package_path))
+
         if request_ocr_validation:
             task_builder.add_subtask(
                 subtask=ValidateOCRFilesTask(package_path)
@@ -596,7 +600,31 @@ class HathiManifestGenerationTask(CompletenessSubTask):
 
                         package_builder.add_file(os.path.join(relative, file_))
             manifest = batch_manifest_builder.build_manifest()
-            manifest_report = validate_manifest.get_report_as_str(manifest,
-                                                                  width=70)
+
+            manifest_report = \
+                validate_manifest.get_report_as_str(manifest, width=70)
+
             self.set_results(manifest_report)
         return True
+# TODO Check names so that the match the following regular expression
+
+
+class FileNamingConvention(CompletenessSubTask):
+    FILE_NAMING_CONVENTION_REGEX = "^\d*([m|v|i]\d*)?(_[1-9])?$"
+
+    def __init__(self, package_path):
+        super().__init__()
+        self.package_path = package_path
+
+        self._validator = \
+            re.compile(FileNamingConvention.FILE_NAMING_CONVENTION_REGEX)
+
+    def work(self) -> bool:
+        if not os.path.isdir(self.package_path):
+            raise FileNotFoundError("Unable to locate \"{}\".".format(os.path.abspath(self.package_path)))
+        if not self._validator.match(os.path.split(self.package_path)[-1]):
+
+            self.log("Warning: {} is an invalid naming scheme".format(self.package_path))
+        return True
+        # return super().work()
+#
