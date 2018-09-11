@@ -22,7 +22,7 @@ pyhathiprep = "*"
 pykdu-compress = "*"
 "pyqt5" = "*"
 setuptools = ">=30.3.0"
-uiucprescon-getmarc = "*"
+uiucprescon-getmarc = ">=0.1.1"
 uiucprescon-imagevalidate = ">=0.1.1"
 uiucprescon-packager = {version = ">=0.2.1", extras = ['kdu']}
 uiucprescon-ocr = ">=0.0.1"

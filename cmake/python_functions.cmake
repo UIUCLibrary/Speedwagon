@@ -88,11 +88,11 @@ function(create_dep_wheels)
         # Create a hash of the requirements file and update cache if
         # the requirements file has changed
         file(SHA1 ${requirements_file} file_hash)
-        if("${file_hash}" STREQUAL "${${requirements_file}_hash}")
+        if("${file_hash}" STREQUAL "${PYTHON_REQUIREMENTS_FILE_${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}_${requirements_file}_hash}")
             message(STATUS "No changed detected from ${requirements_file}")
             continue()
         else()
-            set(${requirements_file}_hash ${file_hash} CACHE INTERNAL "SHA1 hash for ${requirements_file}")
+            set(PYTHON_REQUIREMENTS_FILE_${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}_${requirements_file}_hash ${file_hash} CACHE INTERNAL "SHA1 hash for ${requirements_file}")
         endif()
         list(APPEND requirement_file_args "-r")
         list(APPEND requirement_file_args "${requirements_file}")

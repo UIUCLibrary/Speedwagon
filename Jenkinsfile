@@ -6,6 +6,7 @@ def PKG_VERSION = "unknown"
 def PKG_NAME = "unknown"
 def CMAKE_VERSION = "cmake3.12"
 def JIRA_ISSUE = ""
+def DOC_ZIP_FILENAME = "doc.zip"
 //                                    script{
 ////                                        def generator_list = []
 ////                                        if(params.PACKAGE_WINDOWS_STANDALONE_MSI){
@@ -87,6 +88,7 @@ pipeline {
         WORKON_HOME ="${WORKSPACE}\\pipenv\\"
         build_number = VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
         PIPENV_NOSPIN = "True"
+        DEVPI_JENKINS_PASSWORD=credentials('DS_devpi')
         // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
 
@@ -176,12 +178,14 @@ pipeline {
                             dir("source"){
                                 PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}  setup.py --name").trim()
                                 PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+                                DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
                             }
                         }
                     }
                     post{
                         success{
                             echo """Name     = ${PKG_NAME}
+documentation zip file          = ${DOC_ZIP_FILENAME}
 Version  = ${PKG_VERSION}"""
                         }
                     }
@@ -257,14 +261,17 @@ Version  = ${PKG_VERSION}"""
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            script{
-                                // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
-                                def alljob = env.JOB_NAME.tokenize("/") as String[]
-                                def project_name = alljob[0]
-                                dir('build/docs/') {
-                                    zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,7)}.zip"
-                                }
+                            dir("${WORKSPACE}/dist"){
+                                zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "${DOC_ZIP_FILENAME}"
                             }
+//                            script{
+//                                // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
+//                                def alljob = env.JOB_NAME.tokenize("/") as String[]
+//                                def project_name = alljob[0]
+//                                dir('build/docs/') {
+//                                    zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,7)}.zip"
+//                                }
+//                            }
                         }
                         failure{
                             echo "Failed to build Python package"
@@ -605,17 +612,20 @@ Version  = ${PKG_VERSION}"""
             steps {
                 dir("source"){
                     bat "devpi use https://devpi.library.illinois.edu"
+//                        bat "${tool 'CPython-3.6'} -m devpi login DS_Jenkins --password ${env.DEVPI_JENKINS_PASSWORD} && ${tool 'CPython-3.6'} -m devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging"
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                         bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && ${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                        script {
-                            bat "${tool 'CPython-3.6'} -m devpi upload --from-dir ${WORKSPACE}\\dist"
-                            try {
-                                bat "${tool 'CPython-3.6'} -m devpi upload --only-docs --from-dir ${WORKSPACE}\\dist"
-                            } catch (exc) {
-                                echo "Unable to upload to devpi with docs."
-                            }
+                    }
+//                        bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && ${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                    script {
+                        bat "${tool 'CPython-3.6'} -m devpi upload --from-dir ${WORKSPACE}\\dist"
+                        try {
+                            bat "${tool 'CPython-3.6'} -m devpi upload --only-docs --from-dir ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
+                        } catch (exc) {
+                            echo "Unable to upload to devpi with docs."
                         }
                     }
+//                    }
                 }
             }
         }

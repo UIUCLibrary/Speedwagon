@@ -117,8 +117,17 @@ class MarcGenerator(ProcessJobWorker):
         try:
             marc = pygetmarc.get_marc(int(bib_id))
 
+            field_adder = pygetmarc.modifiers.Add955()
+            field_adder.bib_id = bib_id
+
+            enriched_marc = field_adder.enrich(src=marc)
+
+            reflow_modifier = pygetmarc.modifiers.Reflow()
+            cleaned_up_marc = reflow_modifier.enrich(enriched_marc)
+
+
             with open(dst, "w", encoding="utf-8-sig") as f:
-                f.write(f"{marc}\n")
+                f.write(f"{cleaned_up_marc}\n")
             self.log(f"Generated {dst}")
             success = True
         except ValueError as e:
