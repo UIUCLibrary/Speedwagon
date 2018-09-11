@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import sys
 import typing
 
@@ -91,15 +92,20 @@ class CompletenessWorkflow(AbsWorkflow):
         request_ocr_utf8_validation = job_args['_check_ocr_utf8']
 
         task_builder.add_subtask(
+            subtask=PackageNamingConventionTask(package_path))
+
+        task_builder.add_subtask(
             subtask=HathiCheckMissingPackageFilesTask(package_path))
         task_builder.add_subtask(
             subtask=HathiCheckMissingComponentsTask(request_ocr_validation,
                                                     package_path))
         task_builder.add_subtask(
             subtask=ValidateExtraSubdirectoriesTask(package_path))
+
         task_builder.add_subtask(subtask=ValidateChecksumsTask(package_path))
         task_builder.add_subtask(subtask=ValidateMarcTask(package_path))
         task_builder.add_subtask(subtask=ValidateYMLTask(package_path))
+
         if request_ocr_validation:
             task_builder.add_subtask(
                 subtask=ValidateOCRFilesTask(package_path)
@@ -140,11 +146,33 @@ class CompletenessWorkflow(AbsWorkflow):
 
         error_results += cls._get_result(results_grouped,
                                          ValidateYMLTask)
-
         error_report = hathi_reporter.get_report_as_str(error_results, 70)
-        return f"{manifest_report}" \
-               f"\n" \
-               f"\n{error_report}"
+
+        # ########################### Warnings ###########################
+        warning_results: typing.List[hathi_result.Result] = []
+
+        warning_results += cls._get_result(results_grouped,
+                                           PackageNamingConventionTask)
+
+        warning_report = hathi_reporter.get_report_as_str(warning_results, 70)
+
+        report = f"\n" \
+                 f"Report:\n" \
+                 f"{manifest_report}\n" \
+                 f"\n"
+
+        if error_report:
+            report = f"{report}\n" \
+                     f"\n" \
+                     f"Errors:\n" \
+                     f"{error_report}\n"
+
+        if warning_results:
+            report = f"{report}\n" \
+                     f"\n" \
+                     f"Warnings:\n" \
+                     f"{warning_report}\n"
+        return report
 
     def initial_task(
             self,
@@ -596,7 +624,49 @@ class HathiManifestGenerationTask(CompletenessSubTask):
 
                         package_builder.add_file(os.path.join(relative, file_))
             manifest = batch_manifest_builder.build_manifest()
-            manifest_report = validate_manifest.get_report_as_str(manifest,
-                                                                  width=70)
+
+            manifest_report = \
+                validate_manifest.get_report_as_str(manifest, width=70)
+
             self.set_results(manifest_report)
         return True
+# TODO Check names so that the match the following regular expression
+
+
+class PackageNamingConventionTask(CompletenessSubTask):
+    FILE_NAMING_CONVENTION_REGEX = "^\d*([m|v|i]\d{2,})?(_[1-9])?([m|v|i]\d)?$"
+
+    def __init__(self, package_path):
+        super().__init__()
+        self.package_path = package_path
+
+        self._validator = re.compile(
+            PackageNamingConventionTask.FILE_NAMING_CONVENTION_REGEX)
+
+    def work(self) -> bool:
+        if not os.path.isdir(self.package_path):
+            raise FileNotFoundError("Unable to locate \"{}\".".format(
+                os.path.abspath(self.package_path)))
+
+        warnings: typing.List[hathi_result.Result] = []
+        package_name = os.path.split(self.package_path)[-1]
+
+        if not self._validator.match(package_name):
+            warning_message = "{} is an invalid naming scheme".format(
+                self.package_path)
+
+            self.log("Warning: {}".format(warning_message))
+
+            result = hathi_result.Result(
+                result_type=PackageNamingConventionTask)
+
+            result.source = self.package_path
+            result.message = warning_message
+            warnings.append(result)
+
+        if warnings:
+            self.set_results(warnings)
+        # self.set_results
+        return True
+        # return super().work()
+#
