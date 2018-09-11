@@ -780,9 +780,9 @@ Version                 = ${PKG_VERSION}"""
                     }
                     steps {
                         unstash "standalone_installers"
-                        input 'Update standalone to //storage.library.illinois.edu/HathiTrust/Tools/beta/?'
                         script{
                             def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
+                            input 'Update standalone [${installer_files}] to //storage.library.illinois.edu/HathiTrust/Tools/beta/?'
                             installer_files.each { installer_file ->
 
                                 cifsPublisher(
