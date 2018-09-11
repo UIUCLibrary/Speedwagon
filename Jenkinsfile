@@ -184,9 +184,9 @@ pipeline {
                     }
                     post{
                         success{
-                            echo """Name     = ${PKG_NAME}
-documentation zip file          = ${DOC_ZIP_FILENAME}
-Version  = ${PKG_VERSION}"""
+                            echo """Name                    = ${PKG_NAME}
+documentation zip file  = ${DOC_ZIP_FILENAME}
+Version                 = ${PKG_VERSION}"""
                         }
                     }
                 }
