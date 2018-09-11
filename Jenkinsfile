@@ -6,6 +6,7 @@ def PKG_VERSION = "unknown"
 def PKG_NAME = "unknown"
 def CMAKE_VERSION = "cmake3.12"
 def JIRA_ISSUE = ""
+def DOC_ZIP_FILENAME = "doc.zip"
 //                                    script{
 ////                                        def generator_list = []
 ////                                        if(params.PACKAGE_WINDOWS_STANDALONE_MSI){
@@ -177,12 +178,14 @@ pipeline {
                             dir("source"){
                                 PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}  setup.py --name").trim()
                                 PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+                                DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
                             }
                         }
                     }
                     post{
                         success{
                             echo """Name     = ${PKG_NAME}
+documentation zip file          = ${DOC_ZIP_FILENAME}
 Version  = ${PKG_VERSION}"""
                         }
                     }
