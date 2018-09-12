@@ -23,7 +23,7 @@ pykdu-compress = "*"
 "pyqt5" = "*"
 setuptools = ">=30.3.0"
 uiucprescon-getmarc = ">=0.1.1"
-uiucprescon-imagevalidate = ">=0.1.1"
+uiucprescon-imagevalidate = ">=0.1.2"
 uiucprescon-packager = {version = ">=0.2.1", extras = ['kdu']}
 uiucprescon-ocr = ">=0.0.1"
 importlib-resources = {version = "*", markers="python_version < '3.7'"}
