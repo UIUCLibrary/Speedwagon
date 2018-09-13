@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "90c023fe0a59463354c7c28042083365ffa203d675abb326d023aee5dc59a8b3"
+            "sha256": "230774986ef04a089cdd81f4ed1bf039df10e015d990d340958470e60f36c00d"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -314,12 +314,12 @@
         },
         "uiucprescon-imagevalidate": {
             "hashes": [
-                "sha256:09ad7e04bcdf9d15141ba60c26c8b988b0110f04f644079e36d6ef72b93681e4",
-                "sha256:0ed788e64a355518c22a0ec1c7795d2f8ecd55efcf10d942b4ca0e301413e12f",
-                "sha256:5f3285586bee6857e260c3e5ba9df0dd42c3ce507a97e81d511c006442a826ef"
+                "sha256:32056fe06ba03a35ac130fbcb50f2f3b95871ef7ce5e12724a311c7f6e4eba1f",
+                "sha256:b6e8eddf119b2a5cd2c06c0ec3d837de21fdf5dde8b9d6217443aa8e0f10dea4",
+                "sha256:c244f186880fc82991869535710407d69bd92d5faba8e4f6defb0c430af90eab"
             ],
             "index": "devpi",
-            "version": "==0.1.2"
+            "version": "==0.1.3"
         },
         "uiucprescon-ocr": {
             "hashes": [
