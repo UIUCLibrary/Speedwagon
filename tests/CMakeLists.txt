@@ -22,6 +22,12 @@ foreach(pytest_file ${pytests})
                 message(STATUS "Added ${PROJECT_NAME}.pytest.${pytest_file}.${test_name} to CTest")
             endif()
         endforeach()
+    else()
+        add_test(NAME ${PROJECT_NAME}.pytest.${pytest_file}
+                   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
+            COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} --rootdir=${PROJECT_BINARY_DIR}/standalone
+        )
+
     endif(PYTEST_COLLECTION)
 
 
