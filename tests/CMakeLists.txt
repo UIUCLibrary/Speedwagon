@@ -3,10 +3,11 @@ file(GLOB pytests RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test_*.py)
 foreach(pytest_file ${pytests})
     message(STATUS "Found ${pytest_file}")
 
-    execute_process(
-        COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} -qq --collect-only
-        OUTPUT_VARIABLE PYTEST_COLLECTION
-        ERROR_VARIABLE pytest_std
+    execute_process(COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest --version)
+
+    execute_process(COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} -qq --collect-only
+                    OUTPUT_VARIABLE PYTEST_COLLECTION
+                    ERROR_VARIABLE pytest_std
         )
     message(STATUS "PYTEST_COLLECTION = [${PYTEST_COLLECTION}]")
     if(PYTEST_COLLECTION)
