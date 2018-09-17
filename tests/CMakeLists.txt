@@ -8,6 +8,7 @@ foreach(pytest_file ${pytests})
         OUTPUT_VARIABLE PYTEST_COLLECTION
         ERROR_VARIABLE pytest_std
         )
+    message(STATUS "PYTEST_COLLECTION = [${PYTEST_COLLECTION}]")
     if(PYTEST_COLLECTION)
         string(REPLACE "\n" ";" PYTEST_COLLECTION ${PYTEST_COLLECTION})
 
