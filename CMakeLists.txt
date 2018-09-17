@@ -227,11 +227,7 @@ if(WIN32)
     install(DIRECTORY ${PROJECT_BINARY_DIR}/standalone/Lib/
         DESTINATION Lib
         )
-
-    add_test(NAME unittests
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
-        COMMAND python -m pytest ${PROJECT_SOURCE_DIR}/tests --rootdir=${PROJECT_BINARY_DIR}/standalone
-        )
+    add_subdirectory(tests)
 
     include(cmake/packaging.cmake)
 
@@ -248,7 +244,6 @@ endif()
 
 configure_file(${PROJECT_SOURCE_DIR}/LICENSE ${PROJECT_BINARY_DIR}/LICENSE.txt)
 
-include(CTest)
 
 
 install(FILES
