@@ -494,17 +494,17 @@ Version                 = ${PKG_VERSION}"""
                         }
                         stage("CTest"){
                             steps {
-                                tee('test_standalone_cmake.log') {
-                                    dir("cmake_build") {
-                                        ctest arguments: '-C Release --output-on-failure -C Release --no-compress-output -T test', installation: "${CMAKE_VERSION}"
-                                    }
+                                tee("${workspace}/test_standalone_cmake.log") {
+//                                    dir("cmake_build") {
+                                    ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build  -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/results/ctest -C Release --output-on-failure -C Release --no-compress-output -T test", installation: "${CMAKE_VERSION}"
+//                                    }
                                 }
                             }
                             post{
                                 always {
-                                    dir("cmake_build") {
+                                    dir("results/ctest") {
                                         script {
-                                            def ctest_results = findFiles glob: 'Testing/**/Test.xml'
+                                            def ctest_results = findFiles glob: "*.xml"
                                             ctest_results.each{ ctest_result ->
                                                 echo "Found ${ctest_result}"
                                                 archiveArtifacts artifacts: "${ctest_result}", fingerprint: true
