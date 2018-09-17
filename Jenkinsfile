@@ -494,6 +494,9 @@ Version                 = ${PKG_VERSION}"""
                         }
                         stage("CTest"){
                             steps {
+                                dir("results/ctest"){
+                                    bat "dir"
+                                }
                                 tee("${workspace}/test_standalone_cmake.log") {
 //                                    dir("cmake_build") {
                                     ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build  -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/results/ctest -C Release --output-on-failure -C Release --no-compress-output -T test", installation: "${CMAKE_VERSION}"
@@ -503,6 +506,7 @@ Version                 = ${PKG_VERSION}"""
                             post{
                                 always {
                                     dir("results/ctest") {
+
                                         script {
                                             def ctest_results = findFiles glob: "*.xml"
                                             ctest_results.each{ ctest_result ->
