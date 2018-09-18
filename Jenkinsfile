@@ -474,7 +474,7 @@ Version                 = ${PKG_VERSION}"""
                                 tee('configure_standalone_cmake.log') {
                                     dir("cmake_build") {
                                         bat "dir"
-                                        cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${TEMP}/Speedwagon/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
+                                        cmake arguments: "${WORKSPACE}/source -G \"Visual Studio 14 2015 Win64\" -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${TEMP}/Speedwagon/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
                                                                                
                                     }
                                 }
