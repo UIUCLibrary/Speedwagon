@@ -508,7 +508,7 @@ Version                 = ${PKG_VERSION}"""
                                 }
                                 tee("${workspace}/test_standalone_cmake.log") {
                                     dir("cmake_build") {
-                                        ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build  -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/results/ctest -C Release --output-on-failure -C Release --no-compress-output -T test -j ${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
+                                        ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/results/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
                                     }
                                 }
                             }
@@ -674,11 +674,14 @@ Version                 = ${PKG_VERSION}"""
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        script {
-                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                    bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${PKG_NAME} -s tar.gz"
-                            }
-                        }
+                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi')
+//                        script {
+//                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+//                                    bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} &&
+                        bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${PKG_NAME} -s tar.gz"
+//                            }
+//                        }
                     }
                 }
                 stage("Source Distribution: .zip") {
@@ -699,7 +702,8 @@ Version                 = ${PKG_VERSION}"""
 //                            }
 //
 //                        }
-                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip"
+                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging
+                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip"
                     }
                 }
                 stage("Built Distribution: .whl") {
@@ -713,12 +717,14 @@ Version                 = ${PKG_VERSION}"""
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        script {
-                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                            }
-                        }
-                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose"
+                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi')
+//                        script {
+//                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+//                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+//                            }
+//                        }
+                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging "
+                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose"
                     }
                 }
             }
