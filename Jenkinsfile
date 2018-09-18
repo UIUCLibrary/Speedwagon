@@ -508,7 +508,7 @@ Version                 = ${PKG_VERSION}"""
                                 }
                                 tee("${workspace}/test_standalone_cmake.log") {
                                     dir("cmake_build") {
-                                        ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/results/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -V", installation: "${CMAKE_VERSION}"
+                                        ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/results/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -VV", installation: "${CMAKE_VERSION}"
                                     }
                                 }
                             }
