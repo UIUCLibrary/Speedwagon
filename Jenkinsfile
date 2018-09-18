@@ -498,9 +498,9 @@ Version                 = ${PKG_VERSION}"""
                                     bat "dir"
                                 }
                                 tee("${workspace}/test_standalone_cmake.log") {
-//                                    dir("cmake_build") {
-                                    ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build  -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/results/ctest -C Release --output-on-failure -C Release --no-compress-output -T test", installation: "${CMAKE_VERSION}"
-//                                    }
+                                    dir("cmake_build") {
+                                        ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build  -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/results/ctest -C Release --output-on-failure -C Release --no-compress-output -T test", installation: "${CMAKE_VERSION}"
+                                    }
                                 }
                             }
                             post{
