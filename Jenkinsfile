@@ -67,6 +67,15 @@ def cleanup_workspace(){
     }
 }
 
+def devpi_login(credentialsId){
+    script{
+        withCredentials([usernamePassword(credentialsId: "${credentialsId}", usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+           bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+        }
+    }
+
+}
+
 pipeline {
     agent {
         label "Windows && Python3 && longfilenames && WIX"
