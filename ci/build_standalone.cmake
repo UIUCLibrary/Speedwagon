@@ -3,7 +3,12 @@ set(CTEST_PROJECT_NAME standalone)
 set(CTEST_SOURCE_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/..)
 
 if(NOT CTEST_CMAKE_GENERATOR)
-    set(CTEST_CMAKE_GENERATOR "Visual Studio 14 2015 Win64")
+    if(CMAKE_GENERATOR)
+        set(CTEST_CMAKE_GENERATOR "${CMAKE_GENERATOR}")
+    else()
+        message(STATUS "Defaulting to Visual Studio 14 2015 Win64")
+        set(CTEST_CMAKE_GENERATOR "Visual Studio 14 2015 Win64")
+    endif()
 endif()
 
 if(NOT CTEST_BINARY_DIRECTORY)
