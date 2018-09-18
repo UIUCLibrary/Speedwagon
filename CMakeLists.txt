@@ -247,9 +247,10 @@ foreach(pytest_file ${pytests})
             string(REGEX MATCH "::test_.*" test_name ${test_name})
             if(test_name)
                 string(REPLACE "::" "" test_name ${test_name})
+                string(STRIP ${test_name} test_name)
                 add_test(NAME ${PROJECT_NAME}.pytest.${pytest_file}.${test_name}
                          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
-                         COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} -k ${test_name} --rootdir=${PROJECT_BINARY_DIR}/standalone
+                         COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file}::${test_name} --rootdir=${PROJECT_BINARY_DIR}/standalone
                 )
                 message(STATUS "Added ${PROJECT_NAME}.pytest.${pytest_file}.${test_name} to CTest")
             endif()
