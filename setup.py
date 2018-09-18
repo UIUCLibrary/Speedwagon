@@ -29,7 +29,7 @@ setup(
         "pyhathiprep",
         "hathichecksumupdater",
         "uiucprescon-getmarc",
-        "uiucprescon-imagevalidate>=0.1.1",
+        "uiucprescon-imagevalidate>=0.1.3",
         "uiucprescon-ocr>=0.0.1",
         "uiucprescon-packager[kdu]>=0.2.1",
         "pykdu-compress>=0.0.4",

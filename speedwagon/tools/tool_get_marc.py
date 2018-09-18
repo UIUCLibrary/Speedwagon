@@ -125,7 +125,6 @@ class MarcGenerator(ProcessJobWorker):
             reflow_modifier = pygetmarc.modifiers.Reflow()
             cleaned_up_marc = reflow_modifier.enrich(enriched_marc)
 
-
             with open(dst, "w", encoding="utf-8-sig") as f:
                 f.write(f"{cleaned_up_marc}\n")
             self.log(f"Generated {dst}")

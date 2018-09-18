@@ -67,6 +67,15 @@ def cleanup_workspace(){
     }
 }
 
+def devpi_login(DevpiPath, credentialsId){
+    script{
+        withCredentials([usernamePassword(credentialsId: "${credentialsId}", usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+           bat "${DevpiPath} login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+        }
+    }
+
+}
+
 pipeline {
     agent {
         label "Windows && Python3 && longfilenames && WIX"
@@ -184,9 +193,9 @@ pipeline {
                     }
                     post{
                         success{
-                            echo """Name     = ${PKG_NAME}
-documentation zip file          = ${DOC_ZIP_FILENAME}
-Version  = ${PKG_VERSION}"""
+                            echo """Name                    = ${PKG_NAME}
+documentation zip file  = ${DOC_ZIP_FILENAME}
+Version                 = ${PKG_VERSION}"""
                         }
                     }
                 }
@@ -307,13 +316,19 @@ Version  = ${PKG_VERSION}"""
                     }
                     steps{
                         dir("source"){
-                            bat "pipenv run py.test --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/pytestcoverage/ --cov=speedwagon"    
+                            bat "pipenv run pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/pytestcoverage/ --cov-report xml:${WORKSPACE}/reports/coverage.xml --cov=speedwagon"
                         }                    
                     }
                     post {
                         always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/pytestcoverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
                             junit "reports/pytest/${junit_filename}"
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/pytestcoverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                            publishCoverage adapters: [
+                                    coberturaAdapter('reports/coverage.xml')
+                                    ],
+                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+
+                            bat "del reports\\coverage.xml"
                         }
                     }
                 }
@@ -459,7 +474,7 @@ Version  = ${PKG_VERSION}"""
                                 tee('configure_standalone_cmake.log') {
                                     dir("cmake_build") {
                                         bat "dir"
-                                        cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${TEMP}/Speegwagon/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
+                                        cmake arguments: "${WORKSPACE}/source -G \"Visual Studio 14 2015 Win64\" -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${TEMP}/Speedwagon/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
                                                                                
                                     }
                                 }
@@ -488,17 +503,21 @@ Version  = ${PKG_VERSION}"""
                         }
                         stage("CTest"){
                             steps {
-                                tee('test_standalone_cmake.log') {
+                                dir("results/ctest"){
+                                    bat "dir"
+                                }
+                                tee("${workspace}/test_standalone_cmake.log") {
                                     dir("cmake_build") {
-                                        ctest arguments: '-C Release --output-on-failure -C Release --no-compress-output -T test', installation: "${CMAKE_VERSION}"
+                                        ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/results/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=SpeedwagonBuildNumber${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -V", installation: "${CMAKE_VERSION}"
                                     }
                                 }
                             }
                             post{
                                 always {
-                                    dir("cmake_build") {
+                                    dir("results/ctest") {
+
                                         script {
-                                            def ctest_results = findFiles glob: 'Testing/**/Test.xml'
+                                            def ctest_results = findFiles glob: "*.xml"
                                             ctest_results.each{ ctest_result ->
                                                 echo "Found ${ctest_result}"
                                                 archiveArtifacts artifacts: "${ctest_result}", fingerprint: true
@@ -655,11 +674,14 @@ Version  = ${PKG_VERSION}"""
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        script {
-                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                    bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${PKG_NAME} -s tar.gz"
-                            }
-                        }
+                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi')
+//                        script {
+//                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+//                                    bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} &&
+                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
+                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s tar.gz"
+//                            }
+//                        }
                     }
                 }
                 stage("Source Distribution: .zip") {
@@ -673,15 +695,15 @@ Version  = ${PKG_VERSION}"""
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        script {
-                            // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                            // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                            }
-
-                            bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip"
-                        }
+                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi')
+//                        script {
+//                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+//                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+//                            }
+//
+//                        }
+                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
+                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip"
                     }
                 }
                 stage("Built Distribution: .whl") {
@@ -695,12 +717,14 @@ Version  = ${PKG_VERSION}"""
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        script {
-                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                            }
-                        }
-                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose"
+                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi')
+//                        script {
+//                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+//                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+//                            }
+//                        }
+                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging "
+                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose"
                     }
                 }
             }
@@ -711,11 +735,10 @@ Version  = ${PKG_VERSION}"""
                         // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                         // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                            bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                            bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
                             
                         }
-                        bat "venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging"
-                        bat "venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
+
                     }
 //                    bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} /DS_Jenkins/${env.BRANCH_NAME}"
 
@@ -780,9 +803,9 @@ Version  = ${PKG_VERSION}"""
                     }
                     steps {
                         unstash "standalone_installers"
-                        input 'Update standalone to //storage.library.illinois.edu/HathiTrust/Tools/beta/?'
                         script{
                             def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
+                            input 'Update standalone [${installer_files}] to //storage.library.illinois.edu/HathiTrust/Tools/beta/?'
                             installer_files.each { installer_file ->
 
                                 cifsPublisher(
