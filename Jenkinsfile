@@ -67,9 +67,9 @@ def cleanup_workspace(){
     }
 }
 
-def devpi_login(DevpiPath, credentialsId, CertsPath){
+def devpi_login(DevpiPath, credentialsId, url, CertsPath){
     script{
-        bat "${DevpiPath} use https://devpi.library.illinois.edu"
+        bat "${DevpiPath} use ${url}"
         withCredentials([usernamePassword(credentialsId: "${credentialsId}", usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
            bat "${DevpiPath} login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} --clientdir ${CertsPath}"
         }
@@ -164,6 +164,7 @@ pipeline {
                             bat "${tool 'CPython-3.6'} -m pip list"
                         }
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
+                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
                     }
                     post{
                         always{
@@ -676,7 +677,7 @@ Version                 = ${PKG_VERSION}"""
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "${WORKSPACE}\\certs\\")
+                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
 //                        script {
 //                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
 //                                    bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} &&
@@ -697,7 +698,7 @@ Version                 = ${PKG_VERSION}"""
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "${WORKSPACE}\\certs\\")
+                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
 //                        script {
 //                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
 //                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
@@ -719,7 +720,7 @@ Version                 = ${PKG_VERSION}"""
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "${WORKSPACE}\\certs\\")
+                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", ""${WORKSPACE}\\certs\\")
 //                        script {
 //                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
 //                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
@@ -956,7 +957,7 @@ Version                 = ${PKG_VERSION}"""
                     emailext attachLog: true, body: "${help_info}\n${JOB_NAME} has current status of ${currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
                 }
             }
-            bat "tree /A /F"
+//            bat "tree /A /F"
         }
         cleanup {
             // dir("source"){
