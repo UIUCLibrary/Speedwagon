@@ -111,7 +111,7 @@ pipeline {
 //        timeout(25)  // Timeout after 20 minutes. This shouldn't take this long but it hangs for some reason
         checkoutToSubdirectory("source")
         buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
-        preserveStashes()
+        preserveStashes(buildCount: 5)
     }
 
     environment {
@@ -185,7 +185,7 @@ pipeline {
                             bat "${tool 'CPython-3.6'} -m pip list"
                         }
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
+
                     }
                     post{
                         always{
@@ -203,6 +203,11 @@ pipeline {
                         failure {
                             deleteDir()
                         }
+                    }
+                }
+                stage("Log into DevPi"){
+                    steps{
+                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
                     }
                 }
                 stage("Setting project metadata variables"){
