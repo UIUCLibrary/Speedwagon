@@ -489,7 +489,7 @@ Version                 = ${PKG_VERSION}"""
                                     }
                                 }
                                 dir("python_deps_cache"){
-                                    stash name: "python_deps_cache_${NODE_NAME}_${JOB_NAME}"
+                                    stash name: "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
                                 }
                             }
                             post{
