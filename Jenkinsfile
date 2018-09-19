@@ -490,7 +490,8 @@ pipeline {
                                         try{
                                             unstash name: "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
                                         } catch (exc) {
-                                            echo "No stashed dependency cache found with ID: python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
+                                            echo "Unable to unstash python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}. ${exc}"
+//                                            echo "No stashed dependency cache found with ID: python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
                                         }
 
                                     }
