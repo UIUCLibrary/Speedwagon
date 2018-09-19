@@ -709,6 +709,7 @@ Version                 = ${PKG_VERSION}"""
                     }
                     options {
                         skipDefaultCheckout(true)
+                        timeout(5)  //
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
