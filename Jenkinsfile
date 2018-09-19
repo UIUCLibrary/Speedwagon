@@ -638,11 +638,11 @@ pipeline {
 
 
                     }
-                    post{
-                        cleanup{
-                            deleteDir()
-                        }
-                    }
+//                    post{
+//                        cleanup{
+//                            deleteDir()
+//                        }
+//                    }
                 }
             }
 
@@ -684,6 +684,9 @@ pipeline {
                         equals expected: "dev", actual: env.BRANCH_NAME
                     }
                 }
+            }
+            options{
+                timeout(5)  //
             }
 
             parallel {
@@ -735,7 +738,6 @@ pipeline {
                     }
                     options {
                         skipDefaultCheckout(true)
-                        timeout(5)  //
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
