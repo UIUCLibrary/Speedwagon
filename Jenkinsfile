@@ -78,8 +78,22 @@ def devpi_login(DevpiPath, credentialsId, url, CertsPath){
 }
 
 def test_devpi(DevpiPath, DevpiIndex, certsDir, packageName, PackageRegex){
+    deleteDir()
     devpi_login("${DevpiPath}", 'DS_devpi', "${DevpiIndex}", "${certsDir}")
     bat "${DevpiPath} test --index ${DevpiIndex} --verbose ${packageName} -s ${PackageRegex} --clientdir ${certsDir} --tox-args=\"-vv\""
+}
+
+def unstash_dependencies(path, stashName){
+    script{
+        dir("${path}"){
+            try{
+                unstash name: "${stashName}"
+            } catch (exc) {
+                echo "No stashed dependency cache found with ID: ${stashName}"
+            }
+
+        }
+    }
 }
 
 pipeline {
