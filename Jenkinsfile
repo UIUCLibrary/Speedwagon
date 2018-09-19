@@ -466,7 +466,14 @@ Version                 = ${PKG_VERSION}"""
 
                             steps {
                                 dir("python_deps_cache"){
-                                    unstash name: "python_deps_cache_${NODE_NAME}_${JOB_NAME}"
+                                    script{
+                                        try{
+                                            unstash name: "python_deps_cache_${NODE_NAME}_${JOB_NAME}"
+                                        } catch (exc) {
+                                            echo "no cache found for python_deps_cache_${NODE_NAME}_${JOB_NAME}"
+                                        }
+
+                                    }
                                 }
                                 dir("source"){
                                     bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv && ${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade"
