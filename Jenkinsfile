@@ -681,9 +681,6 @@ pipeline {
                     }
                 }
             }
-            options{
-                timeout(5)  //
-            }
 
             parallel {
                 stage("Source Distribution: .tar.gz") {
@@ -697,6 +694,7 @@ pipeline {
                     }
                     options {
                         skipDefaultCheckout(true)
+                        timeout(5)
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
@@ -711,6 +709,7 @@ pipeline {
                     }
                     options {
                         skipDefaultCheckout(true)
+                        timeout(5)
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
@@ -734,6 +733,7 @@ pipeline {
                     }
                     options {
                         skipDefaultCheckout(true)
+                        timeout(5)
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
