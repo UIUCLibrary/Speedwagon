@@ -71,7 +71,7 @@ def devpi_login(DevpiPath, credentialsId, url, CertsPath){
     script{
         bat "${DevpiPath} use ${url}"
         withCredentials([usernamePassword(credentialsId: "${credentialsId}", usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-           bat "${DevpiPath} login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} --clientdir ${CertsPath}"
+           bat "${DevpiPath} login ${DEVPI_USERNAME} --clientdir ${CertsPath} --password ${DEVPI_PASSWORD}"
         }
     }
 
