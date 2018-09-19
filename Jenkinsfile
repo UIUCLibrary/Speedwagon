@@ -107,7 +107,7 @@ pipeline {
 
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
-        timeout(25)  // Timeout after 20 minutes. This shouldn't take this long but it hangs for some reason
+//        timeout(25)  // Timeout after 20 minutes. This shouldn't take this long but it hangs for some reason
         checkoutToSubdirectory("source")
         buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
         preserveStashes()
@@ -465,6 +465,9 @@ pipeline {
                             label "Windows && Python3 && longfilenames && WIX"
                             customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
                         }
+                    }
+                    options{
+                        timeout(10)
                     }
 //                    environment {
 //                        PIPENV_CACHE_DIR="${WORKSPACE}\\pipenvcache\\"
