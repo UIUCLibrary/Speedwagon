@@ -89,7 +89,8 @@ def unstash_dependencies(path, stashName){
             try{
                 unstash name: "${stashName}"
             } catch (exc) {
-                echo "No stashed dependency cache found with ID: ${stashName}"
+                echo "Unable to unstash python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}. Reason: ${exc}"
+//                echo "No stashed dependency cache found with ID: ${stashName}"
             }
 
         }
@@ -485,17 +486,8 @@ pipeline {
                         stage("CMake Configure"){
 
                             steps {
-                                dir("python_deps_cache"){
-                                    script{
-                                        try{
-                                            unstash name: "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
-                                        } catch (exc) {
-                                            echo "Unable to unstash python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}. ${exc}"
-//                                            echo "No stashed dependency cache found with ID: python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
-                                        }
+                                unstash_dependencies("python_deps_cache", "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}")
 
-                                    }
-                                }
                                 dir("source"){
                                     bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv && ${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade && pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev > requirements-dev.txt"
                                     
