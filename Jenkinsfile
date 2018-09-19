@@ -468,9 +468,9 @@ Version                 = ${PKG_VERSION}"""
                                 dir("python_deps_cache"){
                                     script{
                                         try{
-                                            unstash name: "python_deps_cache_${NODE_NAME}_${JOB_NAME}"
+                                            unstash name: "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
                                         } catch (exc) {
-                                            echo "no cache found for python_deps_cache_${NODE_NAME}_${JOB_NAME}"
+                                            echo "No stashed dependency cache found with ID: python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
                                         }
 
                                     }
