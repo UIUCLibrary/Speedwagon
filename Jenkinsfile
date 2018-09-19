@@ -71,7 +71,7 @@ def devpi_login(DevpiPath, credentialsId, url, CertsPath){
     script{
         bat "${DevpiPath} use ${url} --clientdir ${CertsPath}"
         withCredentials([usernamePassword(credentialsId: "${credentialsId}", usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-           bat "${DevpiPath} login ${DEVPI_USERNAME} --clientdir ${CertsPath} --password ${DEVPI_PASSWORD}"
+           bat "${DevpiPath} login ${DEVPI_USERNAME} --clientdir ${CertsPath} --password ${DEVPI_PASSWORD} --verbose --tox-args=\"-vv\""
         }
     }
 
@@ -80,7 +80,7 @@ def devpi_login(DevpiPath, credentialsId, url, CertsPath){
 def test_devpi(DevpiPath, DevpiIndex, certsDir, packageName, PackageRegex){
 //    bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
     devpi_login("${DevpiPath}", 'DS_devpi', "${DevpiIndex}", "${certsDir}")
-    bat "${DevpiPath} test --index ${DevpiIndex} ${packageName} -s ${PackageRegex}"
+    bat "${DevpiPath} test --index ${DevpiIndex} ${packageName} -s ${PackageRegex} --clientdir ${certsDir}"
 }
 
 pipeline {
