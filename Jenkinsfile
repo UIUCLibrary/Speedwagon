@@ -97,6 +97,7 @@ pipeline {
         timeout(25)  // Timeout after 20 minutes. This shouldn't take this long but it hangs for some reason
         checkoutToSubdirectory("source")
         buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
+        preserveStashes()
     }
 
     environment {
@@ -452,6 +453,7 @@ Version                 = ${PKG_VERSION}"""
                             customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
                         }
                     }
+
                     when{
                         anyOf{
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
@@ -461,9 +463,7 @@ Version                 = ${PKG_VERSION}"""
                     }
                     stages{
                         stage("CMake Configure"){
-                            options {
-                                preserveStashes()
-                            }
+
                             steps {
                                 dir("source"){
                                     bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv && ${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade"
