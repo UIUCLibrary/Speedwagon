@@ -473,8 +473,9 @@ Version                 = ${PKG_VERSION}"""
                                 }
                                 tee('configure_standalone_cmake.log') {
                                     dir("cmake_build") {
+                                        bat "dir"
                                         cmake arguments: "${WORKSPACE}/source -G \"Visual Studio 14 2015 Win64\" -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
-                                        dir"${WORKSPACE}/python_deps_cache"
+//                                        dir "${WORKSPACE}/python_deps_cache"
                                         stash includes: "${WORKSPACE}/python_deps_cache/**", name: "python_deps_cache_${NODE_NAME}_${JOB_NAME}"
 
                                     }
