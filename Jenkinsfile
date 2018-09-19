@@ -956,7 +956,7 @@ Version                 = ${PKG_VERSION}"""
     }
     post {
         failure {
-            echo "Failed!"
+//            echo "Failed!"
 
             script{
                 def help_info = "Pipeline failed. If the problem is old cached data, you might need to purge the testing environment. Try manually running the pipeline again with the parameter FRESH_WORKSPACE checked."
