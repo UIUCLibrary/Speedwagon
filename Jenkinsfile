@@ -78,7 +78,7 @@ def devpi_login(DevpiPath, credentialsId, url, CertsPath){
 }
 
 def test_devpi(DevpiPath, DevpiIndex, certsDir, packageName, PackageRegex){
-    deleteDir()
+
     devpi_login("${DevpiPath}", 'DS_devpi', "${DevpiIndex}", "${certsDir}")
     bat "${DevpiPath} test --index ${DevpiIndex} --verbose ${packageName} -s ${PackageRegex} --clientdir ${certsDir} --tox-args=\"-vv\""
 }
@@ -702,6 +702,7 @@ Version                 = ${PKG_VERSION}"""
                         skipDefaultCheckout(true)
                     }
                     steps {
+                        deleteDir()
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
                         test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}", "tar.gz")
                     }
