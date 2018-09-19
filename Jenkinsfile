@@ -720,7 +720,7 @@ Version                 = ${PKG_VERSION}"""
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", ""${WORKSPACE}\\certs\\")
+                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
 //                        script {
 //                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
 //                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
