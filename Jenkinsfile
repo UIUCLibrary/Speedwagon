@@ -214,13 +214,13 @@ pipeline {
                             }
                         }
                     }
-                    post{
-                        success{
-                            echo """Name                    = ${PKG_NAME}
-documentation zip file  = ${DOC_ZIP_FILENAME}
-Version                 = ${PKG_VERSION}"""
-                        }
-                    }
+//                    post{
+//                        success{
+//                            echo """Name                    = ${PKG_NAME}
+//documentation zip file  = ${DOC_ZIP_FILENAME}
+//Version                 = ${PKG_VERSION}"""
+//                        }
+//                    }
                 }
                 stage("Installing Pipfile"){
                     options{
