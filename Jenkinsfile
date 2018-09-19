@@ -205,14 +205,6 @@ pipeline {
                         }
                     }
                 }
-                stage("Log into DevPi"){
-                    when{
-                        changeRequest()
-                    }
-                    steps{
-                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
-                    }
-                }
                 stage("Setting project metadata variables"){
                     steps{
                         script {
