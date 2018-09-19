@@ -67,13 +67,34 @@ def cleanup_workspace(){
     }
 }
 
-def devpi_login(DevpiPath, credentialsId){
+def devpi_login(DevpiPath, credentialsId, url, CertsPath){
     script{
+        bat "${DevpiPath} use ${url} --clientdir ${CertsPath}"
         withCredentials([usernamePassword(credentialsId: "${credentialsId}", usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-           bat "${DevpiPath} login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+           bat "${DevpiPath} login ${DEVPI_USERNAME} --clientdir ${CertsPath} --password ${DEVPI_PASSWORD}"
         }
     }
 
+}
+
+def test_devpi(DevpiPath, DevpiIndex, certsDir, packageName, PackageRegex){
+
+    devpi_login("${DevpiPath}", 'DS_devpi', "${DevpiIndex}", "${certsDir}")
+    bat "${DevpiPath} test --index ${DevpiIndex} --verbose ${packageName} -s ${PackageRegex} --clientdir ${certsDir} --tox-args=\"-vv\""
+}
+
+def unstash_dependencies(path, stashName){
+    script{
+        dir("${path}"){
+            try{
+                unstash name: "${stashName}"
+            } catch (exc) {
+                echo "Unable to unstash python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}. Reason: ${exc}"
+//                echo "No stashed dependency cache found with ID: ${stashName}"
+            }
+
+        }
+    }
 }
 
 pipeline {
@@ -87,8 +108,10 @@ pipeline {
 
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
-        timeout(20)  // Timeout after 20 minutes. This shouldn't take this long but it hangs for some reason
+//        timeout(25)  // Timeout after 20 minutes. This shouldn't take this long but it hangs for some reason
         checkoutToSubdirectory("source")
+        buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
+        preserveStashes(buildCount: 5)
     }
 
     environment {
@@ -97,7 +120,7 @@ pipeline {
         WORKON_HOME ="${WORKSPACE}\\pipenv\\"
         build_number = VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
         PIPENV_NOSPIN = "True"
-        DEVPI_JENKINS_PASSWORD=credentials('DS_devpi')
+//        DEVPI_JENKINS_PASSWORD=credentials('DS_devpi')
         // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
 
@@ -162,6 +185,7 @@ pipeline {
                             bat "${tool 'CPython-3.6'} -m pip list"
                         }
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
+
                     }
                     post{
                         always{
@@ -181,6 +205,14 @@ pipeline {
                         }
                     }
                 }
+                stage("Log into DevPi"){
+                    when{
+                        changeRequest()
+                    }
+                    steps{
+                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
+                    }
+                }
                 stage("Setting project metadata variables"){
                     steps{
                         script {
@@ -191,13 +223,13 @@ pipeline {
                             }
                         }
                     }
-                    post{
-                        success{
-                            echo """Name                    = ${PKG_NAME}
-documentation zip file  = ${DOC_ZIP_FILENAME}
-Version                 = ${PKG_VERSION}"""
-                        }
-                    }
+//                    post{
+//                        success{
+//                            echo """Name                    = ${PKG_NAME}
+//documentation zip file  = ${DOC_ZIP_FILENAME}
+//Version                 = ${PKG_VERSION}"""
+//                        }
+//                    }
                 }
                 stage("Installing Pipfile"){
                     options{
@@ -273,17 +305,6 @@ Version                 = ${PKG_VERSION}"""
                             dir("${WORKSPACE}/dist"){
                                 zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "${DOC_ZIP_FILENAME}"
                             }
-//                            script{
-//                                // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
-//                                def alljob = env.JOB_NAME.tokenize("/") as String[]
-//                                def project_name = alljob[0]
-//                                dir('build/docs/') {
-//                                    zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,7)}.zip"
-//                                }
-//                            }
-                        }
-                        failure{
-                            echo "Failed to build Python package"
                         }
                     }
                 }
@@ -299,7 +320,6 @@ Version                 = ${PKG_VERSION}"""
                         dir("source"){
                             bat "pipenv run behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
                         }
-                        
                     }
                     post {
                         always {
@@ -455,6 +475,14 @@ Version                 = ${PKG_VERSION}"""
                             customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
                         }
                     }
+                    options{
+                        timeout(10)
+                    }
+//                    environment {
+//                        PIPENV_CACHE_DIR="${WORKSPACE}\\pipenvcache\\"
+//                        WORKON_HOME ="${WORKSPACE}\\pipenv\\"
+//                    }
+
                     when{
                         anyOf{
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
@@ -464,19 +492,24 @@ Version                 = ${PKG_VERSION}"""
                     }
                     stages{
                         stage("CMake Configure"){
+
                             steps {
+                                unstash_dependencies("python_deps_cache", "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}")
+
                                 dir("source"){
-                                    bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv && ${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade"
-                                    bat "pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev > requirements-dev.txt"
+                                    bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv && ${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade && pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev > requirements-dev.txt"
                                     
                                     //${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
                                 }
                                 tee('configure_standalone_cmake.log') {
                                     dir("cmake_build") {
                                         bat "dir"
-                                        cmake arguments: "${WORKSPACE}/source -G \"Visual Studio 14 2015 Win64\" -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${TEMP}/Speedwagon/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
-                                                                               
+                                        cmake arguments: "${WORKSPACE}/source -G \"Visual Studio 14 2015 Win64\" -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
+
                                     }
+                                }
+                                dir("python_deps_cache"){
+                                    stash name: "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
                                 }
                             }
                             post{
@@ -609,11 +642,11 @@ Version                 = ${PKG_VERSION}"""
 
 
                     }
-                    post{
-                        cleanup{
-                            deleteDir()
-                        }
-                    }
+//                    post{
+//                        cleanup{
+//                            deleteDir()
+//                        }
+//                    }
                 }
             }
 
@@ -631,11 +664,9 @@ Version                 = ${PKG_VERSION}"""
             steps {
                 dir("source"){
                     bat "devpi use https://devpi.library.illinois.edu"
-//                        bat "${tool 'CPython-3.6'} -m devpi login DS_Jenkins --password ${env.DEVPI_JENKINS_PASSWORD} && ${tool 'CPython-3.6'} -m devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging"
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                         bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && ${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                     }
-//                        bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && ${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                     script {
                         bat "${tool 'CPython-3.6'} -m devpi upload --from-dir ${WORKSPACE}\\dist"
                         try {
@@ -658,10 +689,10 @@ Version                 = ${PKG_VERSION}"""
                     }
                 }
             }
+            options{
+                timeout(5)  //
+            }
 
-            // when {
-            //     expression { params.DEPLOY_DEVPI == true && (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev")}
-            // }
             parallel {
                 stage("Source Distribution: .tar.gz") {
                     agent {
@@ -669,19 +700,15 @@ Version                 = ${PKG_VERSION}"""
                             label "Windows && Python3"
                         }
                     }
+                    environment{
+                        TMPDIR = "${WORKSPACE}\\tmp"
+                    }
                     options {
                         skipDefaultCheckout(true)
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi')
-//                        script {
-//                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//                                    bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} &&
-                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s tar.gz"
-//                            }
-//                        }
+                        test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "tar.gz")
                     }
                 }
                 stage("Source Distribution: .zip") {
@@ -695,15 +722,16 @@ Version                 = ${PKG_VERSION}"""
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi')
-//                        script {
-//                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-//                            }
-//
-//                        }
-                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip"
+                        test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "zip")
+//                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
+////                        script {
+////                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+////                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+////                            }
+////
+////                        }
+////                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging  --clientdir ${WORKSPACE}\\certs\\"
+//                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip --clientdir ${WORKSPACE}\\certs\\"
                     }
                 }
                 stage("Built Distribution: .whl") {
@@ -717,14 +745,15 @@ Version                 = ${PKG_VERSION}"""
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi')
-//                        script {
-//                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-//                            }
-//                        }
-                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging "
-                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose"
+                        test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs", "${PKG_NAME}==${PKG_VERSION}", "whl")
+//                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
+////                        script {
+////                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+////                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+////                            }
+////                        }
+////                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}\\certs\\
+//                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose --clientdir ${WORKSPACE}\\certs\\"
                     }
                 }
             }
@@ -945,7 +974,7 @@ Version                 = ${PKG_VERSION}"""
     }
     post {
         failure {
-            echo "Failed!"
+//            echo "Failed!"
 
             script{
                 def help_info = "Pipeline failed. If the problem is old cached data, you might need to purge the testing environment. Try manually running the pipeline again with the parameter FRESH_WORKSPACE checked."
@@ -954,7 +983,7 @@ Version                 = ${PKG_VERSION}"""
                     emailext attachLog: true, body: "${help_info}\n${JOB_NAME} has current status of ${currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
                 }
             }
-            bat "tree /A /F"
+//            bat "tree /A /F"
         }
         cleanup {
             // dir("source"){
