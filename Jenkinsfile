@@ -78,7 +78,6 @@ def devpi_login(DevpiPath, credentialsId, url, CertsPath){
 }
 
 def test_devpi(DevpiPath, DevpiIndex, certsDir, packageName, PackageRegex){
-//    bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
     devpi_login("${DevpiPath}", 'DS_devpi', "${DevpiIndex}", "${certsDir}")
     bat "${DevpiPath} test --index ${DevpiIndex} --verbose ${packageName} -s ${PackageRegex} --clientdir ${certsDir} --tox-args=\"-vv\""
 }
@@ -106,7 +105,7 @@ pipeline {
         WORKON_HOME ="${WORKSPACE}\\pipenv\\"
         build_number = VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
         PIPENV_NOSPIN = "True"
-        DEVPI_JENKINS_PASSWORD=credentials('DS_devpi')
+//        DEVPI_JENKINS_PASSWORD=credentials('DS_devpi')
         // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
 
