@@ -276,17 +276,6 @@ Version                 = ${PKG_VERSION}"""
                             dir("${WORKSPACE}/dist"){
                                 zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "${DOC_ZIP_FILENAME}"
                             }
-//                            script{
-//                                // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
-//                                def alljob = env.JOB_NAME.tokenize("/") as String[]
-//                                def project_name = alljob[0]
-//                                dir('build/docs/') {
-//                                    zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,7)}.zip"
-//                                }
-//                            }
-                        }
-                        failure{
-                            echo "Failed to build Python package"
                         }
                     }
                 }
@@ -302,7 +291,6 @@ Version                 = ${PKG_VERSION}"""
                         dir("source"){
                             bat "pipenv run behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
                         }
-                        
                     }
                     post {
                         always {
@@ -681,7 +669,7 @@ Version                 = ${PKG_VERSION}"""
 //                        script {
 //                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
 //                                    bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} &&
-                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
+//                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
                         bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s tar.gz"
 //                            }
 //                        }
@@ -705,7 +693,7 @@ Version                 = ${PKG_VERSION}"""
 //                            }
 //
 //                        }
-                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging  --clientdir ${WORKSPACE}\\certs\\"
+//                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging  --clientdir ${WORKSPACE}\\certs\\"
                         bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip --clientdir ${WORKSPACE}\\certs\\"
                     }
                 }
@@ -726,7 +714,8 @@ Version                 = ${PKG_VERSION}"""
 //                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
 //                            }
 //                        }
-                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}\\certs\\ && venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose --clientdir ${WORKSPACE}\\certs\\"
+//                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}\\certs\\
+                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose --clientdir ${WORKSPACE}\\certs\\"
                     }
                 }
             }
