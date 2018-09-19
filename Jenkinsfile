@@ -465,6 +465,9 @@ Version                 = ${PKG_VERSION}"""
                         stage("CMake Configure"){
 
                             steps {
+                                dir("python_deps_cache"){
+                                    unstash name: "python_deps_cache_${NODE_NAME}_${JOB_NAME}"
+                                }
                                 dir("source"){
                                     bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv && ${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade"
                                     bat "pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev > requirements-dev.txt"
@@ -478,7 +481,9 @@ Version                 = ${PKG_VERSION}"""
 
                                     }
                                 }
-                                stash includes: "python_deps_cache/**", name: "python_deps_cache_${NODE_NAME}_${JOB_NAME}"
+                                dir("python_deps_cache"){
+                                    stash name: "python_deps_cache_${NODE_NAME}_${JOB_NAME}"
+                                }
                             }
                             post{
                                 always{
