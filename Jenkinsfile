@@ -69,7 +69,7 @@ def cleanup_workspace(){
 
 def devpi_login(DevpiPath, credentialsId, url, CertsPath){
     script{
-        bat "${DevpiPath} use ${url}"
+        bat "${DevpiPath} use ${url} --clientdir ${CertsPath}"
         withCredentials([usernamePassword(credentialsId: "${credentialsId}", usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
            bat "${DevpiPath} login ${DEVPI_USERNAME} --clientdir ${CertsPath} --password ${DEVPI_PASSWORD}"
         }
