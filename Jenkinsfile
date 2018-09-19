@@ -452,10 +452,10 @@ Version                 = ${PKG_VERSION}"""
                             customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
                         }
                     }
-                    environment {
-                        PIPENV_CACHE_DIR="${WORKSPACE}\\pipenvcache\\"
-                        WORKON_HOME ="${WORKSPACE}\\pipenv\\"
-                    }
+//                    environment {
+//                        PIPENV_CACHE_DIR="${WORKSPACE}\\pipenvcache\\"
+//                        WORKON_HOME ="${WORKSPACE}\\pipenv\\"
+//                    }
 
                     when{
                         anyOf{
