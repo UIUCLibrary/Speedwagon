@@ -826,7 +826,7 @@ pipeline {
                         unstash "standalone_installers"
                         script{
                             def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
-                            input 'Update standalone [${installer_files}] to //storage.library.illinois.edu/HathiTrust/Tools/beta/?'
+                            input "Update standalone [${installer_files}] to //storage.library.illinois.edu/HathiTrust/Tools/beta/?"
                             installer_files.each { installer_file ->
 
                                 cifsPublisher(
