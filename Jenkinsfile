@@ -696,6 +696,7 @@ pipeline {
                     options {
                         skipDefaultCheckout(true)
                         timeout(5)
+                        lock("${env.NODE_NAME}_devpi ${env.JOB_NAME}-${PKG_VERSION}")
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
@@ -711,6 +712,7 @@ pipeline {
                     options {
                         skipDefaultCheckout(true)
                         timeout(5)
+                        lock("${env.NODE_NAME}_devpi ${env.JOB_NAME}-${PKG_VERSION}")
                     }
                     steps {
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
