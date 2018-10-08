@@ -505,7 +505,7 @@ pipeline {
                                     //${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
                                 }
 //                                cache(caches: [[$class: 'ArbitraryFileCache', excludes: '', includes: '**/*', path: "${WORKSPACE}/python_deps_cache"]], maxCacheSize: 250) {
-                                    tee('configure_standalone_cmake.log') {
+                                    tee("${workspace}/logs/configure_standalone_cmake.log") {
                                         dir("cmake_build") {
                                             bat "dir"
                                             cmake arguments: "${WORKSPACE}/source -G \"Visual Studio 14 2015 Win64\" -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
@@ -518,14 +518,14 @@ pipeline {
                             }
                             post{
                                 always{
-                                    archiveArtifacts artifacts: 'configure_standalone_cmake.log', allowEmptyArchive: true
-                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'configure_standalone_cmake.log']]
+                                    archiveArtifacts artifacts: "${workspace}/logs/configure_standalone_cmake.log", allowEmptyArchive: true
+                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "${workspace}/logs/configure_standalone_cmake.log"]]
                                 }
                             }
                         }
                         stage("CMake Build"){
                             steps {
-                                tee('build_standalone_cmake.log') {
+                                tee("${workspace}/logs/build_standalone_cmake.log") {
                                     dir("cmake_build") {
                                         cmake arguments: "--build . --config Release --parallel ${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
                                     }
@@ -533,8 +533,8 @@ pipeline {
                             }
                             post{
                                 always{
-                                    archiveArtifacts artifacts: 'build_standalone_cmake.log', allowEmptyArchive: true
-                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone_cmake.log']]
+                                    archiveArtifacts artifacts: "${workspace}/logs/build_standalone_cmake.log", allowEmptyArchive: true
+                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "${workspace}/logs/build_standalone_cmake.log"]]
                                 }
                             }
                         }
@@ -543,7 +543,7 @@ pipeline {
                                 dir("logs/ctest"){
                                     bat "dir"
                                 }
-                                tee("${workspace}/test_standalone_cmake.log") {
+                                tee("${workspace}/logs/test_standalone_cmake.log") {
                                     dir("cmake_build") {
                                         ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/logs/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=SpeedwagonBuildNumber${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -V", installation: "${CMAKE_VERSION}"
                                     }
@@ -553,8 +553,8 @@ pipeline {
                                 always {
                                     capture_ctest_results("logs/ctest")
 
-                                    archiveArtifacts artifacts: 'test_standalone_cmake.log', allowEmptyArchive: true
-                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'test_standalone_cmake.log']]
+                                    archiveArtifacts artifacts: 'logs/test_standalone_cmake.log', allowEmptyArchive: true
+                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'logs/test_standalone_cmake.log']]
                                 }
                             }
                         }
