@@ -59,7 +59,7 @@ def capture_ctest_results(PATH){
             def ctest_results = findFiles glob: "*.xml"
             ctest_results.each{ ctest_result ->
                 echo "Found ${ctest_result}"
-                archiveArtifacts artifacts: "${ctest_result}", fingerprint: true
+                archiveArtifacts artifacts: "${ctest_result}"
                 xunit testTimeMargin: '3000',
                     thresholdMode: 1,
                     thresholds: [
