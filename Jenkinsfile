@@ -83,19 +83,6 @@ def test_devpi(DevpiPath, DevpiIndex, certsDir, packageName, PackageRegex){
     bat "${DevpiPath} test --index ${DevpiIndex} --verbose ${packageName} -s ${PackageRegex} --clientdir ${certsDir} --tox-args=\"-vv\""
 }
 
-def unstash_dependencies(path, stashName){
-    script{
-        dir("${path}"){
-            try{
-                unstash name: "${stashName}"
-            } catch (exc) {
-                echo "Unable to unstash python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}. Reason: ${exc}"
-//                echo "No stashed dependency cache found with ID: ${stashName}"
-            }
-
-        }
-    }
-}
 
 pipeline {
     agent {
@@ -487,7 +474,7 @@ pipeline {
                         stage("CMake Configure"){
 
                             steps {
-                                unstash_dependencies("python_deps_cache", "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}")
+//                                unstash_dependencies("python_deps_cache", "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}")
 
                                 dir("source"){
                                     bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv && ${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip==18.0 --quiet && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade && pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev > requirements-dev.txt"
@@ -501,9 +488,7 @@ pipeline {
 
                                     }
                                 }
-                                dir("python_deps_cache"){
-                                    stash name: "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
-                                }
+                                stash includes: 'python_deps_cache/**', name: "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
                             }
                             post{
                                 always{
