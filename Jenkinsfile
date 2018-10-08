@@ -365,10 +365,6 @@ pipeline {
                     }
                     steps {
                         dir("source"){
-                            dir("reports/doctests"){
-                                echo "Cleaning doctest reports directory"
-                                deleteDir()
-                            }
                             bat "pipenv run sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees"
                             
                         }
@@ -544,18 +540,18 @@ pipeline {
                         }
                         stage("CTest"){
                             steps {
-                                dir("results/ctest"){
+                                dir("logs/ctest"){
                                     bat "dir"
                                 }
                                 tee("${workspace}/test_standalone_cmake.log") {
                                     dir("cmake_build") {
-                                        ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/reports/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=SpeedwagonBuildNumber${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -V", installation: "${CMAKE_VERSION}"
+                                        ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/logs/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=SpeedwagonBuildNumber${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -V", installation: "${CMAKE_VERSION}"
                                     }
                                 }
                             }
                             post{
                                 always {
-                                    capture_ctest_results("reports/ctest")
+                                    capture_ctest_results("logs/ctest")
 
                                     archiveArtifacts artifacts: 'test_standalone_cmake.log', allowEmptyArchive: true
                                     warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'test_standalone_cmake.log']]
