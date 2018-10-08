@@ -164,15 +164,16 @@ pipeline {
                     }
                 }
                 stage("Install Python system dependencies"){
-                    options{
-                        lock("system_python_${env.NODE_NAME}")
-                    }
                     steps{
-                        bat "${tool 'CPython-3.6'} -m pip install pip==18.0 --quiet"
-                        tee("logs/pippackages_system_${env.NODE_NAME}.log") {
-                            bat "${tool 'CPython-3.6'} -m pip list"
+
+                        lock("system_python_${env.NODE_NAME}"){
+                            bat "${tool 'CPython-3.6'} -m pip install pip==18.0 --quiet"
+                            tee("logs/pippackages_system_${env.NODE_NAME}.log") {
+                                bat "${tool 'CPython-3.6'} -m pip list"
+                            }
                         }
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
+
 
                     }
                     post{
