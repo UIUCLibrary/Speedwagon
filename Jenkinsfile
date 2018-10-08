@@ -204,15 +204,15 @@ pipeline {
                     }
                     post{
                         always{
-                            dir("logs"){
-                                script{
-                                    def log_files = findFiles glob: '**/pippackages_system_*.log'
-                                    log_files.each { log_file ->
-                                        echo "Found ${log_file}"
-                                        archiveArtifacts artifacts: "${log_file}"
-                                        bat "del ${log_file}"
-                                    }
+//                            dir("logs"){
+                            script{
+                                def log_files = findFiles glob: 'logs/pippackages_system_*.log'
+                                log_files.each { log_file ->
+                                    echo "Found ${log_file}"
+                                    archiveArtifacts artifacts: "${log_file}"
+                                    bat "del ${log_file}"
                                 }
+//                            }
                             }
                         }
                         failure {
@@ -251,16 +251,16 @@ pipeline {
                   
                     post{
                         always{
-                            dir("logs"){
+//                            dir("logs"){
                                 script{
-                                    def log_files = findFiles glob: '**/pippackages_pipenv_*.log'
+                                    def log_files = findFiles glob: 'logs/pippackages_pipenv_*.log'
                                     log_files.each { log_file ->
                                         echo "Found ${log_file}"
                                         archiveArtifacts artifacts: "${log_file}"
                                         bat "del ${log_file}"
                                     }
                                 }
-                            }
+//                            }
                         }
                         failure{
                             echo "pipenv failed. try updating Pipfile.lock file."
