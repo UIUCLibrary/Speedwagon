@@ -52,6 +52,34 @@ def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
     }
 
 }
+
+def capture_ctest_results(PATH){
+    dir("${PATH}") {
+        script {
+            def ctest_results = findFiles glob: "*.xml"
+            ctest_results.each{ ctest_result ->
+                echo "Found ${ctest_result}"
+                archiveArtifacts artifacts: "${ctest_result}", fingerprint: true
+                xunit testTimeMargin: '3000',
+                    thresholdMode: 1,
+                    thresholds: [
+                        failed(),
+                        skipped()
+                    ],
+                    tools: [
+                        CTest(
+                            deleteOutputFiles: true,
+                            failIfNotNew: true,
+                            pattern: "${ctest_result}",
+                            skipNoTestFiles: false,
+                            stopProcessingIfError: true
+                            )
+                        ]
+                bat "del ${ctest_result}"
+            }
+        }
+    }
+}
 def cleanup_workspace(){
     dir("logs"){
         echo "Cleaning out logs directory"
@@ -529,33 +557,8 @@ pipeline {
                             }
                             post{
                                 always {
-                                    dir("results/ctest") {
+                                    capture_ctest_results("results/ctest")
 
-                                        script {
-                                            def ctest_results = findFiles glob: "*.xml"
-                                            ctest_results.each{ ctest_result ->
-                                                echo "Found ${ctest_result}"
-                                                archiveArtifacts artifacts: "${ctest_result}", fingerprint: true
-                                                xunit testTimeMargin: '3000',
-                                                    thresholdMode: 1,
-                                                    thresholds: [
-                                                        failed(),
-                                                        skipped()
-                                                    ],
-                                                    tools: [
-                                                        CTest(
-                                                            deleteOutputFiles: true,
-                                                            failIfNotNew: true,
-                                                            pattern: "${ctest_result}",
-                                                            skipNoTestFiles: false,
-                                                            stopProcessingIfError: true
-                                                            )
-                                                        ]
-                                                bat "del ${ctest_result}"
-                                            }
-                                            
-                                        }
-                                    }
                                     archiveArtifacts artifacts: 'test_standalone_cmake.log', allowEmptyArchive: true
                                     warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'test_standalone_cmake.log']]
                                 }
