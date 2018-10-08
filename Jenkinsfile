@@ -735,6 +735,7 @@ pipeline {
                     }
                     options {
                         skipDefaultCheckout(true)
+                        timestamps()
 //                        lock("${env.NODE_NAME}_devpi ${env.JOB_NAME}-${PKG_VERSION}")
                     }
                     steps {
