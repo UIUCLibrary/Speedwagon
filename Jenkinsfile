@@ -735,14 +735,14 @@ pipeline {
                     }
                     options {
                         skipDefaultCheckout(true)
-                        lock("${env.NODE_NAME}_devpi ${env.JOB_NAME}-${PKG_VERSION}")
+//                        lock("${env.NODE_NAME}_devpi ${env.JOB_NAME}-${PKG_VERSION}")
                     }
                     steps {
                         lock("${env.NODE_NAME}_devpi ${env.JOB_NAME}-${PKG_VERSION}"){
                             bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
 
                             timeout(5){
-                                test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs", "${PKG_NAME}==${PKG_VERSION}", "whl")
+                                test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "whl")
                             }
                         }
 //                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
