@@ -463,9 +463,9 @@ pipeline {
                             }
                             post {
                                 success {
-                                    dir("dist") {
-                                        archiveArtifacts artifacts: "*.whl,*.tar.gz,*.zip", fingerprint: true
-                                    }
+//                                    dir("dist") {
+                                    archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
+//                                    }
                                 }
                             }
                         }
@@ -562,22 +562,21 @@ pipeline {
                             steps {
                                 dir("cmake_build") {
                                     script{
-                                        cpack arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} -V", installation: "${CMAKE_VERSION}"
+                                        cpack arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} -B ${WORKSPACE}/dist/standalone -V", installation: "${CMAKE_VERSION}"
                                     }
                                 }
                             }
                             post {
                                 success{
-                                    dir("cmake_build") {
-                                        script{
-                                            def install_files = findFiles glob: "*.msi,*.exe,*.zip"
-                                            install_files.each { installer_file ->
-                                                echo "Found ${installer_file}"
-                                                archiveArtifacts artifacts: "${installer_file}", fingerprint: true
-                                            }
+                                    script{
+                                        def install_files = findFiles glob: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip"
+                                        install_files.each { installer_file ->
+                                            echo "Found ${installer_file}"
+                                            archiveArtifacts artifacts: "${installer_file}", fingerprint: true
                                         }
-                                        stash includes: "*.msi,*.exe,*.zip", name: "standalone_installers"
                                     }
+                                    stash includes: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip", name: "standalone_installers"
+//                                    }
                                 }
                                 always{
                                     dir("cmake_build"){
