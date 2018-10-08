@@ -481,14 +481,14 @@ pipeline {
                                     
                                     //${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
                                 }
-                                cache(caches: [[$class: 'ArbitraryFileCache', excludes: '', includes: '**/*', path: "${WORKSPACE}/python_deps_cache"]], maxCacheSize: 250) {
+//                                cache(caches: [[$class: 'ArbitraryFileCache', excludes: '', includes: '**/*', path: "${WORKSPACE}/python_deps_cache"]], maxCacheSize: 250) {
                                     tee('configure_standalone_cmake.log') {
                                         dir("cmake_build") {
                                             bat "dir"
                                             cmake arguments: "${WORKSPACE}/source -G \"Visual Studio 14 2015 Win64\" -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
 
                                         }
-                                    }
+//                                    }
                                 }
 
 //                                stash includes: 'python_deps_cache/**', name: "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
