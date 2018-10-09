@@ -500,7 +500,7 @@ pipeline {
 //                                unstash_dependencies("python_deps_cache", "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}")
 
                                 dir("source"){
-                                    bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv && ${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip==18.0 --quiet && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade && pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev > requirements-dev.txt"
+                                    bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv && ${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade --quiet && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade && pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev > requirements-dev.txt"
                                     
                                     //${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
                                 }
@@ -686,7 +686,7 @@ pipeline {
                     }
                     steps {
 //                        lock("${env.NODE_NAME}_devpi_${env.JOB_NAME}-${PKG_VERSION}"){
-                            bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\python.exe -m pip install pip==18.0 && venv\\Scripts\\pip.exe install tox devpi-client"
+                            bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
                             timeout(5){
                                 test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "tar.gz")
                             }
@@ -705,7 +705,7 @@ pipeline {
                     }
                     steps {
 //                        lock("${env.NODE_NAME}_devpi_${env.JOB_NAME}-${PKG_VERSION}"){
-                            bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\python.exe -m pip install pip==18.0 && venv\\Scripts\\pip.exe install tox devpi-client"
+                            bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade --quiet && venv\\Scripts\\pip.exe install tox devpi-client"
                             timeout(5){
                                 test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "zip")
                             }
