@@ -569,13 +569,14 @@ pipeline {
                             }
                             post {
                                 success{
-                                    script{
-                                        def install_files = findFiles glob: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip"
-                                        install_files.each { installer_file ->
-                                            echo "Found ${installer_file}"
-                                            archiveArtifacts artifacts: "${installer_file}", fingerprint: true
-                                        }
-                                    }
+                                    archiveArtifacts artifacts: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip", fingerprint: true
+//                                    script{
+//                                        def install_files = findFiles glob: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip"
+//                                        install_files.each { installer_file ->
+//                                            echo "Found ${installer_file}"
+//                                            archiveArtifacts artifacts: "${installer_file}", fingerprint: true
+//                                        }
+//                                    }
                                     stash includes: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip", name: "standalone_installers"
 //                                    }
                                 }
@@ -608,7 +609,7 @@ pipeline {
                                 cleanup{
                                    dir("cmake_build") {
                                         script{
-                                            def install_files = findFiles glob: "*.msi,*.exe,*.zip"
+                                            def install_files = findFiles glob: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip"
                                             install_files.each { installer_file ->
                                                 bat "del ${installer_file}"
                                             }
