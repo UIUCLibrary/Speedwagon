@@ -479,9 +479,7 @@ pipeline {
                             customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
                         }
                     }
-                    options{
-                        timeout(10)
-                    }
+
 //                    environment {
 //                        PIPENV_CACHE_DIR="${WORKSPACE}\\pipenvcache\\"
 //                        WORKON_HOME ="${WORKSPACE}\\pipenv\\"
@@ -496,6 +494,9 @@ pipeline {
                     }
                     stages{
                         stage("CMake Configure"){
+                            options{
+                                timeout(5)
+                            }
 
                             steps {
 //                                unstash_dependencies("python_deps_cache", "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}")
@@ -525,6 +526,9 @@ pipeline {
                             }
                         }
                         stage("CMake Build"){
+                            options{
+                                timeout(5)
+                            }
                             steps {
                                 tee("${workspace}/logs/build_standalone_cmake.log") {
                                     dir("cmake_build") {
@@ -540,6 +544,9 @@ pipeline {
                             }
                         }
                         stage("CTest"){
+                            options{
+                                timeout(3)
+                            }
                             steps {
                                 dir("logs/ctest"){
                                     bat "dir"
@@ -560,6 +567,9 @@ pipeline {
                             }
                         }
                         stage("CPack"){
+                            options{
+                                timeout(5)
+                            }
                             steps {
                                 dir("cmake_build") {
                                     script{
