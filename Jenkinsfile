@@ -193,7 +193,7 @@ pipeline {
                     steps{
 
                         lock("system_python_${env.NODE_NAME}"){
-                            bat "${tool 'CPython-3.6'} -m pip install pip==18.0 --quiet"
+                            bat "${tool 'CPython-3.6'} -m pip install pip >= 18.1 --quiet"
                             tee("logs/pippackages_system_${env.NODE_NAME}.log") {
                                 bat "${tool 'CPython-3.6'} -m pip list"
                             }
@@ -277,7 +277,8 @@ pipeline {
                         tee('logs/build.log') {
                             dir("source"){
                                 lock("system_pipenv_${NODE_NAME}"){
-                                    powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pipenv run python setup.py build -b ${WORKSPACE}\\build' -Wait"
+                                    bat "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build'"
+//                                    powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pipenv run python setup.py build -b ${WORKSPACE}\\build' -Wait"
                                 }
                                 // bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
                             }
