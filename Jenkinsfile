@@ -194,7 +194,7 @@ pipeline {
                     steps{
 
                         lock("system_python_${env.NODE_NAME}"){
-                            bat "${tool 'CPython-3.6'} -m pip install pip >= 18.1 --quiet"
+                            bat "${tool 'CPython-3.6'} -m pip install pip --upgrade --quiet"
                             tee("logs/pippackages_system_${env.NODE_NAME}.log") {
                                 bat "${tool 'CPython-3.6'} -m pip list"
                             }
@@ -756,9 +756,9 @@ pipeline {
                     }
                     steps {
                         lock("system_python_${NODE_NAME}"){
-                            bat "${tool 'CPython-3.6'} -m pip install pip>=18.1 && ${tool 'CPython-3.6'} -m venv venv "
+                            bat "${tool 'CPython-3.6'} -m pip install pip --upgrade && ${tool 'CPython-3.6'} -m venv venv "
                         }
-                        bat "venv\\Scripts\\python.exe -m pip install pip>=18.1 && venv\\Scripts\\pip.exe install tox devpi-client"
+                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
 
                         timeout(5){
                             test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "whl")
