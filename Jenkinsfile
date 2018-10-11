@@ -1015,7 +1015,7 @@ pipeline {
             dir('build') {
                 deleteDir()
             }
-            script {
+//            script {
 //                if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
 //                    // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
 //                    // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
@@ -1029,7 +1029,7 @@ pipeline {
 //                    }
 //
 //                }
-            }
+//            }
 
         }
 
