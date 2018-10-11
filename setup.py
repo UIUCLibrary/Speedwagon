@@ -35,7 +35,8 @@ setup(
         "pykdu-compress>=0.0.4",
         "setuptools>=30.3.0",
         "importlib_resources",
-        'lxml'
+        'lxml',
+        "py3exiv2bind>=0.1.2",
     ],
     packages=[
         "speedwagon",
