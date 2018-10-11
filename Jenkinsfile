@@ -55,25 +55,28 @@ def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
 
 def capture_ctest_results(PATH){
     script {
-        def ctest_results = findFiles glob: "${PATH}/*.xml"
+
+        def glob_expression = "${PATH}/*.xml"
+
+        archiveArtifacts artifacts: "${glob_expression}"
+        xunit testTimeMargin: '3000',
+            thresholdMode: 1,
+            thresholds: [
+                failed(),
+                skipped()
+            ],
+            tools: [
+                CTest(
+                    deleteOutputFiles: true,
+                    failIfNotNew: true,
+                    pattern: "${glob_expression}",
+                    skipNoTestFiles: false,
+                    stopProcessingIfError: true
+                    )
+                ]
+
+        def ctest_results = findFiles glob: "${glob_expression}"
         ctest_results.each{ ctest_result ->
-            echo "Found ${ctest_result}"
-            archiveArtifacts artifacts: "${ctest_result}"
-            xunit testTimeMargin: '3000',
-                thresholdMode: 1,
-                thresholds: [
-                    failed(),
-                    skipped()
-                ],
-                tools: [
-                    CTest(
-                        deleteOutputFiles: true,
-                        failIfNotNew: true,
-                        pattern: "${ctest_result}",
-                        skipNoTestFiles: false,
-                        stopProcessingIfError: true
-                        )
-                    ]
             bat "del ${ctest_result}"
         }
     }
