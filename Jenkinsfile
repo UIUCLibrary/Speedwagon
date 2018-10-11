@@ -553,9 +553,9 @@ pipeline {
                                     bat "dir"
                                 }
                                 tee("${workspace}/logs/test_standalone_cmake.log") {
-                                    dir("cmake_build") {
-                                        ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/logs/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=SpeedwagonBuildNumber${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -V", installation: "${CMAKE_VERSION}"
-                                    }
+//                                    dir("cmake_build") {
+                                    ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/logs/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=SpeedwagonBuildNumber${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -V", installation: "${CMAKE_VERSION}"
+//                                    }
                                 }
                             }
                             post{
@@ -565,7 +565,9 @@ pipeline {
                                     archiveArtifacts artifacts: 'logs/test_standalone_cmake.log', allowEmptyArchive: true
                                     warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'logs/test_standalone_cmake.log']]
                                 }
+
                             }
+
                         }
                         stage("CPack"){
                             options{
@@ -1009,12 +1011,8 @@ pipeline {
             // }
             
         
-            dir('dist') {
-                deleteDir()
-            }
-            dir('build') {
-                deleteDir()
-            }
+
+
 //            script {
 //                if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
 //                    // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
@@ -1030,7 +1028,15 @@ pipeline {
 //
 //                }
 //            }
-
+            dir('dist') {
+                deleteDir()
+            }
+            dir('build') {
+                deleteDir()
+            }
+            dir('logs') {
+                deleteDir()
+            }
         }
 
     }
