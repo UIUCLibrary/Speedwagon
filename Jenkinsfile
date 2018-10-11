@@ -761,7 +761,7 @@ pipeline {
                     }
                     steps {
                         lock("system_python_${NODE_NAME}"){
-                            bat "${tool 'CPython-3.6'} --version && ${tool 'CPython-3.6'} -m pip install pip --upgrade && ${tool 'CPython-3.6'} -m venv venv "
+                            bat "${tool 'CPython-3.6'} -m pip install pip --upgrade && ${tool 'CPython-3.6'} -m venv venv "
                         }
                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install tox devpi-client && venv\\Scripts\\pip.exe list"
 
@@ -777,6 +777,13 @@ pipeline {
 ////                        }
 ////                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}\\certs\\
 //                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose --clientdir ${WORKSPACE}\\certs\\"
+                    }
+                    post{
+                        failure{
+                            dir("venv"){
+                                deleteDir()
+                            }
+                        }
                     }
                 }
             }
