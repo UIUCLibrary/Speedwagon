@@ -709,7 +709,7 @@ pipeline {
                             }
 
                             bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
-                            timeout(5){
+                            timeout(10){
                                 test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "tar.gz")
                             }
 //                        }
@@ -731,7 +731,7 @@ pipeline {
                                 bat "${tool 'CPython-3.6'} -m venv venv"
                             }
                             bat "venv\\Scripts\\python.exe -m pip install pip --upgrade --quiet && venv\\Scripts\\pip.exe install tox devpi-client"
-                            timeout(5){
+                            timeout(10){
                                 test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "zip")
                             }
 //                        }
