@@ -758,7 +758,7 @@ pipeline {
                     }
                     steps {
                         lock("system_python_${NODE_NAME}"){
-                            bat "${tool 'CPython-3.6'} -m pip install pip --upgrade && ${tool 'CPython-3.6'} -m venv venv "
+                            bat "${tool 'CPython-3.6'} --version && ${tool 'CPython-3.6'} -m pip install pip --upgrade && ${tool 'CPython-3.6'} -m venv venv "
                         }
                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install tox devpi-client && venv\\Scripts\\pip.exe list"
 
