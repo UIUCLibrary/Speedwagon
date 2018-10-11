@@ -52,6 +52,35 @@ def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
     }
 
 }
+
+def capture_ctest_results(PATH){
+    script {
+
+        def glob_expression = "${PATH}/*.xml"
+
+        archiveArtifacts artifacts: "${glob_expression}"
+        xunit testTimeMargin: '3000',
+            thresholdMode: 1,
+            thresholds: [
+                failed(),
+                skipped()
+            ],
+            tools: [
+                CTest(
+                    deleteOutputFiles: true,
+                    failIfNotNew: true,
+                    pattern: "${glob_expression}",
+                    skipNoTestFiles: false,
+                    stopProcessingIfError: true
+                    )
+                ]
+
+        def ctest_results = findFiles glob: "${glob_expression}"
+        ctest_results.each{ ctest_result ->
+            bat "del ${ctest_result}"
+        }
+    }
+}
 def cleanup_workspace(){
     dir("logs"){
         echo "Cleaning out logs directory"
@@ -80,22 +109,10 @@ def devpi_login(DevpiPath, credentialsId, url, CertsPath){
 def test_devpi(DevpiPath, DevpiIndex, certsDir, packageName, PackageRegex){
 
     devpi_login("${DevpiPath}", 'DS_devpi', "${DevpiIndex}", "${certsDir}")
+    echo "Testing on ${NODE_NAME}"
     bat "${DevpiPath} test --index ${DevpiIndex} --verbose ${packageName} -s ${PackageRegex} --clientdir ${certsDir} --tox-args=\"-vv\""
 }
 
-def unstash_dependencies(path, stashName){
-    script{
-        dir("${path}"){
-            try{
-                unstash name: "${stashName}"
-            } catch (exc) {
-                echo "Unable to unstash python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}. Reason: ${exc}"
-//                echo "No stashed dependency cache found with ID: ${stashName}"
-            }
-
-        }
-    }
-}
 
 pipeline {
     agent {
@@ -177,28 +194,29 @@ pipeline {
                     }
                 }
                 stage("Install Python system dependencies"){
-                    options{
-                        lock("system_python_${env.NODE_NAME}")
-                    }
                     steps{
-                        bat "${tool 'CPython-3.6'} -m pip install pip==18.0 --quiet"
-                        tee("logs/pippackages_system_${env.NODE_NAME}.log") {
-                            bat "${tool 'CPython-3.6'} -m pip list"
+
+                        lock("system_python_${env.NODE_NAME}"){
+                            bat "${tool 'CPython-3.6'} -m pip install pip --upgrade --quiet"
+                            tee("logs/pippackages_system_${env.NODE_NAME}.log") {
+                                bat "${tool 'CPython-3.6'} -m pip list"
+                            }
                         }
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
+
 
                     }
                     post{
                         always{
-                            dir("logs"){
-                                script{
-                                    def log_files = findFiles glob: '**/pippackages_system_*.log'
-                                    log_files.each { log_file ->
-                                        echo "Found ${log_file}"
-                                        archiveArtifacts artifacts: "${log_file}"
-                                        bat "del ${log_file}"
-                                    }
+//                            dir("logs"){
+                            script{
+                                def log_files = findFiles glob: 'logs/pippackages_system_*.log'
+                                log_files.each { log_file ->
+                                    echo "Found ${log_file}"
+                                    archiveArtifacts artifacts: "${log_file}"
+                                    bat "del ${log_file}"
                                 }
+//                            }
                             }
                         }
                         failure {
@@ -237,16 +255,16 @@ pipeline {
                   
                     post{
                         always{
-                            dir("logs"){
+//                            dir("logs"){
                                 script{
-                                    def log_files = findFiles glob: '**/pippackages_pipenv_*.log'
+                                    def log_files = findFiles glob: 'logs/pippackages_pipenv_*.log'
                                     log_files.each { log_file ->
                                         echo "Found ${log_file}"
                                         archiveArtifacts artifacts: "${log_file}"
                                         bat "del ${log_file}"
                                     }
                                 }
-                            }
+//                            }
                         }
                         failure{
                             echo "pipenv failed. try updating Pipfile.lock file."
@@ -263,7 +281,8 @@ pipeline {
                         tee('logs/build.log') {
                             dir("source"){
                                 lock("system_pipenv_${NODE_NAME}"){
-                                    powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pipenv run python setup.py build -b ${WORKSPACE}\\build' -Wait"
+                                    bat "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build'"
+//                                    powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pipenv run python setup.py build -b ${WORKSPACE}\\build' -Wait"
                                 }
                                 // bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
                             }
@@ -351,10 +370,6 @@ pipeline {
                     }
                     steps {
                         dir("source"){
-                            dir("reports/doctests"){
-                                echo "Cleaning doctest reports directory"
-                                deleteDir()
-                            }
                             bat "pipenv run sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees"
                             
                         }
@@ -453,9 +468,9 @@ pipeline {
                             }
                             post {
                                 success {
-                                    dir("dist") {
-                                        archiveArtifacts artifacts: "*.whl,*.tar.gz,*.zip", fingerprint: true
-                                    }
+//                                    dir("dist") {
+                                    archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
+//                                    }
                                 }
                             }
                         }
@@ -468,9 +483,7 @@ pipeline {
                             customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
                         }
                     }
-                    options{
-                        timeout(10)
-                    }
+
 //                    environment {
 //                        PIPENV_CACHE_DIR="${WORKSPACE}\\pipenvcache\\"
 //                        WORKON_HOME ="${WORKSPACE}\\pipenv\\"
@@ -485,36 +498,43 @@ pipeline {
                     }
                     stages{
                         stage("CMake Configure"){
+                            options{
+                                timeout(5)
+                            }
 
                             steps {
-                                unstash_dependencies("python_deps_cache", "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}")
+//                                unstash_dependencies("python_deps_cache", "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}")
 
                                 dir("source"){
-                                    bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv && ${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip==18.0 --quiet && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade && pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev > requirements-dev.txt"
+                                    bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv && ${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade --quiet && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade && pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev > requirements-dev.txt"
                                     
                                     //${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
                                 }
-                                tee('configure_standalone_cmake.log') {
-                                    dir("cmake_build") {
-                                        bat "dir"
-                                        cmake arguments: "${WORKSPACE}/source -G \"Visual Studio 14 2015 Win64\" -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
+//                                cache(caches: [[$class: 'ArbitraryFileCache', excludes: '', includes: '**/*', path: "${WORKSPACE}/python_deps_cache"]], maxCacheSize: 250) {
+                                    tee("${workspace}/logs/configure_standalone_cmake.log") {
+                                        dir("cmake_build") {
+                                            bat "dir"
+                                            cmake arguments: "${WORKSPACE}/source -G \"Visual Studio 14 2015 Win64\" -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
 
-                                    }
+                                        }
+//                                    }
                                 }
-                                dir("python_deps_cache"){
-                                    stash name: "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
-                                }
+
+//                                stash includes: 'python_deps_cache/**', name: "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
                             }
                             post{
                                 always{
-                                    archiveArtifacts artifacts: 'configure_standalone_cmake.log', allowEmptyArchive: true
-                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'configure_standalone_cmake.log']]
+                                    archiveArtifacts artifacts: "${workspace}/logs/configure_standalone_cmake.log", allowEmptyArchive: true
+                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "${workspace}/logs/configure_standalone_cmake.log"]]
                                 }
                             }
                         }
                         stage("CMake Build"){
+                            options{
+                                timeout(5)
+                            }
                             steps {
-                                tee('build_standalone_cmake.log') {
+                                tee("${workspace}/logs/build_standalone_cmake.log") {
                                     dir("cmake_build") {
                                         cmake arguments: "--build . --config Release --parallel ${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
                                     }
@@ -522,76 +542,62 @@ pipeline {
                             }
                             post{
                                 always{
-                                    archiveArtifacts artifacts: 'build_standalone_cmake.log', allowEmptyArchive: true
-                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone_cmake.log']]
+                                    archiveArtifacts artifacts: "${workspace}/logs/build_standalone_cmake.log", allowEmptyArchive: true
+                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "${workspace}/logs/build_standalone_cmake.log"]]
                                 }
                             }
                         }
                         stage("CTest"){
+                            options{
+                                timeout(3)
+                            }
                             steps {
-                                dir("results/ctest"){
+                                dir("logs/ctest"){
                                     bat "dir"
                                 }
-                                tee("${workspace}/test_standalone_cmake.log") {
-                                    dir("cmake_build") {
-                                        ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/results/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=SpeedwagonBuildNumber${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -V", installation: "${CMAKE_VERSION}"
-                                    }
+                                tee("${workspace}/logs/test_standalone_cmake.log") {
+//                                    dir("cmake_build") {
+                                    ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/logs/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=SpeedwagonBuildNumber${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -V", installation: "${CMAKE_VERSION}"
+//                                    }
                                 }
                             }
                             post{
                                 always {
-                                    dir("results/ctest") {
+                                    capture_ctest_results("logs/ctest")
 
-                                        script {
-                                            def ctest_results = findFiles glob: "*.xml"
-                                            ctest_results.each{ ctest_result ->
-                                                echo "Found ${ctest_result}"
-                                                archiveArtifacts artifacts: "${ctest_result}", fingerprint: true
-                                                xunit testTimeMargin: '3000',
-                                                    thresholdMode: 1,
-                                                    thresholds: [
-                                                        failed(),
-                                                        skipped()
-                                                    ],
-                                                    tools: [
-                                                        CTest(
-                                                            deleteOutputFiles: true,
-                                                            failIfNotNew: true,
-                                                            pattern: "${ctest_result}",
-                                                            skipNoTestFiles: false,
-                                                            stopProcessingIfError: true
-                                                            )
-                                                        ]
-                                                bat "del ${ctest_result}"
-                                            }
-                                            
-                                        }
-                                    }
-                                    archiveArtifacts artifacts: 'test_standalone_cmake.log', allowEmptyArchive: true
-                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'test_standalone_cmake.log']]
+                                    archiveArtifacts artifacts: 'logs/test_standalone_cmake.log', allowEmptyArchive: true
+                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'logs/test_standalone_cmake.log']]
                                 }
+
                             }
+
                         }
                         stage("CPack"){
+                            options{
+                                timeout(10)
+                            }
                             steps {
-                                dir("cmake_build") {
-                                    script{
-                                        cpack arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} -V", installation: "${CMAKE_VERSION}"
-                                    }
-                                }
+//                                dir("cmake_build") {
+//                                    script{
+                                cpack(
+                                    arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} --config cmake_build/CPackConfig.cmake -B ${WORKSPACE}/dist/standalone -V",
+                                    installation: "${CMAKE_VERSION}"
+                                )
+//                                    }
+//                                }
                             }
                             post {
                                 success{
-                                    dir("cmake_build") {
-                                        script{
-                                            def install_files = findFiles glob: "*.msi,*.exe,*.zip"
-                                            install_files.each { installer_file ->
-                                                echo "Found ${installer_file}"
-                                                archiveArtifacts artifacts: "${installer_file}", fingerprint: true
-                                            }
-                                        }
-                                        stash includes: "*.msi,*.exe,*.zip", name: "standalone_installers"
-                                    }
+                                    archiveArtifacts artifacts: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip", fingerprint: true
+//                                    script{
+//                                        def install_files = findFiles glob: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip"
+//                                        install_files.each { installer_file ->
+//                                            echo "Found ${installer_file}"
+//                                            archiveArtifacts artifacts: "${installer_file}", fingerprint: true
+//                                        }
+//                                    }
+                                    stash includes: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip", name: "standalone_installers"
+//                                    }
                                 }
                                 always{
                                     dir("cmake_build"){
@@ -622,7 +628,7 @@ pipeline {
                                 cleanup{
                                    dir("cmake_build") {
                                         script{
-                                            def install_files = findFiles glob: "*.msi,*.exe,*.zip"
+                                            def install_files = findFiles glob: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip"
                                             install_files.each { installer_file ->
                                                 bat "del ${installer_file}"
                                             }
@@ -682,7 +688,9 @@ pipeline {
                     }
                 }
             }
-
+            options{
+                timestamps()
+            }
             parallel {
                 stage("Source Distribution: .tar.gz") {
                     agent {
@@ -695,12 +703,20 @@ pipeline {
                     }
                     options {
                         skipDefaultCheckout(true)
-                        timeout(5)
-                        lock("${env.NODE_NAME}_devpi ${env.JOB_NAME}-${PKG_VERSION}")
+
                     }
                     steps {
-                        bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "tar.gz")
+//                        lock("${env.NODE_NAME}_devpi_${env.JOB_NAME}-${PKG_VERSION}"){
+                            lock("system_python_${NODE_NAME}"){
+                                bat "${tool 'CPython-3.6'} -m venv venv"
+                            }
+
+                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
+                            timeout(10){
+                                test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "tar.gz")
+                            }
+//                        }
+
                     }
                 }
                 stage("Source Distribution: .zip") {
@@ -711,12 +727,18 @@ pipeline {
                     }
                     options {
                         skipDefaultCheckout(true)
-                        timeout(5)
-                        lock("${env.NODE_NAME}_devpi ${env.JOB_NAME}-${PKG_VERSION}")
                     }
                     steps {
-                        bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "zip")
+//                        lock("${env.NODE_NAME}_devpi_${env.JOB_NAME}-${PKG_VERSION}"){
+                            lock("system_python_${NODE_NAME}"){
+                                bat "${tool 'CPython-3.6'} -m venv venv"
+                            }
+                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade --quiet && venv\\Scripts\\pip.exe install tox devpi-client"
+                            timeout(10){
+                                test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "zip")
+                            }
+//                        }
+
 //                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
 ////                        script {
 ////                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
@@ -736,11 +758,17 @@ pipeline {
                     }
                     options {
                         skipDefaultCheckout(true)
-                        timeout(5)
                     }
                     steps {
-                        bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs", "${PKG_NAME}==${PKG_VERSION}", "whl")
+                        lock("system_python_${NODE_NAME}"){
+                            bat "${tool 'CPython-3.6'} -m pip install pip --upgrade && ${tool 'CPython-3.6'} -m venv venv "
+                        }
+                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install tox devpi-client && venv\\Scripts\\pip.exe list"
+
+                        timeout(5){
+                            test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "whl")
+                        }
+//                        }
 //                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
 ////                        script {
 ////                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
@@ -749,6 +777,13 @@ pipeline {
 ////                        }
 ////                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}\\certs\\
 //                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose --clientdir ${WORKSPACE}\\certs\\"
+                    }
+                    post{
+                        failure{
+                            dir("venv"){
+                                deleteDir()
+                            }
+                        }
                     }
                 }
             }
@@ -986,28 +1021,32 @@ pipeline {
             // }
             
         
+
+
+//            script {
+//                if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
+//                    // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+//                    // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+//
+//                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+//                        try {
+//                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging && devpi remove -y ${PKG_NAME}==${PKG_VERSION}"
+//                        } catch (Exception ex) {
+//                            echo "Failed to remove ${PKG_NAME}==${PKG_VERSION} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+//                        }
+//                    }
+//
+//                }
+//            }
             dir('dist') {
                 deleteDir()
             }
             dir('build') {
                 deleteDir()
             }
-            script {
-                if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
-                    // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                    // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                    
-                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                        try {
-                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging && devpi remove -y ${PKG_NAME}==${PKG_VERSION}"
-                        } catch (Exception ex) {
-                            echo "Failed to remove ${PKG_NAME}==${PKG_VERSION} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                        }
-                    }
-
-                }
+            dir('logs') {
+                deleteDir()
             }
-
         }
 
     }
