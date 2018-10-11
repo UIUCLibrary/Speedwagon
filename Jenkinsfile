@@ -568,7 +568,7 @@ pipeline {
                         }
                         stage("CPack"){
                             options{
-                                timeout(5)
+                                timeout(10)
                             }
                             steps {
                                 dir("cmake_build") {
