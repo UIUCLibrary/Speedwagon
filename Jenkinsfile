@@ -290,8 +290,8 @@ pipeline {
                     }
                     post{
                         always{
+                            archiveArtifacts artifacts: "logs/build.log"
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
-                            archiveArtifacts artifacts: "logs/*.log"
                             // bat "dir build"
                         }
                     }
