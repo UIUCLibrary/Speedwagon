@@ -82,10 +82,16 @@ def capture_ctest_results(PATH){
     }
 }
 def cleanup_workspace(){
-    dir("logs"){
-        echo "Cleaning out logs directory"
-        deleteDir()
+    script{
+        if(fileExists('logs')){
+            dir("logs"){
+                echo "Cleaning out logs directory"
+                deleteDir()
+            }
+        }
+
     }
+
 
     dir("build"){
         echo "Cleaning out build directory"
