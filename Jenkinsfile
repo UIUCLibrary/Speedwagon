@@ -204,9 +204,9 @@ pipeline {
 
                         lock("system_python_${env.NODE_NAME}"){
                             bat "${tool 'CPython-3.6'} -m pip install pip --upgrade --quiet"
-                            tee("logs/pippackages_system_${env.NODE_NAME}.log") {
-                                bat "${tool 'CPython-3.6'} -m pip list"
-                            }
+//                            tee("") {
+                            bat "${tool 'CPython-3.6'} -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
+//                            }
                         }
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
 
@@ -284,14 +284,15 @@ pipeline {
                 stage("Python Package"){
                     steps {
                         
-                        tee('logs/build.log') {
-                            dir("source"){
-                                lock("system_pipenv_${NODE_NAME}"){
-                                    bat "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build'"
+//                        tee('logs/build.log') {
+                        dir("source"){
+                            lock("system_pipenv_${NODE_NAME}"){
+                                powershell "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build | tee ${WORKSPACE}\\logs\\build.log"
+//                                    bat "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build'"
 //                                    powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pipenv run python setup.py build -b ${WORKSPACE}\\build' -Wait"
-                                }
-                                // bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
                             }
+                            // bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
+//                            }
                         }
                     }
                     post{
@@ -305,13 +306,13 @@ pipeline {
                 stage("Sphinx documentation"){
                     steps {
                         echo "Building docs on ${env.NODE_NAME}"
-                        tee('logs/build_sphinx.log') {
-                            dir("source"){
-                                lock("system_pipenv_${NODE_NAME}"){
-                                    bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs"  
-                                }
-                            }   
+//                        tee('logs/build_sphinx.log') {
+                        dir("source"){
+                            lock("system_pipenv_${NODE_NAME}"){
+                                powershell "${tool 'CPython-3.6'} -m pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs | tee ${WORKSPACE}\\logs\\build_sphinx.log"
+                            }
                         }
+//                        }
                     }
                     post{
                         always {
@@ -515,7 +516,7 @@ pipeline {
                                     //${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
                                 }
 //                                cache(caches: [[$class: 'ArbitraryFileCache', excludes: '', includes: '**/*', path: "${WORKSPACE}/python_deps_cache"]], maxCacheSize: 250) {
-                                    tee("${workspace}/logs/configure_standalone_cmake.log") {
+                                    tee("logs/configure_standalone_cmake.log") {
                                         dir("cmake_build") {
                                             bat "dir"
                                             cmake arguments: "${WORKSPACE}/source -G \"Visual Studio 14 2015 Win64\" -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
@@ -528,7 +529,7 @@ pipeline {
                             }
                             post{
                                 always{
-                                    archiveArtifacts artifacts: "${workspace}/logs/configure_standalone_cmake.log", allowEmptyArchive: true
+                                    archiveArtifacts artifacts: "logs/configure_standalone_cmake.log", allowEmptyArchive: true
                                     warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "${workspace}/logs/configure_standalone_cmake.log"]]
                                 }
                             }
