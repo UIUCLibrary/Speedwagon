@@ -1052,6 +1052,9 @@ pipeline {
             dir('logs') {
                 deleteDir()
             }
+            dir('reports') {
+                deleteDir()
+            }
         }
 
     }
