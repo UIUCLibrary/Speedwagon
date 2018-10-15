@@ -286,7 +286,7 @@ pipeline {
 //                        tee('logs/build.log') {
                         dir("source"){
                             lock("system_pipenv_${NODE_NAME}"){
-                                powershell "Start-Process -FilePath ${tool 'CPython-3.6'} -ArgumentList \"-m pipenv run python setup.py build -b ${WORKSPACE}\\build\" -Wait | tee ${WORKSPACE}\\logs\\build.log"
+                                powershell "& ${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build | tee ${WORKSPACE}\\logs\\build.log"
 //                                    bat "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build'"
 //                                    powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pipenv run python setup.py build -b ${WORKSPACE}\\build' -Wait"
                             }
