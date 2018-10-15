@@ -105,9 +105,15 @@ def cleanup_workspace(){
         deleteDir()
         bat "dir > nul"
     }
+}
 
-
-
+def remove_files(artifacts){
+    script{
+        def files = findFiles glob: "${artifacts}"
+        files.each { file_name ->
+            bat "del ${file_name}"
+        }
+    }
 }
 
 def devpi_login(DevpiPath, credentialsId, url, CertsPath){
@@ -485,9 +491,10 @@ pipeline {
                             }
                             post {
                                 success {
-//                                    dir("dist") {
                                     archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
-//                                    }
+                                }
+                                cleanup{
+                                    remove_files("dist/*.whl,dist/*.tar.gz,dist/*.zip")
                                 }
                             }
                         }
