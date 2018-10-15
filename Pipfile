@@ -41,6 +41,7 @@ pyqt-distutils = "*"
 pytest-runner = "*"
 sphinx = "*"
 tox = "*"
+mypy = ">=0.641"
 
 [pipenv]
 allow_prereleases = false
