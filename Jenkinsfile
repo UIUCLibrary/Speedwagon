@@ -82,23 +82,32 @@ def capture_ctest_results(PATH){
     }
 }
 def cleanup_workspace(){
-    script{
-        dir("logs"){
-            echo "Cleaning out logs directory"
-            deleteDir()
-            bat "dir > nul"
-        }
-
+    dir("logs"){
+        echo "Cleaning out logs directory"
+        deleteDir()
+        bat "dir > nul"
     }
-
 
     dir("build"){
         echo "Cleaning out build directory"
         deleteDir()
+        bat "dir > nul"
     }
-    dir("source") {
-        stash includes: 'deployment.yml', name: "Deployment"
+
+    dir("dist"){
+        echo "Cleaning out dist directory"
+        deleteDir()
+        bat "dir > nul"
     }
+
+    dir("reports"){
+        echo "Cleaning out reports directory"
+        deleteDir()
+        bat "dir > nul"
+    }
+
+
+
 }
 
 def devpi_login(DevpiPath, credentialsId, url, CertsPath){
@@ -196,6 +205,9 @@ pipeline {
                 stage("Cleanup"){
                     steps {
                         cleanup_workspace()
+                        dir("source") {
+                            stash includes: 'deployment.yml', name: "Deployment"
+                        }
                     }
                 }
                 stage("Install Python system dependencies"){
