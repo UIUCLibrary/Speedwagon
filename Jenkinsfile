@@ -392,11 +392,11 @@ pipeline {
                     steps{
                         script{
                             try{
-                                tee('logs/mypy.log') {
-                                    dir("source"){
-                                        bat "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html"
-                                    }
+//                                tee('logs/mypy.log') {
+                                dir("source"){
+                                    powershell "& pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html | tee ${WORKSPACE}\\logs\\mypy.log"
                                 }
+//                                }
                             } catch (exc) {
                                 echo "MyPy found some warnings"
                             }      
@@ -407,6 +407,9 @@ pipeline {
                         always {
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'logs/mypy.log']], unHealthy: ''
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
+                        }
+                        cleanup{
+                            bat "if exist ${WORKSPACE}\\logs\\mypy.log del ${WORKSPACE}\\logs\\mypy.log"
                         }
                     }
                 }
@@ -434,11 +437,11 @@ pipeline {
                     steps{
                         script{
                             try{
-                                tee('reports/flake8.log') {
-                                    dir("source"){
-                                        bat "pipenv run flake8 speedwagon --format=pylint"
-                                    }
+//                                tee('reports/flake8.log') {
+                                dir("source"){
+                                    powershell "& pipenv run flake8 speedwagon --format=pylint | tee ${WORKSPACE}\\logs\\mypy.log"
                                 }
+//                                }
                             } catch (exc) {
                                 echo "flake8 found some warnings"
                             }
