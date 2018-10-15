@@ -287,8 +287,6 @@ pipeline {
                         dir("source"){
                             lock("system_pipenv_${NODE_NAME}"){
                                 powershell "& ${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build | tee ${WORKSPACE}\\logs\\build.log"
-//                                    bat "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build'"
-//                                    powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pipenv run python setup.py build -b ${WORKSPACE}\\build' -Wait"
                             }
                             // bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
 //                            }
@@ -308,7 +306,7 @@ pipeline {
 //                        tee('logs/build_sphinx.log') {
                         dir("source"){
                             lock("system_pipenv_${NODE_NAME}"){
-                                powershell "${tool 'CPython-3.6'} -m pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs | tee ${WORKSPACE}\\logs\\build_sphinx.log"
+                                powershell "& ${tool 'CPython-3.6'} -m pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs | tee ${WORKSPACE}\\logs\\build_sphinx.log"
                             }
                         }
 //                        }
