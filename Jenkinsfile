@@ -86,7 +86,7 @@ def cleanup_workspace(){
         dir("logs"){
             echo "Cleaning out logs directory"
             deleteDir()
-            bat "dir"
+            bat "dir > nul"
         }
 
     }
