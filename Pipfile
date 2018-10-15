@@ -33,7 +33,6 @@ pluggy = "*"
 [dev-packages]
 behave = "*"
 "flake8" = "*"
-mypy = "*"
 pytest = "*"
 pytest-cov = "*"
 pytest-qt = "*"
