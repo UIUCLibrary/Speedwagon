@@ -339,6 +339,8 @@ pipeline {
                             dir("${WORKSPACE}/dist"){
                                 zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "${DOC_ZIP_FILENAME}"
                             }
+                            stash includes: "${WORKSPACE}/dist/${DOC_ZIP_FILENAME}", name: 'DOCS_ARCHIVE'
+
                         }
                     }
                 }
@@ -683,6 +685,7 @@ pipeline {
                 }
             }
             steps {
+                unstash 'DOCS_ARCHIVE'
                 dir("source"){
                     bat "devpi use https://devpi.library.illinois.edu"
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
