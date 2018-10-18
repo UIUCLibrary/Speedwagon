@@ -510,6 +510,7 @@ pipeline {
                             post {
                                 success {
                                     archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
+                                    stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
                                 }
                                 cleanup{
                                     remove_files("dist/*.whl,dist/*.tar.gz,dist/*.zip")
@@ -702,6 +703,7 @@ pipeline {
             }
             steps {
                 unstash 'DOCS_ARCHIVE'
+                unstash 'PYTHON_PACKAGES'
                 dir("source"){
                     bat "devpi use https://devpi.library.illinois.edu"
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
