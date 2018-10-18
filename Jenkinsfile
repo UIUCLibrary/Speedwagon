@@ -116,21 +116,36 @@ def remove_files(artifacts){
     }
 }
 
-def devpi_login(DevpiPath, credentialsId, url, CertsPath){
+//def devpi_login(DevpiPath, credentialsId, url, CertsPath){
+//    script{
+//        bat "${DevpiPath} use ${url} --clientdir ${CertsPath}"
+//        withCredentials([usernamePassword(credentialsId: "${credentialsId}", usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+//           bat "${DevpiPath} login ${DEVPI_USERNAME} --clientdir ${CertsPath} --password ${DEVPI_PASSWORD}"
+//        }
+//    }
+//
+//}
+//
+//def test_devpi(DevpiPath, DevpiIndex, certsDir, packageName, PackageRegex){
+//
+//    devpi_login("${DevpiPath}", 'DS_devpi', "${DevpiIndex}", "${certsDir}")
+//    echo "Testing on ${NODE_NAME}"
+//    bat "${DevpiPath} test --index ${DevpiIndex} --verbose ${packageName} -s ${PackageRegex} --clientdir ${certsDir} --tox-args=\"-vv\""
+//}
+
+def test_devpi(DevpiPath, DevpiIndex, packageName, PackageRegex, certsDir="certs\\"){
+
     script{
-        bat "${DevpiPath} use ${url} --clientdir ${CertsPath}"
-        withCredentials([usernamePassword(credentialsId: "${credentialsId}", usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-           bat "${DevpiPath} login ${DEVPI_USERNAME} --clientdir ${CertsPath} --password ${DEVPI_PASSWORD}"
+
+        withCredentials([usernamePassword(credentialsId: "DS_devpi", usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+           bat "${DevpiPath} login DS_Jenkins --clientdir ${certsDir} --password ${DEVPI_PASSWORD}"
+           bat "${DevpiPath} use ${DevpiIndex} --clientdir ${certsDir}"
         }
     }
-
-}
-
-def test_devpi(DevpiPath, DevpiIndex, certsDir, packageName, PackageRegex){
-
-    devpi_login("${DevpiPath}", 'DS_devpi', "${DevpiIndex}", "${certsDir}")
     echo "Testing on ${NODE_NAME}"
-    bat "${DevpiPath} test --index ${DevpiIndex} --verbose ${packageName} -s ${PackageRegex} --clientdir ${certsDir} --tox-args=\"-vv\""
+    withEnv(['PYTEST_ADDOPTS=-vv']) {
+      bat "${DevpiPath} test --index ${DevpiIndex} --verbose ${packageName} -s ${PackageRegex} --clientdir ${certsDir}"
+    }
 }
 
 
@@ -739,7 +754,8 @@ pipeline {
 
                             bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
                             timeout(10){
-                                test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "tar.gz")
+                                bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
+                                test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${PKG_NAME}==${PKG_VERSION}", "tar.gz")
                             }
 //                        }
 
@@ -761,7 +777,7 @@ pipeline {
                             }
                             bat "venv\\Scripts\\python.exe -m pip install pip --upgrade --quiet && venv\\Scripts\\pip.exe install tox devpi-client"
                             timeout(10){
-                                test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "zip")
+                                test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${PKG_NAME}==${PKG_VERSION}", "zip")
                             }
 //                        }
 
@@ -792,7 +808,8 @@ pipeline {
                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install tox devpi-client && venv\\Scripts\\pip.exe list"
 
                         timeout(5){
-                            test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "whl")
+                            bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
+                            test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${PKG_NAME}==${PKG_VERSION}", "whl")
                         }
 //                        }
 //                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
@@ -819,6 +836,7 @@ pipeline {
                     script {
                         // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                         // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+                        bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                             bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
                             
