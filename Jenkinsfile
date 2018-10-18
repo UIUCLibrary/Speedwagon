@@ -650,12 +650,10 @@ pipeline {
                                     }
                                 }
                                 cleanup{
-                                   dir("cmake_build") {
-                                        script{
-                                            def install_files = findFiles glob: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip"
-                                            install_files.each { installer_file ->
-                                                bat "del ${installer_file}"
-                                            }
+                                    script{
+                                        def install_files = findFiles glob: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip"
+                                        install_files.each { installer_file ->
+                                            bat "del ${installer_file}"
                                         }
                                     }
                                 }
