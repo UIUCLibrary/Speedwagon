@@ -340,7 +340,7 @@ pipeline {
                                 zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "${DOC_ZIP_FILENAME}"
                                 bat "dir"
                             }
-                            stash includes: "$dist/${DOC_ZIP_FILENAME}", name: 'DOCS_ARCHIVE'
+                            stash includes: "dist/${DOC_ZIP_FILENAME}", name: 'DOCS_ARCHIVE'
 
                         }
                     }
