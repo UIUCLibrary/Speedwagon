@@ -25,7 +25,7 @@ pykdu-compress = ">=0.1.0"
 setuptools = ">=30.3.0"
 uiucprescon-getmarc = ">=0.1.1"
 uiucprescon-imagevalidate = ">=0.1.3"
-uiucprescon-packager = {version = ">=0.2.1", extras = ['kdu']}
+uiucprescon-packager = {version = ">=0.2.4", extras = ['kdu']}
 uiucprescon-ocr = ">=0.0.1"
 importlib-resources = {version = "*", markers="python_version < '3.7'"}
 pluggy = "*"
