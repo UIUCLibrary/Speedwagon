@@ -2,6 +2,8 @@
 @Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
 import org.ds.*
 
+@Library("devpi") _
+
 def PKG_VERSION = "unknown"
 def PKG_NAME = "unknown"
 def CMAKE_VERSION = "cmake3.12"
@@ -116,21 +118,36 @@ def remove_files(artifacts){
     }
 }
 
-def devpi_login(DevpiPath, credentialsId, url, CertsPath){
+//def devpi_login(DevpiPath, credentialsId, url, CertsPath){
+//    script{
+//        bat "${DevpiPath} use ${url} --clientdir ${CertsPath}"
+//        withCredentials([usernamePassword(credentialsId: "${credentialsId}", usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+//           bat "${DevpiPath} login ${DEVPI_USERNAME} --clientdir ${CertsPath} --password ${DEVPI_PASSWORD}"
+//        }
+//    }
+//
+//}
+//
+//def test_devpi(DevpiPath, DevpiIndex, certsDir, packageName, PackageRegex){
+//
+//    devpi_login("${DevpiPath}", 'DS_devpi', "${DevpiIndex}", "${certsDir}")
+//    echo "Testing on ${NODE_NAME}"
+//    bat "${DevpiPath} test --index ${DevpiIndex} --verbose ${packageName} -s ${PackageRegex} --clientdir ${certsDir} --tox-args=\"-vv\""
+//}
+
+def test_devpi(DevpiPath, DevpiIndex, packageName, PackageRegex, certsDir="certs\\"){
+
     script{
-        bat "${DevpiPath} use ${url} --clientdir ${CertsPath}"
-        withCredentials([usernamePassword(credentialsId: "${credentialsId}", usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-           bat "${DevpiPath} login ${DEVPI_USERNAME} --clientdir ${CertsPath} --password ${DEVPI_PASSWORD}"
+
+        withCredentials([usernamePassword(credentialsId: "DS_devpi", usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+           bat "${DevpiPath} login DS_Jenkins --clientdir ${certsDir} --password ${DEVPI_PASSWORD}"
+           bat "${DevpiPath} use ${DevpiIndex} --clientdir ${certsDir}"
         }
     }
-
-}
-
-def test_devpi(DevpiPath, DevpiIndex, certsDir, packageName, PackageRegex){
-
-    devpi_login("${DevpiPath}", 'DS_devpi', "${DevpiIndex}", "${certsDir}")
     echo "Testing on ${NODE_NAME}"
-    bat "${DevpiPath} test --index ${DevpiIndex} --verbose ${packageName} -s ${PackageRegex} --clientdir ${certsDir} --tox-args=\"-vv\""
+    withEnv(['PYTEST_ADDOPTS=-vv']) {
+      bat "${DevpiPath} test --index ${DevpiIndex} --verbose ${packageName} -s ${PackageRegex} --clientdir ${certsDir}"
+    }
 }
 
 
@@ -336,9 +353,12 @@ pipeline {
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            dir("${WORKSPACE}/dist"){
+                            dir("dist"){
                                 zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "${DOC_ZIP_FILENAME}"
+                                bat "dir"
                             }
+                            stash includes: "dist/${DOC_ZIP_FILENAME}", name: 'DOCS_ARCHIVE'
+
                         }
                     }
                 }
@@ -370,13 +390,13 @@ pipeline {
                     }
                     steps{
                         dir("source"){
-                            bat "pipenv run pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/pytestcoverage/ --cov-report xml:${WORKSPACE}/reports/coverage.xml --cov=speedwagon"
+                            bat "pipenv run pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/pytest_coverage/ --cov-report xml:${WORKSPACE}/reports/coverage.xml --cov=speedwagon"
                         }                    
                     }
                     post {
                         always {
                             junit "reports/pytest/${junit_filename}"
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/pytestcoverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                            publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/pytest_coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
                             publishCoverage adapters: [
                                     coberturaAdapter('reports/coverage.xml')
                                     ],
@@ -492,6 +512,7 @@ pipeline {
                             post {
                                 success {
                                     archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
+                                    stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
                                 }
                                 cleanup{
                                     remove_files("dist/*.whl,dist/*.tar.gz,dist/*.zip")
@@ -650,12 +671,10 @@ pipeline {
                                     }
                                 }
                                 cleanup{
-                                   dir("cmake_build") {
-                                        script{
-                                            def install_files = findFiles glob: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip"
-                                            install_files.each { installer_file ->
-                                                bat "del ${installer_file}"
-                                            }
+                                    script{
+                                        def install_files = findFiles glob: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip"
+                                        install_files.each { installer_file ->
+                                            bat "del ${installer_file}"
                                         }
                                     }
                                 }
@@ -685,6 +704,8 @@ pipeline {
                 }
             }
             steps {
+                unstash 'DOCS_ARCHIVE'
+                unstash 'PYTHON_PACKAGES'
                 dir("source"){
                     bat "devpi use https://devpi.library.illinois.edu"
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
@@ -730,16 +751,22 @@ pipeline {
 
                     }
                     steps {
-//                        lock("${env.NODE_NAME}_devpi_${env.JOB_NAME}-${PKG_VERSION}"){
                             lock("system_python_${NODE_NAME}"){
                                 bat "${tool 'CPython-3.6'} -m venv venv"
                             }
 
                             bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
                             timeout(10){
-                                test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "tar.gz")
+                                bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
+                                devpiTest(
+                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                    url: "https://devpi.library.illinois.edu",
+                                    index: "${env.BRANCH_NAME}_staging",
+                                    pkgName: "${PKG_NAME}",
+                                    pkgVersion: "${PKG_VERSION}",
+                                    pkgRegex: "tar.gz"
+                                )
                             }
-//                        }
 
                     }
                 }
@@ -753,13 +780,19 @@ pipeline {
                         skipDefaultCheckout(true)
                     }
                     steps {
-//                        lock("${env.NODE_NAME}_devpi_${env.JOB_NAME}-${PKG_VERSION}"){
                             lock("system_python_${NODE_NAME}"){
                                 bat "${tool 'CPython-3.6'} -m venv venv"
                             }
                             bat "venv\\Scripts\\python.exe -m pip install pip --upgrade --quiet && venv\\Scripts\\pip.exe install tox devpi-client"
                             timeout(10){
-                                test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "zip")
+                                devpiTest(
+                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                    url: "https://devpi.library.illinois.edu",
+                                    index: "${env.BRANCH_NAME}_staging",
+                                    pkgName: "${PKG_NAME}",
+                                    pkgVersion: "${PKG_VERSION}",
+                                    pkgRegex: "zip"
+                                )
                             }
 //                        }
 
@@ -790,17 +823,15 @@ pipeline {
                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install tox devpi-client && venv\\Scripts\\pip.exe list"
 
                         timeout(5){
-                            test_devpi("venv\\Scripts\\devpi.exe", "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "certs\\", "${PKG_NAME}==${PKG_VERSION}", "whl")
+                            devpiTest(
+                                devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                url: "https://devpi.library.illinois.edu",
+                                index: "${env.BRANCH_NAME}_staging",
+                                pkgName: "${PKG_NAME}",
+                                pkgVersion: "${PKG_VERSION}",
+                                pkgRegex: "whl"
+                            )
                         }
-//                        }
-//                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
-////                        script {
-////                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-////                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-////                            }
-////                        }
-////                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}\\certs\\
-//                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose --clientdir ${WORKSPACE}\\certs\\"
                     }
                     post{
                         failure{
@@ -817,6 +848,7 @@ pipeline {
                     script {
                         // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                         // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+                        bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                             bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
                             

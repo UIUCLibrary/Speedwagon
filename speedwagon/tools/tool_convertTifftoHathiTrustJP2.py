@@ -2,6 +2,7 @@ import abc
 import enum
 import os
 import shutil
+import sys
 import typing
 from contextlib import contextmanager
 import itertools
@@ -9,7 +10,8 @@ from speedwagon import worker
 from speedwagon.tools import options
 from speedwagon.job import AbsTool
 import pykdu_compress
-
+from py3exiv2bind.core import set_dpi
+import py3exiv2bind
 
 class UserArgs(enum.Enum):
     INPUT = "Input"
@@ -66,18 +68,34 @@ class ConvertFile(AbsProcessStrategy):
                                         basename + ".jp2"
                                         )
 
-        pykdu_compress.kdu_compress_cli(
-            "-i {} "
-            "Clevels=5 "
-            "Clayers=8 "
-            "Corder=RLCP "
-            "Cuse_sop=yes "
-            "Cuse_eph=yes "
-            "Cmodes=RESET|RESTART|CAUSAL|ERTERM|SEGMARK "
-            "-no_weights "
-            "-slope 42988 "
-            "-jp2_space sRGB "
-            "-o {}".format(source_file, output_file_path))
+        # pykdu_compress.kdu_compress_cli(
+        #     "-i {} "
+        #     "Clevels=5 "
+        #     "Clayers=8 "
+        #     "Corder=RLCP "
+        #     "Cuse_sop=yes "
+        #     "Cuse_eph=yes "
+        #     "Cmodes=RESET|RESTART|CAUSAL|ERTERM|SEGMARK "
+        #     "-no_weights "
+        #     "-slope 42988 "
+        #     "-jp2_space sRGB "
+        #     "-o {}".format(source_file, output_file_path))
+
+        in_args = [
+             "Clevels=5",
+            "Clayers=8",
+            "Corder=RLCP",
+            "Cuse_sop=yes",
+            "Cuse_eph=yes",
+            "Cmodes=RESET|RESTART|CAUSAL|ERTERM|SEGMARK",
+            "-no_weights",
+            "-slope", "42988",
+            "-jp2_space","sRGB",
+        ]
+        pykdu_compress.kdu_compress_cli2(
+            source_file, output_file_path, in_args=in_args
+        )
+        set_dpi(output_file_path, x=400, y=400)
 
         self.status = "Generated {}".format(output_file_path)
 
