@@ -81,6 +81,9 @@ def capture_ctest_results(PATH){
         ctest_results.each{ ctest_result ->
             bat "del ${ctest_result}"
         }
+        dir("${PATH}"){
+            deleteDir()
+        }
     }
 }
 def cleanup_workspace(){
