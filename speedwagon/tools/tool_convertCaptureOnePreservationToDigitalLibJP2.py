@@ -67,7 +67,10 @@ class ConvertFile(AbsProcessStrategy):
 
         # rc = pykdu_compress.kdu_compress_cli(
         #     "-i {} " "-o {}".format(source_file, output_file_path))
-        rc = pykdu_compress.kdu_compress_cli2(infile=source_file, outfile=output_file_path)
+
+        rc = pykdu_compress.kdu_compress_cli2(
+            infile=source_file, outfile=output_file_path)
+
         if rc != 0:
             raise ProcessingException("kdu_compress_cli returned "
                                       "nonzero value: {}.".format(rc))
