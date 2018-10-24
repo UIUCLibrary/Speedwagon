@@ -175,7 +175,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self._handler = ConsoleLogger(self.console)
         self._handler.setLevel(logging.INFO)
         self.log_manager.addHandler(self._handler)
-        self.log_manager.info("READY!")
+
         ###########################################################
         self.main_splitter.setStretchFactor(0, 0)
         self.main_splitter.setStretchFactor(1, 2)
@@ -222,6 +222,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         # Show Window
         self.show()
+        self.log_manager.info("READY!")
 
     def closeEvent(self, *args, **kwargs):
         self.log_manager.removeHandler(self._handler)

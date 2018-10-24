@@ -153,7 +153,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         super().__init__(parent, work_manager)
         self.log_manager = log_manager
         self.item_selection_model = item_model
-        self.options_model = None
+        self.options_model: typing.Optional[models.ItemListModel] = None
         self.tab_name = name
 
         self.item_selector_view = self._create_selector_view(
@@ -219,7 +219,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         return tool_mapper
 
     @abc.abstractmethod
-    def start(self, item):
+    def start(self, item) -> None:
         pass
 
     @abc.abstractmethod
@@ -347,19 +347,15 @@ class ToolTab(ItemSelectionTab):
             return False
         return True
 
-    def start(self, item):
-        # logger = logging.getLogger(__name__)
-        # logger.debug("Start button pressed")
-
-        # item = self.item_selection_model.data(
-        #     self.item_selector_view.selectedIndexes()[0],
-        #     QtCore.Qt.UserRole
-        # )
+    def start(self, item) -> None:
 
         if issubclass(item, AbsTool):
             try:
-                options = self.options_model.get()
-                item.validate_user_options(**options)
+                if self.options_model is None:
+                    raise Exception("Tools not loaded")
+
+                selected_options = self.options_model.get()
+                item.validate_user_options(**selected_options)
             except Exception as e:
                 msg = QtWidgets.QMessageBox(self.parent)
                 msg.setIcon(QtWidgets.QMessageBox.Warning)
@@ -382,7 +378,8 @@ class ToolTab(ItemSelectionTab):
             # manager_strat = runner_strategies.UsingWorkManager()
             runner = runner_strategies.RunRunner(manager_strat)
 
-            runner.run(self.parent, item(), options, self.work_manager.logger)
+            runner.run(self.parent, item(),
+                       selected_options, self.work_manager.logger)
 
         else:
             QtWidgets.QMessageBox.warning(self.parent,
@@ -459,7 +456,6 @@ class WorkflowsTab(ItemSelectionTab):
         return True
 
     def start(self, item):
-
 
         new_workflow = item()
         assert isinstance(new_workflow, AbsWorkflow)

@@ -55,4 +55,3 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
         super().resizeEvent(QResizeEvent)
         self._label.setMaximumWidth(self.width())
         self.setMinimumHeight(self._label.sizeHint().height() + 75)
-
