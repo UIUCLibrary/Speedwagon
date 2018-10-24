@@ -1,5 +1,3 @@
-import textwrap
-
 from PyQt5 import QtWidgets
 
 
@@ -49,8 +47,12 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
         self.setModal(True)
         self.setMinimumHeight(100)
         self.setMinimumWidth(250)
+        self._label = QtWidgets.QLabel()
+        self._label.setWordWrap(True)
+        self.setLabel(self._label)
 
-    def setLabelText(self, p_str):
-        # Don't make the label too long one a single size and stretch out the
-        # dialog box too much
-        super().setLabelText("\n".join(textwrap.wrap(p_str, width=50)))
+    def resizeEvent(self, QResizeEvent):
+        super().resizeEvent(QResizeEvent)
+        self._label.setMaximumWidth(self.width())
+        self.setMinimumHeight(self._label.sizeHint().height() + 75)
+

@@ -457,8 +457,8 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
                 QtWidgets.QApplication.processEvents()
                 if self.active:
                     continue
-        self.flush_message_buffer()
-        # return results
+            # finally:
+            self.flush_message_buffer()
 
     def flush_message_buffer(self):
         while not self._message_queue.empty():
