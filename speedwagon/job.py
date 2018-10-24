@@ -3,7 +3,6 @@ import importlib
 import inspect
 import logging
 import os
-import sys
 import typing
 from . import tasks
 from . import worker

@@ -11,6 +11,8 @@ import sys
 from PyQt5 import QtCore, QtWidgets
 from collections import namedtuple
 import multiprocessing
+
+from . import dialogbox
 from .tasks import AbsSubtask, QueueAdapter
 
 MessageLog = namedtuple("MessageLog", ("message",))
@@ -199,15 +201,6 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
         pass
 
 
-class WorkProgressBar(QtWidgets.QProgressDialog):
-
-    def closeEvent(self, QCloseEvent):
-        super().closeEvent(QCloseEvent)
-
-    def __init__(self, *__args):
-        super().__init__(*__args)
-
-
 class ProgressMessageBoxLogHandler(logging.Handler):
 
     def __init__(self, dialog_box: QtWidgets.QProgressDialog,
@@ -270,8 +263,8 @@ class WorkRunnerExternal2(contextlib.AbstractContextManager):
         # self.jobs: queue.Queue[JobPair] = queue.Queue()
 
     def __enter__(self):
-        self.dialog = QtWidgets.QProgressDialog(self._parent)
-        self.dialog.setModal(True)
+        self.dialog = dialogbox.WorkProgressBar(self._parent)
+
         self.dialog.setLabelText("Initializing")
         self.dialog.setWindowTitle(self._tool.name)
 
@@ -303,8 +296,7 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         # self.jobs: queue.Queue[JobPair] = queue.Queue()
 
     def __enter__(self):
-        self.dialog = QtWidgets.QProgressDialog(self._parent)
-        self.dialog.setModal(True)
+        self.dialog = dialogbox.WorkProgressBar(self._parent)
         self.dialog.setLabelText("Initializing")
         self.dialog.setMinimumDuration(100)
         # self.dialog.setWindowTitle("Running")
@@ -393,8 +385,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         self.active = False
         still_running = []
 
-        dialog = QtWidgets.QProgressDialog("Canceling", None, 0, 0)
-        dialog.setModal(True)
+        dialog = dialogbox.WorkProgressBar("Canceling", None, 0, 0)
 
         # while not self._pending_jobs.empty():
         #     self._pending_jobs.task_done()
