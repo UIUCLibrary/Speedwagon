@@ -219,7 +219,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         return tool_mapper
 
     @abc.abstractmethod
-    def start(self):
+    def start(self, item):
         pass
 
     @abc.abstractmethod
@@ -247,8 +247,12 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         return actions, tool_actions_layout
 
     def _start(self):
+        selected_workflow = self.item_selection_model.data(
+            self.item_selector_view.selectedIndexes()[0],
+            QtCore.Qt.UserRole)
+
         if self.is_ready_to_start():
-            self.start()
+            self.start(selected_workflow)
 
     @abc.abstractmethod
     def is_ready_to_start(self) -> bool:
@@ -343,14 +347,14 @@ class ToolTab(ItemSelectionTab):
             return False
         return True
 
-    def start(self):
+    def start(self, item):
         # logger = logging.getLogger(__name__)
         # logger.debug("Start button pressed")
 
-        item = self.item_selection_model.data(
-            self.item_selector_view.selectedIndexes()[0],
-            QtCore.Qt.UserRole
-        )
+        # item = self.item_selection_model.data(
+        #     self.item_selector_view.selectedIndexes()[0],
+        #     QtCore.Qt.UserRole
+        # )
 
         if issubclass(item, AbsTool):
             try:
@@ -454,12 +458,10 @@ class WorkflowsTab(ItemSelectionTab):
             return False
         return True
 
-    def start(self):
-        selected_workflow = self.item_selection_model.data(
-            self.item_selector_view.selectedIndexes()[0],
-            QtCore.Qt.UserRole)
+    def start(self, item):
 
-        new_workflow = selected_workflow()
+
+        new_workflow = item()
         assert isinstance(new_workflow, AbsWorkflow)
         user_options = (self.options_model.get())
         try:
