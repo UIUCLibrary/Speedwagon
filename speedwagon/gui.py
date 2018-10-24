@@ -1,10 +1,11 @@
+import argparse
 import email
 import logging
 import sys
 import traceback
 import webbrowser
+from typing import Optional, List, Dict, Tuple
 
-from . import about, system_info
 import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui
 from . import job, tabs
@@ -12,7 +13,7 @@ import speedwagon.tabs
 from .ui import main_window_shell_ui  # type: ignore
 from . import worker
 from collections import namedtuple
-
+from . import about, system_info
 TAB_WIDGET_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.MinimumExpanding,
     QtWidgets.QSizePolicy.Maximum
@@ -113,8 +114,12 @@ class ItemTabsWidget(QtWidgets.QWidget):
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
     def __init__(self, work_manager: worker.ToolJobManager, tools,
-                 workflows) -> None:
+                 workflows: Dict[str, job.AbsWorkflow]) -> None:
         super().__init__()
+
+        workflows_to_load: List[Tuple[str, Dict[str, job.AbsWorkflow]]] = [
+            ("Workflows", workflows)
+        ]
         self._work_manager = work_manager
 
         self.log_manager = self._work_manager.logger
@@ -137,9 +142,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tabWidget = ItemTabsWidget(self.main_splitter)
         self.tabWidget.setMinimumHeight(400)
 
-        # self.tabWidget
-        # self.tabWidget.setLayout(l)
-
         self.tools_tab = tabs.ToolTab(
             parent=self.tabWidget,
             tools=tools,
@@ -149,21 +151,22 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         self.tabWidget.addTab(self.tools_tab.tab, "Tools")
 
-        self.workflows_tab = tabs.WorkflowsTab(
-            parent=self,
-            workflows=workflows,
-            work_manager=self._work_manager,
-            log_manager=self.log_manager
-        )
+        for workflow in workflows_to_load:
+            self.workflows_tab = tabs.WorkflowsTab(
+                parent=self,
+                workflows=workflow[1],
+                work_manager=self._work_manager,
+                log_manager=self.log_manager
+            )
 
-        self.tabWidget.addTab(self.workflows_tab.tab, "Workflows")
-        # self.tabWidget.setMinimumHeight(100)
+            self.tabWidget.addTab(self.workflows_tab.tab, workflow[0])
 
         # Add the tabs widget as the first widget
         self.tabWidget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
         # self.main_splitter.setHandleWidth(10)
         # self.tabWidget.setContentsMargins(0,0,10,0)
         self.main_splitter.addWidget(self.tabWidget)
+        # self.tabWidget.tabs
 
         ###########################################################
         #  Console
@@ -258,7 +261,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             return
 
 
-def main():
+def main(args: Optional[argparse.Namespace] = None) -> None:
     app = QtWidgets.QApplication(sys.argv)
     icon = pkg_resources.resource_stream(__name__, "favicon.ico")
     app.setWindowIcon(QtGui.QIcon(icon.name))
@@ -272,6 +275,16 @@ def main():
                              workflows=workflows)
 
         windows.setWindowTitle("")
+        if args:
+            if args.start_tab:
+                print(args.start_tab)
+                size = windows.tabWidget.tabs.count()
+                for t in range(size):
+                    tab_title = windows.tabWidget.tabs.tabText(t)
+                    if args.start_tab == tab_title:
+                        print("got it")
+                        windows.tabWidget.tabs.setCurrentIndex(t)
+                        break
         # windows.setWindowTitle(f"Version {speedwagon.__version__}")
         rc = app.exec_()
     sys.exit(rc)
