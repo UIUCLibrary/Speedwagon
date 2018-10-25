@@ -393,7 +393,7 @@ pipeline {
                     }
                     steps{
                         dir("source"){
-                            bat "pipenv run pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/pytest_coverage/ --cov-report xml:${WORKSPACE}/reports/coverage.xml --cov=speedwagon"
+                            bat "pipenv run python -m pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/pytest_coverage/ --cov-report xml:${WORKSPACE}/reports/coverage.xml --cov=speedwagon"
                         }                    
                     }
                     post {
