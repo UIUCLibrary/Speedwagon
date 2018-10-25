@@ -381,7 +381,6 @@ pipeline {
                     post {
                         always {
                             junit "reports/behave/*.xml"
-                            archiveArtifacts "reports/behave_coverage.xml"
                         }
                     }
                 }
