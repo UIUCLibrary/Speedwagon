@@ -408,7 +408,7 @@ pipeline {
                         cleanup{
                             script{
                                 if(fileExists('reports/coverage.xml')){
-                                    bat "del reports/coverage.xml"
+                                    bat "del reports\\coverage.xml"
                                 }
                             }
                         }
