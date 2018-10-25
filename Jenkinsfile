@@ -483,7 +483,7 @@ pipeline {
                         script{
                             try{
                                 dir("source"){
-                                    powershell "& pipenv run flake8 speedwagon --format=pylint | tee ${WORKSPACE}\\logs\\mypy.log"
+                                    bat "pipenv run flake8 speedwagon --format=pylint --tee ${WORKSPACE}\\logs\\flake8.log"
                                 }
 //                                }
                             } catch (exc) {
