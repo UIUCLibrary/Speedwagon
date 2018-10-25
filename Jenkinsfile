@@ -1070,7 +1070,7 @@ pipeline {
             }
 //            bat "tree /A /F"
         }
-        cleanup {
+//        cleanup {
             // dir("source"){
             //     bat "pipenv run python setup.py clean --all"
             // }
@@ -1106,7 +1106,7 @@ pipeline {
 //            dir('reports') {
 //                deleteDir()
 //            }
-        }
+//        }
 
     }
 }
