@@ -366,6 +366,10 @@ pipeline {
                             stash includes: "dist/${DOC_ZIP_FILENAME}", name: 'DOCS_ARCHIVE'
 
                         }
+                        cleanup{
+                            cleanWs(patterns: [[pattern: 'logs/build_sphinx.log', type: 'INCLUDE']])
+                            cleanWs(patterns: [[pattern: "dist/${DOC_ZIP_FILENAME}", type: 'INCLUDE']])
+                        }
                     }
                 }
             }
