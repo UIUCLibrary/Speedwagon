@@ -600,7 +600,6 @@ pipeline {
                             }
                             post{
                                 always{
-                                    archiveArtifacts artifacts: "logs/standalone_cmake_configure.log", allowEmptyArchive: true
                                     warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "logs/standalone_cmake_configure.log"]]
                                 }
                             }
@@ -618,7 +617,6 @@ pipeline {
                             }
                             post{
                                 always{
-                                    archiveArtifacts artifacts: "${workspace}/logs/standalone_cmake_build.log", allowEmptyArchive: true
                                     warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "${workspace}/logs/standalone_cmake_build.log"]]
                                 }
                             }
