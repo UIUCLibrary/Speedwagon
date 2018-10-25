@@ -406,11 +406,7 @@ pipeline {
                                 sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                         }
                         cleanup{
-                            script{
-                                if(fileExists('reports/coverage.xml')){
-                                    bat "del reports\\coverage.xml"
-                                }
-                            }
+                            cleanWs(patterns: [[pattern: 'reports/coverage.xml', type: 'INCLUDE']])
                         }
                     }
                 }
@@ -457,7 +453,8 @@ pipeline {
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
                         cleanup{
-                            bat "if exist ${WORKSPACE}\\logs\\mypy.log del ${WORKSPACE}\\logs\\mypy.log"
+                            cleanWs(patterns: [[pattern: 'logs/mypy.log', type: 'INCLUDE']])
+//                            bat "if exist ${WORKSPACE}\\logs\\mypy.log del ${WORKSPACE}\\logs\\mypy.log"
                         }
                     }
                 }
