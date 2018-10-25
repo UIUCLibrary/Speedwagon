@@ -681,7 +681,7 @@ pipeline {
                                 }
                                 always{
                                     dir("cmake_build"){
-                                        archiveArtifacts allowEmptyArchive: true artifacts: "**/wix.log"
+                                        archiveArtifacts allowEmptyArchive: true, artifacts: "**/wix.log"
                                     }
                                 }
                                 failure {
