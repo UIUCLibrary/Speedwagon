@@ -519,7 +519,8 @@ pipeline {
                                     stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
                                 }
                                 cleanup{
-                                    remove_files("dist/*.whl,dist/*.tar.gz,dist/*.zip")
+                                    cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', type: 'INCLUDE']]
+//                                    remove_files("dist/*.whl,dist/*.tar.gz,dist/*.zip")
                                 }
                             }
                         }
@@ -1092,7 +1093,7 @@ pipeline {
 //
 //                }
 //            }
-            cleanup_workspace()
+//            cleanup_workspace()
 //            dir('dist') {
 //                deleteDir()
 //            }
