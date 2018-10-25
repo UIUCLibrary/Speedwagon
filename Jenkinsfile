@@ -375,7 +375,7 @@ pipeline {
                     }
                     steps {
                         dir("source"){
-                            bat "pipenv run coverage run --source ${WORKSPACE}/source/speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
+                            bat "pipenv run coverage run --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
                             bat "pipenv run coverage xml -o ${WORKSPACE}\\reports\\behave_coverage.xml"
                         }
                     }
