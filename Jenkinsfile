@@ -374,12 +374,14 @@ pipeline {
                     }
                     steps {
                         dir("source"){
-                            bat "pipenv run behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
+                            bat "pipenv run coverage run --source ${WORKSPACE}/source/speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
+                            bat "pipenv run coverage xml --o ${WORKSPACE}\\reports\\behave_coverage.xml"
                         }
                     }
                     post {
                         always {
                             junit "reports/behave/*.xml"
+                            archiveArtifacts "reports/behave_coverage.xml"
                         }
                     }
                 }
