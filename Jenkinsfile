@@ -336,6 +336,9 @@ pipeline {
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
                             // bat "dir build"
                         }
+                        cleanup{
+                        cleanWs(patterns: [[pattern: 'logs/build.log', type: 'INCLUDE']])
+                        }
                     }
                 }
                 stage("Sphinx documentation"){
