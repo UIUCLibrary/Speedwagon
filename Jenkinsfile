@@ -76,14 +76,13 @@ def capture_ctest_results(PATH){
                     stopProcessingIfError: true
                     )
                 ]
-
-        def ctest_results = findFiles glob: "${glob_expression}"
-        ctest_results.each{ ctest_result ->
-            bat "del ${ctest_result}"
-        }
-        dir("${PATH}"){
-            deleteDir()
-        }
+//        def ctest_results = findFiles glob: "${glob_expression}"
+//        ctest_results.each{ ctest_result ->
+//            bat "del ${ctest_result}"
+//        }
+//        dir("${PATH}"){
+//            deleteDir()
+//        }
     }
 }
 def cleanup_workspace(){
@@ -481,7 +480,6 @@ pipeline {
                     steps{
                         script{
                             try{
-//                                tee('reports/flake8.log') {
                                 dir("source"){
                                     powershell "& pipenv run flake8 speedwagon --format=pylint | tee ${WORKSPACE}\\logs\\mypy.log"
                                 }
@@ -618,6 +616,9 @@ pipeline {
 
                                     archiveArtifacts artifacts: 'logs/test_standalone_cmake.log', allowEmptyArchive: true
                                     warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'logs/test_standalone_cmake.log']]
+                                }
+                                cleanup{
+                                    cleanWs deleteDirs: true, patterns: [[pattern: 'logs/ctest', type: 'INCLUDE']]
                                 }
 
                             }
