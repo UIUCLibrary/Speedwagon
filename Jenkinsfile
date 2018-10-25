@@ -675,7 +675,7 @@ pipeline {
 //                                            archiveArtifacts artifacts: "${installer_file}", fingerprint: true
 //                                        }
 //                                    }
-                                    stash includes: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip", name: "standalone_installers"
+                                    stash includes: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip", name: "STANDALONE_INSTALLERS"
 //                                    }
                                 }
                                 always{
@@ -732,6 +732,7 @@ pipeline {
             steps {
                 unstash 'DOCS_ARCHIVE'
                 unstash 'PYTHON_PACKAGES'
+                unstash 'STANDALONE_INSTALLERS'
                 dir("source"){
                     bat "devpi use https://devpi.library.illinois.edu"
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
@@ -944,7 +945,7 @@ pipeline {
                         }
                     }
                     steps {
-                        unstash "standalone_installers"
+                        unstash "STANDALONE_INSTALLERS"
                         script{
                             def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
                             input "Update standalone [${installer_files}] to //storage.library.illinois.edu/HathiTrust/Tools/beta/?"
