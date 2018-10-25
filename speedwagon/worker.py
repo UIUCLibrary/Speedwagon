@@ -12,7 +12,7 @@ from PyQt5 import QtCore, QtWidgets
 from collections import namedtuple
 import multiprocessing
 
-from . import dialogbox
+from . import dialog
 from .tasks import AbsSubtask, QueueAdapter
 
 MessageLog = namedtuple("MessageLog", ("message",))
@@ -263,7 +263,7 @@ class WorkRunnerExternal2(contextlib.AbstractContextManager):
         # self.jobs: queue.Queue[JobPair] = queue.Queue()
 
     def __enter__(self):
-        self.dialog = dialogbox.WorkProgressBar(self._parent)
+        self.dialog = dialog.WorkProgressBar(self._parent)
 
         self.dialog.setLabelText("Initializing")
         self.dialog.setWindowTitle(self._tool.name)
@@ -296,7 +296,7 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         # self.jobs: queue.Queue[JobPair] = queue.Queue()
 
     def __enter__(self):
-        self.dialog = dialogbox.WorkProgressBar(self._parent)
+        self.dialog = dialog.WorkProgressBar(self._parent)
         self.dialog.setLabelText("Initializing")
         self.dialog.setMinimumDuration(100)
         # self.dialog.setWindowTitle("Running")
@@ -385,7 +385,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         self.active = False
         still_running = []
 
-        dialog = dialogbox.WorkProgressBar("Canceling", None, 0, 0)
+        dialog_box = dialog.WorkProgressBar("Canceling", None, 0, 0)
 
         # while not self._pending_jobs.empty():
         #     self._pending_jobs.task_done()
@@ -396,9 +396,9 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
                     still_running.append(future)
             self.futures.remove(future)
 
-        dialog.setRange(0, len(still_running))
-        dialog.setLabelText("Please wait")
-        dialog.show()
+        dialog_box.setRange(0, len(still_running))
+        dialog_box.setLabelText("Please wait")
+        dialog_box.show()
         # TODO: set cancel dialog to force the cancellation of the future
 
         while True:
@@ -410,7 +410,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
                                                           timeout=.1)
 
                 for i, future in enumerate(futures):
-                    dialog.setValue(i + 1)
+                    dialog_box.setValue(i + 1)
 
                 break
             except concurrent.futures.TimeoutError:
@@ -418,7 +418,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
         self.logger.info("Cancelled")
         self.flush_message_buffer()
-        dialog.accept()
+        dialog_box.accept()
 
     # TODO: refactor to use an overloaded method instead of a callback
     def get_results(self, timeout_callback=None):

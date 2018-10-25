@@ -7,7 +7,7 @@ from abc import ABCMeta, abstractmethod
 
 from PyQt5 import QtWidgets, QtCore
 
-from . import dialogbox
+from . import dialog
 from . import runner_strategies
 from . import models
 from .tools import options
@@ -399,7 +399,7 @@ class ToolTab(ItemSelectionTab):
                 tb=exc.__traceback__
             )
 
-            msg = dialogbox.ErrorDialogBox(self.parent)
+            msg = dialog.ErrorDialogBox(self.parent)
             msg.setWindowTitle(str(type(exc).__name__))
             msg.setText(str(exc))
             msg.setDetailedText("".join(exception_message))

@@ -4,16 +4,16 @@ import logging
 import sys
 import traceback
 import webbrowser
-from typing import Optional, List, Dict, Tuple
+from typing import Optional
 
 import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui
-from . import job, tabs
-import speedwagon.tabs
+import speedwagon.dialog
+from . import job, tabs, worker
+import speedwagon
 from .ui import main_window_shell_ui  # type: ignore
-from . import worker
 from collections import namedtuple
-from . import about, system_info
+
 TAB_WIDGET_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.MinimumExpanding,
     QtWidgets.QSizePolicy.Maximum
@@ -113,13 +113,9 @@ class ItemTabsWidget(QtWidgets.QWidget):
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
-    def __init__(self, work_manager: worker.ToolJobManager, tools,
-                 workflows: Dict[str, job.AbsWorkflow]) -> None:
+    def __init__(self, work_manager: worker.ToolJobManager, tools) -> None:
         super().__init__()
 
-        workflows_to_load: List[Tuple[str, Dict[str, job.AbsWorkflow]]] = [
-            ("Workflows", workflows)
-        ]
         self._work_manager = work_manager
 
         self.log_manager = self._work_manager.logger
@@ -141,6 +137,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # self.tabWidget
         self.tabWidget = ItemTabsWidget(self.main_splitter)
         self.tabWidget.setMinimumHeight(400)
+        self._tabs = []
 
         self.tools_tab = tabs.ToolTab(
             parent=self.tabWidget,
@@ -151,15 +148,11 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         self.tabWidget.addTab(self.tools_tab.tab, "Tools")
 
-        for workflow in workflows_to_load:
-            self.workflows_tab = tabs.WorkflowsTab(
-                parent=self,
-                workflows=workflow[1],
-                work_manager=self._work_manager,
-                log_manager=self.log_manager
-            )
-
-            self.tabWidget.addTab(self.workflows_tab.tab, workflow[0])
+        # for workflow in workflows_to_load:
+        #     workflow_data = workflow[1]
+        #     workflow_name = workflow[0]
+        #
+        #     self.add_tab(workflow_name, workflow_data)
 
         # Add the tabs widget as the first widget
         self.tabWidget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
@@ -227,6 +220,16 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.show()
         self.log_manager.info("READY!")
 
+    def add_tab(self, workflow_name, workflows):
+        workflows_tab = tabs.WorkflowsTab(
+            parent=self,
+            workflows=workflows,
+            work_manager=self._work_manager,
+            log_manager=self.log_manager
+        )
+        self._tabs.append(workflows_tab)
+        self.tabWidget.addTab(workflows_tab.tab, workflow_name)
+
     def closeEvent(self, *args, **kwargs):
         self.log_manager.removeHandler(self._handler)
         super().closeEvent(*args, **kwargs)
@@ -245,10 +248,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         pass
 
     def show_about_window(self):
-        about.about_dialog_box(parent=self)
+        speedwagon.dialog.about_dialog_box(parent=self)
 
     def show_system_info(self) -> None:
-        system_info_dialog = system_info.SystemInfoDialog(self)
+        system_info_dialog = speedwagon.dialog.SystemInfoDialog(self)
         system_info_dialog.exec()
 
     def start_workflow(self):
@@ -271,8 +274,9 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
     workflows = job.available_workflows()
     with worker.ToolJobManager() as work_manager:
         windows = MainWindow(work_manager=work_manager,
-                             tools=tools,
-                             workflows=workflows)
+                             tools=tools)
+
+        windows.add_tab("Workflows", workflows)
 
         windows.setWindowTitle("")
         if args:
@@ -285,7 +289,6 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
                         print("got it")
                         windows.tabWidget.tabs.setCurrentIndex(t)
                         break
-        # windows.setWindowTitle(f"Version {speedwagon.__version__}")
         rc = app.exec_()
     sys.exit(rc)
 

@@ -1,4 +1,10 @@
+import email
+from typing import Collection
+
+import pkg_resources
 from PyQt5 import QtWidgets
+
+import speedwagon
 
 
 class ErrorDialogBox(QtWidgets.QMessageBox):
@@ -55,3 +61,51 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
         super().resizeEvent(QResizeEvent)
         self._label.setMaximumWidth(self.width())
         self.setMinimumHeight(self._label.sizeHint().height() + 75)
+
+
+def about_dialog_box(parent):
+    try:
+        distribution = speedwagon.get_project_distribution()
+        metadata = dict(
+            email.message_from_string(
+                distribution.get_metadata(distribution.PKG_INFO)))
+        summary = metadata['Summary']
+        message = f"{speedwagon.__name__.title()}: {speedwagon.__version__}" \
+                  f"\n" \
+                  f"\n" \
+                  f"{summary}"
+
+    except pkg_resources.DistributionNotFound:
+                message = \
+                    f"{speedwagon.__name__.title()}: {speedwagon.__version__}"
+
+    QtWidgets.QMessageBox.about(parent, "About", message)
+
+
+class SystemInfoDialog(QtWidgets.QDialog):
+
+    def __init__(self, parent: QtWidgets.QWidget, *args, **kwargs) -> None:
+        super().__init__(parent, *args, **kwargs)
+
+        self.setWindowTitle("System Information")
+        layout = QtWidgets.QVBoxLayout(self)
+        self.setLayout(layout)
+
+        self.installed_packages_title = QtWidgets.QLabel(parent)
+        self.installed_packages_title.setText("Installed Python Packages:")
+
+        installed_python_packages = self.get_installed_packages()
+
+        self.installed_packages_widget = QtWidgets.QListWidget(parent)
+        self.installed_packages_widget.addItems(installed_python_packages)
+
+        layout.addWidget(self.installed_packages_title)
+        layout.addWidget(self.installed_packages_widget)
+
+    @staticmethod
+    def get_installed_packages() -> Collection:
+
+        installed_python_packages = \
+            (str(pkg) for pkg in pkg_resources.working_set)
+
+        return sorted(installed_python_packages, key=lambda x: str(x).lower())
