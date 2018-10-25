@@ -252,7 +252,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                 distribution.get_metadata(distribution.PKG_INFO)))
 
             webbrowser.open_new(metadata['Home-page'])
-        except Exception as e:
+
+        except Exception:
             print("no help")
         pass
 

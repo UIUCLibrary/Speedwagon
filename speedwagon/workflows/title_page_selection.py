@@ -29,7 +29,7 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
         try:
             title_page = object_record.component_metadata[
                 collection.Metadata.TITLE_PAGE]
-        except KeyError as e:
+        except KeyError:
             title_page = ""
 
         files: typing.List[str] = []
