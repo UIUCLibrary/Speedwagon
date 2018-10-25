@@ -375,8 +375,7 @@ pipeline {
                     }
                     steps {
                         dir("source"){
-                            bat "pipenv run coverage run --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
-                            bat "pipenv run coverage xml -o ${WORKSPACE}\\reports\\behave_coverage.xml"
+                            bat "pipenv run coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
                         }
                     }
                     post {
@@ -395,21 +394,21 @@ pipeline {
                     }
                     steps{
                         dir("source"){
-                            bat "pipenv run python -m pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/pytest_coverage/ --cov-report xml:${WORKSPACE}/reports/coverage.xml --cov=speedwagon"
-                        }                    
+                            bat "pipenv run coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
+                        }
                     }
                     post {
                         always {
                             junit "reports/pytest/${junit_filename}"
-                            publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/pytest_coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                            publishCoverage adapters: [
-                                    coberturaAdapter('reports/coverage.xml')
-                                    ],
-                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+//                            publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/pytest_coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+//                            publishCoverage adapters: [
+//                                    coberturaAdapter('reports/coverage.xml')
+//                                    ],
+//                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                         }
-                        cleanup{
-                            cleanWs(patterns: [[pattern: 'reports/coverage.xml', type: 'INCLUDE']])
-                        }
+//                        cleanup{
+//                            cleanWs(patterns: [[pattern: 'reports/coverage.xml', type: 'INCLUDE']])
+//                        }
                     }
                 }
                 stage("Run Doctest Tests"){
@@ -497,6 +496,27 @@ pipeline {
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'reports/flake8.log']], unHealthy: ''
                         }
                     }
+                }
+            }
+            post{
+                always{
+                    dir("source"){
+                        bat "pipenv run coverage combine"
+                        bat "pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml"
+                        bat "pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
+
+                    }
+                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                    publishCoverage adapters: [
+                                    coberturaAdapter('reports/coverage.xml')
+                                    ],
+                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                }
+                cleanup{
+                    cleanWs(patterns: [[pattern: 'reports/coverage.xml', type: 'INCLUDE']])
+                    cleanWs(patterns: [[pattern: 'reports/coverage', type: 'INCLUDE']])
+                    cleanWs(patterns: [[pattern: 'source/.coverage', type: 'INCLUDE']])
+
                 }
             }
         }
