@@ -2,10 +2,11 @@ import argparse
 import email
 import logging
 import sys
+import time
 import traceback
 import webbrowser
-from typing import Optional
-
+from typing import Optional, List
+import io
 import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui
 import speedwagon.dialog
@@ -107,8 +108,8 @@ class ItemTabsWidget(QtWidgets.QWidget):
         self.setLayout(layout)
         self.layout().addWidget(self.tabs)
 
-    def addTab(self, w, name):
-        self.tabs.addTab(w, name)
+    def add_tab(self, tab, name):
+        self.tabs.addTab(tab, name)
 
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
@@ -137,29 +138,22 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # self.tabWidget
         self.tabWidget = ItemTabsWidget(self.main_splitter)
         self.tabWidget.setMinimumHeight(400)
-        self._tabs = []
 
-        self.tools_tab = tabs.ToolTab(
+        self._tabs: List[speedwagon.tabs.ItemSelectionTab] = []
+
+        tools_tab = tabs.ToolTab(
             parent=self.tabWidget,
             tools=tools,
             work_manager=self._work_manager,
             log_manager=self.log_manager
         )
 
-        self.tabWidget.addTab(self.tools_tab.tab, "Tools")
-
-        # for workflow in workflows_to_load:
-        #     workflow_data = workflow[1]
-        #     workflow_name = workflow[0]
-        #
-        #     self.add_tab(workflow_name, workflow_data)
+        self.tabWidget.add_tab(tools_tab.tab, "Tools")
+        self._tabs.append(tools_tab)
 
         # Add the tabs widget as the first widget
         self.tabWidget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
-        # self.main_splitter.setHandleWidth(10)
-        # self.tabWidget.setContentsMargins(0,0,10,0)
         self.main_splitter.addWidget(self.tabWidget)
-        # self.tabWidget.tabs
 
         ###########################################################
         #  Console
@@ -172,6 +166,11 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self._handler.setLevel(logging.INFO)
         self.log_manager.addHandler(self._handler)
 
+        self._log_data = io.StringIO()
+        self._log_data_handler = logging.StreamHandler(self._log_data)
+        self._log_data_handler.setLevel(logging.INFO)
+        self.log_manager.addHandler(self._log_data_handler)
+
         ###########################################################
         self.main_splitter.setStretchFactor(0, 0)
         self.main_splitter.setStretchFactor(1, 2)
@@ -180,9 +179,15 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         menu_bar = self.menuBar()
 
         # File Menu
-
         file_menu = menu_bar.addMenu("File")
 
+        # File --> Export Log
+        export_logs_button = QtWidgets.QAction(" &Export Log", self)
+        export_logs_button.triggered.connect(self.save_log)
+        file_menu.addAction(export_logs_button)
+
+        file_menu.addSeparator()
+        # File --> Exit
         # Create Exit button
         exit_button = QtWidgets.QAction(" &Exit", self)
         exit_button.triggered.connect(self.close)
@@ -192,17 +197,21 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # Help Menu
         help_menu = menu_bar.addMenu("Help")
 
+        # Help --> Help
         # Create a Help menu item
         help_button = QtWidgets.QAction(" &Help ", self)
         help_button.triggered.connect(self.show_help)
         help_menu.addAction(help_button)
 
+        # Help --> System Info
         # Create a system info menu item
         system_info_menu_item = QtWidgets.QAction("System Info", self)
         system_info_menu_item.triggered.connect(self.show_system_info)
         help_menu.addAction(system_info_menu_item)
 
         help_menu.addSeparator()
+
+        # Help --> About
         # Create an About button
         about_button = QtWidgets.QAction(" &About ", self)
         about_button.triggered.connect(self.show_about_window)
@@ -228,7 +237,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             log_manager=self.log_manager
         )
         self._tabs.append(workflows_tab)
-        self.tabWidget.addTab(workflows_tab.tab, workflow_name)
+        self.tabWidget.add_tab(workflows_tab.tab, workflow_name)
 
     def closeEvent(self, *args, **kwargs):
         self.log_manager.removeHandler(self._handler)
@@ -262,6 +271,25 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                 "Expected 1. Found {}".format(num_selected)
             )
             return
+
+    def save_log(self):
+        data = self._log_data.getvalue()
+
+        epoch_in_minutes = int(time.time() / 60)
+        log_file_name, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            "Export Log",
+            "speedwagon_log_{}.txt".format(epoch_in_minutes),
+            "Text Files (*.txt)")
+
+        print(log_file_name)
+        # log_file_name = "logs.txt"
+        if not log_file_name:
+            return
+        with open(log_file_name, "w") as f:
+            f.write(data)
+
+        self.log_manager.info("Saved log to {}".format(log_file_name))
 
 
 def main(args: Optional[argparse.Namespace] = None) -> None:
