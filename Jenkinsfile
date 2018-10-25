@@ -337,7 +337,7 @@ pipeline {
                             // bat "dir build"
                         }
                         cleanup{
-                        cleanWs(patterns: [[pattern: 'logs/build.log', type: 'INCLUDE']])
+                            cleanWs(patterns: [[pattern: 'logs/build.log', type: 'INCLUDE']])
                         }
                     }
                 }
@@ -402,15 +402,7 @@ pipeline {
                     post {
                         always {
                             junit "reports/pytest/${junit_filename}"
-//                            publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/pytest_coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-//                            publishCoverage adapters: [
-//                                    coberturaAdapter('reports/coverage.xml')
-//                                    ],
-//                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                         }
-//                        cleanup{
-//                            cleanWs(patterns: [[pattern: 'reports/coverage.xml', type: 'INCLUDE']])
-//                        }
                     }
                 }
                 stage("Run Doctest Tests"){
@@ -427,8 +419,10 @@ pipeline {
                     post{
                         always {
                             bat "dir ${WORKSPACE}\\reports"
-                            
                             archiveArtifacts artifacts: "reports/doctest.txt"
+                        }
+                        cleanup{
+                            cleanWs(patterns: [[pattern: 'reports/doctest.txt', type: 'INCLUDE']])
                         }
                     }
                 }
