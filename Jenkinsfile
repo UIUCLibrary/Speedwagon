@@ -702,7 +702,9 @@ pipeline {
                                     }
                                 }
                                 cleanup{
-                                    cleanWs(patterns: [[pattern: 'dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip', type: 'INCLUDE']])
+                                    dir("dist"){
+                                        deleteDir()
+                                    }
                                 }
 
                             }
