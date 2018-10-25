@@ -766,16 +766,18 @@ pipeline {
                             }
 
                             bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
-                            timeout(10){
-                                bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
-                                devpiTest(
-                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                    url: "https://devpi.library.illinois.edu",
-                                    index: "${env.BRANCH_NAME}_staging",
-                                    pkgName: "${PKG_NAME}",
-                                    pkgVersion: "${PKG_VERSION}",
-                                    pkgRegex: "tar.gz"
-                                )
+                            lock("${NODE_NAME}_devpi_test"){
+                                timeout(10){
+                                    bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
+                                    devpiTest(
+                                        devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                        url: "https://devpi.library.illinois.edu",
+                                        index: "${env.BRANCH_NAME}_staging",
+                                        pkgName: "${PKG_NAME}",
+                                        pkgVersion: "${PKG_VERSION}",
+                                        pkgRegex: "tar.gz"
+                                    )
+                                }
                             }
 
                     }
@@ -794,15 +796,17 @@ pipeline {
                                 bat "${tool 'CPython-3.6'} -m venv venv"
                             }
                             bat "venv\\Scripts\\python.exe -m pip install pip --upgrade --quiet && venv\\Scripts\\pip.exe install tox devpi-client"
-                            timeout(10){
-                                devpiTest(
-                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                    url: "https://devpi.library.illinois.edu",
-                                    index: "${env.BRANCH_NAME}_staging",
-                                    pkgName: "${PKG_NAME}",
-                                    pkgVersion: "${PKG_VERSION}",
-                                    pkgRegex: "zip"
-                                )
+                            lock("${NODE_NAME}_devpi_test"){
+                                timeout(10){
+                                    devpiTest(
+                                        devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                        url: "https://devpi.library.illinois.edu",
+                                        index: "${env.BRANCH_NAME}_staging",
+                                        pkgName: "${PKG_NAME}",
+                                        pkgVersion: "${PKG_VERSION}",
+                                        pkgRegex: "zip"
+                                    )
+                                }
                             }
 //                        }
 
@@ -832,15 +836,17 @@ pipeline {
                         }
                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install tox devpi-client && venv\\Scripts\\pip.exe list"
 
-                        timeout(5){
-                            devpiTest(
-                                devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                url: "https://devpi.library.illinois.edu",
-                                index: "${env.BRANCH_NAME}_staging",
-                                pkgName: "${PKG_NAME}",
-                                pkgVersion: "${PKG_VERSION}",
-                                pkgRegex: "whl"
-                            )
+                        lock("${NODE_NAME}_devpi_test"){
+                            timeout(5){
+                                devpiTest(
+                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                    url: "https://devpi.library.illinois.edu",
+                                    index: "${env.BRANCH_NAME}_staging",
+                                    pkgName: "${PKG_NAME}",
+                                    pkgVersion: "${PKG_VERSION}",
+                                    pkgRegex: "whl"
+                                )
+                            }
                         }
                     }
                     post{
