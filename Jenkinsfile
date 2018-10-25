@@ -405,6 +405,13 @@ pipeline {
                                     ],
                                 sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                         }
+                        cleanup{
+                            script{
+                                if(fileExists('reports/coverage.xml')){
+                                    bat "del reports/coverage.xml"
+                                }
+                            }
+                        }
                     }
                 }
                 stage("Run Doctest Tests"){
