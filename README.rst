@@ -10,7 +10,7 @@ Speedwagon
 
 
 .. image:: https://img.shields.io/badge/dynamic/json.svg?query=$.results.elements[?(@.name=="Line")].ratio&uri=https://jenkins.library.illinois.edu/job/OpenSourceProjects/job/Speedwagon/job/master/lastBuild/coverage/result/api/json?depth=1&label=Coverage&suffix=%
-    :target: https://jenkins.library.illinois.edu/job/OpenSourceProjects/job/Speedwagon/job/master/lastBuild/coverage/
+    :target: https://jenkins.library.illinois.edu/job/OpenSourceProjects/job/Speedwagon/job/master/coverage/
 
 
 Collection of tools and workflows for DS
