@@ -914,7 +914,7 @@ pipeline {
                                         removePrefix: '', 
                                         sourceFiles: '**')], 
                                     usePromotionTimestamp: false, 
-                                    useWorkspaceInPromotion: false, 
+                                    useWorkspaceInPromotion: false,
                                     verbose: true
                                     )
                                 ]
@@ -937,6 +937,13 @@ pipeline {
                                 equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
                             }
                         }
+
+                    }
+                    agent{
+                        node any
+                    }
+                    options {
+                        skipDefaultCheckout(true)
                     }
                     steps {
                         unstash "STANDALONE_INSTALLERS"
