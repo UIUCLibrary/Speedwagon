@@ -941,9 +941,9 @@ pipeline {
                     steps {
                         unstash "STANDALONE_INSTALLERS"
                         script{
-                            def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
+                            def installer_files  = findFiles glob: 'dist/*.msi,dist/*.exe,dist/*.zip'
                             input "Update standalone [${installer_files}] to //storage.library.illinois.edu/HathiTrust/Tools/beta/?"
-                            installer_files.each { installer_file ->
+//                            installer_files.each { installer_file ->
 
                                 cifsPublisher(
                                     publishers: [[
@@ -958,7 +958,7 @@ pipeline {
                                             remoteDirectory: 'beta',
                                             remoteDirectorySDF: false,
                                             removePrefix: '',
-                                            sourceFiles: "${installer_file}",
+                                            sourceFiles: "dist/*.msi,dist/*.exe,dist/*.zip",
     //                                            sourceFiles: "*.msi,*.exe,*.zip",
                                             ]],
                                         usePromotionTimestamp: false,
@@ -967,7 +967,7 @@ pipeline {
                                         ]]
                                 )
                                 jiraComment body: "Added \"${installer_file}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                            }
+//                            }
                         }
 
 
