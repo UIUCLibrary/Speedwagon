@@ -658,7 +658,7 @@ pipeline {
 //                                dir("cmake_build") {
 //                                    script{
                                 cpack(
-                                    arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} --config cmake_build/CPackConfig.cmake -B ${WORKSPACE}/dist/standalone -V",
+                                    arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} --config cmake_build/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
                                     installation: "${CMAKE_VERSION}"
                                 )
 //                                    }
@@ -666,7 +666,7 @@ pipeline {
                             }
                             post {
                                 success{
-                                    archiveArtifacts artifacts: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip", fingerprint: true
+                                    archiveArtifacts artifacts: "dist/*.msi,dist/*.exe,dist/*.zip", fingerprint: true
 //                                    script{
 //                                        def install_files = findFiles glob: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip"
 //                                        install_files.each { installer_file ->
@@ -674,7 +674,7 @@ pipeline {
 //                                            archiveArtifacts artifacts: "${installer_file}", fingerprint: true
 //                                        }
 //                                    }
-                                    stash includes: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip", name: "STANDALONE_INSTALLERS"
+                                    stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
 //                                    }
                                 }
                                 always{
