@@ -947,32 +947,36 @@ pipeline {
                     steps {
                         unstash "STANDALONE_INSTALLERS"
                         script{
-                            def installer_files  = findFiles glob: 'dist/*.msi,dist/*.exe,dist/*.zip'
-                            input "Update standalone ${installer_files} to //storage.library.illinois.edu/HathiTrust/Tools/beta/?"
-//                            installer_files.each { installer_file ->
+                            dir("dist"){
+                                def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
+                                input "Update standalone ${installer_files} to //storage.library.illinois.edu/HathiTrust/Tools/beta/?"
+    //                            installer_files.each { installer_file ->
 
-                                cifsPublisher(
-                                    publishers: [[
-                                        configName: 'hathitrust tools',
-                                        transfers: [[
-                                            cleanRemote: false,
-                                            excludes: '',
-                                            flatten: false,
-                                            makeEmptyDirs: false,
-                                            noDefaultExcludes: false,
-                                            patternSeparator: '[, ]+',
-                                            remoteDirectory: 'beta',
-                                            remoteDirectorySDF: false,
-                                            removePrefix: '',
-                                            sourceFiles: "dist/*.msi,dist/*.exe,dist/*.zip",
-    //                                            sourceFiles: "*.msi,*.exe,*.zip",
-                                            ]],
-                                        usePromotionTimestamp: false,
-                                        useWorkspaceInPromotion: false,
-                                        verbose: false
-                                        ]]
-                                )
-                                jiraComment body: "Added \"${installer_files}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                                    cifsPublisher(
+                                        publishers: [[
+                                            configName: 'hathitrust tools',
+                                            transfers: [[
+                                                cleanRemote: false,
+                                                excludes: '',
+                                                flatten: false,
+                                                makeEmptyDirs: false,
+                                                noDefaultExcludes: false,
+                                                patternSeparator: '[, ]+',
+                                                remoteDirectory: 'beta',
+                                                remoteDirectorySDF: false,
+                                                removePrefix: '',
+                                                sourceFiles: "*.msi,*.exe,*.zip",
+        //                                            sourceFiles: "*.msi,*.exe,*.zip",
+                                                ]],
+                                            usePromotionTimestamp: false,
+                                            useWorkspaceInPromotion: false,
+                                            verbose: false
+                                            ]]
+                                    )
+                                    jiraComment body: "Added \"${installer_files}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${params.JIRA_ISSUE_VALUE}"
+
+                            }
+
 //                            }
                         }
 
