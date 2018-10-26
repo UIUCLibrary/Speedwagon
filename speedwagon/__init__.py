@@ -21,7 +21,7 @@ def get_version():
         pkg_resources.require(f"{__name__}")
         version = package_distribution.version
 
-    except pkg_resources.DistributionNotFound as e:
+    except pkg_resources.DistributionNotFound:
 
         # =====================================================================
         # In the case of CX_FREEZE. As of version 5.1.1, it doesn't build
@@ -39,7 +39,7 @@ def get_version():
 
         print("No package metadata for this project located", file=sys.stderr)
         version = "Unknown"
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         version = "Unknown"
     return version
 

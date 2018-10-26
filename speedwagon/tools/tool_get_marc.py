@@ -129,7 +129,7 @@ class MarcGenerator(ProcessJobWorker):
                 f.write(f"{cleaned_up_marc}\n")
             self.log(f"Generated {dst}")
             success = True
-        except ValueError as e:
+        except ValueError:
             self.log(f"Error! Could not retrieve {out_file_name} for {bib_id}")
             success = False
 

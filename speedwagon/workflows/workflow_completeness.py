@@ -262,7 +262,7 @@ class HathiCheckMissingComponentsTask(CompletenessSubTask):
                 missing_files_errors = validate_process.run_validation(
                     validator.ValidateComponents(
                         self.package_path,
-                        "^\d{8}$",
+                        "^[0-9]{8}$",
                         *extensions
                     )
                 )
@@ -634,7 +634,8 @@ class HathiManifestGenerationTask(CompletenessSubTask):
 
 
 class PackageNamingConventionTask(CompletenessSubTask):
-    FILE_NAMING_CONVENTION_REGEX = "^\d*([m|v|i]\d{2,})?(_[1-9])?([m|v|i]\d)?$"
+    FILE_NAMING_CONVENTION_REGEX = \
+        "^[0-9]*([m|v|i][0-9]{2,})?(_[1-9])?([m|v|i][0-9])?$"
 
     def __init__(self, package_path):
         super().__init__()

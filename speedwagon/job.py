@@ -1,8 +1,8 @@
 import abc
 import importlib
 import inspect
+import logging
 import os
-import sys
 import typing
 from . import tasks
 from . import worker
@@ -128,6 +128,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
 
     def __init__(self, path) -> None:
         self.path = path
+        self.logger = logging.getLogger(__name__)
 
     @staticmethod
     @abc.abstractmethod
@@ -168,10 +169,8 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
                     yield module_class.name, module_class
 
         except ImportError as e:
-            print(
-                "Unable to load {}. Reason: {}".format(module_file, e),
-                file=sys.stderr
-            )
+            msg = "Unable to load {}. Reason: {}".format(module_file, e)
+            self.logger.warning(msg)
 
     @property
     @abc.abstractmethod

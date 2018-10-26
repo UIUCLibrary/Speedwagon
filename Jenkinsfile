@@ -76,11 +76,13 @@ def capture_ctest_results(PATH){
                     stopProcessingIfError: true
                     )
                 ]
-
-        def ctest_results = findFiles glob: "${glob_expression}"
-        ctest_results.each{ ctest_result ->
-            bat "del ${ctest_result}"
-        }
+//        def ctest_results = findFiles glob: "${glob_expression}"
+//        ctest_results.each{ ctest_result ->
+//            bat "del ${ctest_result}"
+//        }
+//        dir("${PATH}"){
+//            deleteDir()
+//        }
     }
 }
 def cleanup_workspace(){
@@ -289,6 +291,7 @@ pipeline {
                     steps {
                         dir("source"){
                             bat "pipenv install --dev --deploy && pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log"
+                            bat "pipenv check"
 
                         }
                     }
@@ -333,6 +336,9 @@ pipeline {
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
                             // bat "dir build"
                         }
+                        cleanup{
+                            cleanWs(patterns: [[pattern: 'logs/build.log', type: 'INCLUDE']])
+                        }
                     }
                 }
                 stage("Sphinx documentation"){
@@ -360,6 +366,10 @@ pipeline {
                             stash includes: "dist/${DOC_ZIP_FILENAME}", name: 'DOCS_ARCHIVE'
 
                         }
+                        cleanup{
+                            cleanWs(patterns: [[pattern: 'logs/build_sphinx.log', type: 'INCLUDE']])
+                            cleanWs(patterns: [[pattern: "dist/${DOC_ZIP_FILENAME}", type: 'INCLUDE']])
+                        }
                     }
                 }
             }
@@ -372,7 +382,7 @@ pipeline {
                     }
                     steps {
                         dir("source"){
-                            bat "pipenv run behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
+                            bat "pipenv run coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
                         }
                     }
                     post {
@@ -390,17 +400,12 @@ pipeline {
                     }
                     steps{
                         dir("source"){
-                            bat "pipenv run pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/pytest_coverage/ --cov-report xml:${WORKSPACE}/reports/coverage.xml --cov=speedwagon"
-                        }                    
+                            bat "pipenv run coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
+                        }
                     }
                     post {
                         always {
                             junit "reports/pytest/${junit_filename}"
-                            publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/pytest_coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                            publishCoverage adapters: [
-                                    coberturaAdapter('reports/coverage.xml')
-                                    ],
-                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                         }
                     }
                 }
@@ -418,8 +423,10 @@ pipeline {
                     post{
                         always {
                             bat "dir ${WORKSPACE}\\reports"
-                            
                             archiveArtifacts artifacts: "reports/doctest.txt"
+                        }
+                        cleanup{
+                            cleanWs(patterns: [[pattern: 'reports/doctest.txt', type: 'INCLUDE']])
                         }
                     }
                 }
@@ -447,7 +454,7 @@ pipeline {
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
                         cleanup{
-                            bat "if exist ${WORKSPACE}\\logs\\mypy.log del ${WORKSPACE}\\logs\\mypy.log"
+                            cleanWs(patterns: [[pattern: 'logs/mypy.log', type: 'INCLUDE']])
                         }
                     }
                 }
@@ -475,9 +482,8 @@ pipeline {
                     steps{
                         script{
                             try{
-//                                tee('reports/flake8.log') {
                                 dir("source"){
-                                    powershell "& pipenv run flake8 speedwagon --format=pylint | tee ${WORKSPACE}\\logs\\mypy.log"
+                                    bat "pipenv run flake8 speedwagon --format=pylint --tee ${WORKSPACE}\\logs\\flake8.log"
                                 }
 //                                }
                             } catch (exc) {
@@ -487,9 +493,33 @@ pipeline {
                     }
                     post {
                         always {
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'reports/flake8.log']], unHealthy: ''
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'logs/flake8.log']], unHealthy: ''
+                        }
+                        cleanup{
+                            cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
                         }
                     }
+                }
+            }
+            post{
+                always{
+                    dir("source"){
+                        bat "pipenv run coverage combine"
+                        bat "pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml"
+                        bat "pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
+
+                    }
+                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                    publishCoverage adapters: [
+                                    coberturaAdapter('reports/coverage.xml')
+                                    ],
+                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                }
+                cleanup{
+                    cleanWs(patterns: [[pattern: 'reports/coverage.xml', type: 'INCLUDE']])
+                    cleanWs(patterns: [[pattern: 'reports/coverage', type: 'INCLUDE']])
+                    cleanWs(patterns: [[pattern: 'source/.coverage', type: 'INCLUDE']])
+
                 }
             }
         }
@@ -515,7 +545,8 @@ pipeline {
                                     stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
                                 }
                                 cleanup{
-                                    remove_files("dist/*.whl,dist/*.tar.gz,dist/*.zip")
+                                    cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', type: 'INCLUDE']]
+//                                    remove_files("dist/*.whl,dist/*.tar.gz,dist/*.zip")
                                 }
                             }
                         }
@@ -556,41 +587,39 @@ pipeline {
                                     //${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
                                 }
 //                                cache(caches: [[$class: 'ArbitraryFileCache', excludes: '', includes: '**/*', path: "${WORKSPACE}/python_deps_cache"]], maxCacheSize: 250) {
-                                    tee("logs/configure_standalone_cmake.log") {
+//                                    tee("logs/standalone_cmake_configure.log") {
                                         dir("cmake_build") {
                                             bat "dir"
                                             cmake arguments: "${WORKSPACE}/source -G \"Visual Studio 14 2015 Win64\" -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
 
                                         }
 //                                    }
-                                }
+//                                }
 
 //                                stash includes: 'python_deps_cache/**', name: "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
                             }
-                            post{
-                                always{
-                                    archiveArtifacts artifacts: "logs/configure_standalone_cmake.log", allowEmptyArchive: true
-                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "${workspace}/logs/configure_standalone_cmake.log"]]
-                                }
-                            }
+//                            post{
+//                                always{
+//                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "logs/standalone_cmake_configure.log"]]
+//                                }
+//                            }
                         }
                         stage("CMake Build"){
                             options{
                                 timeout(5)
                             }
                             steps {
-                                tee("${workspace}/logs/build_standalone_cmake.log") {
-                                    dir("cmake_build") {
-                                        cmake arguments: "--build . --config Release --parallel ${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
-                                    }
+//                                tee("${workspace}/logs/standalone_cmake_build.log") {
+                                dir("cmake_build") {
+                                    cmake arguments: "--build . --config Release --parallel ${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
                                 }
+//                                }
                             }
-                            post{
-                                always{
-                                    archiveArtifacts artifacts: "${workspace}/logs/build_standalone_cmake.log", allowEmptyArchive: true
-                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "${workspace}/logs/build_standalone_cmake.log"]]
-                                }
-                            }
+//                            post{
+//                                always{
+//                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "${workspace}/logs/standalone_cmake_build.log"]]
+//                                }
+//                            }
                         }
                         stage("CTest"){
                             options{
@@ -600,18 +629,22 @@ pipeline {
                                 dir("logs/ctest"){
                                     bat "dir"
                                 }
-                                tee("${workspace}/logs/test_standalone_cmake.log") {
+//                                tee("${workspace}/logs/standalone_cmake_test.log") {
 //                                    dir("cmake_build") {
                                     ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/logs/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=SpeedwagonBuildNumber${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -V", installation: "${CMAKE_VERSION}"
 //                                    }
-                                }
+//                                }
                             }
                             post{
                                 always {
                                     capture_ctest_results("logs/ctest")
 
-                                    archiveArtifacts artifacts: 'logs/test_standalone_cmake.log', allowEmptyArchive: true
-                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'logs/test_standalone_cmake.log']]
+//                                    archiveArtifacts artifacts: 'logs/standalone_cmake_test.log', allowEmptyArchive: true
+//                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'logs/standalone_cmake_test.log']]
+                                }
+                                cleanup{
+                                    cleanWs deleteDirs: true, patterns: [[pattern: 'logs/ctest', type: 'INCLUDE']]
+                                    cleanWs deleteDirs: true, patterns: [[pattern: 'logs/standalone*.log', type: 'INCLUDE']]
                                 }
 
                             }
@@ -641,17 +674,12 @@ pipeline {
 //                                            archiveArtifacts artifacts: "${installer_file}", fingerprint: true
 //                                        }
 //                                    }
-                                    stash includes: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip", name: "standalone_installers"
+                                    stash includes: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip", name: "STANDALONE_INSTALLERS"
 //                                    }
                                 }
                                 always{
                                     dir("cmake_build"){
-                                        script {
-                                            def wix_logs = findFiles glob: "**/wix.log"
-                                            wix_logs.each { wix_log ->
-                                                archiveArtifacts artifacts: "${wix_log}"
-                                            }
-                                        }
+                                        archiveArtifacts allowEmptyArchive: true, artifacts: "**/wix.log"
                                     }
                                 }
                                 failure {
@@ -671,11 +699,8 @@ pipeline {
                                     }
                                 }
                                 cleanup{
-                                    script{
-                                        def install_files = findFiles glob: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip"
-                                        install_files.each { installer_file ->
-                                            bat "del ${installer_file}"
-                                        }
+                                    dir("dist"){
+                                        deleteDir()
                                     }
                                 }
 
@@ -684,11 +709,6 @@ pipeline {
 
 
                     }
-//                    post{
-//                        cleanup{
-//                            deleteDir()
-//                        }
-//                    }
                 }
             }
 
@@ -706,6 +726,7 @@ pipeline {
             steps {
                 unstash 'DOCS_ARCHIVE'
                 unstash 'PYTHON_PACKAGES'
+                unstash 'STANDALONE_INSTALLERS'
                 dir("source"){
                     bat "devpi use https://devpi.library.illinois.edu"
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
@@ -755,7 +776,7 @@ pipeline {
                                 bat "${tool 'CPython-3.6'} -m venv venv"
                             }
 
-                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
+                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
                             timeout(10){
                                 bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
                                 devpiTest(
@@ -783,7 +804,8 @@ pipeline {
                             lock("system_python_${NODE_NAME}"){
                                 bat "${tool 'CPython-3.6'} -m venv venv"
                             }
-                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade --quiet && venv\\Scripts\\pip.exe install tox devpi-client"
+                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
+
                             timeout(10){
                                 devpiTest(
                                     devpiExecutable: "venv\\Scripts\\devpi.exe",
@@ -820,7 +842,7 @@ pipeline {
                         lock("system_python_${NODE_NAME}"){
                             bat "${tool 'CPython-3.6'} -m pip install pip --upgrade && ${tool 'CPython-3.6'} -m venv venv "
                         }
-                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install tox devpi-client && venv\\Scripts\\pip.exe list"
+                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
 
                         timeout(5){
                             devpiTest(
@@ -917,7 +939,7 @@ pipeline {
                         }
                     }
                     steps {
-                        unstash "standalone_installers"
+                        unstash "STANDALONE_INSTALLERS"
                         script{
                             def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
                             input "Update standalone [${installer_files}] to //storage.library.illinois.edu/HathiTrust/Tools/beta/?"
@@ -1071,7 +1093,7 @@ pipeline {
             }
 //            bat "tree /A /F"
         }
-        cleanup {
+//        cleanup {
             // dir("source"){
             //     bat "pipenv run python setup.py clean --all"
             // }
@@ -1094,7 +1116,7 @@ pipeline {
 //
 //                }
 //            }
-            cleanup_workspace()
+//            cleanup_workspace()
 //            dir('dist') {
 //                deleteDir()
 //            }
@@ -1107,7 +1129,7 @@ pipeline {
 //            dir('reports') {
 //                deleteDir()
 //            }
-        }
+//        }
 
     }
 }

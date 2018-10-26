@@ -5,12 +5,14 @@ import typing
 from speedwagon.worker import ProcessJobWorker
 from speedwagon import worker
 # from frames.tool import SelectDirectory, DummyJob
-from speedwagon.tools.abstool import AbsTool
+from speedwagon.job import AbsTool
+from speedwagon.tools import options
+from speedwagon.tools.options import UserOption2
 
 
 class Spam(AbsTool):
     name = "Spam"
-    active = False
+    active = True
     description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " \
                   "Proin ac diam id purus pretium venenatis. Vestibulum " \
                   "ante ipsum primis in faucibus orci luctus et ultrices " \
@@ -49,6 +51,13 @@ class Spam(AbsTool):
     def discover_task_metadata(*args, **kwargs):
         for x in range(100):
             yield {"num": x}
+
+    @staticmethod
+    def get_user_options() -> typing.List[UserOption2]:
+        return [
+            options.UserOptionCustomDataType("Nothing",
+                                             options.FolderData),
+        ]
 
 
 class DummyJob(ProcessJobWorker):
