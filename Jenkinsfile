@@ -976,8 +976,6 @@ pipeline {
                                     jiraComment body: "Added \"${installer_files}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${params.JIRA_ISSUE_VALUE}"
 
                             }
-
-//                            }
                         }
 
 
