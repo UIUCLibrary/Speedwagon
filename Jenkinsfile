@@ -940,7 +940,9 @@ pipeline {
 
                     }
                     agent{
-                        node any
+                        node{
+                            label "Windows"
+                        }
                     }
                     options {
                         skipDefaultCheckout(true)
