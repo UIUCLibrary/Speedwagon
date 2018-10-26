@@ -948,7 +948,7 @@ pipeline {
                         unstash "STANDALONE_INSTALLERS"
                         script{
                             def installer_files  = findFiles glob: 'dist/*.msi,dist/*.exe,dist/*.zip'
-                            input "Update standalone [${installer_files}] to //storage.library.illinois.edu/HathiTrust/Tools/beta/?"
+                            input "Update standalone ${installer_files} to //storage.library.illinois.edu/HathiTrust/Tools/beta/?"
 //                            installer_files.each { installer_file ->
 
                                 cifsPublisher(
@@ -977,6 +977,11 @@ pipeline {
                         }
 
 
+                    }
+                    post{
+                        cleanup{
+                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.*', type: 'INCLUDE']]
+                        }
                     }
                 }
                 stage("Deploy to DevPi Production") {
