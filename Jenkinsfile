@@ -622,7 +622,13 @@ pipeline {
                             options{
                                 timeout(3)
                             }
+                            environment{
+                                TMPDIR = "${WORKSPACE}/temp"
+                            }
                             steps {
+                                dir("${WORKSPACE}/temp"){
+                                    bat "dir > nul"
+                                }
                                 dir("logs/ctest"){
                                     bat "dir"
                                 }
