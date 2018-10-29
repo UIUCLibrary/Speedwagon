@@ -186,7 +186,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton)
         export_logs_button.setIcon(icon)
 
-
         export_logs_button.triggered.connect(self.save_log)
         file_menu.addAction(export_logs_button)
 
