@@ -12,7 +12,7 @@ from uiucprescon import ocr
 
 def locate_tessdata() -> str:
     path = os.path.join(os.path.dirname(__file__), "tessdata")
-    return path
+    return os.path.normpath(path)
 
 
 class OCRWorkflow(speedwagon.Workflow):
