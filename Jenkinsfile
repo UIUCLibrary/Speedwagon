@@ -1063,7 +1063,7 @@ pipeline {
                                 // deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
                                 jiraComment body: "Version ${PKG_VERSION} sent to staging for user testing.", issueKey: "${params.JIRA_ISSUE_VALUE}"
                                 input("Deploy to production?")
-                                writeFile file: "deployment_request.txt", text: deployment_request
+                                writeFile file: "${WORKSPACE}/logs/deployment_request.txt", text: deployment_request
                                 echo deployment_request
                                 cifsPublisher(
                                     publishers: [[
@@ -1093,7 +1093,7 @@ pipeline {
                     post {
                         success {
                             jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                            archiveArtifacts artifacts: "deployment_request.txt"
+                            archiveArtifacts artifacts: "logs/deployment_request.txt"
                         }
                     }
                 }
