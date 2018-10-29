@@ -447,6 +447,7 @@ pipeline {
                     }
                     post {
                         always {
+                            archiveArtifacts "logs\\mypy.log"
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'logs/mypy.log']], unHealthy: ''
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
@@ -1034,9 +1035,9 @@ pipeline {
                         unstash "Deployment"
                         script{
                             // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                            def deployment_request = requestDeploy yaml: "deployment.yml", file_name: msi_files[0]
                             dir("dist"){
                                 def msi_files = findFiles glob: '*.msi'
+                                def deployment_request = requestDeploy yaml: "deployment.yml", file_name: msi_files[0]
 
                                 cifsPublisher(
                                     publishers: [[
