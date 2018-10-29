@@ -258,6 +258,9 @@ foreach(pytest_file ${pytests})
                          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
                          COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file}::${test_name} --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
                 )
+                set_tests_properties(${PROJECT_NAME}.pytest.${pytest_file}.${test_name} PROPERTIES
+                    RESOURCE_LOCK ${pytest_file}
+                )
                 message(STATUS "Added ${PROJECT_NAME}.pytest.${pytest_file}.${test_name} to CTest")
             endif()
         endforeach()
