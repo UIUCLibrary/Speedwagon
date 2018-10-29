@@ -183,6 +183,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         # File --> Export Log
         export_logs_button = QtWidgets.QAction(" &Export Log", self)
+        icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton)
+        export_logs_button.setIcon(icon)
+
+
         export_logs_button.triggered.connect(self.save_log)
         file_menu.addAction(export_logs_button)
 
@@ -229,6 +233,16 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.show()
         self.log_manager.info("READY!")
 
+    def set_current_tab(self, tab_name: str):
+
+        size = self.tabWidget.tabs.count()
+        for t in range(size):
+            tab_title = self.tabWidget.tabs.tabText(t)
+            if tab_name == tab_title:
+                self.tabWidget.tabs.setCurrentIndex(t)
+                return
+        self.log_manager.warning("{} not found".format(tab_name))
+
     def add_tab(self, workflow_name, workflows):
         workflows_tab = tabs.WorkflowsTab(
             parent=self,
@@ -244,7 +258,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         super().closeEvent(*args, **kwargs)
 
     def show_help(self):
-        print("help!!!")
         try:
             distribution = speedwagon.get_project_distribution()
 
@@ -253,9 +266,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
             webbrowser.open_new(metadata['Home-page'])
 
-        except Exception:
-            print("no help")
-        pass
+        except pkg_resources.DistributionNotFound as e:
+
+            self.log_manager.warning(
+                "No help link available. Reason: {}".format(e))
 
     def show_about_window(self):
         speedwagon.dialog.about_dialog_box(parent=self)
@@ -310,16 +324,11 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
         windows.setWindowTitle("")
         if args:
             if args.start_tab:
-                print(args.start_tab)
-                size = windows.tabWidget.tabs.count()
-                for t in range(size):
-                    tab_title = windows.tabWidget.tabs.tabText(t)
-                    if args.start_tab == tab_title:
-                        print("got it")
-                        windows.tabWidget.tabs.setCurrentIndex(t)
-                        break
+                windows.set_current_tab(tab_name=args.start_tab)
+
         rc = app.exec_()
     sys.exit(rc)
+
 
 
 if __name__ == '__main__':
