@@ -230,7 +230,13 @@ if(WIN32)
 #    add_subdirectory(tests)
 ###########################################
 enable_testing()
-file(GLOB pytests RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/tests tests/test_*.py)
+set(pytests
+    test_pkg_metadata.py
+    test_tasks.py
+    test_tools.py
+    test_ui.py
+    )
+#file(GLOB pytests RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/tests tests/test_*.py)
 
 foreach(pytest_file ${pytests})
     message(STATUS "Found ${pytest_file}")
