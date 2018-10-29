@@ -1037,7 +1037,7 @@ pipeline {
                             // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                             dir("dist"){
                                 def msi_files = findFiles glob: '*.msi'
-                                def deployment_request = requestDeploy yaml: "deployment.yml", file_name: msi_files[0]
+                                def deployment_request = requestDeploy yaml: "${WORKSPACE}/deployment.yml", file_name: msi_files[0]
 
                                 cifsPublisher(
                                     publishers: [[
