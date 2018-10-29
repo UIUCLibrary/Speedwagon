@@ -360,7 +360,7 @@ pipeline {
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                             zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
-                            stash includes: "dist/${DOC_ZIP_FILENAME}", name: 'DOCS_ARCHIVE'
+                            stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
 
                         }
                         cleanup{
@@ -447,6 +447,7 @@ pipeline {
                     }
                     post {
                         always {
+                            archiveArtifacts "logs\\mypy.log"
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'logs/mypy.log']], unHealthy: ''
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
@@ -892,12 +893,8 @@ pipeline {
                         equals expected: true, actual: params.DEPLOY_DOCS
                     }
                     steps{
-                        script {
-                            if(!params.BUILD_DOCS){
-                                bat "pipenv run python setup.py build_sphinx"
-                            }
-                        }
-                        
+                        unstash "DOCS_ARCHIVE"
+
                         dir("build/docs/html/"){
                             input 'Update project documentation?'
                             sshPublisher(
@@ -1030,68 +1027,73 @@ pipeline {
                         }
                         // expression { params.RELEASE == "Release_to_devpi_and_sccm"}
                     }
-
+                    options {
+                        skipDefaultCheckout(true)
+                    }
                     steps {
-                        unstash "msi"
+                        unstash "STANDALONE_INSTALLERS"
                         unstash "Deployment"
                         script{
                             // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                            def msi_files = findFiles glob: '*.msi'
+                            dir("dist"){
+                                def msi_files = findFiles glob: '*.msi'
+                                def deployment_request = requestDeploy yaml: "${WORKSPACE}/deployment.yml", file_name: msi_files[0]
 
-                            def deployment_request = requestDeploy yaml: "deployment.yml", file_name: msi_files[0]
-                            cifsPublisher(
-                                publishers: [[
-                                    configName: 'SCCM Staging', 
-                                    transfers: [[
-                                        cleanRemote: false, 
-                                        excludes: '', 
-                                        flatten: false, 
-                                        makeEmptyDirs: false, 
-                                        noDefaultExcludes: false, 
-                                        patternSeparator: '[, ]+', 
-                                        remoteDirectory: '', 
-                                        remoteDirectorySDF: false, 
-                                        removePrefix: '', 
-                                        sourceFiles: '*.msi'
-                                        ]], 
-                                    usePromotionTimestamp: false, 
-                                    useWorkspaceInPromotion: false, 
-                                    verbose: false
-                                    ]]
+                                cifsPublisher(
+                                    publishers: [[
+                                        configName: 'SCCM Staging',
+                                        transfers: [[
+                                            cleanRemote: false,
+                                            excludes: '',
+                                            flatten: false,
+                                            makeEmptyDirs: false,
+                                            noDefaultExcludes: false,
+                                            patternSeparator: '[, ]+',
+                                            remoteDirectory: '',
+                                            remoteDirectorySDF: false,
+                                            removePrefix: '',
+                                            sourceFiles: '*.msi'
+                                            ]],
+                                        usePromotionTimestamp: false,
+                                        useWorkspaceInPromotion: false,
+                                        verbose: false
+                                        ]]
+                                    )
+
+                                // deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
+                                jiraComment body: "Version ${PKG_VERSION} sent to staging for user testing.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                                input("Deploy to production?")
+                                writeFile file: "${WORKSPACE}/logs/deployment_request.txt", text: deployment_request
+                                echo deployment_request
+                                cifsPublisher(
+                                    publishers: [[
+                                        configName: 'SCCM Upload',
+                                        transfers: [[
+                                            cleanRemote: false,
+                                            excludes: '',
+                                            flatten: false,
+                                            makeEmptyDirs: false,
+                                            noDefaultExcludes: false,
+                                            patternSeparator: '[, ]+',
+                                            remoteDirectory: '',
+                                            remoteDirectorySDF: false,
+                                            removePrefix: '',
+                                            sourceFiles: '*.msi'
+                                            ]],
+                                        usePromotionTimestamp: false,
+                                        useWorkspaceInPromotion: false,
+                                        verbose: false
+                                        ]]
                                 )
+                            }
 
-                            // deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
-                            jiraComment body: "Version ${PKG_VERSION} sent to staging for user testing.", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                            input("Deploy to production?")
-                            writeFile file: "deployment_request.txt", text: deployment_request
-                            echo deployment_request
-                            cifsPublisher(
-                                publishers: [[
-                                    configName: 'SCCM Upload', 
-                                    transfers: [[
-                                        cleanRemote: false, 
-                                        excludes: '', 
-                                        flatten: false, 
-                                        makeEmptyDirs: false, 
-                                        noDefaultExcludes: false, 
-                                        patternSeparator: '[, ]+', 
-                                        remoteDirectory: '', 
-                                        remoteDirectorySDF: false, 
-                                        removePrefix: '', 
-                                        sourceFiles: '*.msi'
-                                        ]], 
-                                    usePromotionTimestamp: false, 
-                                    useWorkspaceInPromotion: false, 
-                                    verbose: false
-                                    ]]
-                            )
                             // deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
                         }
                     }
                     post {
                         success {
                             jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                            archiveArtifacts artifacts: "deployment_request.txt"
+                            archiveArtifacts artifacts: "logs/deployment_request.txt"
                         }
                     }
                 }
