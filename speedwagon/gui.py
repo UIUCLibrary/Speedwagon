@@ -183,8 +183,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         # File --> Export Log
         export_logs_button = QtWidgets.QAction(" &Export Log", self)
-        icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton)
-        export_logs_button.setIcon(icon)
+
+        export_logs_button.setIcon(
+            self.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton)
+        )
 
         export_logs_button.triggered.connect(self.save_log)
         file_menu.addAction(export_logs_button)
@@ -203,6 +205,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # Help --> Help
         # Create a Help menu item
         help_button = QtWidgets.QAction(" &Help ", self)
+
         help_button.triggered.connect(self.show_help)
         help_menu.addAction(help_button)
 
