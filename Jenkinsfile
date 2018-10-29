@@ -360,7 +360,7 @@ pipeline {
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                             zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
-                            stash includes: "dist/${DOC_ZIP_FILENAME}", name: 'DOCS_ARCHIVE'
+                            stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
 
                         }
                         cleanup{
@@ -892,12 +892,8 @@ pipeline {
                         equals expected: true, actual: params.DEPLOY_DOCS
                     }
                     steps{
-                        script {
-                            if(!params.BUILD_DOCS){
-                                bat "pipenv run python setup.py build_sphinx"
-                            }
-                        }
-                        
+                        unstash "DOCS_ARCHIVE"
+
                         dir("build/docs/html/"){
                             input 'Update project documentation?'
                             sshPublisher(
