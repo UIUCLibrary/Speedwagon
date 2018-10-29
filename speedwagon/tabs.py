@@ -97,7 +97,6 @@ class Tab(AbsTab):
             parent
     ) -> typing.Tuple[typing.Dict[TabWidgets, QtWidgets.QWidget],
                       QtWidgets.QLayout]:
-
         tool_config_layout = QtWidgets.QFormLayout()
 
         name_line = QtWidgets.QLineEdit()
@@ -127,7 +126,6 @@ class Tab(AbsTab):
     def create_workspace(cls, title, parent) -> \
             typing.Tuple[QtWidgets.QWidget, typing.Dict[
                 TabWidgets, QtWidgets.QWidget], QtWidgets.QLayout]:
-
         tool_workspace = QtWidgets.QGroupBox()
 
         tool_workspace.setTitle(title)
@@ -416,12 +414,12 @@ class ToolTab(ItemSelectionTab):
             line_sep = "\n" + "*" * 60
 
             fancy_report = f"{line_sep}" \
-                           f"\n   Report" \
-                           f"{line_sep}" \
-                           f"\n" \
-                           f"\n{report}" \
-                           f"\n" \
-                           f"{line_sep}"
+                f"\n   Report" \
+                f"{line_sep}" \
+                f"\n" \
+                f"\n{report}" \
+                f"\n" \
+                f"{line_sep}"
 
             # self.log_manager.notify(fancy_report)
             self.log_manager.info(fancy_report)
@@ -455,13 +453,9 @@ class WorkflowsTab(ItemSelectionTab):
             return False
         return True
 
-    def start(self, item):
-
-        new_workflow = item()
-        assert isinstance(new_workflow, AbsWorkflow)
-        user_options = (self.options_model.get())
+    def run(self, workflow: AbsWorkflow, options) -> None:
         try:
-            new_workflow.validate_user_options(**user_options)
+            workflow.validate_user_options(**options)
 
             manager_strat = runner_strategies.UsingExternalManagerForAdapter(
                 manager=self.work_manager)
@@ -470,8 +464,8 @@ class WorkflowsTab(ItemSelectionTab):
             print("starting")
 
             runner.run(self.parent,
-                       new_workflow,
-                       user_options,
+                       workflow,
+                       options,
                        self.work_manager.logger)
 
         except ValueError as exc:
@@ -496,7 +490,14 @@ class WorkflowsTab(ItemSelectionTab):
             # msg.setDetailedText("".join(exception_message))
             msg.exec_()
             return
-            #     runner
+
+    def start(self, item):
+
+        new_workflow = item()
+        assert isinstance(new_workflow, AbsWorkflow)
+        user_options = (self.options_model.get())
+
+        self.run(new_workflow, user_options)
 
     def _on_success(self, results, callback):
         print("success")
