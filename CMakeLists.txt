@@ -25,7 +25,7 @@ project(Speedwagon
     VERSION ${SPEEDWAGON_VERSION_MAJOR}.${SPEEDWAGON_VERSION_MINOR}.${SPEEDWAGON_VERSION_PATCH})
 
 get_embedded_python_url(
-    VERSION ${PYTHON_VERSION_STRING} 
+    VERSION ${PYTHON_VERSION_STRING}
     URL_VAR EMBEDDED_PYTHON_URL
     )
 
@@ -125,7 +125,7 @@ if(SPEEDWAGON_SYNC_PYTHON_BUILD_VENV)
 endif()
 
 add_custom_target(wheel
-   DEPENDS ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py3-none-any.whl
+   DEPENDS ${PROJECT_BINARY_DIR}/speedwagon-${SPEEDWAGON_VERSION}-py3-none-any.whl
     )
 
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py3-none-any.whl
