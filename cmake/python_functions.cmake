@@ -9,7 +9,7 @@ function(get_python_version SETUP_PY)
         )
 
     string(STRIP ${PYTHON_PACKAGE_VERSION} PYTHON_PACKAGE_VERSION)
-
+    message(WARNING "PYTHON_PACKAGE_VERSION = ${PYTHON_PACKAGE_VERSION}")
     if(NOT PYTHON_PACKAGE_VERSION MATCHES "^[0-9]\\.[0-9]\\.[0-9](\\.)?(a|b|r|dev)?[0=9]?$")
         message(WARNING "Unable to extract version information from the Python project")
     else()
