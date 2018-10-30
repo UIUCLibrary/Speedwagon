@@ -29,7 +29,7 @@ function(get_python_version SETUP_PY)
 
         if(${PYTHON_PACKAGE_VERSION_parse_size} GREATER_EQUAL 3)
             list(GET PYTHON_PACKAGE_VERSION 2 py_patch)
-            set(${PYTHON_MINOR} ${py_patch} PARENT_SCOPE)
+            set(${PYTHON_PATCH} ${py_patch} PARENT_SCOPE)
         endif(${PYTHON_PACKAGE_VERSION_parse_size} GREATER_EQUAL 3)
     endif()
 endfunction(get_python_version)
