@@ -167,8 +167,17 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
                                           model=self.item_selection_model)
 
         self.actions_widgets, self.actions_layout = self.create_actions()
+        if self.item_selection_model.rowCount() == 0:
+            self.item_selector_view.setVisible(False)
+            self.workspace.setVisible(False)
+            self.actions_widgets['start_button'].setEnabled(False)
+            self._empty_tab_message = QtWidgets.QLabel()
+            self._empty_tab_message.setText("No items available to display")
+            self.tab_layout.addWidget(self._empty_tab_message)
         self.compose_tab_layout()
         self.init_selection()
+
+
 
     def init_selection(self):
         # Set the first item
