@@ -128,7 +128,7 @@ add_custom_target(wheel
    DEPENDS ${PROJECT_BINARY_DIR}/speedwagon-${SPEEDWAGON_VERSION}-py3-none-any.whl
     )
 
-add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py3-none-any.whl
+add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/speedwagon-${SPEEDWAGON_VERSION}-py3-none-any.whl
     COMMAND ${VENV_PYTHON} setup.py build_py --no-compile
     COMMAND ${VENV_PYTHON} setup.py bdist_wheel --bdist-dir ${PROJECT_BINARY_DIR}/python_build --dist-dir ${PROJECT_BINARY_DIR}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
