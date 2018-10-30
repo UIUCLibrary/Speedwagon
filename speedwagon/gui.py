@@ -1,4 +1,5 @@
 import argparse
+import contextlib
 import email
 import logging
 import sys
@@ -114,7 +115,7 @@ class ItemTabsWidget(QtWidgets.QWidget):
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
-    def __init__(self, work_manager: worker.ToolJobManager, tools) -> None:
+    def __init__(self, work_manager: worker.ToolJobManager) -> None:
         super().__init__()
 
         self._work_manager = work_manager
@@ -140,16 +141,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tabWidget.setMinimumHeight(400)
 
         self._tabs: List[speedwagon.tabs.ItemSelectionTab] = []
-
-        tools_tab = tabs.ToolTab(
-            parent=self.tabWidget,
-            tools=tools,
-            work_manager=self._work_manager,
-            log_manager=self.log_manager
-        )
-
-        self.tabWidget.add_tab(tools_tab.tab, "Tools")
-        self._tabs.append(tools_tab)
 
         # Add the tabs widget as the first widget
         self.tabWidget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
@@ -233,7 +224,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         # Show Window
         self.show()
-        self.log_manager.info("READY!")
 
     def set_current_tab(self, tab_name: str):
 
@@ -244,6 +234,17 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                 self.tabWidget.tabs.setCurrentIndex(t)
                 return
         self.log_manager.warning("{} not found".format(tab_name))
+
+    def add_tools(self, tools):
+        tools_tab = tabs.ToolTab(
+            parent=self.tabWidget,
+            tools=tools,
+            work_manager=self._work_manager,
+            log_manager=self.log_manager
+        )
+
+        self.tabWidget.add_tab(tools_tab.tab, "Tools")
+        self._tabs.append(tools_tab)
 
     def add_tab(self, workflow_name, workflows):
         workflows_tab = tabs.WorkflowsTab(
@@ -315,19 +316,31 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
     app.setWindowIcon(QtGui.QIcon(icon.name))
     app.setApplicationVersion(f"{speedwagon.__version__}")
     app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
-    tools = job.available_tools()
-    workflows = job.available_workflows()
     with worker.ToolJobManager() as work_manager:
-        windows = MainWindow(work_manager=work_manager,
-                             tools=tools)
+        windows = MainWindow(work_manager=work_manager)
+        windows.log_manager.info("Loading Tools")
 
-        windows.add_tab("Workflows", workflows)
+        loading_job_stream = io.StringIO()
+        with contextlib.redirect_stderr(loading_job_stream):
+            tools = job.available_tools()
+            windows.add_tools(tools)
+        windows.log_manager.warn(loading_job_stream.getvalue().strip())
+
+        windows.log_manager.info("Loading Workflows")
+        loading_workflows_stream = io.StringIO()
+        with contextlib.redirect_stderr(loading_workflows_stream):
+            workflows = job.available_workflows()
+            windows.add_tab("Workflows", workflows)
+        windows.log_manager.warn(loading_workflows_stream.getvalue().strip())
+
+
 
         windows.setWindowTitle("")
         if args:
             if args.start_tab:
                 windows.set_current_tab(tab_name=args.start_tab)
 
+        windows.log_manager.info("Ready")
         rc = app.exec_()
     sys.exit(rc)
 

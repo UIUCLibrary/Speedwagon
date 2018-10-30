@@ -3,6 +3,7 @@ import importlib
 import inspect
 import logging
 import os
+import sys
 import typing
 from . import tasks
 from . import worker
@@ -170,6 +171,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
 
         except ImportError as e:
             msg = "Unable to load {}. Reason: {}".format(module_file, e)
+            print(msg, file=sys.stderr)
             self.logger.warning(msg)
 
     @property
