@@ -359,9 +359,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        print("Cleaning up")
         self._cleanup()
-        print("Shutting down")
         self._executor.shutdown()
 
     def open(self, parent, runner=WorkRunnerExternal2, *args, **kwargs):

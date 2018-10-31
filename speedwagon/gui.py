@@ -298,8 +298,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             "speedwagon_log_{}.txt".format(epoch_in_minutes),
             "Text Files (*.txt)")
 
-        print(log_file_name)
-        # log_file_name = "logs.txt"
         if not log_file_name:
             return
         with open(log_file_name, "w") as f:
