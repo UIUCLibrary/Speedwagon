@@ -312,7 +312,7 @@ class SplashScreenLogHandler(logging.Handler):
         self.widget = widget
 
     def emit(self, record):
-        self.widget.showMessage(record.msg, QtCore.Qt.AlignCenter)
+        self.widget.showMessage(f"<h3>{record.msg}</h3>", QtCore.Qt.AlignCenter)
 
 
 def main(args: Optional[argparse.Namespace] = None) -> None:
@@ -339,6 +339,7 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
         splash_message_handler.setLevel(logging.INFO)
 
         windows = MainWindow(work_manager=work_manager)
+        windows.show()
 
         windows.log_manager.addHandler(splash_message_handler)
 
@@ -349,13 +350,15 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
         windows.log_manager.debug("Loading Tools")
 
         loading_job_stream = io.StringIO()
+
         with contextlib.redirect_stderr(loading_job_stream):
             tools = job.available_tools()
             windows.add_tools(tools)
 
         tool_error_msgs = loading_job_stream.getvalue().strip()
         if tool_error_msgs:
-            windows.log_manager.warn(tool_error_msgs)
+            for line in tool_error_msgs.split("\n"):
+                windows.log_manager.warn(line)
 
         windows.log_manager.debug("Loading Workflows")
 
@@ -366,7 +369,8 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
         workflow_errors_msg = loading_workflows_stream.getvalue().strip()
 
         if workflow_errors_msg:
-            windows.log_manager.warn(workflow_errors_msg)
+            for line in workflow_errors_msg.split("\n"):
+                windows.log_manager.warn(line)
 
         windows.log_manager.debug("Loading User Interface ")
 
@@ -377,7 +381,7 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
             if args.start_tab:
                 windows.set_current_tab(tab_name=args.start_tab)
         splash.finish(windows)
-        windows.show()
+
         windows.log_manager.info("Ready")
         rc = app.exec_()
     sys.exit(rc)
