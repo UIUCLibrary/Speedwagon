@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.12)
 
 
 include(FetchContent)
-include(CTest)
 find_package(PythonInterp REQUIRED)
 
 message(STATUS "Using Python ${PYTHON_VERSION_STRING} located at \"${PYTHON_EXECUTABLE}\".")
@@ -205,6 +204,7 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
     )
 set(SPEEDWAGON_PYTHON_INTERP pythonw.exe)
 
+include(CTest)
 if(WIN32)
     configure_file(templates/speedwagon.bat.in ${PROJECT_BINARY_DIR}/speedwagon.bat @ONLY)
     list(APPEND TOP_LEVEL_FILES ${PROJECT_BINARY_DIR}/speedwagon.bat)
