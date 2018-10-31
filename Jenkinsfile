@@ -571,46 +571,54 @@ pipeline {
                         }
                     }
                     stages{
-                        stage("CMake Configure"){
-                            options{
-                                timeout(5)
-                            }
-
-                            steps {
-//                                unstash_dependencies("python_deps_cache", "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}")
-
-                                dir("source"){
-                                    bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv && ${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade --quiet && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade && pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev > requirements-dev.txt"
-                                    
-                                    //${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
-                                }
-//                                cache(caches: [[$class: 'ArbitraryFileCache', excludes: '', includes: '**/*', path: "${WORKSPACE}/python_deps_cache"]], maxCacheSize: 250) {
-//                                    tee("logs/standalone_cmake_configure.log") {
-                                        dir("cmake_build") {
-                                            bat "dir"
-                                            cmake arguments: "${WORKSPACE}/source -G \"Visual Studio 14 2015 Win64\" -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
-
-                                        }
-//                                    }
-//                                }
-
-//                                stash includes: 'python_deps_cache/**', name: "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
-                            }
-//                            post{
-//                                always{
-//                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "logs/standalone_cmake_configure.log"]]
-//                                }
+//                        stage("CMake Configure"){
+//                            options{
+//                                timeout(5)
 //                            }
-                        }
+//
+//                            steps {
+////                                unstash_dependencies("python_deps_cache", "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}")
+//
+//                                dir("source"){
+//                                    bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv && ${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade --quiet && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade && pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev > requirements-dev.txt"
+//
+//                                    //${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
+//                                }
+////                                cache(caches: [[$class: 'ArbitraryFileCache', excludes: '', includes: '**/*', path: "${WORKSPACE}/python_deps_cache"]], maxCacheSize: 250) {
+////                                    tee("logs/standalone_cmake_configure.log") {
+//                                        dir("cmake_build") {
+//                                            bat "dir"
+////                                            cmake arguments: "${WORKSPACE}/source -G \"Visual Studio 14 2015 Win64\" -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
+//
+//                                        }
+////                                    }
+////                                }
+//
+////                                stash includes: 'python_deps_cache/**', name: "python_deps_cache_${NODE_NAME}_${JOB_BASE_NAME}"
+//                            }
+////                            post{
+////                                always{
+////                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "logs/standalone_cmake_configure.log"]]
+////                                }
+////                            }
+//                        }
                         stage("CMake Build"){
                             options{
                                 timeout(5)
                             }
                             steps {
 //                                tee("${workspace}/logs/standalone_cmake_build.log") {
-                                dir("cmake_build") {
-                                    cmake arguments: "--build . --config Release --parallel ${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
-                                }
+//                                dir("cmake_build") {
+                                cmakeBuild buildDir: 'cmake_build',
+                                    buildType: 'Release',
+                                    cleanBuild: true,
+                                    cmakeArgs: "--parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv",
+                                    generator: 'Visual Studio 14 2015 Win64',
+                                    installation: "${CMAKE_VERSION}",
+                                    sourceDir: 'source'
+
+//                                    cmake arguments: "--build . --config Release --parallel ${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
+//                                }
 //                                }
                             }
 //                            post{
@@ -985,6 +993,7 @@ pipeline {
                     }
                     post{
                         cleanup{
+
                             cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.*', type: 'INCLUDE']]
                         }
                     }
