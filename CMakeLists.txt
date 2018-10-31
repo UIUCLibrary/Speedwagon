@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 
 
 include(FetchContent)
+include(CTest)
 find_package(PythonInterp REQUIRED)
 
 message(STATUS "Using Python ${PYTHON_VERSION_STRING} located at \"${PYTHON_EXECUTABLE}\".")
@@ -228,58 +229,58 @@ if(WIN32)
         DESTINATION Lib
         )
 #    add_subdirectory(tests)
-###########################################
-enable_testing()
-set(pytests
-    test_pkg_metadata.py
-    test_tasks.py
-    test_tools.py
-    test_ui.py
-    )
-#file(GLOB pytests RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/tests tests/test_*.py)
-
-foreach(pytest_file ${pytests})
-    message(STATUS "Found ${pytest_file}")
-
-
-    execute_process(COMMAND ${VENV_PYTHON} -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} -qq --collect-only
-                    OUTPUT_VARIABLE PYTEST_COLLECTION
-                    ERROR_VARIABLE pytest_std
+    ###########################################
+    enable_testing()
+    set(pytests
+        test_pkg_metadata.py
+        test_tasks.py
+        test_tools.py
+        test_ui.py
         )
-    if(PYTEST_COLLECTION)
-        string(REPLACE "\n" ";" PYTEST_COLLECTION ${PYTEST_COLLECTION})
+    #file(GLOB pytests RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/tests tests/test_*.py)
 
-        foreach(test_name ${PYTEST_COLLECTION})
-            string(REGEX MATCH "::test_.*" test_name ${test_name})
-            if(test_name)
-                string(REPLACE "::" "" test_name ${test_name})
-                string(STRIP ${test_name} test_name)
-                add_test(NAME ${PROJECT_NAME}.pytest.${pytest_file}.${test_name}
-                         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
-                         COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file}::${test_name} --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
-                )
-                set_tests_properties(${PROJECT_NAME}.pytest.${pytest_file}.${test_name} PROPERTIES
-                    RESOURCE_LOCK ${pytest_file}
-                )
-                message(STATUS "Added ${PROJECT_NAME}.pytest.${pytest_file}.${test_name} to CTest")
-            endif()
-        endforeach()
-    else()
-        message(STATUS "Added ${PROJECT_NAME}.pytest.${pytest_file} to CTest")
-        add_test(NAME ${PROJECT_NAME}.pytest.${pytest_file}
-                   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
-            COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
-        )
-
-    endif(PYTEST_COLLECTION)
+    foreach(pytest_file ${pytests})
+        message(STATUS "Found ${pytest_file}")
 
 
-#    add_test(NAME ${PROJECT_NAME}.pytest.${pytest_file}
-#        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
-#        COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} --rootdir=${PROJECT_BINARY_DIR}/standalone
-#    )
+        execute_process(COMMAND ${VENV_PYTHON} -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} -qq --collect-only
+                        OUTPUT_VARIABLE PYTEST_COLLECTION
+                        ERROR_VARIABLE pytest_std
+            )
+        if(PYTEST_COLLECTION)
+            string(REPLACE "\n" ";" PYTEST_COLLECTION ${PYTEST_COLLECTION})
 
-endforeach()
+            foreach(test_name ${PYTEST_COLLECTION})
+                string(REGEX MATCH "::test_.*" test_name ${test_name})
+                if(test_name)
+                    string(REPLACE "::" "" test_name ${test_name})
+                    string(STRIP ${test_name} test_name)
+                    add_test(NAME ${PROJECT_NAME}.pytest.${pytest_file}.${test_name}
+                             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
+                             COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file}::${test_name} --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
+                    )
+                    set_tests_properties(${PROJECT_NAME}.pytest.${pytest_file}.${test_name} PROPERTIES
+                        RESOURCE_LOCK ${pytest_file}
+                    )
+                    message(STATUS "Added ${PROJECT_NAME}.pytest.${pytest_file}.${test_name} to CTest")
+                endif()
+            endforeach()
+        else()
+            message(STATUS "Added ${PROJECT_NAME}.pytest.${pytest_file} to CTest")
+            add_test(NAME ${PROJECT_NAME}.pytest.${pytest_file}
+                       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
+                COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
+            )
+
+        endif(PYTEST_COLLECTION)
+
+
+    #    add_test(NAME ${PROJECT_NAME}.pytest.${pytest_file}
+    #        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
+    #        COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} --rootdir=${PROJECT_BINARY_DIR}/standalone
+    #    )
+
+    endforeach()
 
 ###########################################
     include(cmake/packaging.cmake)
