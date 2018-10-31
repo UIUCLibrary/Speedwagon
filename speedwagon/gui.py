@@ -130,6 +130,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.main_splitter = QtWidgets.QSplitter(self.centralwidget)
         self.main_splitter.setOrientation(QtCore.Qt.Vertical)
         self.main_splitter.setChildrenCollapsible(False)
+        self.main_splitter.setSizePolicy(CONSOLE_SIZE_POLICY)
 
         self.mainLayout.addWidget(self.main_splitter)
 
@@ -312,24 +313,27 @@ class SplashScreenLogHandler(logging.Handler):
         self.widget = widget
 
     def emit(self, record):
-        self.widget.showMessage(f"<h3>{record.msg}</h3>", QtCore.Qt.AlignCenter)
+        self.widget.showMessage(
+            f"{record.msg}",
+            QtCore.Qt.AlignCenter,
+        )
 
 
 def main(args: Optional[argparse.Namespace] = None) -> None:
     app = QtWidgets.QApplication(sys.argv)
 
-    icon = pkg_resources.resource_stream(__name__, "favicon.ico")
-    splash = QtWidgets.QSplashScreen(QtGui.QPixmap(icon.name))
+    logo = pkg_resources.resource_stream(__name__, "logo.png")
+    splash = QtWidgets.QSplashScreen(QtGui.QPixmap(logo.name).scaled(400, 400))
 
     splash.setEnabled(False)
-
     splash.setWindowFlags(
         QtCore.Qt.WindowStaysOnTopHint |
         QtCore.Qt.FramelessWindowHint
     )
-
     splash.show()
 
+
+    icon = pkg_resources.resource_stream(__name__, "favicon.ico")
     app.setWindowIcon(QtGui.QIcon(icon.name))
     app.setApplicationVersion(f"{speedwagon.__version__}")
     app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
@@ -339,8 +343,8 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
         splash_message_handler.setLevel(logging.INFO)
 
         windows = MainWindow(work_manager=work_manager)
-        windows.show()
 
+        windows.show()
         windows.log_manager.addHandler(splash_message_handler)
 
         windows.log_manager.info(
