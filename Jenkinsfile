@@ -608,7 +608,9 @@ pipeline {
                             }
                             steps {
 //                                tee("${workspace}/logs/standalone_cmake_build.log") {
-//                                dir("cmake_build") {
+                                dir("cmake_build") {
+                                    bat "dir > nul"
+                                }
                                 cmakeBuild buildDir: 'cmake_build',
                                     cleanBuild: true,
                                     cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv",
