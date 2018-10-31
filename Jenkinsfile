@@ -610,7 +610,6 @@ pipeline {
 //                                tee("${workspace}/logs/standalone_cmake_build.log") {
 //                                dir("cmake_build") {
                                 cmakeBuild buildDir: 'cmake_build',
-                                    buildType: 'Release',
                                     cleanBuild: true,
                                     cmakeArgs: "--parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv",
                                     generator: 'Visual Studio 14 2015 Win64',
@@ -720,6 +719,13 @@ pipeline {
                         }
 
 
+                    }
+                }
+            }
+            post {
+                cleanup{
+                    dir("cmake_build"){
+                        cmake arguments: "--build . --config Release --target clean"
                     }
                 }
             }
