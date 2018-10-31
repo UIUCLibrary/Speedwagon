@@ -1102,43 +1102,43 @@ pipeline {
             }
 //            bat "tree /A /F"
         }
-//        cleanup {
-            // dir("source"){
-            //     bat "pipenv run python setup.py clean --all"
-            // }
+        cleanup {
+             dir("source"){
+                 bat "pipenv run python setup.py clean --all"
+             }
             
         
 
 
-//            script {
-//                if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
-//                    // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-//                    // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-//
-//                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//                        try {
-//                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging && devpi remove -y ${PKG_NAME}==${PKG_VERSION}"
-//                        } catch (Exception ex) {
-//                            echo "Failed to remove ${PKG_NAME}==${PKG_VERSION} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-//                        }
-//                    }
-//
-//                }
-//            }
-//            cleanup_workspace()
-//            dir('dist') {
-//                deleteDir()
-//            }
-//            dir('build') {
-//                deleteDir()
-//            }
-//            dir('logs') {
-//                deleteDir()
-//            }
-//            dir('reports') {
-//                deleteDir()
-//            }
-//        }
+            script {
+                if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
+                    // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+                    // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+
+                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                        try {
+                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging && devpi remove -y ${PKG_NAME}==${PKG_VERSION}"
+                        } catch (Exception ex) {
+                            echo "Failed to remove ${PKG_NAME}==${PKG_VERSION} from ${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                        }
+                    }
+
+                }
+            }
+            cleanup_workspace()
+            dir('dist') {
+                deleteDir()
+            }
+            dir('build') {
+                deleteDir()
+            }
+            dir('logs') {
+                deleteDir()
+            }
+            dir('reports') {
+                deleteDir()
+            }
+        }
 
     }
 }
