@@ -222,8 +222,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # ##################
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
-        # Show Window
-        self.show()
 
     def set_current_tab(self, tab_name: str):
 
@@ -310,40 +308,81 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.log_manager.info("Saved log to {}".format(log_file_name))
 
 
+class SplashScreenLogHandler(logging.Handler):
+    def __init__(self, widget, level=logging.NOTSET):
+        super().__init__(level)
+        self.widget = widget
+
+    def emit(self, record):
+        self.widget.showMessage(record.msg, QtCore.Qt.AlignCenter)
+
+
 def main(args: Optional[argparse.Namespace] = None) -> None:
     app = QtWidgets.QApplication(sys.argv)
+
     icon = pkg_resources.resource_stream(__name__, "favicon.ico")
+    splash = QtWidgets.QSplashScreen(QtGui.QPixmap(icon.name))
+
+    splash.setEnabled(False)
+
+    splash.setWindowFlags(
+        QtCore.Qt.WindowStaysOnTopHint |
+        QtCore.Qt.FramelessWindowHint
+    )
+
+    splash.show()
+
     app.setWindowIcon(QtGui.QIcon(icon.name))
     app.setApplicationVersion(f"{speedwagon.__version__}")
     app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
+
     with worker.ToolJobManager() as work_manager:
+        splash_message_handler = SplashScreenLogHandler(splash)
+        splash_message_handler.setLevel(logging.INFO)
+
         windows = MainWindow(work_manager=work_manager)
-        windows.log_manager.info("Loading Tools")
+
+        windows.log_manager.addHandler(splash_message_handler)
+
+        windows.log_manager.info(
+            f"{speedwagon.__name__.title()} {speedwagon.__version__}"
+        )
+
+        windows.log_manager.debug("Loading Tools")
 
         loading_job_stream = io.StringIO()
         with contextlib.redirect_stderr(loading_job_stream):
             tools = job.available_tools()
             windows.add_tools(tools)
-        windows.log_manager.warn(loading_job_stream.getvalue().strip())
 
-        windows.log_manager.info("Loading Workflows")
+        tool_error_msgs = loading_job_stream.getvalue().strip()
+        if tool_error_msgs:
+            windows.log_manager.warn(tool_error_msgs)
+
+        windows.log_manager.debug("Loading Workflows")
+
         loading_workflows_stream = io.StringIO()
         with contextlib.redirect_stderr(loading_workflows_stream):
             workflows = job.available_workflows()
             windows.add_tab("Workflows", workflows)
-        windows.log_manager.warn(loading_workflows_stream.getvalue().strip())
+        workflow_errors_msg = loading_workflows_stream.getvalue().strip()
 
+        if workflow_errors_msg:
+            windows.log_manager.warn(workflow_errors_msg)
 
+        windows.log_manager.debug("Loading User Interface ")
+
+        windows.log_manager.removeHandler(splash_message_handler)
 
         windows.setWindowTitle("")
         if args:
             if args.start_tab:
                 windows.set_current_tab(tab_name=args.start_tab)
-
+        splash.finish(windows)
+        windows.show()
         windows.log_manager.info("Ready")
         rc = app.exec_()
     sys.exit(rc)
-
 
 
 if __name__ == '__main__':
