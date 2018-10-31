@@ -61,7 +61,7 @@ setup(
             "speedwagon/workflows/tessdata/eng.traineddata",
             "speedwagon/workflows/tessdata/osd.traineddata",
         ],
-        'speedwagon': ["favicon.ico"],
+        'speedwagon': ["favicon.ico", "logo.png"],
     },
     cmdclass=cmdclass,
 )
