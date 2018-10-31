@@ -725,7 +725,7 @@ pipeline {
             post {
                 cleanup{
                     dir("cmake_build"){
-                        cmake arguments: "--build . --config Release --target clean"
+                        cmake arguments: "--build . --config Release --target clean", installation: "${CMAKE_VERSION}"
                     }
                 }
             }
