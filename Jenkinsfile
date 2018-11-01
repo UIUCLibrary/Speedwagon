@@ -249,20 +249,12 @@ pipeline {
                     post{
                         always{
                             archiveArtifacts artifacts: "logs/pippackages_system_*.log"
-                            cleanWs(patterns: [[pattern: "logs/pippackages_system_*.log", type: 'INCLUDE']])
-//                            dir("logs"){
-//                            script{
-//                                def log_files = findFiles glob: 'logs/pippackages_system_*.log'
-//                                log_files.each { log_file ->
-//                                    echo "Found ${log_file}"
-//                                    archiveArtifacts artifacts: "${log_file}"
-//                                    bat "del ${log_file}"
-//                                }
-////                            }
-//                            }
                         }
                         failure {
                             deleteDir()
+                        }
+                        cleanup{
+                            cleanWs(patterns: [[pattern: "logs/pippackages_system_*.log", type: 'INCLUDE']])
                         }
                     }
                 }
@@ -276,13 +268,6 @@ pipeline {
                             }
                         }
                     }
-//                    post{
-//                        success{
-//                            echo """Name                    = ${PKG_NAME}
-//documentation zip file  = ${DOC_ZIP_FILENAME}
-//Version                 = ${PKG_VERSION}"""
-//                        }
-//                    }
                 }
                 stage("Installing Pipfile"){
                     options{
@@ -295,22 +280,15 @@ pipeline {
 
                         }
                     }
-                  
                     post{
                         always{
-//                            dir("logs"){
-                                script{
-                                    def log_files = findFiles glob: 'logs/pippackages_pipenv_*.log'
-                                    log_files.each { log_file ->
-                                        echo "Found ${log_file}"
-                                        archiveArtifacts artifacts: "${log_file}"
-                                        bat "del ${log_file}"
-                                    }
-                                }
-//                            }
+                            archiveArtifacts artifacts: "logs/pippackages_pipenv_*.log"
                         }
-                        failure{
-                            echo "pipenv failed. try updating Pipfile.lock file."
+                        failure {
+                            deleteDir()
+                        }
+                        cleanup{
+                            cleanWs(patterns: [[pattern: "logs/pippackages_pipenv_*.log", type: 'INCLUDE']])
                         }
                     }
                 }
