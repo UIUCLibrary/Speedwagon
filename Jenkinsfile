@@ -366,7 +366,7 @@ pipeline {
                         }
                     }
                 }
-                stage("Run Pytest Unit Tests"){
+                stage("Run PyTest Unit Tests"){
                     when {
                        equals expected: true, actual: params.TEST_RUN_PYTEST
                     }
