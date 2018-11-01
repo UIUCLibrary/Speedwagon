@@ -459,7 +459,7 @@ pipeline {
                         script{
                             try{
                                 dir("source"){
-                                    bat "pipenv run flake8 speedwagon --format=pylint --tee ${WORKSPACE}\\logs\\flake8.log"
+                                    bat "pipenv run flake8 speedwagon --format=pylint --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                 }
 //                                }
                             } catch (exc) {
