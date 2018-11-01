@@ -240,9 +240,7 @@ pipeline {
 
                         lock("system_python_${env.NODE_NAME}"){
                             bat "${tool 'CPython-3.6'} -m pip install pip --upgrade --quiet"
-//                            tee("") {
                             bat "${tool 'CPython-3.6'} -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
-//                            }
                         }
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
 
@@ -250,16 +248,18 @@ pipeline {
                     }
                     post{
                         always{
+                            archiveArtifacts artifacts: "logs/pippackages_system_*.log"
+                            cleanWs(patterns: [[pattern: "logs/pippackages_system_*.log", type: 'INCLUDE']])
 //                            dir("logs"){
-                            script{
-                                def log_files = findFiles glob: 'logs/pippackages_system_*.log'
-                                log_files.each { log_file ->
-                                    echo "Found ${log_file}"
-                                    archiveArtifacts artifacts: "${log_file}"
-                                    bat "del ${log_file}"
-                                }
+//                            script{
+//                                def log_files = findFiles glob: 'logs/pippackages_system_*.log'
+//                                log_files.each { log_file ->
+//                                    echo "Found ${log_file}"
+//                                    archiveArtifacts artifacts: "${log_file}"
+//                                    bat "del ${log_file}"
+//                                }
+////                            }
 //                            }
-                            }
                         }
                         failure {
                             deleteDir()
