@@ -79,7 +79,8 @@ class ConsoleLogger(logging.Handler):
 
     def emit(self, record):
         try:
-            self.console.add_message(record.msg)
+            msg = self.format(record)
+            self.console.add_message(msg)
         except RuntimeError as e:
             print("Error: {}".format(e), file=sys.stderr)
             traceback.print_tb(e.__traceback__)
@@ -115,8 +116,9 @@ class ItemTabsWidget(QtWidgets.QWidget):
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
-    def __init__(self, work_manager: worker.ToolJobManager) -> None:
+    def __init__(self, work_manager: worker.ToolJobManager, debug=False) -> None:
         super().__init__()
+        self._debug = debug
 
         self._work_manager = work_manager
 
@@ -139,13 +141,15 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         ###########################################################
         # self.tabWidget
         self.tabWidget = ItemTabsWidget(self.main_splitter)
-        self.tabWidget.setMinimumHeight(400)
+        self.tabWidget.setVisible(False)
 
         self._tabs: List[speedwagon.tabs.ItemSelectionTab] = []
 
         # Add the tabs widget as the first widget
         self.tabWidget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
         self.main_splitter.addWidget(self.tabWidget)
+        self.main_splitter.setStretchFactor(0, 0)
+        self.main_splitter.setStretchFactor(1, 2)
 
         ###########################################################
         #  Console
@@ -154,18 +158,20 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.console.setMinimumHeight(75)
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
+
         self._handler = ConsoleLogger(self.console)
-        self._handler.setLevel(logging.INFO)
-        self.log_manager.addHandler(self._handler)
 
         self._log_data = io.StringIO()
         self._log_data_handler = logging.StreamHandler(self._log_data)
-        self._log_data_handler.setLevel(logging.INFO)
+
+        self.log_manager.addHandler(self._handler)
         self.log_manager.addHandler(self._log_data_handler)
 
+        self.debug_mode(debug)
+
         ###########################################################
-        self.main_splitter.setStretchFactor(0, 0)
-        self.main_splitter.setStretchFactor(1, 2)
+
+
         # self.main_splitter.set
         # Add menu bar
         menu_bar = self.menuBar()
@@ -223,6 +229,22 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # ##################
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
+    def debug_mode(self, debug: bool):
+        self._debug = debug
+        if debug:
+            self._set_logging_level(logging.DEBUG)
+
+            formatter = logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+            self._handler.setFormatter(formatter)
+
+        else:
+            self._set_logging_level(logging.INFO)
+
+    def _set_logging_level(self, level):
+        self._handler.setLevel(level)
+        self._log_data_handler.setLevel(level)
 
     def set_current_tab(self, tab_name: str):
 
@@ -244,6 +266,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         self.tabWidget.add_tab(tools_tab.tab, "Tools")
         self._tabs.append(tools_tab)
+        self.tabWidget.setVisible(True)
 
     def add_tab(self, workflow_name, workflows):
         workflows_tab = tabs.WorkflowsTab(
@@ -254,6 +277,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         )
         self._tabs.append(workflows_tab)
         self.tabWidget.add_tab(workflows_tab.tab, workflow_name)
+        self.tabWidget.setVisible(True)
 
     def closeEvent(self, *args, **kwargs):
         self.log_manager.removeHandler(self._handler)
@@ -293,11 +317,12 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         data = self._log_data.getvalue()
 
         epoch_in_minutes = int(time.time() / 60)
-        log_file_name, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self,
-            "Export Log",
-            "speedwagon_log_{}.txt".format(epoch_in_minutes),
-            "Text Files (*.txt)")
+        log_file_name, _ = \
+            QtWidgets.QFileDialog.getSaveFileName(
+                self,
+                "Export Log",
+                "speedwagon_log_{}.txt".format(epoch_in_minutes),
+                "Text Files (*.txt)")
 
         if not log_file_name:
             return
@@ -330,8 +355,8 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
         QtCore.Qt.WindowStaysOnTopHint |
         QtCore.Qt.FramelessWindowHint
     )
-    splash.show()
 
+    splash.show()
 
     icon = pkg_resources.resource_stream(__name__, "favicon.ico")
     app.setWindowIcon(QtGui.QIcon(icon.name))
@@ -340,12 +365,20 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
 
     with worker.ToolJobManager() as work_manager:
         splash_message_handler = SplashScreenLogHandler(splash)
-        splash_message_handler.setLevel(logging.INFO)
 
-        windows = MainWindow(work_manager=work_manager)
+        windows = MainWindow(work_manager=work_manager, debug=args.debug)
+
 
         windows.show()
+        # windows.log_manager.setLevel(logging.DEBUG)
         windows.log_manager.addHandler(splash_message_handler)
+
+        if args.debug:
+            splash_message_handler.setLevel(logging.DEBUG)
+            windows.log_manager.debug("DEBUG mode")
+
+        else:
+            splash_message_handler.setLevel(logging.INFO)
 
         windows.log_manager.info(
             f"{speedwagon.__name__.title()} {speedwagon.__version__}"
