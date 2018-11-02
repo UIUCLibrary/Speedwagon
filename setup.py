@@ -64,5 +64,10 @@ setup(
         'speedwagon': ["favicon.ico", "logo.png"],
     },
     cmdclass=cmdclass,
+    data_files=[
+        ('Speedwagon/data_files', ['data_files/dummy.txt']
+         ),
+
+    ]
 )
 
