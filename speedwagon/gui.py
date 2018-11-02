@@ -16,6 +16,9 @@ import speedwagon
 from .ui import main_window_shell_ui  # type: ignore
 from collections import namedtuple
 
+DEBUG_LOGGING_FORMAT = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
 TAB_WIDGET_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.MinimumExpanding,
     QtWidgets.QSizePolicy.Maximum
@@ -163,6 +166,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         self._log_data = io.StringIO()
         self._log_data_handler = logging.StreamHandler(self._log_data)
+        self._log_data_handler.setFormatter(DEBUG_LOGGING_FORMAT)
 
         self.log_manager.addHandler(self._handler)
         self.log_manager.addHandler(self._log_data_handler)
@@ -233,11 +237,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self._debug = debug
         if debug:
             self._set_logging_level(logging.DEBUG)
-
-            formatter = logging.Formatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-            self._handler.setFormatter(formatter)
+            self._handler.setFormatter(DEBUG_LOGGING_FORMAT)
 
         else:
             self._set_logging_level(logging.INFO)
