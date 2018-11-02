@@ -7,6 +7,7 @@ from abc import ABCMeta, abstractmethod
 
 from PyQt5 import QtWidgets, QtCore
 
+from . import dialog
 from . import runner_strategies
 from . import models
 from .tools import options
@@ -96,7 +97,6 @@ class Tab(AbsTab):
             parent
     ) -> typing.Tuple[typing.Dict[TabWidgets, QtWidgets.QWidget],
                       QtWidgets.QLayout]:
-
         tool_config_layout = QtWidgets.QFormLayout()
 
         name_line = QtWidgets.QLineEdit()
@@ -126,7 +126,6 @@ class Tab(AbsTab):
     def create_workspace(cls, title, parent) -> \
             typing.Tuple[QtWidgets.QWidget, typing.Dict[
                 TabWidgets, QtWidgets.QWidget], QtWidgets.QLayout]:
-
         tool_workspace = QtWidgets.QGroupBox()
 
         tool_workspace.setTitle(title)
@@ -152,7 +151,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         super().__init__(parent, work_manager)
         self.log_manager = log_manager
         self.item_selection_model = item_model
-        self.options_model = None
+        self.options_model: typing.Optional[models.ItemListModel] = None
         self.tab_name = name
 
         self.item_selector_view = self._create_selector_view(
@@ -168,8 +167,17 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
                                           model=self.item_selection_model)
 
         self.actions_widgets, self.actions_layout = self.create_actions()
+        if self.item_selection_model.rowCount() == 0:
+            self.item_selector_view.setVisible(False)
+            self.workspace.setVisible(False)
+            self.actions_widgets['start_button'].setEnabled(False)
+            self._empty_tab_message = QtWidgets.QLabel()
+            self._empty_tab_message.setText("No items available to display")
+            self.tab_layout.addWidget(self._empty_tab_message)
         self.compose_tab_layout()
         self.init_selection()
+
+
 
     def init_selection(self):
         # Set the first item
@@ -218,7 +226,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         return tool_mapper
 
     @abc.abstractmethod
-    def start(self):
+    def start(self, item) -> None:
         pass
 
     @abc.abstractmethod
@@ -246,8 +254,12 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         return actions, tool_actions_layout
 
     def _start(self):
+        selected_workflow = self.item_selection_model.data(
+            self.item_selector_view.selectedIndexes()[0],
+            QtCore.Qt.UserRole)
+
         if self.is_ready_to_start():
-            self.start()
+            self.start(selected_workflow)
 
     @abc.abstractmethod
     def is_ready_to_start(self) -> bool:
@@ -342,19 +354,15 @@ class ToolTab(ItemSelectionTab):
             return False
         return True
 
-    def start(self):
-        # logger = logging.getLogger(__name__)
-        # logger.debug("Start button pressed")
-
-        item = self.item_selection_model.data(
-            self.item_selector_view.selectedIndexes()[0],
-            QtCore.Qt.UserRole
-        )
+    def start(self, item) -> None:
 
         if issubclass(item, AbsTool):
             try:
-                options = self.options_model.get()
-                item.validate_user_options(**options)
+                if self.options_model is None:
+                    raise Exception("Tools not loaded")
+
+                selected_options = self.options_model.get()
+                item.validate_user_options(**selected_options)
             except Exception as e:
                 msg = QtWidgets.QMessageBox(self.parent)
                 msg.setIcon(QtWidgets.QMessageBox.Warning)
@@ -377,7 +385,8 @@ class ToolTab(ItemSelectionTab):
             # manager_strat = runner_strategies.UsingWorkManager()
             runner = runner_strategies.RunRunner(manager_strat)
 
-            runner.run(self.parent, item(), options, self.work_manager.logger)
+            runner.run(self.parent, item(),
+                       selected_options, self.work_manager.logger)
 
         else:
             QtWidgets.QMessageBox.warning(self.parent,
@@ -397,11 +406,11 @@ class ToolTab(ItemSelectionTab):
                 tb=exc.__traceback__
             )
 
-            msg = QtWidgets.QMessageBox(self.parent)
-            msg.setIcon(QtWidgets.QMessageBox.Warning)
+            msg = dialog.ErrorDialogBox(self.parent)
             msg.setWindowTitle(str(type(exc).__name__))
             msg.setText(str(exc))
             msg.setDetailedText("".join(exception_message))
+            # msg.setStyleSheet("QLabel{min-width: 700px;}")
             msg.exec_()
 
     def _on_success(self, results, callback):
@@ -414,12 +423,12 @@ class ToolTab(ItemSelectionTab):
             line_sep = "\n" + "*" * 60
 
             fancy_report = f"{line_sep}" \
-                           f"\n   Report" \
-                           f"{line_sep}" \
-                           f"\n" \
-                           f"\n{report}" \
-                           f"\n" \
-                           f"{line_sep}"
+                f"\n   Report" \
+                f"{line_sep}" \
+                f"\n" \
+                f"\n{report}" \
+                f"\n" \
+                f"{line_sep}"
 
             # self.log_manager.notify(fancy_report)
             self.log_manager.info(fancy_report)
@@ -453,16 +462,9 @@ class WorkflowsTab(ItemSelectionTab):
             return False
         return True
 
-    def start(self):
-        selected_workflow = self.item_selection_model.data(
-            self.item_selector_view.selectedIndexes()[0],
-            QtCore.Qt.UserRole)
-
-        new_workflow = selected_workflow()
-        assert isinstance(new_workflow, AbsWorkflow)
-        user_options = (self.options_model.get())
+    def run(self, workflow: AbsWorkflow, options) -> None:
         try:
-            new_workflow.validate_user_options(**user_options)
+            workflow.validate_user_options(**options)
 
             manager_strat = runner_strategies.UsingExternalManagerForAdapter(
                 manager=self.work_manager)
@@ -471,8 +473,8 @@ class WorkflowsTab(ItemSelectionTab):
             print("starting")
 
             runner.run(self.parent,
-                       new_workflow,
-                       user_options,
+                       workflow,
+                       options,
                        self.work_manager.logger)
 
         except ValueError as exc:
@@ -497,7 +499,14 @@ class WorkflowsTab(ItemSelectionTab):
             # msg.setDetailedText("".join(exception_message))
             msg.exec_()
             return
-            #     runner
+
+    def start(self, item):
+
+        new_workflow = item()
+        assert isinstance(new_workflow, AbsWorkflow)
+        user_options = (self.options_model.get())
+
+        self.run(new_workflow, user_options)
 
     def _on_success(self, results, callback):
         print("success")

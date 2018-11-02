@@ -414,7 +414,8 @@ class HathiPackageCompletenessJob(ProcessJobWorker):
         if check_ocr:
             extensions.append(".xml")
         missing_files_errors = validate_process.run_validation(
-            validator.ValidateComponents(package_path, "^\d{8}$", *extensions))
+            validator.ValidateComponents(
+                package_path, "^[0-9]{8}$", *extensions))
 
         if not missing_files_errors:
 

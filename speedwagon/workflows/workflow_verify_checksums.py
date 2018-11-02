@@ -1,3 +1,4 @@
+import abc
 import collections
 import itertools
 import os
@@ -228,14 +229,45 @@ class ValidateChecksumTask(speedwagon.tasks.Subtask):
             ResultValues.PATH: self._file_path,
             ResultValues.CHECKSUM_REPORT_FILE: self._source_report
         }
-        if actual_md5 != self._expected_hash:
+
+        standard_comparison = CaseSensitiveComparison()
+        valid_but_warnable_strategy = CaseInsensitiveComparison()
+
+        if standard_comparison.compare(actual_md5, self._expected_hash):
+            result[ResultValues.VALID] = True
+
+            # if actual_md5 != self._expected_hash:
+
+        elif valid_but_warnable_strategy.compare(actual_md5,
+                                                 self._expected_hash):
+            result[ResultValues.VALID] = True
+            self.log(f"Hash for {self._file_name} is valid but is presented"
+                     f"in a different format than expected."
+                     f"Expected: {self._expected_hash}. Actual: {actual_md5}")
+        else:
             self.log(f"Hash mismatch for {self._file_name}. "
                      f"Expected: {self._expected_hash}. Actual: {actual_md5}")
-
             result[ResultValues.VALID] = False
-        else:
-            result[ResultValues.VALID] = True
 
         self.set_results(result)
 
         return True
+
+
+class AbsComparisonMethod(metaclass=abc.ABCMeta):
+
+    @abc.abstractmethod
+    def compare(self, a: str, b: str) -> bool:
+        pass
+
+
+class CaseSensitiveComparison(AbsComparisonMethod):
+
+    def compare(self, a: str, b: str) -> bool:
+        return a == b
+
+
+class CaseInsensitiveComparison(AbsComparisonMethod):
+
+    def compare(self, a: str, b: str) -> bool:
+        return a.lower() == b.lower()

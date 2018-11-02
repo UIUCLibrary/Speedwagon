@@ -106,8 +106,9 @@ class ZipPackageJob(ProcessJobWorker):
         my_logger.setLevel(logging.INFO)
         with self.log_config(my_logger):
             self.log("Zipping {}".format(source_path))
-            hathizip.process.compress_folder(path=source_path,
-                                             dst=destination_path)
+            hathizip.process.compress_folder_inplace(
+                path=source_path,
+                dst=destination_path)
 
             basename = os.path.basename(source_path)
             newfile = os.path.join(destination_path, f"{basename}.zip")

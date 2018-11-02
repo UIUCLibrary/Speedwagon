@@ -2,6 +2,18 @@
 
 Release History
 ---------------
+
+0.1.3
++++++
+* General:
+  * Text from the console can be exported to a log file
+* New Workflows:
+   * Generate OCR Files
+* Fixes:
+    * Verify HathiTrust Package Completeness workflow no longer fails on hidden system directories.
+    * DPI is updated when creating access files for hathi
+
+
 0.1.2
 +++++
 * New Tools:
@@ -82,7 +94,3 @@ Release History
 
 Dev
 +++
-* New Workflows:
-   * Generate OCR Files
-* Fixes:
-    * Verify HathiTrust Package Completeness workflow no longer fails on hidden system directories.

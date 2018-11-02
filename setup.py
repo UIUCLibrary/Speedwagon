@@ -29,13 +29,14 @@ setup(
         "pyhathiprep",
         "hathichecksumupdater",
         "uiucprescon-getmarc",
-        "uiucprescon-imagevalidate>=0.1.1",
+        "uiucprescon-imagevalidate>=0.1.3",
         "uiucprescon-ocr>=0.0.1",
-        "uiucprescon-packager[kdu]>=0.2.1",
+        "uiucprescon-packager[kdu]>=0.2.4",
         "pykdu-compress>=0.0.4",
         "setuptools>=30.3.0",
         "importlib_resources",
-        'lxml'
+        'lxml',
+        "py3exiv2bind>=0.1.2",
     ],
     packages=[
         "speedwagon",
@@ -60,7 +61,7 @@ setup(
             "speedwagon/workflows/tessdata/eng.traineddata",
             "speedwagon/workflows/tessdata/osd.traineddata",
         ],
-        'speedwagon': ["favicon.ico"],
+        'speedwagon': ["favicon.ico", "logo.png"],
     },
     cmdclass=cmdclass,
 )

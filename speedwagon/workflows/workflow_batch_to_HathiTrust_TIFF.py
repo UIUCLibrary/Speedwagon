@@ -37,7 +37,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
 
                 try:
                     title_page = additional_data["title_pages"][bib_id]
-                except KeyError as e:
+                except KeyError:
                     print("Unable to locate title page for {}".format(bib_id))
                     title_page = None
 
@@ -224,7 +224,7 @@ class GenerateMarcTask(tasks.Subtask):
             self.log(f"Generated marc.xml in {self._destination}")
             success = True
             result["location"] = marc_file
-        except ValueError as e:
+        except ValueError:
 
             self.log(
                 f"Error! Could not retrieve marc record for {self._bib_id}"

@@ -2,10 +2,13 @@
 @Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
 import org.ds.*
 
+@Library("devpi") _
+
 def PKG_VERSION = "unknown"
 def PKG_NAME = "unknown"
 def CMAKE_VERSION = "cmake3.12"
 def JIRA_ISSUE = ""
+def DOC_ZIP_FILENAME = "doc.zip"
 //                                    script{
 ////                                        def generator_list = []
 ////                                        if(params.PACKAGE_WINDOWS_STANDALONE_MSI){
@@ -33,71 +36,14 @@ def check_jira(){
         // }
     }
 }
-
-def deploy_to_sccm(PkgVersion, JiraIssueKey){
-    script{
-        // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-        def msi_files = findFiles glob: '*.msi'
-
-        def deployment_request = requestDeploy yaml: "deployment.yml", file_name: msi_files[0]
-        cifsPublisher(
-            publishers: [[
-                configName: 'SCCM Staging',
-                transfers: [[
-                    cleanRemote: false,
-                    excludes: '',
-                    flatten: false,
-                    makeEmptyDirs: false,
-                    noDefaultExcludes: false,
-                    patternSeparator: '[, ]+',
-                    remoteDirectory: '',
-                    remoteDirectorySDF: false,
-                    removePrefix: '',
-                    sourceFiles: '*.msi'
-                    ]],
-                usePromotionTimestamp: false,
-                useWorkspaceInPromotion: false,
-                verbose: false
-                ]]
-            )
-
-        // deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
-        jiraComment body: "Version ${PkgVersion} sent to staging for user testing.", issueKey: "${JiraIssueKey}"
-//        jiraComment body: "Version ${PKG_VERSION} sent to staging for user testing.", issueKey: "${params.JIRA_ISSUE_VALUE}"
-        input("Deploy to production?")
-        writeFile file: "deployment_request.txt", text: deployment_request
-        echo deployment_request
-        cifsPublisher(
-            publishers: [[
-                configName: 'SCCM Upload',
-                transfers: [[
-                    cleanRemote: false,
-                    excludes: '',
-                    flatten: false,
-                    makeEmptyDirs: false,
-                    noDefaultExcludes: false,
-                    patternSeparator: '[, ]+',
-                    remoteDirectory: '',
-                    remoteDirectorySDF: false,
-                    removePrefix: '',
-                    sourceFiles: '*.msi'
-                    ]],
-                usePromotionTimestamp: false,
-                useWorkspaceInPromotion: false,
-                verbose: false
-                ]]
-        )
-        // deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
-    }
-}
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
     script{
         def cpack_generators = []
-
+        
         if(BuildWix){
             cpack_generators << "WIX"
         }
-
+        
         if(BuildNSIS){
             cpack_generators << "NSIS"
         }
@@ -108,18 +54,54 @@ def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
     }
 
 }
+
+def capture_ctest_results(PATH){
+    script {
+
+        def glob_expression = "${PATH}/*.xml"
+
+        archiveArtifacts artifacts: "${glob_expression}"
+        xunit testTimeMargin: '3000',
+            thresholdMode: 1,
+            thresholds: [
+                failed(),
+                skipped()
+            ],
+            tools: [
+                CTest(
+                    deleteOutputFiles: true,
+                    failIfNotNew: true,
+                    pattern: "${glob_expression}",
+                    skipNoTestFiles: false,
+                    stopProcessingIfError: true
+                    )
+                ]
+//        def ctest_results = findFiles glob: "${glob_expression}"
+//        ctest_results.each{ ctest_result ->
+//            bat "del ${ctest_result}"
+//        }
+//        dir("${PATH}"){
+//            deleteDir()
+//        }
+    }
+}
 def cleanup_workspace(){
     dir("logs"){
         echo "Cleaning out logs directory"
         deleteDir()
+        bat "dir > nul"
     }
 
     dir("build"){
         echo "Cleaning out build directory"
         deleteDir()
+        bat "dir > nul"
     }
-    dir("source") {
-        stash includes: 'deployment.yml', name: "Deployment"
+
+    dir("dist"){
+        echo "Cleaning out dist directory"
+        deleteDir()
+        bat "dir > nul"
     }
 }
 
@@ -132,14 +114,18 @@ pipeline {
     }
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
-        timeout(20)  // Timeout after 20 minutes. This shouldn't take this long but it hangs for some reason
+//        timeout(25)  // Timeout after 20 minutes. This shouldn't take this long but it hangs for some reason
         checkoutToSubdirectory("source")
+        buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
+        preserveStashes(buildCount: 5)
     }
     environment {
         PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\cache\\"
         WORKON_HOME ="${WORKSPACE}\\pipenv\\"
         build_number = VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
         PIPENV_NOSPIN = "True"
+//        DEVPI_JENKINS_PASSWORD=credentials('DS_devpi')
+        // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
@@ -191,33 +177,31 @@ pipeline {
                 stage("Cleanup"){
                     steps {
                         cleanup_workspace()
+                        dir("source") {
+                            stash includes: 'deployment.yml', name: "Deployment"
+                        }
                     }
                 }
                 stage("Install Python system dependencies"){
                     steps{
-                        lock("system_python_${NODE_NAME}"){
-                          bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
-                        }
-                        tee("logs/pippackages_system_${NODE_NAME}.log") {
-                            bat "${tool 'CPython-3.6'} -m pip list"
+
+                        lock("system_python_${env.NODE_NAME}"){
+                            bat "${tool 'CPython-3.6'} -m pip install pip --upgrade --quiet"
+                            bat "${tool 'CPython-3.6'} -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
                         }
                         bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
+
+
                     }
                     post{
                         always{
-                            dir("logs"){
-                                script{
-                                    def log_files = findFiles glob: '**/pippackages_system_*.log'
-                                    log_files.each { log_file ->
-                                        echo "Found ${log_file}"
-                                        archiveArtifacts artifacts: "${log_file}"
-                                        bat "del ${log_file}"
-                                    }
-                                }
-                            }
+                            archiveArtifacts artifacts: "logs/pippackages_system_*.log"
                         }
                         failure {
                             deleteDir()
+                        }
+                        cleanup{
+                            cleanWs(patterns: [[pattern: "logs/pippackages_system_*.log", type: 'INCLUDE']])
                         }
                     }
                 }
@@ -227,13 +211,8 @@ pipeline {
                             dir("source"){
                                 PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}  setup.py --name").trim()
                                 PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+                                DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
                             }
-                        }
-                    }
-                    post{
-                        success{
-                            echo """Name     = ${PKG_NAME}
-Version  = ${PKG_VERSION}"""
                         }
                     }
                 }
@@ -244,25 +223,19 @@ Version  = ${PKG_VERSION}"""
                     steps {
                         dir("source"){
                             bat "pipenv install --dev --deploy && pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log"
+                            bat "pipenv check"
 
                         }
                     }
-                  
                     post{
                         always{
-                            dir("logs"){
-                                script{
-                                    def log_files = findFiles glob: '**/pippackages_pipenv_*.log'
-                                    log_files.each { log_file ->
-                                        echo "Found ${log_file}"
-                                        archiveArtifacts artifacts: "${log_file}"
-                                        bat "del ${log_file}"
-                                    }
-                                }
-                            }
+                            archiveArtifacts artifacts: "logs/pippackages_pipenv_*.log"
                         }
-                        failure{
-                            echo "pipenv failed. try updating Pipfile.lock file."
+                        failure {
+                            deleteDir()
+                        }
+                        cleanup{
+                            cleanWs(patterns: [[pattern: "logs/pippackages_pipenv_*.log", type: 'INCLUDE']])
                         }
                     }
                 }
@@ -273,33 +246,36 @@ Version  = ${PKG_VERSION}"""
                 stage("Python Package"){
                     steps {
                         
-                        tee('logs/build.log') {
-                            dir("source"){
-                                lock("system_pipenv_${NODE_NAME}"){
-                                    powershell "Start-Process -NoNewWindow -FilePath ${tool 'CPython-3.6'} -ArgumentList '-m pipenv run python setup.py build -b ${WORKSPACE}\\build' -Wait"
-                                }
-                                // bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
+//                        tee('logs/build.log') {
+                        dir("source"){
+                            lock("system_pipenv_${NODE_NAME}"){
+                                powershell "& ${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build | tee ${WORKSPACE}\\logs\\build.log"
                             }
+                            // bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
+//                            }
                         }
                     }
                     post{
                         always{
+                            archiveArtifacts artifacts: "logs/build.log"
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
-                            archiveArtifacts artifacts: "logs/*.log"
                             // bat "dir build"
+                        }
+                        cleanup{
+                            cleanWs(patterns: [[pattern: 'logs/build.log', type: 'INCLUDE']])
                         }
                     }
                 }
                 stage("Sphinx documentation"){
                     steps {
                         echo "Building docs on ${env.NODE_NAME}"
-                        tee('logs/build_sphinx.log') {
-                            dir("source"){
-                                lock("system_pipenv_${NODE_NAME}"){
-                                    bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs"  
-                                }
-                            }   
+//                        tee('logs/build_sphinx.log') {
+                        dir("source"){
+                            lock("system_pipenv_${NODE_NAME}"){
+                                powershell "& ${tool 'CPython-3.6'} -m pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs | tee ${WORKSPACE}\\logs\\build_sphinx.log"
+                            }
                         }
+//                        }
                     }
                     post{
                         always {
@@ -308,17 +284,13 @@ Version  = ${PKG_VERSION}"""
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            script{
-                                // Multibranch jobs add the slash and add the branch to the job name. I need only the job name
-                                def alljob = env.JOB_NAME.tokenize("/") as String[]
-                                def project_name = alljob[0]
-                                dir('build/docs/') {
-                                    zip archive: true, dir: 'html', glob: '', zipFile: "${project_name}-${env.BRANCH_NAME}-docs-html-${env.GIT_COMMIT.substring(0,7)}.zip"
-                                }
-                            }
+                            zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
+                            stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
+
                         }
-                        failure{
-                            echo "Failed to build Python package"
+                        cleanup{
+                            cleanWs(patterns: [[pattern: 'logs/build_sphinx.log', type: 'INCLUDE']])
+                            cleanWs(patterns: [[pattern: "dist/${DOC_ZIP_FILENAME}", type: 'INCLUDE']])
                         }
                     }
                 }
@@ -332,7 +304,7 @@ Version  = ${PKG_VERSION}"""
                     }
                     steps {
                         dir("source"){
-                            bat "pipenv run behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
+                            bat "pipenv run coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
                         }
                     }
                     post {
@@ -341,7 +313,7 @@ Version  = ${PKG_VERSION}"""
                         }
                     }
                 }
-                stage("Run Pytest Unit Tests"){
+                stage("Run PyTest Unit Tests"){
                     when {
                        equals expected: true, actual: params.TEST_RUN_PYTEST
                     }
@@ -350,12 +322,11 @@ Version  = ${PKG_VERSION}"""
                     }
                     steps{
                         dir("source"){
-                            bat "pipenv run py.test --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/pytestcoverage/ --cov=speedwagon"    
-                        }                    
+                            bat "pipenv run coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
+                        }
                     }
                     post {
                         always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/pytestcoverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
                             junit "reports/pytest/${junit_filename}"
                         }
                     }
@@ -366,10 +337,6 @@ Version  = ${PKG_VERSION}"""
                     }
                     steps {
                         dir("source"){
-                            dir("reports/doctests"){
-                                echo "Cleaning doctest reports directory"
-                                deleteDir()
-                            }
                             bat "pipenv run sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees"
                         }
                         bat "move build\\docs\\output.txt ${WORKSPACE}\\reports\\doctest.txt"
@@ -378,6 +345,9 @@ Version  = ${PKG_VERSION}"""
                         always {
                             bat "dir ${WORKSPACE}\\reports"
                             archiveArtifacts artifacts: "reports/doctest.txt"
+                        }
+                        cleanup{
+                            cleanWs(patterns: [[pattern: 'reports/doctest.txt', type: 'INCLUDE']])
                         }
                     }
                 }
@@ -388,20 +358,25 @@ Version  = ${PKG_VERSION}"""
                     steps{
                         script{
                             try{
-                                tee('logs/mypy.log') {
-                                    dir("source"){
-                                        bat "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html"
-                                    }
+//                                tee('logs/mypy.log') {
+                                dir("source"){
+                                    powershell "& pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html | tee ${WORKSPACE}\\logs\\mypy.log"
                                 }
+//                                }
                             } catch (exc) {
                                 echo "MyPy found some warnings"
-                            }
+                            }      
+                    
                         }
                     }
                     post {
                         always {
+                            archiveArtifacts "logs\\mypy.log"
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'logs/mypy.log']], unHealthy: ''
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
+                        }
+                        cleanup{
+                            cleanWs(patterns: [[pattern: 'logs/mypy.log', type: 'INCLUDE']])
                         }
                     }
                 }
@@ -428,11 +403,10 @@ Version  = ${PKG_VERSION}"""
                     steps{
                         script{
                             try{
-                                tee('reports/flake8.log') {
-                                    dir("source"){
-                                        bat "pipenv run flake8 speedwagon --format=pylint"
-                                    }
+                                dir("source"){
+                                    bat "pipenv run flake8 speedwagon --format=pylint --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                 }
+//                                }
                             } catch (exc) {
                                 echo "flake8 found some warnings"
                             }
@@ -440,9 +414,33 @@ Version  = ${PKG_VERSION}"""
                     }
                     post {
                         always {
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'reports/flake8.log']], unHealthy: ''
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'logs/flake8.log']], unHealthy: ''
+                        }
+                        cleanup{
+                            cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
                         }
                     }
+                }
+            }
+            post{
+                always{
+                    dir("source"){
+                        bat "pipenv run coverage combine"
+                        bat "pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml"
+                        bat "pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
+
+                    }
+                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                    publishCoverage adapters: [
+                                    coberturaAdapter('reports/coverage.xml')
+                                    ],
+                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                }
+                cleanup{
+                    cleanWs(patterns: [[pattern: 'reports/coverage.xml', type: 'INCLUDE']])
+                    cleanWs(patterns: [[pattern: 'reports/coverage', type: 'INCLUDE']])
+                    cleanWs(patterns: [[pattern: 'source/.coverage', type: 'INCLUDE']])
+
                 }
             }
         }
@@ -464,9 +462,12 @@ Version  = ${PKG_VERSION}"""
                             }
                             post {
                                 success {
-                                    dir("dist") {
-                                        archiveArtifacts artifacts: "*.whl,*.tar.gz,*.zip", fingerprint: true
-                                    }
+                                    archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
+                                    stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
+                                }
+                                cleanup{
+                                    cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', type: 'INCLUDE']]
+//                                    remove_files("dist/*.whl,dist/*.tar.gz,dist/*.zip")
                                 }
                             }
                         }
@@ -479,6 +480,12 @@ Version  = ${PKG_VERSION}"""
                             customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
                         }
                     }
+
+//                    environment {
+//                        PIPENV_CACHE_DIR="${WORKSPACE}\\pipenvcache\\"
+//                        WORKON_HOME ="${WORKSPACE}\\pipenv\\"
+//                    }
+
                     when{
                         anyOf{
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
@@ -487,114 +494,97 @@ Version  = ${PKG_VERSION}"""
                         }
                     }
                     stages{
-                        stage("CMake Configure"){
-                            steps {
-                                dir("source"){
-                                    bat "${tool 'CPython-3.6'} -m venv ${WORKSPACE}/standalone_venv && ${WORKSPACE}/standalone_venv/Scripts/python.exe -m pip install pip --upgrade && ${WORKSPACE}/standalone_venv/Scripts/pip.exe install setuptools --upgrade"
-                                    bat "pipenv lock --requirements > requirements.txt && pipenv lock --requirements --dev > requirements-dev.txt"
-
-                                    //${WORKSPACE}/standalone_venv/Scripts/pip.exe install -r requirements-dev.txt"
-                                }
-                                tee('configure_standalone_cmake.log') {
-                                    dir("cmake_build") {
-                                        bat "dir"
-                                        cmake arguments: "${WORKSPACE}/source -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${TEMP}/Speegwagon/python_deps -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv", installation: "${CMAKE_VERSION}"
-                                                                               
-                                    }
-                                }
-                            }
-                            post{
-                                always{
-                                    archiveArtifacts artifacts: 'configure_standalone_cmake.log', allowEmptyArchive: true
-                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'configure_standalone_cmake.log']]
-                                }
-                            }
-                        }
                         stage("CMake Build"){
+                            options{
+                                timeout(5)
+                            }
                             steps {
-                                tee('build_standalone_cmake.log') {
-                                    dir("cmake_build") {
-                                        cmake arguments: "--build . --config Release --parallel ${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
-                                    }
+//                                tee("${workspace}/logs/standalone_cmake_build.log") {
+                                dir("cmake_build") {
+                                    bat "dir > nul"
                                 }
+                                cmakeBuild buildDir: 'cmake_build',
+                                    cleanBuild: true,
+                                    cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv",
+                                    generator: 'Visual Studio 14 2015 Win64',
+                                    installation: "${CMAKE_VERSION}",
+                                    sourceDir: 'source'
+
+//                                    cmake arguments: "--build . --config Release --parallel ${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
+//                                }
+//                                }
                             }
-                            post{
-                                always{
-                                    archiveArtifacts artifacts: 'build_standalone_cmake.log', allowEmptyArchive: true
-                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'build_standalone_cmake.log']]
-                                }
-                            }
+//                            post{
+//                                always{
+//                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "${workspace}/logs/standalone_cmake_build.log"]]
+//                                }
+//                            }
                         }
                         stage("CTest"){
+                            options{
+                                timeout(3)
+                            }
+                            environment{
+                                TMPDIR = "${WORKSPACE}/temp"
+                            }
                             steps {
-                                tee('test_standalone_cmake.log') {
-                                    dir("cmake_build") {
-                                        ctest arguments: '-C Release --output-on-failure -C Release --no-compress-output -T test', installation: "${CMAKE_VERSION}"
-                                    }
+                                dir("${WORKSPACE}/temp"){
+                                    bat "dir > nul"
                                 }
+                                dir("logs/ctest"){
+                                    bat "dir"
+                                }
+//                                tee("${workspace}/logs/standalone_cmake_test.log") {
+//                                    dir("cmake_build") {
+                                    ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/logs/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=SpeedwagonBuildNumber${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -V", installation: "${CMAKE_VERSION}"
+//                                    }
+//                                }
                             }
                             post{
                                 always {
-                                    dir("cmake_build") {
-                                        script {
-                                            def ctest_results = findFiles glob: 'Testing/**/Test.xml'
-                                            ctest_results.each{ ctest_result ->
-                                                echo "Found ${ctest_result}"
-                                                archiveArtifacts artifacts: "${ctest_result}", fingerprint: true
-                                                xunit testTimeMargin: '3000',
-                                                    thresholdMode: 1,
-                                                    thresholds: [
-                                                        failed(),
-                                                        skipped()
-                                                    ],
-                                                    tools: [
-                                                        CTest(
-                                                            deleteOutputFiles: true,
-                                                            failIfNotNew: true,
-                                                            pattern: "${ctest_result}",
-                                                            skipNoTestFiles: false,
-                                                            stopProcessingIfError: true
-                                                            )
-                                                        ]
-                                                bat "del ${ctest_result}"
-                                            }
-                                            
-                                        }
-                                    }
-                                    archiveArtifacts artifacts: 'test_standalone_cmake.log', allowEmptyArchive: true
-                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'test_standalone_cmake.log']]
+                                    capture_ctest_results("logs/ctest")
+
+//                                    archiveArtifacts artifacts: 'logs/standalone_cmake_test.log', allowEmptyArchive: true
+//                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'logs/standalone_cmake_test.log']]
                                 }
+                                cleanup{
+                                    cleanWs deleteDirs: true, patterns: [[pattern: 'logs/ctest', type: 'INCLUDE']]
+                                    cleanWs deleteDirs: true, patterns: [[pattern: 'logs/standalone*.log', type: 'INCLUDE']]
+                                }
+
                             }
+
                         }
                         stage("CPack"){
+                            options{
+                                timeout(10)
+                            }
                             steps {
-                                dir("cmake_build") {
+//                                dir("cmake_build") {
 //                                    script{
-                                        cpack arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} -V", installation: "${CMAKE_VERSION}"
+                                cpack(
+                                    arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} --config cmake_build/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
+                                    installation: "${CMAKE_VERSION}"
+                                )
 //                                    }
-                                }
+//                                }
                             }
                             post {
                                 success{
-                                    dir("cmake_build") {
-                                        script{
-                                            def install_files = findFiles glob: "*.msi,*.exe,*.zip"
-                                            install_files.each { installer_file ->
-                                                echo "Found ${installer_file}"
-                                                archiveArtifacts artifacts: "${installer_file}", fingerprint: true
-                                            }
-                                        }
-                                        stash includes: "*.msi,*.exe,*.zip", name: "standalone_installers"
-                                    }
+                                    archiveArtifacts artifacts: "dist/*.msi,dist/*.exe,dist/*.zip", fingerprint: true
+//                                    script{
+//                                        def install_files = findFiles glob: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip"
+//                                        install_files.each { installer_file ->
+//                                            echo "Found ${installer_file}"
+//                                            archiveArtifacts artifacts: "${installer_file}", fingerprint: true
+//                                        }
+//                                    }
+                                    stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
+//                                    }
                                 }
                                 always{
                                     dir("cmake_build"){
-                                        script {
-                                            def wix_logs = findFiles glob: "**/wix.log"
-                                            wix_logs.each { wix_log ->
-                                                archiveArtifacts artifacts: "${wix_log}"
-                                            }
-                                        }
+                                        archiveArtifacts allowEmptyArchive: true, artifacts: "**/wix.log"
                                     }
                                 }
                                 failure {
@@ -614,51 +604,25 @@ Version  = ${PKG_VERSION}"""
                                     }
                                 }
                                 cleanup{
-                                   dir("cmake_build") {
-                                        script{
-                                            def install_files = findFiles glob: "*.msi,*.exe,*.zip"
-                                            install_files.each { installer_file ->
-                                                bat "del ${installer_file}"
-                                            }
-                                        }
+                                    dir("dist"){
+                                        deleteDir()
                                     }
                                 }
-                            }
-                        }
-                        stage("Docker testing"){
-                            agent{
-                                node {
-                                    label 'Windows && Docker'
-                                }
-                            }
-                            options {
-                                timeout(5)
-                            }
-                            steps{
-                                unstash "standalone_installers"
-                                dir("${WORKSPACE}/logs"){bat "dir"}
-                                bat "copy source\\ci\\docker\\windowsserver\\run_install.ps1 . && ${tool 'Docker'} image build -t speedwagon -f source/ci/docker/windowsserver/Dockerfile . && ${tool 'Docker'} container run -v ${WORKSPACE}/logs:c:/logs --rm speedwagon"
-                            }
-                            post{
-                                cleanup{
-                                    bat "del *.msi /F /Q"
-                                    }
-                                always{
-                                    dir("${WORKSPACE}/logs/"){
-                                        archiveArtifacts artifacts: "dockerinstall.log", allowEmptyArchive: true
-                                        bat "del dockerinstall.log /F /Q"
-                                    }
-                                }
+
                             }
                         }
                     }
-                    post{
+                    post {
                         cleanup{
-                            deleteDir()
+                            dir("cmake_build"){
+                                cmake arguments: "--build . --config Release --target clean", installation: "${CMAKE_VERSION}"
+                            }
                         }
                     }
                 }
             }
+
+
         }
         stage("Deploy to Devpi Staging") {
             when {
@@ -671,19 +635,23 @@ Version  = ${PKG_VERSION}"""
                 }
             }
             steps {
+                unstash 'DOCS_ARCHIVE'
+                unstash 'PYTHON_PACKAGES'
+                unstash 'STANDALONE_INSTALLERS'
                 dir("source"){
                     bat "devpi use https://devpi.library.illinois.edu"
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                         bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && ${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                        script {
-                            bat "${tool 'CPython-3.6'} -m devpi upload --from-dir ${WORKSPACE}\\dist"
-                            try {
-                                bat "${tool 'CPython-3.6'} -m devpi upload --only-docs --from-dir ${WORKSPACE}\\dist"
-                            } catch (exc) {
-                                echo "Unable to upload to devpi with docs."
-                            }
+                    }
+                    script {
+                        bat "${tool 'CPython-3.6'} -m devpi upload --from-dir ${WORKSPACE}\\dist"
+                        try {
+                            bat "${tool 'CPython-3.6'} -m devpi upload --only-docs --from-dir ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
+                        } catch (exc) {
+                            echo "Unable to upload to devpi with docs."
                         }
                     }
+//                    }
                 }
             }
         }
@@ -697,7 +665,9 @@ Version  = ${PKG_VERSION}"""
                     }
                 }
             }
-
+            options{
+                timestamps()
+            }
             parallel {
                 stage("Source Distribution: .tar.gz") {
                     agent {
@@ -705,16 +675,31 @@ Version  = ${PKG_VERSION}"""
                             label "Windows && Python3"
                         }
                     }
+                    environment{
+                        TMPDIR = "${WORKSPACE}\\tmp"
+                    }
                     options {
                         skipDefaultCheckout(true)
+
                     }
                     steps {
-                        bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        script {
-                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                    bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${PKG_NAME} -s tar.gz"
+                            lock("system_python_${NODE_NAME}"){
+                                bat "${tool 'CPython-3.6'} -m venv venv"
                             }
-                        }
+
+                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
+                            timeout(10){
+                                bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
+                                devpiTest(
+                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                    url: "https://devpi.library.illinois.edu",
+                                    index: "${env.BRANCH_NAME}_staging",
+                                    pkgName: "${PKG_NAME}",
+                                    pkgVersion: "${PKG_VERSION}",
+                                    pkgRegex: "tar.gz"
+                                )
+                            }
+
                     }
                 }
                 stage("Source Distribution: .zip") {
@@ -727,16 +712,32 @@ Version  = ${PKG_VERSION}"""
                         skipDefaultCheckout(true)
                     }
                     steps {
-                        bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        script {
-                            // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                            // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                            lock("system_python_${NODE_NAME}"){
+                                bat "${tool 'CPython-3.6'} -m venv venv"
                             }
+                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
 
-                            bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip"
-                        }
+                            timeout(10){
+                                devpiTest(
+                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                    url: "https://devpi.library.illinois.edu",
+                                    index: "${env.BRANCH_NAME}_staging",
+                                    pkgName: "${PKG_NAME}",
+                                    pkgVersion: "${PKG_VERSION}",
+                                    pkgRegex: "zip"
+                                )
+                            }
+//                        }
+
+//                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
+////                        script {
+////                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+////                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+////                            }
+////
+////                        }
+////                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging  --clientdir ${WORKSPACE}\\certs\\"
+//                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip --clientdir ${WORKSPACE}\\certs\\"
                     }
                 }
                 stage("Built Distribution: .whl") {
@@ -749,13 +750,28 @@ Version  = ${PKG_VERSION}"""
                         skipDefaultCheckout(true)
                     }
                     steps {
-                        bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
-                        script {
-                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                        lock("system_python_${NODE_NAME}"){
+                            bat "${tool 'CPython-3.6'} -m pip install pip --upgrade && ${tool 'CPython-3.6'} -m venv venv "
+                        }
+                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
+
+                        timeout(5){
+                            devpiTest(
+                                devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                url: "https://devpi.library.illinois.edu",
+                                index: "${env.BRANCH_NAME}_staging",
+                                pkgName: "${PKG_NAME}",
+                                pkgVersion: "${PKG_VERSION}",
+                                pkgRegex: "whl"
+                            )
+                        }
+                    }
+                    post{
+                        failure{
+                            dir("venv"){
+                                deleteDir()
                             }
                         }
-                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl --verbose"
                     }
                 }
             }
@@ -765,12 +781,12 @@ Version  = ${PKG_VERSION}"""
                     script {
                         // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                         // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+                        bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                            bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                            bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
                             
                         }
-                        bat "venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging"
-                        bat "venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
+
                     }
 //                    bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} /DS_Jenkins/${env.BRANCH_NAME}"
 
@@ -784,31 +800,27 @@ Version  = ${PKG_VERSION}"""
                         equals expected: true, actual: params.DEPLOY_DOCS
                     }
                     steps{
-                        script {
-                            if(!params.BUILD_DOCS){
-                                bat "pipenv run python setup.py build_sphinx"
-                            }
-                        }
+                        unstash "DOCS_ARCHIVE"
 
                         dir("build/docs/html/"){
                             input 'Update project documentation?'
                             sshPublisher(
                                 publishers: [
                                     sshPublisherDesc(
-                                        configName: 'apache-ns - lib-dccuser-updater',
-                                        sshLabel: [label: 'Linux'],
-                                        transfers: [sshTransfer(excludes: '',
-                                        execCommand: '',
-                                        execTimeout: 120000,
-                                        flatten: false,
-                                        makeEmptyDirs: false,
-                                        noDefaultExcludes: false,
-                                        patternSeparator: '[, ]+',
-                                        remoteDirectory: "${params.DEPLOY_DOCS_URL_SUBFOLDER}",
-                                        remoteDirectorySDF: false,
-                                        removePrefix: '',
-                                        sourceFiles: '**')],
-                                    usePromotionTimestamp: false,
+                                        configName: 'apache-ns - lib-dccuser-updater', 
+                                        sshLabel: [label: 'Linux'], 
+                                        transfers: [sshTransfer(excludes: '', 
+                                        execCommand: '', 
+                                        execTimeout: 120000, 
+                                        flatten: false, 
+                                        makeEmptyDirs: false, 
+                                        noDefaultExcludes: false, 
+                                        patternSeparator: '[, ]+', 
+                                        remoteDirectory: "${params.DEPLOY_DOCS_URL_SUBFOLDER}", 
+                                        remoteDirectorySDF: false, 
+                                        removePrefix: '', 
+                                        sourceFiles: '**')], 
+                                    usePromotionTimestamp: false, 
                                     useWorkspaceInPromotion: false,
                                     verbose: true
                                     )
@@ -832,40 +844,57 @@ Version  = ${PKG_VERSION}"""
                                 equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
                             }
                         }
+
+                    }
+                    agent{
+                        node{
+                            label "Windows"
+                        }
+                    }
+                    options {
+                        skipDefaultCheckout(true)
                     }
                     steps {
-                        unstash "standalone_installers"
-                        input 'Update standalone to //storage.library.illinois.edu/HathiTrust/Tools/beta/?'
+                        unstash "STANDALONE_INSTALLERS"
                         script{
-                            def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
-                            installer_files.each { installer_file ->
+                            dir("dist"){
+                                def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
+                                input "Update standalone ${installer_files} to //storage.library.illinois.edu/HathiTrust/Tools/beta/?"
+    //                            installer_files.each { installer_file ->
 
-                                cifsPublisher(
-                                    publishers: [[
-                                        configName: 'hathitrust tools',
-                                        transfers: [[
-                                            cleanRemote: false,
-                                            excludes: '',
-                                            flatten: false,
-                                            makeEmptyDirs: false,
-                                            noDefaultExcludes: false,
-                                            patternSeparator: '[, ]+',
-                                            remoteDirectory: 'beta',
-                                            remoteDirectorySDF: false,
-                                            removePrefix: '',
-                                            sourceFiles: "${installer_file}",
-    //                                            sourceFiles: "*.msi,*.exe,*.zip",
-                                            ]],
-                                        usePromotionTimestamp: false,
-                                        useWorkspaceInPromotion: false,
-                                        verbose: false
-                                        ]]
-                                )
-                                jiraComment body: "Added \"${installer_file}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                                    cifsPublisher(
+                                        publishers: [[
+                                            configName: 'hathitrust tools',
+                                            transfers: [[
+                                                cleanRemote: false,
+                                                excludes: '',
+                                                flatten: false,
+                                                makeEmptyDirs: false,
+                                                noDefaultExcludes: false,
+                                                patternSeparator: '[, ]+',
+                                                remoteDirectory: 'beta',
+                                                remoteDirectorySDF: false,
+                                                removePrefix: '',
+                                                sourceFiles: "*.msi,*.exe,*.zip",
+        //                                            sourceFiles: "*.msi,*.exe,*.zip",
+                                                ]],
+                                            usePromotionTimestamp: false,
+                                            useWorkspaceInPromotion: false,
+                                            verbose: false
+                                            ]]
+                                    )
+                                    jiraComment body: "Added \"${installer_files}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${params.JIRA_ISSUE_VALUE}"
+
                             }
                         }
 
 
+                    }
+                    post{
+                        cleanup{
+
+                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.*', type: 'INCLUDE']]
+                        }
                     }
                 }
                 stage("Deploy to DevPi Production") {
@@ -906,69 +935,73 @@ Version  = ${PKG_VERSION}"""
                         }
                         // expression { params.RELEASE == "Release_to_devpi_and_sccm"}
                     }
-
+                    options {
+                        skipDefaultCheckout(true)
+                    }
                     steps {
-                        unstash "msi"
+                        unstash "STANDALONE_INSTALLERS"
                         unstash "Deployment"
-                        deploy_to_sccm(PKG_VERSION, params.JIRA_ISSUE_VALUE)
-//                        script{
-//                            // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-//                            def msi_files = findFiles glob: '*.msi'
-//
-//                            def deployment_request = requestDeploy yaml: "deployment.yml", file_name: msi_files[0]
-//                            cifsPublisher(
-//                                publishers: [[
-//                                    configName: 'SCCM Staging',
-//                                    transfers: [[
-//                                        cleanRemote: false,
-//                                        excludes: '',
-//                                        flatten: false,
-//                                        makeEmptyDirs: false,
-//                                        noDefaultExcludes: false,
-//                                        patternSeparator: '[, ]+',
-//                                        remoteDirectory: '',
-//                                        remoteDirectorySDF: false,
-//                                        removePrefix: '',
-//                                        sourceFiles: '*.msi'
-//                                        ]],
-//                                    usePromotionTimestamp: false,
-//                                    useWorkspaceInPromotion: false,
-//                                    verbose: false
-//                                    ]]
-//                                )
-//
-//                            // deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
-//                            jiraComment body: "Version ${PKG_VERSION} sent to staging for user testing.", issueKey: "${params.JIRA_ISSUE_VALUE}"
-//                            input("Deploy to production?")
-//                            writeFile file: "deployment_request.txt", text: deployment_request
-//                            echo deployment_request
-//                            cifsPublisher(
-//                                publishers: [[
-//                                    configName: 'SCCM Upload',
-//                                    transfers: [[
-//                                        cleanRemote: false,
-//                                        excludes: '',
-//                                        flatten: false,
-//                                        makeEmptyDirs: false,
-//                                        noDefaultExcludes: false,
-//                                        patternSeparator: '[, ]+',
-//                                        remoteDirectory: '',
-//                                        remoteDirectorySDF: false,
-//                                        removePrefix: '',
-//                                        sourceFiles: '*.msi'
-//                                        ]],
-//                                    usePromotionTimestamp: false,
-//                                    useWorkspaceInPromotion: false,
-//                                    verbose: false
-//                                    ]]
-//                            )
-//                            // deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
-//                        }
+                        script{
+                            // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+                            dir("dist"){
+                                def msi_files = findFiles glob: '*.msi'
+                                def deployment_request = requestDeploy yaml: "${WORKSPACE}/deployment.yml", file_name: msi_files[0]
+
+                                cifsPublisher(
+                                    publishers: [[
+                                        configName: 'SCCM Staging',
+                                        transfers: [[
+                                            cleanRemote: false,
+                                            excludes: '',
+                                            flatten: false,
+                                            makeEmptyDirs: false,
+                                            noDefaultExcludes: false,
+                                            patternSeparator: '[, ]+',
+                                            remoteDirectory: '',
+                                            remoteDirectorySDF: false,
+                                            removePrefix: '',
+                                            sourceFiles: '*.msi'
+                                            ]],
+                                        usePromotionTimestamp: false,
+                                        useWorkspaceInPromotion: false,
+                                        verbose: false
+                                        ]]
+                                    )
+
+                                // deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
+                                jiraComment body: "Version ${PKG_VERSION} sent to staging for user testing.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                                input("Deploy to production?")
+                                writeFile file: "${WORKSPACE}/logs/deployment_request.txt", text: deployment_request
+                                echo deployment_request
+                                cifsPublisher(
+                                    publishers: [[
+                                        configName: 'SCCM Upload',
+                                        transfers: [[
+                                            cleanRemote: false,
+                                            excludes: '',
+                                            flatten: false,
+                                            makeEmptyDirs: false,
+                                            noDefaultExcludes: false,
+                                            patternSeparator: '[, ]+',
+                                            remoteDirectory: '',
+                                            remoteDirectorySDF: false,
+                                            removePrefix: '',
+                                            sourceFiles: '*.msi'
+                                            ]],
+                                        usePromotionTimestamp: false,
+                                        useWorkspaceInPromotion: false,
+                                        verbose: false
+                                        ]]
+                                )
+                            }
+
+                            // deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+                        }
                     }
                     post {
                         success {
                             jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                            archiveArtifacts artifacts: "deployment_request.txt"
+                            archiveArtifacts artifacts: "logs/deployment_request.txt"
                         }
                     }
                 }
@@ -978,34 +1011,30 @@ Version  = ${PKG_VERSION}"""
     }
     post {
         failure {
-            echo "Failed!"
+//            echo "Failed!"
 
             script{
                 def help_info = "Pipeline failed. If the problem is old cached data, you might need to purge the testing environment. Try manually running the pipeline again with the parameter FRESH_WORKSPACE checked."
                 echo "${help_info}"
                 if (env.BRANCH_NAME == "master"){
-                    emailext attachLog: true, body: "${help_info}\n${JOB_NAME} has current status of ${currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
+                    emailext attachLog: true, body: "${help_info}\n${JOB_NAME} has current status of ${currentBuild.currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
                 }
             }
-            bat "tree /A /F"
+//            bat "tree /A /F"
         }
         cleanup {
-            // dir("source"){
-            //     bat "pipenv run python setup.py clean --all"
-            // }
+             dir("source"){
+                 bat "pipenv run python setup.py clean --all"
+             }
             
+        
 
-            dir('dist') {
-                deleteDir()
-            }
-            dir('build') {
-                deleteDir()
-            }
+
             script {
                 if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
                     // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                     // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                    
+
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                         try {
                             bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging && devpi remove -y ${PKG_NAME}==${PKG_VERSION}"
@@ -1016,7 +1045,19 @@ Version  = ${PKG_VERSION}"""
 
                 }
             }
-
+            cleanup_workspace()
+            dir('dist') {
+                deleteDir()
+            }
+            dir('build') {
+                deleteDir()
+            }
+            dir('logs') {
+                deleteDir()
+            }
+            dir('reports') {
+                deleteDir()
+            }
         }
 
     }

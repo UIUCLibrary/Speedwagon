@@ -22,10 +22,10 @@ get_python_version(
 
 project(Speedwagon
     LANGUAGES NONE
-    VERSION ${SPEEDWAGON_VERSION})
+    VERSION ${SPEEDWAGON_VERSION_MAJOR}.${SPEEDWAGON_VERSION_MINOR}.${SPEEDWAGON_VERSION_PATCH})
 
 get_embedded_python_url(
-    VERSION ${PYTHON_VERSION_STRING} 
+    VERSION ${PYTHON_VERSION_STRING}
     URL_VAR EMBEDDED_PYTHON_URL
     )
 
@@ -125,10 +125,10 @@ if(SPEEDWAGON_SYNC_PYTHON_BUILD_VENV)
 endif()
 
 add_custom_target(wheel
-   DEPENDS ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py3-none-any.whl
+   DEPENDS ${PROJECT_BINARY_DIR}/speedwagon-${SPEEDWAGON_VERSION}-py3-none-any.whl
     )
 
-add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py3-none-any.whl
+add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/speedwagon-${SPEEDWAGON_VERSION}-py3-none-any.whl
     COMMAND ${VENV_PYTHON} setup.py build_py --no-compile
     COMMAND ${VENV_PYTHON} setup.py bdist_wheel --bdist-dir ${PROJECT_BINARY_DIR}/python_build --dist-dir ${PROJECT_BINARY_DIR}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -179,7 +179,7 @@ add_custom_command(
     OUTPUT
         ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages/speedwagon
     DEPENDS wheel
-    COMMAND ${VENV_PYTHON} -m pip install ${PROJECT_BINARY_DIR}/speedwagon-${PROJECT_VERSION}-py3-none-any.whl -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
+    COMMAND ${VENV_PYTHON} -m pip install ${PROJECT_BINARY_DIR}/speedwagon-${SPEEDWAGON_VERSION}-py3-none-any.whl -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
     COMMENT "Installing ${PROJECT_NAME} to standalone build"
     )
 
@@ -204,6 +204,7 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
     )
 set(SPEEDWAGON_PYTHON_INTERP pythonw.exe)
 
+include(CTest)
 if(WIN32)
     configure_file(templates/speedwagon.bat.in ${PROJECT_BINARY_DIR}/speedwagon.bat @ONLY)
     list(APPEND TOP_LEVEL_FILES ${PROJECT_BINARY_DIR}/speedwagon.bat)
@@ -227,12 +228,61 @@ if(WIN32)
     install(DIRECTORY ${PROJECT_BINARY_DIR}/standalone/Lib/
         DESTINATION Lib
         )
-
-    add_test(NAME unittests
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
-        COMMAND python -m pytest ${PROJECT_SOURCE_DIR}/tests --rootdir=${PROJECT_BINARY_DIR}/standalone
+#    add_subdirectory(tests)
+    ###########################################
+    enable_testing()
+    set(pytests
+        test_pkg_metadata.py
+        test_tasks.py
+        test_tools.py
+        test_ui.py
         )
+    #file(GLOB pytests RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/tests tests/test_*.py)
 
+    foreach(pytest_file ${pytests})
+        message(STATUS "Found ${pytest_file}")
+
+
+        execute_process(COMMAND ${VENV_PYTHON} -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} -qq --collect-only
+                        OUTPUT_VARIABLE PYTEST_COLLECTION
+                        ERROR_VARIABLE pytest_std
+            )
+        if(PYTEST_COLLECTION)
+            string(REPLACE "\n" ";" PYTEST_COLLECTION ${PYTEST_COLLECTION})
+
+            foreach(test_name ${PYTEST_COLLECTION})
+                string(REGEX MATCH "::test_.*" test_name ${test_name})
+                if(test_name)
+                    string(REPLACE "::" "" test_name ${test_name})
+                    string(STRIP ${test_name} test_name)
+                    add_test(NAME ${PROJECT_NAME}.pytest.${pytest_file}.${test_name}
+                             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
+                             COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file}::${test_name} --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
+                    )
+                    set_tests_properties(${PROJECT_NAME}.pytest.${pytest_file}.${test_name} PROPERTIES
+                        RESOURCE_LOCK ${pytest_file}
+                    )
+                    message(STATUS "Added ${PROJECT_NAME}.pytest.${pytest_file}.${test_name} to CTest")
+                endif()
+            endforeach()
+        else()
+            message(STATUS "Added ${PROJECT_NAME}.pytest.${pytest_file} to CTest")
+            add_test(NAME ${PROJECT_NAME}.pytest.${pytest_file}
+                       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
+                COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
+            )
+
+        endif(PYTEST_COLLECTION)
+
+
+    #    add_test(NAME ${PROJECT_NAME}.pytest.${pytest_file}
+    #        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
+    #        COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} --rootdir=${PROJECT_BINARY_DIR}/standalone
+    #    )
+
+    endforeach()
+
+###########################################
     include(cmake/packaging.cmake)
 
     install(DIRECTORY ${PROJECT_BINARY_DIR}/standalone/
@@ -248,7 +298,6 @@ endif()
 
 configure_file(${PROJECT_SOURCE_DIR}/LICENSE ${PROJECT_BINARY_DIR}/LICENSE.txt)
 
-include(CTest)
 
 
 install(FILES
