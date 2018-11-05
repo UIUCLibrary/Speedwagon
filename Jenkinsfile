@@ -558,8 +558,10 @@ pipeline {
 //                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'logs/standalone_cmake_test.log']]
                                 }
                                 cleanup{
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'logs/ctest', type: 'INCLUDE']]
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'logs/standalone*.log', type: 'INCLUDE']]
+                                    cleanWs deleteDirs: true, patterns: [
+                                            [pattern: 'logs/ctest', type: 'INCLUDE'],
+                                            [pattern: 'logs/standalone*.log', type: 'INCLUDE']
+                                        ]
                                 }
 
                             }
@@ -1062,6 +1064,11 @@ pipeline {
 
                 }
             }
+            cleanWs deleteDirs: true, patterns: [
+                    [pattern: 'logs', type: 'INCLUDE'],
+                    [pattern: 'dist', type: 'INCLUDE'],
+                    [pattern: 'build', type: 'INCLUDE'],
+                ]
         }
 
     }
