@@ -289,8 +289,12 @@ pipeline {
 
                         }
                         cleanup{
-                            cleanWs(patterns: [[pattern: 'logs/build_sphinx.log', type: 'INCLUDE']])
-                            cleanWs(patterns: [[pattern: "dist/${DOC_ZIP_FILENAME}", type: 'INCLUDE']])
+                            cleanWs(patterns:
+                                    [
+                                        [pattern: 'logs/build_sphinx.log', type: 'INCLUDE'],
+                                        [pattern: "dist/${DOC_ZIP_FILENAME}", type: 'INCLUDE']
+                                    ]
+                                )
                         }
                     }
                 }
@@ -1058,19 +1062,6 @@ pipeline {
 
                 }
             }
-            cleanup_workspace()
-//            dir('dist') {
-//                deleteDir()
-//            }
-//            dir('build') {
-//                deleteDir()
-//            }
-//            dir('logs') {
-//                deleteDir()
-//            }
-//            dir('reports') {
-//                deleteDir()
-//            }
         }
 
     }
