@@ -1068,6 +1068,7 @@ pipeline {
                     [pattern: 'logs', type: 'INCLUDE'],
                     [pattern: 'dist', type: 'INCLUDE'],
                     [pattern: 'build', type: 'INCLUDE'],
+                    [pattern: 'reports', type: 'INCLUDE'],
                 ]
         }
 
