@@ -439,9 +439,13 @@ pipeline {
                                 sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                 }
                 cleanup{
-                    cleanWs(patterns: [[pattern: 'reports/coverage.xml', type: 'INCLUDE']])
-                    cleanWs(patterns: [[pattern: 'reports/coverage', type: 'INCLUDE']])
-                    cleanWs(patterns: [[pattern: 'source/.coverage', type: 'INCLUDE']])
+                    cleanWs(patterns: [
+                            [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
+                            [pattern: 'reports/coverage', type: 'INCLUDE'],
+                            [pattern: 'source/.coverage', type: 'INCLUDE']
+                        ])
+//                    cleanWs(patterns: [[pattern: 'reports/coverage', type: 'INCLUDE']])
+//                    cleanWs(patterns: [[pattern: 'source/.coverage', type: 'INCLUDE']])
 
                 }
             }
