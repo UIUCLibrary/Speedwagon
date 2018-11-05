@@ -1055,18 +1055,18 @@ pipeline {
                 }
             }
             cleanup_workspace()
-            dir('dist') {
-                deleteDir()
-            }
-            dir('build') {
-                deleteDir()
-            }
-            dir('logs') {
-                deleteDir()
-            }
-            dir('reports') {
-                deleteDir()
-            }
+//            dir('dist') {
+//                deleteDir()
+//            }
+//            dir('build') {
+//                deleteDir()
+//            }
+//            dir('logs') {
+//                deleteDir()
+//            }
+//            dir('reports') {
+//                deleteDir()
+//            }
         }
 
     }
