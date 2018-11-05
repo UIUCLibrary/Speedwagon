@@ -375,6 +375,7 @@ pipeline {
                         always {
                             archiveArtifacts "logs\\mypy.log"
                             warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'logs/mypy.log']], unHealthy: ''
+                            scanForIssues pattern: 'logs/mypy.log', reportEncoding: '', sourceCodeEncoding: '', tool: myPy()
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
                         cleanup{
