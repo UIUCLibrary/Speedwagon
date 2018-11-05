@@ -698,7 +698,8 @@ pipeline {
                                     index: "${env.BRANCH_NAME}_staging",
                                     pkgName: "${PKG_NAME}",
                                     pkgVersion: "${PKG_VERSION}",
-                                    pkgRegex: "tar.gz"
+                                    pkgRegex: "tar.gz",
+                                    detox: true
                                 )
                             }
 
@@ -726,7 +727,8 @@ pipeline {
                                     index: "${env.BRANCH_NAME}_staging",
                                     pkgName: "${PKG_NAME}",
                                     pkgVersion: "${PKG_VERSION}",
-                                    pkgRegex: "zip"
+                                    pkgRegex: "zip",
+                                    detox: true
                                 )
                             }
 //                        }
@@ -764,7 +766,8 @@ pipeline {
                                 index: "${env.BRANCH_NAME}_staging",
                                 pkgName: "${PKG_NAME}",
                                 pkgVersion: "${PKG_VERSION}",
-                                pkgRegex: "whl"
+                                pkgRegex: "whl",
+                                detox: true
                             )
                         }
                     }
