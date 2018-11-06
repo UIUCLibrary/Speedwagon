@@ -383,9 +383,7 @@ pipeline {
 //                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'logs/mypy.log']], unHealthy: ''
 //                            scanForIssues pattern: 'logs/mypy.log', reportEncoding: '', sourceCodeEncoding: '', tool: myPy(), blameDisabled: true
 
-                            dir("source"){
-                                recordIssues enabledForFailure: true, tools: [[name: 'MyPy', pattern: "${WORKSPACE}/logs/mypy.log", tool: myPy()]]
-                            }
+                            recordIssues enabledForFailure: true, tools: [[name: 'MyPy', pattern: "${WORKSPACE}/logs/mypy.log", tool: myPy()]], filters: [includeFile('source/*.py')],
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
                         cleanup{
