@@ -283,7 +283,7 @@ pipeline {
                         always {
 //                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build_sphinx.log']]
 //                            scanForIssues pattern: 'logs/build_sphinx.log', reportEncoding: '', sourceCodeEncoding: '', tool: pep8()
-                            recordIssues enabledForFailure: true, tools: [[pattern: 'logs/build_sphinx.log', tool: pep8()]]
+                            recordIssues enabledForFailure: true, tools: [[name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log', tool: pep8()]]
                             archiveArtifacts artifacts: 'logs/build_sphinx.log'
                         }
                         success{
