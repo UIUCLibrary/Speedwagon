@@ -343,8 +343,8 @@ pipeline {
                         dir("source"){
                             bat "pipenv run sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees"
                         }
-                        dir("build/docs"){
-                            bat "move output.txt ${WORKSPACE}\\reports\\doctest.txt"
+                        dir("reports"){
+                            bat "move ${WORKSPACE}\\build\\docs\\output.txt doctest.txt"
                         }
                     }
                     post{
