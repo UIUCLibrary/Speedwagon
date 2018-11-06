@@ -366,7 +366,8 @@ pipeline {
                             try{
 //                                tee('logs/mypy.log') {
                                 dir("source"){
-                                    powershell "& pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html | tee ${WORKSPACE}\\logs\\mypy.log"
+                                    bat "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
+//                                    powershell "& pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html | tee ${WORKSPACE}\\logs\\mypy.log"
                                 }
 //                                }
                             } catch (exc) {
@@ -377,10 +378,11 @@ pipeline {
                     }
                     post {
                         always {
+                            bat "type ${WORKSPACE}\\logs\\mypy.log"
                             archiveArtifacts "logs\\mypy.log"
 //                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'logs/mypy.log']], unHealthy: ''
 //                            scanForIssues pattern: 'logs/mypy.log', reportEncoding: '', sourceCodeEncoding: '', tool: myPy(), blameDisabled: true
-                            recordIssues enabledForFailure: true, tools: [[pattern: 'logs/mypy.log', tool: myPy()]]
+                            recordIssues enabledForFailure: true, tools: [[name: 'MyPy', pattern: 'logs/mypy.log', tool: myPy()]]
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
                         cleanup{
