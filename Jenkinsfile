@@ -412,7 +412,7 @@ pipeline {
                         script{
                             try{
                                 dir("source"){
-                                    bat "pipenv run flake8 speedwagon --format=pylint --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
+                                    bat "pipenv run flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                 }
 //                                }
                             } catch (exc) {
@@ -423,7 +423,9 @@ pipeline {
                     post {
                         always {
 //                            scanForIssues pattern: 'logs/flake8.log', reportEncoding: '', sourceCodeEncoding: '', tool: pyLint()
-                                recordIssues enabledForFailure: true, tools: [[pattern: 'logs/flake8.log', pattern: 'source/*.py', tool: pyLint()]]
+                              archiveArtifacts 'logs/flake8.log'
+
+                              recordIssues enabledForFailure: true, tools: [[name: 'Flake8', pattern: 'logs/flake8.log', tool: flake8()]]
 //                                recordIssues enabledForFailure: true, tools: [[name: 'Flake8', pattern: 'source/*.py', tool: flake8()]]
 
 //                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'logs/flake8.log']], unHealthy: ''
