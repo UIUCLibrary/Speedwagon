@@ -423,7 +423,9 @@ pipeline {
                     post {
                         always {
 //                            scanForIssues pattern: 'logs/flake8.log', reportEncoding: '', sourceCodeEncoding: '', tool: pyLint()
-                                recordIssues enabledForFailure: true, tools: [[pattern: 'logs/flake8.log', tool: pyLint()]]
+                                recordIssues enabledForFailure: true, tools: [[pattern: 'logs/flake8.log', pattern: 'source/*.py', tool: pyLint()]]
+//                                recordIssues enabledForFailure: true, tools: [[name: 'Flake8', pattern: 'source/*.py', tool: flake8()]]
+
 //                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'logs/flake8.log']], unHealthy: ''
                         }
                         cleanup{
