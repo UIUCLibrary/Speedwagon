@@ -258,7 +258,7 @@ pipeline {
                     post{
                         always{
                             archiveArtifacts artifacts: "logs/build.log"
-                            recordIssues enabledForFailure: true, tools: [[pattern: 'logs/build.log', tool: pyLint()]]
+                            recordIssues enabledForFailure: true, tools: [[name: 'Setuptools Build', pattern: 'logs/build.log', tool: pyLint()]]
 //                            scanForIssues pattern: 'logs/build.log', reportEncoding: '', sourceCodeEncoding: '', tool: pyLint()
 //                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
                             // bat "dir build"
