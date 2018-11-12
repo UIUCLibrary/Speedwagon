@@ -258,7 +258,9 @@ pipeline {
                     post{
                         always{
                             archiveArtifacts artifacts: "logs/build.log"
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
+                            recordIssues enabledForFailure: true, tools: [[name: 'Setuptools Build', pattern: 'logs/build.log', tool: pyLint()]]
+//                            scanForIssues pattern: 'logs/build.log', reportEncoding: '', sourceCodeEncoding: '', tool: pyLint()
+//                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
                             // bat "dir build"
                         }
                         cleanup{
@@ -279,7 +281,9 @@ pipeline {
                     }
                     post{
                         always {
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build_sphinx.log']]
+//                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build_sphinx.log']]
+//                            scanForIssues pattern: 'logs/build_sphinx.log', reportEncoding: '', sourceCodeEncoding: '', tool: pep8()
+                            recordIssues enabledForFailure: true, tools: [[name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log', tool: pep8()]]
                             archiveArtifacts artifacts: 'logs/build_sphinx.log'
                         }
                         success{
@@ -289,8 +293,12 @@ pipeline {
 
                         }
                         cleanup{
-                            cleanWs(patterns: [[pattern: 'logs/build_sphinx.log', type: 'INCLUDE']])
-                            cleanWs(patterns: [[pattern: "dist/${DOC_ZIP_FILENAME}", type: 'INCLUDE']])
+                            cleanWs(patterns:
+                                    [
+                                        [pattern: 'logs/build_sphinx.log', type: 'INCLUDE'],
+                                        [pattern: "dist/${DOC_ZIP_FILENAME}", type: 'INCLUDE']
+                                    ]
+                                )
                         }
                     }
                 }
@@ -339,8 +347,8 @@ pipeline {
                         dir("source"){
                             bat "pipenv run sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees"
                         }
-                        dir("build/docs"){
-                            bat "move output.txt ${WORKSPACE}\\reports\\doctest.txt"
+                        dir("reports"){
+                            bat "move ${WORKSPACE}\\build\\docs\\output.txt doctest.txt"
                         }
                     }
                     post{
@@ -362,7 +370,8 @@ pipeline {
                             try{
 //                                tee('logs/mypy.log') {
                                 dir("source"){
-                                    powershell "& pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html | tee ${WORKSPACE}\\logs\\mypy.log"
+                                    bat "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
+//                                    powershell "& pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html | tee ${WORKSPACE}\\logs\\mypy.log"
                                 }
 //                                }
                             } catch (exc) {
@@ -373,8 +382,12 @@ pipeline {
                     }
                     post {
                         always {
+                            bat "type ${WORKSPACE}\\logs\\mypy.log"
                             archiveArtifacts "logs\\mypy.log"
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'logs/mypy.log']], unHealthy: ''
+//                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'logs/mypy.log']], unHealthy: ''
+//                            scanForIssues pattern: 'logs/mypy.log', reportEncoding: '', sourceCodeEncoding: '', tool: myPy(), blameDisabled: true
+
+                            recordIssues enabledForFailure: true, tools: [[name: 'MyPy', pattern: "logs/mypy.log", tool: myPy()]]
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
                         cleanup{
@@ -406,7 +419,7 @@ pipeline {
                         script{
                             try{
                                 dir("source"){
-                                    bat "pipenv run flake8 speedwagon --format=pylint --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
+                                    bat "pipenv run flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                 }
 //                                }
                             } catch (exc) {
@@ -416,7 +429,13 @@ pipeline {
                     }
                     post {
                         always {
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'logs/flake8.log']], unHealthy: ''
+//                            scanForIssues pattern: 'logs/flake8.log', reportEncoding: '', sourceCodeEncoding: '', tool: pyLint()
+                              archiveArtifacts 'logs/flake8.log'
+
+                              recordIssues enabledForFailure: true, tools: [[name: 'Flake8', pattern: 'logs/flake8.log', tool: flake8()]]
+//                                recordIssues enabledForFailure: true, tools: [[name: 'Flake8', pattern: 'source/*.py', tool: flake8()]]
+
+//                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'logs/flake8.log']], unHealthy: ''
                         }
                         cleanup{
                             cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
@@ -439,9 +458,13 @@ pipeline {
                                 sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                 }
                 cleanup{
-                    cleanWs(patterns: [[pattern: 'reports/coverage.xml', type: 'INCLUDE']])
-                    cleanWs(patterns: [[pattern: 'reports/coverage', type: 'INCLUDE']])
-                    cleanWs(patterns: [[pattern: 'source/.coverage', type: 'INCLUDE']])
+                    cleanWs(patterns: [
+                            [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
+                            [pattern: 'reports/coverage', type: 'INCLUDE'],
+                            [pattern: 'source/.coverage', type: 'INCLUDE']
+                        ])
+//                    cleanWs(patterns: [[pattern: 'reports/coverage', type: 'INCLUDE']])
+//                    cleanWs(patterns: [[pattern: 'source/.coverage', type: 'INCLUDE']])
 
                 }
             }
@@ -550,8 +573,10 @@ pipeline {
 //                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'logs/standalone_cmake_test.log']]
                                 }
                                 cleanup{
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'logs/ctest', type: 'INCLUDE']]
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'logs/standalone*.log', type: 'INCLUDE']]
+                                    cleanWs deleteDirs: true, patterns: [
+                                            [pattern: 'logs/ctest', type: 'INCLUDE'],
+                                            [pattern: 'logs/standalone*.log', type: 'INCLUDE']
+                                        ]
                                 }
 
                             }
@@ -689,17 +714,20 @@ pipeline {
                                 bat "${tool 'CPython-3.6'} -m venv venv"
                             }
 
-                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
-                            timeout(10){
-                                bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
-                                devpiTest(
-                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                    url: "https://devpi.library.illinois.edu",
-                                    index: "${env.BRANCH_NAME}_staging",
-                                    pkgName: "${PKG_NAME}",
-                                    pkgVersion: "${PKG_VERSION}",
-                                    pkgRegex: "tar.gz"
-                                )
+                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
+                            lock("${BUILD_TAG}_${NODE_NAME}"){
+                                timeout(10){
+                                    bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
+                                    devpiTest(
+                                        devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                        url: "https://devpi.library.illinois.edu",
+                                        index: "${env.BRANCH_NAME}_staging",
+                                        pkgName: "${PKG_NAME}",
+                                        pkgVersion: "${PKG_VERSION}",
+                                        pkgRegex: "tar.gz",
+                                        detox: false
+                                    )
+                                }
                             }
 
                     }
@@ -717,17 +745,19 @@ pipeline {
                             lock("system_python_${NODE_NAME}"){
                                 bat "${tool 'CPython-3.6'} -m venv venv"
                             }
-                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
-
-                            timeout(10){
-                                devpiTest(
-                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                    url: "https://devpi.library.illinois.edu",
-                                    index: "${env.BRANCH_NAME}_staging",
-                                    pkgName: "${PKG_NAME}",
-                                    pkgVersion: "${PKG_VERSION}",
-                                    pkgRegex: "zip"
-                                )
+                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
+                            lock("${BUILD_TAG}_${NODE_NAME}"){
+                                timeout(10){
+                                    devpiTest(
+                                        devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                        url: "https://devpi.library.illinois.edu",
+                                        index: "${env.BRANCH_NAME}_staging",
+                                        pkgName: "${PKG_NAME}",
+                                        pkgVersion: "${PKG_VERSION}",
+                                        pkgRegex: "zip",
+                                        detox: false
+                                    )
+                                }
                             }
 //                        }
 
@@ -755,17 +785,19 @@ pipeline {
                         lock("system_python_${NODE_NAME}"){
                             bat "${tool 'CPython-3.6'} -m pip install pip --upgrade && ${tool 'CPython-3.6'} -m venv venv "
                         }
-                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
-
-                        timeout(5){
-                            devpiTest(
-                                devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                url: "https://devpi.library.illinois.edu",
-                                index: "${env.BRANCH_NAME}_staging",
-                                pkgName: "${PKG_NAME}",
-                                pkgVersion: "${PKG_VERSION}",
-                                pkgRegex: "whl"
-                            )
+                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
+                        lock("${BUILD_TAG}_${NODE_NAME}"){
+                            timeout(5){
+                                devpiTest(
+                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                    url: "https://devpi.library.illinois.edu",
+                                    index: "${env.BRANCH_NAME}_staging",
+                                    pkgName: "${PKG_NAME}",
+                                    pkgVersion: "${PKG_VERSION}",
+                                    pkgRegex: "whl",
+                                    detox: false
+                                )
+                            }
                         }
                     }
                     post{
@@ -1047,19 +1079,12 @@ pipeline {
 
                 }
             }
-            cleanup_workspace()
-            dir('dist') {
-                deleteDir()
-            }
-            dir('build') {
-                deleteDir()
-            }
-            dir('logs') {
-                deleteDir()
-            }
-            dir('reports') {
-                deleteDir()
-            }
+            cleanWs deleteDirs: true, patterns: [
+                    [pattern: 'logs', type: 'INCLUDE'],
+                    [pattern: 'dist', type: 'INCLUDE'],
+                    [pattern: 'build', type: 'INCLUDE'],
+                    [pattern: 'reports', type: 'INCLUDE'],
+                ]
         }
 
     }

@@ -94,3 +94,6 @@ Release History
 
 Dev
 +++
+
+* General
+   * Splash screen while loading UI
