@@ -567,17 +567,18 @@ pipeline {
                                         installation: "${CMAKE_VERSION}",
                                         workingDir: 'cmake_build'
                                         )
-                                    ctest(
-                                        arguments: "-T submit",
-                                        installation: "${CMAKE_VERSION}",
-                                        workingDir: 'cmake_build'
-                                        )
+
 
 //                                    }
 //                                }
                             }
                             post{
                                 always {
+                                    ctest(
+                                        arguments: "-T submit",
+                                        installation: "${CMAKE_VERSION}",
+                                        workingDir: 'cmake_build'
+                                        )
                                     capture_ctest_results("logs/ctest")
 
 //                                    archiveArtifacts artifacts: 'logs/standalone_cmake_test.log', allowEmptyArchive: true
