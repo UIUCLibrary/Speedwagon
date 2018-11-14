@@ -530,10 +530,11 @@ pipeline {
                                 }
                                 cmakeBuild buildDir: 'cmake_build',
                                     cleanBuild: true,
-                                    cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv",
+                                    cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=${tool 'CPython-3.6'} -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest",
                                     generator: 'Visual Studio 14 2015 Win64',
                                     installation: "${CMAKE_VERSION}",
-                                    sourceDir: 'source'
+                                    sourceDir: 'source',
+                                    steps: [[withCmake: true]]
 
 //                                    cmake arguments: "--build . --config Release --parallel ${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
 //                                }
@@ -561,12 +562,24 @@ pipeline {
                                 }
 //                                tee("${workspace}/logs/standalone_cmake_test.log") {
 //                                    dir("cmake_build") {
-                                    ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/logs/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=SpeedwagonBuildNumber${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -V", installation: "${CMAKE_VERSION}"
+//                                    ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/logs/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=SpeedwagonBuildNumber${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -V", installation: "${CMAKE_VERSION}"ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/logs/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=SpeedwagonBuildNumber${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -V", installation: "${CMAKE_VERSION}"
+                                    ctest(
+                                        arguments: "-T test -C Release -j ${NUMBER_OF_PROCESSORS}",
+                                        installation: "${CMAKE_VERSION}",
+                                        workingDir: 'cmake_build'
+                                        )
+
+
 //                                    }
 //                                }
                             }
                             post{
                                 always {
+                                    ctest(
+                                        arguments: "-T submit",
+                                        installation: "${CMAKE_VERSION}",
+                                        workingDir: 'cmake_build'
+                                        )
                                     capture_ctest_results("logs/ctest")
 
 //                                    archiveArtifacts artifacts: 'logs/standalone_cmake_test.log', allowEmptyArchive: true
