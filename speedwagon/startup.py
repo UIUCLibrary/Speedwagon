@@ -1,5 +1,9 @@
 import argparse
+import os
+from typing import Dict, Optional
+
 import speedwagon
+from speedwagon import config
 
 
 def parse_args():
@@ -22,3 +26,18 @@ def parse_args():
     )
 
     return parser.parse_args()
+
+
+def get_config(configuration: Optional[config.AbsConfig] = None) -> Dict[
+    str, str]:
+    """Load a configuration """
+    if not configuration:
+        current_config = config.WindowsConfig()
+    else:
+        current_config = configuration
+    config_settings = {
+        "user_data_dir": current_config.get_user_data_directory(),
+        "app_data_dir": current_config.get_app_data_directory()
+    }
+    print(config_settings["app_data_dir"])
+    return config_settings
