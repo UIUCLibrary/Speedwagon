@@ -28,16 +28,10 @@ def parse_args():
     return parser.parse_args()
 
 
-def get_config(configuration: Optional[config.AbsConfig] = None) -> Dict[
-    str, str]:
-    """Load a configuration """
+def get_config(configuration: Optional[config.AbsConfig] = None):
+    """Load a configuration of config.AbsConfig
+    If no argument is included, it will try to guess the best one."""
     if not configuration:
-        current_config = config.WindowsConfig()
+        return config.WindowsConfig()
     else:
-        current_config = configuration
-    config_settings = {
-        "user_data_dir": current_config.get_user_data_directory(),
-        "app_data_dir": current_config.get_app_data_directory()
-    }
-    print(config_settings["app_data_dir"])
-    return config_settings
+        return configuration
