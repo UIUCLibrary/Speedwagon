@@ -42,5 +42,3 @@ def test_get_config(dummy_config):
     assert ("foo" in config) is False
     for i in dummy_config:
         print(i)
-
-
