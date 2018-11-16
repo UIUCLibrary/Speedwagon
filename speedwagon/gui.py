@@ -1,18 +1,18 @@
-import argparse
-import contextlib
 import email
 import logging
 import sys
 import time
 import traceback
 import webbrowser
-from typing import Optional, List
+from typing import List
 import io
 import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui
 import speedwagon.dialog
-from . import job, tabs, worker
+from . import tabs, worker
 import speedwagon
+import speedwagon.startup
+import speedwagon.config
 from .ui import main_window_shell_ui  # type: ignore
 from collections import namedtuple
 
@@ -119,7 +119,9 @@ class ItemTabsWidget(QtWidgets.QWidget):
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
-    def __init__(self, work_manager: worker.ToolJobManager, debug=False) -> None:
+    def __init__(self, work_manager: worker.ToolJobManager, debug=False) -> \
+            None:
+
         super().__init__()
         self._debug = debug
 
@@ -174,7 +176,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.debug_mode(debug)
 
         ###########################################################
-
 
         # self.main_splitter.set
         # Add menu bar
@@ -342,87 +343,3 @@ class SplashScreenLogHandler(logging.Handler):
             f"{record.msg}",
             QtCore.Qt.AlignCenter,
         )
-
-
-def main(args: Optional[argparse.Namespace] = None) -> None:
-    app = QtWidgets.QApplication(sys.argv)
-
-    logo = pkg_resources.resource_stream(__name__, "logo.png")
-    splash = QtWidgets.QSplashScreen(QtGui.QPixmap(logo.name).scaled(400, 400))
-
-    splash.setEnabled(False)
-    splash.setWindowFlags(
-        QtCore.Qt.WindowStaysOnTopHint |
-        QtCore.Qt.FramelessWindowHint
-    )
-
-    splash.show()
-
-    icon = pkg_resources.resource_stream(__name__, "favicon.ico")
-    app.setWindowIcon(QtGui.QIcon(icon.name))
-    app.setApplicationVersion(f"{speedwagon.__version__}")
-    app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
-
-    with worker.ToolJobManager() as work_manager:
-        splash_message_handler = SplashScreenLogHandler(splash)
-
-        windows = MainWindow(work_manager=work_manager, debug=args.debug)
-
-
-        windows.show()
-        # windows.log_manager.setLevel(logging.DEBUG)
-        windows.log_manager.addHandler(splash_message_handler)
-
-        if args.debug:
-            splash_message_handler.setLevel(logging.DEBUG)
-            windows.log_manager.debug("DEBUG mode")
-
-        else:
-            splash_message_handler.setLevel(logging.INFO)
-
-        windows.log_manager.info(
-            f"{speedwagon.__name__.title()} {speedwagon.__version__}"
-        )
-
-        windows.log_manager.debug("Loading Tools")
-
-        loading_job_stream = io.StringIO()
-
-        with contextlib.redirect_stderr(loading_job_stream):
-            tools = job.available_tools()
-            windows.add_tools(tools)
-
-        tool_error_msgs = loading_job_stream.getvalue().strip()
-        if tool_error_msgs:
-            for line in tool_error_msgs.split("\n"):
-                windows.log_manager.warn(line)
-
-        windows.log_manager.debug("Loading Workflows")
-
-        loading_workflows_stream = io.StringIO()
-        with contextlib.redirect_stderr(loading_workflows_stream):
-            workflows = job.available_workflows()
-            windows.add_tab("Workflows", workflows)
-        workflow_errors_msg = loading_workflows_stream.getvalue().strip()
-
-        if workflow_errors_msg:
-            for line in workflow_errors_msg.split("\n"):
-                windows.log_manager.warn(line)
-
-        windows.log_manager.debug("Loading User Interface ")
-
-        windows.log_manager.removeHandler(splash_message_handler)
-
-        windows.setWindowTitle("")
-        if args:
-            if args.start_tab:
-                windows.set_current_tab(tab_name=args.start_tab)
-        splash.finish(windows)
-
-        windows.log_manager.info("Ready")
-        rc = app.exec_()
-    sys.exit(rc)
-
-
-if __name__ == '__main__':
-    main()

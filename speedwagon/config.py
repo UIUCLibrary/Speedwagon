@@ -41,7 +41,7 @@ class AbsConfig(collections.abc.Mapping):
     def __getitem__(self, k):
 
         if k == "user_data_directory":
-            return self.get_app_data_directory()
+            return self.get_user_data_directory()
 
         if k == "app_data_directory":
             return self.get_app_data_directory()
@@ -85,5 +85,5 @@ def generate_default(config_file):
     base_directory = os.path.dirname(config_file)
     if base_directory and not os.path.exists(base_directory):
         os.makedirs(base_directory)
-    with open(config_file, "w"):
-        pass
+    with open(config_file, "w") as f:
+        f.write("[GLOBAL]\n")

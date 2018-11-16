@@ -1,11 +1,12 @@
+import configparser
 import os
 
 from speedwagon import startup
-from speedwagon.config import AbsConfig
+from speedwagon import config
 import pytest
 
 
-class MockConfig(AbsConfig):
+class MockConfig(config.AbsConfig):
         def __init__(self):
 
             super().__init__()
@@ -33,7 +34,7 @@ def dummy_config(tmpdir_factory):
 
 
 def test_get_config(dummy_config):
-    config = startup.get_config(dummy_config)
+    config = startup.get_platform_settings(dummy_config)
     assert config is not None
     assert isinstance(config, MockConfig)
 
@@ -51,3 +52,19 @@ def test_get_config__contains__(dummy_config):
 def test_get_config__iter__(dummy_config):
     for i in dummy_config:
         print(i)
+
+
+def test_read_settings(tmpdir):
+    config_file = tmpdir.mkdir("settings").join("config.ini")
+
+    global_settings = {
+        "tessdata": "~/mytesseractdata"
+    }
+
+    with open(config_file, "w") as f:
+        cfg_parser = configparser.ConfigParser()
+        cfg_parser["GLOBAL"] = global_settings
+        cfg_parser.write(f)
+
+    with config.ConfigManager(config_file) as cfg:
+        assert cfg.global_settings['tessdata'] == "~/mytesseractdata"
