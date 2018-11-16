@@ -35,10 +35,19 @@ def dummy_config(tmpdir_factory):
 def test_get_config(dummy_config):
     config = startup.get_config(dummy_config)
     assert config is not None
-    assert os.path.exists(config['user_data_directory'])
-    assert os.path.exists(config['app_data_directory'])
+    assert isinstance(config, MockConfig)
 
-    assert ("user_data_directory" in config) is True
-    assert ("foo" in config) is False
+
+def test_get_config__getitem__(dummy_config):
+    assert os.path.exists(dummy_config['user_data_directory'])
+    assert os.path.exists(dummy_config['app_data_directory'])
+
+
+def test_get_config__contains__(dummy_config):
+    assert ("user_data_directory" in dummy_config) is True
+    assert ("foo" in dummy_config) is False
+
+
+def test_get_config__iter__(dummy_config):
     for i in dummy_config:
         print(i)
