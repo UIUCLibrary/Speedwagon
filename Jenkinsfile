@@ -813,9 +813,7 @@ pipeline {
                     }
                     post{
                         failure{
-                            dir("venv"){
-                                deleteDir()
-                            }
+                            cleanWs deleteDirs: true, patterns: [[pattern: 'venv', type: 'INCLUDE']]
                         }
                     }
                 }
