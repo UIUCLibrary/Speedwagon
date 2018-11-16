@@ -351,7 +351,7 @@ pipeline {
                     }
                     post{
                         always {
-                            bat "dir ${WORKSPACE}\\reports"
+//                            bat "dir ${WORKSPACE}\\reports"
                             archiveArtifacts artifacts: "reports/doctest.txt"
                         }
                         cleanup{
