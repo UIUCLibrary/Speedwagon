@@ -543,8 +543,10 @@ pipeline {
                                     archiveArtifacts artifacts: "logs/cmake-msbuild.log"
                                     recordIssues enabledForFailure: true, tools: [[name: 'Standalone Builds Warnings', pattern: "logs/cmake-msbuild.log", tool: msBuild()]]
                                 }
-//                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "${workspace}/logs/standalone_cmake_build.log"]]
+                                cleanup{
+                                    cleanWs deleteDirs: true, patterns: [[pattern: 'logs/cmake-msbuild.log', type: 'INCLUDE']]
                                 }
+                            }
 //                            }
                         }
                         stage("CTest"){
