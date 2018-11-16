@@ -39,11 +39,11 @@ def check_jira(){
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
     script{
         def cpack_generators = []
-        
+
         if(BuildWix){
             cpack_generators << "WIX"
         }
-        
+
         if(BuildNSIS){
             cpack_generators << "NSIS"
         }
@@ -150,7 +150,7 @@ pipeline {
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
-    
+
     stages {
         stage("Configure"){
             stages{
@@ -245,7 +245,7 @@ pipeline {
             parallel {
                 stage("Python Package"){
                     steps {
-                        
+
 //                        tee('logs/build.log') {
                         dir("source"){
                             lock("system_pipenv_${NODE_NAME}"){
@@ -376,8 +376,8 @@ pipeline {
 //                                }
                             } catch (exc) {
                                 echo "MyPy found some warnings"
-                            }      
-                    
+                            }
+
                         }
                     }
                     post {
@@ -530,7 +530,7 @@ pipeline {
                                 }
                                 cmakeBuild buildDir: 'cmake_build',
                                     cleanBuild: true,
-                                    cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=${tool 'CPython-3.6'} -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest",
+                                    cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=${tool 'CPython-3.6'} -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest -- -flp:logfile=${WORKSPACE}/logs/cmake-msbuild.log;verbosity=Normal",
                                     generator: 'Visual Studio 14 2015 Win64',
                                     installation: "${CMAKE_VERSION}",
                                     sourceDir: 'source',
@@ -540,10 +540,13 @@ pipeline {
 //                                }
 //                                }
                             }
-//                            post{
-//                                always{
+                            post{
+                                always{
+                                    archiveArtifacts artifacts: "logs/cmake-msbuild.log"
+                                    recordIssues enabledForFailure: true, tools: [[name: 'Standalone Builds Warnings', pattern: "logs/cmake-msbuild.log", tool: msBuild()]]
+                                }
 //                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "${workspace}/logs/standalone_cmake_build.log"]]
-//                                }
+                                }
 //                            }
                         }
                         stage("CTest"){
@@ -831,7 +834,7 @@ pipeline {
                         bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                             bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
-                            
+
                         }
 
                     }
@@ -854,20 +857,20 @@ pipeline {
                             sshPublisher(
                                 publishers: [
                                     sshPublisherDesc(
-                                        configName: 'apache-ns - lib-dccuser-updater', 
-                                        sshLabel: [label: 'Linux'], 
-                                        transfers: [sshTransfer(excludes: '', 
-                                        execCommand: '', 
-                                        execTimeout: 120000, 
-                                        flatten: false, 
-                                        makeEmptyDirs: false, 
-                                        noDefaultExcludes: false, 
-                                        patternSeparator: '[, ]+', 
-                                        remoteDirectory: "${params.DEPLOY_DOCS_URL_SUBFOLDER}", 
-                                        remoteDirectorySDF: false, 
-                                        removePrefix: '', 
-                                        sourceFiles: '**')], 
-                                    usePromotionTimestamp: false, 
+                                        configName: 'apache-ns - lib-dccuser-updater',
+                                        sshLabel: [label: 'Linux'],
+                                        transfers: [sshTransfer(excludes: '',
+                                        execCommand: '',
+                                        execTimeout: 120000,
+                                        flatten: false,
+                                        makeEmptyDirs: false,
+                                        noDefaultExcludes: false,
+                                        patternSeparator: '[, ]+',
+                                        remoteDirectory: "${params.DEPLOY_DOCS_URL_SUBFOLDER}",
+                                        remoteDirectorySDF: false,
+                                        removePrefix: '',
+                                        sourceFiles: '**')],
+                                    usePromotionTimestamp: false,
                                     useWorkspaceInPromotion: false,
                                     verbose: true
                                     )
@@ -1073,8 +1076,8 @@ pipeline {
              dir("source"){
                  bat "pipenv run python setup.py clean --all"
              }
-            
-        
+
+
 
 
             script {
