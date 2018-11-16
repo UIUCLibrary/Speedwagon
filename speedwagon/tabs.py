@@ -177,8 +177,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         self.compose_tab_layout()
         self.init_selection()
 
-
-
     def init_selection(self):
         # Set the first item
         index = self.item_selection_model.index(0, 0)
