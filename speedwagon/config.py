@@ -1,4 +1,7 @@
+import configparser
+import contextlib
 import os
+import sys
 from pathlib import Path
 
 import abc
@@ -53,3 +56,34 @@ class WindowsConfig(AbsConfig):
 
     def get_app_data_directory(self) -> str:
         return os.path.join(os.getenv("LocalAppData"), "Speedwagon")
+
+
+class ConfigManager(contextlib.AbstractContextManager):
+    def __init__(self, config_file):
+        self._config_file = config_file
+
+    def __enter__(self):
+        self.cfg_parser = configparser.ConfigParser()
+        self.cfg_parser.read(self._config_file)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        print("Note: Only able to read settings. "
+              "To change any settings, edit {}".format(self._config_file),
+              file=sys.stderr)
+
+    @property
+    def global_settings(self)->dict:
+        try:
+            return self.cfg_parser["GLOBAL"]
+        except KeyError:
+            print("Unable to load global settings.", file=sys.stderr)
+            return dict()
+
+
+def generate_default(config_file):
+    base_directory = os.path.dirname(config_file)
+    if base_directory and not os.path.exists(base_directory):
+        os.makedirs(base_directory)
+    with open(config_file, "w"):
+        pass
