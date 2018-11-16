@@ -1,5 +1,5 @@
 import argparse
-from typing import Dict, Optional
+from typing import Optional
 
 import speedwagon
 from speedwagon import config
@@ -27,7 +27,8 @@ def parse_args():
     return parser.parse_args()
 
 
-def get_config(configuration: Optional[config.AbsConfig] = None)->config.AbsConfig:
+def get_config(configuration: Optional[config.AbsConfig] = None) -> \
+        config.AbsConfig:
     """Load a configuration of config.AbsConfig
     If no argument is included, it will try to guess the best one."""
     if configuration is None:
