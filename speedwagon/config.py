@@ -6,6 +6,7 @@ from pathlib import Path
 
 import abc
 import collections.abc
+from typing import Optional
 
 
 class AbsConfig(collections.abc.Mapping):
@@ -87,3 +88,15 @@ def generate_default(config_file):
         os.makedirs(base_directory)
     with open(config_file, "w") as f:
         f.write("[GLOBAL]\n")
+
+
+def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
+        AbsConfig:
+
+    """Load a configuration of config.AbsConfig
+    If no argument is included, it will try to guess the best one."""
+
+    if configuration is None:
+        return WindowsConfig()
+    else:
+        return configuration

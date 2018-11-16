@@ -11,7 +11,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 
 import speedwagon
 import speedwagon.config
-from speedwagon import config, worker, job
+from speedwagon import worker, job
 from speedwagon.gui import SplashScreenLogHandler, MainWindow
 
 
@@ -35,17 +35,6 @@ def parse_args():
     )
 
     return parser.parse_args()
-
-
-def get_platform_settings(configuration: Optional[config.AbsConfig] = None) \
-        -> config.AbsConfig:
-    """Load a configuration of config.AbsConfig
-    If no argument is included, it will try to guess the best one."""
-
-    if configuration is None:
-        return config.WindowsConfig()
-    else:
-        return configuration
 
 
 def main(args: Optional[argparse.Namespace] = None) -> None:
@@ -80,7 +69,7 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
         # ==================================================
         # Load configurations
         windows.log_manager.debug("Loading settings")
-        platform_settings = speedwagon.startup.get_platform_settings()
+        platform_settings = speedwagon.config.get_platform_settings()
 
         # Make sure required directories exists
         data_dir = platform_settings.get("user_data_directory")

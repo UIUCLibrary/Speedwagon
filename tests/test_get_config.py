@@ -1,7 +1,7 @@
 import configparser
 import os
 
-from speedwagon import startup
+import speedwagon.config
 from speedwagon import config
 import pytest
 
@@ -34,7 +34,7 @@ def dummy_config(tmpdir_factory):
 
 
 def test_get_config(dummy_config):
-    config = startup.get_platform_settings(dummy_config)
+    config = speedwagon.config.get_platform_settings(dummy_config)
     assert config is not None
     assert isinstance(config, MockConfig)
 
