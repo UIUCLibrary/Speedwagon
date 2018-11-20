@@ -1,5 +1,6 @@
 import io
 import os
+import sys
 
 from typing import List, Any, Optional, Iterator
 import contextlib
@@ -95,6 +96,21 @@ class OCRWorkflow(speedwagon.Workflow):
         return cls.SUPPORTED_IMAGE_TYPES[file_type]
 
     def user_options(self):
+        def valid_tessdata_path(item)->bool:
+
+            if item is None:
+                return False
+
+            if not os.path.exists(item):
+                return False
+
+            for i in os.scandir(item):
+                if os.path.splitext(i.name)[1] == ".traineddata":
+                    break
+            else:
+                return False
+
+            return True
         options = []
 
         package_type = tool_options.ListSelection("Image File Type")
@@ -104,7 +120,16 @@ class OCRWorkflow(speedwagon.Workflow):
 
         language_type = tool_options.ListSelection("Language")
 
-        for lang in self.get_available_languages(path=locate_tessdata()):
+        tessdata_path = self.global_settings.get("tessdata")
+
+        if not valid_tessdata_path(tessdata_path):
+
+            tessdata_path = locate_tessdata()
+
+            print("Note: Invalid setting for tessdata. "
+                  "Using path {} ".format(tessdata_path), file=sys.stderr)
+
+        for lang in self.get_available_languages(path=tessdata_path):
 
             language_type.add_selection(lang)
         options.append(language_type)

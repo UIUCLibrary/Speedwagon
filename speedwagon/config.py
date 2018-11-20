@@ -86,8 +86,18 @@ def generate_default(config_file):
     base_directory = os.path.dirname(config_file)
     if base_directory and not os.path.exists(base_directory):
         os.makedirs(base_directory)
+
+    platform_settings = get_platform_settings()
+    data_dir = platform_settings.get("user_data_directory")
+    tessdata = os.path.join(data_dir, "tessdata")
+
+    config = configparser.ConfigParser()
+    config['GLOBAL'] = {
+        "tessdata": tessdata
+    }
     with open(config_file, "w") as f:
-        f.write("[GLOBAL]\n")
+        config.write(f)
+        # f.write("[GLOBAL]\n")
 
 
 def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \

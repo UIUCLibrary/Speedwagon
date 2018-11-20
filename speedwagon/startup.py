@@ -91,7 +91,9 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
 
         with speedwagon.config.ConfigManager(config_file) as f:
             platform_settings._data.update(f.global_settings)
-
+        # windows.user_settings = platform_settings
+        work_manager.user_settings = platform_settings
+        # ==================================================
         if args.debug:
             splash_message_handler.setLevel(logging.DEBUG)
             windows.log_manager.debug("DEBUG mode")

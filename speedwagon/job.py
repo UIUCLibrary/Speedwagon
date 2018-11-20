@@ -79,6 +79,7 @@ class AbsWorkflow(AbsJob):
 
     def __init__(self) -> None:
         super().__init__()
+        self.global_settings = dict()
 
     @abc.abstractmethod
     def discover_task_metadata(self, initial_results: typing.List[typing.Any],

@@ -4,7 +4,7 @@ import sys
 import time
 import traceback
 import webbrowser
-from typing import List
+from typing import List, Dict
 import io
 import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -124,6 +124,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         super().__init__()
         self._debug = debug
+        self.user_settings = None
 
         self._work_manager = work_manager
 
