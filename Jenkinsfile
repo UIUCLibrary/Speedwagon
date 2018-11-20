@@ -364,19 +364,19 @@ pipeline {
                         equals expected: true, actual: params.TEST_RUN_MYPY
                     }
                     steps{
-                        script{
-                            try{
+//                        script{
+//                            try{
 //                                tee('logs/mypy.log') {
                                 dir("source"){
-                                    bat "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
+                                    bat returnStatus: true, script: "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
 //                                    powershell "& pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html | tee ${WORKSPACE}\\logs\\mypy.log"
                                 }
 //                                }
-                            } catch (exc) {
-                                echo "MyPy found some warnings"
-                            }
+//                            } catch (exc) {
+//                                echo "MyPy found some warnings"
+//                            }
 
-                        }
+//                        }
                     }
                     post {
                         always {
@@ -521,16 +521,19 @@ pipeline {
                             }
                             steps {
 //                                tee("${workspace}/logs/standalone_cmake_build.log") {
-                                dir("cmake_build") {
-                                    bat "dir > nul"
-                                }
+                                bat """mkdir cmake_build || echo ${WORKSPACE}\\cmake_build\\ already exists.
+                                mkdir logs || echo ${WORKSPACE}\\logs\\ already exists
+                                """
+//                                dir("cmake_build") {
+//                                    bat "mkdir ${WORKSPACE}\\logs"
+//                                }
                                 cmakeBuild buildDir: 'cmake_build',
                                     cleanBuild: true,
                                     cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=${tool 'CPython-3.6'} -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest",
                                     generator: 'Visual Studio 14 2015 Win64',
                                     installation: "${CMAKE_VERSION}",
                                     sourceDir: 'source',
-                                    steps: [[args: '-- /flp1:warningsonly;logfile=..\\logs\\cmake-msbuild.log', withCmake: true]]
+                                    steps: [[args: "-- /flp1:warningsonly;logfile=${WORKSPACE}\\logs\\cmake-msbuild.log", withCmake: true]]
 
 //                                    cmake arguments: "--build . --config Release --parallel ${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
 //                                }
