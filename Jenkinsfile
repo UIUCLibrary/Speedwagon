@@ -520,13 +520,9 @@ pipeline {
                                 timeout(5)
                             }
                             steps {
-//                                tee("${workspace}/logs/standalone_cmake_build.log") {
                                 bat """mkdir cmake_build || echo ${WORKSPACE}\\cmake_build\\ already exists.
                                 mkdir logs || echo ${WORKSPACE}\\logs\\ already exists
                                 """
-//                                dir("cmake_build") {
-//                                    bat "mkdir ${WORKSPACE}\\logs"
-//                                }
                                 cmakeBuild buildDir: 'cmake_build',
                                     cleanBuild: true,
                                     cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=${tool 'CPython-3.6'} -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest",
@@ -535,9 +531,6 @@ pipeline {
                                     sourceDir: 'source',
                                     steps: [[args: "-- /flp1:warningsonly;logfile=${WORKSPACE}\\logs\\cmake-msbuild.log", withCmake: true]]
 
-//                                    cmake arguments: "--build . --config Release --parallel ${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
-//                                }
-//                                }
                             }
                             post{
                                 always{
