@@ -1,8 +1,9 @@
 import email
+import os
 from typing import Collection
 
 import pkg_resources
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 
 import speedwagon
 
@@ -102,6 +103,12 @@ class SystemInfoDialog(QtWidgets.QDialog):
         layout.addWidget(self.installed_packages_title)
         layout.addWidget(self.installed_packages_widget)
 
+        self._button_box = \
+            QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
+
+        self._button_box.accepted.connect(self.accept)
+        layout.addWidget(self._button_box)
+
     @staticmethod
     def get_installed_packages() -> Collection:
 
@@ -109,3 +116,64 @@ class SystemInfoDialog(QtWidgets.QDialog):
             (str(pkg) for pkg in pkg_resources.working_set)
 
         return sorted(installed_python_packages, key=lambda x: str(x).lower())
+
+
+class SettingsInformationTab(QtWidgets.QWidget):
+
+    def __init__(self, parent=None, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.parent = parent
+        self.settings_location = None
+        layout = QtWidgets.QGridLayout(self)
+        layout.setAlignment(QtCore.Qt.AlignTop)
+
+        self._notification_information = QtWidgets.QLabel()
+
+        self._notification_information.setMaximumWidth(300)
+        self._notification_information.setWordWrap(True)
+        self._notification_information.setText(
+            "Note:\n"
+            "Configuration currently can be only be made by editing the "
+            "program config file.")
+
+        layout.addWidget(self._notification_information, 0, 0)
+
+        self._goto_settings_button = QtWidgets.QPushButton()
+        self._goto_settings_button.setText("Open")
+        self._goto_settings_button.clicked.connect(self.open_settings)
+        layout.addWidget(self._goto_settings_button, 0, 1)
+        self.setLayout(layout)
+
+    def open_settings(self):
+        if self.settings_location is None:
+            print("No settings found")
+            return
+        os.startfile(self.settings_location)
+        QtWidgets.QMessageBox.information(
+            self, "Note", "Restart to apply changes")
+
+
+class SettingsDialog(QtWidgets.QDialog):
+
+    def __init__(self, settings_location, parent=None, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.settings_location = settings_location
+        self.setWindowTitle("Configuration")
+
+        layout = QtWidgets.QVBoxLayout(self)
+
+        self._tabsWidget = QtWidgets.QTabWidget(self)
+        info_tab = SettingsInformationTab()
+        info_tab.settings_location = self.settings_location
+        self._tabsWidget.addTab(info_tab, "Settings")
+        layout.addWidget(self._tabsWidget)
+
+        self._button_box = \
+            QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
+
+        self._button_box.accepted.connect(self.accept)
+        layout.addWidget(self._button_box)
+
+        self.setLayout(layout)
+        self.setFixedHeight(150)
+        self.setFixedWidth(300)

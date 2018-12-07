@@ -349,6 +349,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         self.futures: typing.List[concurrent.futures.Future] = []
         self.logger = logging.getLogger(__name__)
         self.user_settings = None
+        self.configuration_file = None
 
     def __enter__(self):
         self._message_queue = self.manager.Queue()

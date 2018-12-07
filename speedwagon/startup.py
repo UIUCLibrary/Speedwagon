@@ -93,6 +93,7 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
             platform_settings._data.update(f.global_settings)
         # windows.user_settings = platform_settings
         work_manager.user_settings = platform_settings
+        work_manager.configuration_file = config_file
         # ==================================================
         if args.debug:
             splash_message_handler.setLevel(logging.DEBUG)

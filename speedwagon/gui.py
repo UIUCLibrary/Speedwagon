@@ -4,7 +4,7 @@ import sys
 import time
 import traceback
 import webbrowser
-from typing import List, Dict
+from typing import List
 import io
 import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -203,6 +203,25 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         file_menu.addAction(exit_button)
 
+        system_menu = menu_bar.addMenu("System")
+
+        # System --> Configuration
+        # Create a system info menu item
+
+        system_configuration_menu_item = \
+            QtWidgets.QAction("Configuration", self)
+
+        system_configuration_menu_item.triggered.connect(
+            self.show_configuration)
+
+        system_menu.addAction(system_configuration_menu_item)
+
+        # System --> System Info
+        # Create a system info menu item
+        system_info_menu_item = QtWidgets.QAction("System Info", self)
+        system_info_menu_item.triggered.connect(self.show_system_info)
+        system_menu.addAction(system_info_menu_item)
+
         # Help Menu
         help_menu = menu_bar.addMenu("Help")
 
@@ -212,14 +231,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         help_button.triggered.connect(self.show_help)
         help_menu.addAction(help_button)
-
-        # Help --> System Info
-        # Create a system info menu item
-        system_info_menu_item = QtWidgets.QAction("System Info", self)
-        system_info_menu_item.triggered.connect(self.show_system_info)
-        help_menu.addAction(system_info_menu_item)
-
-        help_menu.addSeparator()
 
         # Help --> About
         # Create an About button
@@ -305,6 +316,13 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     def show_system_info(self) -> None:
         system_info_dialog = speedwagon.dialog.SystemInfoDialog(self)
         system_info_dialog.exec()
+
+    def show_configuration(self) -> None:
+
+        config_dialog = speedwagon.dialog.SettingsDialog(
+            self._work_manager.configuration_file, self)
+
+        config_dialog.exec()
 
     def start_workflow(self):
         num_selected = self._workflow_selector_view.selectedIndexes()
