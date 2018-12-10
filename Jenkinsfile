@@ -748,7 +748,7 @@ pipeline {
                     }
                     steps {
                             lock("system_python_${NODE_NAME}"){
-                                bat "${tool 'CPython-3.6'} -m venv venv"
+                                bat "${tool 'CPython-3.6'}\\python -m venv venv"
                             }
                             bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
                             lock("${BUILD_TAG}_${NODE_NAME}"){
