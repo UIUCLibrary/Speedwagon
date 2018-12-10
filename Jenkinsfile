@@ -602,26 +602,10 @@ pipeline {
                                     stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
 //                                    }
                                 }
-                                always{
+                                failure {
                                     dir("cmake_build"){
                                         archiveArtifacts allowEmptyArchive: true, artifacts: "**/wix.log"
                                     }
-                                }
-                                failure {
-//                                    script{
-//                                        try{
-//                                            def wix_logs = findFiles glob: "**/wix.log"
-//                                            wix_logs.each { wix_log ->
-//                                                def error_message = readFile("${wix_log}")
-//                                                echo "${error_message}"
-//                                            }
-//                                        } catch (exc) {
-//                                            echo "read the wix logs."
-//                                        }
-//                                    }
-                                        dir("cmake_build"){
-                                            cmake arguments: "--build . --target clean", installation: "${CMAKE_VERSION}"
-                                        }
                                 }
                                 cleanup{
                                     cleanWs deleteDirs: true, patterns: [[pattern: 'dist', type: 'INCLUDE']]
