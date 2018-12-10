@@ -367,19 +367,9 @@ pipeline {
                         equals expected: true, actual: params.TEST_RUN_MYPY
                     }
                     steps{
-//                        script{
-//                            try{
-//                                tee('logs/mypy.log') {
-                                dir("source"){
-                                    bat returnStatus: true, script: "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
-//                                    powershell "& pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html | tee ${WORKSPACE}\\logs\\mypy.log"
-                                }
-//                                }
-//                            } catch (exc) {
-//                                echo "MyPy found some warnings"
-//                            }
-
-//                        }
+                        dir("source"){
+                            bat returnStatus: true, script: "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
+                        }
                     }
                     post {
                         always {
@@ -618,20 +608,20 @@ pipeline {
                                     }
                                 }
                                 failure {
-                                    script{
-                                        try{
-                                            def wix_logs = findFiles glob: "**/wix.log"
-                                            wix_logs.each { wix_log ->
-                                                def error_message = readFile("${wix_log}")
-                                                echo "${error_message}"
-                                            }
-                                        } catch (exc) {
-                                            echo "read the wix logs."
-                                        }
+//                                    script{
+//                                        try{
+//                                            def wix_logs = findFiles glob: "**/wix.log"
+//                                            wix_logs.each { wix_log ->
+//                                                def error_message = readFile("${wix_log}")
+//                                                echo "${error_message}"
+//                                            }
+//                                        } catch (exc) {
+//                                            echo "read the wix logs."
+//                                        }
+//                                    }
                                         dir("cmake_build"){
                                             cmake arguments: "--build . --target clean", installation: "${CMAKE_VERSION}"
                                         }
-                                    }
                                 }
                                 cleanup{
                                     cleanWs deleteDirs: true, patterns: [[pattern: 'dist', type: 'INCLUDE']]
