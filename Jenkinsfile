@@ -671,14 +671,14 @@ pipeline {
                 unstash 'PYTHON_PACKAGES'
                 unstash 'STANDALONE_INSTALLERS'
                 dir("source"){
-                    bat "devpi use https://devpi.library.illinois.edu"
+                    bat "${WORKSPACE}\\venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                        bat "${tool 'CPython-3.6'}\\python -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && ${tool 'CPython-3.6'}\\python -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                        bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && ${WORKSPACE}\\venv\\Scripts\\python -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                     }
                     script {
-                        bat "${tool 'CPython-3.6'}\\python -m devpi upload --from-dir ${WORKSPACE}\\dist"
+                        bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi upload --from-dir ${WORKSPACE}\\dist"
                         try {
-                            bat "${tool 'CPython-3.6'}\\python -m devpi upload --only-docs --from-dir ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
+                            bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi upload --only-docs --from-dir ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
                         } catch (exc) {
                             echo "Unable to upload to devpi with docs."
                         }
