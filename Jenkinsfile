@@ -186,9 +186,9 @@ pipeline {
                     steps{
 
                         lock("system_python_${env.NODE_NAME}"){
-                            bat "{tool 'CPython-3.6'}\\python -m pip install pip --upgrade --quiet && {tool 'CPython-3.6'}\\python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
+                            bat "${tool 'CPython-3.6'}\\python -m pip install pip --upgrade --quiet && ${tool 'CPython-3.6'}\\python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
                         }
-                        bat "{tool 'CPython-3.6'}\\python -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
+                        bat "${tool 'CPython-3.6'}\\python -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
 
 
                     }
@@ -208,8 +208,8 @@ pipeline {
                     steps{
                         script {
                             dir("source"){
-                                PKG_NAME = bat(returnStdout: true, script: "@{tool 'CPython-3.6'}\\python  setup.py --name").trim()
-                                PKG_VERSION = bat(returnStdout: true, script: "@{tool 'CPython-3.6'}\\python setup.py --version").trim()
+                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python  setup.py --name").trim()
+                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
                                 DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
                             }
                         }
@@ -247,9 +247,9 @@ pipeline {
 //                        tee('logs/build.log') {
                         dir("source"){
                             lock("system_pipenv_${NODE_NAME}"){
-                                powershell "& {tool 'CPython-3.6'}\\python -m pipenv run python setup.py build -b ${WORKSPACE}\\build | tee ${WORKSPACE}\\logs\\build.log"
+                                powershell "& ${tool 'CPython-3.6'}\\python -m pipenv run python setup.py build -b ${WORKSPACE}\\build | tee ${WORKSPACE}\\logs\\build.log"
                             }
-                            // bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
+                            // bat script: "$${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
 //                            }
                         }
                     }
@@ -272,7 +272,7 @@ pipeline {
 //                        tee('logs/build_sphinx.log') {
                         dir("source"){
                             lock("system_pipenv_${NODE_NAME}"){
-                                powershell "& {tool 'CPython-3.6'}\\python -m pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs | tee ${WORKSPACE}\\logs\\build_sphinx.log"
+                                powershell "& ${tool 'CPython-3.6'}\\python -m pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs | tee ${WORKSPACE}\\logs\\build_sphinx.log"
                             }
                         }
 //                        }
@@ -525,7 +525,7 @@ pipeline {
                                 """
                                 cmakeBuild buildDir: 'cmake_build',
                                     cleanBuild: true,
-                                    cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE={tool 'CPython-3.6'}\\python -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest",
+                                    cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=${tool 'CPython-3.6'}\\python -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest",
                                     generator: 'Visual Studio 14 2015 Win64',
                                     installation: "${CMAKE_VERSION}",
                                     sourceDir: 'source',
@@ -673,12 +673,12 @@ pipeline {
                 dir("source"){
                     bat "devpi use https://devpi.library.illinois.edu"
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                        bat "{tool 'CPython-3.6'}\\python -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && {tool 'CPython-3.6'}\\python -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                        bat "${tool 'CPython-3.6'}\\python -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && ${tool 'CPython-3.6'}\\python -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                     }
                     script {
-                        bat "{tool 'CPython-3.6'}\\python -m devpi upload --from-dir ${WORKSPACE}\\dist"
+                        bat "${tool 'CPython-3.6'}\\python -m devpi upload --from-dir ${WORKSPACE}\\dist"
                         try {
-                            bat "{tool 'CPython-3.6'}\\python -m devpi upload --only-docs --from-dir ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
+                            bat "${tool 'CPython-3.6'}\\python -m devpi upload --only-docs --from-dir ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
                         } catch (exc) {
                             echo "Unable to upload to devpi with docs."
                         }
@@ -788,7 +788,7 @@ pipeline {
                     }
                     steps {
                         lock("system_python_${NODE_NAME}"){
-                            bat "${tool 'CPython-3.6'}\\python -m pip install pip --upgrade && {tool 'CPython-3.6'}\\python -m venv venv "
+                            bat "${tool 'CPython-3.6'}\\python -m pip install pip --upgrade && ${tool 'CPython-3.6'}\\python -m venv venv "
                         }
                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
                         lock("${BUILD_TAG}_${NODE_NAME}"){
