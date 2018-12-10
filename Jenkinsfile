@@ -158,7 +158,7 @@ pipeline {
                     when{
                         anyOf{
                             equals expected: true, actual: params.FRESH_WORKSPACE
-                            triggeredBy startedByTimer
+                            triggeredBy "TimerTriggerCause"
                         }
                     }
                     steps{
