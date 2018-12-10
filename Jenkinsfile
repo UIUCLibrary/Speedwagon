@@ -417,15 +417,8 @@ pipeline {
                         equals expected: true, actual: params.TEST_RUN_FLAKE8
                     }
                     steps{
-                        script{
-                            try{
-                                dir("source"){
-                                    bat "pipenv run flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
-                                }
-//                                }
-                            } catch (exc) {
-                                echo "flake8 found some warnings"
-                            }
+                        dir("source"){
+                            bat returnStatus: true, script: "pipenv run flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                         }
                     }
                     post {
