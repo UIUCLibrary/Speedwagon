@@ -39,11 +39,11 @@ def check_jira(){
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
     script{
         def cpack_generators = []
-        
+
         if(BuildWix){
             cpack_generators << "WIX"
         }
-        
+
         if(BuildNSIS){
             cpack_generators << "NSIS"
         }
@@ -150,13 +150,16 @@ pipeline {
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
-    
+
     stages {
         stage("Configure"){
             stages{
                 stage("Purge all existing data in workspace"){
                     when{
-                        equals expected: true, actual: params.FRESH_WORKSPACE
+                        anyOf{
+                            equals expected: true, actual: params.FRESH_WORKSPACE
+                            triggeredBy "TimerTriggerCause"
+                        }
                     }
                     steps{
                         deleteDir()
@@ -186,10 +189,9 @@ pipeline {
                     steps{
 
                         lock("system_python_${env.NODE_NAME}"){
-                            bat "${tool 'CPython-3.6'} -m pip install pip --upgrade --quiet"
-                            bat "${tool 'CPython-3.6'} -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
+                            bat "${tool 'CPython-3.6'}\\python -m pip install pip --upgrade --quiet && ${tool 'CPython-3.6'}\\python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
                         }
-                        bat "${tool 'CPython-3.6'} -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
+                        bat "${tool 'CPython-3.6'}\\python -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
 
 
                     }
@@ -209,8 +211,8 @@ pipeline {
                     steps{
                         script {
                             dir("source"){
-                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}  setup.py --name").trim()
-                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python  setup.py --name").trim()
+                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
                                 DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
                             }
                         }
@@ -222,8 +224,7 @@ pipeline {
                     }
                     steps {
                         dir("source"){
-                            bat "pipenv install --dev --deploy && pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log"
-                            bat "pipenv check"
+                            bat "pipenv install --dev --deploy && pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log && pipenv check"
 
                         }
                     }
@@ -245,13 +246,13 @@ pipeline {
             parallel {
                 stage("Python Package"){
                     steps {
-                        
+
 //                        tee('logs/build.log') {
                         dir("source"){
                             lock("system_pipenv_${NODE_NAME}"){
-                                powershell "& ${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build | tee ${WORKSPACE}\\logs\\build.log"
+                                powershell "& ${tool 'CPython-3.6'}\\python -m pipenv run python setup.py build -b ${WORKSPACE}\\build | tee ${WORKSPACE}\\logs\\build.log"
                             }
-                            // bat script: "${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
+                            // bat script: "$${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
 //                            }
                         }
                     }
@@ -274,7 +275,7 @@ pipeline {
 //                        tee('logs/build_sphinx.log') {
                         dir("source"){
                             lock("system_pipenv_${NODE_NAME}"){
-                                powershell "& ${tool 'CPython-3.6'} -m pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs | tee ${WORKSPACE}\\logs\\build_sphinx.log"
+                                powershell "& ${tool 'CPython-3.6'}\\python -m pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs | tee ${WORKSPACE}\\logs\\build_sphinx.log"
                             }
                         }
 //                        }
@@ -353,7 +354,7 @@ pipeline {
                     }
                     post{
                         always {
-                            bat "dir ${WORKSPACE}\\reports"
+//                            bat "dir ${WORKSPACE}\\reports"
                             archiveArtifacts artifacts: "reports/doctest.txt"
                         }
                         cleanup{
@@ -366,23 +367,13 @@ pipeline {
                         equals expected: true, actual: params.TEST_RUN_MYPY
                     }
                     steps{
-                        script{
-                            try{
-//                                tee('logs/mypy.log') {
-                                dir("source"){
-                                    bat "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
-//                                    powershell "& pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html | tee ${WORKSPACE}\\logs\\mypy.log"
-                                }
-//                                }
-                            } catch (exc) {
-                                echo "MyPy found some warnings"
-                            }      
-                    
+                        dir("source"){
+                            bat returnStatus: true, script: "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
                         }
                     }
                     post {
                         always {
-                            bat "type ${WORKSPACE}\\logs\\mypy.log"
+//                            bat "type ${WORKSPACE}\\logs\\mypy.log"
                             archiveArtifacts "logs\\mypy.log"
 //                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'logs/mypy.log']], unHealthy: ''
 //                            scanForIssues pattern: 'logs/mypy.log', reportEncoding: '', sourceCodeEncoding: '', tool: myPy(), blameDisabled: true
@@ -416,15 +407,8 @@ pipeline {
                         equals expected: true, actual: params.TEST_RUN_FLAKE8
                     }
                     steps{
-                        script{
-                            try{
-                                dir("source"){
-                                    bat "pipenv run flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
-                                }
-//                                }
-                            } catch (exc) {
-                                echo "flake8 found some warnings"
-                            }
+                        dir("source"){
+                            bat returnStatus: true, script: "pipenv run flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                         }
                     }
                     post {
@@ -446,9 +430,7 @@ pipeline {
             post{
                 always{
                     dir("source"){
-                        bat "pipenv run coverage combine"
-                        bat "pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml"
-                        bat "pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
+                        bat "pipenv run coverage combine && pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
 
                     }
                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
@@ -524,26 +506,27 @@ pipeline {
                                 timeout(5)
                             }
                             steps {
-//                                tee("${workspace}/logs/standalone_cmake_build.log") {
-                                dir("cmake_build") {
-                                    bat "dir > nul"
-                                }
+                                bat """mkdir cmake_build || echo ${WORKSPACE}\\cmake_build\\ already exists.
+                                mkdir logs || echo ${WORKSPACE}\\logs\\ already exists
+                                """
                                 cmakeBuild buildDir: 'cmake_build',
                                     cleanBuild: true,
-                                    cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=${tool 'CPython-3.6'} -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest",
+                                    cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=${tool 'CPython-3.6'}\\python -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest",
                                     generator: 'Visual Studio 14 2015 Win64',
                                     installation: "${CMAKE_VERSION}",
                                     sourceDir: 'source',
-                                    steps: [[withCmake: true]]
+                                    steps: [[args: "-- /flp1:warningsonly;logfile=${WORKSPACE}\\logs\\cmake-msbuild.log", withCmake: true]]
 
-//                                    cmake arguments: "--build . --config Release --parallel ${NUMBER_OF_PROCESSORS}", installation: "${CMAKE_VERSION}"
-//                                }
-//                                }
                             }
-//                            post{
-//                                always{
-//                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: "${workspace}/logs/standalone_cmake_build.log"]]
-//                                }
+                            post{
+                                always{
+                                    archiveArtifacts artifacts: "logs/cmake-msbuild.log"
+                                    recordIssues enabledForFailure: true, tools: [[name: 'Standalone Builds Warnings', pattern: "logs/cmake-msbuild.log", tool: msBuild()]]
+                                }
+                                cleanup{
+                                    cleanWs deleteDirs: true, patterns: [[pattern: 'logs/cmake-msbuild.log', type: 'INCLUDE']]
+                                }
+                            }
 //                            }
                         }
                         stage("CTest"){
@@ -560,9 +543,6 @@ pipeline {
                                 dir("logs/ctest"){
                                     bat "dir"
                                 }
-//                                tee("${workspace}/logs/standalone_cmake_test.log") {
-//                                    dir("cmake_build") {
-//                                    ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/logs/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=SpeedwagonBuildNumber${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -V", installation: "${CMAKE_VERSION}"ctest arguments: "-DCTEST_BINARY_DIRECTORY:STRING=${WORKSPACE}/cmake_build -DCTEST_SOURCE_DIRECTORY:STRING=${WORKSPACE}/source -DCTEST_DROP_LOCATION:STRING=${WORKSPACE}/logs/ctest -DCTEST_DROP_METHOD=cp -DCTEST_BUILD_NAME:STRING=SpeedwagonBuildNumber${env.build_number} -C Release --output-on-failure -C Release --no-compress-output -S ${WORKSPACE}/source/ci/build_standalone.cmake -j ${NUMBER_OF_PROCESSORS} -V", installation: "${CMAKE_VERSION}"
                                     ctest(
                                         arguments: "-T test -C Release -j ${NUMBER_OF_PROCESSORS}",
                                         installation: "${CMAKE_VERSION}",
@@ -622,31 +602,13 @@ pipeline {
                                     stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
 //                                    }
                                 }
-                                always{
+                                failure {
                                     dir("cmake_build"){
                                         archiveArtifacts allowEmptyArchive: true, artifacts: "**/wix.log"
                                     }
                                 }
-                                failure {
-                                    script{
-                                        try{
-                                            def wix_logs = findFiles glob: "**/wix.log"
-                                            wix_logs.each { wix_log ->
-                                                def error_message = readFile("${wix_log}")
-                                                echo "${error_message}"
-                                            }
-                                        } catch (exc) {
-                                            echo "read the wix logs."
-                                        }
-                                        dir("cmake_build"){
-                                            cmake arguments: "--build . --target clean", installation: "${CMAKE_VERSION}"
-                                        }
-                                    }
-                                }
                                 cleanup{
-                                    dir("dist"){
-                                        deleteDir()
-                                    }
+                                    cleanWs deleteDirs: true, patterns: [[pattern: 'dist', type: 'INCLUDE']]
                                 }
 
                             }
@@ -679,14 +641,14 @@ pipeline {
                 unstash 'PYTHON_PACKAGES'
                 unstash 'STANDALONE_INSTALLERS'
                 dir("source"){
-                    bat "devpi use https://devpi.library.illinois.edu"
+                    bat "${WORKSPACE}\\venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                        bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && ${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                        bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && ${WORKSPACE}\\venv\\Scripts\\python -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                     }
                     script {
-                        bat "${tool 'CPython-3.6'} -m devpi upload --from-dir ${WORKSPACE}\\dist"
+                        bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi upload --from-dir ${WORKSPACE}\\dist"
                         try {
-                            bat "${tool 'CPython-3.6'} -m devpi upload --only-docs --from-dir ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
+                            bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi upload --only-docs --from-dir ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
                         } catch (exc) {
                             echo "Unable to upload to devpi with docs."
                         }
@@ -724,7 +686,7 @@ pipeline {
                     }
                     steps {
                             lock("system_python_${NODE_NAME}"){
-                                bat "${tool 'CPython-3.6'} -m venv venv"
+                                bat "${tool 'CPython-3.6'}\\python -m venv venv"
                             }
 
                             bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
@@ -756,7 +718,7 @@ pipeline {
                     }
                     steps {
                             lock("system_python_${NODE_NAME}"){
-                                bat "${tool 'CPython-3.6'} -m venv venv"
+                                bat "${tool 'CPython-3.6'}\\python -m venv venv"
                             }
                             bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
                             lock("${BUILD_TAG}_${NODE_NAME}"){
@@ -796,7 +758,7 @@ pipeline {
                     }
                     steps {
                         lock("system_python_${NODE_NAME}"){
-                            bat "${tool 'CPython-3.6'} -m pip install pip --upgrade && ${tool 'CPython-3.6'} -m venv venv "
+                            bat "${tool 'CPython-3.6'}\\python -m pip install pip --upgrade && ${tool 'CPython-3.6'}\\python -m venv venv "
                         }
                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
                         lock("${BUILD_TAG}_${NODE_NAME}"){
@@ -815,9 +777,7 @@ pipeline {
                     }
                     post{
                         failure{
-                            dir("venv"){
-                                deleteDir()
-                            }
+                            cleanWs deleteDirs: true, patterns: [[pattern: 'venv', type: 'INCLUDE']]
                         }
                     }
                 }
@@ -825,18 +785,11 @@ pipeline {
             post {
                 success {
                     echo "it Worked. Pushing file to ${env.BRANCH_NAME} index"
-                    script {
-                        // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                        // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                         bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                             bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
-                            
+
                         }
-
-                    }
-//                    bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} /DS_Jenkins/${env.BRANCH_NAME}"
-
                 }
             }
         }
@@ -854,20 +807,20 @@ pipeline {
                             sshPublisher(
                                 publishers: [
                                     sshPublisherDesc(
-                                        configName: 'apache-ns - lib-dccuser-updater', 
-                                        sshLabel: [label: 'Linux'], 
-                                        transfers: [sshTransfer(excludes: '', 
-                                        execCommand: '', 
-                                        execTimeout: 120000, 
-                                        flatten: false, 
-                                        makeEmptyDirs: false, 
-                                        noDefaultExcludes: false, 
-                                        patternSeparator: '[, ]+', 
-                                        remoteDirectory: "${params.DEPLOY_DOCS_URL_SUBFOLDER}", 
-                                        remoteDirectorySDF: false, 
-                                        removePrefix: '', 
-                                        sourceFiles: '**')], 
-                                    usePromotionTimestamp: false, 
+                                        configName: 'apache-ns - lib-dccuser-updater',
+                                        sshLabel: [label: 'Linux'],
+                                        transfers: [sshTransfer(excludes: '',
+                                        execCommand: '',
+                                        execTimeout: 120000,
+                                        flatten: false,
+                                        makeEmptyDirs: false,
+                                        noDefaultExcludes: false,
+                                        patternSeparator: '[, ]+',
+                                        remoteDirectory: "${params.DEPLOY_DOCS_URL_SUBFOLDER}",
+                                        remoteDirectorySDF: false,
+                                        removePrefix: '',
+                                        sourceFiles: '**')],
+                                    usePromotionTimestamp: false,
                                     useWorkspaceInPromotion: false,
                                     verbose: true
                                     )
@@ -907,7 +860,6 @@ pipeline {
                             dir("dist"){
                                 def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
                                 input "Update standalone ${installer_files} to //storage.library.illinois.edu/HathiTrust/Tools/beta/?"
-    //                            installer_files.each { installer_file ->
 
                                     cifsPublisher(
                                         publishers: [[
@@ -953,13 +905,9 @@ pipeline {
                         }
                     }
                     steps {
-                        script {
-                            // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                            // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                            input "Release ${PKG_NAME} ${PKG_VERSION} to DevPi Production?"
-                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} production/release"
-                            }
+                        input "Release ${PKG_NAME} ${PKG_VERSION} to DevPi Production?"
+                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} production/release"
                         }
                     }
                     post{
@@ -1073,8 +1021,8 @@ pipeline {
              dir("source"){
                  bat "pipenv run python setup.py clean --all"
              }
-            
-        
+
+
 
 
             script {
