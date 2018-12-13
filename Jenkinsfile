@@ -187,7 +187,7 @@ pipeline {
                 }
                 stage("Install Python system dependencies"){
                     steps{
-
+                        echo "getBuildCauses = ${currentBuild.getBuildCauses}"
                         lock("system_python_${env.NODE_NAME}"){
                             bat "${tool 'CPython-3.6'}\\python -m pip install pip --upgrade --quiet && ${tool 'CPython-3.6'}\\python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
                         }
@@ -502,6 +502,7 @@ pipeline {
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+                            triggeredBy "TimerTriggerCause"
                         }
                     }
                     stages{
