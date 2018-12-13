@@ -39,17 +39,26 @@ def check_jira(){
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
     script{
         def cpack_generators = []
+        def item_selected = false
+        def default_generator = "WIX"
 
         if(BuildWix){
             cpack_generators << "WIX"
+            item_selected = true
         }
 
         if(BuildNSIS){
             cpack_generators << "NSIS"
+            item_selected = true
         }
         if(BuildZip){
             cpack_generators << "ZIP"
+            item_selected = true
         }
+        if(item_selected == false){
+            cpack_generators << default_generator
+        }
+
         return "${cpack_generators.join(";")}"
     }
 
@@ -139,7 +148,7 @@ pipeline {
         booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
         booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
-        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: true, description: "Create a standalone wix based .msi installer")
+        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: false, description: "Create a standalone wix based .msi installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: false, description: "Create a standalone NULLSOFT NSIS based .exe installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_ZIP", defaultValue: false, description: "Create a standalone portable package")
 
