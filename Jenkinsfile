@@ -445,9 +445,6 @@ pipeline {
                             [pattern: 'reports/coverage', type: 'INCLUDE'],
                             [pattern: 'source/.coverage', type: 'INCLUDE']
                         ])
-//                    cleanWs(patterns: [[pattern: 'reports/coverage', type: 'INCLUDE']])
-//                    cleanWs(patterns: [[pattern: 'source/.coverage', type: 'INCLUDE']])
-
                 }
             }
         }
@@ -561,9 +558,6 @@ pipeline {
                                         workingDir: 'cmake_build'
                                         )
                                     capture_ctest_results("logs/ctest")
-
-//                                    archiveArtifacts artifacts: 'logs/standalone_cmake_test.log', allowEmptyArchive: true
-//                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'logs/standalone_cmake_test.log']]
                                 }
                                 cleanup{
                                     cleanWs deleteDirs: true, patterns: [
@@ -580,27 +574,15 @@ pipeline {
                                 timeout(10)
                             }
                             steps {
-//                                dir("cmake_build") {
-//                                    script{
                                 cpack(
                                     arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} --config cmake_build/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
                                     installation: "${CMAKE_VERSION}"
                                 )
-//                                    }
-//                                }
                             }
                             post {
                                 success{
                                     archiveArtifacts artifacts: "dist/*.msi,dist/*.exe,dist/*.zip", fingerprint: true
-//                                    script{
-//                                        def install_files = findFiles glob: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip"
-//                                        install_files.each { installer_file ->
-//                                            echo "Found ${installer_file}"
-//                                            archiveArtifacts artifacts: "${installer_file}", fingerprint: true
-//                                        }
-//                                    }
                                     stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
-//                                    }
                                 }
                                 failure {
                                     dir("cmake_build"){
@@ -629,7 +611,10 @@ pipeline {
         stage("Deploy to Devpi Staging") {
             when {
                 allOf{
-                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    anyOf{
+                        equals expected: true, actual: params.DEPLOY_DEVPI
+                        triggeredBy "TimerTriggerCause"
+                    }
                     anyOf {
                         equals expected: "master", actual: env.BRANCH_NAME
                         equals expected: "dev", actual: env.BRANCH_NAME
@@ -660,7 +645,10 @@ pipeline {
         stage("Test DevPi packages") {
             when {
                 allOf{
-                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    anyOf{
+                        equals expected: true, actual: params.DEPLOY_DEVPI
+                        triggeredBy "TimerTriggerCause"
+                    }
                     anyOf {
                         equals expected: "master", actual: env.BRANCH_NAME
                         equals expected: "dev", actual: env.BRANCH_NAME
