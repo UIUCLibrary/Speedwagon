@@ -282,6 +282,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tabWidget.setVisible(True)
 
     def add_tab(self, workflow_name, workflows):
+        self.log_manager.debug("Loading Tab {}".format(workflow_name))
         workflows_tab = tabs.WorkflowsTab(
             parent=self,
             workflows=workflows,

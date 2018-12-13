@@ -1,3 +1,4 @@
+import abc
 import io
 import os
 import sys
@@ -18,33 +19,44 @@ def locate_tessdata() -> str:
 
 class OCRWorkflow(speedwagon.Workflow):
     name = "Generate OCR Files"
-    description = \
-        "Create OCR text files for images. \n" \
-        "\n" \
-        "Settings: \n" \
-        "    Path: Path containing tiff or jp2 files. \n" \
-        "    Image File Type: The type of Image file to use.\n" \
-        "\n" \
-        "\n" \
-        "Adding Additional Languages:\n" \
-        "    To modify the available languages, place Tesseract traineddata " \
-        f"files for version {ocr.Engine(locate_tessdata()).get_version()} " \
-        "into the following directory:\n" \
-        "\n" \
-        f"{locate_tessdata()}.\n" \
-        "\n" \
-        "Note:\n" \
-        "    It's important to use the correct version of the traineddata " \
-        "files. Using incorrect versions won't crash the program but they " \
-        "may produce unexpected results.\n"\
-        "\n" \
-        "For more information about these files, go to " \
-        "https://github.com/tesseract-ocr/tesseract/wiki/Data-Files\n"
 
     SUPPORTED_IMAGE_TYPES = {
         "JPEG 2000": ".jp2",
         "TIFF": ".tif"
     }
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.tessdata_path = self.global_settings.get("tessdata")
+
+        description = \
+            "Create OCR text files for images. \n" \
+            "\n" \
+            "Settings: \n" \
+            "    Path: Path containing tiff or jp2 files. \n" \
+            "    Image File Type: The type of Image file to use.\n" \
+            "\n" \
+            "\n" \
+            "Adding Additional Languages:\n" \
+            "    To modify the available languages, place " \
+            "Tesseract traineddata files for " \
+            f"version {ocr.Engine(self.tessdata_path).get_version()} " \
+            "into the following directory:\n" \
+            "\n" \
+                f"{self.tessdata_path}.\n" \
+            "\n" \
+            "Note:\n" \
+            "    It's important to use the correct version of the " \
+            "traineddata files. Using incorrect versions won't crash the " \
+            "program but they may produce unexpected results.\n" \
+            "\n" \
+            "For more information about these files, go to " \
+            "https://github.com/tesseract-ocr/tesseract/wiki/Data-Files\n"
+        self.set_description(description)
+
+    @classmethod
+    def set_description(cls, text):
+        cls.description = text
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
@@ -72,13 +84,13 @@ class OCRWorkflow(speedwagon.Workflow):
         ocr_file_name = job_args["output_file_name"]
         lang_code = job_args["lang_code"]
 
-        task_builder.add_subtask(
-            GenerateOCRFileTask(
+        ocr_generation_task = GenerateOCRFileTask(
                 source_image=image_file,
                 out_text_file=os.path.join(destination_path, ocr_file_name),
                 lang=lang_code
             )
-        )
+        ocr_generation_task.set_tess_path(locate_tessdata())
+        task_builder.add_subtask(ocr_generation_task)
 
     def initial_task(self, task_builder: tasks.TaskBuilder,
                      **user_args) -> None:
@@ -119,17 +131,16 @@ class OCRWorkflow(speedwagon.Workflow):
         options.append(package_type)
 
         language_type = tool_options.ListSelection("Language")
+        self.tessdata_path = self.global_settings.get("tessdata")
 
-        tessdata_path = self.global_settings.get("tessdata")
-
-        if not valid_tessdata_path(tessdata_path):
+        if not valid_tessdata_path(self.tessdata_path):
 
             tessdata_path = locate_tessdata()
 
             print("Note: Invalid setting for tessdata. "
                   "Using path {} ".format(tessdata_path), file=sys.stderr)
 
-        for lang in self.get_available_languages(path=tessdata_path):
+        for lang in self.get_available_languages(path=self.tessdata_path):
 
             language_type.add_selection(lang)
         options.append(language_type)
@@ -233,6 +244,7 @@ class FindImagesTask(speedwagon.tasks.Subtask):
 
 
 class GenerateOCRFileTask(speedwagon.tasks.Subtask):
+    # engine = None
     engine = ocr.Engine(locate_tessdata())
 
     def __init__(self, source_image, out_text_file, lang="eng") -> None:
@@ -242,10 +254,20 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
         self._output_text_file = out_text_file
         # Use the english language file for now
         self._lang = lang
+        GenerateOCRFileTask.set_tess_path(locate_tessdata())
+        assert self.engine is not None
+
+    @classmethod
+    def set_tess_path(cls, path=locate_tessdata()):
+        print("setting to {}".format(path))
+        cls.engine = ocr.Engine(path)
+        assert cls.engine is not None
+        print(cls.engine)
 
     def work(self) -> bool:
         # Get the ocr text reader for the proper language
-        reader = GenerateOCRFileTask.engine.get_reader(self._lang)
+        print(self.engine)
+        reader = self.engine.get_reader(self._lang)
         self.log("Reading {}".format(self._source))
 
         f = io.StringIO()

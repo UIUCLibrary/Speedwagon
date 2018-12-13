@@ -60,6 +60,10 @@ class WindowsConfig(AbsConfig):
 
 
 class ConfigManager(contextlib.AbstractContextManager):
+    BOOLEAN_SETTINGS = [
+            "debug",
+        ]
+
     def __init__(self, config_file):
         self._config_file = config_file
 
@@ -75,11 +79,25 @@ class ConfigManager(contextlib.AbstractContextManager):
 
     @property
     def global_settings(self)->dict:
+
+
+        global_settings = dict()
         try:
-            return self.cfg_parser["GLOBAL"]
+            global_section = self.cfg_parser["GLOBAL"]
+            for setting in ConfigManager.BOOLEAN_SETTINGS:
+                if setting in global_section:
+                    global_settings[setting] = \
+                        global_section.getboolean(setting)
+
+            for k, v in global_section.items():
+                if k not in ConfigManager.BOOLEAN_SETTINGS:
+                    global_settings[k] = v
+
+
+
         except KeyError:
             print("Unable to load global settings.", file=sys.stderr)
-            return dict()
+        return global_settings
 
 
 def generate_default(config_file):
@@ -91,9 +109,12 @@ def generate_default(config_file):
     data_dir = platform_settings.get("user_data_directory")
     tessdata = os.path.join(data_dir, "tessdata")
 
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser(allow_no_value=True)
+    config.add_section("GLOBAL")
     config['GLOBAL'] = {
-        "tessdata": tessdata
+        "tessdata": tessdata,
+        "starting-tab": "Tools",
+        "debug": False
     }
     with open(config_file, "w") as f:
         config.write(f)

@@ -150,7 +150,9 @@ class SettingsInformationTab(QtWidgets.QWidget):
             return
         os.startfile(self.settings_location)
         QtWidgets.QMessageBox.information(
-            self, "Note", "Restart to apply changes")
+            self, "Info",
+            "Opening config.ini\n"
+            "Note: Please quit and restart Speedwagon to apply changes")
 
 
 class SettingsDialog(QtWidgets.QDialog):

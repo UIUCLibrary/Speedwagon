@@ -14,10 +14,8 @@ def main():
         import pytest  # type: ignore
         sys.exit(pytest.main(sys.argv[2:]))
 
-    startup_settings = speedwagon.startup.parse_args()
 
-    print("{}: {}".format(speedwagon.__name__, speedwagon.__version__))
-    speedwagon.startup.main(startup_settings)
+    speedwagon.startup.main()
 
 
 if __name__ == '__main__':
