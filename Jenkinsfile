@@ -641,7 +641,7 @@ pipeline {
             steps {
                 unstash 'DOCS_ARCHIVE'
                 unstash 'PYTHON_PACKAGES'
-                unstash 'STANDALONE_INSTALLERS'
+//                unstash 'STANDALONE_INSTALLERS'
                 dir("source"){
                     bat "${WORKSPACE}\\venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
