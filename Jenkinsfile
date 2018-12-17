@@ -767,7 +767,7 @@ pipeline {
                         }
                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
                         lock("${BUILD_TAG}_${NODE_NAME}"){
-                            timeout(5){
+                            timeout(10){
                                 devpiTest(
                                     devpiExecutable: "venv\\Scripts\\devpi.exe",
                                     url: "https://devpi.library.illinois.edu",
