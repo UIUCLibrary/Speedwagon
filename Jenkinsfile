@@ -39,17 +39,26 @@ def check_jira(){
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
     script{
         def cpack_generators = []
+        def item_selected = false
+        def default_generator = "WIX"
 
         if(BuildWix){
             cpack_generators << "WIX"
+            item_selected = true
         }
 
         if(BuildNSIS){
             cpack_generators << "NSIS"
+            item_selected = true
         }
         if(BuildZip){
             cpack_generators << "ZIP"
+            item_selected = true
         }
+        if(item_selected == false){
+            cpack_generators << default_generator
+        }
+
         return "${cpack_generators.join(";")}"
     }
 
@@ -139,11 +148,11 @@ pipeline {
         booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
         booleanParam(name: "PACKAGE_PYTHON_FORMATS", defaultValue: true, description: "Create native Python packages")
-        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: true, description: "Create a standalone wix based .msi installer")
+        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: false, description: "Create a standalone wix based .msi installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: false, description: "Create a standalone NULLSOFT NSIS based .exe installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_ZIP", defaultValue: false, description: "Create a standalone portable package")
 
-        booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
+        booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
         booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to \\\\storage.library.illinois.edu\\HathiTrust\\Tools\\beta\\")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
@@ -187,7 +196,6 @@ pipeline {
                 }
                 stage("Install Python system dependencies"){
                     steps{
-
                         lock("system_python_${env.NODE_NAME}"){
                             bat "${tool 'CPython-3.6'}\\python -m pip install pip --upgrade --quiet && ${tool 'CPython-3.6'}\\python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
                         }
@@ -259,7 +267,9 @@ pipeline {
                     post{
                         always{
                             archiveArtifacts artifacts: "logs/build.log"
-                            recordIssues enabledForFailure: true, tools: [[name: 'Setuptools Build', pattern: 'logs/build.log', tool: pyLint()]]
+                            recordIssues(tools: [pyLint(pattern: 'logs/build.log')])
+
+//                            recordIssues tools: [name: 'Setuptools Build', pattern: 'logs/build.log', tool: pyLint()]
 //                            scanForIssues pattern: 'logs/build.log', reportEncoding: '', sourceCodeEncoding: '', tool: pyLint()
 //                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
                             // bat "dir build"
@@ -284,7 +294,9 @@ pipeline {
                         always {
 //                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build_sphinx.log']]
 //                            scanForIssues pattern: 'logs/build_sphinx.log', reportEncoding: '', sourceCodeEncoding: '', tool: pep8()
-                            recordIssues enabledForFailure: true, tools: [[name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log', tool: pep8()]]
+                            recordIssues(tools: [pep8(pattern: 'logs/build_sphinx.log')])
+
+//                            recordIssues enabledForFailure: true, tools: [[name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log', tool: pep8()]]
                             archiveArtifacts artifacts: 'logs/build_sphinx.log'
                         }
                         success{
@@ -378,7 +390,9 @@ pipeline {
 //                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'logs/mypy.log']], unHealthy: ''
 //                            scanForIssues pattern: 'logs/mypy.log', reportEncoding: '', sourceCodeEncoding: '', tool: myPy(), blameDisabled: true
 
-                            recordIssues enabledForFailure: true, tools: [[name: 'MyPy', pattern: "logs/mypy.log", tool: myPy()]]
+//                            recordIssues enabledForFailure: true, tools: [[name: 'MyPy', pattern: "logs/mypy.log", tool: myPy()]]
+                            recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
+
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                         }
                         cleanup{
@@ -416,7 +430,8 @@ pipeline {
 //                            scanForIssues pattern: 'logs/flake8.log', reportEncoding: '', sourceCodeEncoding: '', tool: pyLint()
                               archiveArtifacts 'logs/flake8.log'
 
-                              recordIssues enabledForFailure: true, tools: [[name: 'Flake8', pattern: 'logs/flake8.log', tool: flake8()]]
+//                              recordIssues enabledForFailure: true, tools: [[name: 'Flake8', pattern: 'logs/flake8.log', tool: flake8()]]
+                              recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
 //                                recordIssues enabledForFailure: true, tools: [[name: 'Flake8', pattern: 'source/*.py', tool: flake8()]]
 
 //                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'logs/flake8.log']], unHealthy: ''
@@ -445,9 +460,6 @@ pipeline {
                             [pattern: 'reports/coverage', type: 'INCLUDE'],
                             [pattern: 'source/.coverage', type: 'INCLUDE']
                         ])
-//                    cleanWs(patterns: [[pattern: 'reports/coverage', type: 'INCLUDE']])
-//                    cleanWs(patterns: [[pattern: 'source/.coverage', type: 'INCLUDE']])
-
                 }
             }
         }
@@ -498,6 +510,7 @@ pipeline {
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+                            triggeredBy "TimerTriggerCause"
                         }
                     }
                     stages{
@@ -521,7 +534,8 @@ pipeline {
                             post{
                                 always{
                                     archiveArtifacts artifacts: "logs/cmake-msbuild.log"
-                                    recordIssues enabledForFailure: true, tools: [[name: 'Standalone Builds Warnings', pattern: "logs/cmake-msbuild.log", tool: msBuild()]]
+//                                    recordIssues enabledForFailure: true, tools: [[name: 'Standalone Builds Warnings', pattern: "logs/cmake-msbuild.log", tool: msBuild()]]
+                                    recordIssues(tools: [msBuild(pattern: 'logs/cmake-msbuild.log')])
                                 }
                                 cleanup{
                                     cleanWs deleteDirs: true, patterns: [[pattern: 'logs/cmake-msbuild.log', type: 'INCLUDE']]
@@ -561,9 +575,6 @@ pipeline {
                                         workingDir: 'cmake_build'
                                         )
                                     capture_ctest_results("logs/ctest")
-
-//                                    archiveArtifacts artifacts: 'logs/standalone_cmake_test.log', allowEmptyArchive: true
-//                                    warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MSBuild', pattern: 'logs/standalone_cmake_test.log']]
                                 }
                                 cleanup{
                                     cleanWs deleteDirs: true, patterns: [
@@ -580,27 +591,15 @@ pipeline {
                                 timeout(10)
                             }
                             steps {
-//                                dir("cmake_build") {
-//                                    script{
                                 cpack(
                                     arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} --config cmake_build/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
                                     installation: "${CMAKE_VERSION}"
                                 )
-//                                    }
-//                                }
                             }
                             post {
                                 success{
                                     archiveArtifacts artifacts: "dist/*.msi,dist/*.exe,dist/*.zip", fingerprint: true
-//                                    script{
-//                                        def install_files = findFiles glob: "dist/standalone/*.msi,dist/standalone/*.exe,dist/standalone/*.zip"
-//                                        install_files.each { installer_file ->
-//                                            echo "Found ${installer_file}"
-//                                            archiveArtifacts artifacts: "${installer_file}", fingerprint: true
-//                                        }
-//                                    }
                                     stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
-//                                    }
                                 }
                                 failure {
                                     dir("cmake_build"){
@@ -629,7 +628,10 @@ pipeline {
         stage("Deploy to Devpi Staging") {
             when {
                 allOf{
-                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    anyOf{
+                        equals expected: true, actual: params.DEPLOY_DEVPI
+                        triggeredBy "TimerTriggerCause"
+                    }
                     anyOf {
                         equals expected: "master", actual: env.BRANCH_NAME
                         equals expected: "dev", actual: env.BRANCH_NAME
@@ -639,7 +641,7 @@ pipeline {
             steps {
                 unstash 'DOCS_ARCHIVE'
                 unstash 'PYTHON_PACKAGES'
-                unstash 'STANDALONE_INSTALLERS'
+//                unstash 'STANDALONE_INSTALLERS'
                 dir("source"){
                     bat "${WORKSPACE}\\venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
@@ -660,7 +662,10 @@ pipeline {
         stage("Test DevPi packages") {
             when {
                 allOf{
-                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    anyOf{
+                        equals expected: true, actual: params.DEPLOY_DEVPI
+                        triggeredBy "TimerTriggerCause"
+                    }
                     anyOf {
                         equals expected: "master", actual: env.BRANCH_NAME
                         equals expected: "dev", actual: env.BRANCH_NAME
@@ -707,46 +712,46 @@ pipeline {
 
                     }
                 }
-                stage("Source Distribution: .zip") {
-                    agent {
-                        node {
-                            label "Windows && Python3"
-                        }
-                    }
-                    options {
-                        skipDefaultCheckout(true)
-                    }
-                    steps {
-                            lock("system_python_${NODE_NAME}"){
-                                bat "${tool 'CPython-3.6'}\\python -m venv venv"
-                            }
-                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
-                            lock("${BUILD_TAG}_${NODE_NAME}"){
-                                timeout(10){
-                                    devpiTest(
-                                        devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                        url: "https://devpi.library.illinois.edu",
-                                        index: "${env.BRANCH_NAME}_staging",
-                                        pkgName: "${PKG_NAME}",
-                                        pkgVersion: "${PKG_VERSION}",
-                                        pkgRegex: "zip",
-                                        detox: false
-                                    )
-                                }
-                            }
+//                stage("Source Distribution: .zip") {
+//                    agent {
+//                        node {
+//                            label "Windows && Python3"
 //                        }
-
-//                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
-////                        script {
-////                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-////                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-////                            }
-////
+//                    }
+//                    options {
+//                        skipDefaultCheckout(true)
+//                    }
+//                    steps {
+//                            lock("system_python_${NODE_NAME}"){
+//                                bat "${tool 'CPython-3.6'}\\python -m venv venv"
+//                            }
+//                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
+//                            lock("${BUILD_TAG}_${NODE_NAME}"){
+//                                timeout(10){
+//                                    devpiTest(
+//                                        devpiExecutable: "venv\\Scripts\\devpi.exe",
+//                                        url: "https://devpi.library.illinois.edu",
+//                                        index: "${env.BRANCH_NAME}_staging",
+//                                        pkgName: "${PKG_NAME}",
+//                                        pkgVersion: "${PKG_VERSION}",
+//                                        pkgRegex: "zip",
+//                                        detox: false
+//                                    )
+//                                }
+//                            }
 ////                        }
-////                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging  --clientdir ${WORKSPACE}\\certs\\"
-//                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip --clientdir ${WORKSPACE}\\certs\\"
-                    }
-                }
+//
+////                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
+//////                        script {
+//////                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+//////                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+//////                            }
+//////
+//////                        }
+//////                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging  --clientdir ${WORKSPACE}\\certs\\"
+////                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip --clientdir ${WORKSPACE}\\certs\\"
+//                    }
+//                }
                 stage("Built Distribution: .whl") {
                     agent {
                         node {
@@ -762,7 +767,7 @@ pipeline {
                         }
                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
                         lock("${BUILD_TAG}_${NODE_NAME}"){
-                            timeout(5){
+                            timeout(10){
                                 devpiTest(
                                     devpiExecutable: "venv\\Scripts\\devpi.exe",
                                     url: "https://devpi.library.illinois.edu",
