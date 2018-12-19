@@ -342,12 +342,15 @@ class AbsJobManager(metaclass=abc.ABCMeta):
 class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
     def __init__(self, max_workers=1) -> None:
+        self.settings_path = None
         self.manager = multiprocessing.Manager()
         self._max_workers = max_workers
         self.active = False
         self._pending_jobs: queue.Queue[JobPair] = queue.Queue()
         self.futures: typing.List[concurrent.futures.Future] = []
         self.logger = logging.getLogger(__name__)
+        self.user_settings = None
+        self.configuration_file = None
 
     def __enter__(self):
         self._message_queue = self.manager.Queue()

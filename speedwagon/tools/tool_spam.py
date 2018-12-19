@@ -12,7 +12,7 @@ from speedwagon.tools.options import UserOption2
 
 class Spam(AbsTool):
     name = "Spam"
-    active = True
+    active = False
     description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " \
                   "Proin ac diam id purus pretium venenatis. Vestibulum " \
                   "ante ipsum primis in faucibus orci luctus et ultrices " \

@@ -21,7 +21,8 @@ from speedwagon.workflows.title_page_selection import PackageBrowser
 
 class HathiPrepWorkflow(speedwagon.Workflow):
     name = "Hathi Prep"
-    description = "Something goes here later"
+    description = "Select the correct file " \
+                  "from the drop down as the title in the page data"
 
     def user_options(self):
         options = []

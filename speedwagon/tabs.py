@@ -177,8 +177,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         self.compose_tab_layout()
         self.init_selection()
 
-
-
     def init_selection(self):
         # Set the first item
         index = self.item_selection_model.index(0, 0)
@@ -503,7 +501,13 @@ class WorkflowsTab(ItemSelectionTab):
     def start(self, item):
 
         new_workflow = item()
+
+        # Add global settings to workflow
         assert isinstance(new_workflow, AbsWorkflow)
+
+        new_workflow.global_settings.update(
+            dict(self.work_manager.user_settings))
+
         user_options = (self.options_model.get())
 
         self.run(new_workflow, user_options)
@@ -515,7 +519,12 @@ class WorkflowsTab(ItemSelectionTab):
         print("failed")
 
     def get_item_options_model(self, workflow):
-        model = models.ToolOptionsModel3(workflow().user_options())
+        new_workflow = workflow()
+
+        new_workflow.global_settings.update(
+            dict(self.work_manager.user_settings))
+
+        model = models.ToolOptionsModel3(new_workflow.user_options())
         return model
         # return tool_.ToolsListModel(tool)
 

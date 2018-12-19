@@ -1,5 +1,4 @@
 import glob
-
 import os
 
 from setuptools import setup
@@ -63,6 +62,6 @@ setup(
         ],
         'speedwagon': ["favicon.ico", "logo.png"],
     },
-    cmdclass=cmdclass,
+    cmdclass=cmdclass
 )
 
