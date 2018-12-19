@@ -675,6 +675,11 @@ pipeline {
             options{
                 timestamps()
             }
+            environment{
+                TMPDIR = "${WORKSPACE}\\tmp"
+                TMP = "${WORKSPACE}\\tmp"
+                TEMP = "${WORKSPACE}\\tmp"
+            }
             parallel {
                 stage("Source Distribution: .tar.gz") {
                     agent {
@@ -682,9 +687,7 @@ pipeline {
                             label "Windows && Python3"
                         }
                     }
-                    environment{
-                        TMPDIR = "${WORKSPACE}\\tmp"
-                    }
+
                     options {
                         skipDefaultCheckout(true)
 
@@ -712,46 +715,7 @@ pipeline {
 
                     }
                 }
-//                stage("Source Distribution: .zip") {
-//                    agent {
-//                        node {
-//                            label "Windows && Python3"
-//                        }
-//                    }
-//                    options {
-//                        skipDefaultCheckout(true)
-//                    }
-//                    steps {
-//                            lock("system_python_${NODE_NAME}"){
-//                                bat "${tool 'CPython-3.6'}\\python -m venv venv"
-//                            }
-//                            bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
-//                            lock("${BUILD_TAG}_${NODE_NAME}"){
-//                                timeout(10){
-//                                    devpiTest(
-//                                        devpiExecutable: "venv\\Scripts\\devpi.exe",
-//                                        url: "https://devpi.library.illinois.edu",
-//                                        index: "${env.BRANCH_NAME}_staging",
-//                                        pkgName: "${PKG_NAME}",
-//                                        pkgVersion: "${PKG_VERSION}",
-//                                        pkgRegex: "zip",
-//                                        detox: false
-//                                    )
-//                                }
-//                            }
-////                        }
-//
-////                        devpi_login("venv\\Scripts\\devpi.exe", 'DS_devpi', "https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging", "${WORKSPACE}\\certs\\")
-//////                        script {
-//////                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//////                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-//////                            }
-//////
-//////                        }
-//////                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging  --clientdir ${WORKSPACE}\\certs\\"
-////                        bat "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip --clientdir ${WORKSPACE}\\certs\\"
-//                    }
-//                }
+
                 stage("Built Distribution: .whl") {
                     agent {
                         node {
