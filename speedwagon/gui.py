@@ -1,5 +1,6 @@
 import email
 import logging
+import os
 import sys
 import time
 import traceback
@@ -165,14 +166,14 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
 
-        self._handler = ConsoleLogger(self.console)
+        self.console_log_handler = ConsoleLogger(self.console)
 
         self._log_data = io.StringIO()
-        self._log_data_handler = logging.StreamHandler(self._log_data)
-        self._log_data_handler.setFormatter(DEBUG_LOGGING_FORMAT)
+        self.log_data_handler = logging.StreamHandler(self._log_data)
+        self.log_data_handler.setFormatter(DEBUG_LOGGING_FORMAT)
 
-        self.log_manager.addHandler(self._handler)
-        self.log_manager.addHandler(self._log_data_handler)
+        self.log_manager.addHandler(self.console_log_handler)
+        self.log_manager.addHandler(self.log_data_handler)
 
         self.debug_mode(debug)
 
@@ -250,14 +251,14 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self._debug = debug
         if debug:
             self._set_logging_level(logging.DEBUG)
-            self._handler.setFormatter(DEBUG_LOGGING_FORMAT)
+            self.console_log_handler.setFormatter(DEBUG_LOGGING_FORMAT)
 
         else:
             self._set_logging_level(logging.INFO)
 
     def _set_logging_level(self, level):
-        self._handler.setLevel(level)
-        self._log_data_handler.setLevel(level)
+        self.console_log_handler.setLevel(level)
+        self.log_data_handler.setLevel(level)
 
     def set_current_tab(self, tab_name: str):
 
@@ -282,7 +283,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tabWidget.setVisible(True)
 
     def add_tab(self, workflow_name, workflows):
-        self.log_manager.debug("Loading Tab {}".format(workflow_name))
+
         workflows_tab = tabs.WorkflowsTab(
             parent=self,
             workflows=workflows,
@@ -294,7 +295,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tabWidget.setVisible(True)
 
     def closeEvent(self, *args, **kwargs):
-        self.log_manager.removeHandler(self._handler)
+        self.log_manager.removeHandler(self.console_log_handler)
         super().closeEvent(*args, **kwargs)
 
     def show_help(self):
@@ -320,8 +321,24 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
     def show_configuration(self) -> None:
 
-        config_dialog = speedwagon.dialog.SettingsDialog(
-            self._work_manager.configuration_file, self)
+        config_dialog = speedwagon.dialog.SettingsDialog(self)
+        if self._work_manager.settings_path is not None:
+            config_dialog.settings_location = self._work_manager.settings_path
+
+        info_tab = speedwagon.dialog.SettingsPlaceholderInformationTab()
+        if self._work_manager.settings_path is not None:
+            info_tab.settings_location = \
+                os.path.join(self._work_manager.settings_path, "config.ini")
+
+        config_dialog.add_tab(info_tab, "Global Settings")
+
+        tabs_tab = speedwagon.dialog.SettingsPlaceholderTabsTab()
+
+        if self._work_manager.settings_path is not None:
+            tabs_tab.settings_location = \
+                os.path.join(self._work_manager.settings_path, "tabs.yaml")
+
+        config_dialog.add_tab(tabs_tab, "Tabs")
 
         config_dialog.exec()
 

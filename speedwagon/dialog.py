@@ -118,64 +118,107 @@ class SystemInfoDialog(QtWidgets.QDialog):
         return sorted(installed_python_packages, key=lambda x: str(x).lower())
 
 
-class SettingsInformationTab(QtWidgets.QWidget):
+class PlaceHolderTab(QtWidgets.QWidget):
+
+    def __init__(self, parent=None, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.notification_information = QtWidgets.QLabel()
+
+        # self.notification_information.setMaximumWidth(300)
+        self.notification_information.setWordWrap(True)
+        self.layout = QtWidgets.QGridLayout(self)
+        self.layout.setAlignment(QtCore.Qt.AlignTop)
+        self.layout.addWidget(self.notification_information, 0, 0)
+        self.open_file_button = QtWidgets.QPushButton()
+        self.open_file_button.setText("Open")
+        self.layout.addWidget(self.open_file_button, 0, 1)
+        self.setLayout(self.layout)
+
+
+class SettingsPlaceholderInformationTab(PlaceHolderTab):
 
     def __init__(self, parent=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.parent = parent
         self.settings_location = None
-        layout = QtWidgets.QGridLayout(self)
-        layout.setAlignment(QtCore.Qt.AlignTop)
 
-        self._notification_information = QtWidgets.QLabel()
-
-        self._notification_information.setMaximumWidth(300)
-        self._notification_information.setWordWrap(True)
-        self._notification_information.setText(
-            "Note:\n"
+        self.notification_information.setText(
             "Configuration currently can be only be made by editing the "
             "program config file.")
 
-        layout.addWidget(self._notification_information, 0, 0)
-
-        self._goto_settings_button = QtWidgets.QPushButton()
-        self._goto_settings_button.setText("Open")
-        self._goto_settings_button.clicked.connect(self.open_settings)
-        layout.addWidget(self._goto_settings_button, 0, 1)
-        self.setLayout(layout)
+        self.open_file_button.clicked.connect(self.open_settings)
 
     def open_settings(self):
         if self.settings_location is None:
             print("No settings found")
             return
+
         os.startfile(self.settings_location)
+
         QtWidgets.QMessageBox.information(
             self, "Info",
             "Opening config.ini\n"
             "Note: Please quit and restart Speedwagon to apply changes")
 
 
+class SettingsPlaceholderTabsTab(PlaceHolderTab):
+
+    def __init__(self, parent=None, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.notification_information.setText(
+            "Configuration tabs can be only be made by editing "
+            "tabs.yaml file.")
+
+        self.open_file_button.clicked.connect(self.open_yaml_file)
+        self.settings_location = None
+
+    def open_yaml_file(self):
+        if self.settings_location is None:
+            print("No settings found")
+            return
+        else:
+            print(self.settings_location)
+        os.startfile(self.settings_location)
+
+        QtWidgets.QMessageBox.information(
+            self, "Info",
+            "Opening {}\n"
+            "Note: Please quit and restart Speedwagon to apply "
+            "changes".format(self.settings_location))
+
+
 class SettingsDialog(QtWidgets.QDialog):
 
-    def __init__(self, settings_location, parent=None, *args, **kwargs):
+    def __init__(self, parent=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self.settings_location = settings_location
+        self.settings_location = None
+
         self.setWindowTitle("Configuration")
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.tabsWidget = QtWidgets.QTabWidget(self)
+        self.layout.addWidget(self.tabsWidget)
 
-        layout = QtWidgets.QVBoxLayout(self)
+        self.open_settings_path_button = QtWidgets.QPushButton(self)
+        self.open_settings_path_button.setText("Open Config File Directory")
+        self.open_settings_path_button.clicked.connect(self.open_settings_dir)
 
-        self._tabsWidget = QtWidgets.QTabWidget(self)
-        info_tab = SettingsInformationTab()
-        info_tab.settings_location = self.settings_location
-        self._tabsWidget.addTab(info_tab, "Settings")
-        layout.addWidget(self._tabsWidget)
+        self.layout.addWidget(self.open_settings_path_button)
 
         self._button_box = \
             QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
 
         self._button_box.accepted.connect(self.accept)
-        layout.addWidget(self._button_box)
+        self.layout.addWidget(self._button_box)
 
-        self.setLayout(layout)
-        self.setFixedHeight(150)
-        self.setFixedWidth(300)
+        self.setLayout(self.layout)
+        self.setFixedHeight(350)
+        self.setFixedWidth(500)
+
+    def add_tab(self, tab, tab_name):
+        self.tabsWidget.addTab(tab, tab_name)
+
+    def open_settings_dir(self):
+
+        if self.settings_location is not None:
+            print("Opening")
+            os.startfile(self.settings_location)
