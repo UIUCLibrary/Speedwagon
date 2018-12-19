@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 import typing
+from typing import Dict
 from . import tasks
 from . import worker
 from .tools.options import UserOption2
@@ -79,6 +80,7 @@ class AbsWorkflow(AbsJob):
 
     def __init__(self) -> None:
         super().__init__()
+        self.global_settings: Dict[str, str] = dict()
 
     @abc.abstractmethod
     def discover_task_metadata(self, initial_results: typing.List[typing.Any],
