@@ -6,14 +6,14 @@ from pathlib import Path
 
 import abc
 import collections.abc
-from typing import Optional
+from typing import Optional, Dict
 
 
 class AbsConfig(collections.abc.Mapping):
 
     def __init__(self) -> None:
         super().__init__()
-        self._data = dict()
+        self._data: Dict[str, str] = dict()
 
     @abc.abstractmethod
     def get_user_data_directory(self) -> str:
@@ -56,7 +56,11 @@ class WindowsConfig(AbsConfig):
         return os.path.join(str(Path.home()), "Speedwagon", "data")
 
     def get_app_data_directory(self) -> str:
-        return os.path.join(os.getenv("LocalAppData"), "Speedwagon")
+        data_path = os.getenv("LocalAppData")
+        if data_path:
+            return os.path.join(data_path, "Speedwagon")
+        else:
+            raise FileNotFoundError("Unable to located data_directory")
 
 
 class ConfigManager(contextlib.AbstractContextManager):
