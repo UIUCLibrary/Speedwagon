@@ -80,7 +80,6 @@ class ConfigManager(contextlib.AbstractContextManager):
     @property
     def global_settings(self)->dict:
 
-
         global_settings = dict()
         try:
             global_section = self.cfg_parser["GLOBAL"]
@@ -92,8 +91,6 @@ class ConfigManager(contextlib.AbstractContextManager):
             for k, v in global_section.items():
                 if k not in ConfigManager.BOOLEAN_SETTINGS:
                     global_settings[k] = v
-
-
 
         except KeyError:
             print("Unable to load global settings.", file=sys.stderr)

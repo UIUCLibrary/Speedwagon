@@ -112,7 +112,9 @@ def get_selection(all_workflows):
     return new_workflow_set
 
 
-def get_custom_tabs(all_workflows: dict, yaml_file)->Iterator[Tuple[str, dict]]:
+def get_custom_tabs(all_workflows: dict, yaml_file)->\
+        Iterator[Tuple[str, dict]]:
+
     try:
         with open(yaml_file) as f:
             tabs_config_data = yaml.load(f.read())
@@ -220,9 +222,8 @@ class StartupDefault(AbsStarter):
 
             app_title = speedwagon.__name__.title()
             app_version = speedwagon.__version__
+            self._logger.info(f"{app_title} {app_version}")
 
-            self._logger.info(f"{app_title} {app_version}"
-            )
             self.app.processEvents()
 
             # ==================================================
@@ -340,7 +341,7 @@ class StartupDefault(AbsStarter):
 
             os.makedirs(self.app_data_dir)
             self._logger.debug("Created {}".format(self.app_data_dir))
-            # windows.log_manager.debug("Created {}".format(app_data_dir))
+
 
 def main() -> None:
     app = StartupDefault()

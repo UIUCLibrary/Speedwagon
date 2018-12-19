@@ -1,4 +1,3 @@
-import abc
 import io
 import os
 import sys
@@ -43,7 +42,7 @@ class OCRWorkflow(speedwagon.Workflow):
             f"version {ocr.Engine(self.tessdata_path).get_version()} " \
             "into the following directory:\n" \
             "\n" \
-                f"{self.tessdata_path}.\n" \
+            f"{self.tessdata_path}.\n" \
             "\n" \
             "Note:\n" \
             "    It's important to use the correct version of the " \

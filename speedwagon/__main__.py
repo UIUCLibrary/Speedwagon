@@ -14,7 +14,6 @@ def main():
         import pytest  # type: ignore
         sys.exit(pytest.main(sys.argv[2:]))
 
-
     speedwagon.startup.main()
 
 

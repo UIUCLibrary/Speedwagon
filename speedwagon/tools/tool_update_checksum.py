@@ -191,7 +191,9 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
                     report = os.path.join(root, file_)
                     try:
                         for filename, report_md5_hash in \
-                                UpdateChecksumBatchMultiple.locate_files(report):
+                                UpdateChecksumBatchMultiple.locate_files(
+                                    report):
+
                             job = {
                                 "filename": filename,
                                 "report_md5_hash": report_md5_hash,
@@ -200,7 +202,8 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
                             }
                             jobs.append(job)
                     except Exception as e:
-                        raise Exception("Failed on {}. Reason: {}".format(report, e))
+                        raise Exception(
+                            "Failed on {}. Reason: {}".format(report, e))
         return jobs
 
     @staticmethod
