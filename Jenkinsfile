@@ -639,6 +639,7 @@ pipeline {
                 }
             }
             environment{
+                TOX_WORK_DIR = "${WORKSPACE}\\tmp"
                 TMPDIR = "${WORKSPACE}\\tmp"
                 TMP = "${WORKSPACE}\\tmp"
                 TEMP = "${WORKSPACE}\\tmp"
