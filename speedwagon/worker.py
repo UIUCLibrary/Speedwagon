@@ -342,6 +342,7 @@ class AbsJobManager(metaclass=abc.ABCMeta):
 class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
     def __init__(self, max_workers=1) -> None:
+        self.settings_path = None
         self.manager = multiprocessing.Manager()
         self._max_workers = max_workers
         self.active = False
