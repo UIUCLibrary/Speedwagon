@@ -23,7 +23,7 @@ setup(
     test_suite="tests",
     install_requires=[
         "PyQt5",
-        "hathizip",
+        "HathiZip",
         "HathiValidate>=0.3.3",
         "pyhathiprep",
         "hathichecksumupdater",
