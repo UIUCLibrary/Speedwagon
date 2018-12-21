@@ -532,8 +532,8 @@ pipeline {
                                 timeout(5)
                             }
                             steps {
-                                bat """IF NOT EXISTS "cmake_build" mkdir cmake_build
-                                IF NOT EXISTS "logs" mkdir logs
+                                bat """if not exist "cmake_build" mkdir cmake_build
+                                if not exist "logs" mkdir logs
                                 """
                                 cmakeBuild buildDir: 'cmake_build',
                                     cleanBuild: true,
