@@ -271,7 +271,7 @@ pipeline {
 //                        tee('logs/build.log') {
                         dir("source"){
                             lock("system_pipenv_${NODE_NAME}"){
-                                powershell "& ${tool 'CPython-3.6'}\\python -m pipenv run python setup.py build -b ${WORKSPACE}\\build | tee ${WORKSPACE}\\logs\\build.log"
+                                powershell script: "& ${tool 'CPython-3.6'}\\python -m pipenv run python setup.py build -b ${WORKSPACE}\\build | tee ${WORKSPACE}\\logs\\build.log", returnStdout: false
                             }
                             // bat script: "$${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
 //                            }
