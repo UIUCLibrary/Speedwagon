@@ -114,6 +114,18 @@ def cleanup_workspace(){
     }
 }
 
+def get_pkg_name(pythonHomePath){
+    node("Python3"){
+        checkout scm
+        bat "dir"
+        script{
+            def pkg_name = bat(returnStdout: true, script: "@${pythonHomePath}\\python  setup.py --name").trim()
+            deleteDir()
+            return pkg_name
+        }
+    }
+}
+
 pipeline {
     agent {
         label "Windows && Python3 && longfilenames && WIX"
@@ -133,6 +145,7 @@ pipeline {
         WORKON_HOME ="${WORKSPACE}\\pipenv\\"
         build_number = VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
         PIPENV_NOSPIN = "True"
+        PKG_NAME = get_pkg_name("${tool 'CPython-3.6'}")
 //        DEVPI_JENKINS_PASSWORD=credentials('DS_devpi')
         // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
@@ -219,7 +232,7 @@ pipeline {
                     steps{
                         script {
                             dir("source"){
-                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python  setup.py --name").trim()
+//                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python  setup.py --name").trim()
                                 PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
                                 DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
                             }
