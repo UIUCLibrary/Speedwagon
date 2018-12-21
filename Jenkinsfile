@@ -212,7 +212,7 @@ pipeline {
                         lock("system_python_${env.NODE_NAME}"){
                             bat "${tool 'CPython-3.6'}\\python -m pip install pip --upgrade --quiet && ${tool 'CPython-3.6'}\\python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
                         }
-                        bat "${tool 'CPython-3.6'}\\python -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client"
+                        bat "${tool 'CPython-3.6'}\\python -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client sphinx==1.6.7"
 
 
                     }
@@ -271,7 +271,7 @@ pipeline {
 //                        tee('logs/build.log') {
                         dir("source"){
                             lock("system_pipenv_${NODE_NAME}"){
-                                powershell script: "& ${tool 'CPython-3.6'}\\python.exe -m pipenv run python setup.py build -b ${WORKSPACE}\\build | tee ${WORKSPACE}\\logs\\build.log", returnStdout: false, returnStatus: false
+                                bat "${tool 'CPython-3.6'}\\python.exe -m pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
                             }
                             // bat script: "$${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
 //                            }
@@ -279,8 +279,8 @@ pipeline {
                     }
                     post{
                         always{
-                            archiveArtifacts artifacts: "logs/build.log"
-                            recordIssues(tools: [pyLint(pattern: 'logs/build.log')])
+                            archiveArtifacts artifacts: "logs/build_errors.log"
+                            recordIssues(tools: [pyLint(pattern: 'logs/build_errors.log')])
 
 //                            recordIssues tools: [name: 'Setuptools Build', pattern: 'logs/build.log', tool: pyLint()]
 //                            scanForIssues pattern: 'logs/build.log', reportEncoding: '', sourceCodeEncoding: '', tool: pyLint()
@@ -288,7 +288,7 @@ pipeline {
                             // bat "dir build"
                         }
                         cleanup{
-                            cleanWs(patterns: [[pattern: 'logs/build.log', type: 'INCLUDE']])
+                            cleanWs(patterns: [[pattern: 'logs/build_errors', type: 'INCLUDE']])
                         }
                     }
                 }
