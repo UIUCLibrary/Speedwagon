@@ -651,11 +651,11 @@ pipeline {
                     }
                 }
             }
-            environment{
-                TMPDIR = "${WORKSPACE}\\tmp"
-                TMP = "${WORKSPACE}\\tmp"
-                TEMP = "${WORKSPACE}\\tmp"
-            }
+//            environment{
+//                TMPDIR = "${WORKSPACE}\\tmp"
+//                TMP = "${WORKSPACE}\\tmp"
+//                TEMP = "${WORKSPACE}\\tmp"
+//            }
             options{
                 timestamps()
                 }
@@ -730,12 +730,12 @@ pipeline {
                             options {
                                 skipDefaultCheckout(true)
                             }
-                            environment{
-                                TMPDIR = "${WORKSPACE}\\tmp"
-                                TMP = "${WORKSPACE}\\tmp"
-                                TEMP = "${WORKSPACE}\\tmp"
-                                TOX_WORK_DIR = "${WORKSPACE}\\tmp"
-                            }
+//                            environment{
+//                                TMPDIR = "${WORKSPACE}\\tmp"
+//                                TMP = "${WORKSPACE}\\tmp"
+//                                TEMP = "${WORKSPACE}\\tmp"
+//                                TOX_WORK_DIR = "${WORKSPACE}\\tmp"
+//                            }
                             steps {
                                 lock("system_python_${NODE_NAME}"){
                                     bat "${tool 'CPython-3.6'}\\python -m pip install pip --upgrade && ${tool 'CPython-3.6'}\\python -m venv venv "
