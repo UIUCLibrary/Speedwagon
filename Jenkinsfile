@@ -719,6 +719,14 @@ pipeline {
                                     }
 
                             }
+                            post{
+                                cleanup{
+                                    cleanWs deleteDirs: true, patterns: [
+                                            [pattern: 'certs', type: 'INCLUDE'],
+                                            [pattern: '*@tmp', type: 'INCLUDE']
+                                        ]
+                                }
+                            }
                         }
 
                         stage("Built Distribution: .whl") {
@@ -752,6 +760,14 @@ pipeline {
                                             pkgRegex: "whl",
                                             detox: false
                                         )
+                                    }
+                                }
+                                post{
+                                    cleanup{
+                                        cleanWs deleteDirs: true, patterns: [
+                                                [pattern: 'certs', type: 'INCLUDE'],
+                                                [pattern: '*@tmp', type: 'INCLUDE']
+                                            ]
                                     }
                                 }
                             }
