@@ -739,25 +739,32 @@ pipeline {
                                 skipDefaultCheckout(true)
                             }
                             stages{
-                                stage("Built Distribution testing"){
-                                    steps {
-                                        lock("system_python_${NODE_NAME}"){
-                                            bat "${tool 'CPython-3.6'}\\python -m pip install pip --upgrade && ${tool 'CPython-3.6'}\\python -m venv venv "
-                                        }
+
+                                stage("Creating environment for DevPi test"){
+                                    options{
+                                        timeout(10)
+                                        lock("system_python_${NODE_NAME}")
+                                    }
+                                    steps{
+                                        bat "${tool 'CPython-3.6'}\\python -m pip install pip --upgrade && ${tool 'CPython-3.6'}\\python -m venv venv "
                                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
-                                        lock("${BUILD_TAG}_${NODE_NAME}"){
-                                            timeout(10){
-                                                devpiTest(
-                                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                                    url: "https://devpi.library.illinois.edu",
-                                                    index: "${env.BRANCH_NAME}_staging",
-                                                    pkgName: "${env.PKG_NAME}",
-                                                    pkgVersion: "${PKG_VERSION}",
-                                                    pkgRegex: "whl",
-                                                    detox: false
-                                                )
-                                            }
-                                        }
+                                    }
+                                }
+                                stage("Built Distribution testing"){
+                                    options{
+                                        timeout(10)
+                                        lock("${BUILD_TAG}_${NODE_NAME}")
+                                    }
+                                    steps {
+                                        devpiTest(
+                                            devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                            url: "https://devpi.library.illinois.edu",
+                                            index: "${env.BRANCH_NAME}_staging",
+                                            pkgName: "${env.PKG_NAME}",
+                                            pkgVersion: "${PKG_VERSION}",
+                                            pkgRegex: "whl",
+                                            detox: false
+                                        )
                                     }
                                 }
                             }
