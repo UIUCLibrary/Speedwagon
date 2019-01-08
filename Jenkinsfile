@@ -713,7 +713,7 @@ pipeline {
                                 }
                                 stage("Testing sdist"){
                                     steps{
-                                        lock("${BUILD_TAG}_${NODE_NAME}"){
+//                                        lock("${BUILD_TAG}_${NODE_NAME}"){
                                             timeout(10){
                                                 bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
                                                 devpiTest(
@@ -726,7 +726,7 @@ pipeline {
                                                     detox: false
                                                 )
                                             }
-                                        }
+//                                        }
                                     }
                                 }
 
@@ -761,7 +761,7 @@ pipeline {
                                 }
                                 stage("Testing Whl"){
                                     steps {
-                                        lock("${BUILD_TAG}_${NODE_NAME}"){
+//                                        lock("${BUILD_TAG}_${NODE_NAME}"){
                                             timeout(10){
                                                 devpiTest(
                                                     devpiExecutable: "venv\\Scripts\\devpi.exe",
@@ -772,7 +772,7 @@ pipeline {
                                                     pkgRegex: "whl",
                                                     detox: false
                                                 )
-                                            }
+//                                            }
                                         }
                                     }
                                 }
