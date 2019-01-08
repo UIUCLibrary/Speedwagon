@@ -628,9 +628,13 @@ pipeline {
                     }
                     post {
                         cleanup{
-                            dir("cmake_build"){
-                                cmake arguments: "--build . --config Release --target clean", installation: "${CMAKE_VERSION}"
-                            }
+                            cleanWs deleteDirs: true, patterns: [
+                                [pattern: 'cmake_build', type: 'INCLUDE'],
+                                [pattern: '*@tmp', type: 'INCLUDE'],
+                                [pattern: 'temp', type: 'INCLUDE'],
+                                [pattern: 'logs', type: 'INCLUDE'],
+                                [pattern: 'generatedJUnitFiles', type: 'INCLUDE']
+                            ]
                         }
                     }
                 }
