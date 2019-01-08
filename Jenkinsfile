@@ -704,7 +704,6 @@ pipeline {
                                         lock("system_python_${NODE_NAME}"){
                                             bat "${tool 'CPython-3.6'}\\python -m venv venv"
                                         }
-
                                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
                                     }
                                 }
@@ -718,6 +717,7 @@ pipeline {
                                     steps{
                                         lock("${BUILD_TAG}_${NODE_NAME}"){
                                             timeout(10){
+                                                bat "set"
                                                 bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
                                                 devpiTest(
                                                     devpiExecutable: "venv\\Scripts\\devpi.exe",
@@ -772,6 +772,7 @@ pipeline {
                                     steps {
                                         lock("${BUILD_TAG}_${NODE_NAME}"){
                                             timeout(10){
+                                                bat "set"
                                                 devpiTest(
                                                     devpiExecutable: "venv\\Scripts\\devpi.exe",
                                                     url: "https://devpi.library.illinois.edu",
