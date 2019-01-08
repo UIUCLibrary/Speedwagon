@@ -762,18 +762,16 @@ pipeline {
                                         )
                                     }
                                 }
-                                post{
-                                    cleanup{
-                                        cleanWs deleteDirs: true, patterns: [
-                                                [pattern: 'certs', type: 'INCLUDE'],
-                                                [pattern: '*@tmp', type: 'INCLUDE']
-                                            ]
-                                    }
-                                }
                             }
                             post{
                                 failure{
                                     cleanWs deleteDirs: true, patterns: [[pattern: 'venv', type: 'INCLUDE']]
+                                }
+                                cleanup{
+                                    cleanWs deleteDirs: true, patterns: [
+                                            [pattern: 'certs', type: 'INCLUDE'],
+                                            [pattern: '*@tmp', type: 'INCLUDE']
+                                        ]
                                 }
                             }
                         }
