@@ -147,8 +147,6 @@ pipeline {
         PIPENV_NOSPIN = "True"
         PKG_NAME = get_pkg_name("${tool 'CPython-3.6'}")
         DEVPI = credentials("DS_devpi")
-//        DEVPI_JENKINS_PASSWORD=credentials('DS_devpi')
-        // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
@@ -233,7 +231,6 @@ pipeline {
                     steps{
                         script {
                             dir("source"){
-//                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python  setup.py --name").trim()
                                 PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
                                 DOC_ZIP_FILENAME = "${env.PKG_NAME}-${PKG_VERSION}.doc.zip"
                             }
@@ -269,24 +266,16 @@ pipeline {
                 stage("Python Package"){
                     steps {
 
-//                        tee('logs/build.log') {
                         dir("source"){
                             lock("system_pipenv_${NODE_NAME}"){
                                 bat "${tool 'CPython-3.6'}\\python.exe -m pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
                             }
-                            // bat script: "$${tool 'CPython-3.6'} -m pipenv run python setup.py build -b ${WORKSPACE}\\build"
-//                            }
                         }
                     }
                     post{
                         always{
                             archiveArtifacts artifacts: "logs/build_errors.log"
                             recordIssues(tools: [pyLint(pattern: 'logs/build_errors.log')])
-
-//                            recordIssues tools: [name: 'Setuptools Build', pattern: 'logs/build.log', tool: pyLint()]
-//                            scanForIssues pattern: 'logs/build.log', reportEncoding: '', sourceCodeEncoding: '', tool: pyLint()
-//                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
-                            // bat "dir build"
                         }
                         cleanup{
                             cleanWs(patterns: [[pattern: 'logs/build_errors', type: 'INCLUDE']])
@@ -296,21 +285,15 @@ pipeline {
                 stage("Sphinx Documentation"){
                     steps {
                         echo "Building docs on ${env.NODE_NAME}"
-//                        tee('logs/build_sphinx.log') {
                         dir("source"){
                             lock("system_pipenv_${NODE_NAME}"){
                                 bat "${tool 'CPython-3.6'}\\python -m pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs 2> ${WORKSPACE}\\logs\\build_sphinx.log & type ${WORKSPACE}\\logs\\build_sphinx.log"
                             }
                         }
-//                        }
                     }
                     post{
                         always {
-//                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build_sphinx.log']]
-//                            scanForIssues pattern: 'logs/build_sphinx.log', reportEncoding: '', sourceCodeEncoding: '', tool: pep8()
                             recordIssues(tools: [pep8(pattern: 'logs/build_sphinx.log')])
-
-//                            recordIssues enabledForFailure: true, tools: [[name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log', tool: pep8()]]
                             archiveArtifacts artifacts: 'logs/build_sphinx.log'
                         }
                         success{
@@ -380,7 +363,6 @@ pipeline {
                     }
                     post{
                         always {
-//                            bat "dir ${WORKSPACE}\\reports"
                             archiveArtifacts artifacts: "reports/doctest.txt"
                         }
                         cleanup{
@@ -399,12 +381,7 @@ pipeline {
                     }
                     post {
                         always {
-//                            bat "type ${WORKSPACE}\\logs\\mypy.log"
                             archiveArtifacts "logs\\mypy.log"
-//                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'MyPy', pattern: 'logs/mypy.log']], unHealthy: ''
-//                            scanForIssues pattern: 'logs/mypy.log', reportEncoding: '', sourceCodeEncoding: '', tool: myPy(), blameDisabled: true
-
-//                            recordIssues enabledForFailure: true, tools: [[name: 'MyPy', pattern: "logs/mypy.log", tool: myPy()]]
                             recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
 
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
@@ -441,14 +418,9 @@ pipeline {
                     }
                     post {
                         always {
-//                            scanForIssues pattern: 'logs/flake8.log', reportEncoding: '', sourceCodeEncoding: '', tool: pyLint()
                               archiveArtifacts 'logs/flake8.log'
 
-//                              recordIssues enabledForFailure: true, tools: [[name: 'Flake8', pattern: 'logs/flake8.log', tool: flake8()]]
                               recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
-//                                recordIssues enabledForFailure: true, tools: [[name: 'Flake8', pattern: 'source/*.py', tool: flake8()]]
-
-//                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'PyLint', pattern: 'logs/flake8.log']], unHealthy: ''
                         }
                         cleanup{
                             cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
@@ -500,7 +472,6 @@ pipeline {
                                 }
                                 cleanup{
                                     cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', type: 'INCLUDE']]
-//                                    remove_files("dist/*.whl,dist/*.tar.gz,dist/*.zip")
                                 }
                             }
                         }
@@ -513,11 +484,6 @@ pipeline {
                             customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
                         }
                     }
-
-//                    environment {
-//                        PIPENV_CACHE_DIR="${WORKSPACE}\\pipenvcache\\"
-//                        WORKON_HOME ="${WORKSPACE}\\pipenv\\"
-//                    }
 
                     when{
                         anyOf{
@@ -548,7 +514,6 @@ pipeline {
                             post{
                                 always{
                                     archiveArtifacts artifacts: "logs/cmake-msbuild.log"
-//                                    recordIssues enabledForFailure: true, tools: [[name: 'Standalone Builds Warnings', pattern: "logs/cmake-msbuild.log", tool: msBuild()]]
                                     recordIssues(tools: [msBuild(pattern: 'logs/cmake-msbuild.log')])
                                 }
                                 cleanup{
@@ -576,10 +541,6 @@ pipeline {
                                         installation: "${CMAKE_VERSION}",
                                         workingDir: 'cmake_build'
                                         )
-
-
-//                                    }
-//                                }
                             }
                             post{
                                 always {
@@ -656,11 +617,6 @@ pipeline {
                     }
                 }
             }
-//            environment{
-//                TMPDIR = "${WORKSPACE}\\tmp"
-//                TMP = "${WORKSPACE}\\tmp"
-//                TEMP = "${WORKSPACE}\\tmp"
-//            }
             options{
                 timestamps()
                 }
@@ -672,12 +628,9 @@ pipeline {
                     steps {
                         unstash 'DOCS_ARCHIVE'
                         unstash 'PYTHON_PACKAGES'
-        //                unstash 'STANDALONE_INSTALLERS'
                         dir("source"){
                             bat "${WORKSPACE}\\venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
                             bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && ${WORKSPACE}\\venv\\Scripts\\python -m devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
-//                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//                                bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD} && ${WORKSPACE}\\venv\\Scripts\\python -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
 //                            }
                             script {
                                 bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi upload --from-dir ${WORKSPACE}\\dist"
@@ -715,7 +668,6 @@ pipeline {
                                 }
                                 stage("Testing sdist"){
                                     steps{
-//                                        lock("${BUILD_TAG}_${NODE_NAME}"){
                                             timeout(10){
                                                 bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
                                                 devpiTest(
@@ -728,7 +680,6 @@ pipeline {
                                                     detox: false
                                                 )
                                             }
-//                                        }
                                     }
                                 }
 
@@ -763,7 +714,6 @@ pipeline {
                                 }
                                 stage("Testing Whl"){
                                     steps {
-//                                        lock("${BUILD_TAG}_${NODE_NAME}"){
                                             timeout(10){
                                                 devpiTest(
                                                     devpiExecutable: "venv\\Scripts\\devpi.exe",
@@ -774,7 +724,6 @@ pipeline {
                                                     pkgRegex: "whl",
                                                     detox: false
                                                 )
-//                                            }
                                         }
                                     }
                                 }
@@ -798,7 +747,6 @@ pipeline {
                         success {
                             echo "it Worked. Pushing file to ${env.BRANCH_NAME} index"
                                 bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
-//                                withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                                     bat "devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
 
 //                                }
@@ -814,9 +762,7 @@ pipeline {
                     }
                     steps {
                         input "Release ${env.PKG_NAME} ${PKG_VERSION} to DevPi Production?"
-//                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                             bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${PKG_VERSION} production/release"
-//                        }
                     }
                     post{
                         success{
@@ -908,7 +854,6 @@ pipeline {
                                                 remoteDirectorySDF: false,
                                                 removePrefix: '',
                                                 sourceFiles: "*.msi,*.exe,*.zip",
-        //                                            sourceFiles: "*.msi,*.exe,*.zip",
                                                 ]],
                                             usePromotionTimestamp: false,
                                             useWorkspaceInPromotion: false,
@@ -934,7 +879,6 @@ pipeline {
                     when {
                         allOf{
                             equals expected: true, actual: params.DEPLOY_SCCM
-                            // equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE
                             anyOf{
                                 equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
                                 equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
@@ -942,7 +886,6 @@ pipeline {
                             }
                             branch "master"
                         }
-                        // expression { params.RELEASE == "Release_to_devpi_and_sccm"}
                     }
                     options {
                         skipDefaultCheckout(true)
@@ -951,7 +894,6 @@ pipeline {
                         unstash "STANDALONE_INSTALLERS"
                         unstash "Deployment"
                         script{
-                            // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
                             dir("dist"){
                                 def msi_files = findFiles glob: '*.msi'
                                 def deployment_request = requestDeploy yaml: "${WORKSPACE}/deployment.yml", file_name: msi_files[0]
@@ -977,7 +919,6 @@ pipeline {
                                         ]]
                                     )
 
-                                // deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${name}/")
                                 jiraComment body: "Version ${PKG_VERSION} sent to staging for user testing.", issueKey: "${params.JIRA_ISSUE_VALUE}"
                                 input("Deploy to production?")
                                 writeFile file: "${WORKSPACE}/logs/deployment_request.txt", text: deployment_request
@@ -1003,8 +944,6 @@ pipeline {
                                         ]]
                                 )
                             }
-
-                            // deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
                         }
                     }
                     post {
@@ -1020,8 +959,6 @@ pipeline {
     }
     post {
         failure {
-//            echo "Failed!"
-
             script{
                 def help_info = "Pipeline failed. If the problem is old cached data, you might need to purge the testing environment. Try manually running the pipeline again with the parameter FRESH_WORKSPACE checked."
                 echo "${help_info}"
@@ -1029,7 +966,6 @@ pipeline {
                     emailext attachLog: true, body: "${help_info}\n${JOB_NAME} has current status of ${currentBuild.currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
                 }
             }
-//            bat "tree /A /F"
         }
         cleanup {
              dir("source"){
@@ -1041,15 +977,10 @@ pipeline {
 
             script {
                 if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
-                    // def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                    // def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-
-//                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                         try {
                             bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi remove -y ${env.PKG_NAME}==${PKG_VERSION}"
                         } catch (Exception ex) {
                             echo "Failed to remove ${env.PKG_NAME}==${PKG_VERSION} from ${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
-//                        }
                     }
 
                 }
