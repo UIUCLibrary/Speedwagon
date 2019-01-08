@@ -697,26 +697,41 @@ pipeline {
                                 skipDefaultCheckout(true)
 
                             }
-                            steps {
-                                    lock("system_python_${NODE_NAME}"){
-                                        bat "${tool 'CPython-3.6'}\\python -m venv venv"
-                                    }
+                            stages{
 
-                                    bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
-                                    lock("${BUILD_TAG}_${NODE_NAME}"){
-                                        timeout(10){
-                                            bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
-                                            devpiTest(
-                                                devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                                url: "https://devpi.library.illinois.edu",
-                                                index: "${env.BRANCH_NAME}_staging",
-                                                pkgName: "${env.PKG_NAME}",
-                                                pkgVersion: "${PKG_VERSION}",
-                                                pkgRegex: "tar.gz",
-                                                detox: false
-                                            )
+                                stage("Creating Env for DevPi to test sdist"){
+                                    steps {
+                                        lock("system_python_${NODE_NAME}"){
+                                            bat "${tool 'CPython-3.6'}\\python -m venv venv"
+                                        }
+
+                                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
+                                    }
+                                }
+                                stage("Testing sdist"){
+                                    environment{
+                                        TMPDIR = "${WORKSPACE}\\tmp"
+                                        TMP = "${WORKSPACE}\\tmp"
+                                        TEMP = "${WORKSPACE}\\tmp"
+                                        TOX_WORK_DIR = "${WORKSPACE}\\tmp"
+                                    }
+                                    steps{
+                                        lock("${BUILD_TAG}_${NODE_NAME}"){
+                                            timeout(10){
+                                                bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
+                                                devpiTest(
+                                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                                    url: "https://devpi.library.illinois.edu",
+                                                    index: "${env.BRANCH_NAME}_staging",
+                                                    pkgName: "${env.PKG_NAME}",
+                                                    pkgVersion: "${PKG_VERSION}",
+                                                    pkgRegex: "tar.gz",
+                                                    detox: false
+                                                )
+                                            }
                                         }
                                     }
+                                }
 
                             }
                             post{
@@ -739,8 +754,7 @@ pipeline {
                                 skipDefaultCheckout(true)
                             }
                             stages{
-
-                                stage("Creating environment for DevPi test"){
+                                stage("Creating Env for DevPi to test whl"){
                                     steps{
                                         lock("system_python_${env.NODE_NAME}"){
                                             bat "${tool 'CPython-3.6'}\\python -m pip install pip --upgrade && ${tool 'CPython-3.6'}\\python -m venv venv "
@@ -748,7 +762,13 @@ pipeline {
                                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
                                     }
                                 }
-                                stage("Built Distribution testing"){
+                                stage("Testing Whl"){
+                                    environment{
+                                        TMPDIR = "${WORKSPACE}\\tmp"
+                                        TMP = "${WORKSPACE}\\tmp"
+                                        TEMP = "${WORKSPACE}\\tmp"
+                                        TOX_WORK_DIR = "${WORKSPACE}\\tmp"
+                                    }
                                     steps {
                                         lock("${BUILD_TAG}_${NODE_NAME}"){
                                             timeout(10){
@@ -766,12 +786,7 @@ pipeline {
                                     }
                                 }
                             }
-//                            environment{
-//                                TMPDIR = "${WORKSPACE}\\tmp"
-//                                TMP = "${WORKSPACE}\\tmp"
-//                                TEMP = "${WORKSPACE}\\tmp"
-//                                TOX_WORK_DIR = "${WORKSPACE}\\tmp"
-//                            }
+
 
                             post{
                                 failure{
