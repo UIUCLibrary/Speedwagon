@@ -1,3 +1,4 @@
+import abc
 import email
 import os
 from typing import Collection
@@ -6,7 +7,7 @@ import pkg_resources
 from PyQt5 import QtWidgets, QtCore
 
 import speedwagon
-
+import configparser
 
 class ErrorDialogBox(QtWidgets.QMessageBox):
     """Dialog box to use for Error Messages causes while trying to run a job
@@ -193,7 +194,7 @@ class SettingsDialog(QtWidgets.QDialog):
         super().__init__(parent, *args, **kwargs)
         self.settings_location = None
 
-        self.setWindowTitle("Configuration")
+        self.setWindowTitle("Settings")
         self.layout = QtWidgets.QVBoxLayout(self)
         self.tabsWidget = QtWidgets.QTabWidget(self)
         self.layout.addWidget(self.tabsWidget)
@@ -205,7 +206,7 @@ class SettingsDialog(QtWidgets.QDialog):
         self.layout.addWidget(self.open_settings_path_button)
 
         self._button_box = \
-            QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
+            QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
 
         self._button_box.accepted.connect(self.accept)
         self.layout.addWidget(self._button_box)
@@ -222,3 +223,105 @@ class SettingsDialog(QtWidgets.QDialog):
         if self.settings_location is not None:
             print("Opening")
             os.startfile(self.settings_location)
+
+
+class SettingsEditor:
+
+    def __init__(self, parent) -> None:
+        # super().__init__(context)
+        self.parent = parent
+        self.unmodified = SettingsUnchanged(self)
+        self.modified = SettingsModified(self)
+
+        self.state = self.unmodified
+        self.setting_widgets = dict()
+
+    def add_setting(self, setting_name):
+
+        if setting_name in self.setting_widgets:
+            return
+
+        new_widget = QtWidgets.QLineEdit()
+
+        # Whatever state the editor is in, run the update
+        new_widget.editingFinished.connect(self.state.on_updated)
+
+        self.setting_widgets[setting_name] = \
+            QtWidgets.QLabel(setting_name), new_widget
+
+        self.parent.layout.addRow(
+            self.setting_widgets[setting_name][0],
+            self.setting_widgets[setting_name][1])
+
+    def close(self):
+        self.state.close()
+
+
+class AbsSettingsStage(metaclass=abc.ABCMeta):
+    def __init__(self, context: SettingsEditor):
+        self._context = context
+
+    @abc.abstractmethod
+    def close(self):
+        pass
+
+    @abc.abstractmethod
+    def on_updated(self):
+        pass
+
+
+class SettingsModified(AbsSettingsStage):
+
+    def close(self):
+        print("Saving changes")
+        msg_box = QtWidgets.QMessageBox(self._context.parent)
+        msg_box.setWindowTitle("Saved changes")
+        msg_box.setText("Please restart changes to take effect")
+        msg_box.exec()
+
+
+    def on_updated(self):
+        pass
+
+
+class SettingsUnchanged(AbsSettingsStage):
+
+    def close(self):
+        print("closing without making any changes")
+
+    def on_updated(self):
+        self._context.state = self._context.modified
+
+
+class GlobalSettings(QtWidgets.QWidget):
+
+    def __init__(self, parent=None, *args, **kwargs):
+        super().__init__(parent, *args,**kwargs)
+        self.config_file = None
+
+        self.settings = SettingsEditor(self)
+
+        self.layout = QtWidgets.QFormLayout(self)
+        self.setting_widgets = dict()
+
+    def read_config_data(self):
+
+
+        if self.config_file is None:
+            raise FileNotFoundError("No Configuration file set")
+        if not os.path.exists(self.config_file):
+            raise FileNotFoundError("Invalid Configuration file set")
+
+        # TODO: Refactor into a Model view based on settings
+        config = configparser.ConfigParser()
+        config.read(self.config_file)
+
+        global_settings = config["GLOBAL"]
+
+        for k,v in global_settings.items():
+            self.settings.add_setting(k)
+            label, widget = self.settings.setting_widgets[k]
+            widget.setText(v)
+
+    def on_close(self):
+        self.settings.close()
