@@ -12,7 +12,8 @@ from PyQt5 import QtCore, QtWidgets
 from collections import namedtuple
 import multiprocessing
 
-from . import dialog
+from .dialog import dialogs
+
 from .tasks import AbsSubtask, QueueAdapter
 
 MessageLog = namedtuple("MessageLog", ("message",))
@@ -263,7 +264,7 @@ class WorkRunnerExternal2(contextlib.AbstractContextManager):
         # self.jobs: queue.Queue[JobPair] = queue.Queue()
 
     def __enter__(self):
-        self.dialog = dialog.WorkProgressBar(self._parent)
+        self.dialog = dialogs.WorkProgressBar(self._parent)
 
         self.dialog.setLabelText("Initializing")
         self.dialog.setWindowTitle(self._tool.name)
@@ -296,7 +297,7 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         # self.jobs: queue.Queue[JobPair] = queue.Queue()
 
     def __enter__(self):
-        self.dialog = dialog.WorkProgressBar(self._parent)
+        self.dialog = dialogs.WorkProgressBar(self._parent)
         self.dialog.setLabelText("Initializing")
         self.dialog.setMinimumDuration(100)
         # self.dialog.setWindowTitle("Running")
@@ -386,7 +387,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         self.active = False
         still_running = []
 
-        dialog_box = dialog.WorkProgressBar("Canceling", None, 0, 0)
+        dialog_box = dialogs.WorkProgressBar("Canceling", None, 0, 0)
 
         # while not self._pending_jobs.empty():
         #     self._pending_jobs.task_done()

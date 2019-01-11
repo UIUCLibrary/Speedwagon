@@ -688,7 +688,7 @@ pipeline {
                                 cleanup{
                                     cleanWs deleteDirs: true, patterns: [
                                             [pattern: 'certs', type: 'INCLUDE'],
-                                            [pattern: '*@tmp', type: 'INCLUDE']
+                                            [pattern: '*tmp', type: 'INCLUDE']
                                         ]
                                 }
                             }
@@ -737,7 +737,7 @@ pipeline {
                                 cleanup{
                                     cleanWs deleteDirs: true, patterns: [
                                             [pattern: 'certs', type: 'INCLUDE'],
-                                            [pattern: '*@tmp', type: 'INCLUDE']
+                                            [pattern: '*tmp', type: 'INCLUDE']
                                         ]
                                 }
                             }
@@ -990,6 +990,7 @@ pipeline {
                     [pattern: 'dist', type: 'INCLUDE'],
                     [pattern: 'build', type: 'INCLUDE'],
                     [pattern: 'reports', type: 'INCLUDE'],
+                    [pattern: '*tmp', type: 'INCLUDE']
                 ]
         }
 

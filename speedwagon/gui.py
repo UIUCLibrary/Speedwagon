@@ -10,6 +10,8 @@ import io
 import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui
 import speedwagon.dialog
+import speedwagon.dialog.dialogs
+import speedwagon.dialog.settings
 from . import tabs, worker
 import speedwagon
 import speedwagon.startup
@@ -209,13 +211,14 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # System --> Configuration
         # Create a system info menu item
 
-        system_configuration_menu_item = \
-            QtWidgets.QAction("Configuration", self)
+        system_settings_menu_item = \
+            QtWidgets.QAction("Settings", self)
 
-        system_configuration_menu_item.triggered.connect(
+        system_settings_menu_item.triggered.connect(
             self.show_configuration)
+        system_settings_menu_item.setShortcut("Ctrl+Shift+S")
 
-        system_menu.addAction(system_configuration_menu_item)
+        system_menu.addAction(system_settings_menu_item)
 
         # System --> System Info
         # Create a system info menu item
@@ -268,7 +271,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             if tab_name == tab_title:
                 self.tabWidget.tabs.setCurrentIndex(t)
                 return
-        self.log_manager.warning("{} not found".format(tab_name))
+        self.log_manager.warning("Unable to set tab to {}.".format(tab_name))
 
     def add_tools(self, tools):
         tools_tab = tabs.ToolTab(
@@ -313,26 +316,33 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                 "No help link available. Reason: {}".format(e))
 
     def show_about_window(self):
-        speedwagon.dialog.about_dialog_box(parent=self)
+        speedwagon.dialog.dialogs.about_dialog_box(parent=self)
 
     def show_system_info(self) -> None:
-        system_info_dialog = speedwagon.dialog.SystemInfoDialog(self)
+        system_info_dialog = speedwagon.dialog.dialogs.SystemInfoDialog(self)
         system_info_dialog.exec()
 
     def show_configuration(self) -> None:
 
-        config_dialog = speedwagon.dialog.SettingsDialog(self)
+        config_dialog = speedwagon.dialog.settings.SettingsDialog(self)
+
         if self._work_manager.settings_path is not None:
             config_dialog.settings_location = self._work_manager.settings_path
 
-        info_tab = speedwagon.dialog.SettingsPlaceholderInformationTab()
+        global_settings_tab = speedwagon.dialog.settings.GlobalSettingsTab()
+
+        # info_tab = speedwagon.dialog.SettingsPlaceholderInformationTab()
         if self._work_manager.settings_path is not None:
-            info_tab.settings_location = \
-                os.path.join(self._work_manager.settings_path, "config.ini")
+            global_settings_tab.config_file = \
+                os.path.join(
+                    self._work_manager.settings_path, "config.ini")
 
-        config_dialog.add_tab(info_tab, "Global Settings")
+            global_settings_tab.read_config_data()
 
-        tabs_tab = speedwagon.dialog.SettingsPlaceholderTabsTab()
+        config_dialog.add_tab(global_settings_tab, "Global Settings")
+        config_dialog.accepted.connect(global_settings_tab.on_okay)
+
+        tabs_tab = speedwagon.dialog.settings.SettingsPlaceholderTabsTab()
 
         if self._work_manager.settings_path is not None:
             tabs_tab.settings_location = \
