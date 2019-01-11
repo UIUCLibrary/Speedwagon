@@ -4,6 +4,8 @@ import warnings
 from abc import abstractmethod
 from collections import namedtuple
 import enum
+from typing import List, Tuple, Any
+
 from .job import AbsJob
 from PyQt5 import QtCore
 
@@ -125,7 +127,6 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
             return QtCore.Qt.ItemIsEnabled \
                    | QtCore.Qt.ItemIsSelectable \
                    | QtCore.Qt.ItemIsEditable
-
         else:
             print(column, file=sys.stderr)
 
@@ -231,4 +232,64 @@ class ToolOptionsModel3(ToolOptionsModel):
             return False
         # existing_data = self._data[index.row()]
         self._data[index.row()].data = data
+        return True
+
+
+class SettingsModel(QtCore.QAbstractTableModel):
+
+    def __init__(self, *__args) -> None:
+        super().__init__(*__args)
+        self._data: List[Tuple[str, str]] = []
+        self._headers = {
+            0: "Key",
+            1: "Value"
+        }
+
+    def data(self, index: QtCore.QModelIndex, role=None)->Any:
+        if not index.isValid():
+            return QtCore.QVariant()
+
+        if role == QtCore.Qt.DisplayRole:
+            return self._data[index.row()][index.column()]
+
+        if role == QtCore.Qt.EditRole:
+            return self._data[index.row()][index.column()]
+
+        return QtCore.QVariant()
+
+    def rowCount(self, parent=None, *args, **kwargs):
+        return len(self._data)
+
+    def add_setting(self, name, value):
+        self._data.append((name, value))
+
+    def columnCount(self, parent=None, *args, **kwargs):
+        return 2
+
+    def headerData(self, index, Qt_Orientation, role=None):
+        if Qt_Orientation == QtCore.Qt.Horizontal:
+            if role == QtCore.Qt.DisplayRole:
+                return self._headers.get(index, "")
+        return QtCore.QVariant()
+
+    def flags(self, index: QtCore.QModelIndex):
+        if self._headers.get(index.column(), "") == "Key":
+            return QtCore.Qt.NoItemFlags
+
+        if self._headers.get(index.column(), "") == "Value":
+            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
+
+        return super().flags(index)
+
+    def setData(self, index: QtCore.QModelIndex, data, role: QtCore.Qt = None):
+        if not index.isValid():
+            return False
+        row = index.row()
+        original_data = self._data[row]
+
+        # Only update the model if the data is actually different
+        if data != original_data[1]:
+            self._data[row] = (self._data[row][0], data)
+            self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
+
         return True

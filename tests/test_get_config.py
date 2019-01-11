@@ -68,3 +68,33 @@ def test_read_settings(tmpdir):
 
     with config.ConfigManager(config_file) as cfg:
         assert cfg.global_settings['tessdata'] == "~/mytesseractdata"
+
+
+def test_serialize_settings_model():
+
+    original_settings = {
+        "tessdata": "~/mytesseractdata"
+    }
+
+    # Mock up a model
+    cfg_parser = configparser.ConfigParser()
+    original_settings = cfg_parser["GLOBAL"] = original_settings
+
+    my_model = config.SettingsModel()
+    for k, v in original_settings.items():
+        my_model.add_setting(k, v)
+
+    # Serialize the model to ini file format
+    data = config.serialize_settings_model(my_model)
+    assert data is not None
+
+    # Check that the new data is the same as original
+    new_config = configparser.ConfigParser()
+    new_config.read_string(data)
+    assert "GLOBAL" in new_config
+
+    for k, v in original_settings.items():
+        assert new_config["GLOBAL"][k] == v
+
+
+
