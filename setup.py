@@ -39,10 +39,12 @@ setup(
     ],
     packages=[
         "speedwagon",
+        "speedwagon.dialog",
         "speedwagon.tools",
         "speedwagon.workflows",
         "speedwagon.workflows.tessdata",
-        "speedwagon.ui"
+        "speedwagon.ui",
+
     ],
     setup_requires=['pytest-runner'],
     tests_require=['pytest', "behave", "pytest-qt"],
