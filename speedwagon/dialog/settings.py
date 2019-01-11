@@ -1,9 +1,9 @@
-import configparser
 import os
 
 from PyQt5 import QtWidgets, QtCore
 
-from speedwagon.models import SettingsModel
+from speedwagon import config
+from speedwagon.config import build_setting_model
 
 
 class PlaceHolderTab(QtWidgets.QWidget):
@@ -21,32 +21,6 @@ class PlaceHolderTab(QtWidgets.QWidget):
         self.open_file_button.setText("Open")
         self.layout.addWidget(self.open_file_button, 0, 1)
         self.setLayout(self.layout)
-
-
-class SettingsPlaceholderInformationTab(PlaceHolderTab):
-
-    def __init__(self, parent=None, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.parent = parent
-        self.settings_location = None
-
-        self.notification_information.setText(
-            "Configuration currently can be only be made by editing the "
-            "program config file.")
-
-        self.open_file_button.clicked.connect(self.open_settings)
-
-    def open_settings(self):
-        if self.settings_location is None:
-            print("No settings found")
-            return
-
-        os.startfile(self.settings_location)
-
-        QtWidgets.QMessageBox.information(
-            self, "Info",
-            "Opening config.ini\n"
-            "Note: Please quit and restart Speedwagon to apply changes")
 
 
 class SettingsPlaceholderTabsTab(PlaceHolderTab):
@@ -134,22 +108,12 @@ class GlobalSettingsTab(QtWidgets.QWidget):
         self.layout.addWidget(self.settings_table)
 
     def read_config_data(self):
-
         if self.config_file is None:
             raise FileNotFoundError("No Configuration file set")
-
         if not os.path.exists(self.config_file):
             raise FileNotFoundError("Invalid Configuration file set")
 
-        config = configparser.ConfigParser()
-        config.read(self.config_file)
-
-        global_settings = config["GLOBAL"]
-        my_model = SettingsModel()
-
-        for k, v in global_settings.items():
-            my_model.add_setting(k, v)
-        self.settings_table.setModel(my_model)
+        self.settings_table.setModel(build_setting_model(self.config_file))
         self.settings_table.model().dataChanged.connect(self.on_modified)
 
     def on_modified(self):
@@ -158,6 +122,11 @@ class GlobalSettingsTab(QtWidgets.QWidget):
     def on_okay(self):
         if self._modified:
             print("Saving changes")
+            data = config.serialize_settings_model(self.settings_table.model())
+
+            with open(self.config_file, "w") as fw:
+                fw.write(data)
+
             msg_box = QtWidgets.QMessageBox(self)
             msg_box.setWindowTitle("Saved changes")
             msg_box.setText("Please restart changes to take effect")

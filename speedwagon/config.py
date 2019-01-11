@@ -2,11 +2,14 @@ import configparser
 import contextlib
 import os
 import sys
+from collections import OrderedDict
 from pathlib import Path
-
+import io
 import abc
 import collections.abc
 from typing import Optional, Dict
+
+from speedwagon.models import SettingsModel
 
 
 class AbsConfig(collections.abc.Mapping):
@@ -132,3 +135,30 @@ def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
         return WindowsConfig()
     else:
         return configuration
+
+
+def build_setting_model(config_file):
+
+    config = configparser.ConfigParser()
+    config.read(config_file)
+    global_settings = config["GLOBAL"]
+    my_model = SettingsModel()
+    for k, v in global_settings.items():
+        my_model.add_setting(k, v)
+    return my_model
+
+
+def serialize_settings_model(model: SettingsModel):
+    config_data = configparser.ConfigParser()
+    config_data["GLOBAL"] = {}
+    global_data: Dict[str, str] = OrderedDict()
+
+    for i in range(model.rowCount()):
+        key = model.index(i, 0).data()
+        value = model.index(i, 1).data()
+        global_data[key] = value
+    config_data["GLOBAL"] = global_data
+
+    with io.StringIO() as f:
+        config_data.write(f)
+        return f.getvalue()

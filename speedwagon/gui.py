@@ -271,7 +271,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             if tab_name == tab_title:
                 self.tabWidget.tabs.setCurrentIndex(t)
                 return
-        self.log_manager.warning("{} not found".format(tab_name))
+        self.log_manager.warning("Unable to set tab to {}.".format(tab_name))
 
     def add_tools(self, tools):
         tools_tab = tabs.ToolTab(

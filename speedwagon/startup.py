@@ -309,13 +309,29 @@ class StartupDefault(AbsStarter):
         ]
         # self.read_settings_file(self.config_file)
         for settings_strategy in resolution_order:
-            self.startup_settings = settings_strategy.update(
-                self.startup_settings)
+            try:
+                self.startup_settings = settings_strategy.update(
+                    self.startup_settings)
+            except ValueError as e:
+                if isinstance(settings_strategy, ConfigFileSetter):
+                    self._logger.warning(
+                        "{} contains an invalid setting. Details: {} ".format(
+                            self.config_file, e)
+                    )
+
+                else:
+                    self._logger.warning("{} is an invalid setting".format(e))
         try:
             self._debug = self.startup_settings['debug']
         except KeyError:
             self._logger.warning(
-                "Unable to find a key for debug mode, setting false")
+                "Unable to find a key for debug mode. Setting false")
+
+            self._debug = False
+        except ValueError as e:
+            self._logger.warning(
+                "{} is an invalid setting for debug mode."
+                "Setting false".format(e))
 
             self._debug = False
 
