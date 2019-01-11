@@ -129,8 +129,7 @@ class GlobalSettingsTab(QtWidgets.QWidget):
         self.settings_table.setSelectionMode(
             QtWidgets.QAbstractItemView.SingleSelection)
 
-        self.settings_table.horizontalHeader().\
-            setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.settings_table.horizontalHeader().setStretchLastSection(True)
 
         self.layout.addWidget(self.settings_table)
 
