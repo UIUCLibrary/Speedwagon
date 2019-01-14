@@ -26,6 +26,7 @@ setup(
         "HathiZip",
         "HathiValidate>=0.3.3",
         "pyhathiprep",
+        "pyyaml",
         "hathichecksumupdater",
         "uiucprescon-getmarc",
         "uiucprescon-imagevalidate>=0.1.4",
