@@ -135,7 +135,7 @@ class PackageConverter(ProcessJobWorker):
 
 
 class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL" \
+    name = "0 EXPERIMENTAL " \
            "Convert CaptureOne TIFF to Hathi TIFF package"
     description = "This workflow chains together a number of tools to " \
                   "take a batch of CaptureOne files and structure them as " \
@@ -149,7 +149,7 @@ class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
 
-        jobs = CaptureOneToHathiTiffPackage.discover_task_metadata()
+        jobs = CaptureOneToHathiTiffPackage.discover_task_metadata(**user_args)
         return jobs
 
     def user_options(self):

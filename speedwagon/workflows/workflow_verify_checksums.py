@@ -7,7 +7,7 @@ from typing import DefaultDict, Iterable, Optional, Dict, List, Any, Union
 import hathi_validate.process
 
 from speedwagon.job import AbsWorkflow
-from speedwagon.tools import options
+from speedwagon.tools import options, tool_verify_checksum
 import speedwagon.tasks
 import enum
 
@@ -271,3 +271,23 @@ class CaseInsensitiveComparison(AbsComparisonMethod):
 
     def compare(self, a: str, b: str) -> bool:
         return a.lower() == b.lower()
+
+
+class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
+    name = "0 EXPERIMENTAL " \
+           "Verify Checksum Batch [Single]"
+    description = "Verify checksum values in checksum batch file, report " \
+                  "errors. " \
+                  "\n" \
+                  "\nInput is a text file containing a list of multiple " \
+                  "files and their md5 values. The listed files are " \
+                  "expected to be siblings to the checksum file."
+
+    def discover_task_metadata(self, initial_results: List[Any],
+                               additional_data, **user_args) -> List[dict]:
+        return tool_verify_checksum.VerifyChecksumBatchSingle.discover_task_metadata(**user_args)
+
+    def user_options(self):
+        return tool_verify_checksum.VerifyChecksumBatchSingle.get_user_options()
+
+
