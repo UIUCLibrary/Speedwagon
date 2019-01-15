@@ -1,4 +1,8 @@
+import functools
+
+
 def add_report_borders(func):
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         report = func(*args, **kwargs)
         if report:
