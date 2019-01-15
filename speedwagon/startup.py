@@ -190,10 +190,10 @@ class StartupDefault(AbsStarter):
         self.resolve_settings()
 
         # Display a splash screen until the app is loaded
-        logo = pkg_resources.resource_stream(__name__, "logo.png")
+        with pkg_resources.resource_stream(__name__, "logo.png") as logo:
 
-        splash = QtWidgets.QSplashScreen(
-            QtGui.QPixmap(logo.name).scaled(400, 400))
+            splash = QtWidgets.QSplashScreen(
+                QtGui.QPixmap(logo.name).scaled(400, 400))
 
         splash.setEnabled(False)
         splash.setWindowFlags(
@@ -307,8 +307,9 @@ class StartupDefault(AbsStarter):
             self.platform_settings._data.update(f.global_settings)
 
     def set_app_display_metadata(self):
-        icon = pkg_resources.resource_stream(__name__, "favicon.ico")
-        self.app.setWindowIcon(QtGui.QIcon(icon.name))
+        with pkg_resources.resource_stream(__name__, "favicon.ico") as icon:
+            self.app.setWindowIcon(QtGui.QIcon(icon.name))
+
         self.app.setApplicationVersion(f"{speedwagon.__version__}")
         self.app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
         self.app.processEvents()
