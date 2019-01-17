@@ -443,7 +443,7 @@ pipeline {
             post{
                 always{
                     dir("source"){
-                        bat "python -m pipenv run coverage combine && python -m pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && python -m pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
+                        bat "${tool 'CPython-3.6'}\\python -m pipenv run coverage combine && ${tool 'CPython-3.6'}\\python -m pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && ${tool 'CPython-3.6'}\\python -m pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
 
                     }
                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
@@ -984,7 +984,7 @@ pipeline {
         }
         cleanup {
              dir("source"){
-                 bat "${tool 'CPython-3.6'}\\python -m pipenv run python setup.py clean --all"
+                 bat "${tool 'CPython-3.6'}\\python ${tool 'CPython-3.6'}\\python -m pipenv run python setup.py clean --all"
              }
 
 
