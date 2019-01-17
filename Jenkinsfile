@@ -148,7 +148,7 @@ pipeline {
         PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
         PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
         DEVPI = credentials("DS_devpi")
-        PATH = "${tool 'CPython-3.6'}\\Scripts;PATH"
+
     }
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
@@ -176,6 +176,9 @@ pipeline {
 
     stages {
         stage("Configure"){
+            environment{
+                PATH = "${tool 'CPython-3.6'}\\Scripts;${PATH}"
+            }
             stages{
                 stage("Purge all existing data in workspace"){
                     when{
@@ -243,6 +246,7 @@ pipeline {
                     options{
                         timeout(5)
                     }
+
                     steps {
                         dir("source"){
                             bat "pipenv install --dev --deploy && pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log && pipenv check"
