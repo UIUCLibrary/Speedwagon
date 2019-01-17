@@ -984,7 +984,7 @@ pipeline {
         }
         cleanup {
              dir("source"){
-                 bat "${tool 'CPython-3.6'}\\python ${tool 'CPython-3.6'}\\python -m pipenv run python setup.py clean --all"
+                 bat "${tool 'CPython-3.6'}\\python -m pipenv run python setup.py clean --all"
              }
 
 
