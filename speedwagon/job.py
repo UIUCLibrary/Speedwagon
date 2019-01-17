@@ -4,8 +4,7 @@ import inspect
 import logging
 import os
 import sys
-import typing
-from typing import Dict
+from typing import Type, Optional, Iterable, Dict, List, Any, Tuple
 from . import tasks
 from . import worker
 from .tools.options import UserOption2
@@ -18,8 +17,8 @@ class JobCancelled(Exception):
 
 class AbsJob(metaclass=abc.ABCMeta):
     active = True
-    description: typing.Optional[str] = None
-    name: typing.Optional[str] = None
+    description: Optional[str] = None
+    name: Optional[str] = None
 
     def __init__(self):
         self.options = []  # type: ignore
@@ -42,16 +41,16 @@ class AbsTool(AbsJob):
 
     @staticmethod
     @abc.abstractmethod
-    def new_job() -> typing.Type[worker.ProcessJobWorker]:
+    def new_job() -> Type[worker.ProcessJobWorker]:
         pass
 
     @staticmethod
-    def discover_jobs(**user_args) -> typing.List[dict]:
+    def discover_jobs(**user_args) -> List[dict]:
         pass
 
     @staticmethod
     @abc.abstractmethod
-    def get_user_options() -> typing.List[UserOption2]:
+    def get_user_options() -> List[UserOption2]:
         pass
 
     @staticmethod
@@ -65,7 +64,7 @@ class AbsTool(AbsJob):
     def user_options(self):
         return self.get_user_options()
 
-    def discover_task_metadata(self, **user_args) -> typing.List[dict]:
+    def discover_task_metadata(self, **user_args) -> List[dict]:
         return self.discover_jobs(**user_args)
 
     @staticmethod
@@ -75,17 +74,17 @@ class AbsTool(AbsJob):
 
 class AbsWorkflow(AbsJob):
     active = True
-    description: typing.Optional[str] = None
-    name: typing.Optional[str] = None
+    description: Optional[str] = None
+    name: Optional[str] = None
 
     def __init__(self) -> None:
         super().__init__()
         self.global_settings: Dict[str, str] = dict()
 
     @abc.abstractmethod
-    def discover_task_metadata(self, initial_results: typing.List[typing.Any],
+    def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) \
-            -> typing.List[dict]:
+            -> List[dict]:
         pass
 
     def completion_task(
@@ -101,8 +100,8 @@ class AbsWorkflow(AbsJob):
         pass
 
     @classmethod
-    def generate_report(cls, results: typing.List[tasks.Result],
-                        **user_args) -> typing.Optional[str]:
+    def generate_report(cls, results: List[tasks.Result],
+                        **user_args) -> Optional[str]:
         pass
 
     # @abc.abstractmethod
@@ -138,7 +137,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
     def py_module_filter(item: os.DirEntry) -> bool:
         pass
 
-    def locate(self) -> typing.Dict["str", AbsJob]:
+    def locate(self) -> Dict["str", AbsJob]:
         located_class = dict()
         tree = os.scandir(self.path)
 
@@ -149,11 +148,11 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def base_class(self) -> typing.Type[AbsJob]:
+    def base_class(self) -> Type[AbsJob]:
         pass
 
     def load(self, module_file) -> \
-            typing.Iterable[typing.Tuple[str, typing.Any]]:
+            Iterable[Tuple[str, Any]]:
 
         def class_member_filter(item):
             return inspect.isclass(item) and not inspect.isabstract(item)
