@@ -324,6 +324,9 @@ pipeline {
             }
         }
         stage("Test") {
+            environment{
+                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+            }
             parallel {
                 stage("Run Behave BDD Tests") {
                     when {
@@ -459,6 +462,9 @@ pipeline {
             }
         }
         stage("Packaging") {
+            environment{
+                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+            }
             failFast true
             parallel {
                 stage("Source and Wheel formats"){
