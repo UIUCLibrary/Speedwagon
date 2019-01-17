@@ -516,6 +516,8 @@ pipeline {
                             steps {
                                 bat """if not exist "cmake_build" mkdir cmake_build
                                 if not exist "logs" mkdir logs
+                                if not exist "logs\\ctest" mkdir logs\\ctest
+                                if not exist "temp" mkdir temp
                                 """
                                 cmakeBuild buildDir: 'cmake_build',
                                     cleanBuild: true,
@@ -545,12 +547,12 @@ pipeline {
                                 TMPDIR = "${WORKSPACE}/temp"
                             }
                             steps {
-                                dir("${WORKSPACE}/temp"){
-                                    bat "dir > nul"
-                                }
-                                dir("logs/ctest"){
-                                    bat "dir"
-                                }
+//                                dir("${WORKSPACE}/temp"){
+//                                    bat "dir > nul"
+//                                }
+//                                dir("logs/ctest"){
+//                                    bat "dir"
+//                                }
                                     ctest(
                                         arguments: "-T test -C Release -j ${NUMBER_OF_PROCESSORS}",
                                         installation: "${CMAKE_VERSION}",
