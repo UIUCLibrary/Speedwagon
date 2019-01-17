@@ -462,9 +462,9 @@ pipeline {
             }
         }
         stage("Packaging") {
-            environment{
-                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-            }
+//            environment{
+//                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+//            }
             failFast true
             parallel {
                 stage("Source and Wheel formats"){
@@ -477,7 +477,7 @@ pipeline {
 
                             steps{
                                 dir("source"){
-                                    bat script: "pipenv run python setup.py sdist -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
+                                    bat script: "${tool 'CPython-3.6'}\\Scripts\\pipenv run python setup.py sdist -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
                                 }
                             }
                             post {
