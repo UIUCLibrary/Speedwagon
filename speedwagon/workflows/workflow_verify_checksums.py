@@ -6,8 +6,11 @@ from typing import DefaultDict, Iterable, Optional, Dict, List, Any, Union
 
 import hathi_validate.process
 
+from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
-from speedwagon.tools import options
+from speedwagon.reports import add_report_borders
+from speedwagon.tools import options, tool_verify_checksum
+
 import speedwagon.tasks
 import enum
 
@@ -156,7 +159,8 @@ class ChecksumWorkflow(AbsWorkflow):
                                             List[
                                                 Dict[ResultValues,
                                                      Union[bool, str]]]]:
-        """ Sort the data and put it into a dictionary with the source as the key
+        """ Sort the data and put it into a dictionary with the source as the
+        key
 
         Args:
             results:
@@ -271,3 +275,51 @@ class CaseInsensitiveComparison(AbsComparisonMethod):
 
     def compare(self, a: str, b: str) -> bool:
         return a.lower() == b.lower()
+
+
+class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
+    name = "0 EXPERIMENTAL " \
+           "Verify Checksum Batch [Single]"
+    description = "Verify checksum values in checksum batch file, report " \
+                  "errors. " \
+                  "\n" \
+                  "\nInput is a text file containing a list of multiple " \
+                  "files and their md5 values. The listed files are " \
+                  "expected to be siblings to the checksum file."
+
+    def discover_task_metadata(self, initial_results: List[Any],
+                               additional_data, **user_args) -> List[dict]:
+        return tool_verify_checksum.VerifyChecksumBatchSingle.\
+            discover_task_metadata(**user_args)
+
+    def user_options(self):
+        return tool_verify_checksum.VerifyChecksumBatchSingle.get_user_options()
+
+    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+        new_task = ChecksumTask(**job_args)
+        task_builder.add_subtask(new_task)
+
+    @classmethod
+    @add_report_borders
+    def generate_report(cls, results: List[tasks.Result], **user_args) -> \
+            Optional[str]:
+        result_data = [res.data for res in results]
+
+        return tool_verify_checksum.VerifyChecksumBatchSingle.generate_report\
+            (results=result_data)
+
+
+class ChecksumTask(speedwagon.tasks.Subtask):
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__()
+        self._args = args
+        self._kwarg = kwargs
+
+    def work(self) -> bool:
+
+        process = tool_verify_checksum.ChecksumJob()
+        process.log = self.log
+        process.process(self._args, **self._kwarg)
+        self.set_results(process.result)
+        return True

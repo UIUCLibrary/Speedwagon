@@ -29,6 +29,7 @@ uiucprescon-packager = {version = ">=0.2.4", extras = ['kdu']}
 uiucprescon-ocr = ">=0.0.1"
 importlib-resources = {version = "*", markers="python_version < '3.7'"}
 pluggy = "*"
+pyyaml = "*"
 
 [dev-packages]
 behave = "*"
