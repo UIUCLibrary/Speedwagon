@@ -2,7 +2,7 @@
 @Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
 import org.ds.*
 
-@Library("devpi") _
+@Library("devpi", "PythonHelpers") _
 
 def PKG_VERSION = "unknown"
 //def PKG_NAME = "unknown"
@@ -145,7 +145,8 @@ pipeline {
         WORKON_HOME ="${WORKSPACE}\\pipenv\\"
         build_number = VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
         PIPENV_NOSPIN = "True"
-        PKG_NAME = get_pkg_name("${tool 'CPython-3.6'}")
+        PKG_NAME = pythonPackageName(pythonPath: "${tool 'CPython-3.6'}")
+        PKG_VERSION = pythonPackageVersion(pythonPath: "${tool 'CPython-3.6'}")
         DEVPI = credentials("DS_devpi")
     }
     parameters {
@@ -231,7 +232,7 @@ pipeline {
                     steps{
                         script {
                             dir("source"){
-                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
+//                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
                                 DOC_ZIP_FILENAME = "${env.PKG_NAME}-${PKG_VERSION}.doc.zip"
                             }
                         }
@@ -675,7 +676,7 @@ pipeline {
                                                     url: "https://devpi.library.illinois.edu",
                                                     index: "${env.BRANCH_NAME}_staging",
                                                     pkgName: "${env.PKG_NAME}",
-                                                    pkgVersion: "${PKG_VERSION}",
+                                                    pkgVersion: "${env.PKG_VERSION}",
                                                     pkgRegex: "tar.gz",
                                                     detox: false
                                                 )
@@ -720,7 +721,7 @@ pipeline {
                                                     url: "https://devpi.library.illinois.edu",
                                                     index: "${env.BRANCH_NAME}_staging",
                                                     pkgName: "${env.PKG_NAME}",
-                                                    pkgVersion: "${PKG_VERSION}",
+                                                    pkgVersion: "${env.PKG_VERSION}",
                                                     pkgRegex: "whl",
                                                     detox: false
                                                 )
@@ -747,7 +748,7 @@ pipeline {
                         success {
                             echo "it Worked. Pushing file to ${env.BRANCH_NAME} index"
                                 bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
-                                    bat "devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
+                                    bat "devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
 
 //                                }
                         }
@@ -761,12 +762,12 @@ pipeline {
                         }
                     }
                     steps {
-                        input "Release ${env.PKG_NAME} ${PKG_VERSION} to DevPi Production?"
-                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${PKG_VERSION} production/release"
+                        input "Release ${env.PKG_NAME} ${env.PKG_VERSION} to DevPi Production?"
+                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} production/release"
                     }
                     post{
                         success{
-                            jiraComment body: "Version ${PKG_VERSION} was added to https://devpi.library.illinois.edu/production/release index.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                            jiraComment body: "Version ${env.PKG_VERSION} was added to https://devpi.library.illinois.edu/production/release index.", issueKey: "${params.JIRA_ISSUE_VALUE}"
                         }
                     }
                 }
@@ -919,7 +920,7 @@ pipeline {
                                         ]]
                                     )
 
-                                jiraComment body: "Version ${PKG_VERSION} sent to staging for user testing.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                                jiraComment body: "Version ${env.PKG_VERSION} sent to staging for user testing.", issueKey: "${params.JIRA_ISSUE_VALUE}"
                                 input("Deploy to production?")
                                 writeFile file: "${WORKSPACE}/logs/deployment_request.txt", text: deployment_request
                                 echo deployment_request
@@ -948,7 +949,7 @@ pipeline {
                     }
                     post {
                         success {
-                            jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                            jiraComment body: "Deployment request was sent to SCCM for version ${env.PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
                             archiveArtifacts artifacts: "logs/deployment_request.txt"
                         }
                     }
@@ -978,9 +979,9 @@ pipeline {
             script {
                 if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
                         try {
-                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi remove -y ${env.PKG_NAME}==${PKG_VERSION}"
+                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi remove -y ${env.PKG_NAME}==${env.PKG_VERSION}"
                         } catch (Exception ex) {
-                            echo "Failed to remove ${env.PKG_NAME}==${PKG_VERSION} from ${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
+                            echo "Failed to remove ${env.PKG_NAME}==${env.PKG_VERSION} from ${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
                     }
 
                 }
