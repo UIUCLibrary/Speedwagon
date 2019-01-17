@@ -650,16 +650,16 @@ pipeline {
                         unstash 'PYTHON_PACKAGES'
                         dir("source"){
                             bat "${WORKSPACE}\\venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
-                            bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && ${WORKSPACE}\\venv\\Scripts\\python -m devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
+                            bat "${WORKSPACE}\\venv\\Scripts\\devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && ${WORKSPACE}\\venv\\Scripts\\devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
 //                            }
-                            script {
-                                bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi upload --from-dir ${WORKSPACE}\\dist"
-                                try {
-                                    bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi upload --only-docs --from-dir ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
-                                } catch (exc) {
-                                    echo "Unable to upload to devpi with docs."
-                                }
-                            }
+                            bat "${WORKSPACE}\\venv\\Scripts\\devpi upload --from-dir ${WORKSPACE}\\dist"
+//                            script {
+////                                try {
+////                                    bat "${WORKSPACE}\\venv\\Scripts\\devpi upload --only-docs --from-dir ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
+////                                } catch (exc) {
+////                                    echo "Unable to upload to devpi with docs."
+////                                }
+//                            }
         //                    }
                         }
                     }
