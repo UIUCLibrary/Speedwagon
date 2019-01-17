@@ -2,7 +2,7 @@
 @Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
 import org.ds.*
 
-@Library("devpi", "PythonHelpers") _
+@Library(["devpi", "PythonHelpers"]) _
 
 def PKG_VERSION = "unknown"
 //def PKG_NAME = "unknown"
