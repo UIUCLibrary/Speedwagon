@@ -148,6 +148,7 @@ pipeline {
         PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
         PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
         DEVPI = credentials("DS_devpi")
+        PATH = "${tool 'CPython-3.6'}\\Scripts;PATH"
     }
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
