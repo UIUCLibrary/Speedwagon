@@ -635,6 +635,9 @@ pipeline {
             options{
                 timestamps()
                 }
+            environment{
+                PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+            }
 
             stages{
 
@@ -993,7 +996,7 @@ pipeline {
             script {
                 if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
                         try {
-                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi remove -y ${env.PKG_NAME}==${env.PKG_VERSION}"
+                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe remove -y ${env.PKG_NAME}==${env.PKG_VERSION}"
                         } catch (Exception ex) {
                             echo "Failed to remove ${env.PKG_NAME}==${env.PKG_VERSION} from ${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
                     }
