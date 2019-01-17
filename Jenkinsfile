@@ -430,15 +430,25 @@ pipeline {
             }
             post{
                 always{
-                    dir("source"){
-                        bat "pipenv run coverage combine && pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
+                    script{
+                        try{
+                            dir("source"){
+                                bat "pipenv run coverage combine && pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
+
+                            }
+                            publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                            publishCoverage adapters: [
+                                            coberturaAdapter('reports/coverage.xml')
+                                            ],
+                                        sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+
+                            }
+                        catch (exc) {
+                            echo "Unable to merge coverage data."
+                        }
 
                     }
-                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                    publishCoverage adapters: [
-                                    coberturaAdapter('reports/coverage.xml')
-                                    ],
-                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+
                 }
                 cleanup{
                     cleanWs(patterns: [
