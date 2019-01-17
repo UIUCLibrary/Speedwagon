@@ -443,7 +443,7 @@ pipeline {
             post{
                 always{
                     dir("source"){
-                        bat "pipenv run coverage combine && pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
+                        bat "python -m pipenv run coverage combine && python -m pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && python -m pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
 
                     }
                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
