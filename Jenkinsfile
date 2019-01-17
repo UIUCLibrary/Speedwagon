@@ -145,8 +145,8 @@ pipeline {
         WORKON_HOME ="${WORKSPACE}\\pipenv\\"
         build_number = VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
         PIPENV_NOSPIN = "True"
-        PKG_NAME = pythonPackageName(pythonPath: "${tool 'CPython-3.6'}")
-        PKG_VERSION = pythonPackageVersion(pythonPath: "${tool 'CPython-3.6'}")
+        PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
+        PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
         DEVPI = credentials("DS_devpi")
     }
     parameters {
