@@ -268,6 +268,9 @@ pipeline {
             }
         }
         stage('Build') {
+            environment{
+                PATH = "${tool 'CPython-3.6'}\\Scripts;${PATH}"
+            }
             parallel {
                 stage("Python Package"){
                     steps {
@@ -293,7 +296,7 @@ pipeline {
                         echo "Building docs on ${env.NODE_NAME}"
                         dir("source"){
                             lock("system_pipenv_${NODE_NAME}"){
-                                bat "${tool 'CPython-3.6'}\\python -m pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs 2> ${WORKSPACE}\\logs\\build_sphinx.log & type ${WORKSPACE}\\logs\\build_sphinx.log"
+                                bat "python -m pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs 2> ${WORKSPACE}\\logs\\build_sphinx.log & type ${WORKSPACE}\\logs\\build_sphinx.log"
                             }
                         }
                     }
@@ -975,7 +978,7 @@ pipeline {
         }
         cleanup {
              dir("source"){
-                 bat "pipenv run python setup.py clean --all"
+                 bat "${tool 'CPython-3.6'}\\python -m pipenv run python setup.py clean --all"
              }
 
 
