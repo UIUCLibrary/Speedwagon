@@ -637,9 +637,9 @@ pipeline {
             options{
                 timestamps()
                 }
-            environment{
-                PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-            }
+//            environment{
+//                PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+//            }
 
             stages{
 
@@ -649,7 +649,8 @@ pipeline {
                         unstash 'DOCS_ARCHIVE'
                         unstash 'PYTHON_PACKAGES'
                         dir("source"){
-                            bat "${WORKSPACE}\\venv\\Scripts\\devpi use https://devpi.library.illinois.edu && ${WORKSPACE}\\venv\\Scripts\\python -m devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && ${WORKSPACE}\\venv\\Scripts\\python -m devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
+                            bat "${WORKSPACE}\\venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
+                            bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && ${WORKSPACE}\\venv\\Scripts\\python -m devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
 //                            }
                             script {
                                 bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi upload --from-dir ${WORKSPACE}\\dist"
