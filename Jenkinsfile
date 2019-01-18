@@ -114,18 +114,20 @@ def cleanup_workspace(){
     }
 }
 
-def get_pkg_name(pythonHomePath){
-    node("Python3"){
-        checkout scm
-        bat "dir"
-        script{
-            def pkg_name = bat(returnStdout: true, script: "@${pythonHomePath}\\python  setup.py --name").trim()
-            deleteDir()
-            return pkg_name
-        }
+def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUsername, devpiPassword){
+    script {
+//        if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
+                try {
+                    bat "${devpiExecutable} login ${devpiUsername} --password ${devpiPassword}"
+                    bat "${devpiExecutable} use ${devpiIndex}"
+                    bat "${devpiExecutable} remove -y ${pkgName}==${pkgVersion}"
+                } catch (Exception ex) {
+                    echo "Failed to remove ${pkgName}==${pkgVersion} from ${devpiIndex}"
+            }
+
+//        }
     }
 }
-
 pipeline {
     agent {
         label "Windows && Python3 && longfilenames && WIX"
@@ -992,11 +994,12 @@ pipeline {
 
             script {
                 if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
-                        try {
-                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe remove -y ${env.PKG_NAME}==${env.PKG_VERSION}"
-                        } catch (Exception ex) {
-                            echo "Failed to remove ${env.PKG_NAME}==${env.PKG_VERSION} from ${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
-                    }
+                    remove_from_devpi("venv\\Scripts\\devpi.exe", "${env.PKG_NAME}", "${env.PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
+//                        try {
+//                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe remove -y ${env.PKG_NAME}==${env.PKG_VERSION}"
+//                        } catch (Exception ex) {
+//                            echo "Failed to remove ${env.PKG_NAME}==${env.PKG_VERSION} from ${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
+//                    }
 
                 }
             }
