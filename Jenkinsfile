@@ -477,7 +477,7 @@ pipeline {
 
                             steps{
                                 dir("source"){
-                                    bat script: "${tool 'CPython-3.6'}\\Scripts\\pipenv run python setup.py build -b ..\\build sdist -d ..\\dist bdist_wheel -d ..\\dist"
+                                    bat script: "${tool 'CPython-3.6'}\\Scripts\\pipenv run python setup.py build -b ../build sdist -d ../dist bdist_wheel -d ../dist"
                                 }
                             }
                             post {
