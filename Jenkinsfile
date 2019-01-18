@@ -116,7 +116,6 @@ def cleanup_workspace(){
 
 def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUsername, devpiPassword){
     script {
-//        if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
                 try {
                     bat "${devpiExecutable} login ${devpiUsername} --password ${devpiPassword}"
                     bat "${devpiExecutable} use ${devpiIndex}"
@@ -155,7 +154,6 @@ pipeline {
     }
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
-        // string(name: "PROJECT_NAME", defaultValue: "Speedwagon", description: "Name given to the project")
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
         // file description: 'Build with alternative requirements.txt file', name: 'requirements.txt'
         booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run PyTest unit tests")
@@ -234,16 +232,6 @@ pipeline {
                         }
                     }
                 }
-//                stage("Setting project metadata variables"){
-//                    steps{
-//                        script {
-////                            dir("source"){
-////                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
-//                                DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
-////                            }
-//                        }
-//                    }
-//                }
                 stage("Installing Pipfile"){
                     options{
                         timeout(5)
@@ -550,12 +538,6 @@ pipeline {
                                 TMPDIR = "${WORKSPACE}/temp"
                             }
                             steps {
-//                                dir("${WORKSPACE}/temp"){
-//                                    bat "dir > nul"
-//                                }
-//                                dir("logs/ctest"){
-//                                    bat "dir"
-//                                }
                                     ctest(
                                         arguments: "-T test -C Release -j ${NUMBER_OF_PROCESSORS}",
                                         installation: "${CMAKE_VERSION}",
@@ -994,20 +976,6 @@ pipeline {
                  bat "${tool 'CPython-3.6'}\\python -m pipenv run python setup.py clean --all"
              }
 
-
-//
-//
-//            script {
-//                if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
-//                    remove_from_devpi("venv\\Scripts\\devpi.exe", "${env.PKG_NAME}", "${env.PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
-////                        try {
-////                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe remove -y ${env.PKG_NAME}==${env.PKG_VERSION}"
-////                        } catch (Exception ex) {
-////                            echo "Failed to remove ${env.PKG_NAME}==${env.PKG_VERSION} from ${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
-////                    }
-//
-//                }
-//            }
             cleanWs deleteDirs: true, patterns: [
                     [pattern: 'logs', type: 'INCLUDE'],
                     [pattern: 'dist', type: 'INCLUDE'],
