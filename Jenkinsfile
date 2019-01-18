@@ -266,6 +266,11 @@ pipeline {
                     }
                 }
             }
+            post{
+                always{
+                    echo "Configured ${env.PKG_NAME}, version ${PKG_VERSION}, for testing."
+                }
+            }
         }
         stage('Build') {
             environment{
