@@ -8,7 +8,7 @@ import org.ds.*
 //def PKG_NAME = "unknown"
 def CMAKE_VERSION = "cmake3.12"
 def JIRA_ISSUE = ""
-def DOC_ZIP_FILENAME = "doc.zip"
+//def DOC_ZIP_FILENAME = "doc.zip"
 //                                    script{
 ////                                        def generator_list = []
 ////                                        if(params.PACKAGE_WINDOWS_STANDALONE_MSI){
@@ -147,6 +147,7 @@ pipeline {
         PIPENV_NOSPIN = "True"
         PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
         PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
+        DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
         DEVPI = credentials("DS_devpi")
 
     }
@@ -231,16 +232,16 @@ pipeline {
                         }
                     }
                 }
-                stage("Setting project metadata variables"){
-                    steps{
-                        script {
-//                            dir("source"){
-//                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
-                                DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
-//                            }
-                        }
-                    }
-                }
+//                stage("Setting project metadata variables"){
+//                    steps{
+//                        script {
+////                            dir("source"){
+////                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
+//                                DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
+////                            }
+//                        }
+//                    }
+//                }
                 stage("Installing Pipfile"){
                     options{
                         timeout(5)
@@ -311,15 +312,15 @@ pipeline {
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
-                            stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
+                            zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${env.DOC_ZIP_FILENAME}"
+                            stash includes: "dist/${env.DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
 
                         }
                         cleanup{
                             cleanWs(patterns:
                                     [
                                         [pattern: 'logs/build_sphinx.log', type: 'INCLUDE'],
-                                        [pattern: "dist/${DOC_ZIP_FILENAME}", type: 'INCLUDE']
+                                        [pattern: "dist/${env.DOC_ZIP_FILENAME}", type: 'INCLUDE']
                                     ]
                                 )
                         }
