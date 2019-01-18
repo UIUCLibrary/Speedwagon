@@ -675,6 +675,9 @@ pipeline {
                                 skipDefaultCheckout(true)
 
                             }
+                            environment{
+                                PATH = "${tool 'CPython-3.6'};${PATH}"
+                            }
                             stages{
 
                                 stage("Creating Env for DevPi to test sdist"){
