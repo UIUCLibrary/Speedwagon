@@ -4,7 +4,7 @@ import org.ds.*
 
 @Library(["devpi", "PythonHelpers"]) _
 
-def PKG_VERSION = "unknown"
+//def PKG_VERSION = "unknown"
 //def PKG_NAME = "unknown"
 def CMAKE_VERSION = "cmake3.12"
 def JIRA_ISSUE = ""
@@ -237,7 +237,7 @@ pipeline {
                         script {
                             dir("source"){
 //                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
-                                DOC_ZIP_FILENAME = "${env.PKG_NAME}-${PKG_VERSION}.doc.zip"
+                                DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
                             }
                         }
                     }
@@ -268,7 +268,7 @@ pipeline {
             }
             post{
                 always{
-                    echo "Configured ${env.PKG_NAME}, version ${PKG_VERSION}, for testing."
+                    echo "Configured ${env.PKG_NAME}, version ${env.PKG_VERSION}, for testing."
                 }
             }
         }
