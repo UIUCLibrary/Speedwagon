@@ -648,11 +648,11 @@ pipeline {
                     steps {
                         unstash 'DOCS_ARCHIVE'
                         unstash 'PYTHON_PACKAGES'
-                        dir("source"){
-                            bat "${WORKSPACE}\\venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
-                            bat "${WORKSPACE}\\venv\\Scripts\\devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && ${WORKSPACE}\\venv\\Scripts\\devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
+//                        dir("source"){
+                        bat "${WORKSPACE}\\venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
+                        bat "${WORKSPACE}\\venv\\Scripts\\devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && ${WORKSPACE}\\venv\\Scripts\\devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
 //                            }
-                            bat "${WORKSPACE}\\venv\\Scripts\\devpi upload --from-dir ${WORKSPACE}\\dist"
+                        bat "${WORKSPACE}\\venv\\Scripts\\devpi.exe upload --from-dir dist"
 //                            script {
 ////                                try {
 ////                                    bat "${WORKSPACE}\\venv\\Scripts\\devpi upload --only-docs --from-dir ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
@@ -661,7 +661,7 @@ pipeline {
 ////                                }
 //                            }
         //                    }
-                        }
+//                        }
                     }
                 }
                 stage("Test DevPi packages") {
