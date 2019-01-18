@@ -675,12 +675,13 @@ pipeline {
                                 skipDefaultCheckout(true)
 
                             }
-                            environment{
-                                PATH = "${tool 'CPython-3.6'};${PATH}"
-                            }
+
                             stages{
 
                                 stage("Creating Env for DevPi to test sdist"){
+                                    environment{
+                                        PATH = "${tool 'CPython-3.6'};${PATH}"
+                                    }
                                     steps {
                                         lock("system_python_${NODE_NAME}"){
                                             bat "python -m venv venv"
@@ -689,9 +690,12 @@ pipeline {
                                     }
                                 }
                                 stage("Testing sdist"){
+                                    environment{
+                                        PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${PATH}"
+                                    }
                                     steps{
                                             timeout(10){
-                                                bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
+                                                bat "devpi use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
                                                 devpiTest(
                                                     devpiExecutable: "venv\\Scripts\\devpi.exe",
                                                     url: "https://devpi.library.illinois.edu",
@@ -732,7 +736,7 @@ pipeline {
                                 stage("Creating Env for DevPi to test whl"){
                                     steps{
                                         lock("system_python_${NODE_NAME}"){
-                                            bat "python -m pip install pip --upgrade && ${tool 'CPython-3.6'}\\python -m venv venv "
+                                            bat "python -m pip install pip --upgrade && python -m venv venv "
                                         }
                                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\"  detox devpi-client"
                                     }
