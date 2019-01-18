@@ -477,7 +477,7 @@ pipeline {
 
                             steps{
                                 dir("source"){
-                                    bat script: "${tool 'CPython-3.6'}\\Scripts\\pipenv run python setup.py build -b ../build sdist -d ../dist bdist_wheel -d ../dist"
+                                    bat script: "${tool 'CPython-3.6'}\\Scripts\\pipenv run python setup.py build -b ../build sdist -d ../dist bdist_wheel --format zip -d ../dist"
                                 }
                             }
                             post {
@@ -666,7 +666,7 @@ pipeline {
                 }
                 stage("Test DevPi packages") {
                     parallel {
-                        stage("Source Distribution: .tar.gz") {
+                        stage("Source Distribution: .zip") {
                             agent {
                                 node {
                                     label "Windows && Python3"
@@ -696,7 +696,7 @@ pipeline {
                                                     index: "${env.BRANCH_NAME}_staging",
                                                     pkgName: "${env.PKG_NAME}",
                                                     pkgVersion: "${env.PKG_VERSION}",
-                                                    pkgRegex: "tar.gz",
+                                                    pkgRegex: "zip",
                                                     detox: false
                                                 )
                                             }
