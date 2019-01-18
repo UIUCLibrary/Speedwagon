@@ -788,6 +788,11 @@ pipeline {
                     }
                 }
             }
+            post{
+                cleanup{
+                    remove_from_devpi("venv\\Scripts\\devpi.exe", "${env.PKG_NAME}", "${env.PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
+                }
+            }
         }
         stage("Deploy"){
             parallel {
@@ -990,19 +995,19 @@ pipeline {
              }
 
 
-
-
-            script {
-                if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
-                    remove_from_devpi("venv\\Scripts\\devpi.exe", "${env.PKG_NAME}", "${env.PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
-//                        try {
-//                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe remove -y ${env.PKG_NAME}==${env.PKG_VERSION}"
-//                        } catch (Exception ex) {
-//                            echo "Failed to remove ${env.PKG_NAME}==${env.PKG_VERSION} from ${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
-//                    }
-
-                }
-            }
+//
+//
+//            script {
+//                if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
+//                    remove_from_devpi("venv\\Scripts\\devpi.exe", "${env.PKG_NAME}", "${env.PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
+////                        try {
+////                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe remove -y ${env.PKG_NAME}==${env.PKG_VERSION}"
+////                        } catch (Exception ex) {
+////                            echo "Failed to remove ${env.PKG_NAME}==${env.PKG_VERSION} from ${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
+////                    }
+//
+//                }
+//            }
             cleanWs deleteDirs: true, patterns: [
                     [pattern: 'logs', type: 'INCLUDE'],
                     [pattern: 'dist', type: 'INCLUDE'],
