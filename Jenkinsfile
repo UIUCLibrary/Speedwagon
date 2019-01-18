@@ -234,10 +234,10 @@ pipeline {
                 stage("Setting project metadata variables"){
                     steps{
                         script {
-                            dir("source"){
+//                            dir("source"){
 //                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
                                 DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
-                            }
+//                            }
                         }
                     }
                 }
@@ -435,7 +435,6 @@ pipeline {
                     post {
                         always {
                               archiveArtifacts 'logs/flake8.log'
-
                               recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
                         }
                         cleanup{
@@ -650,15 +649,6 @@ pipeline {
                         unstash 'DOCS_ARCHIVE'
                         unstash 'PYTHON_PACKAGES'
                         bat "devpi use https://devpi.library.illinois.edu && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
-//                            script {
-////                                try {
-////                                    bat "${WORKSPACE}\\venv\\Scripts\\devpi upload --only-docs --from-dir ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
-////                                } catch (exc) {
-////                                    echo "Unable to upload to devpi with docs."
-////                                }
-//                            }
-        //                    }
-//                        }
                     }
                 }
                 stage("Test DevPi packages") {
