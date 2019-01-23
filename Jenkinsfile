@@ -18,10 +18,10 @@ def CMAKE_VERSION = "cmake3.12"
 ////                                        echo "${generator_list.toString()}"
 //                                        def generator_argument = ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR}
 //                                    }
-def check_jira(idOrKey){
+def check_jira(project, issue){
 
     script {
-        def jira_project = jiraGetProject idOrKey: idOrKey, site: 'https://bugs.library.illinois.edu'
+        def jira_project = jiraGetProject idOrKey: project, site: 'https://bugs.library.illinois.edu'
 
 //        try{
 ////            def response = httpRequest authentication: '0c2ea103-5de9-4963-8d62-7247cd7319ee', url: "${jira_project.data.self}"
@@ -40,10 +40,13 @@ def check_jira(idOrKey){
         catch (Exception ex) {
             echo "Pretty print didn't work"
         }
+    }
+    script{
 
-        def issue = jiraGetIssue idOrKey: "${params.JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
-        echo "${issue.data}"
-        echo issue.data.toString()
+        def issue = jiraGetIssue idOrKey: issue, site: 'https://bugs.library.illinois.edu'
+//        echo "${issue.data}"
+        echo "${prettyPrint(toJson(issue.data))}"
+//        echo issue.data.toString()
     }
 }
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
@@ -212,7 +215,7 @@ pipeline {
                     }
                     steps {
                         echo "Finding Jira epic ${params.JIRA_ISSUE_VALUE}"
-                        check_jira('PSR')
+                        check_jira('PSR', "${params.JIRA_ISSUE_VALUE}")
 
                     }
 
