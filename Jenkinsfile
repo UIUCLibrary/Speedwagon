@@ -24,8 +24,7 @@ def check_jira(project, issue){
         def jira_project = jiraGetProject idOrKey: project, site: 'https://bugs.library.illinois.edu'
 
         try{
-            def json_data = prettyPrint(toJson(jira_project.data))
-            def input_data = readJSON text: json_data
+            def input_data = readJSON text: toJson(jira_project.data)
             writeJSON file: 'jira_project.json', json: input_data
         }
         catch (Exception ex) {
