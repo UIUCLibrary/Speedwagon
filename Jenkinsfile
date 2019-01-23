@@ -704,21 +704,23 @@ pipeline {
                                 }
                                 stage("Testing sdist"){
                                     environment{
-                                        PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${PATH}"
+                                        PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${tool 'CPython-3.7'};$PATH"
+                                    }
+                                    options{
+                                        timeout(10)
                                     }
                                     steps{
-                                            timeout(10){
-                                                bat "devpi use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
-                                                devpiTest(
-                                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                                    url: "https://devpi.library.illinois.edu",
-                                                    index: "${env.BRANCH_NAME}_staging",
-                                                    pkgName: "${env.PKG_NAME}",
-                                                    pkgVersion: "${env.PKG_VERSION}",
-                                                    pkgRegex: "zip",
-                                                    detox: false
-                                                )
-                                            }
+                                        bat "devpi use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
+                                        devpiTest(
+                                            devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
+//                                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                            url: "https://devpi.library.illinois.edu",
+                                            index: "${env.BRANCH_NAME}_staging",
+                                            pkgName: "${env.PKG_NAME}",
+                                            pkgVersion: "${env.PKG_VERSION}",
+                                            pkgRegex: "zip",
+                                            detox: false
+                                        )
                                     }
                                 }
 
@@ -744,7 +746,6 @@ pipeline {
                             }
                             environment{
                                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${tool 'CPython-3.7'};$PATH"
-//                                PATH = "${tool 'CPython-3.6'};${PATH}"
                             }
                             stages{
                                 stage("Creating Env for DevPi to test whl"){
@@ -762,7 +763,6 @@ pipeline {
                                     steps {
                                         devpiTest(
                                             devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
-//                                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
                                             url: "https://devpi.library.illinois.edu",
                                             index: "${env.BRANCH_NAME}_staging",
                                             pkgName: "${env.PKG_NAME}",
