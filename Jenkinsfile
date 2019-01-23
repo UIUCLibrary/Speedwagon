@@ -756,19 +756,20 @@ pipeline {
                                     }
                                 }
                                 stage("Testing Whl"){
+                                    options{
+                                        timeout(10)
+                                    }
                                     steps {
-                                            timeout(10){
-                                                devpiTest(
-                                                    devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
+                                        devpiTest(
+                                            devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
 //                                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                                    url: "https://devpi.library.illinois.edu",
-                                                    index: "${env.BRANCH_NAME}_staging",
-                                                    pkgName: "${env.PKG_NAME}",
-                                                    pkgVersion: "${env.PKG_VERSION}",
-                                                    pkgRegex: "whl",
-                                                    detox: false
-                                                )
-                                        }
+                                            url: "https://devpi.library.illinois.edu",
+                                            index: "${env.BRANCH_NAME}_staging",
+                                            pkgName: "${env.PKG_NAME}",
+                                            pkgVersion: "${env.PKG_VERSION}",
+                                            pkgRegex: "whl",
+                                            detox: false
+                                        )
                                     }
                                 }
                             }
