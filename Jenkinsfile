@@ -1,7 +1,7 @@
 #!groovy
 @Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
 import org.ds.*
-import static groovy.json.JsonOutput.*
+import static groovy.json.JsonOutput.* // For pretty printing json data
 
 @Library(["devpi", "PythonHelpers"]) _
 
@@ -18,10 +18,10 @@ def CMAKE_VERSION = "cmake3.12"
 ////                                        echo "${generator_list.toString()}"
 //                                        def generator_argument = ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR}
 //                                    }
-def check_jira(){
+def check_jira(idOrKey){
 
     script {
-        def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
+        def jira_project = jiraGetProject idOrKey: idOrKey, site: 'https://bugs.library.illinois.edu'
 
 //        try{
 ////            def response = httpRequest authentication: '0c2ea103-5de9-4963-8d62-7247cd7319ee', url: "${jira_project.data.self}"
@@ -212,7 +212,7 @@ pipeline {
                     }
                     steps {
                         echo "Finding Jira epic ${params.JIRA_ISSUE_VALUE}"
-                        check_jira()
+                        check_jira('PSR')
 
                     }
 
