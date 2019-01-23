@@ -18,27 +18,24 @@ def CMAKE_VERSION = "cmake3.12"
 ////                                        echo "${generator_list.toString()}"
 //                                        def generator_argument = ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR}
 //                                    }
-def check_jira_issue(issue){
+def check_jira_issue(issue, outputFile){
     script{
 
         def issue_response = jiraGetIssue idOrKey: issue, site: 'https://bugs.library.illinois.edu'
         def input_data = readJSON text: toJson(issue_response.data)
-        writeJSON file: 'logs/jira_issue_data.json', json: input_data
-        archiveArtifacts allowEmptyArchive: true, artifacts: 'logs/jira_issue_data.json'
-//        echo "${issue.data}"
-//        echo "${prettyPrint(toJson(issue_response.data))}"
-//        echo issue.data.toString()
+        writeJSON file: outputFile, json: input_data
+        archiveArtifacts allowEmptyArchive: true, artifacts: outputFile
     }
 }
-def check_jira_project(project){
+def check_jira_project(project, outputFile){
 
     script {
 
         try{
             def jira_project = jiraGetProject idOrKey: project, site: 'https://bugs.library.illinois.edu'
             def input_data = readJSON text: toJson(jira_project.data)
-            writeJSON file: 'logs/jira_project_data.json', json: input_data
-            archiveArtifacts allowEmptyArchive: true, artifacts: 'logs/jira_project_data.json'
+            writeJSON file: outputFile, json: input_data
+            archiveArtifacts allowEmptyArchive: true, artifacts: outputFile
         }
         catch (Exception ex) {
             echo "writing to jira_project.json didn't work"
@@ -46,8 +43,8 @@ def check_jira_project(project){
     }
 }
 def check_jira(project, issue){
-    check_jira_project(project)
-    check_jira_issue(issue)
+    check_jira_project(project, 'logs/jira_project_data.json')
+    check_jira_issue(issue, "logs/jira_issue_data.json")
 //    script {
 //
 //        try{
