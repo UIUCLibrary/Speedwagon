@@ -743,7 +743,8 @@ pipeline {
                                 skipDefaultCheckout(true)
                             }
                             environment{
-                                PATH = "${tool 'CPython-3.6'};${PATH}"
+                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${tool 'CPython-3.7'};$PATH"
+//                                PATH = "${tool 'CPython-3.6'};${PATH}"
                             }
                             stages{
                                 stage("Creating Env for DevPi to test whl"){
@@ -758,7 +759,8 @@ pipeline {
                                     steps {
                                             timeout(10){
                                                 devpiTest(
-                                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                                    devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
+//                                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
                                                     url: "https://devpi.library.illinois.edu",
                                                     index: "${env.BRANCH_NAME}_staging",
                                                     pkgName: "${env.PKG_NAME}",
