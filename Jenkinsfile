@@ -26,6 +26,8 @@ def check_jira(){
 
         def issue = jiraGetIssue idOrKey: "${params.JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
         echo issue.data.toString()
+        def json_text = readJSON text: issue.data.toString()
+        echo "${json_text}"
 //        def data = readJSON text: "${JIRA_ISSUE}"
 //        echo "result = ${JIRA_ISSUE}"
         // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
