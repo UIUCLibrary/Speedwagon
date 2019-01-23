@@ -195,7 +195,7 @@ pipeline {
                 PATH = "${tool 'CPython-3.6'}\\Scripts;${PATH}"
             }
             stages{
-                stage("Inital setup"){
+                stage("Initial setup"){
                     parallel{
                         stage("Purge all existing data in workspace"){
                             when{
