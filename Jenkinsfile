@@ -23,19 +23,19 @@ def check_jira(){
     script {
         def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
 
+//        try{
+////            def response = httpRequest authentication: '0c2ea103-5de9-4963-8d62-7247cd7319ee', url: "${jira_project.data.self}"
+////            def json_data = readJSON text: "${response.content}"
+//            jira_project.data.each{ k, v ->
+//                echo "${k}: ${v}"
+//            }
+////            echo "${json_data}"
+////
+//        } catch (Exception ex) {
+//            echo "didn't work"
+//        }
         try{
-//            def response = httpRequest authentication: '0c2ea103-5de9-4963-8d62-7247cd7319ee', url: "${jira_project.data.self}"
-//            def json_data = readJSON text: "${response.content}"
-            jira_project.data.each{ k, v ->
-                echo "${k}: ${v}"
-            }
-//            echo "${json_data}"
-//
-        } catch (Exception ex) {
-            echo "didn't work"
-        }
-        try{
-            println prettyPrint(toJson(jira_project.data))
+            echo "${prettyPrint(toJson(jira_project.data))}"
         }
         catch (Exception ex) {
             echo "Pretty print didn't work"
