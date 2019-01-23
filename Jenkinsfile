@@ -7,7 +7,7 @@ import org.ds.*
 //def PKG_VERSION = "unknown"
 //def PKG_NAME = "unknown"
 def CMAKE_VERSION = "cmake3.12"
-def JIRA_ISSUE = ""
+
 //def DOC_ZIP_FILENAME = "doc.zip"
 //                                    script{
 ////                                        def generator_list = []
@@ -22,9 +22,12 @@ def check_jira(){
         // def result = jiraSearch "issue = $params.JIRA_ISSUE"
         // jiraComment body: 'Just a test', issueKey: 'PSR-83'
         def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
-        echo "result = ${jira_project.data.toString()}"
-        JIRA_ISSUE = jiraGetIssue idOrKey: "${params.JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
-        echo "result = ${JIRA_ISSUE}"
+        echo jira_project.data.toString()
+
+        def issue = jiraGetIssue idOrKey: "${params.JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
+        echo issue.data.toString()
+//        def data = readJSON text: "${JIRA_ISSUE}"
+//        echo "result = ${JIRA_ISSUE}"
         // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
         // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
         // if(result.isEmpty()){
