@@ -24,7 +24,7 @@ def check_jira(){
         def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
 //        echo jira_project.data.toString()
         try{
-            def response = httpRequest "${jira_project.data.self}"
+            def response = httpRequest authentication: '0c2ea103-5de9-4963-8d62-7247cd7319ee', url: "${jira_project.data.self}"
             echo "response = ${response}"
 //            echo "${response.content}"
 
