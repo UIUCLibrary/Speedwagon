@@ -22,10 +22,11 @@ def check_jira(){
         // def result = jiraSearch "issue = $params.JIRA_ISSUE"
         // jiraComment body: 'Just a test', issueKey: 'PSR-83'
         def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
-        echo jira_project.data.toString()
+//        echo jira_project.data.toString()
         try{
             def response = httpRequest "${jira_project.data.self}"
-            echo "${response.content}"
+            echo "response = ${response}"
+//            echo "${response.content}"
 
         } catch (Exception ex) {
             echo "didn't work"
