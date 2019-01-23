@@ -20,43 +20,35 @@ def CMAKE_VERSION = "cmake3.12"
 //                                    }
 def check_jira_issue(issue, outputFile){
     script{
-
         def issue_response = jiraGetIssue idOrKey: issue, site: 'https://bugs.library.illinois.edu'
-        def input_data = readJSON text: toJson(issue_response.data)
-        writeJSON file: outputFile, json: input_data
-        archiveArtifacts allowEmptyArchive: true, artifacts: outputFile
+        try{
+            def input_data = readJSON text: toJson(issue_response.data)
+            writeJSON file: outputFile, json: input_data
+            archiveArtifacts allowEmptyArchive: true, artifacts: outputFile
+        }
+        catch (Exception ex) {
+            echo "Unable to create ${outputFile}. Reason: ${ex}"
+        }
     }
 }
 def check_jira_project(project, outputFile){
 
     script {
 
+        def jira_project = jiraGetProject idOrKey: project, site: 'https://bugs.library.illinois.edu'
         try{
-            def jira_project = jiraGetProject idOrKey: project, site: 'https://bugs.library.illinois.edu'
             def input_data = readJSON text: toJson(jira_project.data)
             writeJSON file: outputFile, json: input_data
             archiveArtifacts allowEmptyArchive: true, artifacts: outputFile
         }
         catch (Exception ex) {
-            echo "writing to jira_project.json didn't work"
+            echo "Unable to create ${outputFile}. Reason: ${ex}"
         }
     }
 }
 def check_jira(project, issue){
     check_jira_project(project, 'logs/jira_project_data.json')
     check_jira_issue(issue, "logs/jira_issue_data.json")
-//    script {
-//
-//        try{
-//            def jira_project = jiraGetProject idOrKey: project, site: 'https://bugs.library.illinois.edu'
-//            def input_data = readJSON text: toJson(jira_project.data)
-//            writeJSON file: 'logs/jira_project_data.json', json: input_data
-//            archiveArtifacts allowEmptyArchive: true, artifacts: 'logs/jira_project_data.json'
-//        }
-//        catch (Exception ex) {
-//            echo "writing to jira_project.json didn't work"
-//        }
-//    }
 
 }
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
@@ -224,8 +216,10 @@ pipeline {
 
                     }
                     steps {
-                        echo "Finding Jira epic ${params.JIRA_ISSUE_VALUE}"
-                        check_jira('PSR', "${params.JIRA_ISSUE_VALUE}")
+//                        echo "Finding Jira epic ${params.JIRA_ISSUE_VALUE}"
+//                        check_jira('PSR', "${params.JIRA_ISSUE_VALUE}")
+                        check_jira_project('PSR',, 'logs/jira_project_data.json')
+                        check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
 
                     }
 
