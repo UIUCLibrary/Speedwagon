@@ -20,14 +20,18 @@ def CMAKE_VERSION = "cmake3.12"
 def check_jira(){
     script {
         def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
-//        try{
+
+        try{
+            jira_project.items.each {
+                echo "$it"
+            }
 //            def response = httpRequest authentication: '0c2ea103-5de9-4963-8d62-7247cd7319ee', url: "${jira_project.data.self}"
 //            def json_data = readJSON text: "${response.content}"
 //            echo "${json_data}"
 //
-//        } catch (Exception ex) {
-//            echo "didn't work"
-//        }
+        } catch (Exception ex) {
+            echo "didn't work"
+        }
 
         def issue = jiraGetIssue idOrKey: "${params.JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
         echo "${issue.data}"
