@@ -25,8 +25,8 @@ def check_jira(){
 //        echo jira_project.data.toString()
         try{
             def response = httpRequest authentication: '0c2ea103-5de9-4963-8d62-7247cd7319ee', url: "${jira_project.data.self}"
-//            echo "response = ${response}"
-            echo "${response.content}"
+            def json_data = readJSON text: "${response.content}"
+            echo "${json_data}"
 
         } catch (Exception ex) {
             echo "didn't work"
