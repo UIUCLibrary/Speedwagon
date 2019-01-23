@@ -21,9 +21,9 @@ def CMAKE_VERSION = "cmake3.12"
 def check_jira(project, issue){
 
     script {
-        def jira_project = jiraGetProject idOrKey: project, site: 'https://bugs.library.illinois.edu'
 
         try{
+            def jira_project = jiraGetProject idOrKey: project, site: 'https://bugs.library.illinois.edu'
             def input_data = readJSON text: toJson(jira_project.data)
             writeJSON file: 'logs/jira_project_data.json', json: input_data
             archiveArtifacts allowEmptyArchive: true, artifacts: 'logs/jira_project_data.json'
@@ -35,8 +35,11 @@ def check_jira(project, issue){
     script{
 
         def issue_response = jiraGetIssue idOrKey: issue, site: 'https://bugs.library.illinois.edu'
+        def input_data = readJSON text: toJson(issue_response.data)
+        writeJSON file: 'logs/jira_issue_data.json', json: input_data
+        archiveArtifacts allowEmptyArchive: true, artifacts: 'logs/jira_issue_data.json'
 //        echo "${issue.data}"
-        echo "${prettyPrint(toJson(issue_response.data))}"
+//        echo "${prettyPrint(toJson(issue_response.data))}"
 //        echo issue.data.toString()
     }
 }
