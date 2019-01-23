@@ -216,11 +216,14 @@ pipeline {
 
                     }
                     steps {
-//                        echo "Finding Jira epic ${params.JIRA_ISSUE_VALUE}"
-//                        check_jira('PSR', "${params.JIRA_ISSUE_VALUE}")
                         check_jira_project('PSR',, 'logs/jira_project_data.json')
                         check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
 
+                    }
+                    post{
+                        cleanup{
+                            cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
+                        }
                     }
 
                 }
