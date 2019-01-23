@@ -24,8 +24,8 @@ def check_jira(){
         try{
             def response = httpRequest authentication: '0c2ea103-5de9-4963-8d62-7247cd7319ee', url: "${jira_project.data.self}"
             def json_data = readJSON text: "${response.content}"
-            json_data.items.each {
-                echo "$it"
+            json_data.each{ k, v ->
+                echo "${k}: ${v}"
             }
 //            echo "${json_data}"
 //
