@@ -35,7 +35,7 @@ def check_jira(project, issue){
 //            echo "didn't work"
 //        }
         try{
-            writeJSON file: 'jira_project.json', json: jira_project.data
+            writeJSON file: 'jira_project.json', json: jira_project.data.toString()
         }
         catch (Exception ex) {
             echo "writing to json file didn't work"
