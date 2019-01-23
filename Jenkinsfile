@@ -1,6 +1,7 @@
 #!groovy
 @Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
 import org.ds.*
+import static groovy.json.JsonOutput.*
 
 @Library(["devpi", "PythonHelpers"]) _
 
@@ -18,6 +19,7 @@ def CMAKE_VERSION = "cmake3.12"
 //                                        def generator_argument = ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR}
 //                                    }
 def check_jira(){
+
     script {
         def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
 
@@ -31,6 +33,12 @@ def check_jira(){
 //
         } catch (Exception ex) {
             echo "didn't work"
+        }
+        try{
+            println prettyPrint(toJson(jira_project.data))
+        }
+        catch (Exception ex) {
+            echo "Pretty print didn't work"
         }
 
         def issue = jiraGetIssue idOrKey: "${params.JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
