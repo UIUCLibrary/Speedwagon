@@ -43,9 +43,9 @@ def check_jira(project, issue){
     }
     script{
 
-        def issue = jiraGetIssue idOrKey: issue, site: 'https://bugs.library.illinois.edu'
+        def issue_response = jiraGetIssue idOrKey: issue, site: 'https://bugs.library.illinois.edu'
 //        echo "${issue.data}"
-        echo "${prettyPrint(toJson(issue.data))}"
+        echo "${prettyPrint(toJson(issue_response.data))}"
 //        echo issue.data.toString()
     }
 }
