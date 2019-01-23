@@ -23,6 +23,11 @@ def check_jira(){
         // jiraComment body: 'Just a test', issueKey: 'PSR-83'
         def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
         echo jira_project.data.toString()
+        try{
+            echo "${jira_project.data.self}"
+        } catch (Exception ex) {
+            echo "didn't work"
+        }
 
         def issue = jiraGetIssue idOrKey: "${params.JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
         echo "${issue.data}"
