@@ -143,7 +143,7 @@ pipeline {
     }
     environment {
         PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\cache\\"
-        WORKON_HOME ="${WORKSPACE}\\pipenv\\"
+        WORKON_HOME ="${WORKSPACE}\\pipenv"
         build_number = VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
         PIPENV_NOSPIN = "True"
         PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
@@ -205,7 +205,7 @@ pipeline {
                 }
                 stage("Cleanup"){
                     steps {
-                        cleanup_workspace()
+//                        cleanup_workspace()
                         dir("source") {
                             stash includes: 'deployment.yml', name: "Deployment"
                         }
