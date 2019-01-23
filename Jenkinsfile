@@ -19,34 +19,19 @@ def CMAKE_VERSION = "cmake3.12"
 //                                    }
 def check_jira(){
     script {
-        // def result = jiraSearch "issue = $params.JIRA_ISSUE"
-        // jiraComment body: 'Just a test', issueKey: 'PSR-83'
         def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
-//        echo jira_project.data.toString()
-        try{
-            def response = httpRequest authentication: '0c2ea103-5de9-4963-8d62-7247cd7319ee', url: "${jira_project.data.self}"
-            def json_data = readJSON text: "${response.content}"
-            echo "${json_data}"
-
-        } catch (Exception ex) {
-            echo "didn't work"
-        }
+//        try{
+//            def response = httpRequest authentication: '0c2ea103-5de9-4963-8d62-7247cd7319ee', url: "${jira_project.data.self}"
+//            def json_data = readJSON text: "${response.content}"
+//            echo "${json_data}"
+//
+//        } catch (Exception ex) {
+//            echo "didn't work"
+//        }
 
         def issue = jiraGetIssue idOrKey: "${params.JIRA_ISSUE_VALUE}", site: 'https://bugs.library.illinois.edu'
         echo "${issue.data}"
         echo issue.data.toString()
-//        echo "${json_text}"
-//        def data = readJSON text: "${JIRA_ISSUE}"
-//        echo "result = ${JIRA_ISSUE}"
-        // def result = jiraIssueSelector(issueSelector: [$class: 'DefaultIssueSelector'])
-        // def result = jiraIssueSelector(issueSelector: [$class: 'JqlIssueSelector', jql: "issue = $params.JIRA_ISSUE"])
-        // if(result.isEmpty()){
-        //     echo "Jira issue not found"
-        //     error("Jira issue not found")
-
-        // } else {
-        //     echo "Located ${result}"
-        // }
     }
 }
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
