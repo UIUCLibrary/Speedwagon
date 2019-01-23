@@ -25,7 +25,8 @@ def check_jira(project, issue){
 
         try{
             def input_data = readJSON text: toJson(jira_project.data)
-            writeJSON file: 'jira_project.json', json: input_data
+            writeJSON file: 'logs/jira_project_data.json', json: input_data
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'logs/jira_project_data.json'
         }
         catch (Exception ex) {
             echo "writing to jira_project.json didn't work"
