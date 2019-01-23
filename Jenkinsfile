@@ -24,7 +24,9 @@ def check_jira(){
         def jira_project = jiraGetProject idOrKey: 'PSR', site: 'https://bugs.library.illinois.edu'
         echo jira_project.data.toString()
         try{
-            echo "${jira_project.data.self}"
+            def response = httpRequest "${jira_project.data.self}"
+            echo "${response.content}"
+
         } catch (Exception ex) {
             echo "didn't work"
         }
