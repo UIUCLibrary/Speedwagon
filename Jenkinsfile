@@ -201,6 +201,10 @@ pipeline {
                 }
                 stage("Testing Jira epic"){
                     agent any
+                    options {
+                        skipDefaultCheckout(true)
+
+                    }
                     steps {
                         echo "Finding Jira epic ${params.JIRA_ISSUE_VALUE}"
                         check_jira()
