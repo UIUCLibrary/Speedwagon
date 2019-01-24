@@ -330,10 +330,7 @@ pipeline {
                     steps {
                         echo "Building docs on ${env.NODE_NAME}"
                         dir("source"){
-//                            lock("system_pipenv_${NODE_NAME}"){
-//                                bat "python -m pipenv run python setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs 2> ${WORKSPACE}\\logs\\build_sphinx.log & type ${WORKSPACE}\\logs\\build_sphinx.log"
                             bat "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx.log"
-//                            }
                         }
                     }
                     post{
@@ -569,7 +566,6 @@ pipeline {
                                     cleanWs deleteDirs: true, patterns: [[pattern: 'logs/cmake-msbuild.log', type: 'INCLUDE']]
                                 }
                             }
-//                            }
                         }
                         stage("CTest"){
                             options{
@@ -714,7 +710,6 @@ pipeline {
                                         bat "devpi use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
                                         devpiTest(
                                             devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
-//                                                    devpiExecutable: "venv\\Scripts\\devpi.exe",
                                             url: "https://devpi.library.illinois.edu",
                                             index: "${env.BRANCH_NAME}_staging",
                                             pkgName: "${env.PKG_NAME}",
@@ -1008,13 +1003,6 @@ pipeline {
     post {
         failure {
             report_help_info()
-//            script{
-//                def help_info = "Pipeline failed. If the problem is old cached data, you might need to purge the testing environment. Try manually running the pipeline again with the parameter FRESH_WORKSPACE checked."
-//                echo "${help_info}"
-//                if (env.BRANCH_NAME == "master"){
-//                    emailext attachLog: true, body: "${help_info}\n${JOB_NAME} has current status of ${currentBuild.currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
-//                }
-//            }
         }
         cleanup {
              dir("source"){
