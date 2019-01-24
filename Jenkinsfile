@@ -203,7 +203,7 @@ pipeline {
     stages {
         stage("Configure"){
             environment{
-                PATH = "${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
             }
             stages{
                 stage("Initial setup"){
@@ -251,12 +251,12 @@ pipeline {
                         }
                     }
                 }
-                stage("Install Python system dependencies"){
+                stage("Install Python System Dependencies"){
                     steps{
                         lock("system_python_${env.NODE_NAME}"){
-                            bat "(if not exist logs mkdir logs) && ${tool 'CPython-3.6'}\\python -m pip install pip --upgrade --quiet && ${tool 'CPython-3.6'}\\python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
+                            bat "(if not exist logs mkdir logs) && python -m pip install pip --upgrade --quiet && python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
                         }
-                        bat "${tool 'CPython-3.6'}\\python -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client sphinx==1.6.7"
+                        bat "python -m venv venv && venv\\Scripts\\pip.exe install tox sphinx"
 
 
                     }
@@ -312,7 +312,7 @@ pipeline {
 
                         dir("source"){
                             lock("system_pipenv_${NODE_NAME}"){
-                                bat "${tool 'CPython-3.6'}\\python.exe -m pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
+                                bat "pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
                             }
                         }
                     }
@@ -477,7 +477,7 @@ pipeline {
             post{
                 always{
                     dir("source"){
-                        bat "${tool 'CPython-3.6'}\\python -m pipenv run coverage combine && ${tool 'CPython-3.6'}\\python -m pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && ${tool 'CPython-3.6'}\\python -m pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
+                        bat "\"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage combine && \"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && \"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
 
                     }
                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
@@ -673,7 +673,7 @@ pipeline {
                     steps {
                         unstash 'DOCS_ARCHIVE'
                         unstash 'PYTHON_PACKAGES'
-                        bat "devpi use https://devpi.library.illinois.edu && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
+                        bat "pip install devpi-client && devpi use https://devpi.library.illinois.edu && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
                     }
                 }
                 stage("Test DevPi packages") {
@@ -1017,7 +1017,7 @@ pipeline {
         }
         cleanup {
              dir("source"){
-                 bat "${tool 'CPython-3.6'}\\python -m pipenv run python setup.py clean --all"
+                 bat "\"${tool 'CPython-3.6'}\\python\" -m pipenv run python setup.py clean --all"
              }
 
             cleanWs deleteDirs: true, patterns: [
