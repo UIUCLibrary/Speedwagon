@@ -203,7 +203,7 @@ pipeline {
     stages {
         stage("Configure"){
             environment{
-                PATH = "${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
             }
             stages{
                 stage("Initial setup"){
@@ -251,12 +251,12 @@ pipeline {
                         }
                     }
                 }
-                stage("Install Python system dependencies"){
+                stage("Install Python System Dependencies"){
                     steps{
                         lock("system_python_${env.NODE_NAME}"){
                             bat "(if not exist logs mkdir logs) && ${tool 'CPython-3.6'}\\python -m pip install pip --upgrade --quiet && ${tool 'CPython-3.6'}\\python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
                         }
-                        bat "${tool 'CPython-3.6'}\\python -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client sphinx==1.6.7"
+                        bat "python -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client sphinx==1.6.7"
 
 
                     }
