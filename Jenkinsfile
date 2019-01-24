@@ -312,7 +312,7 @@ pipeline {
 
                         dir("source"){
                             lock("system_pipenv_${NODE_NAME}"){
-                                bat "${tool 'CPython-3.6'}\\python.exe -m pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
+                                bat "pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
                             }
                         }
                     }
@@ -477,7 +477,7 @@ pipeline {
             post{
                 always{
                     dir("source"){
-                        bat "${tool 'CPython-3.6'}\\python -m pipenv run coverage combine && ${tool 'CPython-3.6'}\\python -m pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && ${tool 'CPython-3.6'}\\python -m pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
+                        bat "pipenv run coverage combine && pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && python -m pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
 
                     }
                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
