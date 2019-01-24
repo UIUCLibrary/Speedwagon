@@ -254,7 +254,7 @@ pipeline {
                 stage("Install Python System Dependencies"){
                     steps{
                         lock("system_python_${env.NODE_NAME}"){
-                            bat "(if not exist logs mkdir logs) && ${tool 'CPython-3.6'}\\python -m pip install pip --upgrade --quiet && ${tool 'CPython-3.6'}\\python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
+                            bat "(if not exist logs mkdir logs) && python -m pip install pip --upgrade --quiet && python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
                         }
                         bat "python -m venv venv && venv\\Scripts\\pip.exe install tox devpi-client sphinx==1.6.7"
 
