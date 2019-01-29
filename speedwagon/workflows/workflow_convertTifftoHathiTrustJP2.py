@@ -228,6 +228,8 @@ class PackageImageConverter(worker.ProcessJobWorker):
 class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
     name = "0 EXPERIMENTAL " \
            "Convert TIFF to HathiTrust JP2"
+    active = False
+
     description = "Input is a path to a folder containing subfolders which " \
                   "may contain TIFF files." \
                   "\n" \

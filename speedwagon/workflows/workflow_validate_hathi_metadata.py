@@ -101,6 +101,7 @@ class ValidateImageMetadataWorkflow(AbsWorkflow):
     name = "0 EXPERIMENTAL " \
            "Validate Tiff Image Metadata for HathiTrust"
     description = "Validate the metadata located within a tiff file."
+    active = False
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:

@@ -45,6 +45,7 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
                   "\n     + access (folder)" \
                   "\n         - uniqueID2_00000001.jp2" \
                   "\n         - uniqueID2_00000002.jp2"
+    active = False
 
     def user_options(self):
         return [

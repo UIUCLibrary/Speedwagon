@@ -255,6 +255,8 @@ class UpdateChecksumBatchSingleWorkflow(AbsWorkflow):
     description = "Updates the checksum hash in a checksum.md5 file" \
                   "\nInput: checksum.md5 file"
 
+    active = False
+
     def user_options(self):
         return UpdateChecksumBatchSingle.get_user_options()
 
@@ -269,6 +271,7 @@ class UpdateChecksumBatchMultipleWorkflow(AbsWorkflow):
     description = "Updates the checksum hash in all checksum.md5 file found " \
                   "in a path" \
                   "\nInput: path to a root folder"
+    active = False
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
