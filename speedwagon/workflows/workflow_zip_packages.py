@@ -15,109 +15,6 @@ import hathizip.process
 import hathizip
 
 
-class UserArgs(enum.Enum):
-    SOURCE = "Source"
-    OUTPUT = "Output"
-
-
-class JobValues(enum.Enum):
-    SOURCE_PATH = "source_path"
-    DESTINATION_PATH = "destination_path"
-
-
-class ZipPackages(AbsTool):
-    name = "Zip Packages"
-    description = "This tool takes a folder, usually of HathiTrust packages," \
-                  " zips each subfolder, and copies the resultant tree to a " \
-                  "different location. Input is a root folder, usually for a" \
-                  " HathiTrust shipment, containing multiple subfolders, " \
-                  "each one a HathiTrust digitized item." \
-                  "\nOutput is a destination location for the newly " \
-                  "generated files."
-
-    def __init__(self) -> None:
-
-        super().__init__()
-
-        # input_data = SelectDirectory()
-        # input_data.label = "Package root"
-        # self.options.append(input_data)
-
-    @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJobWorker]:
-        return ZipPackageJob
-
-    @staticmethod
-    def discover_task_metadata(
-            *args,
-            **kwargs
-    ) -> typing.List[dict]:  # type: ignore
-
-        source = kwargs[UserArgs.SOURCE.value]
-        output = kwargs[UserArgs.OUTPUT.value]
-        ZipPackages.validate_user_options(**kwargs)
-        job_requests = []
-        for dir_ in filter(lambda x: x.is_dir(), os.scandir(source)):
-            job_requests.append({JobValues.SOURCE_PATH.value: dir_.path,
-                                 JobValues.DESTINATION_PATH.value: output,
-                                 }
-                                )
-        return job_requests
-
-    @staticmethod
-    def validate_user_options(**user_args):
-        source = user_args[UserArgs.SOURCE.value]
-        output = user_args[UserArgs.OUTPUT.value]
-        if not os.path.exists(source) or not os.path.isdir(source):
-            raise ValueError("Invalid source")
-        if not os.path.exists(output) or not os.path.isdir(output):
-            raise ValueError("Invalid output")
-
-    @classmethod
-    def generate_report(cls, *args, **kwargs):
-        if "kwargs" in kwargs:
-            output = kwargs["kwargs"][UserArgs.OUTPUT.value]
-            return \
-                "Zipping complete. All files written to \"{}\".".format(output)
-
-        return "Zipping complete. All files written to output location"
-
-    @staticmethod
-    def get_user_options() -> typing.List[options.UserOption2]:
-        return [
-            options.UserOptionCustomDataType(UserArgs.SOURCE.value,
-                                             options.FolderData),
-
-            options.UserOptionCustomDataType(UserArgs.OUTPUT.value,
-                                             options.FolderData),
-        ]
-
-
-class ZipPackageJob(ProcessJobWorker):
-    @contextmanager
-    def log_config(self, logger):
-        gui_logger = GuiLogHandler(self.log)
-        try:
-            logger.addHandler(gui_logger)
-            yield
-        finally:
-            logger.removeHandler(gui_logger)
-
-    def process(self, source_path, destination_path, *args, **kwargs):
-        my_logger = logging.getLogger(hathizip.__name__)
-        my_logger.setLevel(logging.INFO)
-        with self.log_config(my_logger):
-            self.log("Zipping {}".format(source_path))
-            hathizip.process.compress_folder_inplace(
-                path=source_path,
-                dst=destination_path)
-
-            basename = os.path.basename(source_path)
-            newfile = os.path.join(destination_path, f"{basename}.zip")
-            self.log(f"Created {newfile}")
-            self.result = newfile
-
-
 class ZipPackagesWorkflow(AbsWorkflow):
     name = "0 EXPERIMENTAL " \
            "Zip Packages"
@@ -133,11 +30,37 @@ class ZipPackagesWorkflow(AbsWorkflow):
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
+        source = user_args["Source"]
+        output = user_args["Output"]
 
-        return ZipPackages.discover_task_metadata(**user_args)
+        job_requests = []
+        for dir_ in filter(lambda x: x.is_dir(), os.scandir(source)):
+            job_requests.append({"source_path": dir_.path,
+                                 "destination_path": output,
+                                 }
+                                )
+        return job_requests
+
+    @staticmethod
+    def validate_user_options(**user_args):
+
+        source = user_args["Source"]
+        output = user_args["Output"]
+        if not os.path.exists(source) or not os.path.isdir(source):
+            raise ValueError("Invalid source")
+        if not os.path.exists(output) or not os.path.isdir(output):
+            raise ValueError("Invalid output")
+
+        return True
 
     def user_options(self):
-        return ZipPackages.get_user_options()
+        return [
+            options.UserOptionCustomDataType("Source",
+                                             options.FolderData),
+
+            options.UserOptionCustomDataType("Output",
+                                             options.FolderData),
+        ]
 
     def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
         new_task = ZipTask(**job_args)
@@ -147,8 +70,13 @@ class ZipPackagesWorkflow(AbsWorkflow):
     @reports.add_report_borders
     def generate_report(cls, results: List[tasks.Result],
                         **user_args) -> Optional[str]:
-        original_tool = ZipPackages()
-        return original_tool.generate_report(results=[i.data for i in results])
+
+        output = user_args.get("Output")
+        if output:
+            return \
+                "Zipping complete. All files written to \"{}\".".format(output)
+
+        return "Zipping complete. All files written to output location"
 
 
 class ZipTask(tasks.Subtask):
@@ -158,8 +86,27 @@ class ZipTask(tasks.Subtask):
         self._destination_path = destination_path
 
     def work(self):
-        process = ZipPackageJob()
-        process.log = self.log
-        process.process(self._source_path, self._destination_path)
-        self.set_results(process.result)
+        my_logger = logging.getLogger(hathizip.__name__)
+        my_logger.setLevel(logging.INFO)
+        with self.log_config(my_logger):
+            self.log("Zipping {}".format(self._source_path))
+            hathizip.process.compress_folder_inplace(
+                path=self._source_path,
+                dst=self._destination_path)
+
+            basename = os.path.basename(self._source_path)
+            newfile = os.path.join(self._destination_path, f"{basename}.zip")
+            self.log(f"Created {newfile}")
+            self.set_results(newfile)
+
         return True
+
+    @contextmanager
+    def log_config(self, logger):
+        gui_logger = GuiLogHandler(self.log)
+        try:
+            logger.addHandler(gui_logger)
+            yield
+        finally:
+            logger.removeHandler(gui_logger)
+
