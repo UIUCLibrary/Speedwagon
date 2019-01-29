@@ -2,41 +2,19 @@ import abc
 import enum
 import os
 import shutil
-import typing
-from contextlib import contextmanager
 import itertools
 from typing import List, Any
 
-from speedwagon import worker
+from speedwagon import tasks
 from speedwagon.tools import options
-from speedwagon.job import AbsTool, AbsWorkflow
+from speedwagon.job import AbsWorkflow
 import pykdu_compress
 from py3exiv2bind.core import set_dpi
-
-
-class UserArgs(enum.Enum):
-    INPUT = "Input"
-    OUTPUT = "Output"
-
-
-class ResultValues(enum.Enum):
-    VALID = "valid"
-    FILENAME = "filename"
-    PATH = "path"
-    CHECKSUM_REPORT_FILE = "checksum_report_file"
 
 
 class TaskType(enum.Enum):
     COPY = "copy"
     CONVERT = "convert"
-
-
-class JobValues(enum.Enum):
-    SOURCE_ROOT = "source_root"
-    OUTPUT_ROOT = "output_root"
-    RELATIVE_PATH_TO_ROOT = "relative_path_to_root"
-    SOURCE_FILE = "source_file"
-    TASK = "task_type"
 
 
 class AbsProcessStrategy(metaclass=abc.ABCMeta):
@@ -109,8 +87,11 @@ class CopyFile(AbsProcessStrategy):
         self.status = "Copied {} to {}".format(source_file, destination_path)
 
 
-class ConvertTiffToHathiJp2(AbsTool):
-    name = "Convert TIFF to HathiTrust JP2"
+class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
+    name = "0 EXPERIMENTAL " \
+           "Convert TIFF to HathiTrust JP2"
+    active = True
+
     description = "Input is a path to a folder containing subfolders which " \
                   "may contain TIFF files." \
                   "\n" \
@@ -118,13 +99,11 @@ class ConvertTiffToHathiJp2(AbsTool):
                   "exact structure will be copied, but all TIFF files will " \
                   "be replaced by HathiTrust-compliant JP2 files."
 
-    active = True
-
-    @staticmethod
-    def discover_task_metadata(**user_args) -> typing.List[dict]:
+    def discover_task_metadata(self, initial_results: List[Any],
+                               additional_data, **user_args) -> List[dict]:
         jobs = []
-        source_input = user_args[UserArgs.INPUT.value]
-        dest = user_args[UserArgs.OUTPUT.value]
+        source_input = user_args["Input"]
+        dest = user_args["Output"]
 
         def filter_only_tif_files(filename):
             basename, ext = os.path.splitext(filename)
@@ -142,104 +121,90 @@ class ConvertTiffToHathiJp2(AbsTool):
             for file_ in tiff_files:
 
                 jobs.append({
-                    JobValues.SOURCE_ROOT.value: source_input,
-                    JobValues.OUTPUT_ROOT.value: dest,
-                    JobValues.RELATIVE_PATH_TO_ROOT.value:
+                    "source_root": source_input,
+                    "output_root": dest,
+                    "relative_path_to_root":
                         os.path.relpath(root, source_input),
-                    JobValues.SOURCE_FILE.value: file_,
-                    JobValues.TASK.value: TaskType.CONVERT.value
+                    "source_file": file_,
+                    "task_type": TaskType.CONVERT.value
                 })
 
             for file_ in other_files:
 
                 jobs.append({
-                    JobValues.SOURCE_ROOT.value: source_input,
-                    JobValues.OUTPUT_ROOT.value: dest,
-                    JobValues.RELATIVE_PATH_TO_ROOT.value:
+                    "source_root": source_input,
+                    "output_root": dest,
+                    "relative_path_to_root":
                         os.path.relpath(root, source_input),
-                    JobValues.SOURCE_FILE.value: file_,
-                    JobValues.TASK.value: TaskType.COPY.value
+                    "source_file": file_,
+                    "task_type": TaskType.COPY.value
                 })
 
         return jobs
 
-    @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJobWorker]:
-        return PackageImageConverter
-
-    @staticmethod
-    def get_user_options() -> typing.List[options.UserOption2]:
+    def user_options(self):
         return [
-            options.UserOptionCustomDataType(UserArgs.INPUT.value,
-                                             options.FolderData),
-
-            options.UserOptionCustomDataType(UserArgs.OUTPUT.value,
-                                             options.FolderData),
+            options.UserOptionCustomDataType("Input", options.FolderData),
+            options.UserOptionCustomDataType("Output", options.FolderData)
         ]
 
+    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+        output_root = job_args['output_root']
+        relative_path_to_root = job_args['relative_path_to_root']
+        source_root = job_args['source_root']
+        source_file = job_args['source_file']
+        task_type = job_args['task_type']
 
-class PackageImageConverter(worker.ProcessJobWorker):
+        output_path = os.path.join(output_root, relative_path_to_root)
 
-    @contextmanager
-    def log_config(self, logger):
-        gui_logger = worker.GuiLogHandler(self.log)
-        try:
-            logger.addHandler(gui_logger)
-            yield
-        finally:
-            logger.removeHandler(gui_logger)
+        source_file_path = os.path.join(
+            source_root, relative_path_to_root, source_file)
 
-    def process(self, *args, **kwargs):
-        des_path = os.path.join(
-            kwargs[JobValues.OUTPUT_ROOT.value],
-            kwargs[JobValues.RELATIVE_PATH_TO_ROOT.value]
-        )
-        basename, _ = os.path.splitext(kwargs[JobValues.SOURCE_FILE.value])
-        task_type = kwargs[JobValues.TASK.value]
+        if task_type == "convert":
+            task_builder.add_subtask(
+                ImageConvertTask(source_file_path, output_path))
+        elif task_type == "copy":
+            task_builder.add_subtask(CopyTask(source_file_path, output_path))
 
-        if task_type == TaskType.CONVERT.value:
-            process_task = ProcessFile(ConvertFile())
-        elif task_type == TaskType.COPY.value:
-            process_task = ProcessFile(CopyFile())
         else:
-            self.log("Don't know what to do for {}".format(task_type))
-            return None
+            raise Exception("Don't know what to do for {}".format(task_type))
 
-        output_path = os.path.join(
-            kwargs[JobValues.OUTPUT_ROOT.value],
-            kwargs[JobValues.RELATIVE_PATH_TO_ROOT.value],
-            )
 
-        source_file_path = \
-            os.path.join(kwargs[JobValues.SOURCE_ROOT.value],
-                         kwargs[JobValues.RELATIVE_PATH_TO_ROOT.value],
-                         kwargs[JobValues.SOURCE_FILE.value])
+class ImageConvertTask(tasks.Subtask):
 
+    def __init__(self, source_file_path, output_path) -> None:
+        super().__init__()
+        self._source_file_path = source_file_path
+        self._output_path = output_path
+
+    def work(self) -> bool:
         try:
-            os.makedirs(des_path)
-            self.log("Created {}".format(des_path))
+            os.makedirs(self._output_path)
+            self.log("Created {}".format(self._output_path))
         except FileExistsError:
             pass
-        process_task.process(source_file_path, output_path)
 
+        process_task = ProcessFile(ConvertFile())
+        process_task.process(self._source_file_path, self._output_path)
         self.log(process_task.status_message())
+        return True
 
 
-class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Convert TIFF to HathiTrust JP2"
-    active = False
+class CopyTask(tasks.Subtask):
 
-    description = "Input is a path to a folder containing subfolders which " \
-                  "may contain TIFF files." \
-                  "\n" \
-                  "\nOutput is a new path where the input folder and its " \
-                  "exact structure will be copied, but all TIFF files will " \
-                  "be replaced by HathiTrust-compliant JP2 files."
+    def __init__(self, source_file_path, output_path) -> None:
+        super().__init__()
+        self._source_file_path = source_file_path
+        self._output_path = output_path
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
-        return ConvertTiffToHathiJp2.discover_task_metadata(**user_args)
+    def work(self) -> bool:
+        try:
+            os.makedirs(self._output_path)
+            self.log("Created {}".format(self._output_path))
+        except FileExistsError:
+            pass
 
-    def user_options(self):
-        return ConvertTiffToHathiJp2.get_user_options()
+        process_task = ProcessFile(CopyFile())
+        process_task.process(self._source_file_path, self._output_path)
+        self.log(process_task.status_message())
+        return True
