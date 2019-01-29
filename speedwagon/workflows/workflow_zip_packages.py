@@ -1,16 +1,13 @@
-import enum
 import logging
-import typing
 
 import os
 from contextlib import contextmanager
 from typing import List, Any, Optional
 
-from speedwagon import worker, tasks
-from speedwagon.job import AbsTool, AbsWorkflow
-from speedwagon.worker import ProcessJobWorker, GuiLogHandler
+from speedwagon import tasks, reports
+from speedwagon.job import AbsWorkflow
+from speedwagon.worker import GuiLogHandler
 from speedwagon.tools import options
-from speedwagon import reports
 import hathizip.process
 import hathizip
 
@@ -109,4 +106,3 @@ class ZipTask(tasks.Subtask):
             yield
         finally:
             logger.removeHandler(gui_logger)
-
