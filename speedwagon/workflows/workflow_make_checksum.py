@@ -16,6 +16,7 @@ from speedwagon import worker, tasks
 from pyhathiprep import checksum
 from speedwagon.reports import add_report_borders
 
+
 class UserArgs(enum.Enum):
     INPUT = "Input"
 
@@ -238,12 +239,11 @@ class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
 
     @classmethod
     @add_report_borders
-    def generate_report(cls, results: List[tasks.Result], **user_args) -> \
-    Optional[str]:
+    def generate_report(cls, results: List[tasks.Result],
+                        **user_args) -> Optional[str]:
+
         original_tool = MakeChecksumBatchSingle()
         return original_tool.generate_report(results=[i.data for i in results])
-        # return super().generate_report(results, **user_args)
-
 
     @classmethod
     def sort_results(cls,
@@ -313,7 +313,6 @@ class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
         self._output_filename = output_filename
         self._checksum_calculations = checksum_calculations
 
-
     def work(self) -> bool:
 
         report_builder = checksum.HathiChecksumReport()
@@ -328,5 +327,3 @@ class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
         self.log("Wrote {}".format(self._output_filename))
 
         return True
-
-

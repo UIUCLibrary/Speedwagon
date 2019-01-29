@@ -9,6 +9,7 @@ from speedwagon.tools import options
 from speedwagon.worker import GuiLogHandler
 from uiucprescon.packager.packages.collection_builder import Metadata
 
+
 class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
     name = "0 EXPERIMENTAL " \
            "Convert CaptureOne TIFF to Digital Library Compound Object"
@@ -68,7 +69,7 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
             }
             )
         return jobs
-    #
+
     def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
         existing_package = job_args['package']
         new_package_root = job_args["output"]
@@ -96,7 +97,9 @@ class PackageConverter(tasks.Subtask):
         finally:
             logger.removeHandler(gui_logger)
 
-    def __init__(self, source_path, packaging_id, existing_package, new_package_root) -> None:
+    def __init__(self, source_path, packaging_id,
+                 existing_package, new_package_root) -> None:
+
         super().__init__()
         self.packaging_id = packaging_id
         self.existing_package = existing_package
@@ -107,11 +110,13 @@ class PackageConverter(tasks.Subtask):
         my_logger = logging.getLogger(uiucprescon.packager.__name__)
         my_logger.setLevel(logging.INFO)
         with self.log_config(my_logger):
-            self.log(f"Converting {self.packaging_id} from {self.source_path} "
-                     f"to a Hathi Trust Tiff package at {self.new_package_root}")
+            self.log(
+                f"Converting {self.packaging_id} from {self.source_path} "
+                f"to a Hathi Trust Tiff package at {self.new_package_root}")
 
             package_factory = uiucprescon.packager.PackageFactory(
                 uiucprescon.packager.packages.DigitalLibraryCompound())
 
-            package_factory.transform(self.existing_package, dest=self.new_package_root)
+            package_factory.transform(
+                self.existing_package, dest=self.new_package_root)
         return True
