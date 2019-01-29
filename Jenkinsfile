@@ -154,7 +154,15 @@ def report_help_info(){
 }
 //
 def get_build_number(){
-    return VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
+    script{
+        def versionPrefix = ""
+
+        if(currentBuild.getBuildCauses()[0].shortDescription == "Started by timer"){
+            versionPrefix = "Nightly"
+        }
+
+        return VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
+    }
 }
 
 pipeline {
