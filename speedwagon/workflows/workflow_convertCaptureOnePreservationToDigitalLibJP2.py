@@ -240,7 +240,8 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
-        return ConvertTiffPreservationToDLJp2.discover_task_metadata(**user_args)
+        return \
+            ConvertTiffPreservationToDLJp2.discover_task_metadata(**user_args)
 
     def user_options(self):
         return ConvertTiffPreservationToDLJp2.get_user_options()

@@ -108,6 +108,3 @@ class ValidateImageMetadataWorkflow(AbsWorkflow):
 
     def user_options(self):
         return ValidateImageMetadata.get_user_options()
-
-
-

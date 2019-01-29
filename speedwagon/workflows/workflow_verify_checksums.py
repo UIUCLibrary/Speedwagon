@@ -293,7 +293,8 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
             discover_task_metadata(**user_args)
 
     def user_options(self):
-        return tool_verify_checksum.VerifyChecksumBatchSingle.get_user_options()
+        return \
+            tool_verify_checksum.VerifyChecksumBatchSingle.get_user_options()
 
     def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
         new_task = ChecksumTask(**job_args)
@@ -305,8 +306,8 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
             Optional[str]:
         result_data = [res.data for res in results]
 
-        return tool_verify_checksum.VerifyChecksumBatchSingle.generate_report\
-            (results=result_data)
+        return tool_verify_checksum.VerifyChecksumBatchSingle.generate_report(
+            results=result_data)
 
 
 class ChecksumTask(speedwagon.tasks.Subtask):

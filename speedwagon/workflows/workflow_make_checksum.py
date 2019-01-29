@@ -5,14 +5,16 @@ import os
 import enum
 
 import itertools
-from typing import List, Any
+from typing import List, Any, DefaultDict, Optional
 
+import speedwagon
 from speedwagon.worker import ProcessJobWorker
 from speedwagon.job import AbsTool, AbsWorkflow
 from speedwagon.tools import options
 # from .options import ToolOptionDataType
-from speedwagon import worker
+from speedwagon import worker, tasks
 from pyhathiprep import checksum
+from speedwagon.reports import add_report_borders
 
 
 class UserArgs(enum.Enum):
@@ -215,7 +217,53 @@ class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
-        return MakeChecksumBatchSingle.discover_task_metadata(**user_args)
+        item = MakeChecksumBatchSingle()
+        jobs = item.discover_jobs(**user_args)
+        return jobs
+
+    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+        source_path = job_args['source_path']
+        filename = job_args['filename']
+        report_name = job_args['save_to_filename']
+        new_task = MakeChecksumTask(source_path, filename, report_name)
+        task_builder.add_subtask(new_task)
+
+    def completion_task(self, task_builder: tasks.TaskBuilder, results,
+                        **user_args) -> None:
+
+        sorted_results = self.sort_results([i.data for i in results])
+
+        for checksum_report, checksums in sorted_results.items():
+            process = MakeCheckSumReportTask(checksum_report, checksums)
+            task_builder.add_subtask(process)
+
+    @classmethod
+    @add_report_borders
+    def generate_report(cls, results: List[tasks.Result],
+                        **user_args) -> Optional[str]:
+
+        original_tool = MakeChecksumBatchSingle()
+        return original_tool.generate_report(results=[i.data for i in results])
+
+    @classmethod
+    def sort_results(cls,
+                     results: typing.List[typing.Mapping[ResultsValues, str]]
+                     ) -> typing.Dict[str,
+                                      typing.List[typing.Dict[ResultsValues,
+                                                              str]]]:
+
+        new_results: DefaultDict[str, list] = collections.defaultdict(list)
+
+        sorted_results = sorted(results,
+                                key=lambda it: it[ResultsValues.CHECKSUM_FILE])
+
+        for k, v in itertools.groupby(
+                sorted_results,
+                key=lambda it: it[ResultsValues.CHECKSUM_FILE]):
+
+            for result_data in v:
+                new_results[k].append(result_data)
+        return dict(new_results)
 
     def user_options(self):
         return MakeChecksumBatchSingle.get_user_options()
@@ -235,3 +283,47 @@ class MakeChecksumBatchMultipleWorkflow(AbsWorkflow):
 
     def user_options(self):
         return MakeChecksumBatchMultiple.get_user_options()
+
+
+class MakeChecksumTask(speedwagon.tasks.Subtask):
+
+    def __init__(self, source_path, filename, checksum_report) -> None:
+        super().__init__()
+        self._source_path = source_path
+        self._filename = filename
+        self._checksum_report = checksum_report
+
+    def work(self) -> bool:
+        worker = ChecksumJob()
+        worker.log = self.log
+        worker.process(
+            source_path=self._source_path,
+            filename=self._filename,
+            save_to_filename=self._checksum_report
+
+        )
+        self.set_results(worker.result)
+        return True
+
+
+class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
+
+    def __init__(self, output_filename, checksum_calculations) -> None:
+        super().__init__()
+        self._output_filename = output_filename
+        self._checksum_calculations = checksum_calculations
+
+    def work(self) -> bool:
+
+        report_builder = checksum.HathiChecksumReport()
+        for item in self._checksum_calculations:
+            filename = item[ResultsValues.SOURCE_FILE]
+            hash_value = item[ResultsValues.SOURCE_HASH]
+            report_builder.add_entry(filename, hash_value)
+        report = report_builder.build()
+
+        with open(self._output_filename, "w", encoding="utf-8") as wf:
+                wf.write(report)
+        self.log("Wrote {}".format(self._output_filename))
+
+        return True

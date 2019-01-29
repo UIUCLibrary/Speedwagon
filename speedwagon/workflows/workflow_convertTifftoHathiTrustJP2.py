@@ -241,4 +241,3 @@ class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
 
     def user_options(self):
         return ConvertTiffToHathiJp2.get_user_options()
-

@@ -135,4 +135,4 @@ class ZipPackagesWorkflow(AbsWorkflow):
         return ZipPackages.discover_task_metadata(**user_args)
 
     def user_options(self):
-        return  ZipPackages.get_user_options()
+        return ZipPackages.get_user_options()
