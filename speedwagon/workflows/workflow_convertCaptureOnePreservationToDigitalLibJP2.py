@@ -237,6 +237,7 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
                   "of TIFF files and as its output creates a sibling folder " \
                   "called \"access\" containing digital-library " \
                   "compliant JP2 files named the same as the TIFFs."
+    active = False
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:

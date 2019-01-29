@@ -128,6 +128,7 @@ class ZipPackagesWorkflow(AbsWorkflow):
                   "each one a HathiTrust digitized item." \
                   "\nOutput is a destination location for the newly " \
                   "generated files."
+    active = False
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:

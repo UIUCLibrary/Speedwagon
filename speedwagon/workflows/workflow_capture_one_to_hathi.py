@@ -145,6 +145,7 @@ class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
                   "It takes as its input a folder of CaptureOne batch " \
                   "files. It takes as its output a folder location where " \
                   "new files will be written."
+    active = False
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:

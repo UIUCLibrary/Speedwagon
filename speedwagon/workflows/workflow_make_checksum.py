@@ -276,6 +276,7 @@ class MakeChecksumBatchMultipleWorkflow(AbsWorkflow):
                   "inside a given path" \
                   "\nInput: Path to a root directory that contains " \
                   "subdirectories to generate checksum.md5 files"
+    active = False
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
