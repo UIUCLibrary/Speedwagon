@@ -4,12 +4,13 @@ import typing
 
 import os
 from contextlib import contextmanager
-from typing import List, Any
+from typing import List, Any, Optional
 
-from speedwagon import worker
+from speedwagon import worker, tasks
 from speedwagon.job import AbsTool, AbsWorkflow
 from speedwagon.worker import ProcessJobWorker, GuiLogHandler
 from speedwagon.tools import options
+from speedwagon import reports
 import hathizip.process
 import hathizip
 
@@ -128,7 +129,7 @@ class ZipPackagesWorkflow(AbsWorkflow):
                   "each one a HathiTrust digitized item." \
                   "\nOutput is a destination location for the newly " \
                   "generated files."
-    active = False
+    active = True
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
@@ -137,3 +138,28 @@ class ZipPackagesWorkflow(AbsWorkflow):
 
     def user_options(self):
         return ZipPackages.get_user_options()
+
+    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+        new_task = ZipTask(**job_args)
+        task_builder.add_subtask(new_task)
+
+    @classmethod
+    @reports.add_report_borders
+    def generate_report(cls, results: List[tasks.Result],
+                        **user_args) -> Optional[str]:
+        original_tool = ZipPackages()
+        return original_tool.generate_report(results=[i.data for i in results])
+
+
+class ZipTask(tasks.Subtask):
+    def __init__(self, source_path, destination_path, *args, **kwargs) -> None:
+        super().__init__()
+        self._source_path = source_path
+        self._destination_path = destination_path
+
+    def work(self):
+        process = ZipPackageJob()
+        process.log = self.log
+        process.process(self._source_path, self._destination_path)
+        self.set_results(process.result)
+        return True
