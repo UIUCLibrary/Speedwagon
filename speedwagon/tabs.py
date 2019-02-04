@@ -5,7 +5,7 @@ import enum
 import typing
 from abc import ABCMeta, abstractmethod
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore  # type: ignore
 
 import speedwagon.dialog.dialogs
 from . import runner_strategies

@@ -7,7 +7,7 @@ import enum
 from typing import List, Tuple, Any
 
 from .job import AbsJob
-from PyQt5 import QtCore
+from PyQt5 import QtCore  # type: ignore
 
 from .import tools
 
@@ -245,7 +245,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
             1: "Value"
         }
 
-    def data(self, index: QtCore.QModelIndex, role=None)->Any:
+    def data(self, index: QtCore.QModelIndex, role=None) -> Any:
         if not index.isValid():
             return QtCore.QVariant()
 

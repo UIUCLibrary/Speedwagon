@@ -8,7 +8,7 @@ from typing import Type, Optional, Iterable, Dict, List, Any, Tuple
 from . import tasks
 from . import worker
 from .tools.options import UserOption2
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets  # type: ignore
 
 
 class JobCancelled(Exception):
