@@ -130,15 +130,16 @@ def get_custom_tabs(all_workflows: dict, yaml_file)->\
 
                 try:
                     new_tab_items = dict()
+                    new_tab = tabs_config_data.get(tab_name)
+                    if new_tab is not None:
+                        for item_name in new_tab:
+                            try:
+                                new_tab_items[item_name] = all_workflows[item_name]
 
-                    for item_name in tabs_config_data.get(tab_name):
-                        try:
-                            new_tab_items[item_name] = all_workflows[item_name]
-
-                        except LookupError:
-                            print("Unable to load '{}' in tab {}.".format(
-                                item_name, tab_name), file=sys.stderr)
-                    yield tab_name, new_tab_items
+                            except LookupError:
+                                print("Unable to load '{}' in tab {}.".format(
+                                    item_name, tab_name), file=sys.stderr)
+                        yield tab_name, new_tab_items
                 except TypeError as e:
                     print("Error loading tab '{}'. "
                           "Reason: {}".format(tab_name, e), file=sys.stderr)
