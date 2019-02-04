@@ -4,7 +4,7 @@ import typing
 
 from speedwagon import worker
 # from frames.tool import SelectDirectory, EggsJob
-from speedwagon.tools.abstool import AbsTool
+from speedwagon.job import AbsTool
 
 from speedwagon.worker import ProcessJobWorker
 
