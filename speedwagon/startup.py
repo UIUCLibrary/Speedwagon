@@ -116,7 +116,7 @@ def get_selection(all_workflows):
     return new_workflow_set
 
 
-def get_custom_tabs(all_workflows: dict, yaml_file)->\
+def get_custom_tabs(all_workflows: dict, yaml_file) -> \
         Iterator[Tuple[str, dict]]:
 
     try:
@@ -134,11 +134,15 @@ def get_custom_tabs(all_workflows: dict, yaml_file)->\
                     if new_tab is not None:
                         for item_name in new_tab:
                             try:
-                                new_tab_items[item_name] = all_workflows[item_name]
+                                workflow = all_workflows[item_name]
+                                if workflow.active is False:
+                                    print("workflow not active")
+                                new_tab_items[item_name] = workflow
 
                             except LookupError:
-                                print("Unable to load '{}' in tab {}.".format(
-                                    item_name, tab_name), file=sys.stderr)
+                                print(
+                                    f"Unable to load '{item_name}' in "
+                                    f"tab {tab_name}", file=sys.stderr)
                         yield tab_name, new_tab_items
                 except TypeError as e:
                     print("Error loading tab '{}'. "

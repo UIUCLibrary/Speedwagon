@@ -245,7 +245,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
             1: "Value"
         }
 
-    def data(self, index: QtCore.QModelIndex, role=None)->Any:
+    def data(self, index: QtCore.QModelIndex, role=None) -> Any:
         if not index.isValid():
             return QtCore.QVariant()
 

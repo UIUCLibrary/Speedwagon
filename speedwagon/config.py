@@ -85,7 +85,7 @@ class ConfigManager(contextlib.AbstractContextManager):
               file=sys.stderr)
 
     @property
-    def global_settings(self)->dict:
+    def global_settings(self) -> dict:
 
         global_settings = dict()
         try:

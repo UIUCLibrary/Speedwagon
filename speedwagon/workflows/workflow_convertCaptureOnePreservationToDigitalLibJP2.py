@@ -126,10 +126,10 @@ class ConvertTiffPreservationToDLJp2(AbsTool):
         for tiff_file in \
                 filter(filter_only_tif_files, os.scandir(source_input)):
 
-                jobs.append({
-                    JobValues.SOURCE_FILE.value: tiff_file.path,
-                    JobValues.OUTPUT_PATH.value: dest,
-                })
+            jobs.append({
+                JobValues.SOURCE_FILE.value: tiff_file.path,
+                JobValues.OUTPUT_PATH.value: dest,
+            })
 
         return jobs
 

@@ -239,7 +239,7 @@ class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
         report = report_builder.build()
 
         with open(self._output_filename, "w", encoding="utf-8") as wf:
-                wf.write(report)
+            wf.write(report)
         self.log("Wrote {}".format(self._output_filename))
 
         return True
