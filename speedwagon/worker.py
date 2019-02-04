@@ -8,7 +8,7 @@ import queue
 import typing
 import abc
 import sys
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets  # type: ignore
 from collections import namedtuple
 import multiprocessing
 

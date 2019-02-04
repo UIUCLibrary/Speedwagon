@@ -2,7 +2,7 @@ import email
 from typing import Collection
 
 import pkg_resources
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets  # type: ignore
 
 import speedwagon
 

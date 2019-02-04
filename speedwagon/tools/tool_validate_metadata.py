@@ -3,7 +3,7 @@ import os
 import typing
 from uiucprescon import imagevalidate
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets  # type: ignore
 
 from speedwagon import worker
 from speedwagon.job import AbsTool

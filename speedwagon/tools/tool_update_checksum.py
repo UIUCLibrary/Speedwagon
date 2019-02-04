@@ -4,7 +4,7 @@ import enum
 import os
 
 import itertools
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets  # type: ignore
 
 from speedwagon.worker import ProcessJobWorker
 from speedwagon.job import AbsTool

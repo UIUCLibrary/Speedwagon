@@ -7,7 +7,7 @@ import enum
 from typing import List, Tuple, Any
 
 from .job import AbsJob
-from PyQt5 import QtCore
+from PyQt5 import QtCore  # type: ignore
 
 from .import tools
 

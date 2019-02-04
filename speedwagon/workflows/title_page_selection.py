@@ -2,8 +2,8 @@ import os
 import typing
 from collections import namedtuple
 
-from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import Qt
+from PyQt5 import QtWidgets, QtCore  # type: ignore
+from PyQt5.QtCore import Qt  # type: ignore
 from uiucprescon.packager.packages import collection
 
 ModelField = namedtuple("ModelField",

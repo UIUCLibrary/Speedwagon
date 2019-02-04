@@ -10,7 +10,7 @@ from typing import Dict, Union, Iterator, Tuple
 import yaml
 
 import pkg_resources
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 
 import speedwagon
 import speedwagon.config

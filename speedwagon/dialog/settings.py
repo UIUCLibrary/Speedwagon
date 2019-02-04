@@ -1,6 +1,6 @@
 import os
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore  # type: ignore
 
 from speedwagon import config
 from speedwagon.config import build_setting_model
