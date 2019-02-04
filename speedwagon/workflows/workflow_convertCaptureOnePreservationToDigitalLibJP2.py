@@ -1,31 +1,15 @@
 import abc
-import enum
 import itertools
 import os
-import shutil
 import sys
 import typing
-from typing import List, Any
+from typing import List, Any, Optional
 
-from speedwagon import worker
+from speedwagon import tasks, reports
 from speedwagon.tools import options
-from speedwagon.job import AbsTool, AbsWorkflow
+from speedwagon.job import AbsWorkflow
+
 import pykdu_compress
-
-
-class UserArgs(enum.Enum):
-    INPUT = "Input"
-
-
-class ResultValues(enum.Enum):
-    OUTPUT_FILENAME = "output_filename"
-    SOURCE_FILENAME = "source_filename"
-    SUCCESS = "success"
-
-
-class JobValues(enum.Enum):
-    SOURCE_FILE = "source_file"
-    OUTPUT_PATH = "output_path"
 
 
 class AbsProcessStrategy(metaclass=abc.ABCMeta):
@@ -79,36 +63,25 @@ class ConvertFile(AbsProcessStrategy):
         self.output = output_file_path
         self.status = "Generated {}".format(output_file_path)
 
-
-def partition(pred, iterable):
-    t1, t2 = itertools.tee(iterable)
-    return itertools.filterfalse(pred, t1), filter(pred, t2)
+#
 
 
-class CopyFile(AbsProcessStrategy):
-
-    def process(self, source_file, destination_path):
-        filename = os.path.basename(source_file)
-        shutil.copyfile(source_file, os.path.join(destination_path, filename))
-        self.status = "Copied {} to {}".format(source_file, destination_path)
-
-
-class ConvertTiffPreservationToDLJp2(AbsTool):
-    name = "Convert CaptureOne Preservation TIFF to Digital Library Access JP2"
+class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
+    name = "0 EXPERIMENTAL " \
+           "Convert CaptureOne Preservation TIFF to Digital Library Access JP2"
     description = "This tool takes as its input a \"preservation\" folder " \
                   "of TIFF files and as its output creates a sibling folder " \
                   "called \"access\" containing digital-library " \
                   "compliant JP2 files named the same as the TIFFs."
-
     active = True
 
-    @staticmethod
-    def discover_task_metadata(**user_args) -> typing.List[dict]:
+    def discover_task_metadata(self, initial_results: List[Any],
+                               additional_data, **user_args) -> List[dict]:
         jobs = []
-        source_input = user_args[UserArgs.INPUT.value]
+        source_input = user_args["Input"]
 
         dest = os.path.abspath(
-            os.path.join(user_args[UserArgs.INPUT.value],
+            os.path.join(source_input,
                          "..",
                          "access")
         )
@@ -127,62 +100,29 @@ class ConvertTiffPreservationToDLJp2(AbsTool):
                 filter(filter_only_tif_files, os.scandir(source_input)):
 
             jobs.append({
-                JobValues.SOURCE_FILE.value: tiff_file.path,
-                JobValues.OUTPUT_PATH.value: dest,
+                "source_file": tiff_file.path,
+                "output_path": dest,
             })
 
         return jobs
 
-    @staticmethod
-    def generate_report(results, user_args):
-        failure = False
-        dest = None
-
-        def successful(result):
-            if not result[ResultValues.SUCCESS.value]:
-                return False
-            return True
-
-        failed_results, successful_results = partition(successful, results)
-
-        dest_paths = set()
-        for result in successful_results:
-            new_file = result[ResultValues.OUTPUT_FILENAME.value]
-            dest_paths.add(os.path.dirname(new_file))
-
-        if len(dest_paths) == 1:
-            dest = dest_paths.pop()
-        else:
-            failure = True
-
-        if not failure:
-            report = "Success! [{}] JP2 files written to \"{}\" folder".format(
-                len(results), dest)
-        else:
-            failed_list = "* \n".join(
-                [result[ResultValues.SOURCE_FILENAME.value]
-                 for result in failed_results]
-            )
-
-            report = "Failed!\n" \
-                     "The following files failed to convert: \n" \
-                     "{}".format(failed_list)
-        return report
-
-    @staticmethod
-    def new_job() -> typing.Type[worker.ProcessJobWorker]:
-        return PackageImageConverter
-
-    @staticmethod
-    def get_user_options() -> typing.List[options.UserOption2]:
+    def user_options(self):
         return [
-            options.UserOptionCustomDataType(UserArgs.INPUT.value,
-                                             options.FolderData)
-        ]
+            options.UserOptionCustomDataType("Input", options.FolderData)
+            ]
+
+    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+        source_file = job_args['source_file']
+        dest_path = job_args['output_path']
+        new_task = PackageImageConverterTask(
+            source_file_path=source_file,
+            dest_path=dest_path
+        )
+        task_builder.add_subtask(new_task)
 
     @staticmethod
     def validate_user_options(**user_args):
-        input_value = user_args[UserArgs.INPUT.value]
+        input_value = user_args["Input"]
 
         if input_value is None:
             raise ValueError("Input is required")
@@ -197,14 +137,62 @@ class ConvertTiffPreservationToDLJp2(AbsTool):
             raise ValueError("Invalid value in input: Not a preservation "
                              "directory")
 
+    @classmethod
+    @reports.add_report_borders
+    def generate_report(cls, results: List[tasks.Result], **user_args) -> \
+            Optional[str]:
 
-class PackageImageConverter(worker.ProcessJobWorker):
+        failure = False
+        dest = None
 
-    def process(self, *args, **kwargs):
-        des_path = kwargs[JobValues.OUTPUT_PATH.value]
+        failed_results, successful_results = cls._partition_results(results)
 
-        basename, _ = os.path.splitext(kwargs[JobValues.SOURCE_FILE.value])
-        source_file_path = kwargs[JobValues.SOURCE_FILE.value]
+        dest_paths = set()
+        for result in successful_results:
+            new_file = result.data["output_filename"]
+            dest_paths.add(os.path.dirname(new_file))
+
+        if len(dest_paths) == 1:
+            dest = dest_paths.pop()
+        else:
+            failure = True
+
+        if not failure:
+            report = "Success! [{}] JP2 files written to \"{}\" folder".format(
+                len(results), dest)
+        else:
+            failed_list = "* \n".join(
+                [result.data["source_filename"]
+                 for result in failed_results]
+            )
+
+            report = "Failed!\n" \
+                     "The following files failed to convert: \n" \
+                     "{}".format(failed_list)
+        return report
+
+    @classmethod
+    def _partition_results(cls, results):
+        def successful(res):
+            if not res.data["success"]:
+                return False
+            return True
+
+        t1, t2 = itertools.tee(results)
+        return itertools.filterfalse(successful, t1), filter(successful, t2)
+
+
+class PackageImageConverterTask(tasks.Subtask):
+
+    def __init__(self, source_file_path, dest_path) -> None:
+        super().__init__()
+        self._dest_path = dest_path
+        self._source_file_path = source_file_path
+
+    def work(self):
+        des_path = self._dest_path
+
+        basename, _ = os.path.splitext(self._source_file_path)
 
         process_task = ProcessFile(ConvertFile())
 
@@ -215,34 +203,18 @@ class PackageImageConverter(worker.ProcessJobWorker):
             pass
 
         try:
-            process_task.process(source_file_path, des_path)
+            process_task.process(self._source_file_path, des_path)
             success = True
         except ProcessingException as e:
             print(e, file=sys.stderr)
             success = False
 
-        self.result = {
-            ResultValues.OUTPUT_FILENAME.value: process_task.output,
-            ResultValues.SOURCE_FILENAME.value: source_file_path,
-            ResultValues.SUCCESS.value: success
-        }
+        self.set_results(
+            {
+                "output_filename": process_task.output,
+                "source_filename": self._source_file_path,
+                "success": success
+            }
+        )
 
         self.log(process_task.status_message())
-
-
-class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Convert CaptureOne Preservation TIFF to Digital Library Access JP2"
-    description = "This tool takes as its input a \"preservation\" folder " \
-                  "of TIFF files and as its output creates a sibling folder " \
-                  "called \"access\" containing digital-library " \
-                  "compliant JP2 files named the same as the TIFFs."
-    active = False
-
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
-        return \
-            ConvertTiffPreservationToDLJp2.discover_task_metadata(**user_args)
-
-    def user_options(self):
-        return ConvertTiffPreservationToDLJp2.get_user_options()
