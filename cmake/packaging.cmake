@@ -16,7 +16,7 @@ set(CPACK_NSIS_MENU_LINKS
     )
 
 set(CPACK_NSIS_CREATE_ICONS_EXTRA
-    "CreateShortCut '$SMPROGRAMS\\\\Speedwagon\\\\Speedwagon.lnk' '$INSTDIR\\\\bin\\\\pythonw.exe' '-m speedwagon' '$INSTDIR\\\\Lib\\\\site-packages\\\\Speedwagon\\\\favicon.ico'"
+    "CreateShortCut '$SMPROGRAMS\\\\Speedwagon\\\\Speedwagon.lnk' '$INSTDIR\\\\bin\\\\python.exe' '-m speedwagon' '$INSTDIR\\\\Lib\\\\site-packages\\\\Speedwagon\\\\favicon.ico'"
     )
 
 set(CPACK_NSIS_DELETE_ICONS_EXTRA
