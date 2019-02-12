@@ -202,7 +202,7 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
     COMMAND ${VENV_PYTHON} -m pip install pytest -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
     COMMENT "Adding pytest to standalone virtual environment"
     )
-set(SPEEDWAGON_PYTHON_INTERP pythonw.exe)
+set(SPEEDWAGON_PYTHON_INTERP python.exe)
 
 include(CTest)
 if(WIN32)
