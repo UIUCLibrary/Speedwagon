@@ -2,7 +2,7 @@ import abc
 import logging
 import tempfile
 
-import typing
+from typing import List, Any
 
 from .job import AbsJob, AbsTool, AbsWorkflow, Workflow, JobCancelled
 from . import tasks
@@ -116,7 +116,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
     def run(self, parent, job: AbsJob, options: dict,
             logger: logging.Logger, completion_callback=None) -> None:
 
-        results: typing.List[typing.Any] = []
+        results: List[Any] = []
 
         temp_dir = tempfile.TemporaryDirectory()
         with temp_dir as build_dir:

@@ -107,7 +107,7 @@ class OCRWorkflow(speedwagon.Workflow):
         return cls.SUPPORTED_IMAGE_TYPES[file_type]
 
     def user_options(self):
-        def valid_tessdata_path(item)->bool:
+        def valid_tessdata_path(item) -> bool:
 
             if item is None:
                 return False
@@ -154,7 +154,7 @@ class OCRWorkflow(speedwagon.Workflow):
     @staticmethod
     def get_available_languages(path) -> Iterator[str]:
 
-        def filter_only_trainingdata(item: os.DirEntry)->bool:
+        def filter_only_trainingdata(item: os.DirEntry) -> bool:
             if not item.is_file():
                 return False
 

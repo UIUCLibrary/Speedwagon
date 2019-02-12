@@ -1,6 +1,6 @@
 import logging
 
-import uiucprescon
+from uiucprescon import packager
 from typing import List, Any
 from contextlib import contextmanager
 from speedwagon import tasks
@@ -45,7 +45,7 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
                   "\n     + access (folder)" \
                   "\n         - uniqueID2_00000001.jp2" \
                   "\n         - uniqueID2_00000002.jp2"
-    active = False
+    active = True
 
     def user_options(self):
         return [
@@ -59,8 +59,8 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
         source_input = user_args["Input"]
         dest = user_args["Output"]
 
-        package_factory = uiucprescon.packager.PackageFactory(
-            uiucprescon.packager.packages.CaptureOnePackage())
+        package_factory = packager.PackageFactory(
+            packager.packages.CaptureOnePackage())
 
         for package in package_factory.locate_packages(source_input):
             jobs.append({
@@ -85,7 +85,6 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
 
         )
         task_builder.add_subtask(packaging_task)
-        super().create_new_task(task_builder, **job_args)
 
 
 class PackageConverter(tasks.Subtask):
@@ -108,15 +107,15 @@ class PackageConverter(tasks.Subtask):
         self.source_path = source_path
 
     def work(self):
-        my_logger = logging.getLogger(uiucprescon.packager.__name__)
+        my_logger = logging.getLogger(packager.__name__)
         my_logger.setLevel(logging.INFO)
         with self.log_config(my_logger):
             self.log(
                 f"Converting {self.packaging_id} from {self.source_path} "
                 f"to a Hathi Trust Tiff package at {self.new_package_root}")
 
-            package_factory = uiucprescon.packager.PackageFactory(
-                uiucprescon.packager.packages.DigitalLibraryCompound())
+            package_factory = packager.PackageFactory(
+                packager.packages.DigitalLibraryCompound())
 
             package_factory.transform(
                 self.existing_package, dest=self.new_package_root)

@@ -4,7 +4,7 @@ import os
 import typing
 
 import itertools
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets  # type: ignore
 
 # from speedwagon.worker import ProcessJobWorker
 # from .abstool import AbsTool

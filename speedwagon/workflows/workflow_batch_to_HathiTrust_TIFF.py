@@ -2,7 +2,7 @@ import itertools
 import os
 import typing
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets  # type: ignore
 from uiucprescon.packager.packages.collection import Metadata
 
 import speedwagon

@@ -3,7 +3,7 @@ import os
 import typing
 import warnings
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore  # type: ignore
 
 
 class WidgetMeta(abc.ABCMeta, type(QtCore.QObject)):  # type: ignore

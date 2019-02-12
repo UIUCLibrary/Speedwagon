@@ -8,7 +8,7 @@ import webbrowser
 from typing import List
 import io
 import pkg_resources
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtCore, QtGui  # type: ignore
 import speedwagon.dialog
 import speedwagon.dialog.dialogs
 import speedwagon.dialog.settings

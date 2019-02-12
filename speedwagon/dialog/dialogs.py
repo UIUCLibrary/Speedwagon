@@ -2,7 +2,7 @@ import email
 from typing import Collection
 
 import pkg_resources
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets  # type: ignore
 
 import speedwagon
 
@@ -76,8 +76,8 @@ def about_dialog_box(parent):
                   f"{summary}"
 
     except pkg_resources.DistributionNotFound:
-                message = \
-                    f"{speedwagon.__name__.title()}: {speedwagon.__version__}"
+        message = \
+            f"{speedwagon.__name__.title()}: {speedwagon.__version__}"
 
     QtWidgets.QMessageBox.about(parent, "About", message)
 

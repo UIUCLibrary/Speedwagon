@@ -3,7 +3,7 @@ import os
 import shutil
 import typing
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets  # type: ignore
 
 import speedwagon.tasks
 import speedwagon
