@@ -4,7 +4,7 @@
     <Fragment>
         <DirectoryRef Id="PROGRAM_MENU_FOLDER">
             <Component Id="CM_SHORTCUT" Guid="*">
-                <Shortcut Id="CM_SP_bin.pythonw.exe"
+                <Shortcut Id="CM_SP_bin.python.exe"
                           Name="@CMAKE_PROJECT_NAME@"
                           Description="Collection of tools and workflows for DS"
                           Target="[#CM_FP_bin.python.exe]"
