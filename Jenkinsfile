@@ -570,17 +570,8 @@ pipeline {
 //                                    generator: 'Visual Studio 14 2015 Win64',
                                     installation: "${CMAKE_VERSION}",
                                     sourceDir: 'source',
-                                    steps: [[args: "-- /flp1:warningsonly;logfile=${WORKSPACE}\\logs\\cmake-msbuild.log", withCmake: true]]
+                                    steps: [[args: "", withCmake: true]]
 
-                            }
-                            post{
-                                always{
-                                    archiveArtifacts artifacts: "logs/cmake-msbuild.log"
-                                    recordIssues(tools: [msBuild(pattern: 'logs/cmake-msbuild.log')])
-                                }
-                                cleanup{
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'logs/cmake-msbuild.log', type: 'INCLUDE']]
-                                }
                             }
                         }
                         stage("CTest"){
