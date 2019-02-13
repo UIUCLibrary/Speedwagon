@@ -6,8 +6,6 @@ import os
 import itertools
 from typing import List, Any
 
-from PyQt5 import QtWidgets  # type: ignore
-
 from speedwagon.worker import ProcessJobWorker
 from speedwagon.job import AbsTool, AbsWorkflow
 # from .options import ToolOptionDataType
@@ -16,6 +14,8 @@ from speedwagon import worker
 # from pyhathiprep import checksum
 from hathi_checksum import checksum_report, update_report
 from hathi_checksum import utils as hathi_checksum_utils
+
+from speedwagon.workflows.shared_custom_widgets import ChecksumData
 
 
 class ResultValues(enum.Enum):
@@ -27,32 +27,6 @@ class ResultValues(enum.Enum):
 
 class UserArgs(enum.Enum):
     INPUT = "Input"
-
-
-class ChecksumFile(options.AbsBrowseableWidget):
-    def browse_clicked(self):
-        selection = QtWidgets.QFileDialog.getOpenFileName(
-            filter="Checksum files (*.md5)")
-
-        if selection[0]:
-            self.data = selection[0]
-            self.editingFinished.emit()
-
-
-class ChecksumData(options.AbsCustomData2):
-
-    @classmethod
-    def is_valid(cls, value) -> bool:
-        if not os.path.exists(value):
-            return False
-        if os.path.basename(value) == "checksum":
-            print("No a checksum file")
-            return False
-        return True
-
-    @classmethod
-    def edit_widget(cls) -> QtWidgets.QWidget:
-        return ChecksumFile()
 
 
 def find_outdated(results: typing.List[typing.Dict[ResultValues, str]]):
