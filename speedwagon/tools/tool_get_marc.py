@@ -9,6 +9,8 @@ from speedwagon.job import AbsTool
 from speedwagon.worker import ProcessJobWorker
 from uiucprescon import pygetmarc
 
+from speedwagon.workflows.workflow_get_marc import strip_volume
+
 
 class UserArgs(enum.Enum):
     INPUT = "Input"
@@ -54,9 +56,9 @@ class GenerateMarcXMLFilesTool(AbsTool):
 
             if not item.is_dir():
                 return False
-
-            if not isinstance(eval(item.name), int):
-                return False
+            if "v" not in item.name:
+                if not isinstance(eval(item.name), int):
+                    return False
 
             return True
 
@@ -115,10 +117,13 @@ class MarcGenerator(ProcessJobWorker):
 
         self.log(f"Retrieving {out_file_name} for {bib_id}")
         try:
-            marc = pygetmarc.get_marc(int(bib_id))
+            short_bibid = strip_volume(bib_id)
+            marc = pygetmarc.get_marc(short_bibid)
 
             field_adder = pygetmarc.modifiers.Add955()
             field_adder.bib_id = bib_id
+            if "v" in bib_id:
+                field_adder.contains_v = True
 
             enriched_marc = field_adder.enrich(src=marc)
 
