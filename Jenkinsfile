@@ -566,20 +566,12 @@ pipeline {
                                 cmakeBuild buildDir: 'cmake_build',
                                     cleanBuild: true,
                                     cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\" -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest",
-                                    generator: 'Visual Studio 14 2015 Win64',
+                                    generator: 'Ninja',
+//                                    generator: 'Visual Studio 14 2015 Win64',
                                     installation: "${CMAKE_VERSION}",
                                     sourceDir: 'source',
-                                    steps: [[args: "-- /flp1:warningsonly;logfile=${WORKSPACE}\\logs\\cmake-msbuild.log", withCmake: true]]
+                                    steps: [[args: "", withCmake: true]]
 
-                            }
-                            post{
-                                always{
-                                    archiveArtifacts artifacts: "logs/cmake-msbuild.log"
-                                    recordIssues(tools: [msBuild(pattern: 'logs/cmake-msbuild.log')])
-                                }
-                                cleanup{
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'logs/cmake-msbuild.log', type: 'INCLUDE']]
-                                }
                             }
                         }
                         stage("CTest"){
@@ -1026,6 +1018,7 @@ pipeline {
 
             cleanWs deleteDirs: true, patterns: [
                     [pattern: 'logs', type: 'INCLUDE'],
+                    [pattern: 'source', type: 'INCLUDE'],
                     [pattern: 'dist', type: 'INCLUDE'],
                     [pattern: 'build', type: 'INCLUDE'],
                     [pattern: 'reports', type: 'INCLUDE'],

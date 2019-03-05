@@ -459,6 +459,11 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
                 QtWidgets.QApplication.processEvents()
                 if self.active:
                     continue
+            except concurrent.futures.process.BrokenProcessPool as e:
+                traceback.print_tb(e.__traceback__)
+                print(e, file=sys.stderr)
+                print(f.exception(), file=sys.stderr)
+                raise
             # finally:
             self.flush_message_buffer()
 

@@ -86,9 +86,9 @@ class OCRWorkflow(speedwagon.Workflow):
         ocr_generation_task = GenerateOCRFileTask(
                 source_image=image_file,
                 out_text_file=os.path.join(destination_path, ocr_file_name),
-                lang=lang_code
+                lang=lang_code,
+                tesseract_path=self.global_settings.get("tessdata")
             )
-        ocr_generation_task.set_tess_path(locate_tessdata())
         task_builder.add_subtask(ocr_generation_task)
 
     def initial_task(self, task_builder: tasks.TaskBuilder,
@@ -246,26 +246,26 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
     # engine = None
     engine = ocr.Engine(locate_tessdata())
 
-    def __init__(self, source_image, out_text_file, lang="eng") -> None:
+    def __init__(self, source_image, out_text_file, lang="eng",
+                 tesseract_path=None) -> None:
         super().__init__()
-        # print(self.engine.get_version())
+
         self._source = source_image
         self._output_text_file = out_text_file
         # Use the english language file for now
         self._lang = lang
-        GenerateOCRFileTask.set_tess_path(locate_tessdata())
+
+        GenerateOCRFileTask.set_tess_path(tesseract_path or locate_tessdata())
         assert self.engine is not None
 
     @classmethod
     def set_tess_path(cls, path=locate_tessdata()):
-        print("setting to {}".format(path))
+        assert path is not None
         cls.engine = ocr.Engine(path)
         assert cls.engine is not None
-        print(cls.engine)
 
     def work(self) -> bool:
         # Get the ocr text reader for the proper language
-        print(self.engine)
         reader = self.engine.get_reader(self._lang)
         self.log("Reading {}".format(self._source))
 

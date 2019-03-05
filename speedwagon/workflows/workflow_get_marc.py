@@ -1,4 +1,5 @@
 import os
+import re
 from typing import List, Any, Optional
 
 from speedwagon import tasks, reports
@@ -34,9 +35,9 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
             if not item.is_dir():
                 return False
-
-            if not isinstance(eval(item.name), int):
-                return False
+            if "v" not in item.name:
+                if not isinstance(eval(item.name), int):
+                    return False
 
             return True
 
@@ -107,10 +108,13 @@ class MarcGeneratorTask(tasks.Subtask):
 
         self.log(f"Retrieving {out_file_name} for {self._bib_id}")
         try:
-            marc = pygetmarc.get_marc(int(self._bib_id))
+            short_bibid = strip_volume(self._bib_id)
+            marc = pygetmarc.get_marc(int(short_bibid))
 
             field_adder = pygetmarc.modifiers.Add955()
             field_adder.bib_id = self._bib_id
+            if "v" in self._bib_id:
+                field_adder.contains_v = True
 
             enriched_marc = field_adder.enrich(src=marc)
 
@@ -134,3 +138,12 @@ class MarcGeneratorTask(tasks.Subtask):
         self.set_results(result)
 
         return True
+
+
+def strip_volume(full_bib_id: str) -> int:
+    # Only pull the base bib id
+    volume_regex = re.compile("^[0-9]{7}(?=((v[0-9]*)((i[0-9])?)?)?$)")
+    result = volume_regex.match(full_bib_id)
+    if not result:
+        raise ValueError("{} is not a valid bib_id".format(full_bib_id))
+    return int(result.group(0))

@@ -266,16 +266,18 @@ class StartupDefault(AbsStarter):
                 all_workflows = job.available_workflows()
 
             # Load every user configured tab
-            try:
-                for tab_name, extra_tab in \
-                        get_custom_tabs(all_workflows, self.tabs_file):
+            tabs_file_size = os.path.getsize(self.tabs_file)
+            if tabs_file_size > 0:
+                try:
+                    for tab_name, extra_tab in \
+                            get_custom_tabs(all_workflows, self.tabs_file):
 
-                    windows.add_tab(tab_name, collections.OrderedDict(
-                        sorted(extra_tab.items())))
-            except FileFormatError as e:
-                self._logger.warning(
-                    "Unable to load custom tabs from {}. "
-                    "Reason: {}".format(self.tabs_file, e))
+                        windows.add_tab(tab_name, collections.OrderedDict(
+                            sorted(extra_tab.items())))
+                except FileFormatError as e:
+                    self._logger.warning(
+                        "Unable to load custom tabs from {}. "
+                        "Reason: {}".format(self.tabs_file, e))
 
             # All Workflows tab
 
@@ -325,7 +327,7 @@ class StartupDefault(AbsStarter):
             ConfigFileSetter(self.config_file),
             CliArgsSetter(),
         ]
-        # self.read_settings_file(self.config_file)
+        self.read_settings_file(self.config_file)
         for settings_strategy in resolution_order:
             try:
                 self.startup_settings = settings_strategy.update(
