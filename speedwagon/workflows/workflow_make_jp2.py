@@ -8,15 +8,15 @@ import abc
 
 
 def _filter_tif_only(item: os.DirEntry) -> bool:
-        if not item.is_file():
-            return False
+    if not item.is_file():
+        return False
 
-        basename, ext = os.path.splitext(item.name)
+    basename, ext = os.path.splitext(item.name)
 
-        if ext.lower() != ".tif":
-            return False
+    if ext.lower() != ".tif":
+        return False
 
-        return True
+    return True
 
 
 class AbsProfile(metaclass=abc.ABCMeta):
@@ -64,10 +64,10 @@ class HathiTrustProfile(AbsProfile):
                     yield source_file.path
 
     def _find_root_access(self, path):
-            for root, dirs, files in os.walk(path):
-                for _dir in dirs:
-                    if _dir == "access":
-                        yield os.path.join(root, _dir)
+        for root, dirs, files in os.walk(path):
+            for _dir in dirs:
+                if _dir == "access":
+                    yield os.path.join(root, _dir)
 
 
 class ProfileFactory:
@@ -117,7 +117,9 @@ class MakeJp2Workflow(job.AbsWorkflow):
         profile = profile_factory.create(profile_name)
         for source_file in profile.locate_source_files(source_root):
 
-            new_name = f"{os.path.splitext(os.path.basename(source_file))[0]}.jp2"
+            new_name = \
+                f"{os.path.splitext(os.path.basename(source_file))[0]}.jp2"
+
             rel_path = os.path.dirname(
                 os.path.relpath(source_file, source_root))
 
@@ -145,7 +147,7 @@ class MakeJp2Workflow(job.AbsWorkflow):
         if not os.path.exists(input_path):
             raise ValueError("Unable to locate {}.".format(input_path))
 
-        if not os.path.isdir(input_path ):
+        if not os.path.isdir(input_path):
             raise ValueError(
                 "Input not a valid directory {}".format(input_path))
 
@@ -167,7 +169,9 @@ class MakeJp2Workflow(job.AbsWorkflow):
         image_factory = job_args["image_factory"]
 
         source_file = os.path.join(source_root, relative_location, source_file)
-        destination_file = os.path.join(destination_root, relative_location, new_name)
+
+        destination_file = os.path.join(destination_root,
+                                        relative_location, new_name)
 
         make_dir = EnsurePathTask(
             os.path.join(destination_root, relative_location)
@@ -184,7 +188,8 @@ class MakeJp2Workflow(job.AbsWorkflow):
 
     @classmethod
     def generate_report(cls, results: List[tasks.Result], **user_args) -> \
-    Optional[str]:
+            Optional[str]:
+
         report_title = "Results:"
         files_generated = []
         for res in results:
@@ -213,7 +218,9 @@ class EnsurePathTask(tasks.Subtask):
 
 class ConvertFileTask(tasks.Subtask):
 
-    def __init__(self, source_file, destination_file, image_factory_name) -> None:
+    def __init__(self, source_file, destination_file,
+                 image_factory_name) -> None:
+
         super().__init__()
         self._source_file = source_file
         self._destination_file = destination_file
