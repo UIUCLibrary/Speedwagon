@@ -67,12 +67,18 @@ class OCRWorkflow(speedwagon.Workflow):
                 image_path = os.path.dirname(image_file)
                 base_name = os.path.splitext(os.path.basename(image_file))[0]
                 ocr_file_name = "{}.txt".format(base_name)
+                for k, v in ocr.LANGUAGE_CODES.items():
+                    if v == user_args["Language"]:
+                        language_code = k
+                        break
+                else:
+                    raise ValueError("Unable to look up language code for {}".format(user_args["Language"]))
 
                 new_task = {
                     "source_file_path": image_file,
                     "destination_path": image_path,
                     "output_file_name": ocr_file_name,
-                    "lang_code": user_args["Language"]
+                    "lang_code": language_code
                 }
                 new_tasks.append(new_task)
         return new_tasks
@@ -140,8 +146,11 @@ class OCRWorkflow(speedwagon.Workflow):
                   "Using path {} ".format(tessdata_path), file=sys.stderr)
 
         for lang in self.get_available_languages(path=self.tessdata_path):
-
-            language_type.add_selection(lang)
+            fullname = ocr.LANGUAGE_CODES.get(lang)
+            if fullname is None:
+                continue
+            else:
+                language_type.add_selection(fullname)
         options.append(language_type)
 
         package_root_option = tool_options.UserOptionCustomDataType(
@@ -252,7 +261,6 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
 
         self._source = source_image
         self._output_text_file = out_text_file
-        # Use the english language file for now
         self._lang = lang
 
         GenerateOCRFileTask.set_tess_path(tesseract_path or locate_tessdata())
@@ -261,6 +269,7 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
     @classmethod
     def set_tess_path(cls, path=locate_tessdata()):
         assert path is not None
+        assert os.path.exists(path)
         cls.engine = ocr.Engine(path)
         assert cls.engine is not None
 
