@@ -1,5 +1,6 @@
 import configparser
 import os
+import shutil
 
 import speedwagon.config
 from speedwagon import config
@@ -22,7 +23,8 @@ class MockConfig(config.AbsConfig):
 
 @pytest.fixture(scope="module")
 def dummy_config(tmpdir_factory):
-    root_dir = tmpdir_factory.mktemp("settings")
+    root_dir = os.path.join(tmpdir_factory.getbasetemp(), "settings")
+    os.makedirs(root_dir)
     dummy = MockConfig()
     dummy.user_data_dir = os.path.join(root_dir, "user_data_directory")
     os.mkdir(dummy.user_data_dir)
@@ -30,7 +32,8 @@ def dummy_config(tmpdir_factory):
     dummy.app_data_dir = os.path.join(root_dir, "app_data_directory")
     os.mkdir(dummy.app_data_dir)
 
-    return dummy
+    yield dummy
+    shutil.rmtree(root_dir)
 
 
 def test_get_config(dummy_config):
@@ -68,6 +71,10 @@ def test_read_settings(tmpdir):
 
     with config.ConfigManager(config_file) as cfg:
         assert cfg.global_settings['tessdata'] == "~/mytesseractdata"
+
+    shutil.rmtree(tmpdir)
+    shortcut = os.path.join(tmpdir.dirname, "test_read_settingscurrent")
+    os.unlink(shortcut)
 
 
 def test_serialize_settings_model():

@@ -1,4 +1,6 @@
 import logging
+import os
+import shutil
 import typing
 import concurrent.futures
 import pytest
@@ -57,10 +59,12 @@ class SimpleTaskBuilder(speedwagon.tasks.BaseTaskBuilder):
 
 @pytest.fixture
 def simple_task_builder(tmpdir_factory):
-    temp_path = tmpdir_factory.mktemp("test")
+    temp_path = os.path.join(tmpdir_factory.getbasetemp(), "test")
+    os.makedirs(temp_path)
     builder = TaskBuilder(SimpleTaskBuilder(), str(temp_path))
     builder.add_subtask(subtask=SimpleSubtask("got it"))
-    return builder
+    yield builder
+    shutil.rmtree(temp_path)
 
 
 def test_task_builder(simple_task_builder):
@@ -122,6 +126,9 @@ def test_task_can_be_picked(tmpdir):
 
     # with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executer:
     #     future = executer.submit(print, "hello")
+    shutil.rmtree(tmpdir)
+    shortcut = os.path.join(tmpdir.dirname, "test_task_can_be_pickedcurrent")
+    os.unlink(shortcut)
 
 
 def execute_task(new_task):
@@ -142,11 +149,15 @@ def test_task_as_concurrent_future(simple_task_builder):
 
 @pytest.fixture
 def simple_task_builder_with_2_subtasks(tmpdir_factory):
-    temp_path = tmpdir_factory.mktemp("test")
+    temp_path = tmpdir_factory.mktemp("task_builder")
     builder = TaskBuilder(SimpleTaskBuilder(), temp_path)
     builder.add_subtask(subtask=SimpleSubtask("First"))
     builder.add_subtask(subtask=SimpleSubtask("Second"))
-    return builder
+    yield builder
+    shutil.rmtree(temp_path)
+    shortcut = os.path.join(tmpdir_factory.getbasetemp(), "task_buildercurrent")
+    # if os.path.exists(shortcut):
+    os.unlink(shortcut)
 
 
 @pytest.mark.adapter
@@ -211,6 +222,9 @@ def test_pretask_builder(tmpdir):
     builder.add_subtask(subtask=SimpleSubtask("Second"))
     task = builder.build_task()
     assert task.pretask == pretask
+    shutil.rmtree(tmpdir)
+    shortcut = os.path.join(tmpdir.dirname, "test_pretask_buildercurrent")
+    os.unlink(shortcut)
 
 
 def test_posttask_builder(tmpdir):
@@ -225,6 +239,9 @@ def test_posttask_builder(tmpdir):
     builder.set_posttask(posttask)
     task = builder.build_task()
     assert task.posttask == posttask
+    shutil.rmtree(tmpdir)
+    shortcut = os.path.join(tmpdir.dirname, "test_posttask_buildercurrent")
+    os.unlink(shortcut)
 
 
 @pytest.mark.adapter
@@ -251,6 +268,9 @@ def test_adapter_results_with_pretask(tmpdir):
         assert "Starting" == results[0]
         assert "First" == results[1]
         assert "Second" == results[2]
+    shutil.rmtree(tmpdir)
+    shortcut = os.path.join(tmpdir.dirname, "test_adapter_results_with_pretcurrent")
+    os.unlink(shortcut)
 
 
 @pytest.mark.adapter
@@ -277,3 +297,7 @@ def test_adapter_results_with_posttask(tmpdir):
         assert "First" == results[0]
         assert "Second" == results[1]
         assert "Ending" == results[2]
+
+    shutil.rmtree(tmpdir)
+    shortcut = os.path.join(tmpdir.dirname, "test_adapter_results_with_postcurrent")
+    os.unlink(shortcut)
