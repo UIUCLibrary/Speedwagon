@@ -537,7 +537,7 @@ pipeline {
                     agent {
                         node {
                             label "Windows && Python3 && longfilenames && WIX"
-                            customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
+//                            customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
                         }
                     }
 
