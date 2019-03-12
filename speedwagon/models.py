@@ -5,10 +5,11 @@ from abc import abstractmethod
 from collections import namedtuple
 import enum
 
+from speedwagon import tabs, Workflow
 from .job import AbsJob
 from PyQt5 import QtCore  # type: ignore
 
-from .import tools
+from . import tools
 
 
 class JobModelData(enum.Enum):
@@ -98,6 +99,55 @@ class WorkflowListModel(ItemListModel):
 
         self.jobs.sort(key=key or (lambda i: i.name))
         self.layoutChanged.emit()
+
+
+class WorkflowListModel2(QtCore.QAbstractListModel):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.workflows: List[Workflow] = []
+
+    def __iadd__(self, other):
+        self.add_workflow(other)
+        return self
+
+    def __isub__(self, other):
+        self.remove_workflow(other)
+        return self
+
+    def rowCount(self, parent=None, *args, **kwargs):
+        return len(self.workflows)
+
+    def data(self, index: QtCore.QModelIndex, role: QtCore.Qt = None):
+        if not index.isValid():
+            return QtCore.QVariant()
+        row = index.row()
+
+        workflow = {
+            QtCore.Qt.DisplayRole: self.workflows[row].name,
+            QtCore.Qt.UserRole: self.workflows[row]
+        }
+        return workflow.get(role, QtCore.QVariant())
+
+    def sort(self, key=None, order=None):
+        self.layoutAboutToBeChanged.emit()
+
+        self.workflows.sort(key=key or (lambda i: i.name))
+        self.layoutChanged.emit()
+
+    def add_workflow(self, workflow: Workflow) -> None:
+        self.beginInsertRows(QtCore.QModelIndex(), 0, self.rowCount())
+        for existing_workflow in self.workflows:
+            if workflow.name == existing_workflow.name:
+                break
+        else:
+            self.workflows.append(workflow)
+        self.endInsertRows()
+
+    def remove_workflow(self, workflow):
+        self.beginRemoveRows(QtCore.QModelIndex(), 0, self.rowCount())
+        if workflow in self.workflows:
+            self.workflows.remove(workflow)
+        self.endRemoveRows()
 
 
 class ToolOptionsModel(QtCore.QAbstractTableModel):
@@ -231,7 +281,7 @@ class ToolOptionsModel3(ToolOptionsModel):
     def setData(self, index, data, role=None):
         if not index.isValid():
             return False
-        # existing_data = self._data[index.row()]
+        # existing_data = self.tabs[index.row()]
         self._data[index.row()].data = data
         return True
 
@@ -294,3 +344,53 @@ class SettingsModel(QtCore.QAbstractTableModel):
             self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
 
         return True
+
+
+class TabsModel(QtCore.QAbstractListModel):
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.tabs: List[tabs.TabData] = []
+
+    def __contains__(self, value):
+        # Looks for the tab based on the tab_name string
+        for tab in self.tabs:
+            if tab.tab_name == value:
+                return True
+        return False
+
+    def __iadd__(self, other):
+        self.add_tab(other)
+        return self
+
+    def __isub__(self, other):
+        self.remove_tab(other)
+        return self
+
+    def data(self, index: QtCore.QModelIndex, role: QtCore.Qt = None) \
+            -> Union[QtCore.QVariant, str, "tabs.TabData"]:
+
+        if not index.isValid():
+            return QtCore.QVariant()
+
+        row = index.row()
+        workflow = {
+            QtCore.Qt.DisplayRole: self.tabs[row].tab_name,
+            QtCore.Qt.UserRole: self.tabs[row]
+        }
+
+        return workflow.get(role, QtCore.QVariant())
+
+    def rowCount(self, parent=None, *args, **kwargs):
+        return len(self.tabs)
+
+    def add_tab(self, tab: "tabs.TabData") -> None:
+        self.beginInsertRows(QtCore.QModelIndex(), 0, self.rowCount())
+        self.tabs.append(tab)
+        self.endInsertRows()
+
+    def remove_tab(self, tab: "tabs.TabData") -> None:
+        self.beginRemoveRows(QtCore.QModelIndex(), 0, self.rowCount())
+        if tab in self.tabs:
+            self.tabs.remove(tab)
+        self.endRemoveRows()

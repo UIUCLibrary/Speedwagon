@@ -1,17 +1,19 @@
 import abc
+import os
 import sys
 import traceback
 import enum
 import typing
 from abc import ABCMeta, abstractmethod
 
+import yaml
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 
 import speedwagon.dialog.dialogs
 from . import runner_strategies
 from . import models
 from .tools import options
-from .job import AbsWorkflow, AbsTool
+from .job import AbsWorkflow, AbsTool, NullWorkflow
 
 SELECTOR_VIEW_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.MinimumExpanding,
@@ -443,12 +445,13 @@ class ToolTab(ItemSelectionTab):
 
 class WorkflowsTab(ItemSelectionTab):
 
-    def __init__(self, parent: QtWidgets.QWidget, workflows, work_manager,
-                 log_manager) -> None:
+    def __init__(self, parent: QtWidgets.QWidget, workflows, work_manager=None,
+                 log_manager=None) -> None:
 
         super().__init__("Workflow", parent,
                          models.WorkflowListModel(workflows), work_manager,
                          log_manager)
+        self._worflows = workflows
 
     def is_ready_to_start(self) -> bool:
         if len(self.item_selector_view.selectedIndexes()) != 1:
@@ -566,12 +569,8 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
             # i.browse()
         super().setEditorData(editor, index)
 
-    def setModelData(
-            self,
-            widget: QtWidgets.QWidget,
-            model: QtCore.QAbstractItemModel,
-            index
-    ):
+    def setModelData(self, widget: QtWidgets.QWidget,
+                     model: QtCore.QAbstractItemModel, index):
 
         if isinstance(widget, options.CustomItemWidget):
             model.setData(index, widget.data)
@@ -580,3 +579,46 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
 
     def destroyEditor(self, QWidget, QModelIndex):
         super().destroyEditor(QWidget, QModelIndex)
+
+
+class TabData:
+    def __init__(self) -> None:
+        self.tab_name = ""
+        self.workflows = models.WorkflowListModel2()
+
+
+def read_tabs_yaml(yaml_file)-> typing.Iterator[TabData]:
+    tabs_file_size = os.path.getsize(yaml_file)
+    if tabs_file_size > 0:
+        try:
+            with open(yaml_file) as f:
+                tabs_config_data = yaml.load(f.read())
+            if not isinstance(tabs_config_data, dict):
+                raise Exception(f"Failed to parse file")
+
+            for tab_name in tabs_config_data:
+                new_tab = TabData()
+                new_tab.tab_name = tab_name
+                for workflow_name in tabs_config_data.get(tab_name, []):
+                    empty_workflow = NullWorkflow()
+                    empty_workflow.name = workflow_name
+                    new_tab.workflows.add_workflow(empty_workflow)
+                yield new_tab
+
+        except FileNotFoundError as e:
+            print("Custom tabs file not found. "
+                  "Reason: {}".format(e), file=sys.stderr)
+            raise
+        except AttributeError as e:
+            print("Custom tabs file failed to load. "
+                  "Reason: {}".format(e), file=sys.stderr)
+            raise
+
+        except yaml.YAMLError as e:
+            print("{} file failed to load. "
+                  "Reason: {}".format(yaml_file, e), file=sys.stderr)
+            raise
+
+
+# TODO: create function to write tabs
+

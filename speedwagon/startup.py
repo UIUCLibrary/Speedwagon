@@ -14,8 +14,9 @@ from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 
 import speedwagon
 import speedwagon.config
-from speedwagon import worker, job
+from speedwagon import worker, job, tabs
 from speedwagon.gui import SplashScreenLogHandler, MainWindow
+from speedwagon.dialog.dialogs import TabEditor
 
 
 class FileFormatError(Exception):
@@ -40,7 +41,6 @@ def parse_args():
         action='store_true',
         help="Run with debug mode"
     )
-
     return parser.parse_args()
 
 
@@ -75,7 +75,8 @@ class CliArgsSetter(AbsSetting):
 
         return new_settings
 
-    def _parse_args(self):
+    @staticmethod
+    def _parse_args():
         parser = argparse.ArgumentParser()
 
         parser.add_argument(
@@ -93,7 +94,6 @@ class CliArgsSetter(AbsSetting):
             action='store_true',
             help="Run with debug mode"
         )
-
         return parser.parse_args()
 
 
@@ -166,6 +166,10 @@ class AbsStarter(metaclass=abc.ABCMeta):
     def run(self):
         pass
 
+    @abc.abstractmethod
+    def initialize(self):
+        pass
+
 
 class StartupDefault(AbsStarter):
     def __init__(self):
@@ -190,10 +194,11 @@ class StartupDefault(AbsStarter):
         self.app_data_dir = self.platform_settings.get("app_data_directory")
         self.app = QtWidgets.QApplication(sys.argv)
 
-    def run(self):
+    def initialize(self):
         self.ensure_settings_files()
         self.resolve_settings()
 
+    def run(self):
         # Display a splash screen until the app is loaded
         with pkg_resources.resource_stream(__name__, "logo.png") as logo:
 
@@ -379,8 +384,43 @@ class StartupDefault(AbsStarter):
             self._logger.debug("Created {}".format(self.app_data_dir))
 
 
+def standalone_tab_editor():
+    print("Loading settings")
+    settings = speedwagon.config.get_platform_settings()
+
+    app = QtWidgets.QApplication(sys.argv)
+    print("Loading tab editor")
+    editor = TabEditor()
+    loading_workflows_stream = io.StringIO()
+    with contextlib.redirect_stderr(loading_workflows_stream):
+        workflows = job.available_workflows()
+        editor.set_all_workflows(workflows)
+
+    editor.tabs_file = \
+        os.path.join(settings.get_app_data_directory(), "tabs.yml")
+
+    model = editor.selectedTabComboBox.model()
+    new_tab = tabs.TabData()
+
+    new_tab.tab_name = "My tab"
+    model += new_tab
+
+    second_new_tab = tabs.TabData()
+    second_new_tab.tab_name = "My tab 2nd tab"
+    second_new_tab.workflows.add_workflow(workflows["Hathi Prep"])
+    model += second_new_tab
+
+    print("displaying tab editor")
+    editor.show()
+    app.exec()
+
+
 def main() -> None:
+    if "tab-editor" in sys.argv:
+        standalone_tab_editor()
+        return
     app = StartupDefault()
+    app.initialize()
     sys.exit(app.run())
 
 

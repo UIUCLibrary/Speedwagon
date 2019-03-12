@@ -6,7 +6,8 @@ import os
 import sys
 from typing import Type, Optional, Iterable, Dict, List, Any, Tuple
 from . import tasks
-from . import worker
+# from . import worker
+import speedwagon
 from .tools.options import UserOption2
 from PyQt5 import QtWidgets  # type: ignore
 
@@ -41,7 +42,7 @@ class AbsTool(AbsJob):
 
     @staticmethod
     @abc.abstractmethod
-    def new_job() -> Type[worker.ProcessJobWorker]:
+    def new_job() -> Type["worker.ProcessJobWorker"]:
         pass
 
     @staticmethod
@@ -124,6 +125,16 @@ class Workflow(AbsWorkflow):
 
         """
         return dict()
+
+
+class NullWorkflow(Workflow):
+
+    def discover_task_metadata(self, initial_results: List[Any],
+                               additional_data, **user_args) -> List[dict]:
+        return []
+
+    def user_options(self):
+        return []
 
 
 class AbsDynamicFinder(metaclass=abc.ABCMeta):

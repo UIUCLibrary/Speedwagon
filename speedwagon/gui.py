@@ -288,11 +288,13 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     def add_tab(self, workflow_name, workflows):
 
         workflows_tab = tabs.WorkflowsTab(
-            parent=self,
+            parent=None,
             workflows=workflows,
             work_manager=self._work_manager,
             log_manager=self.log_manager
         )
+        workflows_tab.parent = self
+        workflows_tab.workflows = workflows
         self._tabs.append(workflows_tab)
         self.tabWidget.add_tab(workflows_tab.tab, workflow_name)
         self.tabWidget.setVisible(True)
@@ -390,3 +392,5 @@ class SplashScreenLogHandler(logging.Handler):
             f"{record.msg}",
             QtCore.Qt.AlignCenter,
         )
+
+
