@@ -1,10 +1,9 @@
 import sys
-import typing
+from typing import Type, Dict, List, Any, Union, Tuple
 import warnings
 from abc import abstractmethod
 from collections import namedtuple
 import enum
-from typing import List, Tuple, Any
 
 from .job import AbsJob
 from PyQt5 import QtCore  # type: ignore
@@ -21,9 +20,9 @@ class ItemListModel(QtCore.QAbstractTableModel):
     # NAME = 0
     # DESCRIPTION = 1
 
-    def __init__(self, data: typing.Dict["str", typing.Type[AbsJob]]) -> None:
+    def __init__(self, data: Dict["str", Type[AbsJob]]) -> None:
         super().__init__()
-        self.jobs: typing.List[typing.Type[AbsJob]] = []
+        self.jobs: List[Type[AbsJob]] = []
         for k, v in data.items():
             self.jobs.append(v)
 
@@ -41,9 +40,9 @@ class ItemListModel(QtCore.QAbstractTableModel):
         return len(self.jobs)
 
     @staticmethod
-    def _extract_job_metadata(job: typing.Type[AbsJob],
+    def _extract_job_metadata(job: Type[AbsJob],
                               data_type: JobModelData):
-        static_data_values: typing.Dict[JobModelData, typing.Any] = {
+        static_data_values: Dict[JobModelData, Any] = {
             JobModelData.NAME: job.name,
             JobModelData.DESCRIPTION: job.description
         }
@@ -56,8 +55,8 @@ OptionPair = namedtuple("OptionPair", ("label", "data"))
 class ToolsListModel(ItemListModel):
 
     def data(self, index, role=None) -> \
-            typing.Union[str, typing.Type[AbsJob],
-                         QtCore.QSize, QtCore.QVariant]:
+            Union[str, Type[AbsJob],
+                  QtCore.QSize, QtCore.QVariant]:
 
         if index.isValid():
             data = self.jobs[index.row()]
@@ -75,12 +74,8 @@ class ToolsListModel(ItemListModel):
 
 
 class WorkflowListModel(ItemListModel):
-
-    def data(
-            self,
-            index,
-            role=None
-    ) -> typing.Union[str, typing.Type[AbsJob], QtCore.QSize, QtCore.QVariant]:
+    def data(self, index, role=None) -> \
+            Union[str, Type[AbsJob], QtCore.QSize, QtCore.QVariant]:
 
         if index.isValid():
             data = self.jobs[index.row()]
@@ -97,6 +92,12 @@ class WorkflowListModel(ItemListModel):
                 return QtCore.QSize(10, 20)
 
         return QtCore.QVariant()
+
+    def sort(self, key=None, order=None):
+        self.layoutAboutToBeChanged.emit()
+
+        self.jobs.sort(key=key or (lambda i: i.name))
+        self.layoutChanged.emit()
 
 
 class ToolOptionsModel(QtCore.QAbstractTableModel):
@@ -133,7 +134,7 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
 
 class ToolOptionsPairsModel(ToolOptionsModel):
 
-    def __init__(self, data: typing.Dict[str, str], parent=None) -> None:
+    def __init__(self, data: Dict[str, str], parent=None) -> None:
         warnings.warn("Use ToolOptionsModel2 instead", DeprecationWarning)
         super().__init__(parent)
         for k, v in data.items():
@@ -170,7 +171,7 @@ class ToolOptionsPairsModel(ToolOptionsModel):
         return options
 
 
-def _lookup_constant(value: int) -> typing.List[str]:
+def _lookup_constant(value: int) -> List[str]:
     res = []
     for m in [
         attr for attr in dir(QtCore.Qt)
@@ -187,7 +188,7 @@ class ToolOptionsModel3(ToolOptionsModel):
 
     def __init__(
             self,
-            data: typing.List[tools.options.UserOptionPythonDataType2],
+            data: List[tools.options.UserOptionPythonDataType2],
             parent=None
     ) -> None:
 
@@ -195,7 +196,7 @@ class ToolOptionsModel3(ToolOptionsModel):
             raise NotImplementedError
         super().__init__(parent)
 
-        self._data: typing.List[tools.options.UserOptionPythonDataType2] = data
+        self._data: List[tools.options.UserOptionPythonDataType2] = data
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if index.isValid():
