@@ -184,6 +184,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
     def _create_selector_view(self, parent, model: QtCore.QAbstractTableModel):
         selector_view = QtWidgets.QListView(parent)
+        selector_view.setAlternatingRowColors(True)
         selector_view.setUniformItemSizes(True)
         selector_view.setModel(model)
 
