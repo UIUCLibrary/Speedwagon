@@ -48,7 +48,7 @@ setup(
         "speedwagon.ui",
 
     ],
-    setup_requires=['pytest-runner'],
+    setup_requires=['pytest-runner', "pyqt_distutils"],
     tests_require=['pytest', "behave", "pytest-qt"],
     python_requires=">=3.6",
 
