@@ -135,19 +135,42 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         self.layoutChanged.emit()
 
     def add_workflow(self, workflow: Workflow) -> None:
-        self.beginInsertRows(QtCore.QModelIndex(), 0, self.rowCount())
         for existing_workflow in self.workflows:
             if workflow.name == existing_workflow.name:
                 break
         else:
-            self.workflows.append(workflow)
-        self.endInsertRows()
+            row = len(self.workflows)
+            index = self.createIndex(row, 0)
+            self.beginInsertRows(index, 0, self.rowCount())
+            self.workflows.insert(row, workflow)
+            self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
+            self.endInsertRows()
+
+    def setData(self, index: QtCore.QModelIndex,
+                workflow: Any, role: QtCore.Qt = None):
+
+        if not index.isValid():
+            return False
+
+        if workflow not in self.workflows:
+            return False
+
+        row = index.row()
+
+        if len(self.workflows) <= row:
+            return False
+
+        self.workflows[row] = workflow
+        self.dataChanged.emit(index, index, [role])
+        return True
 
     def remove_workflow(self, workflow):
-        self.beginRemoveRows(QtCore.QModelIndex(), 0, self.rowCount())
         if workflow in self.workflows:
+            index = QtCore.QModelIndex()
+            self.beginRemoveRows(index, 0, self.rowCount())
             self.workflows.remove(workflow)
-        self.endRemoveRows()
+            self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
+            self.endRemoveRows()
 
 
 class ToolOptionsModel(QtCore.QAbstractTableModel):
@@ -374,6 +397,9 @@ class TabsModel(QtCore.QAbstractListModel):
             return QtCore.QVariant()
 
         row = index.row()
+        if row > len(self.tabs):
+            return None
+
         workflow = {
             QtCore.Qt.DisplayRole: self.tabs[row].tab_name,
             QtCore.Qt.UserRole: self.tabs[row]
@@ -385,12 +411,32 @@ class TabsModel(QtCore.QAbstractListModel):
         return len(self.tabs)
 
     def add_tab(self, tab: "tabs.TabData") -> None:
-        self.beginInsertRows(QtCore.QModelIndex(), 0, self.rowCount())
-        self.tabs.append(tab)
+        row = len(self.tabs)
+        index = self.createIndex(row, 0)
+        self.beginInsertRows(index, 0, self.rowCount())
+        self.tabs.insert(row, tab)
+        self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
         self.endInsertRows()
 
     def remove_tab(self, tab: "tabs.TabData") -> None:
-        self.beginRemoveRows(QtCore.QModelIndex(), 0, self.rowCount())
+        index = QtCore.QModelIndex()
         if tab in self.tabs:
+            self.beginRemoveRows(index, 0, self.rowCount())
             self.tabs.remove(tab)
-        self.endRemoveRows()
+            self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
+            self.endRemoveRows()
+
+    def setData(self, index: QtCore.QModelIndex, tab, role: QtCore.Qt = None):
+        if not index.isValid():
+            return False
+
+        if tabs in self.tabs:
+            return False
+
+        row = index.row()
+        if len(self.tabs) <= row:
+            return False
+
+        self.tabs[row] = tab
+        self.dataChanged.emit(index, index, [role])
+        return True

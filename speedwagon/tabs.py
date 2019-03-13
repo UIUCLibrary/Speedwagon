@@ -587,7 +587,7 @@ class TabData:
         self.workflows = models.WorkflowListModel2()
 
 
-def read_tabs_yaml(yaml_file)-> typing.Iterator[TabData]:
+def read_tabs_yaml(yaml_file) -> typing.Iterator[TabData]:
     tabs_file_size = os.path.getsize(yaml_file)
     if tabs_file_size > 0:
         try:
@@ -618,7 +618,4 @@ def read_tabs_yaml(yaml_file)-> typing.Iterator[TabData]:
             print("{} file failed to load. "
                   "Reason: {}".format(yaml_file, e), file=sys.stderr)
             raise
-
-
 # TODO: create function to write tabs
-

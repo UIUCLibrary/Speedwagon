@@ -14,9 +14,9 @@ from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 
 import speedwagon
 import speedwagon.config
-from speedwagon import worker, job, tabs
+from speedwagon import worker, job
 from speedwagon.gui import SplashScreenLogHandler, MainWindow
-from speedwagon.dialog.dialogs import TabEditor
+from speedwagon.dialog.settings import TabEditor
 
 
 class FileFormatError(Exception):
@@ -384,31 +384,63 @@ class StartupDefault(AbsStarter):
             self._logger.debug("Created {}".format(self.app_data_dir))
 
 
+class TabsEditorApp(QtWidgets.QDialog):
+    """Dialog box for editing tabs.yml file"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._layout = QtWidgets.QVBoxLayout()
+        self.editor = TabEditor()
+        self._layout.addWidget(self.editor)
+        self.dialogButtonBox = QtWidgets.QDialogButtonBox(self)
+        self._layout.addWidget(self.dialogButtonBox)
+
+        self.dialogButtonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
+
+        self.setLayout(self._layout)
+
+        self.dialogButtonBox.accepted.connect(self.on_okay)
+        self.dialogButtonBox.rejected.connect(self.on_cancel)
+        self.rejected.connect(self.on_cancel)
+
+    def load_all_workflows(self):
+        loading_workflows_stream = io.StringIO()
+        with contextlib.redirect_stderr(loading_workflows_stream):
+            workflows = job.available_workflows()
+            self.editor.set_all_workflows(workflows)
+
+    def on_okay(self):
+        if self.editor.modified is True:
+            print("Saving changes")
+        self.close()
+
+    def on_cancel(self):
+        self.close()
+
+    def load_tab_file(self, filename):
+        self.editor.tabs_file = filename
+
+    @property
+    def tabs_file(self):
+        return self.editor.tabs_file
+
+    @tabs_file.setter
+    def tabs_file(self, value):
+        self.editor.tabs_file = value
+
+
 def standalone_tab_editor():
     print("Loading settings")
     settings = speedwagon.config.get_platform_settings()
 
     app = QtWidgets.QApplication(sys.argv)
     print("Loading tab editor")
-    editor = TabEditor()
-    loading_workflows_stream = io.StringIO()
-    with contextlib.redirect_stderr(loading_workflows_stream):
-        workflows = job.available_workflows()
-        editor.set_all_workflows(workflows)
+    editor = TabsEditorApp()
+    editor.load_all_workflows()
 
-    editor.tabs_file = \
-        os.path.join(settings.get_app_data_directory(), "tabs.yml")
-
-    model = editor.selectedTabComboBox.model()
-    new_tab = tabs.TabData()
-
-    new_tab.tab_name = "My tab"
-    model += new_tab
-
-    second_new_tab = tabs.TabData()
-    second_new_tab.tab_name = "My tab 2nd tab"
-    second_new_tab.workflows.add_workflow(workflows["Hathi Prep"])
-    model += second_new_tab
+    tabs_file = os.path.join(settings.get_app_data_directory(), "tabs.yml")
+    editor.load_tab_file(tabs_file)
 
     print("displaying tab editor")
     editor.show()

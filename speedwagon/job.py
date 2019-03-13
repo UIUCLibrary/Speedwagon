@@ -6,8 +6,7 @@ import os
 import sys
 from typing import Type, Optional, Iterable, Dict, List, Any, Tuple
 from . import tasks
-# from . import worker
-import speedwagon
+from . import worker
 from .tools.options import UserOption2
 from PyQt5 import QtWidgets  # type: ignore
 
@@ -42,7 +41,7 @@ class AbsTool(AbsJob):
 
     @staticmethod
     @abc.abstractmethod
-    def new_job() -> Type["worker.ProcessJobWorker"]:
+    def new_job() -> Type[worker.ProcessJobWorker]:
         pass
 
     @staticmethod

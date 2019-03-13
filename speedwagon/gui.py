@@ -392,5 +392,3 @@ class SplashScreenLogHandler(logging.Handler):
             f"{record.msg}",
             QtCore.Qt.AlignCenter,
         )
-
-
