@@ -1,4 +1,4 @@
-include LICENSE README.rst requirements.txt requirements-dev.txt Makefile tox.ini extra_commands.py
+include LICENSE README.rst requirements.txt requirements-dev.txt Makefile tox.ini extra_commands.py pyuic.json
 recursive-exclude speedwagon/ui *.py
 recursive-include speedwagon/ui *.ui
 include speedwagon/ui/__init__.py
