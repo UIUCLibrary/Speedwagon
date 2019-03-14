@@ -30,8 +30,7 @@ class SettingsPlaceholderTabsTab(PlaceHolderTab):
         super().__init__(parent, *args, **kwargs)
         self.notification_information.setText(
             "Configuration tabs can be only be made by editing "
-            "tabs.yaml file.")
-
+            "tabs.yml file.")
         self.open_file_button.clicked.connect(self.open_yaml_file)
         self.settings_location = None
 
@@ -76,8 +75,8 @@ class SettingsDialog(QtWidgets.QDialog):
         self.layout.addWidget(self._button_box)
 
         self.setLayout(self.layout)
-        self.setFixedHeight(350)
-        self.setFixedWidth(500)
+        self.setFixedHeight(480)
+        self.setFixedWidth(600)
 
     def add_tab(self, tab, tab_name):
         self.tabsWidget.addTab(tab, tab_name)
@@ -134,6 +133,30 @@ class GlobalSettingsTab(QtWidgets.QWidget):
             msg_box.exec()
 
 
+class TabsConfigurationTab(QtWidgets.QWidget):
+    def __init__(self, parent=None, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.settings_location = None
+        self._modified = False
+        # self.settings = SettingsEditor(self)
+
+        self.layout = QtWidgets.QVBoxLayout(self)
+
+        # self.settings_table = QtWidgets.QTableView(self)
+        self.editor = TabEditor()
+
+        # self.settings_table.setSelectionMode(
+        #     QtWidgets.QAbstractItemView.SingleSelection)
+        #
+        # self.settings_table.horizontalHeader().setStretchLastSection(True)
+
+        self.layout.addWidget(self.editor)
+
+    def load(self):
+        print(f"loading {self.settings_location}")
+        self.editor.tabs_file = self.settings_location
+
+
 class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
 
     def __init__(self, *args, **kwargs):
@@ -159,6 +182,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         self.removeItemsButton.clicked.connect(self._remove_items)
         self._tabs_model.dataChanged.connect(self.on_modified)
         self.modified = False
+        self.splitter.setChildrenCollapsible(False)
 
     def on_modified(self):
         self.modified = True
@@ -169,6 +193,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
 
     @tabs_file.setter
     def tabs_file(self, value):
+
         for tab in tabs.read_tabs_yaml(value):
 
             tab.workflows.dataChanged.connect(self.on_modified)

@@ -14,6 +14,8 @@ from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 
 import speedwagon
 import speedwagon.config
+import speedwagon.models
+import speedwagon.tabs
 from speedwagon import worker, job
 from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.dialog.settings import TabEditor
@@ -405,14 +407,15 @@ class TabsEditorApp(QtWidgets.QDialog):
         self.rejected.connect(self.on_cancel)
 
     def load_all_workflows(self):
-        loading_workflows_stream = io.StringIO()
-        with contextlib.redirect_stderr(loading_workflows_stream):
-            workflows = job.available_workflows()
-            self.editor.set_all_workflows(workflows)
+        workflows = job.available_workflows()
+        self.editor.set_all_workflows(workflows)
 
     def on_okay(self):
         if self.editor.modified is True:
             print("Saving changes")
+            tabs = extract_tab_information(self.editor.selectedTabComboBox.model())
+            speedwagon.tabs.write_tabs_yaml(self.tabs_file, tabs)
+
         self.close()
 
     def on_cancel(self):
@@ -429,6 +432,16 @@ class TabsEditorApp(QtWidgets.QDialog):
     def tabs_file(self, value):
         self.editor.tabs_file = value
 
+
+def extract_tab_information(model: speedwagon.models.TabsModel):
+    tabs = []
+    for tab in model.tabs:
+
+        new_tab = speedwagon.tabs.TabData()
+        new_tab.tab_name = tab.tab_name
+        new_tab.workflows = tab.workflows
+        tabs.append(new_tab)
+    return tabs
 
 def standalone_tab_editor():
     print("Loading settings")

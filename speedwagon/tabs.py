@@ -1,9 +1,11 @@
 import abc
+import io
 import os
 import sys
 import traceback
 import enum
-import typing
+# import typing
+from typing import List, Optional, Tuple, Dict, Iterator
 from abc import ABCMeta, abstractmethod
 
 import yaml
@@ -97,7 +99,7 @@ class Tab(AbsTab):
     def create_workspace_layout(
             cls,
             parent
-    ) -> typing.Tuple[typing.Dict[TabWidgets, QtWidgets.QWidget],
+    ) -> Tuple[Dict[TabWidgets, QtWidgets.QWidget],
                       QtWidgets.QLayout]:
         tool_config_layout = QtWidgets.QFormLayout()
 
@@ -126,7 +128,7 @@ class Tab(AbsTab):
 
     @classmethod
     def create_workspace(cls, title, parent) -> \
-            typing.Tuple[QtWidgets.QWidget, typing.Dict[
+            Tuple[QtWidgets.QWidget, Dict[
                 TabWidgets, QtWidgets.QWidget], QtWidgets.QLayout]:
         tool_workspace = QtWidgets.QGroupBox()
 
@@ -138,7 +140,7 @@ class Tab(AbsTab):
         return tool_workspace, workspace_widgets, layout
 
     @staticmethod
-    def create_tab() -> typing.Tuple[QtWidgets.QWidget, QtWidgets.QLayout]:
+    def create_tab() -> Tuple[QtWidgets.QWidget, QtWidgets.QLayout]:
         tab_tools = QtWidgets.QWidget()
         tab_tools.setObjectName("tab")
         tab_tools_layout = QtWidgets.QVBoxLayout(tab_tools)
@@ -153,7 +155,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         super().__init__(parent, work_manager)
         self.log_manager = log_manager
         self.item_selection_model = item_model
-        self.options_model: typing.Optional[models.ItemListModel] = None
+        self.options_model: Optional[models.ItemListModel] = None
         self.tab_name = name
 
         self.item_selector_view = self._create_selector_view(
@@ -234,7 +236,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     def get_item_options_model(self, item):
         pass
 
-    def create_actions(self) -> typing.Tuple[typing.Dict[str,
+    def create_actions(self) -> Tuple[Dict[str,
                                                          QtWidgets.QWidget],
                                              QtWidgets.QLayout]:
 
@@ -343,7 +345,7 @@ class ToolTab(ItemSelectionTab):
                          models.ToolsListModel(tools),
                          work_manager,
                          log_manager)
-        self._tool: typing.Optional[AbsTool] = None
+        self._tool: Optional[AbsTool] = None
 
     def is_ready_to_start(self) -> bool:
         number_of_selected = self.item_selector_view.selectedIndexes()
@@ -587,7 +589,7 @@ class TabData:
         self.workflows = models.WorkflowListModel2()
 
 
-def read_tabs_yaml(yaml_file) -> typing.Iterator[TabData]:
+def read_tabs_yaml(yaml_file) -> Iterator[TabData]:
     tabs_file_size = os.path.getsize(yaml_file)
     if tabs_file_size > 0:
         try:
@@ -618,4 +620,16 @@ def read_tabs_yaml(yaml_file) -> typing.Iterator[TabData]:
             print("{} file failed to load. "
                   "Reason: {}".format(yaml_file, e), file=sys.stderr)
             raise
-# TODO: create function to write tabs
+
+
+def write_tabs_yaml(yaml_file, tabs: List[TabData]):
+    tabs_data = dict()
+    for tab in tabs:
+        print(tab.tab_name)
+        tabs = list()
+        for workflow in tab.workflows.workflows:
+            tabs.append(workflow.name)
+        tabs_data[tab.tab_name] = tabs
+    with open(yaml_file, "w") as f:
+        yaml.dump(tabs_data, f, default_flow_style=False)
+
