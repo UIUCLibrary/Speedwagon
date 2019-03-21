@@ -9,7 +9,9 @@ from abc import ABCMeta, abstractmethod
 import yaml
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 
+import speedwagon
 import speedwagon.dialog.dialogs
+import speedwagon.models
 from . import runner_strategies
 from . import models
 from .tools import options
@@ -628,3 +630,11 @@ def write_tabs_yaml(yaml_file, tabs: List[TabData]):
 
     with open(yaml_file, "w") as f:
         yaml.dump(tabs_data, f, default_flow_style=False)
+
+
+def extract_tab_information(model: "speedwagon.models.TabsModel"):
+    tabs = []
+    for tab in model.tabs:
+        new_tab = speedwagon.tabs.TabData(tab.tab_name, tab.workflows_model)
+        tabs.append(new_tab)
+    return tabs

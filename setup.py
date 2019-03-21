@@ -54,7 +54,8 @@ setup(
 
     entry_points={
         "gui_scripts": [
-            'speedwagon = speedwagon.__main__:main'
+            'speedwagon = speedwagon.__main__:main',
+            'sw-tab-editor = speedwagon.startup:standalone_tab_editor'
         ],
     },
     include_package_data=True,

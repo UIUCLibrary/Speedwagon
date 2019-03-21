@@ -19,6 +19,7 @@ import speedwagon.tabs
 from speedwagon import worker, job
 from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.dialog.settings import TabEditor
+from speedwagon.tabs import extract_tab_information
 
 
 class FileFormatError(Exception):
@@ -391,6 +392,7 @@ class TabsEditorApp(QtWidgets.QDialog):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.setWindowTitle("Speedwagon Tabs Editor")
         self._layout = QtWidgets.QVBoxLayout()
         self.editor = TabEditor()
         self._layout.addWidget(self.editor)
@@ -433,14 +435,6 @@ class TabsEditorApp(QtWidgets.QDialog):
     @tabs_file.setter
     def tabs_file(self, value):
         self.editor.tabs_file = value
-
-
-def extract_tab_information(model: speedwagon.models.TabsModel):
-    tabs = []
-    for tab in model.tabs:
-        new_tab = speedwagon.tabs.TabData(tab.tab_name, tab.workflows_model)
-        tabs.append(new_tab)
-    return tabs
 
 
 def standalone_tab_editor():
