@@ -635,6 +635,6 @@ def write_tabs_yaml(yaml_file, tabs: List[TabData]):
 def extract_tab_information(model: "speedwagon.models.TabsModel"):
     tabs = []
     for tab in model.tabs:
-        new_tab = speedwagon.tabs.TabData(tab.tab_name, tab.workflows_model)
+        new_tab = TabData(tab.tab_name, tab.workflows_model)
         tabs.append(new_tab)
     return tabs

@@ -144,7 +144,7 @@ class TabsConfigurationTab(QtWidgets.QWidget):
 
         # self.settings_table = QtWidgets.QTableView(self)
         self.editor = TabEditor()
-        self.editor.layout().setContentsMargins(0,0,0,0)
+        self.editor.layout().setContentsMargins(0, 0, 0, 0)
 
         self.layout.addWidget(self.editor)
 
@@ -154,13 +154,13 @@ class TabsConfigurationTab(QtWidgets.QWidget):
             tabs.write_tabs_yaml(
                 self.settings_location,
                 tabs.extract_tab_information(
-                self.editor.selectedTabComboBox.model()))
+                    self.editor.selectedTabComboBox.model())
+            )
 
             msg_box = QtWidgets.QMessageBox(self)
             msg_box.setWindowTitle("Saved changes to tabs files")
             msg_box.setText("Please restart changes to take effect")
             msg_box.exec()
-
 
     def load(self):
         print(f"loading {self.settings_location}")
