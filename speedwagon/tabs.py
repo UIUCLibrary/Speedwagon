@@ -594,7 +594,7 @@ def read_tabs_yaml(yaml_file) -> Iterator[TabData]:
     if tabs_file_size > 0:
         try:
             with open(yaml_file) as f:
-                tabs_config_data = yaml.load(f.read())
+                tabs_config_data = yaml.load(f.read(), Loader=yaml.SafeLoader)
             if not isinstance(tabs_config_data, dict):
                 raise Exception(f"Failed to parse file")
 

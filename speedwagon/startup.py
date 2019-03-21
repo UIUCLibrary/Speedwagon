@@ -123,7 +123,7 @@ def get_custom_tabs(all_workflows: dict, yaml_file) -> \
 
     try:
         with open(yaml_file) as f:
-            tabs_config_data = yaml.load(f.read())
+            tabs_config_data = yaml.load(f.read(), Loader=yaml.SafeLoader)
         if not isinstance(tabs_config_data, dict):
             raise FileFormatError(f"Failed to parse file")
 
