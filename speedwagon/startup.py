@@ -413,7 +413,9 @@ class TabsEditorApp(QtWidgets.QDialog):
     def on_okay(self):
         if self.editor.modified is True:
             print("Saving changes")
-            tabs = extract_tab_information(self.editor.selectedTabComboBox.model())
+            tabs = extract_tab_information(
+                self.editor.selectedTabComboBox.model())
+
             speedwagon.tabs.write_tabs_yaml(self.tabs_file, tabs)
 
         self.close()
@@ -436,12 +438,10 @@ class TabsEditorApp(QtWidgets.QDialog):
 def extract_tab_information(model: speedwagon.models.TabsModel):
     tabs = []
     for tab in model.tabs:
-
-        new_tab = speedwagon.tabs.TabData()
-        new_tab.tab_name = tab.tab_name
-        new_tab.workflows = tab.workflows
+        new_tab = speedwagon.tabs.TabData(tab.tab_name, tab.workflows_model)
         tabs.append(new_tab)
     return tabs
+
 
 def standalone_tab_editor():
     print("Loading settings")

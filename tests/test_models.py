@@ -26,20 +26,18 @@ def test_settings_model_added():
 
 def test_tabs_model_iadd_tab():
     test_model = models.TabsModel()
-    new_tab = tabs.TabData()
-    new_tab.tab_name = "My tab"
+    new_tab = tabs.TabData("My tab", models.WorkflowListModel2())
     test_model += new_tab
     assert test_model.rowCount() == 1
 
 
 def test_tabs_model_delete_tab():
     test_model = models.TabsModel()
-    new_tab = tabs.TabData()
-    new_tab.tab_name = "My tab"
+    new_tab = tabs.TabData("My tab", models.WorkflowListModel2())
+    # new_tab.tab_name =
     test_model += new_tab
 
-    second_new_tab = tabs.TabData()
-    second_new_tab.tab_name = "second new tab"
+    second_new_tab = tabs.TabData("second new tab", models.WorkflowListModel2())
     test_model += second_new_tab
     assert test_model.rowCount() == 2
 
@@ -49,12 +47,10 @@ def test_tabs_model_delete_tab():
 
 def test_tabs_model_delete_all_tabs():
     test_model = models.TabsModel()
-    first_new_tab = tabs.TabData()
-    first_new_tab.tab_name = "My tab"
+    first_new_tab = tabs.TabData("My tab", models.WorkflowListModel2())
     test_model += first_new_tab
 
-    second_new_tab = tabs.TabData()
-    second_new_tab.tab_name = "second new tab"
+    second_new_tab = tabs.TabData("second new tab", models.WorkflowListModel2())
     test_model += second_new_tab
     assert test_model.rowCount() == 2
 

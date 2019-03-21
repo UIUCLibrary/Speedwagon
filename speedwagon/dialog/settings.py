@@ -196,7 +196,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
 
         for tab in tabs.read_tabs_yaml(value):
 
-            tab.workflows.dataChanged.connect(self.on_modified)
+            tab.workflows_model.dataChanged.connect(self.on_modified)
             self._tabs_model.add_tab(tab)
         self.selectedTabComboBox.setCurrentIndex(0)
         self._tabs_file = value
@@ -207,7 +207,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         index = model.index(tab)
         if index.isValid():
             data = model.data(index, role=QtCore.Qt.UserRole)
-            self.tabWorkflowsListView.setModel(data.workflows)
+            self.tabWorkflowsListView.setModel(data.workflows_model)
         else:
             self.tabWorkflowsListView.setModel(models.WorkflowListModel2())
 
@@ -229,8 +229,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
                 error.exec()
                 continue
 
-            new_tab = tabs.TabData()
-            new_tab.tab_name = new_tab_name
+            new_tab = tabs.TabData(new_tab_name, models.WorkflowListModel2())
             self._tabs_model.add_tab(new_tab)
             new_index = self.selectedTabComboBox.findText(new_tab_name)
             self.selectedTabComboBox.setCurrentIndex(new_index)
