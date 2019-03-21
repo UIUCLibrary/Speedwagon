@@ -288,11 +288,13 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     def add_tab(self, workflow_name, workflows):
 
         workflows_tab = tabs.WorkflowsTab(
-            parent=self,
+            parent=None,
             workflows=workflows,
             work_manager=self._work_manager,
             log_manager=self.log_manager
         )
+        workflows_tab.parent = self
+        workflows_tab.workflows = workflows
         self._tabs.append(workflows_tab)
         self.tabWidget.add_tab(workflows_tab.tab, workflow_name)
         self.tabWidget.setVisible(True)
@@ -342,11 +344,12 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         config_dialog.add_tab(global_settings_tab, "Global Settings")
         config_dialog.accepted.connect(global_settings_tab.on_okay)
 
-        tabs_tab = speedwagon.dialog.settings.SettingsPlaceholderTabsTab()
+        tabs_tab = speedwagon.dialog.settings.TabsConfigurationTab()
 
         if self._work_manager.settings_path is not None:
             tabs_tab.settings_location = \
-                os.path.join(self._work_manager.settings_path, "tabs.yaml")
+                os.path.join(self._work_manager.settings_path, "tabs.yml")
+            tabs_tab.load()
 
         config_dialog.add_tab(tabs_tab, "Tabs")
 

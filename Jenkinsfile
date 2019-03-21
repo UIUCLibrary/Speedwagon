@@ -537,6 +537,7 @@ pipeline {
                     agent {
                         node {
                             label "Windows && Python3 && longfilenames && WIX"
+//                            Not sure why what is currently breaking build
                             customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
                         }
                     }

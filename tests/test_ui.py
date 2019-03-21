@@ -49,7 +49,7 @@ class EchoJob(worker.ProcessJobWorker):
         }
 
 
-def test_model():
+def test_tool_options_model():
     tool = EchoTool
     user_options = tool.get_user_options()
 

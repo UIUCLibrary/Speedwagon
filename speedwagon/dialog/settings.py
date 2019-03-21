@@ -2,8 +2,9 @@ import os
 
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 
-from speedwagon import config
+from speedwagon import config, models, tabs
 from speedwagon.config import build_setting_model
+from speedwagon.ui import tab_editor_ui
 
 
 class PlaceHolderTab(QtWidgets.QWidget):
@@ -29,8 +30,7 @@ class SettingsPlaceholderTabsTab(PlaceHolderTab):
         super().__init__(parent, *args, **kwargs)
         self.notification_information.setText(
             "Configuration tabs can be only be made by editing "
-            "tabs.yaml file.")
-
+            "tabs.yml file.")
         self.open_file_button.clicked.connect(self.open_yaml_file)
         self.settings_location = None
 
@@ -75,8 +75,8 @@ class SettingsDialog(QtWidgets.QDialog):
         self.layout.addWidget(self._button_box)
 
         self.setLayout(self.layout)
-        self.setFixedHeight(350)
-        self.setFixedWidth(500)
+        self.setFixedHeight(480)
+        self.setFixedWidth(600)
 
     def add_tab(self, tab, tab_name):
         self.tabsWidget.addTab(tab, tab_name)
@@ -131,3 +131,141 @@ class GlobalSettingsTab(QtWidgets.QWidget):
             msg_box.setWindowTitle("Saved changes")
             msg_box.setText("Please restart changes to take effect")
             msg_box.exec()
+
+
+class TabsConfigurationTab(QtWidgets.QWidget):
+    def __init__(self, parent=None, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.settings_location = None
+        self._modified = False
+        # self.settings = SettingsEditor(self)
+
+        self.layout = QtWidgets.QVBoxLayout(self)
+
+        # self.settings_table = QtWidgets.QTableView(self)
+        self.editor = TabEditor()
+
+        # self.settings_table.setSelectionMode(
+        #     QtWidgets.QAbstractItemView.SingleSelection)
+        #
+        # self.settings_table.horizontalHeader().setStretchLastSection(True)
+
+        self.layout.addWidget(self.editor)
+
+    def load(self):
+        print(f"loading {self.settings_location}")
+        self.editor.tabs_file = self.settings_location
+
+
+class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setupUi(self)
+        self._tabs_file = None
+
+        self._tabs_model = models.TabsModel()
+
+        self._all_workflows_model = models.WorkflowListModel2()
+        self._active_tab_worksflows_model = models.WorkflowListModel2()
+
+        self.tabWorkflowsListView.setModel(self._active_tab_worksflows_model)
+
+        self.selectedTabComboBox.setModel(self._tabs_model)
+
+        self.selectedTabComboBox.currentIndexChanged.connect(self._changed_tab)
+
+        self.newTabButton.clicked.connect(self._create_new_tab)
+
+        self.deleteCurrentTabButton.clicked.connect(self._delete_tab)
+        self.addItemsButton.clicked.connect(self._add_items_to_tab)
+        self.removeItemsButton.clicked.connect(self._remove_items)
+        self._tabs_model.dataChanged.connect(self.on_modified)
+        self.modified = False
+        self.splitter.setChildrenCollapsible(False)
+
+    def on_modified(self):
+        self.modified = True
+
+    @property
+    def tabs_file(self):
+        return self._tabs_file
+
+    @tabs_file.setter
+    def tabs_file(self, value):
+
+        for tab in tabs.read_tabs_yaml(value):
+
+            tab.workflows.dataChanged.connect(self.on_modified)
+            self._tabs_model.add_tab(tab)
+        self.selectedTabComboBox.setCurrentIndex(0)
+        self._tabs_file = value
+        self.modified = False
+
+    def _changed_tab(self, tab):
+        model = self.selectedTabComboBox.model()
+        index = model.index(tab)
+        if index.isValid():
+            data = model.data(index, role=QtCore.Qt.UserRole)
+            self.tabWorkflowsListView.setModel(data.workflows)
+        else:
+            self.tabWorkflowsListView.setModel(models.WorkflowListModel2())
+
+    def _create_new_tab(self):
+        while True:
+            new_tab_name, accepted = QtWidgets.QInputDialog.getText(
+                self.parent(), "Create New Tab", "Tab name")
+
+            # The user cancelled
+            if not accepted:
+                return
+
+            if new_tab_name in self._tabs_model:
+                message = f"Tab named \"{new_tab_name}\" already exists."
+                error = QtWidgets.QMessageBox(self)
+                error.setText(message)
+                error.setWindowTitle("Unable to Create New Tab")
+                error.setIcon(QtWidgets.QMessageBox.Critical)
+                error.exec()
+                continue
+
+            new_tab = tabs.TabData()
+            new_tab.tab_name = new_tab_name
+            self._tabs_model.add_tab(new_tab)
+            new_index = self.selectedTabComboBox.findText(new_tab_name)
+            self.selectedTabComboBox.setCurrentIndex(new_index)
+            return
+
+    def _delete_tab(self):
+        data = self.selectedTabComboBox.currentData()
+        model = self.selectedTabComboBox.model()
+        model -= data
+
+    def _add_items_to_tab(self):
+        model = self.tabWorkflowsListView.model()
+        for i in self.allWorkflowsListView.selectedIndexes():
+            new_workflow = i.data(role=QtCore.Qt.UserRole)
+            model.add_workflow(new_workflow)
+        model.sort()
+
+    def _remove_items(self):
+        model = self.tabWorkflowsListView.model()
+        items_to_remove = [
+            i.data(role=QtCore.Qt.UserRole)
+            for i in self.tabWorkflowsListView.selectedIndexes()
+        ]
+
+        for item in items_to_remove:
+            model.remove_workflow(item)
+        model.sort()
+
+    def set_all_workflows(self, workflows):
+        # self._all_workflows_model = models.WorkflowListModel2()
+        for k, v in workflows.items():
+            self._all_workflows_model.add_workflow(v)
+        self._all_workflows_model.sort()
+        self.allWorkflowsListView.setModel(self._all_workflows_model)
+
+    @property
+    def current_tab(self):
+        return self.selectedTabComboBox.currentData()

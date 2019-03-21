@@ -14,8 +14,11 @@ from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 
 import speedwagon
 import speedwagon.config
+import speedwagon.models
+import speedwagon.tabs
 from speedwagon import worker, job
 from speedwagon.gui import SplashScreenLogHandler, MainWindow
+from speedwagon.dialog.settings import TabEditor
 
 
 class FileFormatError(Exception):
@@ -40,7 +43,6 @@ def parse_args():
         action='store_true',
         help="Run with debug mode"
     )
-
     return parser.parse_args()
 
 
@@ -75,7 +77,8 @@ class CliArgsSetter(AbsSetting):
 
         return new_settings
 
-    def _parse_args(self):
+    @staticmethod
+    def _parse_args():
         parser = argparse.ArgumentParser()
 
         parser.add_argument(
@@ -93,7 +96,6 @@ class CliArgsSetter(AbsSetting):
             action='store_true',
             help="Run with debug mode"
         )
-
         return parser.parse_args()
 
 
@@ -166,6 +168,10 @@ class AbsStarter(metaclass=abc.ABCMeta):
     def run(self):
         pass
 
+    @abc.abstractmethod
+    def initialize(self):
+        pass
+
 
 class StartupDefault(AbsStarter):
     def __init__(self):
@@ -190,10 +196,11 @@ class StartupDefault(AbsStarter):
         self.app_data_dir = self.platform_settings.get("app_data_directory")
         self.app = QtWidgets.QApplication(sys.argv)
 
-    def run(self):
+    def initialize(self):
         self.ensure_settings_files()
         self.resolve_settings()
 
+    def run(self):
         # Display a splash screen until the app is loaded
         with pkg_resources.resource_stream(__name__, "logo.png") as logo:
 
@@ -379,8 +386,86 @@ class StartupDefault(AbsStarter):
             self._logger.debug("Created {}".format(self.app_data_dir))
 
 
+class TabsEditorApp(QtWidgets.QDialog):
+    """Dialog box for editing tabs.yml file"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._layout = QtWidgets.QVBoxLayout()
+        self.editor = TabEditor()
+        self._layout.addWidget(self.editor)
+        self.dialogButtonBox = QtWidgets.QDialogButtonBox(self)
+        self._layout.addWidget(self.dialogButtonBox)
+
+        self.dialogButtonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
+
+        self.setLayout(self._layout)
+
+        self.dialogButtonBox.accepted.connect(self.on_okay)
+        self.dialogButtonBox.rejected.connect(self.on_cancel)
+        self.rejected.connect(self.on_cancel)
+
+    def load_all_workflows(self):
+        workflows = job.available_workflows()
+        self.editor.set_all_workflows(workflows)
+
+    def on_okay(self):
+        if self.editor.modified is True:
+            print("Saving changes")
+            tabs = extract_tab_information(self.editor.selectedTabComboBox.model())
+            speedwagon.tabs.write_tabs_yaml(self.tabs_file, tabs)
+
+        self.close()
+
+    def on_cancel(self):
+        self.close()
+
+    def load_tab_file(self, filename):
+        self.editor.tabs_file = filename
+
+    @property
+    def tabs_file(self):
+        return self.editor.tabs_file
+
+    @tabs_file.setter
+    def tabs_file(self, value):
+        self.editor.tabs_file = value
+
+
+def extract_tab_information(model: speedwagon.models.TabsModel):
+    tabs = []
+    for tab in model.tabs:
+
+        new_tab = speedwagon.tabs.TabData()
+        new_tab.tab_name = tab.tab_name
+        new_tab.workflows = tab.workflows
+        tabs.append(new_tab)
+    return tabs
+
+def standalone_tab_editor():
+    print("Loading settings")
+    settings = speedwagon.config.get_platform_settings()
+
+    app = QtWidgets.QApplication(sys.argv)
+    print("Loading tab editor")
+    editor = TabsEditorApp()
+    editor.load_all_workflows()
+
+    tabs_file = os.path.join(settings.get_app_data_directory(), "tabs.yml")
+    editor.load_tab_file(tabs_file)
+
+    print("displaying tab editor")
+    editor.show()
+    app.exec()
+
+
 def main() -> None:
+    if "tab-editor" in sys.argv:
+        standalone_tab_editor()
+        return
     app = StartupDefault()
+    app.initialize()
     sys.exit(app.run())
 
 

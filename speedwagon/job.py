@@ -126,6 +126,16 @@ class Workflow(AbsWorkflow):
         return dict()
 
 
+class NullWorkflow(Workflow):
+
+    def discover_task_metadata(self, initial_results: List[Any],
+                               additional_data, **user_args) -> List[dict]:
+        return []
+
+    def user_options(self):
+        return []
+
+
 class AbsDynamicFinder(metaclass=abc.ABCMeta):
 
     def __init__(self, path) -> None:

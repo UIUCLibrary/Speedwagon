@@ -1,12 +1,11 @@
 import abc
 import logging
 import tempfile
-
 from typing import List, Any
 
-from .job import AbsJob, AbsTool, AbsWorkflow, Workflow, JobCancelled
 from . import tasks
 from . import worker
+from .job import AbsJob, AbsTool, AbsWorkflow, Workflow, JobCancelled
 
 
 class TaskFailed(Exception):
@@ -35,7 +34,7 @@ class UsingExternalManager(AbsRunner):
 
     def __init__(
             self,
-            manager: worker.ToolJobManager,
+            manager: "worker.ToolJobManager",
             on_success,
             on_failure
     ) -> None:
@@ -100,7 +99,7 @@ class UsingExternalManager(AbsRunner):
 
 class UsingExternalManagerForAdapter(AbsRunner):
 
-    def __init__(self, manager: worker.ToolJobManager) -> None:
+    def __init__(self, manager: "worker.ToolJobManager") -> None:
         self._manager = manager
 
     def _update_progress(self, runner, current: int, total: int):
