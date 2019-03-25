@@ -477,6 +477,11 @@ pipeline {
 //                            }
                         }
                     }
+                    post{
+                        always{
+                            archiveArtifacts allowEmptyArchive: true, artifacts: '.tox/py*/log/*.log'
+                        }
+                    }
                 }
                 stage("Run Flake8 Static Analysis") {
                     when {
