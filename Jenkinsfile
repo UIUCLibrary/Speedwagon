@@ -165,6 +165,19 @@ def get_build_number(){
     }
 }
 
+
+def runtox(){
+    script{
+        try{
+            bat "pipenv run tox --workdir ${WORKSPACE}\\.tox"
+        } catch (exc) {
+            bat "pipenv run tox --workdir ${WORKSPACE}\\.tox --recreate"
+        }
+    }
+
+}
+
+
 pipeline {
     agent {
         label "Windows && Python3 && longfilenames && WIX"
@@ -454,13 +467,14 @@ pipeline {
                     }
                     steps {
                         dir("source"){
-                            script{
-                                try{
-                                    bat "pipenv run tox --workdir ${WORKSPACE}\\.tox"
-                                } catch (exc) {
-                                    bat "pipenv run tox --workdir ${WORKSPACE}\\.tox --recreate"
-                                }
-                            }
+                            runtox()
+//                            script{
+//                                try{
+//                                    bat "pipenv run tox --workdir ${WORKSPACE}\\.tox"
+//                                } catch (exc) {
+//                                    bat "pipenv run tox --workdir ${WORKSPACE}\\.tox --recreate"
+//                                }
+//                            }
                         }
                     }
                 }
