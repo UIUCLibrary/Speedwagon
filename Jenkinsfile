@@ -481,6 +481,9 @@ pipeline {
                         always{
                             archiveArtifacts allowEmptyArchive: true, artifacts: '.tox/py*/log/*.log'
                         }
+                        cleanup{
+                            cleanWs deleteDirs: true, patterns: [[pattern: '.tox/py*/log/*.log', type: 'INCLUDE']]
+                        }
                     }
                 }
                 stage("Run Flake8 Static Analysis") {
