@@ -430,10 +430,10 @@ pipeline {
                     }
                     post{
                         always {
-                            archiveArtifacts artifacts: "reports/doctest.txt"
+                            archiveArtifacts artifacts: "logs/doctest.txt"
                         }
                         cleanup{
-                            cleanWs(patterns: [[pattern: 'reports/doctest.txt', type: 'INCLUDE']])
+                            cleanWs(patterns: [[pattern: 'logs/doctest.txt', type: 'INCLUDE']])
                         }
                     }
                 }
