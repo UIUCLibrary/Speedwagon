@@ -169,9 +169,9 @@ def get_build_number(){
 def runtox(){
     script{
         try{
-            bat "pipenv run tox --workdir ${WORKSPACE}\\.tox"
+            bat "pipenv run tox --workdir ${WORKSPACE}\\.tox --result-json=${WORKSPACE}\\logs\\tox_report.json"
         } catch (exc) {
-            bat "pipenv run tox --workdir ${WORKSPACE}\\.tox --recreate"
+            bat "pipenv run tox --workdir ${WORKSPACE}\\.tox --result-json=${WORKSPACE}\\logs\\tox_report.json --recreate"
         }
     }
 
@@ -476,7 +476,7 @@ pipeline {
                     }
                     post{
                         always{
-                            archiveArtifacts allowEmptyArchive: true, artifacts: '.tox/py*/log/*.log,.tox/log/*.log'
+                            archiveArtifacts allowEmptyArchive: true, artifacts: '.tox/py*/log/*.log,.tox/log/*.log,logs/tox_report.json'
                         }
                         cleanup{
                             cleanWs deleteDirs: true, patterns: [
