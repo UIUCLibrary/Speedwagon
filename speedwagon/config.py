@@ -80,9 +80,7 @@ class ConfigManager(contextlib.AbstractContextManager):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        print("Note: Only able to read settings. "
-              "To change any settings, edit {}".format(self._config_file),
-              file=sys.stderr)
+        pass
 
     @property
     def global_settings(self) -> dict:
