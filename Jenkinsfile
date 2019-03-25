@@ -479,10 +479,10 @@ pipeline {
                     }
                     post{
                         always{
-                            archiveArtifacts allowEmptyArchive: true, artifacts: '.tox/py*/log/*.log'
+                            archiveArtifacts allowEmptyArchive: true, artifacts: '.tox/py*/log/*.log,.tox/log/*.log'
                         }
                         cleanup{
-                            cleanWs deleteDirs: true, patterns: [[pattern: '.tox/py*/log/*.log', type: 'INCLUDE']]
+                            cleanWs deleteDirs: true, patterns: [[pattern: '.tox/py*/log/*.log,.tox/log/*.log', type: 'INCLUDE']]
                         }
                     }
                 }
