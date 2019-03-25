@@ -1,17 +1,17 @@
 import abc
-import io
 import os
 import sys
 import traceback
 import enum
-# import typing
-from typing import List, Optional, Tuple, Dict, Iterator
+from typing import List, Optional, Tuple, Dict, Iterator, NamedTuple
 from abc import ABCMeta, abstractmethod
 
 import yaml
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 
+import speedwagon
 import speedwagon.dialog.dialogs
+import speedwagon.models
 from . import runner_strategies
 from . import models
 from .tools import options
@@ -96,11 +96,9 @@ class Tab(AbsTab):
         return tool_settings
 
     @classmethod
-    def create_workspace_layout(
-            cls,
-            parent
-    ) -> Tuple[Dict[TabWidgets, QtWidgets.QWidget],
-                      QtWidgets.QLayout]:
+    def create_workspace_layout(cls, parent) \
+            -> Tuple[Dict[TabWidgets, QtWidgets.QWidget], QtWidgets.QLayout]:
+
         tool_config_layout = QtWidgets.QFormLayout()
 
         name_line = QtWidgets.QLineEdit()
@@ -236,9 +234,8 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     def get_item_options_model(self, item):
         pass
 
-    def create_actions(self) -> Tuple[Dict[str,
-                                                         QtWidgets.QWidget],
-                                             QtWidgets.QLayout]:
+    def create_actions(self) \
+            -> Tuple[Dict[str, QtWidgets.QWidget], QtWidgets.QLayout]:
 
         tool_actions_layout = QtWidgets.QHBoxLayout()
 
@@ -583,10 +580,9 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
         super().destroyEditor(QWidget, QModelIndex)
 
 
-class TabData:
-    def __init__(self) -> None:
-        self.tab_name = ""
-        self.workflows = models.WorkflowListModel2()
+class TabData(NamedTuple):
+    tab_name: str
+    workflows_model: "models.WorkflowListModel2"
 
 
 def read_tabs_yaml(yaml_file) -> Iterator[TabData]:
@@ -594,17 +590,19 @@ def read_tabs_yaml(yaml_file) -> Iterator[TabData]:
     if tabs_file_size > 0:
         try:
             with open(yaml_file) as f:
-                tabs_config_data = yaml.load(f.read())
+                tabs_config_data = yaml.load(f.read(), Loader=yaml.SafeLoader)
             if not isinstance(tabs_config_data, dict):
                 raise Exception(f"Failed to parse file")
 
             for tab_name in tabs_config_data:
-                new_tab = TabData()
-                new_tab.tab_name = tab_name
+                # new_tab = TabData()
+                model = models.WorkflowListModel2()
+                # new_tab.tab_name = tab_name
                 for workflow_name in tabs_config_data.get(tab_name, []):
                     empty_workflow = NullWorkflow()
                     empty_workflow.name = workflow_name
-                    new_tab.workflows.add_workflow(empty_workflow)
+                    model.add_workflow(empty_workflow)
+                new_tab = TabData(tab_name, model)
                 yield new_tab
 
         except FileNotFoundError as e:
@@ -625,11 +623,18 @@ def read_tabs_yaml(yaml_file) -> Iterator[TabData]:
 def write_tabs_yaml(yaml_file, tabs: List[TabData]):
     tabs_data = dict()
     for tab in tabs:
-        print(tab.tab_name)
-        tabs = list()
-        for workflow in tab.workflows.workflows:
-            tabs.append(workflow.name)
-        tabs_data[tab.tab_name] = tabs
+        tab_model = tab.workflows_model
+
+        tabs_data[tab.tab_name] = \
+            [workflow.name for workflow in tab_model.workflows]
+
     with open(yaml_file, "w") as f:
         yaml.dump(tabs_data, f, default_flow_style=False)
 
+
+def extract_tab_information(model: "speedwagon.models.TabsModel"):
+    tabs = []
+    for tab in model.tabs:
+        new_tab = TabData(tab.tab_name, tab.workflows_model)
+        tabs.append(new_tab)
+    return tabs

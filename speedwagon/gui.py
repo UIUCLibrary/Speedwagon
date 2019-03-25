@@ -352,6 +352,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             tabs_tab.load()
 
         config_dialog.add_tab(tabs_tab, "Tabs")
+        config_dialog.accepted.connect(tabs_tab.on_okay)
 
         config_dialog.exec()
 

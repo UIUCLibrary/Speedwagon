@@ -19,6 +19,7 @@ import speedwagon.tabs
 from speedwagon import worker, job
 from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.dialog.settings import TabEditor
+from speedwagon.tabs import extract_tab_information
 
 
 class FileFormatError(Exception):
@@ -123,7 +124,7 @@ def get_custom_tabs(all_workflows: dict, yaml_file) -> \
 
     try:
         with open(yaml_file) as f:
-            tabs_config_data = yaml.load(f.read())
+            tabs_config_data = yaml.load(f.read(), Loader=yaml.SafeLoader)
         if not isinstance(tabs_config_data, dict):
             raise FileFormatError(f"Failed to parse file")
 
@@ -391,6 +392,7 @@ class TabsEditorApp(QtWidgets.QDialog):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.setWindowTitle("Speedwagon Tabs Editor")
         self._layout = QtWidgets.QVBoxLayout()
         self.editor = TabEditor()
         self._layout.addWidget(self.editor)
@@ -413,7 +415,9 @@ class TabsEditorApp(QtWidgets.QDialog):
     def on_okay(self):
         if self.editor.modified is True:
             print("Saving changes")
-            tabs = extract_tab_information(self.editor.selectedTabComboBox.model())
+            tabs = extract_tab_information(
+                self.editor.selectedTabComboBox.model())
+
             speedwagon.tabs.write_tabs_yaml(self.tabs_file, tabs)
 
         self.close()
@@ -432,16 +436,6 @@ class TabsEditorApp(QtWidgets.QDialog):
     def tabs_file(self, value):
         self.editor.tabs_file = value
 
-
-def extract_tab_information(model: speedwagon.models.TabsModel):
-    tabs = []
-    for tab in model.tabs:
-
-        new_tab = speedwagon.tabs.TabData()
-        new_tab.tab_name = tab.tab_name
-        new_tab.workflows = tab.workflows
-        tabs.append(new_tab)
-    return tabs
 
 def standalone_tab_editor():
     print("Loading settings")

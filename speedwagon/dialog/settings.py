@@ -2,7 +2,7 @@ import os
 
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 
-from speedwagon import config, models, tabs
+from speedwagon import config, models, tabs, job
 from speedwagon.config import build_setting_model
 from speedwagon.ui import tab_editor_ui
 
@@ -144,17 +144,29 @@ class TabsConfigurationTab(QtWidgets.QWidget):
 
         # self.settings_table = QtWidgets.QTableView(self)
         self.editor = TabEditor()
-
-        # self.settings_table.setSelectionMode(
-        #     QtWidgets.QAbstractItemView.SingleSelection)
-        #
-        # self.settings_table.horizontalHeader().setStretchLastSection(True)
+        self.editor.layout().setContentsMargins(0, 0, 0, 0)
 
         self.layout.addWidget(self.editor)
+
+    def on_okay(self):
+        if self.editor.modified is True:
+            print(f"Saving changes to {self.settings_location}")
+            tabs.write_tabs_yaml(
+                self.settings_location,
+                tabs.extract_tab_information(
+                    self.editor.selectedTabComboBox.model())
+            )
+
+            msg_box = QtWidgets.QMessageBox(self)
+            msg_box.setWindowTitle("Saved changes to tabs files")
+            msg_box.setText("Please restart changes to take effect")
+            msg_box.exec()
 
     def load(self):
         print(f"loading {self.settings_location}")
         self.editor.tabs_file = self.settings_location
+        workflows = job.available_workflows()
+        self.editor.set_all_workflows(workflows)
 
 
 class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
@@ -184,6 +196,8 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         self.modified = False
         self.splitter.setChildrenCollapsible(False)
 
+        pass
+
     def on_modified(self):
         self.modified = True
 
@@ -196,7 +210,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
 
         for tab in tabs.read_tabs_yaml(value):
 
-            tab.workflows.dataChanged.connect(self.on_modified)
+            tab.workflows_model.dataChanged.connect(self.on_modified)
             self._tabs_model.add_tab(tab)
         self.selectedTabComboBox.setCurrentIndex(0)
         self._tabs_file = value
@@ -207,7 +221,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         index = model.index(tab)
         if index.isValid():
             data = model.data(index, role=QtCore.Qt.UserRole)
-            self.tabWorkflowsListView.setModel(data.workflows)
+            self.tabWorkflowsListView.setModel(data.workflows_model)
         else:
             self.tabWorkflowsListView.setModel(models.WorkflowListModel2())
 
@@ -229,8 +243,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
                 error.exec()
                 continue
 
-            new_tab = tabs.TabData()
-            new_tab.tab_name = new_tab_name
+            new_tab = tabs.TabData(new_tab_name, models.WorkflowListModel2())
             self._tabs_model.add_tab(new_tab)
             new_index = self.selectedTabComboBox.findText(new_tab_name)
             self.selectedTabComboBox.setCurrentIndex(new_index)

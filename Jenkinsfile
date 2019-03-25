@@ -640,6 +640,7 @@ pipeline {
                             cleanWs deleteDirs: true, patterns: [
                                 [pattern: 'cmake_build', type: 'INCLUDE'],
                                 [pattern: '*@tmp', type: 'INCLUDE'],
+                                [pattern: 'source', type: 'INCLUDE'],
                                 [pattern: 'temp', type: 'INCLUDE'],
                                 [pattern: 'logs', type: 'INCLUDE'],
                                 [pattern: 'generatedJUnitFiles', type: 'INCLUDE']
