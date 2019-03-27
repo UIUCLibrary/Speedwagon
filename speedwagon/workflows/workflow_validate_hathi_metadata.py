@@ -40,8 +40,7 @@ class TiffFileCheckData(options.AbsCustomData2):
 
 
 class ValidateImageMetadataWorkflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Validate Tiff Image Metadata for HathiTrust"
+    name = "Validate Tiff Image Metadata for HathiTrust"
     description = "Validate the metadata located within a tiff file."
     active = True
 

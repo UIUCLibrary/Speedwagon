@@ -10,8 +10,7 @@ from uiucprescon import pygetmarc
 
 
 class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Generate MARC.XML Files"
+    name = "Generate MARC.XML Files"
     description = "For input, this tool takes a path to a directory of " \
                   "files, each of which is a digitized volume, and is named " \
                   "for that volume’s bibid. The program then retrieves " \

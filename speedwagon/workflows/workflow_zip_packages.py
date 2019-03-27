@@ -13,8 +13,7 @@ import hathizip
 
 
 class ZipPackagesWorkflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Zip Packages"
+    name = "Zip Packages"
 
     description = "This tool takes a folder, usually of HathiTrust packages," \
                   " zips each subfolder, and copies the resultant tree to a " \

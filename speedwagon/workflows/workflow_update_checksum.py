@@ -224,8 +224,7 @@ class ChecksumJob(ProcessJobWorker):
 
 
 class UpdateChecksumBatchSingleWorkflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Update Checksum Batch [Single]"
+    name = "Update Checksum Batch [Single]"
     description = "Updates the checksum hash in a checksum.md5 file" \
                   "\nInput: checksum.md5 file"
 
@@ -240,8 +239,7 @@ class UpdateChecksumBatchSingleWorkflow(AbsWorkflow):
 
 
 class UpdateChecksumBatchMultipleWorkflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Update Checksum Batch [Multiple]"
+    name = "Update Checksum Batch [Multiple]"
     description = "Updates the checksum hash in all checksum.md5 file found " \
                   "in a path" \
                   "\nInput: path to a root folder"

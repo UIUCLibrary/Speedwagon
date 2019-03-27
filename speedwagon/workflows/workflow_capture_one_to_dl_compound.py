@@ -11,8 +11,7 @@ from uiucprescon.packager.packages.collection_builder import Metadata
 
 
 class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Convert CaptureOne TIFF to Digital Library Compound Object"
+    name = "Convert CaptureOne TIFF to Digital Library Compound Object"
     description = "Input is a path to a folder of TIFF files all named with " \
                   "a bibID as a prefacing identifier, a final delimiting " \
                   "underscore or dash, and a sequence consisting of padded " \

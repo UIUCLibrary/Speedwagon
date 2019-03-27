@@ -67,8 +67,7 @@ class ConvertFile(AbsProcessStrategy):
 
 
 class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Convert CaptureOne Preservation TIFF to Digital Library Access JP2"
+    name = "Convert CaptureOne Preservation TIFF to Digital Library Access JP2"
     description = "This tool takes as its input a \"preservation\" folder " \
                   "of TIFF files and as its output creates a sibling folder " \
                   "called \"access\" containing digital-library " \

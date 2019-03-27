@@ -15,8 +15,7 @@ from . import checksum_tasks, shared_custom_widgets
 
 
 class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Make Checksum Batch [Single]"
+    name = "Make Checksum Batch [Single]"
     description = "Creates a single checksum.md5 for every file inside " \
                   "a given folder" \
                   "\nInput: Path to a root folder"
@@ -105,8 +104,7 @@ class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
 
 
 class MakeChecksumBatchMultipleWorkflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Make Checksum Batch [Multiple]"
+    name = "Make Checksum Batch [Multiple]"
     description = "Creates a checksum.md5 for every subdirectory found " \
                   "inside a given path" \
                   "\nInput: Path to a root directory that contains " \
