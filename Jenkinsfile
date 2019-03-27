@@ -659,14 +659,18 @@ pipeline {
                     }
                     post {
                         cleanup{
-                            cleanWs deleteDirs: true, patterns: [
-                                [pattern: 'cmake_build', type: 'INCLUDE'],
-                                [pattern: '*@tmp', type: 'INCLUDE'],
-                                [pattern: 'source', type: 'INCLUDE'],
-                                [pattern: 'temp', type: 'INCLUDE'],
-                                [pattern: 'logs', type: 'INCLUDE'],
-                                [pattern: 'generatedJUnitFiles', type: 'INCLUDE']
-                            ]
+                            cleanWs(
+                                deleteDirs: true,
+                                disableDeferredWipeout: true,
+                                patterns: [
+                                    [pattern: 'cmake_build', type: 'INCLUDE'],
+                                    [pattern: '*@tmp', type: 'INCLUDE'],
+                                    [pattern: 'source', type: 'INCLUDE'],
+                                    [pattern: 'temp', type: 'INCLUDE'],
+                                    [pattern: 'logs', type: 'INCLUDE'],
+                                    [pattern: 'generatedJUnitFiles', type: 'INCLUDE']
+                                ]
+                            )
                         }
                     }
                 }
@@ -1040,14 +1044,18 @@ pipeline {
                  bat "\"${tool 'CPython-3.6'}\\python\" -m pipenv run python setup.py clean --all"
              }
 
-            cleanWs deleteDirs: true, patterns: [
+            cleanWs(
+                deleteDirs: true,
+                patterns: [
                     [pattern: 'logs', type: 'INCLUDE'],
                     [pattern: 'source', type: 'INCLUDE'],
                     [pattern: 'dist', type: 'INCLUDE'],
                     [pattern: 'build', type: 'INCLUDE'],
                     [pattern: 'reports', type: 'INCLUDE'],
                     [pattern: '*tmp', type: 'INCLUDE']
-                ]
+                ],
+
+            )
         }
 
     }
