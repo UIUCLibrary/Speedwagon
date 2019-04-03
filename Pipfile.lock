@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "579db03431cc2cac4c9716b3bbd4ad67543ccbf47b751a75506ead639e70e935"
+            "sha256": "447ee42d0e5155144bc819d3ae271c3c200df2753dc9ff8176166ed67cfbf453"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -342,11 +342,11 @@
                 "kdu"
             ],
             "hashes": [
-                "sha256:aa8343bfc3950a6a49fc25470da84f5034fb5637ff301473c8cb0f05dde9d6b9",
-                "sha256:dffe3c809eaa17988d224d3fcd3c2ffecaee42552ded2dc1e3a66de367d9b523"
+                "sha256:28a2e824650386608fcee4f89bc9872da3c6653b51ee3c283da654e6f119eaab",
+                "sha256:b5e872a4eaf3a6913d3d45eec5f6ef4aba574e2430bae3b0d788aa2e0205370c"
             ],
             "index": "devpi",
-            "version": "==0.2.9"
+            "version": "==0.2.10"
         },
         "uiucprescon.images": {
             "hashes": [
@@ -779,11 +779,11 @@
         },
         "tox": {
             "hashes": [
-                "sha256:ec7a20f8417897f9e2cee916288d10d21d2eb8b6045b84ebf0937b3c6166c180",
-                "sha256:ffa98042af372a22a02a1f2277647e883f81e517a0d2381a38fe00b3cfb2b820"
+                "sha256:69620e19de33a6b7ee8aeda5478791b3618ff58f0b869dbd0319fb71aa903deb",
+                "sha256:e5cdb1653aa27b3e46b5c390de6b6d51d31afcfdbd9d1222d82d76b82ad03d9b"
             ],
             "index": "devpi",
-            "version": "==3.8.5"
+            "version": "==3.8.6"
         },
         "typed-ast": {
             "hashes": [
