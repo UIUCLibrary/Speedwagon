@@ -26,7 +26,7 @@ setuptools = ">=30.3.0"
 uiucprescon-getmarc = ">=0.1.1"
 uiucprescon-imagevalidate = ">=0.1.4"
 "uiucprescon.images" = "*"
-uiucprescon-packager = {version = ">=0.2.4", extras = ['kdu']}
+uiucprescon-packager = {version = ">=0.2.9", extras = ['kdu']}
 uiucprescon-ocr = ">=0.1.0"
 importlib-resources = {version = "*", markers="python_version < '3.7'"}
 pluggy = "*"
