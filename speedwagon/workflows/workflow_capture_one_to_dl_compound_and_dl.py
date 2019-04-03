@@ -69,7 +69,6 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
 
         )
         task_builder.add_subtask(dl_packaging_task)
-        # FIXME: requires tweaking of uiucprescon.packager
         ht_packaging_task = PackageConverter(
             source_path=source_path,
             existing_package=existing_package,
