@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import traceback
 
@@ -27,8 +28,10 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
     def user_options(self):
         return [
             options.UserOptionCustomDataType("Input", options.FolderData),
-            options.UserOptionCustomDataType("Output Digital Library", options.FolderData),
-            options.UserOptionCustomDataType("Output HathiTrust", options.FolderData),
+            options.UserOptionCustomDataType(
+                "Output Digital Library", options.FolderData),
+            options.UserOptionCustomDataType(
+                "Output HathiTrust", options.FolderData),
                 ]
 
     def discover_task_metadata(self, initial_results: List[Any],
@@ -53,6 +56,27 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
             traceback.print_exc(file=sys.stderr)
             print(e)
         return jobs
+
+    @staticmethod
+    def validate_user_options(**user_args):
+        directory_keys = [
+            "Input",
+            "Output Digital Library",
+            "Output HathiTrust"
+
+          ]
+
+        for directory_key in directory_keys:
+            directory_value = user_args[directory_key]
+            if directory_value is None:
+                raise ValueError("Output {} is required".format(directory_key))
+
+            if not os.path.exists(directory_value):
+                raise ValueError("Invalid value in {}".format(directory_key))
+
+            if not os.path.isdir(directory_value):
+                raise ValueError("Invalid value in {}: Not a directory".format(directory_key))
+
 
     def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
         existing_package = job_args['package']
