@@ -77,7 +77,6 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
             if not os.path.isdir(directory_value):
                 raise ValueError("Invalid value in {}: Not a directory".format(directory_key))
 
-
     def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
         existing_package = job_args['package']
         new_dl_package_root = job_args["output_dl"]
