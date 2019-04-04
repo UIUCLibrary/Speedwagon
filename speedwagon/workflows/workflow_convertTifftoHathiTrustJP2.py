@@ -6,7 +6,7 @@ import itertools
 from typing import List, Any
 
 from speedwagon import tasks
-from speedwagon.tools import options
+from . import shared_custom_widgets as options
 from speedwagon.job import AbsWorkflow
 import pykdu_compress
 from py3exiv2bind.core import set_dpi

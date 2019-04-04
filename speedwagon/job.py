@@ -5,9 +5,9 @@ import logging
 import os
 import sys
 from typing import Type, Optional, Iterable, Dict, List, Any, Tuple
+
+# from speedwagon.tool import AbsTool
 from . import tasks
-from . import worker
-from .tools.options import UserOption2
 from PyQt5 import QtWidgets  # type: ignore
 
 
@@ -35,41 +35,6 @@ class AbsJob(metaclass=abc.ABCMeta):
                         task_builder: tasks.TaskBuilder,
                         **job_args):
         pass
-
-
-class AbsTool(AbsJob):
-
-    @staticmethod
-    @abc.abstractmethod
-    def new_job() -> Type[worker.ProcessJobWorker]:
-        pass
-
-    @staticmethod
-    def discover_jobs(**user_args) -> List[dict]:
-        pass
-
-    @staticmethod
-    @abc.abstractmethod
-    def get_user_options() -> List[UserOption2]:
-        pass
-
-    @staticmethod
-    def post_process(user_args: dict):
-        pass
-
-    @staticmethod
-    def on_completion(*args, **kwargs):
-        pass
-
-    def user_options(self):
-        return self.get_user_options()
-
-    def discover_task_metadata(self, **user_args) -> List[dict]:
-        return self.discover_jobs(**user_args)
-
-    @staticmethod
-    def generate_report(results, user_args):
-        return None
 
 
 class AbsWorkflow(AbsJob):
@@ -205,35 +170,6 @@ class AbsToolData(metaclass=abc.ABCMeta):
     @property
     def data(self):
         return self.widget.value
-
-
-class ToolFinder(AbsDynamicFinder):
-
-    @staticmethod
-    def py_module_filter(item: os.DirEntry):
-        if not str(item.name).startswith("tool_"):
-            return False
-        return True
-
-    @property
-    def package_name(self) -> str:
-        return "{}.tools".format(__package__)
-
-    @property
-    def base_class(self):
-        return AbsTool
-
-
-def available_tools() -> dict:
-    """
-    Locate all tools that can be loaded
-
-    Returns: Dictionary of all tools
-
-    """
-    root = os.path.join(os.path.dirname(__file__), "tools")
-    finder = ToolFinder(root)
-    return finder.locate()
 
 
 class WorkflowFinder(AbsDynamicFinder):

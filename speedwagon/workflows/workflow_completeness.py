@@ -11,7 +11,7 @@ import hathi_validate
 
 import speedwagon
 from speedwagon.tasks import Subtask
-from speedwagon.tools import options
+from . import shared_custom_widgets as options
 from speedwagon.job import AbsWorkflow
 from hathi_validate import manifest as validate_manifest
 from hathi_validate import report as hathi_reporter

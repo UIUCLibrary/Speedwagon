@@ -14,8 +14,9 @@ import speedwagon.dialog.dialogs
 import speedwagon.models
 from . import runner_strategies
 from . import models
-from .tools import options
-from .job import AbsWorkflow, AbsTool, NullWorkflow
+from .workflows import shared_custom_widgets as options
+from .job import AbsWorkflow, NullWorkflow
+from speedwagon.tool import AbsTool
 
 SELECTOR_VIEW_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.MinimumExpanding,

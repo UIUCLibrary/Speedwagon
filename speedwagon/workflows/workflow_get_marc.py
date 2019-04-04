@@ -3,11 +3,10 @@ import re
 from typing import List, Any, Optional
 
 from speedwagon import tasks, reports
-from speedwagon.tools import options
 from speedwagon.job import AbsWorkflow
 
 from uiucprescon import pygetmarc
-
+from . import shared_custom_widgets as options
 
 class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
     name = "Generate MARC.XML Files"

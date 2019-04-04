@@ -7,9 +7,10 @@ import itertools
 from typing import List, Any
 
 from speedwagon.worker import ProcessJobWorker
-from speedwagon.job import AbsTool, AbsWorkflow
+from speedwagon.job import AbsWorkflow
+from speedwagon.tool import AbsTool
 # from .options import ToolOptionDataType
-from speedwagon.tools import options
+from . import shared_custom_widgets as options
 from speedwagon import worker
 # from pyhathiprep import checksum
 from hathi_checksum import checksum_report, update_report
@@ -139,7 +140,7 @@ class UpdateChecksumBatchSingle(UpdateChecksum):
             raise ValueError("Selected input is not a checksum.md5 file")
 
     @staticmethod
-    def get_user_options() -> typing.List[options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption3]:
         return [
             options.UserOptionCustomDataType(UserArgs.INPUT.value,
                                              ChecksumData),
@@ -183,7 +184,7 @@ class UpdateChecksumBatchMultiple(UpdateChecksum):
         return jobs
 
     @staticmethod
-    def get_user_options() -> typing.List[options.UserOption2]:
+    def get_user_options() -> typing.List[options.UserOption3]:
         return [
             options.UserOptionCustomDataType(UserArgs.INPUT.value,
                                              options.FolderData),

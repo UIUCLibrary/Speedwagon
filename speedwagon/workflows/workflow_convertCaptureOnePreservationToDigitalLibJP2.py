@@ -6,7 +6,7 @@ import typing
 from typing import List, Any, Optional
 
 from speedwagon import tasks, reports
-from speedwagon.tools import options
+from . import shared_custom_widgets as options
 from speedwagon.job import AbsWorkflow
 
 import pykdu_compress

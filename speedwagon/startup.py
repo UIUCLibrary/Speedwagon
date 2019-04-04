@@ -254,20 +254,6 @@ class StartupDefault(AbsStarter):
             work_manager.configuration_file = self.config_file
 
             # ==================================================
-            self._logger.debug("Loading Tools")
-
-            loading_job_stream = io.StringIO()
-
-            with contextlib.redirect_stderr(loading_job_stream):
-                tools = job.available_tools()
-                windows.add_tools(tools)
-
-            tool_error_msgs = loading_job_stream.getvalue().strip()
-            if tool_error_msgs:
-                for line in tool_error_msgs.split("\n"):
-                    self._logger.warning(line)
-
-            # ==================================================
             self._logger.debug("Loading Workflows")
             loading_workflows_stream = io.StringIO()
             with contextlib.redirect_stderr(loading_workflows_stream):

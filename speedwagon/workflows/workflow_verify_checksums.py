@@ -9,7 +9,8 @@ import hathi_validate.process
 from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
 from speedwagon.reports import add_report_borders
-from speedwagon.tools import options, tool_verify_checksum
+from speedwagon.tools import tool_verify_checksum
+from . import shared_custom_widgets as options
 
 import speedwagon.tasks
 import enum

@@ -5,7 +5,7 @@ from typing import List, Any
 from contextlib import contextmanager
 from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
-from speedwagon.tools import options
+from . import shared_custom_widgets as options
 from speedwagon.worker import GuiLogHandler
 from uiucprescon.packager.packages.collection_builder import Metadata
 

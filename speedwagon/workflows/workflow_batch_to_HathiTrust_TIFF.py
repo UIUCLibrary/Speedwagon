@@ -7,7 +7,8 @@ from uiucprescon.packager.packages.collection import Metadata
 
 import speedwagon
 from speedwagon import tasks
-from speedwagon.tools import options
+from speedwagon.workflows import shared_custom_widgets
+# from speedwagon.tools import options
 from uiucprescon import packager, pygetmarc
 from . title_page_selection import PackageBrowser
 from pyhathiprep import package_creater
@@ -50,10 +51,10 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         return tasks_metadata
 
     def user_options(self):
-        source = options.UserOptionCustomDataType("Source", options.FolderData)
+        source = shared_custom_widgets.UserOptionCustomDataType("Source", shared_custom_widgets.FolderData)
 
-        destination = options.UserOptionCustomDataType("Destination",
-                                                       options.FolderData)
+        destination = shared_custom_widgets.UserOptionCustomDataType("Destination",
+                                                       shared_custom_widgets.FolderData)
 
         return [source, destination]
 

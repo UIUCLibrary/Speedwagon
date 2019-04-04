@@ -5,7 +5,8 @@ from typing import List, Any
 
 from . import tasks
 from . import worker
-from .job import AbsJob, AbsTool, AbsWorkflow, Workflow, JobCancelled
+from .job import AbsJob, AbsWorkflow, Workflow, JobCancelled
+from speedwagon.tool import AbsTool
 
 
 class TaskFailed(Exception):

@@ -6,8 +6,7 @@ from PyQt5 import QtWidgets  # type: ignore
 
 from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
-from speedwagon.tools import options
-
+from . import shared_custom_widgets as options
 
 class ImageFile(options.AbsBrowseableWidget):
     def browse_clicked(self):
@@ -20,7 +19,7 @@ class ImageFile(options.AbsBrowseableWidget):
             self.editingFinished.emit()
 
 
-class TiffFileCheckData(options.AbsCustomData2):
+class TiffFileCheckData(options.AbsCustomData3):
 
     @classmethod
     def is_valid(cls, value) -> bool:
