@@ -51,10 +51,11 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         return tasks_metadata
 
     def user_options(self):
-        source = shared_custom_widgets.UserOptionCustomDataType("Source", shared_custom_widgets.FolderData)
+        source = shared_custom_widgets.UserOptionCustomDataType(
+            "Source", shared_custom_widgets.FolderData)
 
-        destination = shared_custom_widgets.UserOptionCustomDataType("Destination",
-                                                       shared_custom_widgets.FolderData)
+        destination = shared_custom_widgets.UserOptionCustomDataType(
+            "Destination", shared_custom_widgets.FolderData)
 
         return [source, destination]
 

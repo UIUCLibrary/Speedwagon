@@ -8,6 +8,7 @@ from speedwagon.job import AbsWorkflow
 from uiucprescon import pygetmarc
 from . import shared_custom_widgets as options
 
+
 class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
     name = "Generate MARC.XML Files"
     description = "For input, this tool takes a path to a directory of " \

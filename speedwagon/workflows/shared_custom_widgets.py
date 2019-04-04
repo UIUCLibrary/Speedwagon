@@ -5,6 +5,7 @@ from PyQt5 import QtWidgets, QtCore
 from typing import Type
 from speedwagon.tools import options
 
+
 class WidgetMeta(abc.ABCMeta, type(QtCore.QObject)):  # type: ignore
     pass
 
@@ -108,6 +109,7 @@ class ChecksumData(AbsCustomData3):
     def edit_widget(cls) -> QtWidgets.QWidget:
         return ChecksumFile()
 
+
 class FolderBrowseWidget(AbsBrowseableWidget):
 
     def browse_clicked(self):
@@ -115,6 +117,7 @@ class FolderBrowseWidget(AbsBrowseableWidget):
         if selection:
             self.data = selection
             self.editingFinished.emit()
+
 
 class FolderData(AbsCustomData3, metaclass=abc.ABCMeta):
 
@@ -131,6 +134,7 @@ class FolderData(AbsCustomData3, metaclass=abc.ABCMeta):
     # @classmethod
     # def browse(cls):
     #     return QtWidgets.QLineEdit()
+
 
 class UserOption3(metaclass=abc.ABCMeta):
     def __init__(self, label_text):

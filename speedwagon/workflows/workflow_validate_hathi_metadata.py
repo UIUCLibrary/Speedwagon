@@ -8,6 +8,7 @@ from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
 
+
 class ImageFile(options.AbsBrowseableWidget):
     def browse_clicked(self):
         selection = QtWidgets.QFileDialog.getOpenFileName(

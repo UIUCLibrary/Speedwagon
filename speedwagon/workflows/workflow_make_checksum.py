@@ -13,6 +13,7 @@ from .checksum_shared import ResultsValues
 from . import checksum_tasks, shared_custom_widgets
 from . import shared_custom_widgets as options
 
+
 class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
     name = "Make Checksum Batch [Single]"
     description = "Creates a single checksum.md5 for every file inside " \
