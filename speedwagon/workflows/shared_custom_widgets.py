@@ -3,7 +3,18 @@ import os
 
 from PyQt5 import QtWidgets, QtCore
 from typing import Type
-from speedwagon.tools import options
+
+
+class AbsCustomData2(metaclass=abc.ABCMeta):
+    @classmethod
+    @abc.abstractmethod
+    def is_valid(cls, value) -> bool:
+        pass
+
+    @classmethod
+    @abc.abstractmethod
+    def edit_widget(cls) -> QtWidgets.QWidget:
+        pass
 
 
 class WidgetMeta(abc.ABCMeta, type(QtCore.QObject)):  # type: ignore
@@ -84,7 +95,7 @@ class AbsCustomData3(metaclass=abc.ABCMeta):
         pass
 
 
-class ChecksumFile(options.AbsBrowseableWidget):
+class ChecksumFile(AbsBrowseableWidget):
     def browse_clicked(self):
         selection = QtWidgets.QFileDialog.getOpenFileName(
             filter="Checksum files (*.md5)")
@@ -166,3 +177,62 @@ class UserOptionCustomDataType(UserOption3):
 
     def edit_widget(self) -> QtWidgets.QWidget:
         return self.data_type.edit_widget()
+
+
+class UserOption2(metaclass=abc.ABCMeta):
+    def __init__(self, label_text):
+        self.label_text = label_text
+        self.data = None
+
+    @abc.abstractmethod
+    def is_valid(self) -> bool:
+        pass
+
+    def edit_widget(self) -> QtWidgets.QWidget:
+        pass
+
+
+class UserOptionPythonDataType2(UserOption2):
+    def __init__(self, label_text, data_type=str) -> None:
+        super().__init__(label_text)
+        self.data_type = data_type
+        self.data = None
+
+    def is_valid(self) -> bool:
+        return isinstance(self.data, self.data_type)
+
+
+class ListSelectionWidget(CustomItemWidget, metaclass=WidgetMeta):
+
+    def __init__(self, selections, *args, **kwargs):
+        super().__init__()
+        # super().__init__(parent, *args, **kwargs)
+        self._combobox = QtWidgets.QComboBox()
+        self._selections = selections
+
+        self._model = QtCore.QStringListModel()
+        self._model.setStringList(self._selections)
+        self._combobox.setModel(self._model)
+        self._combobox.currentIndexChanged.connect(self._update)
+        self.inner_layout.addWidget(self._combobox,
+                                    alignment=QtCore.Qt.AlignBaseline)
+
+    def _update(self):
+        self.data = self._combobox.currentText()
+
+
+class ListSelection(UserOption2):
+
+    def __init__(self, label_text):
+        super().__init__(label_text)
+        self._selections = []
+
+    def is_valid(self) -> bool:
+        return True
+
+    def edit_widget(self) -> QtWidgets.QWidget:
+        return ListSelectionWidget(self._selections)
+
+    def add_selection(self, text):
+        self._selections.append(text)
+        self.data = self._selections[0]

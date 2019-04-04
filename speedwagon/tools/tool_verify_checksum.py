@@ -6,14 +6,12 @@ import typing
 import itertools
 from PyQt5 import QtWidgets  # type: ignore
 
-# from speedwagon.worker import ProcessJobWorker
-# from .abstool import AbsTool
-# from .options import ToolOptionDataType, UserOptionPythonDataType
+
 import speedwagon.tool
+from speedwagon.workflows import shared_custom_widgets
 from speedwagon.tools import options
 import speedwagon.worker
 import speedwagon.job
-# from speedwagon import worker, job
 import hathi_validate
 from speedwagon.workflows import workflow_verify_checksums
 from hathi_validate import process
@@ -50,7 +48,7 @@ class ChecksumFile(options.AbsBrowseableWidget):
             self.editingFinished.emit()
 
 
-class ChecksumData(options.AbsCustomData2):
+class ChecksumData(shared_custom_widgets.AbsCustomData2):
 
     @classmethod
     def is_valid(cls, value) -> bool:
@@ -185,11 +183,10 @@ class VerifyChecksumBatchSingle(VerifyChecksum):
         return jobs
 
     @staticmethod
-    def get_user_options() -> typing.List[options.UserOption2]:
+    def get_user_options() -> typing.List[shared_custom_widgets.UserOption2]:
         return [
-            options.UserOptionCustomDataType(UserArgs.INPUT.value,
-                                             ChecksumData),
-
+            shared_custom_widgets.UserOptionCustomDataType(
+                UserArgs.INPUT.value, ChecksumData)
         ]
 
     @staticmethod
@@ -200,59 +197,6 @@ class VerifyChecksumBatchSingle(VerifyChecksum):
         if not os.path.exists(input_data) \
                 or not os.path.splitext(input_data)[1] == ".md5":
             raise ValueError("Invalid user arguments")
-
-#
-# class VerifyChecksumBatchMultiple(VerifyChecksum):
-#     name = "Verify Checksum Batch [Multiple]"
-#     description = "Verify checksum values in checksum batch file, " \
-#                   "report errors. " \
-#                   "\n" \
-#                   "\nInput is path that contains subdirectory which a text " \
-#                   "file containing a list of multiple files and their md5 " \
-#                   "values. The listed files are expected to be siblings to " \
-#                   "the checksum file."
-#
-#     active = False
-#
-#     @staticmethod
-#     def discover_task_metadata(**user_args) -> typing.List[dict]:
-#         jobs = []
-#         user_input = user_args[UserArgs.INPUT.value]
-#         for root, dirs, files in os.walk(os.path.abspath(user_input)):
-#             for file_ in files:
-#                 if file_ != "checksum.md5":
-#                     continue
-#
-#                 checksum_report_file = os.path.join(root, file_)
-#                 for report_md5_hash, filename in \
-#                         hathi_validate.process.extracts_checksums(
-#                             checksum_report_file
-#                         ):
-#
-#                     new_job = {
-#                         JobValues.EXPECTED_HASH.value: report_md5_hash,
-#                         JobValues.ITEM_FILENAME.value: filename,
-#                         JobValues.ROOT_PATH.value: root,
-#                         JobValues.SOURCE_REPORT.value: checksum_report_file
-#                     }
-#                     jobs.append(new_job)
-#         return jobs
-#
-#     @staticmethod
-#     def get_user_options() -> typing.List[options.UserOption2]:
-#         return [
-#             options.UserOptionCustomDataType(UserArgs.INPUT.value,
-#                                              options.FolderData),
-#         ]
-#
-#     @staticmethod
-#     def validate_user_options(**user_args):
-#         input_data = user_args[UserArgs.INPUT.value]
-#         if input_data is None:
-#             raise ValueError("Missing value in input")
-#
-#         if not os.path.exists(input_data) or not os.path.isdir(input_data):
-#             raise ValueError("Invalid user arguments")
 
 
 class ChecksumJob(speedwagon.worker.ProcessJobWorker):

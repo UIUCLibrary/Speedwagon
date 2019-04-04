@@ -10,7 +10,7 @@ from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
 from speedwagon.reports import add_report_borders
 from speedwagon.tools import tool_verify_checksum
-from . import shared_custom_widgets as options
+from . import shared_custom_widgets
 
 import speedwagon.tasks
 import enum
@@ -72,8 +72,8 @@ class ChecksumWorkflow(AbsWorkflow):
         return jobs
 
     def user_options(self):
-        return options.UserOptionCustomDataType(UserArgs.INPUT.value,
-                                                options.FolderData),
+        return shared_custom_widgets.UserOptionCustomDataType(
+            UserArgs.INPUT.value, shared_custom_widgets.FolderData),
 
     @staticmethod
     def validate_user_options(**user_args):
@@ -106,8 +106,7 @@ class ChecksumWorkflow(AbsWorkflow):
                                  source_report=source_report))
 
     @classmethod
-    def generate_report(cls,
-                        results: List[speedwagon.tasks.Result],
+    def generate_report(cls, results: List[speedwagon.tasks.Result],
                         **user_args) -> Optional[str]:
         def validation_result_filter(
                 task_result: speedwagon.tasks.Result) -> bool:
@@ -289,12 +288,15 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
+        # TODO: move VerifyChecksumBatchSingle here
         return tool_verify_checksum.VerifyChecksumBatchSingle.\
             discover_task_metadata(**user_args)
 
     def user_options(self):
-        return \
-            tool_verify_checksum.VerifyChecksumBatchSingle.get_user_options()
+        return [
+            shared_custom_widgets.UserOptionCustomDataType(
+                UserArgs.INPUT.value, shared_custom_widgets.ChecksumData),
+        ]
 
     def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
         new_task = ChecksumTask(**job_args)

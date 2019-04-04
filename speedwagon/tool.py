@@ -5,7 +5,7 @@ from typing import Type, List
 from speedwagon import worker
 from speedwagon import job
 from speedwagon.job import AbsDynamicFinder
-from speedwagon.tools.options import UserOption2
+from speedwagon.workflows.shared_custom_widgets import UserOption2
 
 
 class AbsTool(job.AbsJob):
