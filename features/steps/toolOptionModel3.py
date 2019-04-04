@@ -2,8 +2,7 @@ from behave import *
 
 import speedwagon.models
 import speedwagon.tools
-import speedwagon.tools.options
-from speedwagon.workflows import shared_custom_widgets as options
+from speedwagon.tools import options
 
 use_step_matcher("re")
 
@@ -32,7 +31,7 @@ def step_impl(context):
     Args:
         context (behave.runner.Context):
     """
-    my_option = options.UserOptionPythonDataType3("my_option", str)
+    my_option = options.UserOptionPythonDataType2("my_option", str)
     my_option.data = ""
     data = [my_option]
     # data = [speedwagon.tools.options.ToolOptionDataType(name="my_option")]

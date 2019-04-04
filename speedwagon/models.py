@@ -9,7 +9,7 @@ from speedwagon import tabs, Workflow
 from .job import AbsJob
 from PyQt5 import QtCore  # type: ignore
 
-from . import tools
+from .tools import options
 
 
 class JobModelData(enum.Enum):
@@ -261,7 +261,7 @@ class ToolOptionsModel3(ToolOptionsModel):
 
     def __init__(
             self,
-            data: List[tools.options.UserOptionPythonDataType2],
+            data: List[options.UserOptionPythonDataType2],
             parent=None
     ) -> None:
 
@@ -269,7 +269,7 @@ class ToolOptionsModel3(ToolOptionsModel):
             raise NotImplementedError
         super().__init__(parent)
 
-        self._data: List[tools.options.UserOptionPythonDataType2] = data
+        self._data: List[options.UserOptionPythonDataType2] = data
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if index.isValid():
