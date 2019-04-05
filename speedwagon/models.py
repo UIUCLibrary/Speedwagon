@@ -52,27 +52,6 @@ class ItemListModel(QtCore.QAbstractTableModel):
 OptionPair = namedtuple("OptionPair", ("label", "data"))
 
 
-class ToolsListModel(ItemListModel):
-
-    def data(self, index, role=None) -> \
-            Union[str, Type[AbsWorkflow],
-                  QtCore.QSize, QtCore.QVariant]:
-
-        if index.isValid():
-            data = self.jobs[index.row()]
-            if role == QtCore.Qt.DisplayRole or role == QtCore.Qt.EditRole:
-                return self._extract_job_metadata(
-                    job=data,
-                    data_type=JobModelData(index.column())
-                )
-
-            if role == QtCore.Qt.UserRole:
-                return self.jobs[index.row()]
-            if role == QtCore.Qt.SizeHintRole:
-                return QtCore.QSize(10, 20)
-        return QtCore.QVariant()
-
-
 class WorkflowListModel(ItemListModel):
     def data(self, index, role=None) -> \
             Union[str, Type[AbsWorkflow], QtCore.QSize, QtCore.QVariant]:
