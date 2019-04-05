@@ -318,7 +318,6 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
             Optional[str]:
         results = [res.data for res in results]
 
-        # results = kwargs['results']
         line_sep = "\n" + "-" * 60
         sorted_results = cls.sort_results(results)
         results_with_failures = cls.find_failed(sorted_results)
