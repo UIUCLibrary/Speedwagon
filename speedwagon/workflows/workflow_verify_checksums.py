@@ -350,7 +350,9 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
         return report
 
     @classmethod
-    def sort_results(cls, results) -> Dict[str, List[Dict[ResultValues, Union[bool, str]]]]:
+    def sort_results(cls, results) -> \
+            Dict[str, List[Dict[ResultValues, Union[bool, str]]]]:
+
         """ Sort the data and put it into a dictionary with the source as the
         key
 
@@ -377,8 +379,10 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
         return dict(new_results)
 
     @classmethod
-    def find_failed(cls, new_results:
-            Dict[str, List[Dict[ResultValues, Union[bool, str]]]]) -> dict:
+    def find_failed(cls, new_results: Dict[str,
+                                           List[Dict[ResultValues,
+                                                     Union[bool,
+                                                           str]]]]) -> dict:
 
         failed: DefaultDict[str, list] = collections.defaultdict(list)
 
