@@ -6,7 +6,6 @@ from typing import List, Any
 from . import tasks
 from . import worker
 from .job import AbsJob, AbsWorkflow, Workflow, JobCancelled
-from speedwagon.tool import AbsTool
 
 
 class TaskFailed(Exception):
@@ -66,31 +65,6 @@ class UsingExternalManager(AbsRunner):
                     if current == total:
                         runner.dialog.accept()
 
-                if isinstance(job, AbsTool):
-                    runner.abort_callback = self.on_runner_aborted
-                    logger.addHandler(runner.progress_dialog_box_handler)
-                    runner.dialog.setRange(0, 0)
-
-                    i = -1
-                    for i, new_setting in \
-                            enumerate(job.discover_task_metadata(**options)):
-
-                        new_job = job.new_job()
-                        self._manager.add_job(new_job(), new_setting)
-
-                    logger.info("Found {} jobs".format(i + 1))
-                    runner.dialog.setMaximum(i)
-
-                    self._manager.start()
-
-                    runner.dialog.show()
-
-                    results = list()
-                    for result in self._manager.get_results(update_progress):
-                        results.append(result)
-                    logger.removeHandler(runner.progress_dialog_box_handler)
-
-                    self._on_success(results, job.on_completion)
         except Exception as e:
             self._on_failure(e)
 

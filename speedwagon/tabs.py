@@ -16,7 +16,7 @@ from . import runner_strategies
 from . import models
 from .workflows import shared_custom_widgets as options
 from .job import AbsWorkflow, NullWorkflow
-from speedwagon.tool import AbsTool
+
 
 SELECTOR_VIEW_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.MinimumExpanding,
@@ -334,113 +334,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         self.tab_layout.addWidget(self.item_selector_view)
         self.tab_layout.addWidget(self.workspace)
         self.tab_layout.addLayout(self.actions_layout)
-
-
-class ToolTab(ItemSelectionTab):
-    def __init__(self, parent, tools, work_manager, log_manager) -> None:
-        super().__init__("Tool",
-                         parent,
-                         models.ToolsListModel(tools),
-                         work_manager,
-                         log_manager)
-        self._tool: Optional[AbsTool] = None
-
-    def is_ready_to_start(self) -> bool:
-        number_of_selected = self.item_selector_view.selectedIndexes()
-        if len(number_of_selected) != 1:
-            print(
-                "Invalid number of selected Indexes. "
-                "Expected 1. Found {}".format(number_of_selected)
-            )
-            return False
-        return True
-
-    def start(self, item) -> None:
-
-        if issubclass(item, AbsTool):
-            try:
-                if self.options_model is None:
-                    raise Exception("Tools not loaded")
-
-                selected_options = self.options_model.get()
-                item.validate_user_options(**selected_options)
-            except Exception as e:
-                msg = QtWidgets.QMessageBox(self.parent)
-                msg.setIcon(QtWidgets.QMessageBox.Warning)
-                msg.setWindowTitle("Invalid Configuration")
-                msg.setText(str(e))
-                # msg.setDetailedText("".join(exception_message))
-                msg.exec_()
-                return
-            self._tool = item
-
-            # wrapped_strat = runner_strategies.UsingWorkWrapper()
-            # runner = runner_strategies.RunRunner(wrapped_strat)
-
-            manager_strat = runner_strategies.UsingExternalManager(
-                manager=self.work_manager,
-                on_success=self._on_success,
-                on_failure=self._on_failed
-            )
-
-            # manager_strat = runner_strategies.UsingWorkManager()
-            runner = runner_strategies.RunRunner(manager_strat)
-
-            runner.run(self.parent, item(),
-                       selected_options, self.work_manager.logger)
-
-        else:
-            QtWidgets.QMessageBox.warning(self.parent,
-                                          "No op", "No tool selected.")
-
-    def _on_failed(self, exc):
-        self.log_manager.error("Process failed. Reason: {}".format(exc))
-        # print("************** {}".format(exc))
-        if exc:
-            traceback.print_tb(exc.__traceback__)
-            # self.log_manager.notify(str(exc))
-            self.log_manager.warning(str(exc))
-
-            exception_message = traceback.format_exception(
-                type(exc),
-                exc,
-                tb=exc.__traceback__
-            )
-
-            msg = speedwagon.dialog.dialogs.ErrorDialogBox(self.parent)
-            msg.setWindowTitle(str(type(exc).__name__))
-            msg.setText(str(exc))
-            msg.setDetailedText("".join(exception_message))
-            # msg.setStyleSheet("QLabel{min-width: 700px;}")
-            msg.exec_()
-
-    def _on_success(self, results, callback):
-        self.log_manager.info("Done!")
-        user_args = self.options_model.get()
-        callback(results=results, user_args=user_args)
-        report = self._tool.generate_report(results=results,
-                                            user_args=user_args)
-        if report:
-            line_sep = "\n" + "*" * 60
-
-            fancy_report = f"{line_sep}" \
-                f"\n   Report" \
-                f"{line_sep}" \
-                f"\n" \
-                f"\n{report}" \
-                f"\n" \
-                f"{line_sep}"
-
-            # self.log_manager.notify(fancy_report)
-            self.log_manager.info(fancy_report)
-
-        # self._tool.setup_task(results=results,user_args=user_args)
-
-        # QtWidgets.QMessageBox.about(self, "Finished", "Finished")
-
-    def get_item_options_model(self, tool):
-        model = models.ToolOptionsModel3(tool.get_user_options())
-        return model
 
 
 class WorkflowsTab(ItemSelectionTab):

@@ -273,18 +273,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                 return
         self.log_manager.warning("Unable to set tab to {}.".format(tab_name))
 
-    def add_tools(self, tools):
-        tools_tab = tabs.ToolTab(
-            parent=self.tabWidget,
-            tools=tools,
-            work_manager=self._work_manager,
-            log_manager=self.log_manager
-        )
-
-        self.tabWidget.add_tab(tools_tab.tab, "Tools")
-        self._tabs.append(tools_tab)
-        self.tabWidget.setVisible(True)
-
     def add_tab(self, workflow_name, workflows):
 
         workflows_tab = tabs.WorkflowsTab(
