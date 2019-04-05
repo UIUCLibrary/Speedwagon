@@ -1,7 +1,6 @@
 from behave import *
 
 import speedwagon.models
-import speedwagon.tools
 import speedwagon.workflows.shared_custom_widgets
 
 use_step_matcher("re")
