@@ -5,8 +5,9 @@ import sys
 from typing import List, Any, Optional, Iterator
 import contextlib
 import speedwagon
+from . import shared_custom_widgets
 from speedwagon import tasks
-from speedwagon.tools import options as tool_options
+# from speedwagon.tools import options as tool_options
 
 from uiucprescon import ocr
 
@@ -131,12 +132,15 @@ class OCRWorkflow(speedwagon.Workflow):
             return True
         options = []
 
-        package_type = tool_options.ListSelection("Image File Type")
+        package_type = shared_custom_widgets.ListSelection("Image File Type")
+
         for file_type in OCRWorkflow.SUPPORTED_IMAGE_TYPES.keys():
             package_type.add_selection(file_type)
         options.append(package_type)
 
-        language_type = tool_options.ListSelection("Language")
+        language_type = shared_custom_widgets.ListSelection(
+                "Language")
+
         self.tessdata_path = self.global_settings.get("tessdata")
 
         if not valid_tessdata_path(self.tessdata_path):
@@ -154,8 +158,9 @@ class OCRWorkflow(speedwagon.Workflow):
                 language_type.add_selection(fullname)
         options.append(language_type)
 
-        package_root_option = tool_options.UserOptionCustomDataType(
-            "Path", tool_options.FolderData)
+        package_root_option = \
+            shared_custom_widgets.UserOptionCustomDataType(
+                "Path", shared_custom_widgets.FolderData)
 
         options.append(package_root_option)
 

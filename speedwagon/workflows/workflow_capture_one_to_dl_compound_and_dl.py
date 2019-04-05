@@ -8,13 +8,14 @@ from typing import List, Any
 from contextlib import contextmanager
 from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
-from speedwagon.tools import options
+from . import shared_custom_widgets as options
 from speedwagon.worker import GuiLogHandler
 from uiucprescon.packager.packages.collection_builder import Metadata
 
 
 class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
-    name = "Convert CaptureOne TIFF to Digital Library Compound Object and HathiTrust"
+    name = "Convert CaptureOne TIFF to Digital Library Compound Object and " \
+           "HathiTrust"
     description = "Input is a path to a folder of TIFF files all named with " \
                   "a bibID as a prefacing identifier, a final delimiting " \
                   "underscore or dash, and a sequence consisting of padded " \
@@ -75,7 +76,8 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
                 raise ValueError("Invalid value in {}".format(directory_key))
 
             if not os.path.isdir(directory_value):
-                raise ValueError("Invalid value in {}: Not a directory".format(directory_key))
+                raise ValueError("Invalid value in {}: "
+                                 "Not a directory".format(directory_key))
 
     def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
         existing_package = job_args['package']
@@ -137,7 +139,8 @@ class PackageConverter(tasks.Subtask):
         with self.log_config(my_logger):
             self.log(
                 f"Converting {self.packaging_id} from {self.source_path} "
-                f"to a {self.package_format} package at {self.new_package_root}")
+                f"to a {self.package_format} package at "
+                f"{self.new_package_root}")
             package_factory = packager.PackageFactory(
                 PackageConverter.package_formats[self.package_format])
 

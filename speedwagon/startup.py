@@ -7,9 +7,9 @@ import logging
 import os
 import sys
 from typing import Dict, Union, Iterator, Tuple
-import yaml
 
 import pkg_resources
+import yaml
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 
 import speedwagon
@@ -17,8 +17,8 @@ import speedwagon.config
 import speedwagon.models
 import speedwagon.tabs
 from speedwagon import worker, job
-from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.dialog.settings import TabEditor
+from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.tabs import extract_tab_information
 
 
@@ -252,20 +252,6 @@ class StartupDefault(AbsStarter):
 
             work_manager.user_settings = self.platform_settings
             work_manager.configuration_file = self.config_file
-
-            # ==================================================
-            self._logger.debug("Loading Tools")
-
-            loading_job_stream = io.StringIO()
-
-            with contextlib.redirect_stderr(loading_job_stream):
-                tools = job.available_tools()
-                windows.add_tools(tools)
-
-            tool_error_msgs = loading_job_stream.getvalue().strip()
-            if tool_error_msgs:
-                for line in tool_error_msgs.split("\n"):
-                    self._logger.warning(line)
 
             # ==================================================
             self._logger.debug("Loading Workflows")

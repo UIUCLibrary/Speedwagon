@@ -42,7 +42,6 @@ setup(
     packages=[
         "speedwagon",
         "speedwagon.dialog",
-        "speedwagon.tools",
         "speedwagon.workflows",
         "speedwagon.workflows.tessdata",
         "speedwagon.ui",

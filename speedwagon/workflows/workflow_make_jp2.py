@@ -1,9 +1,9 @@
 import os
 from typing import List, Any, Optional
 
+from . import shared_custom_widgets
 from speedwagon import job, tasks
 from uiucprescon import images
-from speedwagon.tools import options as tool_options
 import abc
 
 
@@ -91,16 +91,16 @@ class MakeJp2Workflow(job.AbsWorkflow):
 
     def user_options(self):
         options = []
-        input_option = tool_options.UserOptionCustomDataType(
-            "Input", tool_options.FolderData)
+        input_option = shared_custom_widgets.UserOptionCustomDataType(
+            "Input", shared_custom_widgets.FolderData)
 
         options.append(input_option)
 
-        output_option = tool_options.UserOptionCustomDataType(
-            "Output", tool_options.FolderData)
+        output_option = shared_custom_widgets.UserOptionCustomDataType(
+            "Output", shared_custom_widgets.FolderData)
 
         options.append(output_option)
-        profile_type = tool_options.ListSelection("Profile")
+        profile_type = shared_custom_widgets.ListSelection("Profile")
         for profile_name in ProfileFactory.profiles.keys():
             profile_type.add_selection(profile_name)
         options.append(profile_type)
