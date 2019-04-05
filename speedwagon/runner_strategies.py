@@ -30,48 +30,6 @@ class RunRunner:
         self._strategy.run(parent, tool, options, logger, completion_callback)
 
 
-class UsingExternalManager(AbsRunner):
-
-    def __init__(
-            self,
-            manager: "worker.ToolJobManager",
-            on_success,
-            on_failure
-    ) -> None:
-
-        self._manager = manager
-        self._on_success = on_success
-        self._on_failure = on_failure
-
-    def run(self,
-            parent,
-            job: AbsJob,
-            options: dict,
-            logger: logging.Logger,
-            completion_callback=None):
-
-        try:
-            with self._manager.open(options=options,
-                                    tool=job,
-                                    parent=parent) as runner:
-
-                def update_progress(current: int, total: int):
-
-                    if total != runner.dialog.maximum():
-                        runner.dialog.setMaximum(total)
-                    if current != runner.dialog.value():
-                        runner.dialog.setValue(current)
-
-                    if current == total:
-                        runner.dialog.accept()
-
-        except Exception as e:
-            self._on_failure(e)
-
-    def on_runner_aborted(self):
-        self._manager.abort()
-
-
 class UsingExternalManagerForAdapter(AbsRunner):
 
     def __init__(self, manager: "worker.ToolJobManager") -> None:

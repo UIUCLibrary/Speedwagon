@@ -7,9 +7,9 @@ import logging
 import os
 import sys
 from typing import Dict, Union, Iterator, Tuple
-import yaml
 
 import pkg_resources
+import yaml
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 
 import speedwagon
@@ -17,8 +17,8 @@ import speedwagon.config
 import speedwagon.models
 import speedwagon.tabs
 from speedwagon import worker, job
-from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.dialog.settings import TabEditor
+from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.tabs import extract_tab_information
 
 
