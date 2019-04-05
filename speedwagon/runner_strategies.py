@@ -5,7 +5,7 @@ from typing import List, Any
 
 from . import tasks
 from . import worker
-from .job import AbsJob, AbsWorkflow, Workflow, JobCancelled
+from .job import AbsWorkflow, Workflow, JobCancelled
 
 
 class TaskFailed(Exception):
@@ -15,8 +15,8 @@ class TaskFailed(Exception):
 class AbsRunner(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def run(self, parent, job: AbsJob, options: dict, logger: logging.Logger,
-            completion_callback=None) -> None:
+    def run(self, parent, job: AbsWorkflow, options: dict,
+            logger: logging.Logger, completion_callback=None) -> None:
         pass
 
 
@@ -24,8 +24,8 @@ class RunRunner:
     def __init__(self, strategy: AbsRunner) -> None:
         self._strategy = strategy
 
-    def run(self, parent, tool: AbsJob, options: dict, logger: logging.Logger,
-            completion_callback=None) -> None:
+    def run(self, parent, tool: AbsWorkflow, options: dict,
+            logger: logging.Logger, completion_callback=None) -> None:
 
         self._strategy.run(parent, tool, options, logger, completion_callback)
 
@@ -45,7 +45,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
         if current == total:
             runner.dialog.accept()
 
-    def run(self, parent, job: AbsJob, options: dict,
+    def run(self, parent, job: AbsWorkflow, options: dict,
             logger: logging.Logger, completion_callback=None) -> None:
 
         results: List[Any] = []

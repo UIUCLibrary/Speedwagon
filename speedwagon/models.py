@@ -7,7 +7,7 @@ import enum
 
 from .workflows import shared_custom_widgets
 from speedwagon import tabs, Workflow
-from .job import AbsJob
+from .job import AbsWorkflow
 from PyQt5 import QtCore  # type: ignore
 
 
@@ -20,9 +20,9 @@ class ItemListModel(QtCore.QAbstractTableModel):
     # NAME = 0
     # DESCRIPTION = 1
 
-    def __init__(self, data: Dict["str", Type[AbsJob]]) -> None:
+    def __init__(self, data: Dict["str", Type[AbsWorkflow]]) -> None:
         super().__init__()
-        self.jobs: List[Type[AbsJob]] = []
+        self.jobs: List[Type[AbsWorkflow]] = []
         for k, v in data.items():
             self.jobs.append(v)
 
@@ -40,7 +40,7 @@ class ItemListModel(QtCore.QAbstractTableModel):
         return len(self.jobs)
 
     @staticmethod
-    def _extract_job_metadata(job: Type[AbsJob],
+    def _extract_job_metadata(job: Type[AbsWorkflow],
                               data_type: JobModelData):
         static_data_values: Dict[JobModelData, Any] = {
             JobModelData.NAME: job.name,
@@ -55,7 +55,7 @@ OptionPair = namedtuple("OptionPair", ("label", "data"))
 class ToolsListModel(ItemListModel):
 
     def data(self, index, role=None) -> \
-            Union[str, Type[AbsJob],
+            Union[str, Type[AbsWorkflow],
                   QtCore.QSize, QtCore.QVariant]:
 
         if index.isValid():
@@ -75,7 +75,7 @@ class ToolsListModel(ItemListModel):
 
 class WorkflowListModel(ItemListModel):
     def data(self, index, role=None) -> \
-            Union[str, Type[AbsJob], QtCore.QSize, QtCore.QVariant]:
+            Union[str, Type[AbsWorkflow], QtCore.QSize, QtCore.QVariant]:
 
         if index.isValid():
             data = self.jobs[index.row()]

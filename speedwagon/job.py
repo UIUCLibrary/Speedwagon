@@ -6,7 +6,6 @@ import os
 import sys
 from typing import Type, Optional, Iterable, Dict, List, Any, Tuple
 
-# from speedwagon.tool import AbsTool
 from . import tasks
 from PyQt5 import QtWidgets  # type: ignore
 
@@ -15,29 +14,7 @@ class JobCancelled(Exception):
     pass
 
 
-class AbsJob(metaclass=abc.ABCMeta):
-    active = True
-    description: Optional[str] = None
-    name: Optional[str] = None
-
-    def __init__(self):
-        self.options = []  # type: ignore
-
-    @abc.abstractmethod
-    def user_options(self):
-        pass
-
-    @staticmethod
-    def validate_user_options(**user_args):
-        return True
-
-    def create_new_task(self,
-                        task_builder: tasks.TaskBuilder,
-                        **job_args):
-        pass
-
-
-class AbsWorkflow(AbsJob):
+class AbsWorkflow(metaclass=abc.ABCMeta):
     active = True
     description: Optional[str] = None
     name: Optional[str] = None
@@ -45,33 +22,34 @@ class AbsWorkflow(AbsJob):
     def __init__(self) -> None:
         super().__init__()
         self.global_settings: Dict[str, str] = dict()
+        self.options = []  # type: ignore
 
     @abc.abstractmethod
     def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) \
-            -> List[dict]:
+                               additional_data, **user_args) -> List[dict]:
         pass
 
-    def completion_task(
-            self,
-            task_builder: tasks.TaskBuilder,
-            results,
-            **user_args
-    ) -> None:
+    def completion_task(self, task_builder: tasks.TaskBuilder, results,
+                        **user_args) -> None:
         pass
 
     def initial_task(self, task_builder: tasks.TaskBuilder,
                      **user_args) -> None:
         pass
 
+    def create_new_task(self,
+                        task_builder: tasks.TaskBuilder,
+                        **job_args):
+        pass
+
     @classmethod
     def generate_report(cls, results: List[tasks.Result],
                         **user_args) -> Optional[str]:
-        pass
+        """Generate a text report for the results of the workflow"""
 
-    # @abc.abstractmethod
-    # def user_options(self):
-    #     return {}
+    @staticmethod
+    def validate_user_options(**user_args):
+        return True
 
 
 class Workflow(AbsWorkflow):
@@ -112,7 +90,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
     def py_module_filter(item: os.DirEntry) -> bool:
         pass
 
-    def locate(self) -> Dict["str", AbsJob]:
+    def locate(self) -> Dict["str", AbsWorkflow]:
         located_class = dict()
         tree = os.scandir(self.path)
 
@@ -123,7 +101,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def base_class(self) -> Type[AbsJob]:
+    def base_class(self) -> Type[AbsWorkflow]:
         pass
 
     def load(self, module_file) -> \
@@ -153,23 +131,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def package_name(self) -> str:
-        pass
-
-
-class AbsToolData(metaclass=abc.ABCMeta):
-
-    def __init__(self, parent=None):
-        self._parent = parent
-        self.label = ""
-        self.widget = self.get_widget()
-
-    @abc.abstractmethod
-    def get_widget(self):
-        pass
-
-    @property
-    def data(self):
-        return self.widget.value
+        """The name of the python package"""
 
 
 class WorkflowFinder(AbsDynamicFinder):

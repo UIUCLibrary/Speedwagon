@@ -4,7 +4,7 @@ import sys
 import traceback
 import enum
 from typing import List, Optional, Tuple, Dict, Iterator, NamedTuple
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 
 import yaml
 from PyQt5 import QtWidgets, QtCore  # type: ignore
