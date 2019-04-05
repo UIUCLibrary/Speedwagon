@@ -38,37 +38,14 @@ class TabWidgets(enum.Enum):
     SETTINGS = "settings"
 
 
-class AbsTab(metaclass=ABCMeta):
+class Tab:
     @abc.abstractmethod
     def compose_tab_layout(self):
-        pass
+        """Draw the layout of the tab"""
 
     @abc.abstractmethod
     def create_actions(self):
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def create_tools_settings_view(parent):
-        pass
-
-    @classmethod
-    @abstractmethod
-    def create_workspace_layout(cls, parent):
-        pass
-
-    @classmethod
-    @abstractmethod
-    def create_workspace(cls, title, parent):
-        pass
-
-
-class Tab(AbsTab):
-    def compose_tab_layout(self):
-        return super().compose_tab_layout()
-
-    def create_actions(self):
-        return super().create_actions()
+        """Generate action widgets"""
 
     def __init__(self, parent, work_manager):
         self.parent = parent
@@ -235,8 +212,8 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     def get_item_options_model(self, item):
         pass
 
-    def create_actions(self) \
-            -> Tuple[Dict[str, QtWidgets.QWidget], QtWidgets.QLayout]:
+    def create_actions(self) -> Tuple[Dict[str, QtWidgets.QWidget],
+                                      QtWidgets.QLayout]:
 
         tool_actions_layout = QtWidgets.QHBoxLayout()
 
