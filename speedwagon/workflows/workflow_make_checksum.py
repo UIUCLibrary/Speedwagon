@@ -7,16 +7,15 @@ import itertools
 from typing import List, Any, DefaultDict, Optional
 
 from speedwagon.job import AbsWorkflow
-from speedwagon.tools import options
 from speedwagon import tasks
 from speedwagon.reports import add_report_borders
 from .checksum_shared import ResultsValues
 from . import checksum_tasks, shared_custom_widgets
+from . import shared_custom_widgets as options
 
 
 class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Make Checksum Batch [Single]"
+    name = "Make Checksum Batch [Single]"
     description = "Creates a single checksum.md5 for every file inside " \
                   "a given folder" \
                   "\nInput: Path to a root folder"
@@ -105,8 +104,7 @@ class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
 
 
 class MakeChecksumBatchMultipleWorkflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Make Checksum Batch [Multiple]"
+    name = "Make Checksum Batch [Multiple]"
     description = "Creates a checksum.md5 for every subdirectory found " \
                   "inside a given path" \
                   "\nInput: Path to a root directory that contains " \

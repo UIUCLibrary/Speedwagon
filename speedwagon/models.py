@@ -5,11 +5,10 @@ from abc import abstractmethod
 from collections import namedtuple
 import enum
 
+from .workflows import shared_custom_widgets
 from speedwagon import tabs, Workflow
-from .job import AbsJob
+from .job import AbsWorkflow
 from PyQt5 import QtCore  # type: ignore
-
-from . import tools
 
 
 class JobModelData(enum.Enum):
@@ -18,12 +17,10 @@ class JobModelData(enum.Enum):
 
 
 class ItemListModel(QtCore.QAbstractTableModel):
-    # NAME = 0
-    # DESCRIPTION = 1
 
-    def __init__(self, data: Dict["str", Type[AbsJob]]) -> None:
+    def __init__(self, data: Dict["str", Type[AbsWorkflow]]) -> None:
         super().__init__()
-        self.jobs: List[Type[AbsJob]] = []
+        self.jobs: List[Type[AbsWorkflow]] = []
         for k, v in data.items():
             self.jobs.append(v)
 
@@ -41,7 +38,7 @@ class ItemListModel(QtCore.QAbstractTableModel):
         return len(self.jobs)
 
     @staticmethod
-    def _extract_job_metadata(job: Type[AbsJob],
+    def _extract_job_metadata(job: Type[AbsWorkflow],
                               data_type: JobModelData):
         static_data_values: Dict[JobModelData, Any] = {
             JobModelData.NAME: job.name,
@@ -53,30 +50,9 @@ class ItemListModel(QtCore.QAbstractTableModel):
 OptionPair = namedtuple("OptionPair", ("label", "data"))
 
 
-class ToolsListModel(ItemListModel):
-
-    def data(self, index, role=None) -> \
-            Union[str, Type[AbsJob],
-                  QtCore.QSize, QtCore.QVariant]:
-
-        if index.isValid():
-            data = self.jobs[index.row()]
-            if role == QtCore.Qt.DisplayRole or role == QtCore.Qt.EditRole:
-                return self._extract_job_metadata(
-                    job=data,
-                    data_type=JobModelData(index.column())
-                )
-
-            if role == QtCore.Qt.UserRole:
-                return self.jobs[index.row()]
-            if role == QtCore.Qt.SizeHintRole:
-                return QtCore.QSize(10, 20)
-        return QtCore.QVariant()
-
-
 class WorkflowListModel(ItemListModel):
     def data(self, index, role=None) -> \
-            Union[str, Type[AbsJob], QtCore.QSize, QtCore.QVariant]:
+            Union[str, Type[AbsWorkflow], QtCore.QSize, QtCore.QVariant]:
 
         if index.isValid():
             data = self.jobs[index.row()]
@@ -227,15 +203,13 @@ class ToolOptionsPairsModel(ToolOptionsModel):
         existing_data = self._data[index.row()]
         self._data[index.row()] = OptionPair(existing_data.label, data)
         return True
-        # return super().setData(QModelIndex, data, role)
 
     def headerData(self, index, Qt_Orientation, role=None):
-        if Qt_Orientation == QtCore.Qt.Vertical:
-            if role == QtCore.Qt.DisplayRole:
-                title = self._data[index].label
-                return str(title)
+        if Qt_Orientation == QtCore.Qt.Vertical \
+                and role == QtCore.Qt.DisplayRole:
+            title = self._data[index].label
+            return str(title)
         return QtCore.QVariant()
-        # return super().headerData(index, Qt_Orientation, role)
 
     def get(self) -> dict:
         options = dict()
@@ -251,9 +225,8 @@ def _lookup_constant(value: int) -> List[str]:
         if not callable(getattr(QtCore.Qt, attr)) and not attr.startswith("_")
     ]:
 
-        if getattr(QtCore.Qt, m) == value:
-            if "role" in m.lower():
-                res.append(m)
+        if getattr(QtCore.Qt, m) == value and "role" in m.lower():
+            res.append(m)
     return res
 
 
@@ -261,7 +234,8 @@ class ToolOptionsModel3(ToolOptionsModel):
 
     def __init__(
             self,
-            data: List[tools.options.UserOptionPythonDataType2],
+            data: List[
+                shared_custom_widgets.UserOptionPythonDataType2],
             parent=None
     ) -> None:
 
@@ -269,7 +243,8 @@ class ToolOptionsModel3(ToolOptionsModel):
             raise NotImplementedError
         super().__init__(parent)
 
-        self._data: List[tools.options.UserOptionPythonDataType2] = data
+        self._data: \
+            List[shared_custom_widgets.UserOptionPythonDataType2] = data
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if index.isValid():
@@ -295,16 +270,16 @@ class ToolOptionsModel3(ToolOptionsModel):
         return options
 
     def headerData(self, index, Qt_Orientation, role=None):
-        if Qt_Orientation == QtCore.Qt.Vertical:
-            if role == QtCore.Qt.DisplayRole:
-                title = self._data[index].label_text
-                return str(title)
+        if Qt_Orientation == QtCore.Qt.Vertical and \
+                role == QtCore.Qt.DisplayRole:
+
+            title = self._data[index].label_text
+            return str(title)
         return QtCore.QVariant()
 
     def setData(self, index, data, role=None):
         if not index.isValid():
             return False
-        # existing_data = self.tabs[index.row()]
         self._data[index.row()].data = data
         return True
 
@@ -341,9 +316,9 @@ class SettingsModel(QtCore.QAbstractTableModel):
         return 2
 
     def headerData(self, index, Qt_Orientation, role=None):
-        if Qt_Orientation == QtCore.Qt.Horizontal:
-            if role == QtCore.Qt.DisplayRole:
-                return self._headers.get(index, "")
+        if Qt_Orientation == QtCore.Qt.Horizontal and \
+                role == QtCore.Qt.DisplayRole:
+            return self._headers.get(index, "")
         return QtCore.QVariant()
 
     def flags(self, index: QtCore.QModelIndex):

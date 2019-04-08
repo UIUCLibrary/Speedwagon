@@ -9,9 +9,8 @@ import hathi_validate.process
 from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
 from speedwagon.reports import add_report_borders
-from speedwagon.tools import options, tool_verify_checksum
+from . import shared_custom_widgets
 
-import speedwagon.tasks
 import enum
 
 
@@ -71,8 +70,8 @@ class ChecksumWorkflow(AbsWorkflow):
         return jobs
 
     def user_options(self):
-        return options.UserOptionCustomDataType(UserArgs.INPUT.value,
-                                                options.FolderData),
+        return shared_custom_widgets.UserOptionCustomDataType(
+            UserArgs.INPUT.value, shared_custom_widgets.FolderData),
 
     @staticmethod
     def validate_user_options(**user_args):
@@ -83,17 +82,14 @@ class ChecksumWorkflow(AbsWorkflow):
         if not os.path.exists(input_data) or not os.path.isdir(input_data):
             raise ValueError("Invalid user arguments")
 
-    def initial_task(self,
-                     task_builder: speedwagon.tasks.TaskBuilder,
+    def initial_task(self, task_builder: tasks.TaskBuilder,
                      **user_args) -> None:
         root = user_args['Input']
         for checksum_report_file in self._locate_checksum_files(root):
             task_builder.add_subtask(
                 ReadChecksumReportTask(checksum_file=checksum_report_file))
 
-    def create_new_task(self,
-                        task_builder: "speedwagon.tasks.TaskBuilder",
-                        **job_args):
+    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
         filename = job_args['filename']
         file_path = job_args['path']
         expected_hash = job_args['expected_hash']
@@ -105,11 +101,11 @@ class ChecksumWorkflow(AbsWorkflow):
                                  source_report=source_report))
 
     @classmethod
-    def generate_report(cls,
-                        results: List[speedwagon.tasks.Result],
+    def generate_report(cls, results: List[tasks.Result],
                         **user_args) -> Optional[str]:
+
         def validation_result_filter(
-                task_result: speedwagon.tasks.Result) -> bool:
+                task_result: tasks.Result) -> bool:
             if task_result.source != ValidateChecksumTask:
                 return False
             return True
@@ -181,7 +177,7 @@ class ChecksumWorkflow(AbsWorkflow):
         return dict(new_results)
 
 
-class ReadChecksumReportTask(speedwagon.tasks.Subtask):
+class ReadChecksumReportTask(tasks.Subtask):
 
     def __init__(self, checksum_file):
         super().__init__()
@@ -190,8 +186,8 @@ class ReadChecksumReportTask(speedwagon.tasks.Subtask):
     def work(self) -> bool:
         results = []
 
-        checksums = \
-            hathi_validate.process.extracts_checksums(self._checksum_file)
+        checksums = hathi_validate.process.extracts_checksums(
+            self._checksum_file)
 
         for report_md5_hash, filename in checksums:
             new_job_to_do = {
@@ -209,7 +205,7 @@ class ReadChecksumReportTask(speedwagon.tasks.Subtask):
         return True
 
 
-class ValidateChecksumTask(speedwagon.tasks.Subtask):
+class ValidateChecksumTask(tasks.Subtask):
 
     def __init__(self,
                  file_name,
@@ -278,8 +274,7 @@ class CaseInsensitiveComparison(AbsComparisonMethod):
 
 
 class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Verify Checksum Batch [Single]"
+    name = "Verify Checksum Batch [Single]"
     description = "Verify checksum values in checksum batch file, report " \
                   "errors. " \
                   "\n" \
@@ -289,12 +284,29 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
-        return tool_verify_checksum.VerifyChecksumBatchSingle.\
-            discover_task_metadata(**user_args)
+        jobs = []
+        relative_path = os.path.dirname(user_args[UserArgs.INPUT.value])
+        checksum_report_file = os.path.abspath(user_args[UserArgs.INPUT.value])
+
+        for report_md5_hash, filename in \
+                hathi_validate.process.extracts_checksums(
+                    checksum_report_file
+                ):
+
+            new_job = {
+                JobValues.EXPECTED_HASH.value: report_md5_hash,
+                JobValues.ITEM_FILENAME.value: filename,
+                JobValues.ROOT_PATH.value: relative_path,
+                JobValues.SOURCE_REPORT.value: checksum_report_file
+            }
+            jobs.append(new_job)
+        return jobs
 
     def user_options(self):
-        return \
-            tool_verify_checksum.VerifyChecksumBatchSingle.get_user_options()
+        return [
+            shared_custom_widgets.UserOptionCustomDataType(
+                UserArgs.INPUT.value, shared_custom_widgets.ChecksumData),
+        ]
 
     def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
         new_task = ChecksumTask(**job_args)
@@ -304,13 +316,85 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
     @add_report_borders
     def generate_report(cls, results: List[tasks.Result], **user_args) -> \
             Optional[str]:
-        result_data = [res.data for res in results]
+        results = [res.data for res in results]
 
-        return tool_verify_checksum.VerifyChecksumBatchSingle.generate_report(
-            results=result_data)
+        line_sep = "\n" + "-" * 60
+        sorted_results = cls.sort_results(results)
+        results_with_failures = cls.find_failed(sorted_results)
+
+        if len(results_with_failures) > 0:
+            messages = []
+            for checksum_file, failed_files in results_with_failures.items():
+                status = \
+                    f"{len(failed_files)} files failed checksum validation."
+
+                failed_files_bullets = [
+                    f"* {failure[ResultValues.FILENAME]}"
+                    for failure in failed_files
+                ]
+
+                failure_list = "\n".join(failed_files_bullets)
+                single_message = f"{checksum_file}" \
+                                 f"\n\n{status}" \
+                                 f"\n{failure_list}"
+                messages.append(single_message)
+            report = "\n{}\n".format(line_sep).join(messages)
+
+        else:
+            stats_message = f"All {len(results)} passed checksum validation."
+            failure_list = ""
+            report = f"Success" \
+                     f"\n{stats_message}" \
+                     f"\n{failure_list}"
+        return report
+
+    @classmethod
+    def sort_results(cls, results) -> \
+            Dict[str, List[Dict[ResultValues, Union[bool, str]]]]:
+
+        """ Sort the data and put it into a dictionary with the source as the
+        key
+
+        Args:
+            results:
+
+        Returns: Dictionary of organized data where the source is the key and
+                 the value contains all the files updated
+
+        """
+        new_results: DefaultDict[str, list] = \
+            collections.defaultdict(list)
+
+        sorted_results = sorted(
+            results, key=lambda it: it[ResultValues.CHECKSUM_REPORT_FILE]
+        )
+
+        for k, v in itertools.groupby(
+                sorted_results,
+                key=lambda it: it[ResultValues.CHECKSUM_REPORT_FILE]
+        ):
+            for result_data in v:
+                new_results[k].append(result_data)
+        return dict(new_results)
+
+    @classmethod
+    def find_failed(cls, new_results: Dict[str,
+                                           List[Dict[ResultValues,
+                                                     Union[bool,
+                                                           str]]]]) -> dict:
+
+        failed: DefaultDict[str, list] = collections.defaultdict(list)
+
+        for checksum_file, results in new_results.items():
+
+            for failed_item in \
+                    filter(lambda it: not it[ResultValues.VALID], results):
+
+                failed[checksum_file].append(failed_item)
+        return dict(failed)
 
 
-class ChecksumTask(speedwagon.tasks.Subtask):
+class ChecksumTask(tasks.Subtask):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
@@ -318,9 +402,34 @@ class ChecksumTask(speedwagon.tasks.Subtask):
         self._kwarg = kwargs
 
     def work(self) -> bool:
+        filename = self._kwarg[JobValues.ITEM_FILENAME.value]
+        source_report = self._kwarg[JobValues.SOURCE_REPORT.value]
+        expected = self._kwarg[JobValues.EXPECTED_HASH.value]
+        checksum_path = self._kwarg[JobValues.ROOT_PATH.value]
+        full_path = os.path.join(checksum_path, filename)
+        self.log("Calculating MD5 for {}".format(filename))
+        actual_md5 = hathi_validate.process.calculate_md5(full_path)
+        result = {
+            ResultValues.FILENAME: filename,
+            ResultValues.PATH: checksum_path,
+            ResultValues.CHECKSUM_REPORT_FILE: source_report
+        }
 
-        process = tool_verify_checksum.ChecksumJob()
-        process.log = self.log
-        process.process(self._args, **self._kwarg)
-        self.set_results(process.result)
+        standard_comparison = CaseSensitiveComparison()
+
+        valid_but_warnable_strategy = CaseInsensitiveComparison()
+
+        if standard_comparison.compare(actual_md5, expected):
+            result[ResultValues.VALID] = True
+        elif valid_but_warnable_strategy.compare(actual_md5, expected):
+            result[ResultValues.VALID] = True
+            self.log(f"Hash for {filename} is valid but is presented"
+                     f"in a different format than expected."
+                     f"Expected: {expected}. Actual: {actual_md5}")
+        else:
+            self.log(f"Hash mismatch for {filename}. "
+                     f"Expected: {expected}. Actual: {actual_md5}")
+            result[ResultValues.VALID] = False
+
+        self.set_results(result)
         return True

@@ -1,6 +1,5 @@
 import abc
 import concurrent.futures
-# from abc import ABCMeta, abstractmethod
 import contextlib
 import logging
 import multiprocessing
@@ -61,9 +60,6 @@ class AbsJobWorker(metaclass=QtMeta):
         new_job.set_message_queue(message_queue)
         new_job.execute(*args, **kwargs)
         return new_job.task_result
-        # print(logger_queue)
-        # print(task)
-        # print("HERER")
 
 
 class ProcessJobWorker(AbsJobWorker):
@@ -72,15 +68,11 @@ class ProcessJobWorker(AbsJobWorker):
     def __init__(self):
         super().__init__()
 
-    #     # self._mq = None
-
     def process(self, *args, **kwargs):
         pass
 
     def set_message_queue(self, value):
-        pass
         self._mq = value
-        # cls.mq = value
 
     def log(self, message):
         if self._mq:
@@ -139,10 +131,7 @@ class UIWorker(Worker):
         self._jobs_queue = queue.Queue()
 
 
-# class ProcessWorker(Worker):
 class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
-    # _message_queue = manager.Queue(maxsize=100)
-    # _message_queue = queue.Queue()  # type: ignore
     executor = concurrent.futures.ProcessPoolExecutor(max_workers=1)
 
     def __init__(self, *args, **kwargs):
@@ -150,10 +139,7 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
         self.manager = multiprocessing.Manager()
         self._message_queue = self.manager.Queue()  # type: ignore
         self._results = None
-        # self.manager = multiprocessing.Manager()
         self._tasks = []
-        # self.executor = None
-        # self._message_queue = self.manager.Queue(maxsize=1)
 
     @classmethod
     def initialize_worker(cls, max_workers=1):
@@ -288,18 +274,14 @@ class WorkRunnerExternal2(contextlib.AbstractContextManager):
 class WorkRunnerExternal3(contextlib.AbstractContextManager):
     def __init__(self, parent):
         self.results = []
-        # self._tool = tool
-        # self._options = options
         self._parent = parent
         self.abort_callback = None
         self.was_aborted = False
-        # self.jobs: queue.Queue[JobPair] = queue.Queue()
 
     def __enter__(self):
         self.dialog = WorkProgressBar(self._parent)
         self.dialog.setLabelText("Initializing")
         self.dialog.setMinimumDuration(100)
-        # self.dialog.setWindowTitle("Running")
 
         self.progress_dialog_box_handler = \
             ProgressMessageBoxLogHandler(self.dialog)
@@ -392,9 +374,8 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         #     self._pending_jobs.task_done()
 
         for future in reversed(self.futures):
-            if not future.cancel():
-                if future.running():
-                    still_running.append(future)
+            if not future.cancel and future.running():
+                still_running.append(future)
             self.futures.remove(future)
 
         dialog_box.setRange(0, len(still_running))
@@ -447,13 +428,11 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
                 self.active = False
                 self.futures.clear()
-                # self._pending_jobs.join()
                 self.flush_message_buffer()
 
             except concurrent.futures.TimeoutError:
                 self.flush_message_buffer()
                 if timeout_callback:
-                    # completed = [f for f in self.futures if f.done()]
                     timeout_callback(completed, total_jobs)
                 QtWidgets.QApplication.processEvents()
                 if self.active:

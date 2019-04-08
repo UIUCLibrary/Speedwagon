@@ -6,7 +6,7 @@ import typing
 from typing import List, Any, Optional
 
 from speedwagon import tasks, reports
-from speedwagon.tools import options
+from . import shared_custom_widgets as options
 from speedwagon.job import AbsWorkflow
 
 import pykdu_compress
@@ -51,9 +51,6 @@ class ConvertFile(AbsProcessStrategy):
                                         basename + ".jp2"
                                         )
 
-        # rc = pykdu_compress.kdu_compress_cli(
-        #     "-i {} " "-o {}".format(source_file, output_file_path))
-
         rc = pykdu_compress.kdu_compress_cli2(
             infile=source_file, outfile=output_file_path)
 
@@ -67,8 +64,7 @@ class ConvertFile(AbsProcessStrategy):
 
 
 class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Convert CaptureOne Preservation TIFF to Digital Library Access JP2"
+    name = "Convert CaptureOne Preservation TIFF to Digital Library Access JP2"
     description = "This tool takes as its input a \"preservation\" folder " \
                   "of TIFF files and as its output creates a sibling folder " \
                   "called \"access\" containing digital-library " \

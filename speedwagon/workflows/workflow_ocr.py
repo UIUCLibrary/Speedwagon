@@ -5,15 +5,26 @@ import sys
 from typing import List, Any, Optional, Iterator
 import contextlib
 import speedwagon
+from . import shared_custom_widgets
 from speedwagon import tasks
-from speedwagon.tools import options as tool_options
 
 from uiucprescon import ocr
 
 
 def locate_tessdata() -> str:
     path = os.path.join(os.path.dirname(__file__), "tessdata")
-    return os.path.normpath(path)
+    if path_contains_traineddata(path):
+        return os.path.normpath(path)
+
+
+def path_contains_traineddata(path) -> bool:
+    for file in os.scandir(path):
+        if not file.is_file():
+            continue
+        file_name, ext = os.path.splitext(file.name)
+        if ext == ".traineddata":
+            return True
+    return False
 
 
 class OCRWorkflow(speedwagon.Workflow):
@@ -72,8 +83,8 @@ class OCRWorkflow(speedwagon.Workflow):
                         language_code = k
                         break
                 else:
-                    raise ValueError("Unable to look up language code for {}"
-                                     .format(user_args["Language"]))
+                    raise ValueError("Unable to look up language code "
+                                     "for {}".format(user_args["Language"]))
 
                 new_task = {
                     "source_file_path": image_file,
@@ -94,7 +105,7 @@ class OCRWorkflow(speedwagon.Workflow):
                 source_image=image_file,
                 out_text_file=os.path.join(destination_path, ocr_file_name),
                 lang=lang_code,
-                tesseract_path=self.global_settings.get("tessdata")
+                tesseract_path=self.tessdata_path
             )
         task_builder.add_subtask(ocr_generation_task)
 
@@ -122,21 +133,19 @@ class OCRWorkflow(speedwagon.Workflow):
             if not os.path.exists(item):
                 return False
 
-            for i in os.scandir(item):
-                if os.path.splitext(i.name)[1] == ".traineddata":
-                    break
-            else:
-                return False
+            return path_contains_traineddata(item)
 
-            return True
         options = []
 
-        package_type = tool_options.ListSelection("Image File Type")
+        package_type = shared_custom_widgets.ListSelection("Image File Type")
+
         for file_type in OCRWorkflow.SUPPORTED_IMAGE_TYPES.keys():
             package_type.add_selection(file_type)
         options.append(package_type)
 
-        language_type = tool_options.ListSelection("Language")
+        language_type = shared_custom_widgets.ListSelection(
+                "Language")
+
         self.tessdata_path = self.global_settings.get("tessdata")
 
         if not valid_tessdata_path(self.tessdata_path):
@@ -154,8 +163,9 @@ class OCRWorkflow(speedwagon.Workflow):
                 language_type.add_selection(fullname)
         options.append(language_type)
 
-        package_root_option = tool_options.UserOptionCustomDataType(
-            "Path", tool_options.FolderData)
+        package_root_option = \
+            shared_custom_widgets.UserOptionCustomDataType(
+                "Path", shared_custom_widgets.FolderData)
 
         options.append(package_root_option)
 
@@ -253,7 +263,6 @@ class FindImagesTask(speedwagon.tasks.Subtask):
 
 
 class GenerateOCRFileTask(speedwagon.tasks.Subtask):
-    # engine = None
     engine = ocr.Engine(locate_tessdata())
 
     def __init__(self, source_image, out_text_file, lang="eng",
@@ -277,7 +286,7 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
     def work(self) -> bool:
         # Get the ocr text reader for the proper language
         reader = self.engine.get_reader(self._lang)
-        self.log("Reading {}".format(self._source))
+        self.log("Reading {}".format(os.path.normcase(self._source)))
 
         f = io.StringIO()
 

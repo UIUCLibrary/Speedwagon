@@ -3,15 +3,14 @@ import re
 from typing import List, Any, Optional
 
 from speedwagon import tasks, reports
-from speedwagon.tools import options
 from speedwagon.job import AbsWorkflow
 
 from uiucprescon import pygetmarc
+from . import shared_custom_widgets as options
 
 
 class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Generate MARC.XML Files"
+    name = "Generate MARC.XML Files"
     description = "For input, this tool takes a path to a directory of " \
                   "files, each of which is a digitized volume, and is named " \
                   "for that volume’s bibid. The program then retrieves " \
@@ -35,9 +34,9 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
             if not item.is_dir():
                 return False
-            if "v" not in item.name:
-                if not isinstance(eval(item.name), int):
-                    return False
+
+            if "v" not in item.name and not isinstance(eval(item.name), int):
+                return False
 
             return True
 

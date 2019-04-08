@@ -165,6 +165,19 @@ def get_build_number(){
     }
 }
 
+
+def runtox(){
+    script{
+        try{
+            bat "pipenv run tox --workdir ${WORKSPACE}\\.tox --result-json=${WORKSPACE}\\logs\\tox_report.json"
+        } catch (exc) {
+            bat "pipenv run tox --workdir ${WORKSPACE}\\.tox --result-json=${WORKSPACE}\\logs\\tox_report.json --recreate"
+        }
+    }
+
+}
+
+
 pipeline {
     agent {
         label "Windows && Python3 && longfilenames && WIX"
@@ -412,18 +425,15 @@ pipeline {
                     }
                     steps {
                         dir("source"){
-                            bat "pipenv run sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees"
-                        }
-                        dir("reports"){
-                            bat "move ${WORKSPACE}\\build\\docs\\output.txt doctest.txt"
+                            bat "pipenv run sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}/logs/doctest.txt"
                         }
                     }
                     post{
                         always {
-                            archiveArtifacts artifacts: "reports/doctest.txt"
+                            archiveArtifacts artifacts: "logs/doctest.txt"
                         }
                         cleanup{
-                            cleanWs(patterns: [[pattern: 'reports/doctest.txt', type: 'INCLUDE']])
+                            cleanWs(patterns: [[pattern: 'logs/doctest.txt', type: 'INCLUDE']])
                         }
                     }
                 }
@@ -454,13 +464,25 @@ pipeline {
                     }
                     steps {
                         dir("source"){
-                            script{
-                                try{
-                                    bat "pipenv run tox --workdir ${WORKSPACE}\\.tox"
-                                } catch (exc) {
-                                    bat "pipenv run tox --workdir ${WORKSPACE}\\.tox --recreate"
-                                }
-                            }
+                            runtox()
+//                            script{
+//                                try{
+//                                    bat "pipenv run tox --workdir ${WORKSPACE}\\.tox"
+//                                } catch (exc) {
+//                                    bat "pipenv run tox --workdir ${WORKSPACE}\\.tox --recreate"
+//                                }
+//                            }
+                        }
+                    }
+                    post{
+                        always{
+                            archiveArtifacts allowEmptyArchive: true, artifacts: '.tox/py*/log/*.log,.tox/log/*.log,logs/tox_report.json'
+                        }
+                        cleanup{
+                            cleanWs deleteDirs: true, patterns: [
+                                [pattern: '.tox/py*/log/*.log', type: 'INCLUDE'],
+                                [pattern: '.tox/log/*.log', type: 'INCLUDE']
+                            ]
                         }
                     }
                 }
@@ -637,14 +659,18 @@ pipeline {
                     }
                     post {
                         cleanup{
-                            cleanWs deleteDirs: true, patterns: [
-                                [pattern: 'cmake_build', type: 'INCLUDE'],
-                                [pattern: '*@tmp', type: 'INCLUDE'],
-                                [pattern: 'source', type: 'INCLUDE'],
-                                [pattern: 'temp', type: 'INCLUDE'],
-                                [pattern: 'logs', type: 'INCLUDE'],
-                                [pattern: 'generatedJUnitFiles', type: 'INCLUDE']
-                            ]
+                            cleanWs(
+                                deleteDirs: true,
+                                disableDeferredWipeout: true,
+                                patterns: [
+                                    [pattern: 'cmake_build', type: 'INCLUDE'],
+                                    [pattern: '*@tmp', type: 'INCLUDE'],
+                                    [pattern: 'source', type: 'INCLUDE'],
+                                    [pattern: 'temp', type: 'INCLUDE'],
+                                    [pattern: 'logs', type: 'INCLUDE'],
+                                    [pattern: 'generatedJUnitFiles', type: 'INCLUDE']
+                                ]
+                            )
                         }
                     }
                 }
@@ -1018,14 +1044,18 @@ pipeline {
                  bat "\"${tool 'CPython-3.6'}\\python\" -m pipenv run python setup.py clean --all"
              }
 
-            cleanWs deleteDirs: true, patterns: [
+            cleanWs(
+                deleteDirs: true,
+                patterns: [
                     [pattern: 'logs', type: 'INCLUDE'],
                     [pattern: 'source', type: 'INCLUDE'],
                     [pattern: 'dist', type: 'INCLUDE'],
                     [pattern: 'build', type: 'INCLUDE'],
                     [pattern: 'reports', type: 'INCLUDE'],
                     [pattern: '*tmp', type: 'INCLUDE']
-                ]
+                ],
+
+            )
         }
 
     }

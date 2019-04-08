@@ -124,8 +124,6 @@ def test_task_can_be_picked(tmpdir):
     task_unserialized = TaskBuilder.load(serialized)
     assert task_original.name == task_unserialized.name
 
-    # with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executer:
-    #     future = executer.submit(print, "hello")
     shutil.rmtree(tmpdir)
     shortcut = os.path.join(tmpdir.dirname, "test_task_can_be_pickedcurrent")
     os.unlink(shortcut)

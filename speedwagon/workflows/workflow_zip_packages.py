@@ -7,14 +7,13 @@ from typing import List, Any, Optional
 from speedwagon import tasks, reports
 from speedwagon.job import AbsWorkflow
 from speedwagon.worker import GuiLogHandler
-from speedwagon.tools import options
+from . import shared_custom_widgets as options
 import hathizip.process
 import hathizip
 
 
 class ZipPackagesWorkflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Zip Packages"
+    name = "Zip Packages"
 
     description = "This tool takes a folder, usually of HathiTrust packages," \
                   " zips each subfolder, and copies the resultant tree to a " \

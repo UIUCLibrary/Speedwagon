@@ -3,9 +3,11 @@ import warnings
 from typing import Iterable, Optional, List, Any
 
 from uiucprescon import imagevalidate
+
+from . import shared_custom_widgets
 from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
-from speedwagon.tools import options as tool_options
+
 import speedwagon.tasks
 import enum
 
@@ -58,9 +60,8 @@ class ValidateMetadataWorkflow(AbsWorkflow):
             })
         return new_tasks
 
-    def initial_task(self, task_builder: tasks.TaskBuilder,
-                     **user_args) -> None:
-        # profile = imagevalidate.get_profile(user_args["Profile"])
+    def initial_task(
+            self, task_builder: tasks.TaskBuilder, **user_args) -> None:
 
         task_builder.add_subtask(
             LocateImagesTask(user_args[UserArgs.INPUT.value],
@@ -71,10 +72,10 @@ class ValidateMetadataWorkflow(AbsWorkflow):
         options = []
 
         input_option = \
-            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value,
-                                                  tool_options.FolderData)
+            shared_custom_widgets.UserOptionCustomDataType(
+                UserArgs.INPUT.value, shared_custom_widgets.FolderData)
 
-        profile_type = tool_options.ListSelection("Profile")
+        profile_type = shared_custom_widgets.ListSelection("Profile")
 
         for profile_name in imagevalidate.available_profiles():
             profile_type.add_selection(profile_name)

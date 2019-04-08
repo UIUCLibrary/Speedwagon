@@ -5,7 +5,7 @@ from typing import List, Any
 
 from . import tasks
 from . import worker
-from .job import AbsJob, AbsTool, AbsWorkflow, Workflow, JobCancelled
+from .job import AbsWorkflow, Workflow, JobCancelled
 
 
 class TaskFailed(Exception):
@@ -15,8 +15,8 @@ class TaskFailed(Exception):
 class AbsRunner(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def run(self, parent, job: AbsJob, options: dict, logger: logging.Logger,
-            completion_callback=None) -> None:
+    def run(self, parent, job: AbsWorkflow, options: dict,
+            logger: logging.Logger, completion_callback=None) -> None:
         pass
 
 
@@ -24,77 +24,10 @@ class RunRunner:
     def __init__(self, strategy: AbsRunner) -> None:
         self._strategy = strategy
 
-    def run(self, parent, tool: AbsJob, options: dict, logger: logging.Logger,
-            completion_callback=None) -> None:
+    def run(self, parent, tool: AbsWorkflow, options: dict,
+            logger: logging.Logger, completion_callback=None) -> None:
 
         self._strategy.run(parent, tool, options, logger, completion_callback)
-
-
-class UsingExternalManager(AbsRunner):
-
-    def __init__(
-            self,
-            manager: "worker.ToolJobManager",
-            on_success,
-            on_failure
-    ) -> None:
-
-        self._manager = manager
-        self._on_success = on_success
-        self._on_failure = on_failure
-
-    def run(self,
-            parent,
-            job: AbsJob,
-            options: dict,
-            logger: logging.Logger,
-            completion_callback=None):
-
-        try:
-            with self._manager.open(options=options,
-                                    tool=job,
-                                    parent=parent) as runner:
-
-                def update_progress(current: int, total: int):
-
-                    if total != runner.dialog.maximum():
-                        runner.dialog.setMaximum(total)
-                    if current != runner.dialog.value():
-                        runner.dialog.setValue(current)
-
-                    if current == total:
-                        runner.dialog.accept()
-
-                if isinstance(job, AbsTool):
-                    runner.abort_callback = self.on_runner_aborted
-                    logger.addHandler(runner.progress_dialog_box_handler)
-                    runner.dialog.setRange(0, 0)
-
-                    i = -1
-                    for i, new_setting in \
-                            enumerate(job.discover_task_metadata(**options)):
-
-                        new_job = job.new_job()
-                        self._manager.add_job(new_job(), new_setting)
-
-                    logger.info("Found {} jobs".format(i + 1))
-                    runner.dialog.setMaximum(i)
-
-                    self._manager.start()
-
-                    runner.dialog.show()
-
-                    results = list()
-                    for result in self._manager.get_results(update_progress):
-                        results.append(result)
-                    logger.removeHandler(runner.progress_dialog_box_handler)
-
-                    self._on_success(results, job.on_completion)
-        except Exception as e:
-            self._on_failure(e)
-
-    def on_runner_aborted(self):
-        self._manager.abort()
 
 
 class UsingExternalManagerForAdapter(AbsRunner):
@@ -112,7 +45,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
         if current == total:
             runner.dialog.accept()
 
-    def run(self, parent, job: AbsJob, options: dict,
+    def run(self, parent, job: AbsWorkflow, options: dict,
             logger: logging.Logger, completion_callback=None) -> None:
 
         results: List[Any] = []

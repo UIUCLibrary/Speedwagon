@@ -7,8 +7,7 @@ from PyQt5 import QtWidgets  # type: ignore
 
 import speedwagon.tasks
 import speedwagon
-
-from speedwagon.tools import options as tool_options
+from . import shared_custom_widgets
 
 import uiucprescon.packager.packages
 from uiucprescon.packager import PackageFactory
@@ -26,11 +25,11 @@ class HathiPrepWorkflow(speedwagon.Workflow):
 
     def user_options(self):
         options = []
-        package_type = tool_options.ListSelection("Image File Type")
+        package_type = shared_custom_widgets.ListSelection("Image File Type")
         package_type.add_selection("JPEG 2000")
         package_type.add_selection("TIFF")
-        input_option = tool_options.UserOptionCustomDataType(
-            "input", tool_options.FolderData)
+        input_option = shared_custom_widgets.UserOptionCustomDataType(
+            "input", shared_custom_widgets.FolderData)
 
         options.append(input_option)
         options.append(package_type)

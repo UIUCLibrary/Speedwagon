@@ -4,7 +4,7 @@ import sys
 import traceback
 import enum
 from typing import List, Optional, Tuple, Dict, Iterator, NamedTuple
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 
 import yaml
 from PyQt5 import QtWidgets, QtCore  # type: ignore
@@ -14,8 +14,9 @@ import speedwagon.dialog.dialogs
 import speedwagon.models
 from . import runner_strategies
 from . import models
-from .tools import options
-from .job import AbsWorkflow, AbsTool, NullWorkflow
+from .workflows import shared_custom_widgets as options
+from .job import AbsWorkflow, NullWorkflow
+
 
 SELECTOR_VIEW_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.MinimumExpanding,
@@ -37,37 +38,14 @@ class TabWidgets(enum.Enum):
     SETTINGS = "settings"
 
 
-class AbsTab(metaclass=ABCMeta):
+class Tab:
     @abc.abstractmethod
     def compose_tab_layout(self):
-        pass
+        """Draw the layout of the tab"""
 
     @abc.abstractmethod
     def create_actions(self):
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def create_tools_settings_view(parent):
-        pass
-
-    @classmethod
-    @abstractmethod
-    def create_workspace_layout(cls, parent):
-        pass
-
-    @classmethod
-    @abstractmethod
-    def create_workspace(cls, title, parent):
-        pass
-
-
-class Tab(AbsTab):
-    def compose_tab_layout(self):
-        return super().compose_tab_layout()
-
-    def create_actions(self):
-        return super().create_actions()
+        """Generate action widgets"""
 
     def __init__(self, parent, work_manager):
         self.parent = parent
@@ -191,7 +169,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         selector_view.setModel(model)
 
         MIN_ROWS_VIS = 4
-        # MAX_ROWS_VIS = 5
 
         if model.rowCount() < MIN_ROWS_VIS:
             min_rows = model.rowCount()
@@ -220,6 +197,8 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         tool_mapper.setModel(model)
         tool_mapper.addMapping(config_widgets[TabWidgets.NAME], 0)
 
+        # PlainText mapping because without the descriptions render without
+        # newline
         tool_mapper.addMapping(config_widgets[TabWidgets.DESCRIPTION],
                                1,
                                b"plainText")
@@ -234,8 +213,8 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     def get_item_options_model(self, item):
         pass
 
-    def create_actions(self) \
-            -> Tuple[Dict[str, QtWidgets.QWidget], QtWidgets.QLayout]:
+    def create_actions(self) -> Tuple[Dict[str, QtWidgets.QWidget],
+                                      QtWidgets.QLayout]:
 
         tool_actions_layout = QtWidgets.QHBoxLayout()
 
@@ -266,7 +245,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         pass
 
     def _update_tool_selected(self, current, previous):
-        # selection_settings_widget = self.workspace_widgets['settings']
         try:
             if current.isValid():
                 self.item_selected(current)
@@ -333,113 +311,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         self.tab_layout.addWidget(self.item_selector_view)
         self.tab_layout.addWidget(self.workspace)
         self.tab_layout.addLayout(self.actions_layout)
-
-
-class ToolTab(ItemSelectionTab):
-    def __init__(self, parent, tools, work_manager, log_manager) -> None:
-        super().__init__("Tool",
-                         parent,
-                         models.ToolsListModel(tools),
-                         work_manager,
-                         log_manager)
-        self._tool: Optional[AbsTool] = None
-
-    def is_ready_to_start(self) -> bool:
-        number_of_selected = self.item_selector_view.selectedIndexes()
-        if len(number_of_selected) != 1:
-            print(
-                "Invalid number of selected Indexes. "
-                "Expected 1. Found {}".format(number_of_selected)
-            )
-            return False
-        return True
-
-    def start(self, item) -> None:
-
-        if issubclass(item, AbsTool):
-            try:
-                if self.options_model is None:
-                    raise Exception("Tools not loaded")
-
-                selected_options = self.options_model.get()
-                item.validate_user_options(**selected_options)
-            except Exception as e:
-                msg = QtWidgets.QMessageBox(self.parent)
-                msg.setIcon(QtWidgets.QMessageBox.Warning)
-                msg.setWindowTitle("Invalid Configuration")
-                msg.setText(str(e))
-                # msg.setDetailedText("".join(exception_message))
-                msg.exec_()
-                return
-            self._tool = item
-
-            # wrapped_strat = runner_strategies.UsingWorkWrapper()
-            # runner = runner_strategies.RunRunner(wrapped_strat)
-
-            manager_strat = runner_strategies.UsingExternalManager(
-                manager=self.work_manager,
-                on_success=self._on_success,
-                on_failure=self._on_failed
-            )
-
-            # manager_strat = runner_strategies.UsingWorkManager()
-            runner = runner_strategies.RunRunner(manager_strat)
-
-            runner.run(self.parent, item(),
-                       selected_options, self.work_manager.logger)
-
-        else:
-            QtWidgets.QMessageBox.warning(self.parent,
-                                          "No op", "No tool selected.")
-
-    def _on_failed(self, exc):
-        self.log_manager.error("Process failed. Reason: {}".format(exc))
-        # print("************** {}".format(exc))
-        if exc:
-            traceback.print_tb(exc.__traceback__)
-            # self.log_manager.notify(str(exc))
-            self.log_manager.warning(str(exc))
-
-            exception_message = traceback.format_exception(
-                type(exc),
-                exc,
-                tb=exc.__traceback__
-            )
-
-            msg = speedwagon.dialog.dialogs.ErrorDialogBox(self.parent)
-            msg.setWindowTitle(str(type(exc).__name__))
-            msg.setText(str(exc))
-            msg.setDetailedText("".join(exception_message))
-            # msg.setStyleSheet("QLabel{min-width: 700px;}")
-            msg.exec_()
-
-    def _on_success(self, results, callback):
-        self.log_manager.info("Done!")
-        user_args = self.options_model.get()
-        callback(results=results, user_args=user_args)
-        report = self._tool.generate_report(results=results,
-                                            user_args=user_args)
-        if report:
-            line_sep = "\n" + "*" * 60
-
-            fancy_report = f"{line_sep}" \
-                f"\n   Report" \
-                f"{line_sep}" \
-                f"\n" \
-                f"\n{report}" \
-                f"\n" \
-                f"{line_sep}"
-
-            # self.log_manager.notify(fancy_report)
-            self.log_manager.info(fancy_report)
-
-        # self._tool.setup_task(results=results,user_args=user_args)
-
-        # QtWidgets.QMessageBox.about(self, "Finished", "Finished")
-
-    def get_item_options_model(self, tool):
-        model = models.ToolOptionsModel3(tool.get_user_options())
-        return model
 
 
 class WorkflowsTab(ItemSelectionTab):
@@ -529,7 +400,6 @@ class WorkflowsTab(ItemSelectionTab):
 
         model = models.ToolOptionsModel3(new_workflow.user_options())
         return model
-        # return tool_.ToolsListModel(tool)
 
 
 class MyDelegate(QtWidgets.QStyledItemDelegate):
@@ -595,9 +465,7 @@ def read_tabs_yaml(yaml_file) -> Iterator[TabData]:
                 raise Exception(f"Failed to parse file")
 
             for tab_name in tabs_config_data:
-                # new_tab = TabData()
                 model = models.WorkflowListModel2()
-                # new_tab.tab_name = tab_name
                 for workflow_name in tabs_config_data.get(tab_name, []):
                     empty_workflow = NullWorkflow()
                     empty_workflow.name = workflow_name

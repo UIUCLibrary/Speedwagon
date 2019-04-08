@@ -4,15 +4,14 @@ from contextlib import contextmanager
 from uiucprescon import packager
 from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
-from speedwagon.tools import options
+from . import shared_custom_widgets as options
 from speedwagon.worker import GuiLogHandler
 
 from uiucprescon.packager.packages.collection_builder import Metadata
 
 
 class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
-    name = "0 EXPERIMENTAL " \
-           "Convert CaptureOne TIFF to Hathi TIFF package"
+    name = "Convert CaptureOne TIFF to Hathi TIFF package"
     description = "This workflow chains together a number of tools to " \
                   "take a batch of CaptureOne files and structure them as " \
                   "HathiTrust packages. This includes putting them in the " \
@@ -41,7 +40,6 @@ class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
             }
             )
         return jobs
-        # return jobs
 
     def user_options(self):
         return [
