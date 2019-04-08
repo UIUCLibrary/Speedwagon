@@ -665,4 +665,3 @@ class PackageNamingConventionTask(CompletenessSubTask):
         if warnings:
             self.set_results(warnings)
         return True
-
