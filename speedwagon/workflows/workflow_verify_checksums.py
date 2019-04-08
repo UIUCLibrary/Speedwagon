@@ -236,8 +236,6 @@ class ValidateChecksumTask(tasks.Subtask):
         if standard_comparison.compare(actual_md5, self._expected_hash):
             result[ResultValues.VALID] = True
 
-            # if actual_md5 != self._expected_hash:
-
         elif valid_but_warnable_strategy.compare(actual_md5,
                                                  self._expected_hash):
             result[ResultValues.VALID] = True

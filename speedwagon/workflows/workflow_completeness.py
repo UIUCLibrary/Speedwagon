@@ -490,7 +490,6 @@ class ValidateOCRFilesTask(CompletenessSubTask):
                     "No validation errors found in ".format(self.package_path)
                 )
 
-                # else:
                 for error in ocr_errors:
                     self.log(error.message)
                     errors.append(error)
@@ -537,7 +536,6 @@ class ValidateYMLTask(CompletenessSubTask):
                         for error in meta_yml_errors:
                             self.log(error.message)
                             errors.append(error)
-                #
             except FileNotFoundError as e:
                 report_builder.add_error(
                     report_builder.add_error(
@@ -667,4 +665,4 @@ class PackageNamingConventionTask(CompletenessSubTask):
         if warnings:
             self.set_results(warnings)
         return True
-#
+

@@ -58,7 +58,6 @@ class ToolConsole(QtWidgets.QWidget):
         self.setLayout(layout)
 
         self._console = QtWidgets.QTextBrowser(self)
-        # self._console.setContentsMargins(0,0,0,0)
 
         self.layout().addWidget(self._console)
 
@@ -95,7 +94,6 @@ class ItemTabsWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        # QtWidgets.QTabWidget
         layout = QtWidgets.QVBoxLayout(self)
 
         default_style = self.style()
@@ -146,7 +144,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         ###########################################################
         # Tabs
         ###########################################################
-        # self.tabWidget
         self.tabWidget = ItemTabsWidget(self.main_splitter)
         self.tabWidget.setVisible(False)
 
@@ -179,7 +176,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         ###########################################################
 
-        # self.main_splitter.set
         # Add menu bar
         menu_bar = self.menuBar()
 

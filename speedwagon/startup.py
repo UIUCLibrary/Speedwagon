@@ -306,7 +306,6 @@ class StartupDefault(AbsStarter):
                 windows.set_current_tab(
                     tab_name=self.startup_settings['starting-tab'])
 
-            # QtCore.QThread.sleep(1)
             splash.finish(windows)
 
             self._logger.info("Ready")

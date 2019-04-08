@@ -162,7 +162,6 @@ class MakeYamlTask(speedwagon.tasks.Subtask):
         self._source = source
         self._title_page = title_page
         self._package_id = package_id
-        # self._working_dir = subtask_working_dir
 
     def work(self):
         meta_filename = "meta.yml"

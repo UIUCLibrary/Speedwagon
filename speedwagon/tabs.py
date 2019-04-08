@@ -54,7 +54,6 @@ class Tab:
         self.tab.setSizePolicy(WORKFLOW_SIZE_POLICY)
         self.tab.setMinimumHeight(400)
         self.tab_layout.setSpacing(20)
-        # self.tab.setFixedHeight(500)
 
     @staticmethod
     def create_tools_settings_view(parent):
@@ -256,7 +255,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
                 self.item_selector_view.setCurrentIndex(previous)
             else:
                 traceback.print_tb(e.__traceback__)
-                # traceback.print_exception(e)
                 self.item_selector_view.setCurrentIndex(previous)
 
     def item_selected(self, index: QtCore.QModelIndex):

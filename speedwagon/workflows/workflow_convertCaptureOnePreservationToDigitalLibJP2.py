@@ -60,8 +60,6 @@ class ConvertFile(AbsProcessStrategy):
         self.output = output_file_path
         self.status = "Generated {}".format(output_file_path)
 
-#
-
 
 class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
     name = "Convert CaptureOne Preservation TIFF to Digital Library Access JP2"

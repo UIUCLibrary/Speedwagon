@@ -195,7 +195,6 @@ class ListSelectionWidget(CustomItemWidget, metaclass=WidgetMeta):
 
     def __init__(self, selections, *args, **kwargs):
         super().__init__()
-        # super().__init__(parent, *args, **kwargs)
         self._combobox = QtWidgets.QComboBox()
         self._selections = selections
 
