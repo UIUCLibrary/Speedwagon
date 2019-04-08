@@ -20,13 +20,11 @@ def step_impl(context: runner.Context):
 @when("we provide data to generate a Qt model")
 def step_impl(context: runner.Context):
     context.data_model = speedwagon.models.ToolOptionsModel3(context.data)
-    # assert context.d == "dd"
 
 
 @then("we get a ToolOptionsModel object")
 def step_impl(context: runner.Context):
     assert isinstance(context.data_model, speedwagon.models.ToolOptionsModel3)
-    pass
 
 
 @then("the model has 2 rows")

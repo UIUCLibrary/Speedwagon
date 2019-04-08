@@ -201,11 +201,10 @@ class CompletenessWorkflow(AbsWorkflow):
         return results
 
     @staticmethod
-    def validate_user_options(Source, *args, **kwargs):
-        src = Source
-        if not src:
+    def validate_user_options(source, *args, **kwargs):
+        if not source:
             raise ValueError("Source is missing a value")
-        if not os.path.exists(src) or not os.path.isdir(src):
+        if not os.path.exists(source) or not os.path.isdir(source):
             raise ValueError("Invalid source")
 
 
@@ -667,7 +666,5 @@ class PackageNamingConventionTask(CompletenessSubTask):
 
         if warnings:
             self.set_results(warnings)
-        # self.set_results
         return True
-        # return super().work()
 #

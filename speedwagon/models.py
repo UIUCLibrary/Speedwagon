@@ -17,8 +17,6 @@ class JobModelData(enum.Enum):
 
 
 class ItemListModel(QtCore.QAbstractTableModel):
-    # NAME = 0
-    # DESCRIPTION = 1
 
     def __init__(self, data: Dict["str", Type[AbsWorkflow]]) -> None:
         super().__init__()
@@ -205,15 +203,13 @@ class ToolOptionsPairsModel(ToolOptionsModel):
         existing_data = self._data[index.row()]
         self._data[index.row()] = OptionPair(existing_data.label, data)
         return True
-        # return super().setData(QModelIndex, data, role)
 
     def headerData(self, index, Qt_Orientation, role=None):
-        if Qt_Orientation == QtCore.Qt.Vertical:
-            if role == QtCore.Qt.DisplayRole:
-                title = self._data[index].label
-                return str(title)
+        if Qt_Orientation == QtCore.Qt.Vertical \
+                and role == QtCore.Qt.DisplayRole:
+            title = self._data[index].label
+            return str(title)
         return QtCore.QVariant()
-        # return super().headerData(index, Qt_Orientation, role)
 
     def get(self) -> dict:
         options = dict()
@@ -229,9 +225,8 @@ def _lookup_constant(value: int) -> List[str]:
         if not callable(getattr(QtCore.Qt, attr)) and not attr.startswith("_")
     ]:
 
-        if getattr(QtCore.Qt, m) == value:
-            if "role" in m.lower():
-                res.append(m)
+        if getattr(QtCore.Qt, m) == value and "role" in m.lower():
+            res.append(m)
     return res
 
 
@@ -275,16 +270,16 @@ class ToolOptionsModel3(ToolOptionsModel):
         return options
 
     def headerData(self, index, Qt_Orientation, role=None):
-        if Qt_Orientation == QtCore.Qt.Vertical:
-            if role == QtCore.Qt.DisplayRole:
-                title = self._data[index].label_text
-                return str(title)
+        if Qt_Orientation == QtCore.Qt.Vertical and \
+                role == QtCore.Qt.DisplayRole:
+
+            title = self._data[index].label_text
+            return str(title)
         return QtCore.QVariant()
 
     def setData(self, index, data, role=None):
         if not index.isValid():
             return False
-        # existing_data = self.tabs[index.row()]
         self._data[index.row()].data = data
         return True
 
@@ -321,9 +316,9 @@ class SettingsModel(QtCore.QAbstractTableModel):
         return 2
 
     def headerData(self, index, Qt_Orientation, role=None):
-        if Qt_Orientation == QtCore.Qt.Horizontal:
-            if role == QtCore.Qt.DisplayRole:
-                return self._headers.get(index, "")
+        if Qt_Orientation == QtCore.Qt.Horizontal and \
+                role == QtCore.Qt.DisplayRole:
+            return self._headers.get(index, "")
         return QtCore.QVariant()
 
     def flags(self, index: QtCore.QModelIndex):

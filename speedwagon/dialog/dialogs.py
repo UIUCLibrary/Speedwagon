@@ -31,11 +31,11 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
         self.setSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
-        textEdit = self.findChild(QtWidgets.QTextEdit)
-        if textEdit is not None:
-            textEdit.setMinimumHeight(100)
-            textEdit.setMaximumHeight(16777215)
-            textEdit.setSizePolicy(
+        text_edit = self.findChild(QtWidgets.QTextEdit)
+        if text_edit is not None:
+            text_edit.setMinimumHeight(100)
+            text_edit.setMaximumHeight(16777215)
+            text_edit.setSizePolicy(
                 QtWidgets.QSizePolicy.Expanding,
                 QtWidgets.QSizePolicy.Expanding)
 

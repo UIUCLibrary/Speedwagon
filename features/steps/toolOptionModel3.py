@@ -33,5 +33,4 @@ def step_impl(context):
     my_option = speedwagon.workflows.shared_custom_widgets.UserOptionPythonDataType2("my_option", str)
     my_option.data = ""
     data = [my_option]
-    # data = [speedwagon.tools.options.ToolOptionDataType(name="my_option")]
     context.data_model = speedwagon.models.ToolOptionsModel3(data)

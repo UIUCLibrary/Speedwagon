@@ -34,9 +34,9 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
             if not item.is_dir():
                 return False
-            if "v" not in item.name:
-                if not isinstance(eval(item.name), int):
-                    return False
+
+            if "v" not in item.name and not isinstance(eval(item.name), int):
+                return False
 
             return True
 

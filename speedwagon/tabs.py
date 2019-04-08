@@ -169,7 +169,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         selector_view.setModel(model)
 
         MIN_ROWS_VIS = 4
-        # MAX_ROWS_VIS = 5
 
         if model.rowCount() < MIN_ROWS_VIS:
             min_rows = model.rowCount()
@@ -244,7 +243,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         pass
 
     def _update_tool_selected(self, current, previous):
-        # selection_settings_widget = self.workspace_widgets['settings']
         try:
             if current.isValid():
                 self.item_selected(current)
@@ -400,7 +398,6 @@ class WorkflowsTab(ItemSelectionTab):
 
         model = models.ToolOptionsModel3(new_workflow.user_options())
         return model
-        # return tool_.ToolsListModel(tool)
 
 
 class MyDelegate(QtWidgets.QStyledItemDelegate):
@@ -466,9 +463,7 @@ def read_tabs_yaml(yaml_file) -> Iterator[TabData]:
                 raise Exception(f"Failed to parse file")
 
             for tab_name in tabs_config_data:
-                # new_tab = TabData()
                 model = models.WorkflowListModel2()
-                # new_tab.tab_name = tab_name
                 for workflow_name in tabs_config_data.get(tab_name, []):
                     empty_workflow = NullWorkflow()
                     empty_workflow.name = workflow_name

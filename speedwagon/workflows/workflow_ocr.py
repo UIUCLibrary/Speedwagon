@@ -7,7 +7,6 @@ import contextlib
 import speedwagon
 from . import shared_custom_widgets
 from speedwagon import tasks
-# from speedwagon.tools import options as tool_options
 
 from uiucprescon import ocr
 
@@ -258,7 +257,6 @@ class FindImagesTask(speedwagon.tasks.Subtask):
 
 
 class GenerateOCRFileTask(speedwagon.tasks.Subtask):
-    # engine = None
     engine = ocr.Engine(locate_tessdata())
 
     def __init__(self, source_image, out_text_file, lang="eng",

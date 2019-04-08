@@ -81,7 +81,6 @@ class ConsoleLogger(logging.Handler):
     def __init__(self, console: ToolConsole, level=logging.NOTSET) -> None:
         super().__init__(level)
         self.console = console
-        # self.callback = callback
 
     def emit(self, record):
         try:
@@ -134,7 +133,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.log_manager = self._work_manager.logger
         self.log_manager.setLevel(logging.DEBUG)
 
-        # self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
         self.setupUi(self)
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
 
@@ -321,7 +319,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         global_settings_tab = speedwagon.dialog.settings.GlobalSettingsTab()
 
-        # info_tab = speedwagon.dialog.SettingsPlaceholderInformationTab()
         if self._work_manager.settings_path is not None:
             global_settings_tab.config_file = \
                 os.path.join(

@@ -58,13 +58,7 @@ class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
         self.inner_layout.addWidget(self.browse_button)
         self.text_line.textEdited.connect(self._change_data)
         self.text_line.editingFinished.connect(self.editingFinished)
-        # self.text_line.focus
-        # self.text_line.
         self.browse_button.clicked.connect(self.browse_clicked)
-        # self.browse_button.clicked.connect(self.editingFinished)
-
-        # self.setFocusPolicy(QtCore.Qt.StrongFocus)
-        # self.text_line.setFocusPolicy(QtCore.Qt.StrongFocus)
 
     @abc.abstractmethod
     def browse_clicked(self):
@@ -142,10 +136,6 @@ class FolderData(AbsCustomData3, metaclass=abc.ABCMeta):
     def edit_widget(cls) -> QtWidgets.QWidget:
         return FolderBrowseWidget()
 
-    # @classmethod
-    # def browse(cls):
-    #     return QtWidgets.QLineEdit()
-
 
 class UserOption3(metaclass=abc.ABCMeta):
     def __init__(self, label_text):
@@ -173,7 +163,6 @@ class UserOptionCustomDataType(UserOption3):
 
     def is_valid(self) -> bool:
         return self.data_type.is_valid(self.data)
-        # return self.data_type.is_valid(self.data)
 
     def edit_widget(self) -> QtWidgets.QWidget:
         return self.data_type.edit_widget()

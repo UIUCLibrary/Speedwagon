@@ -115,16 +115,6 @@ class Subtask(AbsSubtask):
     def work(self) -> bool:
         return super().work()
 
-    # self._result = Result(self.__class__, value)
-    # @property
-    # def results(self):
-    #     pass
-
-    # @task_result.setter
-    # def task_result(self, value: typing.Type[typing.Any]):
-    #     warnings.warn("Using results instead", PendingDeprecationWarning)
-    #     self._result = Result(self.__class__, value)
-
     @property
     def results(self):
         return self._result.data

@@ -17,7 +17,7 @@ class MakeChecksumTask(tasks.Subtask):
 
     def work(self) -> bool:
         item_path = self._source_path
-        item_file_name = self._filename = self._filename
+        item_file_name = self._filename
         report_path_to_save_to = self._checksum_report
         self.log(f"Calculated the checksum for {item_file_name}")
 

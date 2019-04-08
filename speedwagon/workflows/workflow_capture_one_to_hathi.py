@@ -40,7 +40,6 @@ class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
             }
             )
         return jobs
-        # return jobs
 
     def user_options(self):
         return [

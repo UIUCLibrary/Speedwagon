@@ -94,7 +94,6 @@ class GlobalSettingsTab(QtWidgets.QWidget):
         super().__init__(parent, *args, **kwargs)
         self.config_file = None
         self._modified = False
-        # self.settings = SettingsEditor(self)
 
         self.layout = QtWidgets.QVBoxLayout(self)
 
@@ -138,11 +137,8 @@ class TabsConfigurationTab(QtWidgets.QWidget):
         super().__init__(parent, *args, **kwargs)
         self.settings_location = None
         self._modified = False
-        # self.settings = SettingsEditor(self)
 
         self.layout = QtWidgets.QVBoxLayout(self)
-
-        # self.settings_table = QtWidgets.QTableView(self)
         self.editor = TabEditor()
         self.editor.layout().setContentsMargins(0, 0, 0, 0)
 
@@ -195,8 +191,6 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         self._tabs_model.dataChanged.connect(self.on_modified)
         self.modified = False
         self.splitter.setChildrenCollapsible(False)
-
-        pass
 
     def on_modified(self):
         self.modified = True
@@ -251,7 +245,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
 
     def _delete_tab(self):
         data = self.selectedTabComboBox.currentData()
-        model = self.selectedTabComboBox.model()
+        model: None = self.selectedTabComboBox.model()
         model -= data
 
     def _add_items_to_tab(self):
@@ -273,7 +267,6 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         model.sort()
 
     def set_all_workflows(self, workflows):
-        # self._all_workflows_model = models.WorkflowListModel2()
         for k, v in workflows.items():
             self._all_workflows_model.add_workflow(v)
         self._all_workflows_model.sort()

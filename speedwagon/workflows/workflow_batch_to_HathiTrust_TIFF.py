@@ -8,7 +8,6 @@ from uiucprescon.packager.packages.collection import Metadata
 import speedwagon
 from speedwagon import tasks
 from speedwagon.workflows import shared_custom_widgets
-# from speedwagon.tools import options
 from uiucprescon import packager, pygetmarc
 from . title_page_selection import PackageBrowser
 from pyhathiprep import package_creater
@@ -154,7 +153,6 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                   f"* {yaml_file_message}\n" \
                   f"* {checksum_message}"
         return message
-        # return super().generate_report(results, **user_args)
 
 
 class TransformPackageTask(tasks.Subtask):
@@ -251,7 +249,6 @@ class MakeYamlTask(tasks.Subtask):
             print("Unable to split {} with a _ delimiter".format(title_page))
             self._title_page = title_page
         self._bib_id = bib_id
-        # self._working_dir = subtask_working_dir
 
     def work(self):
         meta_filename = "meta.yml"

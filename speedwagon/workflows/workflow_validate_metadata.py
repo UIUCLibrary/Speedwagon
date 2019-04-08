@@ -8,7 +8,6 @@ from . import shared_custom_widgets
 from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
 
-# from speedwagon.tools import options as tool_options
 import speedwagon.tasks
 import enum
 
@@ -61,9 +60,8 @@ class ValidateMetadataWorkflow(AbsWorkflow):
             })
         return new_tasks
 
-    def initial_task(self, task_builder: tasks.TaskBuilder,
-                     **user_args) -> None:
-        # profile = imagevalidate.get_profile(user_args["Profile"])
+    def initial_task(
+            self, task_builder: tasks.TaskBuilder, **user_args) -> None:
 
         task_builder.add_subtask(
             LocateImagesTask(user_args[UserArgs.INPUT.value],
