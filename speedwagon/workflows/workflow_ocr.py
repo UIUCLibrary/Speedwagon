@@ -11,10 +11,11 @@ from speedwagon import tasks
 from uiucprescon import ocr
 
 
-def locate_tessdata() -> str:
+def locate_tessdata() -> Optional[str]:
     path = os.path.join(os.path.dirname(__file__), "tessdata")
     if path_contains_traineddata(path):
         return os.path.normpath(path)
+    return None
 
 
 def path_contains_traineddata(path) -> bool:
