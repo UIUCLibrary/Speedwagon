@@ -13,7 +13,18 @@ from uiucprescon import ocr
 
 def locate_tessdata() -> str:
     path = os.path.join(os.path.dirname(__file__), "tessdata")
-    return os.path.normpath(path)
+    if path_contains_traineddata(path):
+        return os.path.normpath(path)
+
+
+def path_contains_traineddata(path) -> bool:
+    for file in os.scandir(path):
+        if not file.is_file():
+            continue
+        file_name, ext = os.path.splitext(file.name)
+        if ext == ".traineddata":
+            return True
+    return False
 
 
 class OCRWorkflow(speedwagon.Workflow):
@@ -72,8 +83,8 @@ class OCRWorkflow(speedwagon.Workflow):
                         language_code = k
                         break
                 else:
-                    raise ValueError("Unable to look up language code for {}"
-                                     .format(user_args["Language"]))
+                    raise ValueError("Unable to look up language code "
+                                     "for {}".format(user_args["Language"]))
 
                 new_task = {
                     "source_file_path": image_file,
@@ -94,7 +105,7 @@ class OCRWorkflow(speedwagon.Workflow):
                 source_image=image_file,
                 out_text_file=os.path.join(destination_path, ocr_file_name),
                 lang=lang_code,
-                tesseract_path=self.global_settings.get("tessdata")
+                tesseract_path=self.tessdata_path
             )
         task_builder.add_subtask(ocr_generation_task)
 
@@ -122,13 +133,8 @@ class OCRWorkflow(speedwagon.Workflow):
             if not os.path.exists(item):
                 return False
 
-            for i in os.scandir(item):
-                if os.path.splitext(i.name)[1] == ".traineddata":
-                    break
-            else:
-                return False
+            return path_contains_traineddata(item)
 
-            return True
         options = []
 
         package_type = shared_custom_widgets.ListSelection("Image File Type")
@@ -280,7 +286,7 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
     def work(self) -> bool:
         # Get the ocr text reader for the proper language
         reader = self.engine.get_reader(self._lang)
-        self.log("Reading {}".format(self._source))
+        self.log("Reading {}".format(os.path.normcase(self._source)))
 
         f = io.StringIO()
 

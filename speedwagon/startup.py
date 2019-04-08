@@ -6,7 +6,7 @@ import io
 import logging
 import os
 import sys
-from typing import Dict, Union, Iterator, Tuple
+from typing import Dict, Union, Iterator, Tuple, List
 
 import pkg_resources
 import yaml
@@ -20,7 +20,7 @@ from speedwagon import worker, job
 from speedwagon.dialog.settings import TabEditor
 from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.tabs import extract_tab_information
-
+import pathlib
 
 class FileFormatError(Exception):
     pass
@@ -49,6 +49,12 @@ def parse_args():
 
 class AbsSetting(metaclass=abc.ABCMeta):
 
+    @property
+    @staticmethod
+    @abc.abstractmethod
+    def FRIENDLY_NAME():
+        return NotImplementedError
+
     def update(self, settings=None) -> Dict["str", Union[str, bool]]:
         if settings is None:
             return dict()
@@ -57,6 +63,7 @@ class AbsSetting(metaclass=abc.ABCMeta):
 
 
 class DefaultsSetter(AbsSetting):
+    FRIENDLY_NAME = "Setting defaults"
 
     def update(self, settings=None) -> Dict["str", Union[str, bool]]:
         new_settings = super().update(settings)
@@ -65,6 +72,8 @@ class DefaultsSetter(AbsSetting):
 
 
 class CliArgsSetter(AbsSetting):
+
+    FRIENDLY_NAME = "Command line arguments setting"
 
     def update(self, settings=None) -> Dict["str", Union[str, bool]]:
         new_settings = super().update(settings)
@@ -101,6 +110,8 @@ class CliArgsSetter(AbsSetting):
 
 
 class ConfigFileSetter(AbsSetting):
+    FRIENDLY_NAME = "Config file settings"
+
     def __init__(self, config_file):
         self.config_file = config_file
 
@@ -190,7 +201,7 @@ class StartupDefault(AbsStarter):
             self.platform_settings.get_app_data_directory(), "tabs.yml")
 
         # Make sure required directories exists
-        self.data_dir = self.platform_settings.get("user_data_directory")
+        self.user_data_dir = self.platform_settings.get("user_data_directory")
         self.startup_settings = dict()
         self._debug = False
 
@@ -316,13 +327,17 @@ class StartupDefault(AbsStarter):
         self.app.processEvents()
 
     def resolve_settings(self):
-        resolution_order = [
+        resolution_order: List[AbsSetting] = [
             DefaultsSetter(),
             ConfigFileSetter(self.config_file),
             CliArgsSetter(),
         ]
         self.read_settings_file(self.config_file)
         for settings_strategy in resolution_order:
+
+            self._logger.debug("Loading settings from {}".format(
+                settings_strategy.FRIENDLY_NAME))
+
             try:
                 self.startup_settings = settings_strategy.update(
                     self.startup_settings)
@@ -355,22 +370,38 @@ class StartupDefault(AbsStarter):
 
             self._logger.debug(
                 "No config file found. Generated {}".format(self.config_file))
+        else:
+            self._logger.debug(
+                "Found existing config file {}".format(self.config_file))
 
         if not os.path.exists(self.tabs_file):
-            with open(self.tabs_file, "w"):
-                pass
+            pathlib.Path(self.tabs_file).touch()
+
             self._logger.debug(
                 "No tabs.yml file found. Generated {}".format(self.tabs_file))
+        else:
+            self._logger.debug(
+                "Found existing tabs file {}".format(self.tabs_file))
 
-        if self.data_dir and not os.path.exists(self.data_dir):
-            os.makedirs(self.data_dir)
-            self._logger.debug("Created directory {}".format(self.data_dir))
+        if self.user_data_dir and not os.path.exists(self.user_data_dir):
+            os.makedirs(self.user_data_dir)
+            self._logger.debug("Created directory {}".format(
+                self.user_data_dir))
+
+        else:
+            self._logger.debug(
+                "Found existing user data directory {}".format(
+                    self.user_data_dir))
 
         if self.app_data_dir is not None and \
                 not os.path.exists(self.app_data_dir):
 
             os.makedirs(self.app_data_dir)
             self._logger.debug("Created {}".format(self.app_data_dir))
+        else:
+            self._logger.debug(
+                "Found existing app data "
+                "directory {}".format(self.app_data_dir))
 
 
 class TabsEditorApp(QtWidgets.QDialog):

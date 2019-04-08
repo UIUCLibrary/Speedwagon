@@ -197,6 +197,8 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         tool_mapper.setModel(model)
         tool_mapper.addMapping(config_widgets[TabWidgets.NAME], 0)
 
+        # PlainText mapping because without the descriptions render without
+        # newline
         tool_mapper.addMapping(config_widgets[TabWidgets.DESCRIPTION],
                                1,
                                b"plainText")

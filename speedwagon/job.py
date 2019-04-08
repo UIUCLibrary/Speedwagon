@@ -18,10 +18,10 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
     active = True
     description: Optional[str] = None
     name: Optional[str] = None
+    global_settings: Dict[str, str] = dict()
 
     def __init__(self) -> None:
         super().__init__()
-        self.global_settings: Dict[str, str] = dict()
         self.options = []  # type: ignore
 
     @abc.abstractmethod
