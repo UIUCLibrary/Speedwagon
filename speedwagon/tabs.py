@@ -263,9 +263,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
         item = self.item_selection_model.data(index, QtCore.Qt.UserRole)
         item_settings = self.workspace_widgets[TabWidgets.SETTINGS]
-        # item_settings = self.workspace_widgets['settings']
-        # model.
-        # self.workspace.set_tool(tool)
         #################
         try:
             model = self.get_item_options_model(item)
@@ -277,7 +274,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             )
 
             item_settings.setSizePolicy(ITEM_SETTINGS_POLICY)
-            # item_settings.resize()
         except Exception as e:
             tb = traceback.format_exception(etype=type(e),
                                             value=e,
@@ -344,9 +340,7 @@ class WorkflowsTab(ItemSelectionTab):
 
             print("starting")
 
-            runner.run(self.parent,
-                       workflow,
-                       options,
+            runner.run(self.parent, workflow, options,
                        self.work_manager.logger)
 
         except ValueError as exc:
@@ -368,7 +362,6 @@ class WorkflowsTab(ItemSelectionTab):
                                                    exc,
                                                    tb=exc.__traceback__))
             )
-            # msg.setDetailedText("".join(exception_message))
             msg.exec_()
             return
 
@@ -386,12 +379,6 @@ class WorkflowsTab(ItemSelectionTab):
 
         self.run(new_workflow, user_options)
 
-    def _on_success(self, results, callback):
-        print("success")
-
-    def _on_failed(self, exc):
-        print("failed")
-
     def get_item_options_model(self, workflow):
         new_workflow = workflow()
 
@@ -404,12 +391,9 @@ class WorkflowsTab(ItemSelectionTab):
 
 class MyDelegate(QtWidgets.QStyledItemDelegate):
 
-    def createEditor(
-            self,
-            parent,
-            option: QtWidgets.QStyleOptionViewItem,
-            index: QtCore.QModelIndex
-    ):
+    def createEditor(self, parent, option: QtWidgets.QStyleOptionViewItem,
+                     index: QtCore.QModelIndex):
+
         if index.isValid():
             tool_settings = index.data(QtCore.Qt.UserRole)
             browser_widget = tool_settings.edit_widget()
@@ -435,7 +419,6 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
             i = index.data(QtCore.Qt.UserRole)
             if isinstance(editor, options.CustomItemWidget):
                 editor.data = i.data
-            # i.browse()
         super().setEditorData(editor, index)
 
     def setModelData(self, widget: QtWidgets.QWidget,
