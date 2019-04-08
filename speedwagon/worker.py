@@ -100,26 +100,21 @@ class Worker(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def initialize_worker(self) -> None:
         """Initialize the executor"""
-        pass
 
     @abc.abstractmethod
     def cancel(self) -> None:
         """Shutdown the executor"""
-        pass
 
     @abc.abstractmethod
     def run_all_jobs(self):
         """Execute jobs in loaded in q"""
-        pass
 
     @abc.abstractmethod
     def add_job(self, job: typing.Type[ProcessJobWorker], **job_args):
         """Load jobs into queue"""
-        pass
 
 
 class UIWorker(Worker):
-    # class Worker(QtCore.QObject, metaclass=WorkerMeta):
     def __init__(self, parent):
         """Interface for managing jobs. Designed handle loading and executing jobs.
 
@@ -149,17 +144,13 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
         )  # TODO: Fix this
 
     def cancel(self):
-        # if hasattr(self, "executor"):
         self.executor.shutdown()
 
     @classmethod
     def _exec_job(cls, job, args, message_queue):
         new_job = job()
-        # new_job.set_message_queue(logger_queue)
         new_job.mq = message_queue
         fut = cls.executor.submit(new_job.execute, **args)
-
-        # fut.add_done_callback(self.complete_task)
         return fut
 
     def add_job(self, job: ProcessJobWorker, **job_args):
@@ -172,9 +163,7 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
             job_, args, message_queue = self._jobs_queue.get()
             fut = self._exec_job(job_, args, message_queue)
             self._tasks.append(fut)
-        # logging.debug("All jobs have been launched")
         for future in concurrent.futures.as_completed(self._tasks):
-            # logging.debug("future finished")
             self.complete_task(future)
         self.on_completion(results=self._results)
 
@@ -237,38 +226,6 @@ class GuiLogHandler(logging.Handler):
 
     def emit(self, record):
         self.callback(record.msg)
-
-
-class WorkRunnerExternal2(contextlib.AbstractContextManager):
-    def __init__(self, tool, options, parent):
-        self.results = []
-        self._tool = tool
-        self._options = options
-        self._parent = parent
-        self.abort_callback = None
-        # self.jobs: queue.Queue[JobPair] = queue.Queue()
-
-    def __enter__(self):
-        self.dialog = WorkProgressBar(self._parent)
-
-        self.dialog.setLabelText("Initializing")
-        self.dialog.setWindowTitle(self._tool.name)
-
-        self.progress_dialog_box_handler = \
-            ProgressMessageBoxLogHandler(self.dialog)
-
-        self.dialog.canceled.connect(self.abort)
-        return self
-
-    def abort(self):
-        if self.dialog.result() == self.dialog.Accepted:
-            print("SUCCESS")
-        else:
-            if self.abort_callback is not None:
-                self.abort_callback()
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.dialog.hide()
 
 
 class WorkRunnerExternal3(contextlib.AbstractContextManager):
@@ -347,7 +304,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         self._cleanup()
         self._executor.shutdown()
 
-    def open(self, parent, runner=WorkRunnerExternal2, *args, **kwargs):
+    def open(self, parent, runner, *args, **kwargs):
         return runner(*args, **kwargs, parent=parent)
 
     def add_job(self, new_job: ProcessJobWorker, settings: dict) -> None:
