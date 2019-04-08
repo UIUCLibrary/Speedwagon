@@ -22,6 +22,7 @@ from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.tabs import extract_tab_information
 import pathlib
 
+
 class FileFormatError(Exception):
     pass
 
