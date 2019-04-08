@@ -93,7 +93,6 @@ class Worker2(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def initialize_worker(cls) -> None:
         """Initialize the executor"""
-        pass
 
 
 class Worker(metaclass=abc.ABCMeta):
@@ -255,10 +254,6 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
     def __exit__(self, exc_type, exc_value, traceback):
         self.dialog.close()
 
-#
-# def _execute(job, **settings):
-#     pass
-
 
 class AbsJobManager(metaclass=abc.ABCMeta):
     @abc.abstractmethod
@@ -326,9 +321,6 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         still_running = []
 
         dialog_box = WorkProgressBar("Canceling", None, 0, 0)
-
-        # while not self._pending_jobs.empty():
-        #     self._pending_jobs.task_done()
 
         for future in reversed(self.futures):
             if not future.cancel and future.running():
@@ -399,7 +391,6 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
                 print(e, file=sys.stderr)
                 print(f.exception(), file=sys.stderr)
                 raise
-            # finally:
             self.flush_message_buffer()
 
     def flush_message_buffer(self):
