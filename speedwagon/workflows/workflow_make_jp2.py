@@ -74,7 +74,6 @@ class ProfileFactory:
     profiles = {
         "HathiTrust":  HathiTrustProfile,
         "Digital Library": DigitalLibraryProfile
-        # "HathiTrust Flat":
     }
 
     @classmethod

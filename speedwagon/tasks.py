@@ -25,7 +25,7 @@ class AbsSubtask(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def log(self, message) -> None:
-        pass
+        """Log a message to the console on the main window"""
 
     @property
     def task_result(self) -> Optional['Result']:

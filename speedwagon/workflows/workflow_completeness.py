@@ -174,21 +174,15 @@ class CompletenessWorkflow(AbsWorkflow):
                      f"{warning_report}\n"
         return report
 
-    def initial_task(
-            self,
-            task_builder: speedwagon.tasks.TaskBuilder,
-            **user_args
-    ) -> None:
+    def initial_task(self, task_builder: speedwagon.tasks.TaskBuilder,
+                     **user_args) -> None:
 
         new_task = HathiManifestGenerationTask(batch_root=user_args['Source'])
         task_builder.add_subtask(subtask=new_task)
 
     @classmethod
-    def _get_result(
-            cls,
-            results_grouped: typing.Dict[typing.Any, list],
-            key
-    ) -> typing.List[hathi_result.Result]:
+    def _get_result(cls, results_grouped: typing.Dict[typing.Any, list],
+                    key) -> typing.List[hathi_result.Result]:
 
         results: typing.List[hathi_result.Result] = []
 
@@ -201,7 +195,8 @@ class CompletenessWorkflow(AbsWorkflow):
         return results
 
     @staticmethod
-    def validate_user_options(source, *args, **kwargs):
+    def validate_user_options(*args, **kwargs):
+        source = kwargs.get("Source")
         if not source:
             raise ValueError("Source is missing a value")
         if not os.path.exists(source) or not os.path.isdir(source):
@@ -490,7 +485,6 @@ class ValidateOCRFilesTask(CompletenessSubTask):
                     "No validation errors found in ".format(self.package_path)
                 )
 
-                # else:
                 for error in ocr_errors:
                     self.log(error.message)
                     errors.append(error)
@@ -537,7 +531,6 @@ class ValidateYMLTask(CompletenessSubTask):
                         for error in meta_yml_errors:
                             self.log(error.message)
                             errors.append(error)
-                #
             except FileNotFoundError as e:
                 report_builder.add_error(
                     report_builder.add_error(
@@ -667,4 +660,3 @@ class PackageNamingConventionTask(CompletenessSubTask):
         if warnings:
             self.set_results(warnings)
         return True
-#

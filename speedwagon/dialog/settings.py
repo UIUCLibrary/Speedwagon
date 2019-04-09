@@ -7,48 +7,6 @@ from speedwagon.config import build_setting_model
 from speedwagon.ui import tab_editor_ui
 
 
-class PlaceHolderTab(QtWidgets.QWidget):
-
-    def __init__(self, parent=None, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.notification_information = QtWidgets.QLabel()
-
-        # self.notification_information.setMaximumWidth(300)
-        self.notification_information.setWordWrap(True)
-        self.layout = QtWidgets.QGridLayout(self)
-        self.layout.setAlignment(QtCore.Qt.AlignTop)
-        self.layout.addWidget(self.notification_information, 0, 0)
-        self.open_file_button = QtWidgets.QPushButton()
-        self.open_file_button.setText("Open")
-        self.layout.addWidget(self.open_file_button, 0, 1)
-        self.setLayout(self.layout)
-
-
-class SettingsPlaceholderTabsTab(PlaceHolderTab):
-
-    def __init__(self, parent=None, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.notification_information.setText(
-            "Configuration tabs can be only be made by editing "
-            "tabs.yml file.")
-        self.open_file_button.clicked.connect(self.open_yaml_file)
-        self.settings_location = None
-
-    def open_yaml_file(self):
-        if self.settings_location is None:
-            print("No settings found")
-            return
-        else:
-            print(self.settings_location)
-        os.startfile(self.settings_location)
-
-        QtWidgets.QMessageBox.information(
-            self, "Info",
-            "Opening {}\n"
-            "Note: Please quit and restart Speedwagon to apply "
-            "changes".format(self.settings_location))
-
-
 class SettingsDialog(QtWidgets.QDialog):
 
     def __init__(self, parent=None, *args, **kwargs):

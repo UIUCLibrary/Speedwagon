@@ -120,7 +120,6 @@ def generate_default(config_file):
     }
     with open(config_file, "w") as f:
         config.write(f)
-        # f.write("[GLOBAL]\n")
 
 
 def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \

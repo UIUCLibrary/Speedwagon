@@ -173,8 +173,6 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 )
 
                 for result in main_results:
-                    # for f in self._manager.futures:
-                    #     print(f)
                     if result is not None:
                         results.append(result)
                 if runner.was_aborted:
