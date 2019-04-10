@@ -1,3 +1,12 @@
+"""
+    speedagon.startup
+    ~~~~~~~~~~~~~~~~~
+
+    Use for loading and starting up the main application
+
+    .. versionadded:: 0.1.4
+       added a spash screen for logo
+"""
 import abc
 import argparse
 import collections
