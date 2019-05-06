@@ -1,11 +1,13 @@
-"""
-    speedagon.startup
-    ~~~~~~~~~~~~~~~~~
+"""Defines how Speedwagon starts up on the current system
 
     Use for loading and starting up the main application
 
+Changes:
+++++++++
+
     .. versionadded:: 0.1.4
        added a spash screen for logo
+
 """
 import abc
 import argparse

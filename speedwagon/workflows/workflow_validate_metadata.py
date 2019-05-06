@@ -35,11 +35,8 @@ class ValidateMetadataWorkflow(AbsWorkflow):
                   "\n" \
                   "\n" \
                   "Input is path that contains subdirectory which " \
-                  "containing a series of tiff or jp2 files. " \
-                  "\n" \
-                  "\n" \
-                  "Note: The HathiTrust JPEG 2000 profile does not check " \
-                  "color space at this time."
+                  "containing a series of tiff or jp2 files. "
+
 
     def _locate_checksum_files(self, root) -> Iterable[str]:
         for root, dirs, files in os.walk(root):
@@ -54,7 +51,7 @@ class ValidateMetadataWorkflow(AbsWorkflow):
         new_tasks = []
 
         for image_file in initial_results[0].data:
-            new_tasks .append({
+            new_tasks.append({
                 JobValues.ITEM_FILENAME.value: image_file,
                 JobValues.PROFILE_NAME.value: user_args["Profile"]
             })

@@ -6,3 +6,4 @@ Developer’s Guide
     :toctree: speedwagon
 
     speedwagon.workflows
+    speedwagon.startup
