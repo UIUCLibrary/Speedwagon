@@ -32,9 +32,9 @@ def get_project_metadata():
 
 cwd = os.getcwd()
 project_root = os.path.join(os.path.dirname(cwd), "../..")
-
+sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, project_root )
-
+sys.path.append(os.path.abspath('exts'))
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -46,10 +46,12 @@ sys.path.insert(0, project_root )
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.coverage',
     'sphinx.ext.githubpages',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'workflowssummary'
 ]
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
@@ -62,6 +64,7 @@ napoleon_use_admonition_for_references = False
 napoleon_use_ivar = False
 napoleon_use_param = True
 napoleon_use_rtype = True
+autosummary_generate = True
 
 metadata = get_project_metadata()
 
@@ -79,7 +82,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = metadata['name']
-copyright = '2017, {}'.format(metadata['author'])
+copyright = '2017, 2018, 2019, {}'.format(metadata['author'])
 author = metadata['author']
 
 # The version info for the project you're documenting, acts as replacement for
@@ -87,7 +90,7 @@ author = metadata['author']
 # built documents.
 #
 # The short X.Y version.
-version_extractor = re.compile("\d+[.]\d+[.]\d+")
+version_extractor = re.compile(r"\d+[.]\d+[.]\d+")
 version = version_extractor.search(metadata["version"]).group(0)
 # The full version, including alpha/beta/rc tags.
 release = metadata["version"]
@@ -126,8 +129,8 @@ html_theme = 'alabaster'
 html_theme_options = {
     # 'logo': 'full_mark_horz_bw.png',
     'github_user': 'uiuclibrary',
-    'github_repo': 'frames',
-    'github_button': True,
+    'github_repo': 'Speedwagon',
+    'github_button': False,
     'logo_name': True,
     'description': metadata['description']
 }
@@ -193,6 +196,5 @@ texinfo_documents = [
     metadata['author'], 'frames', metadata['description'],
      'Miscellaneous'),
 ]
-
 
 

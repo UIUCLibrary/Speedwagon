@@ -6,11 +6,15 @@
 Welcome to Speedwagon's documentation!
 ======================================
 
+This documented is for version |version|.
+
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    about
+   workflows
+   development
    history
 
 
