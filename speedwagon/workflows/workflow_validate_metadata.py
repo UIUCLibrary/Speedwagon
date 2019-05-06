@@ -30,12 +30,15 @@ class ResultValues(enum.Enum):
 
 class ValidateMetadataWorkflow(AbsWorkflow):
     name = "Validate Metadata"
-    description = "Validate the metadata for images located inside a " \
-                  "directory. " \
+    description = "Validates the technical metadata for JP2000 files to " \
+                  "include x and why resolution, bit depth and color space " \
+                  "for images located inside a directory.  The tool also " \
+                  "verifies values exist for address, city, state, zip " \
+                  "code, country, phone number insuring the provenance of " \
+                  "the file.\n" \
                   "\n" \
-                  "\n" \
-                  "Input is path that contains subdirectory which " \
-                  "containing a series of tiff or jp2 files. "
+                  "Input is path that contains subdirectory which containing " \
+                  "a series of jp2 files."
 
 
     def _locate_checksum_files(self, root) -> Iterable[str]:

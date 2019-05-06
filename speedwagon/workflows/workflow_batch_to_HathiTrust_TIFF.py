@@ -16,12 +16,12 @@ import shutil
 
 class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
     name = "CaptureOne Batch to HathiTrust TIFF Complete Package"
-    description = "This workflow chains together a number of tools to " \
-                  "take a batch of CaptureOne files and structure them as " \
-                  "HathiTrust packages. This includes putting them in the " \
-                  "correct folder structure, importing MARC.XML files, " \
-                  "generating YAML files, and generating a checksum file. " \
-                  "It takes as its input a folder of CaptureOne batch " \
+    description = "This workflow chains together a number of tools to take " \
+                  "a batch of CaptureOne files and structure them as " \
+                  "HathiTrust compliant packages. This includes putting " \
+                  "them in the correct folder structure, importing MARC.XML " \
+                  "files, generating YAML files, and generating a checksum " \
+                  "file. It takes as its input a folder of CaptureOne batch " \
                   "files. It takes as its output a folder location where " \
                   "new files will be written."
 

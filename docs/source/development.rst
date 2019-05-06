@@ -5,5 +5,7 @@ Developer’s Guide
     :template: mytemplate.rst
     :toctree: speedwagon
 
-    speedwagon.workflows
+    speedwagon
+    speedwagon.config
     speedwagon.startup
+    speedwagon.workflows

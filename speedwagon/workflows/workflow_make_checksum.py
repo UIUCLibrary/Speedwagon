@@ -16,9 +16,16 @@ from . import shared_custom_widgets as options
 
 class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
     name = "Make Checksum Batch [Single]"
-    description = "Creates a single checksum.md5 for every file inside " \
-                  "a given folder" \
-                  "\nInput: Path to a root folder"
+    description = "The checksum is a signature of a file.  If any data is " \
+                  "changed, the checksum will provide a different signature. " \
+                  "The checksum.md5 contains a record of the files for a " \
+                  "given package.\n" \
+                  "\n" \
+                  "The tool creates a checksum.md5 for every subdirectory " \
+                  "found inside a given path.\n" \
+                  "\n" \
+                  "Input: Path to a root directory that contains " \
+                  "subdirectories to generate checksum.md5 files"
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
@@ -200,9 +207,11 @@ class MakeChecksumBatchMultipleWorkflow(AbsWorkflow):
 
 class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
     name = "Regenerate Checksum Batch [Single]"
-    description = "Regenerates hash values for every file inside for a " \
-                  "given checksum.md5 file" \
-                  "\nInput: Path to a root folder"
+    description = "Regenerates the hash values for every checksum.md5 " \
+                  "located inside a given path.\n" \
+                  "\n" \
+                  "Input: Path to a root directory that contains " \
+                  "subdirectories to generate checksum.md5 files"
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
@@ -292,8 +301,9 @@ class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
 class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
     name = "Regenerate Checksum Batch [Multiple]"
     description = "Regenerates the hash values for ever checksum.md5 " \
-                  "located inside a given path" \
-                  "\nInput: Path to a root directory that contains " \
+                  "located inside a given path\n" \
+                  "\n" \
+                  "Input: Path to a root directory that contains " \
                   "subdirectories to generate checksum.md5 files"
 
     def discover_task_metadata(self, initial_results: List[Any],

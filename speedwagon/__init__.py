@@ -12,6 +12,11 @@ def get_project_metadata(config_file):
 
 
 def get_project_distribution() -> pkg_resources.Distribution:
+    """
+
+    Returns:
+
+    """
     return pkg_resources.get_distribution(f"{__name__}")
 
 
