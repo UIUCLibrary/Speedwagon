@@ -6,7 +6,7 @@ Changes:
 ++++++++
 
     .. versionadded:: 0.1.4
-       added a spash screen for logo
+       added a splash screen for logo
 
 """
 import abc
