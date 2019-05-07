@@ -1,3 +1,4 @@
+"""Load and save user configurations"""
 import configparser
 import contextlib
 import os

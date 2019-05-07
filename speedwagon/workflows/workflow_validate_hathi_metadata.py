@@ -41,7 +41,16 @@ class TiffFileCheckData(options.AbsCustomData3):
 
 class ValidateImageMetadataWorkflow(AbsWorkflow):
     name = "Validate Tiff Image Metadata for HathiTrust"
-    description = "Validate the metadata located within a tiff file."
+    description = "Validate the metadata located within a tiff file. " \
+                  "Validates the technical metadata to include x and why " \
+                  "resolution, bit depth and color space for images located " \
+                  "inside a directory.  The tool also verifies values exist " \
+                  "for address, city, state, zip code, country, phone " \
+                  "number insuring the provenance of the file.  \n" \
+                  "\n" \
+                  "Input is path that contains subdirectory which " \
+                  "containing a series of tiff files."
+
     active = True
 
     def discover_task_metadata(self, initial_results: List[Any],

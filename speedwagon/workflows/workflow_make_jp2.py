@@ -84,7 +84,9 @@ class ProfileFactory:
 
 class MakeJp2Workflow(job.AbsWorkflow):
     name = "Make JP2"
-    description = "Make Jpeg 2000 files"
+    description = "Makes Jpeg 2000 files from TIFF. Tool converts tiff " \
+                  "files in access folder in each directory to an JP2000 " \
+                  "files with Kakadu."
 
     active = True
 

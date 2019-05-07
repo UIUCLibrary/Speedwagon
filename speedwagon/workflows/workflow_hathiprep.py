@@ -20,8 +20,15 @@ from speedwagon.workflows.title_page_selection import PackageBrowser
 
 class HathiPrepWorkflow(speedwagon.Workflow):
     name = "Hathi Prep"
-    description = "Select the correct file " \
-                  "from the drop down as the title in the page data"
+    description = "Enables user to select, from a dropdown list of image " \
+                  "file names, the title page to be displayed on the " \
+                  "HathiTrust website for the item. This updates the .yml " \
+                  "file.\n" \
+                  "\n" \
+                  "NB: It is useful to first identify the desired " \
+                  "title page and associated filename in a separate image " \
+                  "viewer." \
+
 
     def user_options(self):
         options = []
