@@ -48,8 +48,8 @@ class ValidateImageMetadataWorkflow(AbsWorkflow):
                   "for address, city, state, zip code, country, phone " \
                   "number insuring the provenance of the file.  \n" \
                   "\n" \
-                  "Input is path that contains subdirectory which containing a " \
-                  "series of tiff files."
+                  "Input is path that contains subdirectory which " \
+                  "containing a series of tiff files."
 
     active = True
 

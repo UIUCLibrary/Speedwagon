@@ -84,7 +84,8 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
                     report_lines = []
 
                     for checksum_report, items_written in \\
-                            cls.sort_results([i.data for i in results]).items():
+                            cls.sort_results([i.data for \n
+                            i in results]).items():
 
                         report_lines.append(
                             f"Checksum values for {len(items_written)} "

@@ -37,9 +37,8 @@ class ValidateMetadataWorkflow(AbsWorkflow):
                   "code, country, phone number insuring the provenance of " \
                   "the file.\n" \
                   "\n" \
-                  "Input is path that contains subdirectory which containing " \
-                  "a series of jp2 files."
-
+                  "Input is path that contains subdirectory which " \
+                  "containing a series of jp2 files."
 
     def _locate_checksum_files(self, root) -> Iterable[str]:
         for root, dirs, files in os.walk(root):

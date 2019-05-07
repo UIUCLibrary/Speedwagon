@@ -29,6 +29,7 @@ class HathiPrepWorkflow(speedwagon.Workflow):
                   "title page and associated filename in a separate image " \
                   "viewer." \
 
+
     def user_options(self):
         options = []
         package_type = shared_custom_widgets.ListSelection("Image File Type")

@@ -20,7 +20,8 @@ Changes:
        Generate OCR Files Workflow
 
     .. versionadded:: 0.1.4
-       Convert CaptureOne TIFF to Digital Library Compound Object and HathiTrust
+       Convert CaptureOne TIFF to Digital Library Compound Object and
+           HathiTrust
 
     .. versionchanged:: 0.1.4
        Migrated existing tools to use workflow
@@ -29,7 +30,8 @@ Changes:
 
             * Convert CaptureOne TIFF to Digital Library Compound Object
             * Convert CaptureOne TIFF to Hathi TIFF package
-            * Convert CaptureOne Preservation TIFF to Digital Library Access JP2
+            * Convert CaptureOne Preservation TIFF to Digital Library
+              Access JP2
             * Convert TIFF to HathiTrust JP2
             * Generate MARC.XML Files
             * Make Checksum Batch [Multiple]
@@ -43,3 +45,7 @@ Changes:
 """
 
 from .workflow_completeness import CompletenessWorkflow
+
+__all__ = [
+    "CompletenessWorkflow"
+]

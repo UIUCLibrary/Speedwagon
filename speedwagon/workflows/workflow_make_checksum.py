@@ -17,9 +17,9 @@ from . import shared_custom_widgets as options
 class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
     name = "Make Checksum Batch [Single]"
     description = "The checksum is a signature of a file.  If any data is " \
-                  "changed, the checksum will provide a different signature. " \
-                  "The checksum.md5 contains a record of the files for a " \
-                  "given package.\n" \
+                  "changed, the checksum will provide a different " \
+                  "signature. The checksum.md5 contains a record of the " \
+                  "files for a given package.\n" \
                   "\n" \
                   "The tool creates a checksum.md5 for every subdirectory " \
                   "found inside a given path.\n" \
