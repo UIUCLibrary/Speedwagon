@@ -27,7 +27,13 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
-        pass
+        """Generate data or parameters needed for task to complete based on
+        the user's original configuration
+
+        Return a list of dictionaries of types that can be serialized,
+            preferably strings.
+
+        """
 
     def completion_task(self, task_builder: tasks.TaskBuilder, results,
                         **user_args) -> None:
@@ -35,17 +41,58 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
     def initial_task(self, task_builder: tasks.TaskBuilder,
                      **user_args) -> None:
-        pass
+        """Create a task to run before the main tasks start.
 
-    def create_new_task(self,
-                        task_builder: tasks.TaskBuilder,
-                        **job_args):
-        pass
+            The initial task is run prior to the get_additional_info method.
+            Results generated here will then be passed to get_additional_info.
+
+            This is useful for locating additional information that will be
+            needed by other tasks and the user needs to additional decisions
+            before running the main tasks.
+
+            In general, prefer discover_task_metadata if you don't need a
+            user's interaction.
+        """
+
+    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+        """Add a new task to be accomplished when the workflow is started.
+
+
+        Use the task_builder parameter's add_subtask method to include a
+        tasks.Subtask()
+
+            Example:
+                .. code-block::
+
+                    title_page = job_args['title_page']
+                    source = job_args['source_path']
+                    package_id = job_args['package_id']
+
+                    task_builder.add_subtask(
+                        subtask=MakeYamlTask(package_id, source, title_page))
+
+        """
 
     @classmethod
-    def generate_report(cls, results: List[tasks.Result],
-                        **user_args) -> Optional[str]:
-        """Generate a text report for the results of the workflow"""
+    def generate_report(cls, results: List[tasks.Result], **user_args) \
+            -> Optional[str]:
+        """Generate a text report for the results of the workflow.
+
+            Example:
+                .. code-block::
+
+                    report_lines = []
+
+                    for checksum_report, items_written in \\
+                            cls.sort_results([i.data for i in results]).items():
+
+                        report_lines.append(
+                            f"Checksum values for {len(items_written)} "
+                            f"files written to {checksum_report}")
+
+                    return '\\n'.join(report_lines)
+
+        """
 
     @staticmethod
     def validate_user_options(**user_args):
@@ -53,6 +100,10 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
 
 class Workflow(AbsWorkflow):
+    """Base class for defining a new workflow item
+
+        Subclass this class to generate a new workflow
+    """
 
     def get_additional_info(self, parent: QtWidgets.QWidget,
                             options: dict, pretask_results: list) -> dict:
@@ -63,7 +114,8 @@ class Workflow(AbsWorkflow):
             options:  Dictionary of existing user settings
             pretask_results: results of the pretask, if any
 
-        Returns: Any additional configurations that needs to be added to a job
+        Returns:
+            Any additional configurations that needs to be added to a job
 
         """
         return dict()
