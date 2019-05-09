@@ -35,6 +35,8 @@ project_root = os.path.join(os.path.dirname(cwd), "../..")
 sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, project_root )
 sys.path.append(os.path.abspath('exts'))
+
+nitpick_ignore = [('py:class', 'type')]
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -65,6 +67,7 @@ napoleon_use_ivar = False
 napoleon_use_param = True
 napoleon_use_rtype = True
 autosummary_generate = True
+autosummary_imported_members = True
 
 metadata = get_project_metadata()
 

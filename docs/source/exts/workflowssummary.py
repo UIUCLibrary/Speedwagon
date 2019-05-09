@@ -13,11 +13,11 @@ Notes:
 
 from docutils.parsers.rst import Directive
 from docutils import nodes
-from speedwagon import job
+from speedwagon import available_workflows
 from sphinx.util import logging
 from sphinx import addnodes
 
-all_workflows = job.available_workflows()
+all_workflows = available_workflows()
 
 
 class WorkflowMetadataListDirective(Directive):

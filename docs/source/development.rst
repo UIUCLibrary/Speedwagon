@@ -1,27 +1,9 @@
 Developer’s Guide
 =================
 
-Creating New Workflows
-~~~~~~~~~~~~~~~~~~~~~~
+.. toctree::
+   :maxdepth: 2
 
-You can create your own workflows. To do so, you need to
+   create_workflow
+   api_reference
 
-    1. creating a new python module that starts with \"workflow\_\" in
-       :py:mod:`speedwagon.workflows` sub-package
-    2. Create a new class that inherits the :py:class:`speedwagon.Workflow`
-       class
-    3. Implement the required abstract methods
-
-
-
-
-API Reference
-~~~~~~~~~~~~~
-
-.. autosummary::
-    :toctree: speedwagon
-
-    speedwagon
-    speedwagon.config
-    speedwagon.startup
-    speedwagon.workflows

@@ -3,7 +3,8 @@ import setuptools.config
 import os
 import sys
 
-from .job import Workflow, JobCancelled
+from .job import Workflow, JobCancelled, available_workflows
+from .tasks import Subtask
 from . import tasks
 
 
@@ -53,6 +54,8 @@ __version__ = get_version()
 
 __all__ = [
     "Workflow",
+    "Subtask",
+    "available_workflows",
     "JobCancelled",
     "tasks"
 ]
