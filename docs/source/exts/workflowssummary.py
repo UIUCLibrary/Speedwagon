@@ -3,15 +3,20 @@
 Sphinx extension that adds the ability to generate documentation for each
 workflow.
 
+By default, a description is added. To not include this,
+add ``:nodescription:`` option
+
 Example:
     ```.. workflowlist::```
+
+
 
 Notes:
     Leading and trailing whitespace is ignored when generating descriptions.
 
 """
 
-from docutils.parsers.rst import Directive
+from docutils.parsers.rst import Directive, directives
 from docutils import nodes
 from speedwagon import available_workflows
 from sphinx.util import logging
@@ -23,8 +28,11 @@ all_workflows = available_workflows()
 class WorkflowMetadataListDirective(Directive):
 
     entries = dict()
-    has_content = True
+    has_content = False
     logger = logging.getLogger(__name__)
+    option_spec = {
+        'nodescription': directives.flag
+    }
 
     def run(self):
 
@@ -68,7 +76,7 @@ class WorkflowMetadataListDirective(Directive):
         targetname = nodes.fully_normalize_name(workflow.name)
         workflow_item = nodes.section(ids=[ids], names=[targetname])
         workflow_item.append(nodes.title(text=workflow.name, ids=[ids]))
-        if workflow.description:
+        if not "nodescription" in self.options and workflow.description:
             description_block = nodes.line_block()
             for line in workflow.description.split("\n"):
                 new_line = nodes.line(text=line)
