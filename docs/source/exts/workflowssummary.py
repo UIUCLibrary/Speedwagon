@@ -39,9 +39,10 @@ class AutoWorkflowDirective(Directive):
     def run(self):
         workflow = all_workflows.get(self.arguments[0])
         if not workflow:
-            self.warning(f"Unable to add {self.content.data[0]}" )
-            for w in all_workflows.keys():
-                print(w)
+
+            valid_workflows = [w for w in all_workflows.keys()]
+            self.warning(f"Unable to add {self.arguments[0]}, "
+                         f"Only known ones are {','.join(valid_workflows)}")
             return []
         indexnode = addnodes.index(entries=[])
 
