@@ -2,7 +2,7 @@ Developer’s Guide
 =================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
 
    create_workflow
    api_reference
