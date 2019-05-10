@@ -2,6 +2,3 @@ Workflows
 =========
 
 .. workflowlist::
-
-
-
