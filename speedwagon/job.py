@@ -1,3 +1,5 @@
+"""Define how various jobs are described"""
+
 import abc
 import importlib
 import inspect
@@ -50,8 +52,8 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
             needed by other tasks and the user needs to additional decisions
             before running the main tasks.
 
-            In general, prefer discover_task_metadata if you don't need a
-            user's interaction.
+            In general, prefer :py:meth:`discover_task_metadata` if you don't
+            need a user's interaction.
         """
 
     def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
@@ -59,7 +61,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
 
         Use the task_builder parameter's add_subtask method to include a
-        tasks.Subtask()
+        :py:class:`speedwagon.Subtask()`
 
             Example:
                 .. code-block::
@@ -209,7 +211,8 @@ def available_workflows() -> dict:
     Locate all workflow class found in workflows subpackage with the workflow
     prefix
 
-    Returns: Dictionary of all workflow
+    Returns:
+        Dictionary of all workflow
 
     """
 

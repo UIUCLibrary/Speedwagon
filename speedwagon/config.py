@@ -14,6 +14,7 @@ from speedwagon.models import SettingsModel
 
 
 class AbsConfig(collections.abc.Mapping):
+    """Abstract class for defining where speedwagon should locate data files"""
 
     def __init__(self) -> None:
         super().__init__()
@@ -55,6 +56,15 @@ class AbsConfig(collections.abc.Mapping):
 
 
 class WindowsConfig(AbsConfig):
+    """Speedwagon configuration for running on Microsoft Windows machine
+
+    It uses a subfolder in the user's home directory to store data such as
+    tesseract ocr data. For example:
+    ``C:\\\\Users\\\\johndoe\\\\Speedwagon\\\\data``
+
+    It uses ``%LocalAppData%`` for app data
+
+    """
 
     def get_user_data_directory(self) -> str:
         return os.path.join(str(Path.home()), "Speedwagon", "data")
@@ -104,6 +114,8 @@ class ConfigManager(contextlib.AbstractContextManager):
 
 
 def generate_default(config_file):
+    """Generate config file with default settings"""
+
     base_directory = os.path.dirname(config_file)
     if base_directory and not os.path.exists(base_directory):
         os.makedirs(base_directory)
@@ -125,7 +137,6 @@ def generate_default(config_file):
 
 def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
         AbsConfig:
-
     """Load a configuration of config.AbsConfig
     If no argument is included, it will try to guess the best one."""
 
@@ -135,7 +146,8 @@ def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
         return configuration
 
 
-def build_setting_model(config_file):
+def build_setting_model(config_file) -> SettingsModel:
+    """Read a configuration file and generate a SettingsModel"""
 
     config = configparser.ConfigParser()
     config.read(config_file)
@@ -146,7 +158,15 @@ def build_setting_model(config_file):
     return my_model
 
 
-def serialize_settings_model(model: SettingsModel):
+def serialize_settings_model(model: SettingsModel) -> str:
+    """Convert a SettingsModel into a data format that can be written to a
+    file.
+
+    Note:
+        This only generates and returns a string. You are still responsible to
+        write that data to a file.
+
+    """
     config_data = configparser.ConfigParser()
     config_data["GLOBAL"] = {}
     global_data: Dict[str, str] = OrderedDict()

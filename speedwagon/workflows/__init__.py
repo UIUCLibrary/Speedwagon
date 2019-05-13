@@ -1,4 +1,5 @@
-"""The Workflows subpackage contains all the bundled workflows in Speedwagon
+"""Subpackage:  The Workflows subpackage contains all the bundled workflows in
+Speedwagon
 
 During startup, this package is scanned for python modules that start with
 "workflow\\_" in the filename. These files are then scanned to see if they

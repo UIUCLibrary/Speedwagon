@@ -281,7 +281,7 @@ pipeline {
                         lock("system_python_${env.NODE_NAME}"){
                             bat "(if not exist logs mkdir logs) && python -m pip install pip --upgrade --quiet && python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
                         }
-                        bat "python -m venv venv && venv\\Scripts\\pip.exe install tox sphinx"
+                        bat 'python -m venv venv && venv\\Scripts\\pip.exe install "tox<3.10" sphinx'
 
 
                     }

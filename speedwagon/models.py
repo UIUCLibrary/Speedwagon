@@ -1,3 +1,5 @@
+"""Data models for displaying data to user in the user interface"""
+
 import sys
 from typing import Type, Dict, List, Any, Union, Tuple
 import warnings

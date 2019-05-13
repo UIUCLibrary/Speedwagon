@@ -3,28 +3,84 @@
 Sphinx extension that adds the ability to generate documentation for each
 workflow.
 
+By default, a description is added. To not include this,
+add ``:nodescription:`` option
+
 Example:
     ```.. workflowlist::```
+
+
 
 Notes:
     Leading and trailing whitespace is ignored when generating descriptions.
 
 """
 
-from docutils.parsers.rst import Directive
+from docutils.parsers.rst import Directive, directives
 from docutils import nodes
-from speedwagon import job
+import speedwagon
 from sphinx.util import logging
 from sphinx import addnodes
 
-all_workflows = job.available_workflows()
+all_workflows = speedwagon.available_workflows()
+
+
+class AutoWorkflowDirective(Directive):
+    required_arguments = 1
+    optional_arguments = 0
+    has_content = True
+    final_argument_whitespace = True
+    option_spec = {
+        'notitle': directives.flag,
+        'description': directives.flag
+    }
+    add_index = True
+
+    def run(self):
+        workflow = all_workflows.get(self.arguments[0])
+        if not workflow:
+
+            valid_workflows = [w for w in all_workflows.keys()]
+            self.warning(f"Unable to add {self.arguments[0]}, "
+                         f"Only known ones are {','.join(valid_workflows)}")
+            return []
+        indexnode = addnodes.index(entries=[])
+
+        targetid = nodes.make_id("workflow-{}".format(workflow.name))
+
+        targetname = nodes.fully_normalize_name(workflow.name)
+
+        section = nodes.section(names=[targetname], ids=[targetid])
+
+        if "notitle" not in self.options:
+            new_title = nodes.title(workflow.name, text=workflow.name, ids=[targetid])
+            section.append(new_title)
+
+        if "description" in self.options and workflow.description:
+            description_block = nodes.line_block()
+            for line in workflow.description.split("\n"):
+                new_line = nodes.line(text=line)
+                description_block += new_line
+            section += description_block
+        par = nodes.paragraph()
+        self.state.nested_parse(self.content, self.content_offset, par)
+        section += par
+        self.add_name(section)
+        indexnode['entries'].append(
+            ('single', workflow.name, targetid, '', workflow.name[0]))
+
+        section.append(indexnode)
+        return [section]
 
 
 class WorkflowMetadataListDirective(Directive):
 
     entries = dict()
-    has_content = True
+    has_content = False
     logger = logging.getLogger(__name__)
+    option_spec = {
+        'nodescription': directives.flag
+    }
 
     def run(self):
 
@@ -68,7 +124,7 @@ class WorkflowMetadataListDirective(Directive):
         targetname = nodes.fully_normalize_name(workflow.name)
         workflow_item = nodes.section(ids=[ids], names=[targetname])
         workflow_item.append(nodes.title(text=workflow.name, ids=[ids]))
-        if workflow.description:
+        if "nodescription" not in self.options and workflow.description:
             description_block = nodes.line_block()
             for line in workflow.description.split("\n"):
                 new_line = nodes.line(text=line)
@@ -79,7 +135,9 @@ class WorkflowMetadataListDirective(Directive):
 
 
 def setup(app):
+
     app.add_directive("workflowlist", WorkflowMetadataListDirective)
+    app.add_directive("autoworkflow", AutoWorkflowDirective)
     return {
         'version': '0.1',
     }

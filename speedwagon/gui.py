@@ -1,3 +1,7 @@
+"""Main UI code
+
+Mainly for connecting GUI elements, such as buttons, to functions and methods
+that do the work"""
 import email
 import logging
 import os
@@ -12,11 +16,11 @@ from PyQt5 import QtWidgets, QtCore, QtGui  # type: ignore
 import speedwagon.dialog
 import speedwagon.dialog.dialogs
 import speedwagon.dialog.settings
-from . import tabs, worker
+from speedwagon import tabs, worker
 import speedwagon
 import speedwagon.startup
 import speedwagon.config
-from .ui import main_window_shell_ui  # type: ignore
+from speedwagon.ui import main_window_shell_ui  # type: ignore
 from collections import namedtuple
 
 DEBUG_LOGGING_FORMAT = logging.Formatter(
@@ -36,6 +40,7 @@ Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 
 
 class ToolConsole(QtWidgets.QWidget):
+    """asdfasdf"""
 
     def __init__(self, parent):
         super().__init__(parent)

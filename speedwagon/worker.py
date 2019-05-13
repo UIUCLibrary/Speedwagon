@@ -1,3 +1,4 @@
+"""Consumer of tasks"""
 import abc
 import concurrent.futures
 import contextlib

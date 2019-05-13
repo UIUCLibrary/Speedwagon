@@ -1,3 +1,5 @@
+"""Defining execution of a given workflow steps and processes"""
+
 import abc
 import logging
 import tempfile

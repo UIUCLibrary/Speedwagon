@@ -1,3 +1,5 @@
+"""Common code to help generate reports for the user"""
+
 import functools
 
 

@@ -1,3 +1,4 @@
+"""Creating and managing tabs in the UI display"""
 import abc
 import os
 import sys
