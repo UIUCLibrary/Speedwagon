@@ -14,6 +14,7 @@ This documented is for version |version|.
 
    about
    workflows
+   advanced
    development
    history
 

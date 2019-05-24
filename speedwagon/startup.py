@@ -39,24 +39,7 @@ class FileFormatError(Exception):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        '--version', action='version', version=speedwagon.__version__)
-
-    parser.add_argument(
-        "--starting-tab",
-        dest="start_tab",
-        help="Which tab to have open on start"
-    )
-
-    parser.add_argument(
-        "--debug",
-        dest="debug",
-        action='store_true',
-        help="Run with debug mode"
-    )
-    return parser.parse_args()
+    return CliArgsSetter.get_arg_parser()
 
 
 class AbsSetting(metaclass=abc.ABCMeta):
@@ -100,7 +83,7 @@ class CliArgsSetter(AbsSetting):
         return new_settings
 
     @staticmethod
-    def _parse_args():
+    def get_arg_parser():
         parser = argparse.ArgumentParser()
 
         parser.add_argument(
@@ -118,6 +101,11 @@ class CliArgsSetter(AbsSetting):
             action='store_true',
             help="Run with debug mode"
         )
+        return parser
+
+    @staticmethod
+    def _parse_args():
+        parser = CliArgsSetter.get_arg_parser()
         return parser.parse_args()
 
 
