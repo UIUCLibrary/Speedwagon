@@ -13,6 +13,7 @@ This documented is for version |version|.
    :caption: Contents:
 
    about
+   getting_started
    workflows
    advanced
    development
