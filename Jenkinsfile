@@ -509,8 +509,6 @@ pipeline {
                     environment{
                         scannerHome = tool name: 'sonar-scanner-3.3.0', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                         PATH = "${WORKSPACE}\\venv\\Scripts;${PATH}"
-//                        SONAR_LOGIN = credentials("sonar-login-speedwagon")
-
                     }
                     steps{
                         withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
@@ -522,7 +520,7 @@ pipeline {
 -D"sonar.projectBaseDir=%WORKSPACE%/source" \
 -D"sonar.buildString=%BUILD_TAG%" \
 -D"sonar.python.coverage.reportPaths=reports/coverage.xml" \
--D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/*.xml" \
+-D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/**/*.xml" \
 -X'
                             )
                         }
