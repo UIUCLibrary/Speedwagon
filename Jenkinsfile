@@ -525,8 +525,9 @@ pipeline {
                                 bat(
                                     label: "Running sonar scanner",
                                     script: "\
-\"${env.scannerHome}/bin/sonar-scanner\" \
--D\"sonar.projectBaseDir=${WORKSPACE}/source\" \
+\"%scannerHome%/bin/sonar-scanner\" \
+-D\"sonar.projectVersion=%PKG_VERSION% \
+-D\"sonar.projectBaseDir=%WORKSPACE%/source\" \
 -X"
                                 )
                             }
