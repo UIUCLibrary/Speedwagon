@@ -527,9 +527,6 @@ pipeline {
                                     script: "\
 \"${env.scannerHome}/bin/sonar-scanner\" \
 -D\"sonar.projectBaseDir=${WORKSPACE}/source\" \
--D\"sonar.projectKey=speedwagon\" \
--D\"sonar.sources=.\" \
--D\"sonar.host.url=https://sonarqube.library.illinois.edu\"  \
 -X"
                                 )
                             }
