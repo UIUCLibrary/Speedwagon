@@ -521,8 +521,8 @@ pipeline {
                     }
                     steps{
                         dir("source"){
-                            echo "Running sonar scanner"
-//                            bat "\"${env.scannerHome}/bin/sonar-scanner\" D\"sonar.projectKey=speedwagon\" -D\"sonar.sources=.\" -D\"sonar.host.url=https://sonarqube.library.illinois.edu\" -D\"sonar.login=%SONAR_LOGIN%\" -X"
+//                            echo "Running sonar scanner"
+                            bat "\"${env.scannerHome}/bin/sonar-scanner\" D\"sonar.projectKey=speedwagon\" -D\"sonar.sources=.\" -D\"sonar.host.url=https://sonarqube.library.illinois.edu\" -D\"sonar.login=%SONAR_LOGIN%\" -X"
                         }
                     }
                 }
