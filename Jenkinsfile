@@ -516,7 +516,7 @@ pipeline {
                 stage("Run Sonarqube Analysis"){
                     environment{
                         scannerHome = tool name: 'sonar-scanner-3.3.0', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-                        SONAR_LOGIN = credentials("sonar.login")
+                        SONAR_LOGIN = credentials("sonar-login-speedwagon")
 
                     }
                     steps{
