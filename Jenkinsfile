@@ -506,6 +506,9 @@ pipeline {
                     }
                 }
                 stage("Run Sonarqube Analysis"){
+                    when{
+                        equals expected: "master", actual: env.BRANCH_NAME
+                    }
                     environment{
                         scannerHome = tool name: 'sonar-scanner-3.3.0', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                         PATH = "${WORKSPACE}\\venv\\Scripts;${PATH}"
