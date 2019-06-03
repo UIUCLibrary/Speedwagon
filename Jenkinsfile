@@ -520,7 +520,7 @@ pipeline {
 -D"sonar.projectBaseDir=%WORKSPACE%/source" \
 -D"sonar.buildString=%BUILD_TAG%" \
 -D"sonar.python.coverage.reportPaths=reports/coverage.xml" \
--D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/**/*.xml" \
+-D"sonar.python.xunit.reportPath=reports/tests/**/*.xml" \
 -X'
                             )
                         }
