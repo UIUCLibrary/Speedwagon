@@ -509,6 +509,9 @@ pipeline {
                     when{
                         equals expected: "master", actual: env.BRANCH_NAME
                     }
+                    options{
+                        timeout(5)
+                    }
                     environment{
                         scannerHome = tool name: 'sonar-scanner-3.3.0', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                         PATH = "${WORKSPACE}\\venv\\Scripts;${PATH}"
