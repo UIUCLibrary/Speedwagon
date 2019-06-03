@@ -513,6 +513,11 @@ pipeline {
                         }
                     }
                 }
+                stage("Run Sonarqube Analysis"){
+                    steps{
+                        echo "running Sonarqube"
+                    }
+                }
             }
         }
         stage("Packaging") {
