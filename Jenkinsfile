@@ -382,138 +382,136 @@ pipeline {
             environment{
                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
             }
-            parallel {
-                stage("Run Behave BDD Tests") {
-                    steps {
-                        dir("source"){
-                            catchError(buildResult: hudson.model.Result.UNSTABLE, message: 'Did not pass all Behave BDD tests', stageResult: hudson.model.Result.UNSTABLE) {
-                                bat "pipenv run coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
-                            }
-                        }
-                    }
-                    post {
-                        always {
-                            junit "reports/behave/*.xml"
-                        }
-                    }
-                }
-                stage("Run PyTest Unit Tests"){
-                    environment{
-                        junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
-                    }
-                    steps{
-                        dir("source"){
-                            catchError(buildResult: hudson.model.Result.UNSTABLE, message: 'Did not pass all pytest tests', stageResult: hudson.model.Result.UNSTABLE) {
-                                bat "pipenv run coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
-                            }
-                        }
-                    }
-                    post {
-                        always {
-                            junit "reports/pytest/${junit_filename}"
-                        }
-                    }
-                }
-                stage("Run Doctest Tests"){
-                    steps {
-                        dir("source"){
-                            bat "pipenv run sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}/logs/doctest.txt"
-                        }
-                    }
-                    post{
-                        always {
-                            archiveArtifacts artifacts: "logs/doctest.txt"
-                        }
-                        cleanup{
-                            cleanWs(patterns: [[pattern: 'logs/doctest.txt', type: 'INCLUDE']])
-                        }
-                    }
-                }
-                stage("Run MyPy Static Analysis") {
-                    steps{
-                        dir("source"){
-                            catchError(buildResult: hudson.model.Result.SUCCESS, message: 'MyPy found issues', stageResult: hudson.model.Result.UNSTABLE) {
-                                bat script: "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
-                            }
-                        }
-                    }
-                    post {
-                        always {
-                            archiveArtifacts "logs\\mypy.log"
-                            recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
+            stages{
+                stage("Run Tests"){
 
-                            publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
+                    parallel {
+                        stage("Run Behave BDD Tests") {
+                            steps {
+                                dir("source"){
+                                    catchError(buildResult: hudson.model.Result.UNSTABLE, message: 'Did not pass all Behave BDD tests', stageResult: hudson.model.Result.UNSTABLE) {
+                                        bat "pipenv run coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
+                                    }
+                                }
+                            }
+                            post {
+                                always {
+                                    junit "reports/behave/*.xml"
+                                }
+                            }
                         }
-                        cleanup{
-                            cleanWs(patterns: [[pattern: 'logs/mypy.log', type: 'INCLUDE']])
+                        stage("Run PyTest Unit Tests"){
+                            environment{
+                                junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
+                            }
+                            steps{
+                                dir("source"){
+                                    catchError(buildResult: hudson.model.Result.UNSTABLE, message: 'Did not pass all pytest tests', stageResult: hudson.model.Result.UNSTABLE) {
+                                        bat "pipenv run coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
+                                    }
+                                }
+                            }
+                            post {
+                                always {
+                                    junit "reports/pytest/${junit_filename}"
+                                }
+                            }
                         }
-                    }
-                }
-                stage("Run Tox test") {
-                    when{
-                        equals expected: true, actual: params.TEST_RUN_TOX
-                    }
-                    steps {
-                        dir("source"){
-                            runtox()
-//                            script{
-//                                try{
-//                                    bat "pipenv run tox --workdir ${WORKSPACE}\\.tox"
-//                                } catch (exc) {
-//                                    bat "pipenv run tox --workdir ${WORKSPACE}\\.tox --recreate"
-//                                }
-//                            }
+                        stage("Run Doctest Tests"){
+                            steps {
+                                dir("source"){
+                                    bat "pipenv run sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}/logs/doctest.txt"
+                                }
+                            }
+                            post{
+                                always {
+                                    archiveArtifacts artifacts: "logs/doctest.txt"
+                                }
+                                cleanup{
+                                    cleanWs(patterns: [[pattern: 'logs/doctest.txt', type: 'INCLUDE']])
+                                }
+                            }
+                        }
+                        stage("Run MyPy Static Analysis") {
+                            steps{
+                                dir("source"){
+                                    catchError(buildResult: hudson.model.Result.SUCCESS, message: 'MyPy found issues', stageResult: hudson.model.Result.UNSTABLE) {
+                                        bat script: "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
+                                    }
+                                }
+                            }
+                            post {
+                                always {
+                                    archiveArtifacts "logs\\mypy.log"
+                                    recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
+
+                                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
+                                }
+                                cleanup{
+                                    cleanWs(patterns: [[pattern: 'logs/mypy.log', type: 'INCLUDE']])
+                                }
+                            }
+                        }
+                        stage("Run Tox test") {
+                            when{
+                                equals expected: true, actual: params.TEST_RUN_TOX
+                            }
+                            steps {
+                                dir("source"){
+                                    runtox()
+                                }
+                            }
+                            post{
+                                always{
+                                    archiveArtifacts allowEmptyArchive: true, artifacts: '.tox/py*/log/*.log,.tox/log/*.log,logs/tox_report.json'
+                                }
+                                cleanup{
+                                    cleanWs deleteDirs: true, patterns: [
+                                        [pattern: '.tox/py*/log/*.log', type: 'INCLUDE'],
+                                        [pattern: '.tox/log/*.log', type: 'INCLUDE']
+                                    ]
+                                }
+                            }
+                        }
+                        stage("Run Flake8 Static Analysis") {
+                            steps{
+                                dir("source"){
+                                    catchError(buildResult: hudson.model.Result.SUCCESS, message: 'Flake8 found issues', stageResult: hudson.model.Result.UNSTABLE) {
+                                        bat script: "pipenv run flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
+                                    }
+                                }
+                            }
+                            post {
+                                always {
+                                      archiveArtifacts 'logs/flake8.log'
+                                      recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
+                                }
+                                cleanup{
+                                    cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
+                                }
+                            }
                         }
                     }
                     post{
                         always{
-                            archiveArtifacts allowEmptyArchive: true, artifacts: '.tox/py*/log/*.log,.tox/log/*.log,logs/tox_report.json'
-                        }
-                        cleanup{
-                            cleanWs deleteDirs: true, patterns: [
-                                [pattern: '.tox/py*/log/*.log', type: 'INCLUDE'],
-                                [pattern: '.tox/log/*.log', type: 'INCLUDE']
-                            ]
-                        }
-                    }
-                }
-                stage("Run Flake8 Static Analysis") {
-                    steps{
-                        dir("source"){
-                            catchError(buildResult: hudson.model.Result.SUCCESS, message: 'Flake8 found issues', stageResult: hudson.model.Result.UNSTABLE) {
-                                bat script: "pipenv run flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
-                            }
-                        }
-                    }
-                    post {
-                        always {
-                              archiveArtifacts 'logs/flake8.log'
-                              recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
-                        }
-                        cleanup{
-                            cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
-                        }
-                    }
-                }
-            }
-            post{
-                always{
-                    dir("source"){
-                        bat "\"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage combine && \"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && \"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
+                            dir("source"){
+                                bat "\"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage combine && \"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && \"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
 
+                            }
+                            publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                            publishCoverage adapters: [
+                                            coberturaAdapter('reports/coverage.xml')
+                                            ],
+                                        sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                        }
+                        cleanup{
+                            cleanWs(patterns: [
+                                    [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
+                                    [pattern: 'reports/coverage', type: 'INCLUDE'],
+                                    [pattern: 'source/.coverage', type: 'INCLUDE']
+                                ])
+                        }
                     }
-                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                    publishCoverage adapters: [
-                                    coberturaAdapter('reports/coverage.xml')
-                                    ],
-                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
-                }
-                cleanup{
-                    cleanWs(patterns: [
-                            [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
-                            [pattern: 'reports/coverage', type: 'INCLUDE'],
-                            [pattern: 'source/.coverage', type: 'INCLUDE']
-                        ])
                 }
             }
         }
