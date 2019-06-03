@@ -516,13 +516,17 @@ pipeline {
                 stage("Run Sonarqube Analysis"){
                     environment{
                         scannerHome = tool name: 'sonar-scanner-3.3.0', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-                        SONAR_LOGIN = credentials("sonar-login-speedwagon")
+//                        SONAR_LOGIN = credentials("sonar-login-speedwagon")
 
                     }
                     steps{
                         dir("source"){
-//                            echo "Running sonar scanner"
-                            bat "\"${env.scannerHome}/bin/sonar-scanner\" D\"sonar.projectKey=speedwagon\" -D\"sonar.sources=.\" -D\"sonar.host.url=https://sonarqube.library.illinois.edu\" -D\"sonar.login=%SONAR_LOGIN%\" -X"
+                            withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu", credentialsId: 'sonar-login-speedwagon') {
+                                bat(
+                                    label: "Running sonar scanner",
+                                    script: "\"${env.scannerHome}/bin/sonar-scanner\" D\"sonar.projectKey=speedwagon\" -D\"sonar.sources=.\" -D\"sonar.host.url=https://sonarqube.library.illinois.edu\"  -X"
+                                )
+                            }
                         }
                     }
                 }
