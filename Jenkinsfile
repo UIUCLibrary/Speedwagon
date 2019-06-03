@@ -514,8 +514,15 @@ pipeline {
                     }
                 }
                 stage("Run Sonarqube Analysis"){
+                    environment{
+                        scannerHome = tool name: 'sonar-scanner-3.3.0', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                        SONAR_LOGIN = credentials("sonar.login")
+
+                    }
                     steps{
-                        echo "running Sonarqube"
+                        dir("source"){
+                            bat "\"${env.scannerHome}/bin/sonar-scanner\" D\"sonar.projectKey=speedwagon\" -D\"sonar.sources=.\" -D\"sonar.host.url=https://sonarqube.library.illinois.edu\" -D\"sonar.login=%SONAR_LOGIN%\" -X"
+                        }
                     }
                 }
             }
