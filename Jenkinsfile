@@ -517,7 +517,7 @@ pipeline {
                                 script: '\
 "%scannerHome%/bin/sonar-scanner" \
 -D"sonar.projectVersion=%PKG_VERSION%" \
--D"sonar.project.settings=source/sonar-project.properties" \
+-D"project.settings=source/sonar-project.properties" \
 -D"sonar.projectBaseDir=%WORKSPACE%" \
 -D"sonar.sources=source/speedwagon" \
 -D"sonar.tests=source/tests,source/features" \
