@@ -504,13 +504,7 @@ pipeline {
                                             ],
                                         sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                         }
-                        cleanup{
-                            cleanWs(patterns: [
-                                    [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
-                                    [pattern: 'reports/coverage', type: 'INCLUDE'],
-                                    [pattern: 'source/.coverage', type: 'INCLUDE']
-                                ])
-                        }
+
                     }
                 }
                 stage("Run Sonarqube Analysis"){
@@ -520,20 +514,28 @@ pipeline {
 
                     }
                     steps{
-                        dir("source"){
-                            withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
-                                bat(
-                                    label: "Running sonar scanner",
-                                    script: '\
+                        withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
+                            bat(
+                                label: "Running sonar scanner",
+                                script: '\
 "%scannerHome%/bin/sonar-scanner" \
 -D"sonar.projectVersion=%PKG_VERSION%" \
 -D"sonar.projectBaseDir=%WORKSPACE%/source" \
 -D"sonar.buildString=%BUILD_TAG%" \
+-D"sonar.python.coverage.reportPaths=reports/coverage.xml" \
 -X'
-                                )
-                            }
+                            )
                         }
                     }
+                }
+            }
+            post{
+                cleanup{
+                    cleanWs(patterns: [
+                            [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
+                            [pattern: 'reports/coverage', type: 'INCLUDE'],
+                            [pattern: 'source/.coverage', type: 'INCLUDE']
+                        ])
                 }
             }
         }
