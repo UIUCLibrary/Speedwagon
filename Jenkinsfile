@@ -522,8 +522,8 @@ pipeline {
 -D"sonar.tests=tests,features" \
 -D"sonar.buildString=%BUILD_TAG%" \
 -D"sonar.scm.provider=git" \
--D"sonar.python.coverage.reportPaths=../reports/coverage.xml" \
--D"sonar.python.xunit.reportPath=../reports/tests/pytest/*.xml" \
+-D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
+-D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/*.xml" \
 -X'
                             )
                         }
