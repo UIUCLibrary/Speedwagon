@@ -517,7 +517,10 @@ pipeline {
                                 script: '\
 "%scannerHome%/bin/sonar-scanner" \
 -D"sonar.projectVersion=%PKG_VERSION%" \
--D"sonar.projectBaseDir=%WORKSPACE%/source" \
+-D"sonar.project.settings=source/sonar-project.properties" \
+-D"sonar.projectBaseDir=%WORKSPACE%" \
+-D"sonar.sources=source/speedwagon" \
+-D"sonar.tests=source/tests,source/features" \
 -D"sonar.buildString=%BUILD_TAG%" \
 -D"sonar.python.coverage.reportPaths=reports/coverage.xml" \
 -D"sonar.python.xunit.reportPath=reports/tests/pytest/*.xml" \
