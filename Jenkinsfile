@@ -348,9 +348,11 @@ pipeline {
                 }
                 stage("Sphinx Documentation"){
                     steps {
-                        echo "Building docs on ${env.NODE_NAME}"
                         dir("source"){
-                            bat "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx.log"
+                            bat(
+                                label: "Building docs on ${env.NODE_NAME}",
+                                script: "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx.log"
+                                )
                         }
                     }
                     post{
