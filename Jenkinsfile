@@ -524,7 +524,12 @@ pipeline {
                             withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
                                 bat(
                                     label: "Running sonar scanner",
-                                    script: "\"${env.scannerHome}/bin/sonar-scanner\" D\"sonar.projectKey=speedwagon\" -D\"sonar.sources=.\" -D\"sonar.host.url=https://sonarqube.library.illinois.edu\"  -X"
+                                    script: "\
+\"${env.scannerHome}/bin/sonar-scanner\" \
+-D\"sonar.projectKey=speedwagon\" \
+-D\"sonar.sources=.\" \
+-D\"sonar.host.url=https://sonarqube.library.illinois.edu\"  \
+-X"
                                 )
                             }
                         }
