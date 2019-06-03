@@ -386,7 +386,9 @@ pipeline {
                 stage("Run Behave BDD Tests") {
                     steps {
                         dir("source"){
-                            bat "pipenv run coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
+                            catchError(buildResult: hudson.model.Result.UNSTABLE, message: 'Did not pass all Behave BDD tests', stageResult: hudson.model.Result.UNSTABLE) {
+                                bat "pipenv run coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
+                            }
                         }
                     }
                     post {
