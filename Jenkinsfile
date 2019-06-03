@@ -524,11 +524,12 @@ pipeline {
                             withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
                                 bat(
                                     label: "Running sonar scanner",
-                                    script: "\
-\"%scannerHome%/bin/sonar-scanner\" \
--D\"sonar.projectVersion=%PKG_VERSION% \
--D\"sonar.projectBaseDir=%WORKSPACE%/source\" \
--X"
+                                    script: '\
+"%scannerHome%/bin/sonar-scanner" \
+-D"sonar.projectVersion=%PKG_VERSION%" \
+-D"sonar.projectBaseDir=%WORKSPACE%/source" \
+-D"sonar.buildString=%BUILD_TAG%" \
+-X'
                                 )
                             }
                         }
