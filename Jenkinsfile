@@ -517,14 +517,13 @@ pipeline {
                                 script: '\
 "%scannerHome%/bin/sonar-scanner" \
 -D"sonar.projectVersion=%PKG_VERSION%" \
--D"project.settings=source/sonar-project.properties" \
--D"sonar.projectBaseDir=%WORKSPACE%" \
+-D"sonar.projectBaseDir=%WORKSPACE%/source" \
 -D"sonar.sources=source/speedwagon" \
--D"sonar.tests=source/tests,source/features" \
+-D"sonar.tests=tests,features" \
 -D"sonar.buildString=%BUILD_TAG%" \
 -D"sonar.scm.provider=git" \
--D"sonar.python.coverage.reportPaths=reports/coverage.xml" \
--D"sonar.python.xunit.reportPath=reports/tests/pytest/*.xml" \
+-D"sonar.python.coverage.reportPaths=../reports/coverage.xml" \
+-D"sonar.python.xunit.reportPath=../reports/tests/pytest/*.xml" \
 -X'
                             )
                         }
