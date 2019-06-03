@@ -522,6 +522,7 @@ pipeline {
 -D"sonar.sources=source/speedwagon" \
 -D"sonar.tests=source/tests,source/features" \
 -D"sonar.buildString=%BUILD_TAG%" \
+-D"sonar.scm.provider=git" \
 -D"sonar.python.coverage.reportPaths=reports/coverage.xml" \
 -D"sonar.python.xunit.reportPath=reports/tests/pytest/*.xml" \
 -X'
