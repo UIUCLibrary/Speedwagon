@@ -391,13 +391,13 @@ pipeline {
                             steps {
                                 dir("source"){
                                     catchError(buildResult: hudson.model.Result.UNSTABLE, message: 'Did not pass all Behave BDD tests', stageResult: hudson.model.Result.UNSTABLE) {
-                                        bat "pipenv run coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\behave"
+                                        bat "pipenv run coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\tests\\behave"
                                     }
                                 }
                             }
                             post {
                                 always {
-                                    junit "reports/behave/*.xml"
+                                    junit "reports/tests/behave/*.xml"
                                 }
                             }
                         }
@@ -405,13 +405,13 @@ pipeline {
                             steps{
                                 dir("source"){
                                     catchError(buildResult: hudson.model.Result.UNSTABLE, message: 'Did not pass all pytest tests', stageResult: hudson.model.Result.UNSTABLE) {
-                                        bat "pipenv run coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
+                                        bat "pipenv run coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
                                     }
                                 }
                             }
                             post {
                                 always {
-                                    junit "reports/pytest/${junit_filename}"
+                                    junit "reports/tests/pytest/${junit_filename}"
                                 }
                             }
                         }
@@ -521,7 +521,7 @@ pipeline {
 -D"sonar.projectBaseDir=%WORKSPACE%/source" \
 -D"sonar.buildString=%BUILD_TAG%" \
 -D"sonar.python.coverage.reportPaths=reports/coverage.xml" \
--D"sonar.python.xunit.reportPath=reports/pytest/junit-%junit_filename%" \
+-D"sonar.python.xunit.reportPath=reports/tests/*.xml" \
 -X'
                             )
                         }
