@@ -401,7 +401,9 @@ pipeline {
                     }
                     steps{
                         dir("source"){
-                            bat "pipenv run coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
+                            catchError(buildResult: hudson.model.Result.UNSTABLE, message: 'Did not pass all pytest tests', stageResult: hudson.model.Result.UNSTABLE) {
+                                bat "pipenv run coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
+                            }
                         }
                     }
                     post {
