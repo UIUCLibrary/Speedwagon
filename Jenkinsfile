@@ -381,6 +381,7 @@ pipeline {
         stage("Test") {
             environment{
                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
             }
             stages{
                 stage("Run Tests"){
@@ -401,9 +402,6 @@ pipeline {
                             }
                         }
                         stage("Run PyTest Unit Tests"){
-                            environment{
-                                junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
-                            }
                             steps{
                                 dir("source"){
                                     catchError(buildResult: hudson.model.Result.UNSTABLE, message: 'Did not pass all pytest tests', stageResult: hudson.model.Result.UNSTABLE) {
@@ -523,6 +521,7 @@ pipeline {
 -D"sonar.projectBaseDir=%WORKSPACE%/source" \
 -D"sonar.buildString=%BUILD_TAG%" \
 -D"sonar.python.coverage.reportPaths=reports/coverage.xml" \
+-D"sonar.python.xunit.reportPath=reports/pytest/junit-%junit_filename%" \
 -X'
                             )
                         }
