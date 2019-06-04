@@ -531,9 +531,9 @@ pipeline {
 -D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
 -X'
                             )
-                            echo "SonarQube results = ${waitForQualityGate(abortPipeline: false).status}"
 
                         }
+                        echo "SonarQube results = ${waitForQualityGate(abortPipeline: false).status}"
                     }
                 }
             }
