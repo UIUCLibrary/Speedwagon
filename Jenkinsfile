@@ -615,7 +615,10 @@ pipeline {
                             )
 
                         }
-                        echo "SonarQube results = ${waitForQualityGate(abortPipeline: false).status}"
+                        script{
+                            def sonarqube_result = waitForQualityGate(abortPipeline: false)
+                            echo "SonarQube results = ${sonarqube_result.status}"
+                        }
                     }
                 }
             }
