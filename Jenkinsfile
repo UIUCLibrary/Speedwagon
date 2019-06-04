@@ -528,6 +528,7 @@ pipeline {
 -D"sonar.scm.provider=git" \
 -D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
 -D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
+-D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
 -X'
                             )
                         }
