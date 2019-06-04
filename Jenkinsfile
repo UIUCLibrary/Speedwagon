@@ -622,6 +622,14 @@ pipeline {
                             }
                         }
                     }
+                    post{
+                        always{
+                            archiveArtifacts(
+                                allowEmptyArchive: true,
+                                artifacts: ".scannerwork/report-task.txt"
+                            )
+                        }
+                    }
                 }
             }
             post{
