@@ -531,10 +531,7 @@ pipeline {
 -D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
 -X'
                             )
-                            script{
-                                def quality_result = waitForQualityGate abortPipeline: false
-                                echo "SonarQube results = ${quality_result.status}"
-                            }
+                            echo "SonarQube results = ${waitForQualityGate(abortPipeline: false).status}"
 
                         }
                     }
