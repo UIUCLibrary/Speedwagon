@@ -178,6 +178,36 @@ def runtox(){
 }
 
 
+def deploy_hathi_beta(jiraIssueKey){
+    script{
+        def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
+        input "Update standalone ${installer_files} to //storage.library.illinois.edu/HathiTrust/Tools/beta/? More information: ${currentBuild.absoluteUrl}"
+
+            cifsPublisher(
+                publishers: [[
+                    configName: 'hathitrust tools',
+                    transfers: [[
+                        cleanRemote: false,
+                        excludes: '',
+                        flatten: false,
+                        makeEmptyDirs: false,
+                        noDefaultExcludes: false,
+                        patternSeparator: '[, ]+',
+                        remoteDirectory: 'beta',
+                        remoteDirectorySDF: false,
+                        removePrefix: '',
+                        sourceFiles: "*.msi,*.exe,*.zip",
+                        ]],
+                    usePromotionTimestamp: false,
+                    useWorkspaceInPromotion: false,
+                    verbose: false
+                    ]]
+            )
+            jiraComment body: "Added \"${installer_files}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${jiraIssueKey}"
+
+    }
+}
+
 pipeline {
     agent {
         label "Windows && Python3 && longfilenames && WIX"
@@ -933,34 +963,8 @@ pipeline {
                     }
                     steps {
                         unstash "STANDALONE_INSTALLERS"
-                        script{
-                            dir("dist"){
-                                def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
-                                input "Update standalone ${installer_files} to //storage.library.illinois.edu/HathiTrust/Tools/beta/? More information: ${currentBuild.absoluteUrl}"
-
-                                    cifsPublisher(
-                                        publishers: [[
-                                            configName: 'hathitrust tools',
-                                            transfers: [[
-                                                cleanRemote: false,
-                                                excludes: '',
-                                                flatten: false,
-                                                makeEmptyDirs: false,
-                                                noDefaultExcludes: false,
-                                                patternSeparator: '[, ]+',
-                                                remoteDirectory: 'beta',
-                                                remoteDirectorySDF: false,
-                                                removePrefix: '',
-                                                sourceFiles: "*.msi,*.exe,*.zip",
-                                                ]],
-                                            usePromotionTimestamp: false,
-                                            useWorkspaceInPromotion: false,
-                                            verbose: false
-                                            ]]
-                                    )
-                                    jiraComment body: "Added \"${installer_files}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${params.JIRA_ISSUE_VALUE}"
-
-                            }
+                        dir("dist"){
+                            deploy_hathi_beta("${params.JIRA_ISSUE_VALUE}")
                         }
 
 
