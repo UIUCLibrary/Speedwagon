@@ -207,6 +207,58 @@ def deploy_hathi_beta(jiraIssueKey){
 
     }
 }
+def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
+    script{
+        def msi_files = findFiles glob: "${file_glob}"
+        def deployment_request = requestDeploy yaml: "${WORKSPACE}/deployment.yml", file_name: msi_files[0]
+
+        cifsPublisher(
+            publishers: [[
+                configName: 'SCCM Staging',
+                transfers: [[
+                    cleanRemote: false,
+                    excludes: '',
+                    flatten: false,
+                    makeEmptyDirs: false,
+                    noDefaultExcludes: false,
+                    patternSeparator: '[, ]+',
+                    remoteDirectory: '',
+                    remoteDirectorySDF: false,
+                    removePrefix: '',
+                    sourceFiles: '*.msi'
+                    ]],
+                usePromotionTimestamp: false,
+                useWorkspaceInPromotion: false,
+                verbose: false
+                ]]
+            )
+
+        jiraComment body: "Version ${pkgVersion} sent to staging for user testing.", issueKey: "${jiraIssueKey}"
+        input("Deploy to production?")
+        writeFile file: "${WORKSPACE}/logs/deployment_request.txt", text: deployment_request
+        echo deployment_request
+        cifsPublisher(
+            publishers: [[
+                configName: 'SCCM Upload',
+                transfers: [[
+                    cleanRemote: false,
+                    excludes: '',
+                    flatten: false,
+                    makeEmptyDirs: false,
+                    noDefaultExcludes: false,
+                    patternSeparator: '[, ]+',
+                    remoteDirectory: '',
+                    remoteDirectorySDF: false,
+                    removePrefix: '',
+                    sourceFiles: '*.msi'
+                    ]],
+                usePromotionTimestamp: false,
+                useWorkspaceInPromotion: false,
+                verbose: false
+                ]]
+        )
+    }
+}
 
 pipeline {
     agent {
@@ -997,54 +1049,7 @@ pipeline {
                         unstash "Deployment"
                         script{
                             dir("dist"){
-                                def msi_files = findFiles glob: '*.msi'
-                                def deployment_request = requestDeploy yaml: "${WORKSPACE}/deployment.yml", file_name: msi_files[0]
-
-                                cifsPublisher(
-                                    publishers: [[
-                                        configName: 'SCCM Staging',
-                                        transfers: [[
-                                            cleanRemote: false,
-                                            excludes: '',
-                                            flatten: false,
-                                            makeEmptyDirs: false,
-                                            noDefaultExcludes: false,
-                                            patternSeparator: '[, ]+',
-                                            remoteDirectory: '',
-                                            remoteDirectorySDF: false,
-                                            removePrefix: '',
-                                            sourceFiles: '*.msi'
-                                            ]],
-                                        usePromotionTimestamp: false,
-                                        useWorkspaceInPromotion: false,
-                                        verbose: false
-                                        ]]
-                                    )
-
-                                jiraComment body: "Version ${env.PKG_VERSION} sent to staging for user testing.", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                                input("Deploy to production?")
-                                writeFile file: "${WORKSPACE}/logs/deployment_request.txt", text: deployment_request
-                                echo deployment_request
-                                cifsPublisher(
-                                    publishers: [[
-                                        configName: 'SCCM Upload',
-                                        transfers: [[
-                                            cleanRemote: false,
-                                            excludes: '',
-                                            flatten: false,
-                                            makeEmptyDirs: false,
-                                            noDefaultExcludes: false,
-                                            patternSeparator: '[, ]+',
-                                            remoteDirectory: '',
-                                            remoteDirectorySDF: false,
-                                            removePrefix: '',
-                                            sourceFiles: '*.msi'
-                                            ]],
-                                        usePromotionTimestamp: false,
-                                        useWorkspaceInPromotion: false,
-                                        verbose: false
-                                        ]]
-                                )
+                                deploy_sscm("*.msi", "${env.PKG_VERSION}", "${params.JIRA_ISSUE_VALUE}")
                             }
                         }
                     }
