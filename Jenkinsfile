@@ -169,9 +169,9 @@ def get_build_number(){
 def runtox(){
     script{
         try{
-            bat "pipenv run tox --workdir ${WORKSPACE}\\.tox --result-json=${WORKSPACE}\\logs\\tox_report.json"
+            bat "pipenv run tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox --result-json=${WORKSPACE}\\logs\\tox_report.json"
         } catch (exc) {
-            bat "pipenv run tox --workdir ${WORKSPACE}\\.tox --result-json=${WORKSPACE}\\logs\\tox_report.json --recreate"
+            bat "pipenv run tox -vv --workdir ${WORKSPACE}\\.tox --result-json=${WORKSPACE}\\logs\\tox_report.json --recreate"
         }
     }
 
