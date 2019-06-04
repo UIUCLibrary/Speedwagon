@@ -390,7 +390,7 @@ pipeline {
                         stage("Run Behave BDD Tests") {
                             steps {
                                 dir("source"){
-                                    catchError(buildResult: hudson.model.Result.UNSTABLE, message: 'Did not pass all Behave BDD tests', stageResult: hudson.model.Result.UNSTABLE) {
+                                    catchError(buildResult: "UNSTABLE", message: 'Did not pass all Behave BDD tests', stageResult: "UNSTABLE") {
                                         bat "pipenv run coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\tests\\behave"
                                     }
                                 }
@@ -404,7 +404,7 @@ pipeline {
                         stage("Run PyTest Unit Tests"){
                             steps{
                                 dir("source"){
-                                    catchError(buildResult: hudson.model.Result.UNSTABLE, message: 'Did not pass all pytest tests', stageResult: hudson.model.Result.UNSTABLE) {
+                                    catchError(buildResult: "UNSTABLE", message: 'Did not pass all pytest tests', stageResult: "UNSTABLE") {
                                         bat "pipenv run coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
                                     }
                                 }
@@ -433,7 +433,7 @@ pipeline {
                         stage("Run MyPy Static Analysis") {
                             steps{
                                 dir("source"){
-                                    catchError(buildResult: hudson.model.Result.SUCCESS, message: 'MyPy found issues', stageResult: hudson.model.Result.UNSTABLE) {
+                                    catchError(buildResult: "SUCCESS", message: 'MyPy found issues', stageResult: "UNSTABLE") {
                                         bat script: "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
                                     }
                                 }
@@ -474,7 +474,7 @@ pipeline {
                         stage("Run Flake8 Static Analysis") {
                             steps{
                                 dir("source"){
-                                    catchError(buildResult: hudson.model.Result.SUCCESS, message: 'Flake8 found issues', stageResult: hudson.model.Result.UNSTABLE) {
+                                    catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
                                         bat script: "pipenv run flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                     }
                                 }
