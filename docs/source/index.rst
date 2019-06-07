@@ -12,7 +12,6 @@ This documented is for version |version|.
    use_cases
    workflows
    uiuc_workflows
-   simplified_workflow
    advanced
    development
    history

@@ -1,3 +1,5 @@
+.. _simplified_workflow:
+
 =================================================
 Simplified Workflow - How to package vendor files
 =================================================
