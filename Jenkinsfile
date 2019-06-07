@@ -409,7 +409,7 @@ pipeline {
                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
             }
             parallel {
-                stage("Python Package"){
+                stage("Building Python Library"){
                     steps {
 
                         dir("source"){
@@ -658,15 +658,27 @@ pipeline {
                                     bat script: "pipenv run python setup.py build -b ../build sdist -d ../dist --format zip bdist_wheel -d ../dist"
                                 }
                             }
-                            post {
-                                success {
-                                    archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
-                                    stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
-                                }
-                                cleanup{
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', type: 'INCLUDE']]
-                                }
+
+                        }
+                        stage("Testing Python Packages"){
+                            steps{
+                                testPythonPackage(
+                                    pythonToolName: "CPython-3.7",
+                                    pkgRegex: "dist/*.whl,dist/*.tar.gz,dist/*.zip",
+                                    testNodeLabels: "Windows",
+                                    testEnvs: ["py36", "py37"]
+
+                                )
                             }
+                        }
+                    }
+                    post {
+                        success {
+                            archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
+                            stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
+                        }
+                        cleanup{
+                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', type: 'INCLUDE']]
                         }
                     }
                 }
