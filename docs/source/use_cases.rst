@@ -69,8 +69,6 @@ Internal Workflow Diagram (Locally generated package)
   figure below:
 
 
-.. todo: Fix file tree
-
 Input - Batch Folder
 
     - Preservation
