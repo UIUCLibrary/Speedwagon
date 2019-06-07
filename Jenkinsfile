@@ -409,7 +409,7 @@ pipeline {
                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
             }
             parallel {
-                stage("Python Package"){
+                stage("Building Python Library"){
                     steps {
 
                         dir("source"){
