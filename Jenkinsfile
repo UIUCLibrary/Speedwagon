@@ -668,6 +668,11 @@ pipeline {
                                 }
                             }
                         }
+                        stage("Testing Python Packages"){
+                            steps{
+                                echo "I'm testing"
+                            }
+                        }
                     }
                 }
                 stage("Windows Standalone"){
