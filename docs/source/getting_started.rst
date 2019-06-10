@@ -6,7 +6,7 @@ Getting Started
 Installation
 ============
 
-There a number of ways to install Speedwagon, depending on your needs.
+There are a number of ways to install Speedwagon, depending on your needs.
 
 Installation on Windows
 -----------------------
@@ -15,7 +15,7 @@ Since the majority of computer workstations used by the staff of The University
 of Illinois at Urbana Champaign libraries run the Windows operating system,
 the development of Speedwagon focused on making the application easily
 accessible on the Windows platform. A great deal work has gone into making
-Speedwagon not only easy to use but also easy to install on Windows by an
+Speedwagon not only easy to use but also easy to install on Windows for an
 average user.
 
 Installation on Windows from MSI installer
@@ -31,7 +31,7 @@ and adds an easy way to uninstall it later if you choose.
 Double click on the Speedwagon-version.number.msi file to start the
 installation wizard.
 
-.. image:: _static/msi_icon.png
+.. image:: msi_icon.png
 
 
 Installation on Windows from whl File
