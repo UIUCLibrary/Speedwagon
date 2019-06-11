@@ -505,6 +505,7 @@ pipeline {
                             post{
                                 always {
                                     archiveArtifacts artifacts: "logs/doctest.txt"
+                                    postLogFileOnPullRequest("Doctest result",'logs/doctest.txt')
                                 }
                                 cleanup{
                                     cleanWs(patterns: [[pattern: 'logs/doctest.txt', type: 'INCLUDE']])
@@ -523,6 +524,7 @@ pipeline {
                                 always {
                                     archiveArtifacts "logs\\mypy.log"
                                     recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
+                                    postLogFileOnPullRequest("mypy result", 'logs/mypy.log')
 
                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                                 }
