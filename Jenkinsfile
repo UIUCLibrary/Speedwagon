@@ -7,7 +7,7 @@ import static groovy.json.JsonOutput.* // For pretty printing json data
 
 //def PKG_VERSION = "unknown"
 //def PKG_NAME = "unknown"
-def CMAKE_VERSION = "cmake3.12"
+def CMAKE_VERSION = "cmake3.13"
 
 //def DOC_ZIP_FILENAME = "doc.zip"
 //                                    script{
