@@ -100,32 +100,6 @@ def capture_ctest_results(PATH){
                     stopProcessingIfError: true
                     )
                 ]
-//        def ctest_results = findFiles glob: "${glob_expression}"
-//        ctest_results.each{ ctest_result ->
-//            bat "del ${ctest_result}"
-//        }
-//        dir("${PATH}"){
-//            deleteDir()
-//        }
-    }
-}
-def cleanup_workspace(){
-    dir("logs"){
-        echo "Cleaning out logs directory"
-        deleteDir()
-        bat "dir > nul"
-    }
-
-    dir("build"){
-        echo "Cleaning out build directory"
-        deleteDir()
-        bat "dir > nul"
-    }
-
-    dir("dist"){
-        echo "Cleaning out dist directory"
-        deleteDir()
-        bat "dir > nul"
     }
 }
 
@@ -357,7 +331,6 @@ pipeline {
 
                 stage("Cleanup"){
                     steps {
-//                        cleanup_workspace()
                         dir("source") {
                             stash includes: 'deployment.yml', name: "Deployment"
                         }
