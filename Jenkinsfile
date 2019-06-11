@@ -18,14 +18,6 @@ def CMAKE_VERSION = "cmake3.12"
 ////                                        echo "${generator_list.toString()}"
 //                                        def generator_argument = ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR}
 //                                    }
-def find_wix_logs(){
-    script{
-        def log_files = findFiles glob: '**/*.log'
-        log_files.each{
-            echo "${it}"
-        }
-    }
-}
 def check_jira_issue(issue, outputFile){
     script{
         def issue_response = jiraGetIssue idOrKey: issue, site: 'https://bugs.library.illinois.edu'
@@ -801,9 +793,8 @@ pipeline {
                                     stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
                                 }
                                 failure {
-                                    find_wix_logs()
 
-                                    archiveArtifacts allowEmptyArchive: true, artifacts: "standalone_build/dist/**/wix.log"
+                                    archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log"
                                 }
                             }
                         }
