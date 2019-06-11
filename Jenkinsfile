@@ -440,6 +440,7 @@ pipeline {
                         always {
                             recordIssues(tools: [pep8(pattern: 'logs/build_sphinx.log')])
                             archiveArtifacts artifacts: 'logs/build_sphinx.log'
+                            postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
@@ -567,11 +568,6 @@ pipeline {
                                       archiveArtifacts 'logs/flake8.log'
                                       recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
                                       postLogFileOnPullRequest("flake8 result",'logs/flake8.log')
-//                                      script{
-//                                        if (env.CHANGE_ID){
-//                                            pullRequest.comment('This PR is highly illogical..')
-//                                        }
-//                                    }
                                 }
                                 cleanup{
                                     cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
