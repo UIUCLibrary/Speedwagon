@@ -244,6 +244,17 @@ def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
     }
 }
 
+def postLogFileOnPullRequest(title, filename){
+    script{
+        if (env.CHANGE_ID){
+            def log_file = readFile 'logs/flake8.log'
+            echo "log_file.length() = ${log_file.length()}"
+
+//            pullRequest.comment('This PR is highly illogical..')
+        }
+    }
+}
+
 pipeline {
     agent {
         label "Windows && Python3 && longfilenames && WIX"
@@ -338,11 +349,6 @@ pipeline {
                 }
                 stage("Install Python System Dependencies"){
                     steps{
-                        script{
-                            if (env.CHANGE_ID){
-                                pullRequest.comment('This PR is highly illogical..')
-                            }
-                        }
                         lock("system_python_${env.NODE_NAME}"){
                             bat "(if not exist logs mkdir logs) && python -m pip install pip --upgrade --quiet && python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
                         }
@@ -553,6 +559,12 @@ pipeline {
                                 always {
                                       archiveArtifacts 'logs/flake8.log'
                                       recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
+                                      postLogFileOnPullRequest("flake8 result",'logs/flake8.log')
+//                                      script{
+//                                        if (env.CHANGE_ID){
+//                                            pullRequest.comment('This PR is highly illogical..')
+//                                        }
+//                                    }
                                 }
                                 cleanup{
                                     cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
