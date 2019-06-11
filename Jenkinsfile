@@ -247,7 +247,7 @@ def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
 def postLogFileOnPullRequest(title, filename){
     script{
         if (env.CHANGE_ID){
-            def log_file = readFile 'logs/flake8.log'
+            def log_file = readFile filename
             if(log_file.length() == 0){
                 return
             }
