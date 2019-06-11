@@ -248,9 +248,14 @@ def postLogFileOnPullRequest(title, filename){
     script{
         if (env.CHANGE_ID){
             def log_file = readFile 'logs/flake8.log'
-            echo "log_file.length() = ${log_file.length()}"
+            if(log_file.length() == 0){
+                return
+            }
 
-//            pullRequest.comment('This PR is highly illogical..')
+            pullRequest.comment("""${title}
+${log_file}
+"""
+            )
         }
     }
 }
