@@ -721,6 +721,7 @@ pipeline {
                     }
                     environment {
                         PATH = "${tool 'CPython-3.6'};${tool(name: 'WixToolset_311', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool')};$PATH"
+                        PYTHONDONTWRITEBYTECODE="x"
                     }
                     stages{
                         stage("CMake Build"){
