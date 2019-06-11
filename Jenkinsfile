@@ -160,34 +160,41 @@ def runtox(){
     }
 
 }
-
+def deploy_hathi_beta_nexus_prescon_beta(filename, deployUrl, credId){
+    script{
+        withCredentials([usernamePassword(credentialsId: credId, passwordVariable: 'nexusPassword', usernameVariable: 'nexusUsername')]) {
+            // curl -v --upload C:\Users\hborcher\PycharmProjects\modular_UI\build\Speedwagon-0.1.4-win64.msi  https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/Speedwagon-0.1.4-win64.msi -u ${nexusUsername}:${nexusPassword}
+            echo "deploying ${filename} to ${deployUrl}"
+        }
+    }
+}
 
 def deploy_hathi_beta(jiraIssueKey){
     script{
         def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
         input "Update standalone ${installer_files} to //storage.library.illinois.edu/HathiTrust/Tools/beta/? More information: ${currentBuild.absoluteUrl}"
 
-            cifsPublisher(
-                publishers: [[
-                    configName: 'hathitrust tools',
-                    transfers: [[
-                        cleanRemote: false,
-                        excludes: '',
-                        flatten: false,
-                        makeEmptyDirs: false,
-                        noDefaultExcludes: false,
-                        patternSeparator: '[, ]+',
-                        remoteDirectory: 'beta',
-                        remoteDirectorySDF: false,
-                        removePrefix: '',
-                        sourceFiles: "*.msi,*.exe,*.zip",
-                        ]],
-                    usePromotionTimestamp: false,
-                    useWorkspaceInPromotion: false,
-                    verbose: false
-                    ]]
-            )
-            jiraComment body: "Added \"${installer_files}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${jiraIssueKey}"
+        cifsPublisher(
+            publishers: [[
+                configName: 'hathitrust tools',
+                transfers: [[
+                    cleanRemote: false,
+                    excludes: '',
+                    flatten: false,
+                    makeEmptyDirs: false,
+                    noDefaultExcludes: false,
+                    patternSeparator: '[, ]+',
+                    remoteDirectory: 'beta',
+                    remoteDirectorySDF: false,
+                    removePrefix: '',
+                    sourceFiles: "*.msi,*.exe,*.zip",
+                    ]],
+                usePromotionTimestamp: false,
+                useWorkspaceInPromotion: false,
+                verbose: false
+                ]]
+        )
+        jiraComment body: "Added \"${installer_files}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${jiraIssueKey}"
 
     }
 }
@@ -289,14 +296,19 @@ pipeline {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
         // file description: 'Build with alternative requirements.txt file', name: 'requirements.txt'
-        booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
-        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: false, description: "Create a standalone wix based .msi installer")
+//        TODO: Turn  TEST_RUN_TOX on by default
+        booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
+
+//        TODO: Turn PACKAGE_WINDOWS_STANDALONE_MSI off by default
+        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: true, description: "Create a standalone wix based .msi installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: false, description: "Create a standalone NULLSOFT NSIS based .exe installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_ZIP", defaultValue: false, description: "Create a standalone portable package")
 
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
-        booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to \\\\storage.library.illinois.edu\\HathiTrust\\Tools\\beta\\")
+
+        //        TODO: Turn DEPLOY_HATHI_TOOL_BETA off by default
+        booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: on, description: "Deploy standalone to \\\\storage.library.illinois.edu\\HathiTrust\\Tools\\beta\\")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
@@ -1045,7 +1057,16 @@ pipeline {
                     steps {
                         unstash "STANDALONE_INSTALLERS"
                         dir("dist"){
-                            deploy_hathi_beta("${params.JIRA_ISSUE_VALUE}")
+                            script{
+                                def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
+                                installer_files.each{
+                                    def deployUrl = "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon" + it
+                                    deploy_hathi_beta_nexus_prescon_beta(it, deployUrl, "jenkins-nexus")
+                                }
+
+                            }
+
+//                            deploy_hathi_beta("${params.JIRA_ISSUE_VALUE}")
                         }
 
 
