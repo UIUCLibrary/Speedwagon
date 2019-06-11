@@ -243,7 +243,7 @@ if(WIN32)
         message(STATUS "Found ${pytest_file}")
 
 
-        execute_process(COMMAND ${VENV_PYTHON} -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} -qq --collect-only
+        execute_process(COMMAND ${VENV_PYTHON} python -B -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} -qq --collect-only
                         OUTPUT_VARIABLE PYTEST_COLLECTION
                         ERROR_VARIABLE pytest_std
             )
@@ -257,7 +257,7 @@ if(WIN32)
                     string(STRIP ${test_name} test_name)
                     add_test(NAME ${PROJECT_NAME}.pytest.${pytest_file}.${test_name}
                              WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
-                             COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file}::${test_name} --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
+                             COMMAND ${PROJECT_BINARY_DIR}/standalone/python -B -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file}::${test_name} --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
                     )
                     set_tests_properties(${PROJECT_NAME}.pytest.${pytest_file}.${test_name} PROPERTIES
                         RESOURCE_LOCK ${pytest_file}
@@ -269,7 +269,7 @@ if(WIN32)
             message(STATUS "Added ${PROJECT_NAME}.pytest.${pytest_file} to CTest")
             add_test(NAME ${PROJECT_NAME}.pytest.${pytest_file}
                        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
-                COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
+                COMMAND ${PROJECT_BINARY_DIR}/standalone/python -B -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
             )
 
         endif(PYTEST_COLLECTION)
