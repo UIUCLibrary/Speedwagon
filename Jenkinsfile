@@ -244,6 +244,22 @@ def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
     }
 }
 
+def postLogFileOnPullRequest(title, filename){
+    script{
+        if (env.CHANGE_ID){
+            def log_file = readFile filename
+            if(log_file.length() == 0){
+                return
+            }
+
+            pullRequest.comment("""${title}
+${log_file}
+"""
+            )
+        }
+    }
+}
+
 pipeline {
     agent {
         label "Windows && Python3 && longfilenames && WIX"
@@ -424,6 +440,7 @@ pipeline {
                         always {
                             recordIssues(tools: [pep8(pattern: 'logs/build_sphinx.log')])
                             archiveArtifacts artifacts: 'logs/build_sphinx.log'
+                            postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
@@ -489,6 +506,7 @@ pipeline {
                             post{
                                 always {
                                     archiveArtifacts artifacts: "logs/doctest.txt"
+                                    postLogFileOnPullRequest("Doctest result",'logs/doctest.txt')
                                 }
                                 cleanup{
                                     cleanWs(patterns: [[pattern: 'logs/doctest.txt', type: 'INCLUDE']])
@@ -507,7 +525,6 @@ pipeline {
                                 always {
                                     archiveArtifacts "logs\\mypy.log"
                                     recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
-
                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                                 }
                                 cleanup{
@@ -548,6 +565,7 @@ pipeline {
                                 always {
                                       archiveArtifacts 'logs/flake8.log'
                                       recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
+                                      postLogFileOnPullRequest("flake8 result",'logs/flake8.log')
                                 }
                                 cleanup{
                                     cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
