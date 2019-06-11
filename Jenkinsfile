@@ -1,5 +1,5 @@
 #!groovy
-//@Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
+@Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
 import org.ds.*
 import static groovy.json.JsonOutput.* // For pretty printing json data
 
@@ -308,7 +308,7 @@ pipeline {
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
 
         //        TODO: Turn DEPLOY_HATHI_TOOL_BETA off by default
-        booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: on, description: "Deploy standalone to \\\\storage.library.illinois.edu\\HathiTrust\\Tools\\beta\\")
+        booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to \\\\storage.library.illinois.edu\\HathiTrust\\Tools\\beta\\")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
@@ -1059,10 +1059,10 @@ pipeline {
                         dir("dist"){
                             script{
                                 def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
-                                installer_files.each{
-                                    def deployUrl = "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon" + it
-                                    deploy_hathi_beta_nexus_prescon_beta(it, deployUrl, "jenkins-nexus")
-                                }
+//                                installer_files.each{
+//                                    def deployUrl = "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon" + it
+//                                    deploy_hathi_beta_nexus_prescon_beta(it, deployUrl, "jenkins-nexus")
+//                                }
 
                             }
 
