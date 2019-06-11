@@ -793,18 +793,22 @@ pipeline {
                                     stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
                                 }
                                 failure {
-                                    dir("cmake_build"){
-                                        archiveArtifacts allowEmptyArchive: true, artifacts: "**/wix.log"
-                                    }
+                                    archiveArtifacts allowEmptyArchive: true, artifacts: "standalone_build/dist/**/wix.log"
                                 }
-                                cleanup{
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'dist', type: 'INCLUDE']]
-                                }
-
                             }
                         }
                     }
                     post {
+                        failure {
+                            cleanWs(
+                                deleteDirs: true,
+                                disableDeferredWipeout: true,
+                                patterns: [
+                                    [pattern: 'python_deps_cache', type: 'INCLUDE'],
+                                    [pattern: 'standalone_venv ', type: 'INCLUDE'],
+                                    ]
+                                )
+                        }
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
@@ -814,6 +818,7 @@ pipeline {
                                     [pattern: '*@tmp', type: 'INCLUDE'],
                                     [pattern: 'source', type: 'INCLUDE'],
                                     [pattern: 'temp', type: 'INCLUDE'],
+                                    [pattern: 'dist', type: 'INCLUDE'],
                                     [pattern: 'logs', type: 'INCLUDE'],
                                     [pattern: 'generatedJUnitFiles', type: 'INCLUDE']
                                 ]
