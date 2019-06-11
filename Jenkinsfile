@@ -1,5 +1,5 @@
 #!groovy
-@Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
+//@Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
 import org.ds.*
 import static groovy.json.JsonOutput.* // For pretty printing json data
 
