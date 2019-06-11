@@ -7,7 +7,7 @@ recursive-include features/steps *.py
 recursive-include features *.feature
 include docs/make.bat docs/Makefile
 recursive-include docs/source *
-recursive-exclude docs/build/ *
+recursive-exclude docs/build *
 
 prune *.traineddata
 
