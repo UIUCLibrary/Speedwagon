@@ -338,6 +338,9 @@ pipeline {
                 }
                 stage("Install Python System Dependencies"){
                     steps{
+                        script{
+                            pullRequest.comment('This PR is highly illogical..')
+                        }
                         lock("system_python_${env.NODE_NAME}"){
                             bat "(if not exist logs mkdir logs) && python -m pip install pip --upgrade --quiet && python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
                         }
