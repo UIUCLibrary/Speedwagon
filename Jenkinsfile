@@ -794,7 +794,7 @@ pipeline {
                                 }
                                 failure {
 
-                                    archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log"
+                                    archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log,dist/**/*.wxs"
                                 }
                             }
                         }
