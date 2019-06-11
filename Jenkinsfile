@@ -721,7 +721,7 @@ pipeline {
                     stages{
                         stage("CMake Build"){
                             options{
-                                timeout(5)
+                                timeout(10)
                             }
                             steps {
                                 bat """if not exist "cmake_build" mkdir cmake_build
