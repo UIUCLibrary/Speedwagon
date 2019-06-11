@@ -525,8 +525,6 @@ pipeline {
                                 always {
                                     archiveArtifacts "logs\\mypy.log"
                                     recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
-                                    postLogFileOnPullRequest("mypy result", 'logs/mypy.log')
-
                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                                 }
                                 cleanup{
