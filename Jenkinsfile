@@ -1136,6 +1136,9 @@ pipeline {
     post {
         failure {
             report_help_info()
+            dir("source"){
+                bat "pipenv --rm"
+            }
         }
         cleanup {
             cleanWs(
