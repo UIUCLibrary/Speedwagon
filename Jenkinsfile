@@ -162,8 +162,6 @@ def runtox(){
 }
 def deploy_hathi_beta_nexus_prescon_beta(filename, deployUrl, credId){
     script{
-        File f = new File(filename)
-        echo "f.name = ${f.name}"
         withCredentials([usernamePassword(credentialsId: credId, passwordVariable: 'nexusPassword', usernameVariable: 'nexusUsername')]) {
             // curl -v --upload C:\Users\hborcher\PycharmProjects\modular_UI\build\Speedwagon-0.1.4-win64.msi  https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/Speedwagon-0.1.4-win64.msi -u ${nexusUsername}:${nexusPassword}
             echo "deploying ${filename} to ${deployUrl}"
@@ -1075,7 +1073,8 @@ pipeline {
                                 def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
                                 installer_files.each{
                                     def deployUrl = "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon" + it
-                                    deploy_hathi_beta_nexus_prescon_beta(it, deployUrl, "jenkins-nexus")
+                                    echo "${it}"
+//                                    deploy_hathi_beta_nexus_prescon_beta(it, deployUrl, "jenkins-nexus")
                                 }
 
                             }
