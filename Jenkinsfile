@@ -808,10 +808,12 @@ pipeline {
                                 deleteDirs: true,
                                 disableDeferredWipeout: true,
                                 patterns: [
+                                    [pattern: 'standalone_venv ', type: 'INCLUDE'],
                                     [pattern: 'python_deps_cache', type: 'INCLUDE'],
-                                    [pattern: 'standalone_venv ', type: 'INCLUDE']
+
                                     ]
                                 )
+                            bat "dir"
                         }
                         cleanup{
                             cleanWs(
