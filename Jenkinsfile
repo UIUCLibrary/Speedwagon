@@ -1072,7 +1072,7 @@ pipeline {
                             def installer_files  = findFiles glob: 'dist/*.msi,dist/*.exe,dist/*.zip'
                             installer_files.each{
                                 def deployUrl = "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon" + it
-                                echo "${it}"
+                                echo "${it.name}"
 //                                    deploy_hathi_beta_nexus_prescon_beta(it, deployUrl, "jenkins-nexus")
                             }
 
