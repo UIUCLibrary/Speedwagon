@@ -1072,11 +1072,15 @@ pipeline {
                         unstash "STANDALONE_INSTALLERS"
                         script{
                             def installer_files  = findFiles glob: 'dist/*.msi,dist/*.exe,dist/*.zip'
+                            def new_urls = []
                             installer_files.each{
                                 def deployUrl = "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/" + it.name
-//                                echo "${it.name}"
                                   deploy_hathi_beta_nexus_prescon_beta(it, deployUrl, "jenkins-nexus")
+                                  new_urls << deployUrl
                             }
+                            echo "Added the following beta file(s):\n ${new_urls}"
+//                            jiraComment body: "Added the following betas ${new_urls}", issueKey: "${jiraIssueKey}"
+
 
                         }
 
