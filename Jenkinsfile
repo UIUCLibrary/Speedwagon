@@ -160,7 +160,7 @@ def runtox(){
     }
 
 }
-def deploy_hathi_beta_nexus_prescon_beta(filename, deployUrl, credId){
+def deploy_to_nexus(filename, deployUrl, credId){
     script{
         withCredentials([usernamePassword(credentialsId: credId, passwordVariable: 'nexusPassword', usernameVariable: 'nexusUsername')]) {
              bat(
@@ -1073,12 +1073,15 @@ pipeline {
                         script{
                             def installer_files  = findFiles glob: 'dist/*.msi,dist/*.exe,dist/*.zip'
                             def new_urls = []
+                            input "Update standalone ${installer_files} to 'https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/'? More information: ${currentBuild.absoluteUrl}"
                             installer_files.each{
                                 def deployUrl = "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/" + it.name
-                                  deploy_hathi_beta_nexus_prescon_beta(it, deployUrl, "jenkins-nexus")
+                                  deploy_to_nexus(it, deployUrl, "jenkins-nexus")
                                   new_urls << deployUrl
                             }
-                            echo "Added the following beta file(s):\n ${new_urls}"
+                            echo """The following beta file(s) are now available:
+${new_urls.join{"* " + it }.join("\n")}
+"""
 //                            jiraComment body: "Added the following betas ${new_urls}", issueKey: "${jiraIssueKey}"
 
 
