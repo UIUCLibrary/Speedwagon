@@ -1142,7 +1142,7 @@ pipeline {
         failure {
             report_help_info()
             dir("source"){
-                bat "${tool 'CPython-3.6'}\\Scripts\\pipenv --rm"
+                bat "\"${tool 'CPython-3.6'}\\Scripts\\pipenv\" --rm"
             }
         }
         cleanup {
