@@ -165,7 +165,7 @@ def deploy_hathi_beta_nexus_prescon_beta(filename, deployUrl, credId){
         withCredentials([usernamePassword(credentialsId: credId, passwordVariable: 'nexusPassword', usernameVariable: 'nexusUsername')]) {
              bat(
                  label: "Deploying ${filename} to ${deployUrl}",
-                 script: "curl -v --upload ${filename} ${deployUrl} -u ${nexusUsername}:${nexusPassword}"
+                 script: "curl -v --upload ${filename} ${deployUrl} -u %nexusUsername%:%nexusPassword%"
              )
         }
     }
