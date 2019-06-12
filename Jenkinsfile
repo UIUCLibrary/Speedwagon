@@ -769,12 +769,6 @@ pipeline {
                                         )
                                     capture_ctest_results("logs/ctest")
                                 }
-                                cleanup{
-                                    cleanWs deleteDirs: true, patterns: [
-                                            [pattern: 'logs/ctest', type: 'INCLUDE'],
-                                            [pattern: 'logs/standalone*.log', type: 'INCLUDE']
-                                        ]
-                                }
 
                             }
 
