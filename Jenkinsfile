@@ -188,35 +188,6 @@ ${url_message_list}
     }
 }
 
-def deploy_hathi_beta(jiraIssueKey){
-    script{
-        def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
-        input "Update standalone ${installer_files} to //storage.library.illinois.edu/HathiTrust/Tools/beta/? More information: ${currentBuild.absoluteUrl}"
-
-        cifsPublisher(
-            publishers: [[
-                configName: 'hathitrust tools',
-                transfers: [[
-                    cleanRemote: false,
-                    excludes: '',
-                    flatten: false,
-                    makeEmptyDirs: false,
-                    noDefaultExcludes: false,
-                    patternSeparator: '[, ]+',
-                    remoteDirectory: 'beta',
-                    remoteDirectorySDF: false,
-                    removePrefix: '',
-                    sourceFiles: "*.msi,*.exe,*.zip",
-                    ]],
-                usePromotionTimestamp: false,
-                useWorkspaceInPromotion: false,
-                verbose: false
-                ]]
-        )
-        jiraComment body: "Added \"${installer_files}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${jiraIssueKey}"
-
-    }
-}
 def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
     script{
         def msi_files = findFiles glob: "${file_glob}"
