@@ -173,15 +173,24 @@ def deploy_to_nexus(filename, deployUrl, credId){
 def deploy_artifacts_to_url(regex, urlDestination, jiraIssueKey){
     script{
         def installer_files  = findFiles glob: 'dist/*.msi,dist/*.exe,dist/*.zip'
+        def simple_file_names = []
+
+        installer_files.each{
+            simple_file_names << it.name
+        }
+
+
+        input "Update standalone ${simple_file_names.join(',')} to '${urlDestination}'? More information: ${currentBuild.absoluteUrl}"
+
         def new_urls = []
-        input "Update standalone ${installer_files} to '${urlDestination}'? More information: ${currentBuild.absoluteUrl}"
         installer_files.each{
             def deployUrl = "${urlDestination}" + it.name
               deploy_to_nexus(it, deployUrl, "jenkins-nexus")
               new_urls << deployUrl
         }
+        def url_message_list = new_urls.collect{"* " + it}.join("\n")
         echo """The following beta file(s) are now available:
-${new_urls.join{"* " + it }.join("\n")}
+${url_message_list}
 """
 //                            jiraComment body: "Added the following betas ${new_urls}", issueKey: "${jiraIssueKey}"
 
