@@ -231,6 +231,9 @@ if(WIN32)
 #    add_subdirectory(tests)
     ###########################################
     enable_testing()
+#   TODO: Make this dynamic by calling python -m pytest --collect-only and
+#         parsing the data
+
     set(pytests
         test_pkg_metadata.py
         test_tasks.py
