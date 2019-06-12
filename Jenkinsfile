@@ -5,19 +5,7 @@ import static groovy.json.JsonOutput.* // For pretty printing json data
 
 @Library(["devpi", "PythonHelpers"]) _
 
-//def PKG_VERSION = "unknown"
-//def PKG_NAME = "unknown"
 def CMAKE_VERSION = "cmake3.13"
-
-//def DOC_ZIP_FILENAME = "doc.zip"
-//                                    script{
-////                                        def generator_list = []
-////                                        if(params.PACKAGE_WINDOWS_STANDALONE_MSI){
-////                                            generator_list << "WIX"
-////                                        }
-////                                        echo "${generator_list.toString()}"
-//                                        def generator_argument = ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR}
-//                                    }
 def check_jira_issue(issue, outputFile){
     script{
         def issue_response = jiraGetIssue idOrKey: issue, site: 'https://bugs.library.illinois.edu'
@@ -195,7 +183,7 @@ def deploy_artifacts_to_url(regex, urlDestination, jiraIssueKey){
 ${url_message_list}
 """
             echo "${jira_message}"
-//            jiraComment body: "${jira_message}", issueKey: "${jiraIssueKey}"
+            jiraComment body: "${jira_message}", issueKey: "${jiraIssueKey}"
         }
     }
 }
@@ -326,20 +314,16 @@ pipeline {
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
-        // file description: 'Build with alternative requirements.txt file', name: 'requirements.txt'
-//        TODO: Turn  TEST_RUN_TOX on by default
-        booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
+        booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
 
-//        TODO: Turn PACKAGE_WINDOWS_STANDALONE_MSI off by default
-        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: true, description: "Create a standalone wix based .msi installer")
+        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: false, description: "Create a standalone wix based .msi installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: false, description: "Create a standalone NULLSOFT NSIS based .exe installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_ZIP", defaultValue: false, description: "Create a standalone portable package")
 
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
 
-        //        TODO: Turn DEPLOY_HATHI_TOOL_BETA off by default
-        booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: true, description: "Deploy standalone to \\\\storage.library.illinois.edu\\HathiTrust\\Tools\\beta\\")
+        booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to \\\\storage.library.illinois.edu\\HathiTrust\\Tools\\beta\\")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
@@ -698,10 +682,6 @@ pipeline {
             failFast true
             parallel {
                 stage("Source and Wheel formats"){
-//                TODO: Remove this line
-                    when{
-                        equals expected: true, actual: false
-                    }
                     stages{
 
                         stage("Packaging sdist and wheel"){
@@ -1100,11 +1080,6 @@ pipeline {
                     steps {
                         unstash "STANDALONE_INSTALLERS"
                         deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/", params.JIRA_ISSUE_VALUE)
-
-
-//                            deploy_hathi_beta("${params.JIRA_ISSUE_VALUE}")
-
-
                     }
                     post{
                         cleanup{
