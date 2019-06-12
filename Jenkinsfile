@@ -803,12 +803,13 @@ pipeline {
                     }
                     post {
                         failure {
+                            bat "dir"
                             cleanWs(
                                 deleteDirs: true,
                                 disableDeferredWipeout: true,
                                 patterns: [
                                     [pattern: 'python_deps_cache', type: 'INCLUDE'],
-                                    [pattern: 'standalone_venv ', type: 'INCLUDE'],
+                                    [pattern: 'standalone_venv ', type: 'INCLUDE']
                                     ]
                                 )
                         }
