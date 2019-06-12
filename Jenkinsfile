@@ -164,7 +164,9 @@ def deploy_hathi_beta_nexus_prescon_beta(filename, deployUrl, credId){
     script{
         withCredentials([usernamePassword(credentialsId: credId, passwordVariable: 'nexusPassword', usernameVariable: 'nexusUsername')]) {
             // curl -v --upload C:\Users\hborcher\PycharmProjects\modular_UI\build\Speedwagon-0.1.4-win64.msi  https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/Speedwagon-0.1.4-win64.msi -u ${nexusUsername}:${nexusPassword}
-            echo "deploying ${filename} to ${deployUrl}"
+            File f = new File(filename)
+            def file_name = f.getName()
+            echo "deploying ${file_name} to ${deployUrl}"
         }
     }
 }
