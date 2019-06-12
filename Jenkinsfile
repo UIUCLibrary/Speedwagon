@@ -5,19 +5,7 @@ import static groovy.json.JsonOutput.* // For pretty printing json data
 
 @Library(["devpi", "PythonHelpers"]) _
 
-//def PKG_VERSION = "unknown"
-//def PKG_NAME = "unknown"
-def CMAKE_VERSION = "cmake3.12"
-
-//def DOC_ZIP_FILENAME = "doc.zip"
-//                                    script{
-////                                        def generator_list = []
-////                                        if(params.PACKAGE_WINDOWS_STANDALONE_MSI){
-////                                            generator_list << "WIX"
-////                                        }
-////                                        echo "${generator_list.toString()}"
-//                                        def generator_argument = ${params.PACKAGE_WINDOWS_STANDALONE_PACKAGE_GENERATOR}
-//                                    }
+def CMAKE_VERSION = "cmake3.13"
 def check_jira_issue(issue, outputFile){
     script{
         def issue_response = jiraGetIssue idOrKey: issue, site: 'https://bugs.library.illinois.edu'
@@ -160,37 +148,46 @@ def runtox(){
     }
 
 }
-
-
-def deploy_hathi_beta(jiraIssueKey){
+def deploy_to_nexus(filename, deployUrl, credId){
     script{
-        def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
-        input "Update standalone ${installer_files} to //storage.library.illinois.edu/HathiTrust/Tools/beta/? More information: ${currentBuild.absoluteUrl}"
-
-            cifsPublisher(
-                publishers: [[
-                    configName: 'hathitrust tools',
-                    transfers: [[
-                        cleanRemote: false,
-                        excludes: '',
-                        flatten: false,
-                        makeEmptyDirs: false,
-                        noDefaultExcludes: false,
-                        patternSeparator: '[, ]+',
-                        remoteDirectory: 'beta',
-                        remoteDirectorySDF: false,
-                        removePrefix: '',
-                        sourceFiles: "*.msi,*.exe,*.zip",
-                        ]],
-                    usePromotionTimestamp: false,
-                    useWorkspaceInPromotion: false,
-                    verbose: false
-                    ]]
-            )
-            jiraComment body: "Added \"${installer_files}\" to //storage.library.illinois.edu/HathiTrust/Tools/beta/", issueKey: "${jiraIssueKey}"
-
+        withCredentials([usernamePassword(credentialsId: credId, passwordVariable: 'nexusPassword', usernameVariable: 'nexusUsername')]) {
+             bat(
+                 label: "Deploying ${filename} to ${deployUrl}",
+                 script: "curl -v --upload ${filename} ${deployUrl} -u %nexusUsername%:%nexusPassword%"
+             )
+        }
     }
 }
+def deploy_artifacts_to_url(regex, urlDestination, jiraIssueKey){
+    script{
+        def installer_files  = findFiles glob: 'dist/*.msi,dist/*.exe,dist/*.zip'
+        def simple_file_names = []
+
+        installer_files.each{
+            simple_file_names << it.name
+        }
+
+
+        input "Update standalone ${simple_file_names.join(', ')} to '${urlDestination}'? More information: ${currentBuild.absoluteUrl}"
+
+        def new_urls = []
+        try{
+            installer_files.each{
+                def deployUrl = "${urlDestination}" + it.name
+                  deploy_to_nexus(it, deployUrl, "jenkins-nexus")
+                  new_urls << deployUrl
+            }
+        } finally{
+            def url_message_list = new_urls.collect{"* " + it}.join("\n")
+            def jira_message = """The following beta file(s) are now available:
+${url_message_list}
+"""
+            echo "${jira_message}"
+            jiraComment body: "${jira_message}", issueKey: "${jiraIssueKey}"
+        }
+    }
+}
+
 def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
     script{
         def msi_files = findFiles glob: "${file_glob}"
@@ -288,15 +285,16 @@ pipeline {
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
-        // file description: 'Build with alternative requirements.txt file', name: 'requirements.txt'
         booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
+
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: false, description: "Create a standalone wix based .msi installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: false, description: "Create a standalone NULLSOFT NSIS based .exe installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_ZIP", defaultValue: false, description: "Create a standalone portable package")
 
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
-        booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to \\\\storage.library.illinois.edu\\HathiTrust\\Tools\\beta\\")
+
+        booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
@@ -365,9 +363,6 @@ pipeline {
                         always{
                             archiveArtifacts artifacts: "logs/pippackages_system_*.log"
                         }
-                        failure {
-                            deleteDir()
-                        }
                         cleanup{
                             cleanWs(patterns: [[pattern: "logs/pippackages_system_*.log", type: 'INCLUDE']])
                         }
@@ -389,7 +384,9 @@ pipeline {
                             archiveArtifacts artifacts: "logs/pippackages_pipenv_*.log"
                         }
                         failure {
-                            deleteDir()
+                            dir("source"){
+                                bat "pipenv --rm"
+                            }
                         }
                         cleanup{
                             cleanWs(patterns: [[pattern: "logs/pippackages_pipenv_*.log", type: 'INCLUDE']])
@@ -400,6 +397,9 @@ pipeline {
             post{
                 always{
                     echo "Configured ${env.PKG_NAME}, version ${env.PKG_VERSION}, for testing."
+                }
+                failure{
+                    deleteDir()
                 }
             }
         }
@@ -704,12 +704,12 @@ pipeline {
                         }
                     }
                     environment {
-                        PATH = "${tool 'CPython-3.6'};$PATH"
+                        PATH = "${tool 'CPython-3.6'};${tool(name: 'WixToolset_311', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool')};$PATH"
                     }
                     stages{
                         stage("CMake Build"){
                             options{
-                                timeout(5)
+                                timeout(10)
                             }
                             steps {
                                 bat """if not exist "cmake_build" mkdir cmake_build
@@ -751,12 +751,6 @@ pipeline {
                                         )
                                     capture_ctest_results("logs/ctest")
                                 }
-                                cleanup{
-                                    cleanWs deleteDirs: true, patterns: [
-                                            [pattern: 'logs/ctest', type: 'INCLUDE'],
-                                            [pattern: 'logs/standalone*.log', type: 'INCLUDE']
-                                        ]
-                                }
 
                             }
 
@@ -777,18 +771,27 @@ pipeline {
                                     stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
                                 }
                                 failure {
-                                    dir("cmake_build"){
-                                        archiveArtifacts allowEmptyArchive: true, artifacts: "**/wix.log"
-                                    }
-                                }
-                                cleanup{
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'dist', type: 'INCLUDE']]
-                                }
 
+                                    archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log,dist/**/*.wxs"
+                                }
                             }
                         }
                     }
                     post {
+                        failure {
+                            cleanWs(
+                                deleteDirs: true,
+                                disableDeferredWipeout: true,
+                                patterns: [
+                                    [pattern: 'standalone_venv ', type: 'INCLUDE'],
+                                    [pattern: 'python_deps_cache', type: 'INCLUDE'],
+
+                                    ]
+                                )
+                            dir("standalone_venv"){
+                                deleteDir()
+                            }
+                        }
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
@@ -798,6 +801,7 @@ pipeline {
                                     [pattern: '*@tmp', type: 'INCLUDE'],
                                     [pattern: 'source', type: 'INCLUDE'],
                                     [pattern: 'temp', type: 'INCLUDE'],
+                                    [pattern: 'dist', type: 'INCLUDE'],
                                     [pattern: 'logs', type: 'INCLUDE'],
                                     [pattern: 'generatedJUnitFiles', type: 'INCLUDE']
                                 ]
@@ -952,8 +956,10 @@ pipeline {
                     }
                     post {
                         success {
-                            echo "it Worked. Pushing file to ${env.BRANCH_NAME} index"
-                            bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
+                            bat(
+                                label: "it Worked. Pushing file to ${env.BRANCH_NAME} index",
+                                script:"venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
+                            )
                         }
                     }
                 }
@@ -1044,11 +1050,7 @@ pipeline {
                     }
                     steps {
                         unstash "STANDALONE_INSTALLERS"
-                        dir("dist"){
-                            deploy_hathi_beta("${params.JIRA_ISSUE_VALUE}")
-                        }
-
-
+                        deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/", params.JIRA_ISSUE_VALUE)
                     }
                     post{
                         cleanup{
@@ -1096,12 +1098,11 @@ pipeline {
     post {
         failure {
             report_help_info()
+            dir("source"){
+                bat "\"${tool 'CPython-3.6'}\\Scripts\\pipenv\" --rm"
+            }
         }
         cleanup {
-             dir("source"){
-                 bat "\"${tool 'CPython-3.6'}\\python\" -m pipenv run python setup.py clean --all"
-             }
-
             cleanWs(
                 deleteDirs: true,
                 patterns: [
