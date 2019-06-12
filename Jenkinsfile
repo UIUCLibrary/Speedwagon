@@ -180,21 +180,23 @@ def deploy_artifacts_to_url(regex, urlDestination, jiraIssueKey){
         }
 
 
-        input "Update standalone ${simple_file_names.join(',')} to '${urlDestination}'? More information: ${currentBuild.absoluteUrl}"
+        input "Update standalone ${simple_file_names.join(', ')} to '${urlDestination}'? More information: ${currentBuild.absoluteUrl}"
 
         def new_urls = []
-        installer_files.each{
-            def deployUrl = "${urlDestination}" + it.name
-              deploy_to_nexus(it, deployUrl, "jenkins-nexus")
-              new_urls << deployUrl
-        }
-        def url_message_list = new_urls.collect{"* " + it}.join("\n")
-        echo """The following beta file(s) are now available:
+        try{
+            installer_files.each{
+                def deployUrl = "${urlDestination}" + it.name
+                  deploy_to_nexus(it, deployUrl, "jenkins-nexus")
+                  new_urls << deployUrl
+            }
+        } finally{
+            def url_message_list = new_urls.collect{"* " + it}.join("\n")
+            def jira_message = """The following beta file(s) are now available:
 ${url_message_list}
 """
-//                            jiraComment body: "Added the following betas ${new_urls}", issueKey: "${jiraIssueKey}"
-
-
+            echo "${jira_message}"
+//            jiraComment body: "${jira_message}", issueKey: "${jiraIssueKey}"
+        }
     }
 }
 
