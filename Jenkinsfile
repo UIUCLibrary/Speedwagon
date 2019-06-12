@@ -377,9 +377,6 @@ pipeline {
                         always{
                             archiveArtifacts artifacts: "logs/pippackages_system_*.log"
                         }
-                        failure {
-                            deleteDir()
-                        }
                         cleanup{
                             cleanWs(patterns: [[pattern: "logs/pippackages_system_*.log", type: 'INCLUDE']])
                         }
@@ -401,7 +398,9 @@ pipeline {
                             archiveArtifacts artifacts: "logs/pippackages_pipenv_*.log"
                         }
                         failure {
-                            deleteDir()
+                            dir("source"){
+                                bat "pipenv --rm
+                            }
                         }
                         cleanup{
                             cleanWs(patterns: [[pattern: "logs/pippackages_pipenv_*.log", type: 'INCLUDE']])
@@ -412,6 +411,9 @@ pipeline {
             post{
                 always{
                     echo "Configured ${env.PKG_NAME}, version ${env.PKG_VERSION}, for testing."
+                }
+                failure{
+                    deleteDir()
                 }
             }
         }
