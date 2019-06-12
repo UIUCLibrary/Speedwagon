@@ -234,8 +234,8 @@ if(WIN32)
     set(pytests
         test_pkg_metadata.py
         test_tasks.py
-        test_tools.py
-        test_ui.py
+        test_models.py
+        test_get_config.py
         )
     #file(GLOB pytests RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/tests tests/test_*.py)
 
