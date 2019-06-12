@@ -399,7 +399,7 @@ pipeline {
                         }
                         failure {
                             dir("source"){
-                                bat "pipenv --rm
+                                bat "pipenv --rm"
                             }
                         }
                         cleanup{
@@ -1132,10 +1132,6 @@ pipeline {
             report_help_info()
         }
         cleanup {
-             dir("source"){
-                 bat "\"${tool 'CPython-3.6'}\\python\" -m pipenv run python setup.py clean --all"
-             }
-
             cleanWs(
                 deleteDirs: true,
                 patterns: [
