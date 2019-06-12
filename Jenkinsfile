@@ -170,6 +170,24 @@ def deploy_to_nexus(filename, deployUrl, credId){
         }
     }
 }
+def deploy_artifacts_to_url(regex, urlDestination, jiraIssueKey){
+    script{
+        def installer_files  = findFiles glob: 'dist/*.msi,dist/*.exe,dist/*.zip'
+        def new_urls = []
+        input "Update standalone ${installer_files} to '${urlDestination}'? More information: ${currentBuild.absoluteUrl}"
+        installer_files.each{
+            def deployUrl = "${urlDestination}" + it.name
+              deploy_to_nexus(it, deployUrl, "jenkins-nexus")
+              new_urls << deployUrl
+        }
+        echo """The following beta file(s) are now available:
+${new_urls.join{"* " + it }.join("\n")}
+"""
+//                            jiraComment body: "Added the following betas ${new_urls}", issueKey: "${jiraIssueKey}"
+
+
+    }
+}
 
 def deploy_hathi_beta(jiraIssueKey){
     script{
@@ -1070,22 +1088,8 @@ pipeline {
                     }
                     steps {
                         unstash "STANDALONE_INSTALLERS"
-                        script{
-                            def installer_files  = findFiles glob: 'dist/*.msi,dist/*.exe,dist/*.zip'
-                            def new_urls = []
-                            input "Update standalone ${installer_files} to 'https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/'? More information: ${currentBuild.absoluteUrl}"
-                            installer_files.each{
-                                def deployUrl = "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/" + it.name
-                                  deploy_to_nexus(it, deployUrl, "jenkins-nexus")
-                                  new_urls << deployUrl
-                            }
-                            echo """The following beta file(s) are now available:
-${new_urls.join{"* " + it }.join("\n")}
-"""
-//                            jiraComment body: "Added the following betas ${new_urls}", issueKey: "${jiraIssueKey}"
+                        deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/", params.JIRA_ISSUE_VALUE)
 
-
-                        }
 
 //                            deploy_hathi_beta("${params.JIRA_ISSUE_VALUE}")
 
