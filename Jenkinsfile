@@ -813,6 +813,9 @@ pipeline {
 
                                     ]
                                 )
+                            dir("standalone_venv"){
+                                deleteDir()
+                            }
                             bat "dir"
                         }
                         cleanup{
