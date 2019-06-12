@@ -1068,15 +1068,13 @@ pipeline {
                     }
                     steps {
                         unstash "STANDALONE_INSTALLERS"
-                        dir("dist"){
-                            script{
-                                def installer_files  = findFiles glob: '*.msi,*.exe,*.zip'
-                                installer_files.each{
-                                    def deployUrl = "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon" + it
-                                    deploy_hathi_beta_nexus_prescon_beta(it, deployUrl, "jenkins-nexus")
-                                }
-
+                        script{
+                            def installer_files  = findFiles glob: 'dist/*.msi,dist/*.exe,dist/*.zip'
+                            installer_files.each{
+                                def deployUrl = "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon" + it
+                                deploy_hathi_beta_nexus_prescon_beta(it, deployUrl, "jenkins-nexus")
                             }
+
 
 //                            deploy_hathi_beta("${params.JIRA_ISSUE_VALUE}")
                         }
