@@ -156,6 +156,6 @@ ENV/
 /.mypy_cache/
 
 # Qt generated files
-frames/ui/*.py
-!frames/ui/__init__.py
+speedwagon/ui/*.py
+!speedwagon/ui/__init__.py
 *.traineddata
