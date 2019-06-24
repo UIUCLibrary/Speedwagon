@@ -39,6 +39,8 @@ class OCRWorkflow(speedwagon.Workflow):
     def __init__(self) -> None:
         super().__init__()
         self.tessdata_path = self.global_settings.get("tessdata")
+        if not os.path.exists(self.tessdata_path):
+            os.mkdir(self.tessdata_path)
 
         description = \
             "Create OCR text files for images. \n" \
