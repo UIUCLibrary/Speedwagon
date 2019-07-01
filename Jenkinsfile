@@ -39,6 +39,28 @@ def check_jira(project, issue){
     check_jira_issue(issue, "logs/jira_issue_data.json")
 
 }
+
+def build_sphinx(){
+        dir("source"){
+            bat(
+                label: "Building HTML docs on ${env.NODE_NAME}",
+                script: "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx.log"
+                )
+            bat(
+                label: "Building LaTex docs on ${env.NODE_NAME}",
+                script: "python -m pipenv run sphinx-build docs/source ..\\build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
+                )
+        }
+        echo "PDFLATEX = ${env.PDFLATEX}"
+        bat "${env.PDFLATEX}/pdflatex --version"
+        dir("build\\docs\\latex"){
+
+            bat(
+               label: "Building pdf from Latex",
+               script: "${env.PDFLATEX}/pdflatex speedwagon.tex -interaction=nonstopmode -output-directory=..\\pdf"
+            )
+        }
+}
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
     script{
         def cpack_generators = []
@@ -350,18 +372,25 @@ pipeline {
                         }
                     }
                 }
-                stage("Install Python System Dependencies"){
+                stage("Install Python Dependencies"){
                     steps{
                         lock("system_python_${env.NODE_NAME}"){
-                            bat "(if not exist logs mkdir logs) && python -m pip install pip --upgrade --quiet && python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
+                            bat(
+                                label: "Install Python System Dependencies",
+                                script:"(if not exist logs mkdir logs) && python -m pip install pip --upgrade --quiet && python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
+                                )
                         }
-                        bat 'python -m venv venv && venv\\Scripts\\pip.exe install "tox<3.10" sphinx pylint'
+                        bat (
+                            label: "Install Python Virtual Environment Dependencies",
+                            script: "python -m venv venv && venv\\Scripts\\pip.exe install \"tox<3.10\" sphinx pylint && venv\\Scripts\\pip list > logs/pippackages_venv_${env.NODE_NAME}.log"
+                            )
 
 
                     }
                     post{
                         always{
                             archiveArtifacts artifacts: "logs/pippackages_system_*.log"
+                            archiveArtifacts artifacts: "logs/pippackages_venv_*.log"
                         }
                         cleanup{
                             cleanWs(patterns: [[pattern: "logs/pippackages_system_*.log", type: 'INCLUDE']])
@@ -428,18 +457,19 @@ pipeline {
                     }
                 }
                 stage("Sphinx Documentation"){
+                    options{
+                        timeout(2)
+                    }
+                    environment{
+                        PDFLATEX = tool name: 'TexLive', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
+                    }
                     steps {
-                        dir("source"){
-                            bat(
-                                label: "Building docs on ${env.NODE_NAME}",
-                                script: "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx.log"
-                                )
-                        }
+                        build_sphinx()
                     }
                     post{
                         always {
                             recordIssues(tools: [pep8(pattern: 'logs/build_sphinx.log')])
-                            archiveArtifacts artifacts: 'logs/build_sphinx.log'
+                            archiveArtifacts artifacts: 'logs/build_sphinx.log,build/docs/pdf/*.log'
                             postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
                         }
                         success{
@@ -1055,7 +1085,7 @@ pipeline {
                     post{
                         cleanup{
 
-                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.*', type: 'INCLUDE']]
+                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist.*', type: 'INCLUDE']]
                         }
                     }
                 }
