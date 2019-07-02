@@ -51,14 +51,14 @@ def build_sphinx(){
                 script: "python -m pipenv run sphinx-build docs/source ..\\build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
                 )
         }
-        echo "PDFLATEX = ${env.PDFLATEX}"
-        bat "${env.PDFLATEX}/pdflatex --version"
-        dir("build\\docs\\latex"){
-
+        dir("build/docs/latex"){
             bat(
-               label: "Building pdf from Latex",
-               script: "${env.PDFLATEX}/pdflatex speedwagon.tex -interaction=nonstopmode -output-directory=..\\pdf"
+               label: "Converting documentation from LaTex format into a pdf",
+               script: "${env.PDFLATEX}\\pdflatex -interaction=nonstopmode speedwagon.tex "
             )
+        }
+        dir("build/docs"){
+            bat "move /Y latex\\*.pdf"
         }
 }
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
@@ -469,10 +469,11 @@ pipeline {
                     post{
                         always {
                             recordIssues(tools: [pep8(pattern: 'logs/build_sphinx.log')])
-                            archiveArtifacts artifacts: 'logs/build_sphinx.log,build/docs/pdf/*.log'
+                            archiveArtifacts artifacts: 'logs/build_sphinx.log'
                             postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
                         }
                         success{
+                            archiveArtifacts artifacts: "build/docs/*.pdf"
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                             zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${env.DOC_ZIP_FILENAME}"
                             stash includes: "dist/${env.DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
