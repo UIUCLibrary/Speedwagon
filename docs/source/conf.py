@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# frames documentation build configuration file, created by
+# speedwagon documentation build configuration file, created by
 # sphinx-quickstart on Mon Jul 24 16:19:57 2017.
 #
 # This file is execfile()d with the current directory set to its
@@ -148,7 +148,7 @@ html_logo = '_static/full_mark_horz_bw.gif'
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'framesdoc'
+htmlhelp_basename = 'speedwagondoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -175,7 +175,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'frames.tex',  '{} Documentation'.format(metadata['name']),
+    (master_doc, 'speedwagon.tex',  '{} Documentation'.format(metadata['name']),
      metadata['author'], 'manual'),
 ]
 
@@ -197,7 +197,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, metadata['name'], '{} Documentation'.format(metadata['name']),
-    metadata['author'], 'frames', metadata['description'],
+    metadata['author'], 'speedwagon', metadata['description'],
      'Miscellaneous'),
 ]
 
