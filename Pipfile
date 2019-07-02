@@ -45,6 +45,7 @@ pytest-runner = "*"
 sphinx = "*"
 tox = "*"
 mypy = ">=0.641"
+rinohtype = "*"
 
 [pipenv]
 allow_prereleases = false
