@@ -26,14 +26,14 @@ class CompletenessWorkflow(AbsWorkflow):
     description = "This workflow takes as its input a directory of " \
                   "HathiTrust packages. It evaluates each subfolder as a " \
                   "HathiTrust package, and verifies its structural " \
-                  "completeness (that it contains correctly named marc.xml, " \
-                  "meta.yml, and checksum.md5 files); that its page files " \
-                  "(image files, OCR, and optional OCR XML) are formatted " \
-                  "as required (named according to HathiTrust’s convention, " \
-                  "and an equal number of each); and that its XML, YML, and " \
-                  "TIFF or JP2 files are well-formed and valid. (This " \
-                  "workflow provides console feedback, but doesn’t write " \
-                  "new files as output)."
+                  "completeness (that it contains correctly named " \
+                  "marc.xml, meta.yml, and checksum.md5 files); that its " \
+                  "page files (image files, OCR, and optional OCR XML) are " \
+                  "formatted as required (named according to HathiTrust’s " \
+                  "convention, and an equal number of each); and that its " \
+                  "XML, YML, and TIFF or JP2 files are well-formed and " \
+                  "valid. (This workflow provides console feedback, but " \
+                  "doesn’t write new files as output)."
 
     def user_options(self):
         check_page_data_option = options.UserOptionPythonDataType2(

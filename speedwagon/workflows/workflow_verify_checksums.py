@@ -37,7 +37,7 @@ class ChecksumWorkflow(AbsWorkflow):
     description = "Verify checksum values in checksum batch file, report " \
                   "errors. Verifies every entry in the checksum.md5 files " \
                   "matches expected hash value for the actual file.  Tool " \
-                  "reports discrepancies in console of Speedwagon. \n" \
+                  "reports discrepancies in console of Speedwagon." \
                   "\n" \
                   "Input is path that contains subdirectory which a text " \
                   "file containing a list of multiple files and their md5 " \
@@ -277,7 +277,7 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
     description = "Verify checksum values in checksum batch file, report " \
                   "errors. Verifies every entry in the checksum.md5 files " \
                   "matches expected hash value for the actual file.  Tool " \
-                  "reports discrepancies in console of Speedwagon.\n" \
+                  "reports discrepancies in console of Speedwagon." \
                   "\n" \
                   "Input is a text file containing a list of multiple files " \
                   "and their md5 values. The listed files are expected to " \

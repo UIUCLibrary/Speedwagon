@@ -12,38 +12,13 @@ from uiucprescon.packager.packages.collection_builder import Metadata
 
 class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
     name = "Convert CaptureOne TIFF to Digital Library Compound Object"
-    description = "Input is a path to a folder of TIFF files all named with " \
-                  "a bibID as a prefacing identifier, a final delimiting " \
-                  "underscore or dash, and a sequence consisting of padded " \
-                  "zeroes and a number." \
-                  "\n" \
-                  "\nOutput is a directory to put the new packages." \
-                  "\n" \
-                  "\nInput:" \
-                  "\n  + batch folder" \
-                  "\n      - uniqueID1_00000001.tif" \
-                  "\n      - uniqueID1_00000002.tif" \
-                  "\n      - uniqueID1_00000003.tif" \
-                  "\n      - uniqueID2_00000001.tif" \
-                  "\n      - uniqueID2_00000002.tif" \
-                  "\n" \
-                  "\nOutput:" \
-                  "\n + uniqueID1 (folder)" \
-                  "\n     + preservation (folder)" \
-                  "\n         - uniqueID1_00000001.tif" \
-                  "\n         - uniqueID1_00000002.tif" \
-                  "\n         - uniqueID1_00000003.tif" \
-                  "\n     + access (folder)" \
-                  "\n         - uniqueID1_00000001.jp2" \
-                  "\n         - uniqueID1_00000002.jp2" \
-                  "\n         - uniqueID1_00000003.jp2" \
-                  "\n + uniqueID2 (folder)" \
-                  "\n     + preservation (folder)" \
-                  "\n         - uniqueID2_00000001.tif" \
-                  "\n         - uniqueID2_00000002.tif" \
-                  "\n     + access (folder)" \
-                  "\n         - uniqueID2_00000001.jp2" \
-                  "\n         - uniqueID2_00000002.jp2"
+    description = 'Input is a path to a folder of TIFF files all named with ' \
+                  'a bibid as a prefacing identifier, a final delimiting ' \
+                  'underscore or dash, and a sequence consisting of padded ' \
+                  'zeroes and a number' \
+                  '\n' \
+                  '\n' \
+                  'Output is a directory to put the new packages'
     active = True
 
     def user_options(self):
