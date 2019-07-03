@@ -4,7 +4,7 @@ Welcome to Speedwagon's documentation!
 This documented is for version |version|.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
    :caption: Contents:
 
    overview
@@ -16,7 +16,7 @@ This documented is for version |version|.
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Appendices:
 
    vendor_specs
