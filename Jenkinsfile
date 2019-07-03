@@ -57,8 +57,8 @@ def build_sphinx(){
                script: "${env.PDFLATEX}\\pdflatex -interaction=nonstopmode speedwagon.tex "
             )
         }
-        dir("build/docs"){
-            bat "move /Y latex\\*.pdf"
+        dir("dist\\docs"){
+            bat "move /Y ..\\build\\docs\\latex\\*.pdf"
         }
 }
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
@@ -473,7 +473,7 @@ pipeline {
                             postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
                         }
                         success{
-                            archiveArtifacts artifacts: "build/docs/*.pdf"
+                            archiveArtifacts artifacts: "dist/docs/*.pdf"
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                             zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${env.DOC_ZIP_FILENAME}"
                             stash includes: "dist/${env.DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
