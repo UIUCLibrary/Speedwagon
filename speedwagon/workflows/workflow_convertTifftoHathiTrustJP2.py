@@ -84,9 +84,6 @@ class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
                   "exact structure will be copied, but all TIFF files will " \
                   "be replaced by HathiTrust-compliant JP2 files."
 
-
-
-
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
         jobs = []
