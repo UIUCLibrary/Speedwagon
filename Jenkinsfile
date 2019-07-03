@@ -475,8 +475,8 @@ pipeline {
                         success{
                             archiveArtifacts artifacts: "dist/docs/*.pdf"
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${env.DOC_ZIP_FILENAME}"
-                            stash includes: "dist/${env.DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
+                            zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/docs/${env.DOC_ZIP_FILENAME}"
+                            stash includes: "dist/docs/${env.DOC_ZIP_FILENAME},build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
 
                         }
                         cleanup{
