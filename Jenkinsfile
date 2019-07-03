@@ -58,7 +58,7 @@ def build_sphinx(){
             )
         }
         dir("dist\\docs"){
-            bat "move /Y ..\\build\\docs\\latex\\*.pdf"
+            bat "move /Y ..\\..\\build\\docs\\latex\\*.pdf"
         }
 }
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
