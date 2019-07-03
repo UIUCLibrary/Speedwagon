@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "c985882630a74eff4b931d4b022d18cf964b78ee5e51ef52c611fe0285d9327c"
+            "sha256": "880144890eb26f33ddbf770144a5425fc48450287f357ca5c58f99bbdbce340b"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -817,6 +817,13 @@
             "index": "devpi",
             "version": "==2.1.2"
         },
+        "sphinx-argparse": {
+            "hashes": [
+                "sha256:60ab98f80ffd38731d62e267171388a421abbc96c74901b7785a8e058b438c17"
+            ],
+            "index": "devpi",
+            "version": "==0.2.5"
+        },
         "sphinxcontrib-applehelp": {
             "hashes": [
                 "sha256:edaa0ab2b2bc74403149cb0209d6775c96de797dfd5b5e2a71981309efab3897",
@@ -868,11 +875,11 @@
         },
         "tox": {
             "hashes": [
-                "sha256:45a265e953368fb372cca3eac33b69fdb1b1453e5b114be231c84fc3dfadceed",
-                "sha256:f5cb0b5b8d14f2100982b0981c750d840228180a348e6bad355aa38e949fbc3f"
+                "sha256:dab0b0160dd187b654fc33d690ee1d7bf328bd5b8dc6ef3bb3cc468969c659ba",
+                "sha256:ee35ffce74933a6c6ac10c9a0182e41763140a5a5070e21b114feca56eaccdcd"
             ],
             "index": "devpi",
-            "version": "==3.13.1"
+            "version": "==3.13.2"
         },
         "typed-ast": {
             "hashes": [

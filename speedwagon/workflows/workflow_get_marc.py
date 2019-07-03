@@ -14,11 +14,11 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
     description = "For input, this tool takes a path to a directory of " \
                   "files, each of which is a digitized volume, and is named " \
                   "for that volume’s bibid. The program then retrieves " \
-                  "MARC.XML files for these bibIDs and writes them into the " \
-                  "folder for each corresponding bibID. It uses the UIUC " \
-                  "Library’s GetMARC service " \
-                  "(http://quest.library.illinois.edu/GetMARC/) to retrieve " \
-                  "these MARC.XML files from the Library’s catalog. "
+                  "MARC.XML files for these bibId's and writes them into " \
+                  "the folder for each corresponding bibid. It uses the " \
+                  "UIUC Library’s GetMARC service " \
+                  "(http://quest.library.illinois.edu/GetMARC/) to " \
+                  "retrieve these MARC.XML files from the Library’s catalog."
 
     def user_options(self):
         return [

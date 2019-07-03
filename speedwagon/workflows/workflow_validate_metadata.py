@@ -35,7 +35,7 @@ class ValidateMetadataWorkflow(AbsWorkflow):
                   "for images located inside a directory.  The tool also " \
                   "verifies values exist for address, city, state, zip " \
                   "code, country, phone number insuring the provenance of " \
-                  "the file.\n" \
+                  "the file." \
                   "\n" \
                   "Input is path that contains subdirectory which " \
                   "containing a series of jp2 files."

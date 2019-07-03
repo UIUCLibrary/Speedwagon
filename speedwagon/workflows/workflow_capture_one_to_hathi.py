@@ -12,8 +12,8 @@ from uiucprescon.packager.packages.collection_builder import Metadata
 
 class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
     name = "Convert CaptureOne TIFF to Hathi TIFF package"
-    description = "This workflow chains together a number of tools to " \
-                  "take a batch of CaptureOne files and structure them as " \
+    description = "This workflow chains together a number of tools to take " \
+                  "a batch of CaptureOne files and structure them as " \
                   "HathiTrust packages. This includes putting them in the " \
                   "correct folder structure, importing MARC.XML files, " \
                   "generating YAML files, and generating a checksum file. " \

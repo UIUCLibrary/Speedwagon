@@ -15,13 +15,15 @@ import hathizip
 class ZipPackagesWorkflow(AbsWorkflow):
     name = "Zip Packages"
 
-    description = "This tool takes a folder, usually of HathiTrust packages," \
-                  " zips each subfolder, and copies the resultant tree to a " \
-                  "different location. Input is a root folder, usually for a" \
-                  " HathiTrust shipment, containing multiple subfolders, " \
-                  "each one a HathiTrust digitized item." \
-                  "\nOutput is a destination location for the newly " \
-                  "generated files."
+    description = "This tool takes a folder, usually of HathiTrust " \
+                  "packages, zips each subfolder, and copies the resultant " \
+                  "tree to a different location. Input is a root folder, " \
+                  "usually for a HathiTrust shipment, containing multiple " \
+                  "subfolders, each one a HathiTrust digitized item." \
+                  "\n" \
+                  "Output is a destination location for the newly generated " \
+                  "file."
+
     active = True
 
     def discover_task_metadata(self, initial_results: List[Any],

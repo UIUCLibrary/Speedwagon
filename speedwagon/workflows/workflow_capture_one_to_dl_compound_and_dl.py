@@ -17,13 +17,12 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
     name = "Convert CaptureOne TIFF to Digital Library Compound Object and " \
            "HathiTrust"
     description = "Input is a path to a folder of TIFF files all named with " \
-                  "a bibID as a prefacing identifier, a final delimiting " \
-                  "underscore or dash, and a sequence consisting of padded " \
-                  "zeroes and a number." \
+                  "a bibid as a prefacing identifier, a final delimiting " \
+                  "underscore or dash, and a sequence consisting of " \
+                  "padded zeroes and a number." \
                   "\n" \
-                  "\nOutput Hathi is a directory to put the new packages " \
-                  "for HathiTrust."
-
+                  "Output Hathi is a directory to put the new packages for " \
+                  "HathiTrust."
     active = True
 
     def user_options(self):
