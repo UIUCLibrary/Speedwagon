@@ -1,5 +1,4 @@
 import glob
-
 import os
 
 from setuptools import setup
@@ -24,26 +23,29 @@ setup(
     test_suite="tests",
     install_requires=[
         "PyQt5",
-        "hathizip",
-        "HathiValidate>=0.3.3",
+        "HathiZip",
+        "HathiValidate>=0.3.4",
         "pyhathiprep",
+        "pyyaml",
         "hathichecksumupdater",
-        "uiucprescon-getmarc",
+        "uiucprescon-getmarc>=0.1.1",
         "uiucprescon-imagevalidate>=0.1.4",
-        "uiucprescon-ocr>=0.0.1",
-        "uiucprescon-packager[kdu]>=0.1.1",
-        "pykdu-compress>=0.0.4",
+        "uiucprescon-ocr>=0.1.0",
+        "uiucprescon-packager[kdu]>=0.2.10",
+        "uiucprescon.images",
+        "pykdu-compress>=0.1.1",
         "setuptools>=30.3.0",
-        "importlib_resources",
+        'importlib_resources;python_version<"3.7"',
         'lxml',
         "py3exiv2bind>=0.1.3",
     ],
     packages=[
         "speedwagon",
-        "speedwagon.tools",
+        "speedwagon.dialog",
         "speedwagon.workflows",
         "speedwagon.workflows.tessdata",
-        "speedwagon.ui"
+        "speedwagon.ui",
+
     ],
     setup_requires=['pytest-runner'],
     tests_require=['pytest', "behave", "pytest-qt"],
@@ -51,7 +53,8 @@ setup(
 
     entry_points={
         "gui_scripts": [
-            'speedwagon = speedwagon.__main__:main'
+            'speedwagon = speedwagon.__main__:main',
+            'sw-tab-editor = speedwagon.startup:standalone_tab_editor'
         ],
     },
     include_package_data=True,
@@ -63,6 +66,6 @@ setup(
         ],
         'speedwagon': ["favicon.ico", "logo.png"],
     },
-    cmdclass=cmdclass,
+    cmdclass=cmdclass
 )
 

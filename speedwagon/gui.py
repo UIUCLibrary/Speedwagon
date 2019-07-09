@@ -1,19 +1,26 @@
-import argparse
-import contextlib
+"""Main UI code
+
+Mainly for connecting GUI elements, such as buttons, to functions and methods
+that do the work"""
 import email
 import logging
+import os
 import sys
 import time
 import traceback
 import webbrowser
-from typing import Optional, List
+from typing import List
 import io
 import pkg_resources
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtCore, QtGui  # type: ignore
 import speedwagon.dialog
-from . import job, tabs, worker
+import speedwagon.dialog.dialogs
+import speedwagon.dialog.settings
+from speedwagon import tabs, worker
 import speedwagon
-from .ui import main_window_shell_ui  # type: ignore
+import speedwagon.startup
+import speedwagon.config
+from speedwagon.ui import main_window_shell_ui  # type: ignore
 from collections import namedtuple
 
 DEBUG_LOGGING_FORMAT = logging.Formatter(
@@ -33,6 +40,7 @@ Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 
 
 class ToolConsole(QtWidgets.QWidget):
+    """asdfasdf"""
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -55,7 +63,6 @@ class ToolConsole(QtWidgets.QWidget):
         self.setLayout(layout)
 
         self._console = QtWidgets.QTextBrowser(self)
-        # self._console.setContentsMargins(0,0,0,0)
 
         self.layout().addWidget(self._console)
 
@@ -78,7 +85,6 @@ class ConsoleLogger(logging.Handler):
     def __init__(self, console: ToolConsole, level=logging.NOTSET) -> None:
         super().__init__(level)
         self.console = console
-        # self.callback = callback
 
     def emit(self, record):
         try:
@@ -93,7 +99,6 @@ class ItemTabsWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        # QtWidgets.QTabWidget
         layout = QtWidgets.QVBoxLayout(self)
 
         default_style = self.style()
@@ -119,16 +124,18 @@ class ItemTabsWidget(QtWidgets.QWidget):
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
-    def __init__(self, work_manager: worker.ToolJobManager, debug=False) -> None:
+    def __init__(self, work_manager: worker.ToolJobManager, debug=False) -> \
+            None:
+
         super().__init__()
         self._debug = debug
+        self.user_settings = None
 
         self._work_manager = work_manager
 
         self.log_manager = self._work_manager.logger
         self.log_manager.setLevel(logging.DEBUG)
 
-        # self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
         self.setupUi(self)
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
 
@@ -142,7 +149,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         ###########################################################
         # Tabs
         ###########################################################
-        # self.tabWidget
         self.tabWidget = ItemTabsWidget(self.main_splitter)
         self.tabWidget.setVisible(False)
 
@@ -162,21 +168,19 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
 
-        self._handler = ConsoleLogger(self.console)
+        self.console_log_handler = ConsoleLogger(self.console)
 
         self._log_data = io.StringIO()
-        self._log_data_handler = logging.StreamHandler(self._log_data)
-        self._log_data_handler.setFormatter(DEBUG_LOGGING_FORMAT)
+        self.log_data_handler = logging.StreamHandler(self._log_data)
+        self.log_data_handler.setFormatter(DEBUG_LOGGING_FORMAT)
 
-        self.log_manager.addHandler(self._handler)
-        self.log_manager.addHandler(self._log_data_handler)
+        self.log_manager.addHandler(self.console_log_handler)
+        self.log_manager.addHandler(self.log_data_handler)
 
         self.debug_mode(debug)
 
         ###########################################################
 
-
-        # self.main_splitter.set
         # Add menu bar
         menu_bar = self.menuBar()
 
@@ -201,6 +205,26 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         file_menu.addAction(exit_button)
 
+        system_menu = menu_bar.addMenu("System")
+
+        # System --> Configuration
+        # Create a system info menu item
+
+        system_settings_menu_item = \
+            QtWidgets.QAction("Settings", self)
+
+        system_settings_menu_item.triggered.connect(
+            self.show_configuration)
+        system_settings_menu_item.setShortcut("Ctrl+Shift+S")
+
+        system_menu.addAction(system_settings_menu_item)
+
+        # System --> System Info
+        # Create a system info menu item
+        system_info_menu_item = QtWidgets.QAction("System Info", self)
+        system_info_menu_item.triggered.connect(self.show_system_info)
+        system_menu.addAction(system_info_menu_item)
+
         # Help Menu
         help_menu = menu_bar.addMenu("Help")
 
@@ -210,14 +234,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         help_button.triggered.connect(self.show_help)
         help_menu.addAction(help_button)
-
-        # Help --> System Info
-        # Create a system info menu item
-        system_info_menu_item = QtWidgets.QAction("System Info", self)
-        system_info_menu_item.triggered.connect(self.show_system_info)
-        help_menu.addAction(system_info_menu_item)
-
-        help_menu.addSeparator()
 
         # Help --> About
         # Create an About button
@@ -237,14 +253,14 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self._debug = debug
         if debug:
             self._set_logging_level(logging.DEBUG)
-            self._handler.setFormatter(DEBUG_LOGGING_FORMAT)
+            self.console_log_handler.setFormatter(DEBUG_LOGGING_FORMAT)
 
         else:
             self._set_logging_level(logging.INFO)
 
     def _set_logging_level(self, level):
-        self._handler.setLevel(level)
-        self._log_data_handler.setLevel(level)
+        self.console_log_handler.setLevel(level)
+        self.log_data_handler.setLevel(level)
 
     def set_current_tab(self, tab_name: str):
 
@@ -254,33 +270,24 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             if tab_name == tab_title:
                 self.tabWidget.tabs.setCurrentIndex(t)
                 return
-        self.log_manager.warning("{} not found".format(tab_name))
-
-    def add_tools(self, tools):
-        tools_tab = tabs.ToolTab(
-            parent=self.tabWidget,
-            tools=tools,
-            work_manager=self._work_manager,
-            log_manager=self.log_manager
-        )
-
-        self.tabWidget.add_tab(tools_tab.tab, "Tools")
-        self._tabs.append(tools_tab)
-        self.tabWidget.setVisible(True)
+        self.log_manager.warning("Unable to set tab to {}.".format(tab_name))
 
     def add_tab(self, workflow_name, workflows):
+
         workflows_tab = tabs.WorkflowsTab(
-            parent=self,
+            parent=None,
             workflows=workflows,
             work_manager=self._work_manager,
             log_manager=self.log_manager
         )
+        workflows_tab.parent = self
+        workflows_tab.workflows = workflows
         self._tabs.append(workflows_tab)
         self.tabWidget.add_tab(workflows_tab.tab, workflow_name)
         self.tabWidget.setVisible(True)
 
     def closeEvent(self, *args, **kwargs):
-        self.log_manager.removeHandler(self._handler)
+        self.log_manager.removeHandler(self.console_log_handler)
         super().closeEvent(*args, **kwargs)
 
     def show_help(self):
@@ -298,11 +305,42 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
                 "No help link available. Reason: {}".format(e))
 
     def show_about_window(self):
-        speedwagon.dialog.about_dialog_box(parent=self)
+        speedwagon.dialog.dialogs.about_dialog_box(parent=self)
 
     def show_system_info(self) -> None:
-        system_info_dialog = speedwagon.dialog.SystemInfoDialog(self)
+        system_info_dialog = speedwagon.dialog.dialogs.SystemInfoDialog(self)
         system_info_dialog.exec()
+
+    def show_configuration(self) -> None:
+
+        config_dialog = speedwagon.dialog.settings.SettingsDialog(self)
+
+        if self._work_manager.settings_path is not None:
+            config_dialog.settings_location = self._work_manager.settings_path
+
+        global_settings_tab = speedwagon.dialog.settings.GlobalSettingsTab()
+
+        if self._work_manager.settings_path is not None:
+            global_settings_tab.config_file = \
+                os.path.join(
+                    self._work_manager.settings_path, "config.ini")
+
+            global_settings_tab.read_config_data()
+
+        config_dialog.add_tab(global_settings_tab, "Global Settings")
+        config_dialog.accepted.connect(global_settings_tab.on_okay)
+
+        tabs_tab = speedwagon.dialog.settings.TabsConfigurationTab()
+
+        if self._work_manager.settings_path is not None:
+            tabs_tab.settings_location = \
+                os.path.join(self._work_manager.settings_path, "tabs.yml")
+            tabs_tab.load()
+
+        config_dialog.add_tab(tabs_tab, "Tabs")
+        config_dialog.accepted.connect(tabs_tab.on_okay)
+
+        config_dialog.exec()
 
     def start_workflow(self):
         num_selected = self._workflow_selector_view.selectedIndexes()
@@ -342,87 +380,3 @@ class SplashScreenLogHandler(logging.Handler):
             f"{record.msg}",
             QtCore.Qt.AlignCenter,
         )
-
-
-def main(args: Optional[argparse.Namespace] = None) -> None:
-    app = QtWidgets.QApplication(sys.argv)
-
-    logo = pkg_resources.resource_stream(__name__, "logo.png")
-    splash = QtWidgets.QSplashScreen(QtGui.QPixmap(logo.name).scaled(400, 400))
-
-    splash.setEnabled(False)
-    splash.setWindowFlags(
-        QtCore.Qt.WindowStaysOnTopHint |
-        QtCore.Qt.FramelessWindowHint
-    )
-
-    splash.show()
-
-    icon = pkg_resources.resource_stream(__name__, "favicon.ico")
-    app.setWindowIcon(QtGui.QIcon(icon.name))
-    app.setApplicationVersion(f"{speedwagon.__version__}")
-    app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
-
-    with worker.ToolJobManager() as work_manager:
-        splash_message_handler = SplashScreenLogHandler(splash)
-
-        windows = MainWindow(work_manager=work_manager, debug=args.debug)
-
-
-        windows.show()
-        # windows.log_manager.setLevel(logging.DEBUG)
-        windows.log_manager.addHandler(splash_message_handler)
-
-        if args.debug:
-            splash_message_handler.setLevel(logging.DEBUG)
-            windows.log_manager.debug("DEBUG mode")
-
-        else:
-            splash_message_handler.setLevel(logging.INFO)
-
-        windows.log_manager.info(
-            f"{speedwagon.__name__.title()} {speedwagon.__version__}"
-        )
-
-        windows.log_manager.debug("Loading Tools")
-
-        loading_job_stream = io.StringIO()
-
-        with contextlib.redirect_stderr(loading_job_stream):
-            tools = job.available_tools()
-            windows.add_tools(tools)
-
-        tool_error_msgs = loading_job_stream.getvalue().strip()
-        if tool_error_msgs:
-            for line in tool_error_msgs.split("\n"):
-                windows.log_manager.warn(line)
-
-        windows.log_manager.debug("Loading Workflows")
-
-        loading_workflows_stream = io.StringIO()
-        with contextlib.redirect_stderr(loading_workflows_stream):
-            workflows = job.available_workflows()
-            windows.add_tab("Workflows", workflows)
-        workflow_errors_msg = loading_workflows_stream.getvalue().strip()
-
-        if workflow_errors_msg:
-            for line in workflow_errors_msg.split("\n"):
-                windows.log_manager.warn(line)
-
-        windows.log_manager.debug("Loading User Interface ")
-
-        windows.log_manager.removeHandler(splash_message_handler)
-
-        windows.setWindowTitle("")
-        if args:
-            if args.start_tab:
-                windows.set_current_tab(tab_name=args.start_tab)
-        splash.finish(windows)
-
-        windows.log_manager.info("Ready")
-        rc = app.exec_()
-    sys.exit(rc)
-
-
-if __name__ == '__main__':
-    main()

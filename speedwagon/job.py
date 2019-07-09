@@ -1,114 +1,112 @@
+"""Define how various jobs are described"""
+
 import abc
 import importlib
 import inspect
 import logging
 import os
 import sys
-import typing
+from typing import Type, Optional, Iterable, Dict, List, Any, Tuple
+
 from . import tasks
-from . import worker
-from .tools.options import UserOption2
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets  # type: ignore
 
 
 class JobCancelled(Exception):
     pass
 
 
-class AbsJob(metaclass=abc.ABCMeta):
+class AbsWorkflow(metaclass=abc.ABCMeta):
     active = True
-    description: typing.Optional[str] = None
-    name: typing.Optional[str] = None
+    description: Optional[str] = None
+    name: Optional[str] = None
+    global_settings: Dict[str, str] = dict()
 
-    def __init__(self):
+    def __init__(self) -> None:
+        super().__init__()
         self.options = []  # type: ignore
 
     @abc.abstractmethod
-    def user_options(self):
+    def discover_task_metadata(self, initial_results: List[Any],
+                               additional_data, **user_args) -> List[dict]:
+        """Generate data or parameters needed for task to complete based on
+        the user's original configuration
+
+        Return a list of dictionaries of types that can be serialized,
+            preferably strings.
+
+        """
+
+    def completion_task(self, task_builder: tasks.TaskBuilder, results,
+                        **user_args) -> None:
         pass
+
+    def initial_task(self, task_builder: tasks.TaskBuilder,
+                     **user_args) -> None:
+        """Create a task to run before the main tasks start.
+
+            The initial task is run prior to the get_additional_info method.
+            Results generated here will then be passed to get_additional_info.
+
+            This is useful for locating additional information that will be
+            needed by other tasks and the user needs to additional decisions
+            before running the main tasks.
+
+            In general, prefer :py:meth:`discover_task_metadata` if you don't
+            need a user's interaction.
+        """
+
+    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+        """Add a new task to be accomplished when the workflow is started.
+
+
+        Use the task_builder parameter's add_subtask method to include a
+        :py:class:`speedwagon.Subtask()`
+
+            Example:
+                .. code-block::
+
+                    title_page = job_args['title_page']
+                    source = job_args['source_path']
+                    package_id = job_args['package_id']
+
+                    task_builder.add_subtask(
+                        subtask=MakeYamlTask(package_id, source, title_page))
+
+        """
+
+    @classmethod
+    def generate_report(cls, results: List[tasks.Result], **user_args) \
+            -> Optional[str]:
+        """Generate a text report for the results of the workflow.
+
+            Example:
+                .. code-block::
+
+                    report_lines = []
+
+                    for checksum_report, items_written in \\
+                            cls.sort_results([i.data for \n
+                            i in results]).items():
+
+                        report_lines.append(
+                            f"Checksum values for {len(items_written)} "
+                            f"files written to {checksum_report}")
+
+                    return '\\n'.join(report_lines)
+
+        """
 
     @staticmethod
     def validate_user_options(**user_args):
         return True
 
-    def create_new_task(self,
-                        task_builder: tasks.TaskBuilder,
-                        **job_args):
-        pass
-
-
-class AbsTool(AbsJob):
-
-    @staticmethod
-    @abc.abstractmethod
-    def new_job() -> typing.Type[worker.ProcessJobWorker]:
-        pass
-
-    @staticmethod
-    def discover_jobs(**user_args) -> typing.List[dict]:
-        pass
-
-    @staticmethod
-    @abc.abstractmethod
-    def get_user_options() -> typing.List[UserOption2]:
-        pass
-
-    @staticmethod
-    def post_process(user_args: dict):
-        pass
-
-    @staticmethod
-    def on_completion(*args, **kwargs):
-        pass
-
-    def user_options(self):
-        return self.get_user_options()
-
-    def discover_task_metadata(self, **user_args) -> typing.List[dict]:
-        return self.discover_jobs(**user_args)
-
-    @staticmethod
-    def generate_report(results, user_args):
-        return None
-
-
-class AbsWorkflow(AbsJob):
-    active = True
-    description: typing.Optional[str] = None
-    name: typing.Optional[str] = None
-
-    def __init__(self) -> None:
-        super().__init__()
-
-    @abc.abstractmethod
-    def discover_task_metadata(self, initial_results: typing.List[typing.Any],
-                               additional_data, **user_args) \
-            -> typing.List[dict]:
-        pass
-
-    def completion_task(
-            self,
-            task_builder: tasks.TaskBuilder,
-            results,
-            **user_args
-    ) -> None:
-        pass
-
-    def initial_task(self, task_builder: tasks.TaskBuilder,
-                     **user_args) -> None:
-        pass
-
-    @classmethod
-    def generate_report(cls, results: typing.List[tasks.Result],
-                        **user_args) -> typing.Optional[str]:
-        pass
-
-    # @abc.abstractmethod
-    # def user_options(self):
-    #     return {}
-
 
 class Workflow(AbsWorkflow):
+    """Base class for defining a new workflow item
+
+        Subclass this class to generate a new workflow
+    """
 
     def get_additional_info(self, parent: QtWidgets.QWidget,
                             options: dict, pretask_results: list) -> dict:
@@ -119,10 +117,21 @@ class Workflow(AbsWorkflow):
             options:  Dictionary of existing user settings
             pretask_results: results of the pretask, if any
 
-        Returns: Any additional configurations that needs to be added to a job
+        Returns:
+            Any additional configurations that needs to be added to a job
 
         """
         return dict()
+
+
+class NullWorkflow(Workflow):
+
+    def discover_task_metadata(self, initial_results: List[Any],
+                               additional_data, **user_args) -> List[dict]:
+        return []
+
+    def user_options(self):
+        return []
 
 
 class AbsDynamicFinder(metaclass=abc.ABCMeta):
@@ -136,7 +145,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
     def py_module_filter(item: os.DirEntry) -> bool:
         pass
 
-    def locate(self) -> typing.Dict["str", AbsJob]:
+    def locate(self) -> Dict["str", AbsWorkflow]:
         located_class = dict()
         tree = os.scandir(self.path)
 
@@ -147,11 +156,11 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def base_class(self) -> typing.Type[AbsJob]:
+    def base_class(self) -> Type[AbsWorkflow]:
         pass
 
     def load(self, module_file) -> \
-            typing.Iterable[typing.Tuple[str, typing.Any]]:
+            Iterable[Tuple[str, Any]]:
 
         def class_member_filter(item):
             return inspect.isclass(item) and not inspect.isabstract(item)
@@ -177,52 +186,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def package_name(self) -> str:
-        pass
-
-
-class AbsToolData(metaclass=abc.ABCMeta):
-
-    def __init__(self, parent=None):
-        self._parent = parent
-        self.label = ""
-        self.widget = self.get_widget()
-
-    @abc.abstractmethod
-    def get_widget(self):
-        pass
-
-    @property
-    def data(self):
-        return self.widget.value
-
-
-class ToolFinder(AbsDynamicFinder):
-
-    @staticmethod
-    def py_module_filter(item: os.DirEntry):
-        if not str(item.name).startswith("tool_"):
-            return False
-        return True
-
-    @property
-    def package_name(self) -> str:
-        return "{}.tools".format(__package__)
-
-    @property
-    def base_class(self):
-        return AbsTool
-
-
-def available_tools() -> dict:
-    """
-    Locate all tools that can be loaded
-
-    Returns: Dictionary of all tools
-
-    """
-    root = os.path.join(os.path.dirname(__file__), "tools")
-    finder = ToolFinder(root)
-    return finder.locate()
+        """The name of the python package"""
 
 
 class WorkflowFinder(AbsDynamicFinder):
@@ -247,7 +211,8 @@ def available_workflows() -> dict:
     Locate all workflow class found in workflows subpackage with the workflow
     prefix
 
-    Returns: Dictionary of all workflow
+    Returns:
+        Dictionary of all workflow
 
     """
 

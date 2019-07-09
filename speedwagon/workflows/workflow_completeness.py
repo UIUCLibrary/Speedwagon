@@ -11,7 +11,7 @@ import hathi_validate
 
 import speedwagon
 from speedwagon.tasks import Subtask
-from speedwagon.tools import options
+from . import shared_custom_widgets as options
 from speedwagon.job import AbsWorkflow
 from hathi_validate import manifest as validate_manifest
 from hathi_validate import report as hathi_reporter
@@ -26,14 +26,14 @@ class CompletenessWorkflow(AbsWorkflow):
     description = "This workflow takes as its input a directory of " \
                   "HathiTrust packages. It evaluates each subfolder as a " \
                   "HathiTrust package, and verifies its structural " \
-                  "completeness (that it contains correctly named marc.xml, " \
-                  "meta.yml, and checksum.md5 files); that its page files " \
-                  "(image files, OCR, and optional OCR XML) are formatted " \
-                  "as required (named according to HathiTrust’s convention, " \
-                  "and an equal number of each); and that its XML, YML, and " \
-                  "TIFF or JP2 files are well-formed and valid. (This " \
-                  "workflow provides console feedback, but doesn’t write " \
-                  "new files as output)."
+                  "completeness (that it contains correctly named " \
+                  "marc.xml, meta.yml, and checksum.md5 files); that its " \
+                  "page files (image files, OCR, and optional OCR XML) are " \
+                  "formatted as required (named according to HathiTrust’s " \
+                  "convention, and an equal number of each); and that its " \
+                  "XML, YML, and TIFF or JP2 files are well-formed and " \
+                  "valid. (This workflow provides console feedback, but " \
+                  "doesn’t write new files as output)."
 
     def user_options(self):
         check_page_data_option = options.UserOptionPythonDataType2(
@@ -174,21 +174,15 @@ class CompletenessWorkflow(AbsWorkflow):
                      f"{warning_report}\n"
         return report
 
-    def initial_task(
-            self,
-            task_builder: speedwagon.tasks.TaskBuilder,
-            **user_args
-    ) -> None:
+    def initial_task(self, task_builder: speedwagon.tasks.TaskBuilder,
+                     **user_args) -> None:
 
         new_task = HathiManifestGenerationTask(batch_root=user_args['Source'])
         task_builder.add_subtask(subtask=new_task)
 
     @classmethod
-    def _get_result(
-            cls,
-            results_grouped: typing.Dict[typing.Any, list],
-            key
-    ) -> typing.List[hathi_result.Result]:
+    def _get_result(cls, results_grouped: typing.Dict[typing.Any, list],
+                    key) -> typing.List[hathi_result.Result]:
 
         results: typing.List[hathi_result.Result] = []
 
@@ -201,11 +195,11 @@ class CompletenessWorkflow(AbsWorkflow):
         return results
 
     @staticmethod
-    def validate_user_options(Source, *args, **kwargs):
-        src = Source
-        if not src:
+    def validate_user_options(*args, **kwargs):
+        source = kwargs.get("Source")
+        if not source:
             raise ValueError("Source is missing a value")
-        if not os.path.exists(src) or not os.path.isdir(src):
+        if not os.path.exists(source) or not os.path.isdir(source):
             raise ValueError("Invalid source")
 
 
@@ -491,7 +485,6 @@ class ValidateOCRFilesTask(CompletenessSubTask):
                     "No validation errors found in ".format(self.package_path)
                 )
 
-                # else:
                 for error in ocr_errors:
                     self.log(error.message)
                     errors.append(error)
@@ -538,7 +531,6 @@ class ValidateYMLTask(CompletenessSubTask):
                         for error in meta_yml_errors:
                             self.log(error.message)
                             errors.append(error)
-                #
             except FileNotFoundError as e:
                 report_builder.add_error(
                     report_builder.add_error(
@@ -667,7 +659,4 @@ class PackageNamingConventionTask(CompletenessSubTask):
 
         if warnings:
             self.set_results(warnings)
-        # self.set_results
         return True
-        # return super().work()
-#

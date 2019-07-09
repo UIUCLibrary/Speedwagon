@@ -3,12 +3,11 @@ import os
 import shutil
 import typing
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets  # type: ignore
 
 import speedwagon.tasks
 import speedwagon
-
-from speedwagon.tools import options as tool_options
+from . import shared_custom_widgets
 
 import uiucprescon.packager.packages
 from uiucprescon.packager import PackageFactory
@@ -21,15 +20,23 @@ from speedwagon.workflows.title_page_selection import PackageBrowser
 
 class HathiPrepWorkflow(speedwagon.Workflow):
     name = "Hathi Prep"
-    description = "Something goes here later"
+    description = "Enables user to select, from a dropdown list of image " \
+                  "file names, the title page to be displayed on the " \
+                  "HathiTrust website for the item. This updates the .yml " \
+                  "file.\n" \
+                  "\n" \
+                  "NB: It is useful to first identify the desired " \
+                  "title page and associated filename in a separate image " \
+                  "viewer." \
+
 
     def user_options(self):
         options = []
-        package_type = tool_options.ListSelection("Image File Type")
+        package_type = shared_custom_widgets.ListSelection("Image File Type")
         package_type.add_selection("JPEG 2000")
         package_type.add_selection("TIFF")
-        input_option = tool_options.UserOptionCustomDataType(
-            "input", tool_options.FolderData)
+        input_option = shared_custom_widgets.UserOptionCustomDataType(
+            "input", shared_custom_widgets.FolderData)
 
         options.append(input_option)
         options.append(package_type)
@@ -162,7 +169,6 @@ class MakeYamlTask(speedwagon.tasks.Subtask):
         self._source = source
         self._title_page = title_page
         self._package_id = package_id
-        # self._working_dir = subtask_working_dir
 
     def work(self):
         meta_filename = "meta.yml"

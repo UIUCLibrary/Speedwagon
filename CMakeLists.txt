@@ -202,7 +202,7 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
     COMMAND ${VENV_PYTHON} -m pip install pytest -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
     COMMENT "Adding pytest to standalone virtual environment"
     )
-set(SPEEDWAGON_PYTHON_INTERP pythonw.exe)
+set(SPEEDWAGON_PYTHON_INTERP python.exe)
 
 include(CTest)
 if(WIN32)
@@ -231,11 +231,14 @@ if(WIN32)
 #    add_subdirectory(tests)
     ###########################################
     enable_testing()
+#   TODO: Make this dynamic by calling python -m pytest --collect-only and
+#         parsing the data
+
     set(pytests
         test_pkg_metadata.py
         test_tasks.py
-        test_tools.py
-        test_ui.py
+        test_models.py
+        test_get_config.py
         )
     #file(GLOB pytests RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/tests tests/test_*.py)
 
@@ -243,7 +246,7 @@ if(WIN32)
         message(STATUS "Found ${pytest_file}")
 
 
-        execute_process(COMMAND ${VENV_PYTHON} -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} -qq --collect-only
+        execute_process(COMMAND ${VENV_PYTHON} python -B -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} -qq --collect-only
                         OUTPUT_VARIABLE PYTEST_COLLECTION
                         ERROR_VARIABLE pytest_std
             )
@@ -261,6 +264,7 @@ if(WIN32)
                     )
                     set_tests_properties(${PROJECT_NAME}.pytest.${pytest_file}.${test_name} PROPERTIES
                         RESOURCE_LOCK ${pytest_file}
+                        ENVIRONMENT "PYTHONDONTWRITEBYTECODE=x"
                     )
                     message(STATUS "Added ${PROJECT_NAME}.pytest.${pytest_file}.${test_name} to CTest")
                 endif()
@@ -271,6 +275,9 @@ if(WIN32)
                        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
                 COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
             )
+            set_tests_properties(${PROJECT_NAME}.pytest.${pytest_file} PROPERTIES
+                        ENVIRONMENT "PYTHONDONTWRITEBYTECODE=x"
+                    )
 
         endif(PYTEST_COLLECTION)
 

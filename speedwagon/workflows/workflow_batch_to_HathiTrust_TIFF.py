@@ -2,12 +2,12 @@ import itertools
 import os
 import typing
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets  # type: ignore
 from uiucprescon.packager.packages.collection import Metadata
 
 import speedwagon
 from speedwagon import tasks
-from speedwagon.tools import options
+from speedwagon.workflows import shared_custom_widgets
 from uiucprescon import packager, pygetmarc
 from . title_page_selection import PackageBrowser
 from pyhathiprep import package_creater
@@ -16,12 +16,12 @@ import shutil
 
 class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
     name = "CaptureOne Batch to HathiTrust TIFF Complete Package"
-    description = "This workflow chains together a number of tools to " \
-                  "take a batch of CaptureOne files and structure them as " \
-                  "HathiTrust packages. This includes putting them in the " \
-                  "correct folder structure, importing MARC.XML files, " \
-                  "generating YAML files, and generating a checksum file. " \
-                  "It takes as its input a folder of CaptureOne batch " \
+    description = "This workflow chains together a number of tools to take " \
+                  "a batch of CaptureOne files and structure them as " \
+                  "HathiTrust compliant packages. This includes putting " \
+                  "them in the correct folder structure, importing MARC.XML " \
+                  "files, generating YAML files, and generating a checksum " \
+                  "file. It takes as its input a folder of CaptureOne batch " \
                   "files. It takes as its output a folder location where " \
                   "new files will be written."
 
@@ -50,10 +50,11 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         return tasks_metadata
 
     def user_options(self):
-        source = options.UserOptionCustomDataType("Source", options.FolderData)
+        source = shared_custom_widgets.UserOptionCustomDataType(
+            "Source", shared_custom_widgets.FolderData)
 
-        destination = options.UserOptionCustomDataType("Destination",
-                                                       options.FolderData)
+        destination = shared_custom_widgets.UserOptionCustomDataType(
+            "Destination", shared_custom_widgets.FolderData)
 
         return [source, destination]
 
@@ -152,7 +153,6 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                   f"* {yaml_file_message}\n" \
                   f"* {checksum_message}"
         return message
-        # return super().generate_report(results, **user_args)
 
 
 class TransformPackageTask(tasks.Subtask):
@@ -249,7 +249,6 @@ class MakeYamlTask(tasks.Subtask):
             print("Unable to split {} with a _ delimiter".format(title_page))
             self._title_page = title_page
         self._bib_id = bib_id
-        # self._working_dir = subtask_working_dir
 
     def work(self):
         meta_filename = "meta.yml"

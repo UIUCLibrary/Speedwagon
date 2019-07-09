@@ -1,3 +1,4 @@
+"""Define a single step in the workflow"""
 import abc
 import os
 
@@ -25,7 +26,7 @@ class AbsSubtask(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def log(self, message) -> None:
-        pass
+        """Log a message to the console on the main window"""
 
     @property
     def task_result(self) -> Optional['Result']:
@@ -70,6 +71,10 @@ class Result(NamedTuple):
 
 
 class Subtask(AbsSubtask):
+    """Base class for defining a new task for a :py:class:`Workflow` to create
+
+    Subclass this generate a new task
+    """
 
     def __init__(self) -> None:
         self._result: Optional[Result] = None
@@ -113,17 +118,15 @@ class Subtask(AbsSubtask):
         self._status = value
 
     def work(self) -> bool:
+        """This method is called when the task's work should be done
+
+        Override this method to accomplish the task.
+
+        Note:
+            Currently expects to return a boolean value to indicate if the task
+            has succeeded or failed. However, this is likely to change.
+        """
         return super().work()
-
-    # self._result = Result(self.__class__, value)
-    # @property
-    # def results(self):
-    #     pass
-
-    # @task_result.setter
-    # def task_result(self, value: typing.Type[typing.Any]):
-    #     warnings.warn("Using results instead", PendingDeprecationWarning)
-    #     self._result = Result(self.__class__, value)
 
     @property
     def results(self):

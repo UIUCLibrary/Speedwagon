@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# frames documentation build configuration file, created by
+# speedwagon documentation build configuration file, created by
 # sphinx-quickstart on Mon Jul 24 16:19:57 2017.
 #
 # This file is execfile()d with the current directory set to its
@@ -32,9 +32,11 @@ def get_project_metadata():
 
 cwd = os.getcwd()
 project_root = os.path.join(os.path.dirname(cwd), "../..")
-
+sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, project_root )
+sys.path.append(os.path.abspath('exts'))
 
+nitpick_ignore = [('py:class', 'type')]
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -46,10 +48,13 @@ sys.path.insert(0, project_root )
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.coverage',
     'sphinx.ext.githubpages',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'sphinxarg.ext',
+    'workflowssummary'
 ]
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
@@ -62,6 +67,8 @@ napoleon_use_admonition_for_references = False
 napoleon_use_ivar = False
 napoleon_use_param = True
 napoleon_use_rtype = True
+autosummary_generate = True
+autosummary_imported_members = True
 
 metadata = get_project_metadata()
 
@@ -79,7 +86,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = metadata['name']
-copyright = '2017, {}'.format(metadata['author'])
+copyright = '2017, 2018, 2019, {}'.format(metadata['author'])
 author = metadata['author']
 
 # The version info for the project you're documenting, acts as replacement for
@@ -87,7 +94,7 @@ author = metadata['author']
 # built documents.
 #
 # The short X.Y version.
-version_extractor = re.compile("\d+[.]\d+[.]\d+")
+version_extractor = re.compile(r"\d+[.]\d+[.]\d+")
 version = version_extractor.search(metadata["version"]).group(0)
 # The full version, including alpha/beta/rc tags.
 release = metadata["version"]
@@ -126,8 +133,8 @@ html_theme = 'alabaster'
 html_theme_options = {
     # 'logo': 'full_mark_horz_bw.png',
     'github_user': 'uiuclibrary',
-    'github_repo': 'frames',
-    'github_button': True,
+    'github_repo': 'Speedwagon',
+    'github_button': False,
     'logo_name': True,
     'description': metadata['description']
 }
@@ -141,35 +148,37 @@ html_logo = '_static/full_mark_horz_bw.gif'
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'framesdoc'
+htmlhelp_basename = 'speedwagondoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
-
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
-    # 'papersize': 'letterpaper',
+    'papersize': 'letterpaper',
 
     # The font size ('10pt', '11pt' or '12pt').
     #
-    # 'pointsize': '10pt',
+    'pointsize': '10pt',
 
     # Additional stuff for the LaTeX preamble.
     #
-    # 'preamble': '',
+    'preamble': '',
 
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
+
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'frames.tex',  '{} Documentation'.format(metadata['name']),
-     metadata['author'], 'manual'),
+    (master_doc, 'speedwagon.tex',
+     '{} Documentation'.format(metadata['name'].title()),
+     "University of Illinois at Urbana Champaign",
+     'manual'),
 ]
 
 
@@ -190,9 +199,8 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, metadata['name'], '{} Documentation'.format(metadata['name']),
-    metadata['author'], 'frames', metadata['description'],
+    metadata['author'], 'speedwagon', metadata['description'],
      'Miscellaneous'),
 ]
-
 
 

@@ -3,7 +3,8 @@ import setuptools.config
 import os
 import sys
 
-from .job import Workflow, JobCancelled
+from .job import Workflow, JobCancelled, available_workflows
+from .tasks import Subtask
 from . import tasks
 
 
@@ -12,6 +13,11 @@ def get_project_metadata(config_file):
 
 
 def get_project_distribution() -> pkg_resources.Distribution:
+    """
+
+    Returns:
+
+    """
     return pkg_resources.get_distribution(f"{__name__}")
 
 
@@ -48,6 +54,8 @@ __version__ = get_version()
 
 __all__ = [
     "Workflow",
+    "Subtask",
+    "available_workflows",
     "JobCancelled",
     "tasks"
 ]

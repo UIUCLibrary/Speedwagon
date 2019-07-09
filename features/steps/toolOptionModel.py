@@ -2,8 +2,7 @@ from behave import *
 from behave import runner
 from PyQt5 import QtCore
 import speedwagon.models
-import speedwagon.tools.options
-
+from speedwagon.workflows.shared_custom_widgets import  UserOptionCustomDataType
 
 # use_step_matcher("re")
 
@@ -21,13 +20,11 @@ def step_impl(context: runner.Context):
 @when("we provide data to generate a Qt model")
 def step_impl(context: runner.Context):
     context.data_model = speedwagon.models.ToolOptionsModel3(context.data)
-    # assert context.d == "dd"
 
 
 @then("we get a ToolOptionsModel object")
 def step_impl(context: runner.Context):
     assert isinstance(context.data_model, speedwagon.models.ToolOptionsModel3)
-    pass
 
 
 @then("the model has 2 rows")
@@ -100,8 +97,8 @@ def step_impl(context: runner.Context):
 @given("we have two ToolOptions called dummy and dummy2")
 def step_impl(context):
     data = [
-        speedwagon.tools.options.UserOptionPythonDataType2("dummy", str),
-        speedwagon.tools.options.UserOptionPythonDataType2("dummy2", str)
+        UserOptionCustomDataType("dummy", str),
+        UserOptionCustomDataType("dummy2", str)
     ]
 
     context.data = data

@@ -3,9 +3,11 @@ import warnings
 from typing import Iterable, Optional, List, Any
 
 from uiucprescon import imagevalidate
+
+from . import shared_custom_widgets
 from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
-from speedwagon.tools import options as tool_options
+
 import speedwagon.tasks
 import enum
 
@@ -28,16 +30,15 @@ class ResultValues(enum.Enum):
 
 class ValidateMetadataWorkflow(AbsWorkflow):
     name = "Validate Metadata"
-    description = "Validate the metadata for images located inside a " \
-                  "directory. " \
-                  "\n" \
+    description = "Validates the technical metadata for JP2000 files to " \
+                  "include x and why resolution, bit depth and color space " \
+                  "for images located inside a directory.  The tool also " \
+                  "verifies values exist for address, city, state, zip " \
+                  "code, country, phone number insuring the provenance of " \
+                  "the file." \
                   "\n" \
                   "Input is path that contains subdirectory which " \
-                  "containing a series of tiff or jp2 files. " \
-                  "\n" \
-                  "\n" \
-                  "Note: The HathiTrust JPEG 2000 profile does not check " \
-                  "color space at this time."
+                  "containing a series of jp2 files."
 
     def _locate_checksum_files(self, root) -> Iterable[str]:
         for root, dirs, files in os.walk(root):
@@ -52,15 +53,14 @@ class ValidateMetadataWorkflow(AbsWorkflow):
         new_tasks = []
 
         for image_file in initial_results[0].data:
-            new_tasks .append({
+            new_tasks.append({
                 JobValues.ITEM_FILENAME.value: image_file,
                 JobValues.PROFILE_NAME.value: user_args["Profile"]
             })
         return new_tasks
 
-    def initial_task(self, task_builder: tasks.TaskBuilder,
-                     **user_args) -> None:
-        # profile = imagevalidate.get_profile(user_args["Profile"])
+    def initial_task(
+            self, task_builder: tasks.TaskBuilder, **user_args) -> None:
 
         task_builder.add_subtask(
             LocateImagesTask(user_args[UserArgs.INPUT.value],
@@ -71,10 +71,10 @@ class ValidateMetadataWorkflow(AbsWorkflow):
         options = []
 
         input_option = \
-            tool_options.UserOptionCustomDataType(UserArgs.INPUT.value,
-                                                  tool_options.FolderData)
+            shared_custom_widgets.UserOptionCustomDataType(
+                UserArgs.INPUT.value, shared_custom_widgets.FolderData)
 
-        profile_type = tool_options.ListSelection("Profile")
+        profile_type = shared_custom_widgets.ListSelection("Profile")
 
         for profile_name in imagevalidate.available_profiles():
             profile_type.add_selection(profile_name)

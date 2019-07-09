@@ -25,10 +25,13 @@ pykdu-compress = ">=0.1.1"
 setuptools = ">=30.3.0"
 uiucprescon-getmarc = ">=0.1.1"
 uiucprescon-imagevalidate = ">=0.1.4"
-uiucprescon-packager = {version = ">=0.2.4", extras = ['kdu']}
-uiucprescon-ocr = ">=0.0.1"
+"uiucprescon.images" = "*"
+uiucprescon-packager = {version = ">=0.2.10", extras = ['kdu']}
+uiucprescon-ocr = ">=0.1.0"
+idna_ssl = "*"
 importlib-resources = {version = "*", markers="python_version < '3.7'"}
 pluggy = "*"
+pyyaml = ">=5.1"
 
 [dev-packages]
 behave = "*"
@@ -40,8 +43,10 @@ coverage = "*"
 pyqt-distutils = "*"
 pytest-runner = "*"
 sphinx = "*"
+sphinx-argparse = "*"
 tox = "*"
 mypy = ">=0.641"
+rinohtype = "*"
 
 [pipenv]
 allow_prereleases = false
