@@ -279,6 +279,59 @@ ${log_file}
     }
 }
 
+
+def testMsiInstall(dockerfilePath, dockerImageName, dockerContainerName, logsPath){
+    unstash 'STANDALONE_INSTALLERS'
+    dir(logsPath){
+        bat "dir > nul"
+    }
+    script{
+         withEnv([
+            "DOCKER_IMAGE_NAME=${dockerImageName.toLowerCase()}",
+            "DOCKER_CONTAINER_NAME=${dockerContainerName.toLowerCase()}",
+            "DOCKER_LOGS_PATH=${logsPath}"
+            ]){
+            bat(
+                label: "Build Windows Docker Container",
+                script: "docker build  -t %DOCKER_IMAGE_NAME% -f ${dockerfilePath} ./source "
+                )
+            try{
+
+                def dockerSha = powershell(
+                    label: "Run Docker Container with ${logsPath} mounted",
+                    script: 'docker run -d -t -v "$((Get-Location).Path)\\$($env:DOCKER_LOGS_PATH):c:\\logs" -v "$((Get-Location).Path)\\dist:c:\\dist" --name $($env:DOCKER_CONTAINER_NAME) $($env:DOCKER_IMAGE_NAME)',
+                    returnStdout: true
+                ).trim()
+
+                bat(
+                    label: "Run install script",
+                    script: "docker exec ${dockerSha} powershell.exe -executionpolicy bypass -file c:/scripts/run_install.ps1"
+                )
+
+            } finally {
+                bat(
+                    label: "Stopping ${DOCKER_CONTAINER_NAME} container",
+                    returnStatus: true,
+                    script: "docker stop --time=1 ${DOCKER_CONTAINER_NAME}"
+                    )
+
+                bat(
+                    label: "Removing ${DOCKER_CONTAINER_NAME} container",
+                    returnStatus: true,
+                    script: "docker rm ${DOCKER_CONTAINER_NAME}"
+                    )
+
+            }
+        }
+
+//        bat(
+//            label: "Install msi inside a Windows Docker container",
+//            script: "docker build  -t ${currentBuild.projectName}-windows-install -f source\\ci\\docker\\windowsserver\\Dockerfile . && docker run --name ${currentBuild.projectName}-windows-installer-test --rm ${currentBuild.projectName}-windows-install"
+//        )
+    }
+}
+
+
 pipeline {
     agent {
         label "Windows && Python3 && longfilenames && WIX"
@@ -308,7 +361,6 @@ pipeline {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
         booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
-
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: false, description: "Create a standalone wix based .msi installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: false, description: "Create a standalone NULLSOFT NSIS based .exe installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_ZIP", defaultValue: false, description: "Create a standalone portable package")
@@ -323,6 +375,7 @@ pipeline {
     }
 
     stages {
+
         stage("Configure"){
             environment{
                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
@@ -365,13 +418,13 @@ pipeline {
                     }
                 }
 
-                stage("Cleanup"){
-                    steps {
-                        dir("source") {
-                            stash includes: 'deployment.yml', name: "Deployment"
-                        }
-                    }
-                }
+//                stage("Cleanup"){
+//                    steps {
+//                        dir("source") {
+//                            stash includes: 'deployment.yml', name: "Deployment"
+//                        }
+//                    }
+//                }
                 stage("Install Python Dependencies"){
                     steps{
                         lock("system_python_${env.NODE_NAME}"){
@@ -384,51 +437,30 @@ pipeline {
                             label: "Install Python Virtual Environment Dependencies",
                             script: "python -m venv venv && venv\\Scripts\\pip.exe install \"tox<3.10\" sphinx pylint && venv\\Scripts\\pip list > logs/pippackages_venv_${env.NODE_NAME}.log"
                             )
-
-
-                    }
-                    post{
-                        always{
-                            archiveArtifacts artifacts: "logs/pippackages_system_*.log"
-                            archiveArtifacts artifacts: "logs/pippackages_venv_*.log"
-                        }
-                        cleanup{
-                            cleanWs(patterns: [[pattern: "logs/pippackages_system_*.log", type: 'INCLUDE']])
-                        }
-                    }
-                }
-                stage("Installing Pipfile"){
-                    options{
-                        timeout(5)
-                    }
-
-                    steps {
                         dir("source"){
                             bat "pipenv install --dev --deploy && pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log && pipenv check"
 
-                        }
-                    }
-                    post{
-                        always{
-                            archiveArtifacts artifacts: "logs/pippackages_pipenv_*.log"
-                        }
-                        failure {
-                            dir("source"){
-                                bat "pipenv --rm"
-                            }
-                        }
-                        cleanup{
-                            cleanWs(patterns: [[pattern: "logs/pippackages_pipenv_*.log", type: 'INCLUDE']])
                         }
                     }
                 }
             }
             post{
                 always{
+                    archiveArtifacts artifacts: "logs/pippackages_pipenv_*.log,logs/pippackages_system_*.log,logs/pippackages_venv_*.log"
                     echo "Configured ${env.PKG_NAME}, version ${env.PKG_VERSION}, for testing."
                 }
                 failure{
+                    dir("source"){
+                        bat "pipenv --rm"
+                    }
                     deleteDir()
+                }
+                cleanup{
+                    cleanWs(patterns: [
+                        [pattern: "logs/pippackages_pipenv_*.log", type: 'INCLUDE'],
+                        [pattern: "logs/pippackages_system_*.log", type: 'INCLUDE']
+                        ]
+                    )
                 }
             }
         }
@@ -804,6 +836,43 @@ pipeline {
                                 failure {
 
                                     archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log,dist/**/*.wxs"
+                                }
+                            }
+                        }
+                        stage("Testing MSI Install"){
+                            agent {
+                                label "Docker"
+                            }
+                            environment{
+                                PATH = "${tool name: 'Docker', type: 'org.jenkinsci.plugins.docker.commons.tools.DockerTool'};${PATH}"
+
+                            }
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                    triggeredBy "TimerTriggerCause"
+                                }
+                            }
+                            steps{
+                                testMsiInstall(
+                                    "source/ci/docker/windowsserver/Dockerfile",
+                                    "${JOB_NAME.replaceAll('/', '-').toLowerCase()}-install",
+                                    "${JOB_NAME.replaceAll('/', '-').toLowerCase()}-testenv",
+                                    "logs"
+                                    )
+
+                            }
+                            post{
+                                always{
+                                    archiveArtifacts artifacts: "logs/*.log"
+                                }
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        patterns: [
+                                            [pattern: 'logs', type: 'INCLUDE']
+                                            ]
+                                        )
                                 }
                             }
                         }

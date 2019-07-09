@@ -1,4 +1,4 @@
-﻿$MSIFILES = Get-ChildItem -Path . -Filter *.msi
+﻿$MSIFILES = Get-ChildItem -Path c:\dist -Filter *.msi
 # Only continue if one and only one msi file is located
 try
 {
@@ -72,8 +72,10 @@ try{
 
         while(Get-Job -State "Running")
         {
-
-            Get-Content "$logFileShort" -Tail 1
+            if(Test-Path $logFileShort)
+            {
+                Get-Content "$logFileShort" -Tail 1
+            }
             Start-Sleep 10
         }
         Get-Job | Receive-Job
