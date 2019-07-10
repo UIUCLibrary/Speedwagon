@@ -1,21 +1,28 @@
-.. project documentation master file, created by
-   sphinx-quickstart on Mon Jul 24 16:19:57 2017.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to Speedwagon's documentation!
 ======================================
 
 This documented is for version |version|.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
    :caption: Contents:
 
-   about
+   overview
+   getting_started
+   use_cases
    workflows
+   uiuc_workflows
+   advanced
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Appendices:
+
+   vendor_specs
    development
    history
+
 
 
 Indices and tables

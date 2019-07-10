@@ -77,11 +77,10 @@ class CopyFile(AbsProcessStrategy):
 class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
     name = "Convert TIFF to HathiTrust JP2"
     active = True
-
     description = "Input is a path to a folder containing subfolders which " \
                   "may contain TIFF files." \
                   "\n" \
-                  "\nOutput is a new path where the input folder and its " \
+                  "Output is a new path where the input folder and its " \
                   "exact structure will be copied, but all TIFF files will " \
                   "be replaced by HathiTrust-compliant JP2 files."
 

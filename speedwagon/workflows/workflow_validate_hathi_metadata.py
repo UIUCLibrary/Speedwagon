@@ -46,7 +46,7 @@ class ValidateImageMetadataWorkflow(AbsWorkflow):
                   "resolution, bit depth and color space for images located " \
                   "inside a directory.  The tool also verifies values exist " \
                   "for address, city, state, zip code, country, phone " \
-                  "number insuring the provenance of the file.  \n" \
+                  "number insuring the provenance of the file. " \
                   "\n" \
                   "Input is path that contains subdirectory which " \
                   "containing a series of tiff files."

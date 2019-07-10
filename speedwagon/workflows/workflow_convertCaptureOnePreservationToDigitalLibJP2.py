@@ -63,10 +63,10 @@ class ConvertFile(AbsProcessStrategy):
 
 class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
     name = "Convert CaptureOne Preservation TIFF to Digital Library Access JP2"
-    description = "This tool takes as its input a \"preservation\" folder " \
-                  "of TIFF files and as its output creates a sibling folder " \
-                  "called \"access\" containing digital-library " \
-                  "compliant JP2 files named the same as the TIFFs."
+    description = 'This tool takes as its input a "preservation" folder of ' \
+                  'TIFF files and as its output creates a sibling folder ' \
+                  'called "access" containing digital-library compliant JP2 ' \
+                  'files named the same as the TIFFs.'
     active = True
 
     def discover_task_metadata(self, initial_results: List[Any],

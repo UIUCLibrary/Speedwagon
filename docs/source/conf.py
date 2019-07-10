@@ -53,6 +53,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon',
+    'sphinxarg.ext',
     'workflowssummary'
 ]
 napoleon_google_docstring = True
