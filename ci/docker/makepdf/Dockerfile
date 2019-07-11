@@ -3,7 +3,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y tzdata && ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime && dpkg-reconfigure --frontend noninteractive tzdata
 
 
-RUN apt-get update && apt-get install -y locales locales-all python3-pip latexmk texlive-full
+RUN apt-get update && apt-get install -y locales locales-all python3-pip
+RUN apt-get install -y latexmk texlive-full
 
 ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
@@ -17,4 +18,4 @@ WORKDIR /project
 #RUN pipenv install --dev
 
 #ENTRYPOINT ["python3", "--version"]
-CMD cd build/docs/latex && make
+#CMD cd build/docs/latex && make

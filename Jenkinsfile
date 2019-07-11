@@ -51,15 +51,73 @@ def build_sphinx(){
                 script: "python -m pipenv run sphinx-build docs/source ..\\build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
                 )
         }
-        dir("build/docs/latex"){
-            bat(
-               label: "Converting documentation from LaTex format into a pdf",
-               script: "${env.PDFLATEX}\\pdflatex -interaction=nonstopmode speedwagon.tex "
-            )
-        }
-        dir("dist\\docs"){
-            bat "move /Y ..\\..\\build\\docs\\latex\\*.pdf"
-        }
+
+}
+
+def convert_latex_to_pdf(latexPath, destPath, logsPath){
+    script{
+        stash includes: "${latexPath}/*", name: 'latex_docs'
+        node("Docker"){
+            try{
+                def docker_path = "${tool name: 'Docker', type: 'org.jenkinsci.plugins.docker.commons.tools.DockerTool'}"
+                withEnv([
+                    "Path=${docker_path};${env.PATH}",
+                    "latex_docs_path=${latexPath}",
+                    "DOCKER_CONTAINER_NAME=latexmk-env"
+                    ]) {
+                    checkout scm
+                    unstash "latex_docs"
+                    bat(
+                        label: "Build Docker Image with texlive",
+                        script: "docker build  -t latexmk -f ci/docker/makepdf/lite/Dockerfile ."
+                    )
+                    try{
+
+                        powershell(
+                            label: "Run Docker Container",
+                            script: 'docker run --rm -t -v "$((Get-Location).Path)\\build\\docs\\latex:/latex" --name $($env:DOCKER_CONTAINER_NAME) --workdir /latex latexmk make',
+                        )
+
+                    } finally {
+                        dir("build/docs/latex"){
+                            stash(
+                                includes: "*.log",
+                                name: "latexmk logs",
+                                allowEmpty: true
+                            )
+                        }
+                        bat(
+                            label: "Stopping ${DOCKER_CONTAINER_NAME} container",
+                            returnStatus: true,
+                            script: "docker stop --time=1 ${DOCKER_CONTAINER_NAME}"
+                            )
+
+                        bat(
+                            label: "Removing ${DOCKER_CONTAINER_NAME} container",
+                            returnStatus: true,
+                            script: "docker rm ${DOCKER_CONTAINER_NAME}"
+                            )
+                    }
+                }
+                dir("build/docs/latex"){
+                    stash(
+                        includes: "*.pdf",
+                        name: "resulting_pdf"
+                        )
+                }
+            } finally {
+                deleteDir()
+            }
+         }
+         dir(logsPath){
+            unstash "latexmk logs"
+         }
+         dir(destPath){
+            unstash "resulting_pdf"
+         }
+    }
+
+
 }
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
     script{
@@ -489,19 +547,20 @@ pipeline {
                     }
                 }
                 stage("Sphinx Documentation"){
-                    options{
-                        timeout(2)
-                    }
+                    // options{
+                    //     timeout(2)
+                    // }
                     environment{
                         PDFLATEX = tool name: 'TexLive', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
                     }
                     steps {
                         build_sphinx()
+                        convert_latex_to_pdf("build/docs/latex", "dist/docs", "logs/latex")
                     }
                     post{
                         always {
                             recordIssues(tools: [pep8(pattern: 'logs/build_sphinx.log')])
-                            archiveArtifacts artifacts: 'logs/build_sphinx.log'
+                            archiveArtifacts artifacts: 'logs/build_sphinx.log,logs/latex/speedwagon.log'
                             postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
                         }
                         success{
@@ -512,9 +571,13 @@ pipeline {
 
                         }
                         cleanup{
-                            cleanWs(patterns:
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns:
                                     [
                                         [pattern: 'logs/build_sphinx.log', type: 'INCLUDE'],
+                                        [pattern: "build/docs/latex", type: 'INCLUDE'],
+                                        [pattern: "dist/docs/*.pdf", type: 'INCLUDE'],
                                         [pattern: "dist/${env.DOC_ZIP_FILENAME}", type: 'INCLUDE']
                                     ]
                                 )
