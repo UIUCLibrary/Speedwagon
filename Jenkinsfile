@@ -51,15 +51,95 @@ def build_sphinx(){
                 script: "python -m pipenv run sphinx-build docs/source ..\\build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
                 )
         }
-        dir("build/docs/latex"){
-            bat(
-               label: "Converting documentation from LaTex format into a pdf",
-               script: "${env.PDFLATEX}\\pdflatex -interaction=nonstopmode speedwagon.tex "
+
+}
+def install_system_python_deps(){
+    lock("system_python_${env.NODE_NAME}"){
+        bat(
+            label: "Install Python System Dependencies",
+            script:"(if not exist logs mkdir logs) && python -m pip install pip --upgrade --quiet"
             )
-        }
-        dir("dist\\docs"){
-            bat "move /Y ..\\..\\build\\docs\\latex\\*.pdf"
-        }
+
+        bat(
+            label: "Generating a log of python packages installed system-wide",
+            script: "python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
+        )
+
+    }
+}
+
+def install_pipfile(pipfilePath){
+    dir(pipfilePath){
+        bat(
+            label: "Installing Python packages from pipfile in ${pipfilePath}",
+            script: "pipenv install --dev --deploy"
+        )
+
+        bat(
+            label: "Generating a log of python packages installed from pipfile",
+            script: "pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log"
+            )
+
+        bat(
+            label: "Checking packages installed by pipfile for security issues",
+            script: "pipenv check"
+            )
+
+    }
+}
+def convert_latex_to_pdf(latexPath, destPath, logsPath){
+    script{
+        stash includes: "${latexPath}/*", name: 'latex_docs'
+        node("Docker"){
+            try{
+                def docker_path = "${tool name: 'Docker', type: 'org.jenkinsci.plugins.docker.commons.tools.DockerTool'}"
+                withEnv([
+                    "Path=${docker_path};${env.PATH}",
+                    "latex_docs_path=${latexPath}",
+                    "DOCKER_IMAGE_NAME=${JOB_NAME.replaceAll('/', '.').toLowerCase()}.latexmk"
+                    ]) {
+                    checkout scm
+                    unstash "latex_docs"
+                    bat(
+                        label: "Build Docker Image with texlive",
+                        script: "docker build  -t %DOCKER_IMAGE_NAME% -f ci/docker/makepdf/lite/Dockerfile ."
+                    )
+                    try{
+
+                        powershell(
+                            label: "Run Docker Container",
+                            script: 'docker run --rm -t -v "$((Get-Location).Path)\\build\\docs\\latex:/latex" --workdir /latex $($env:DOCKER_IMAGE_NAME) make',
+                        )
+
+                    } finally {
+                        dir("build/docs/latex"){
+                            stash(
+                                includes: "*.log",
+                                name: "latexmk logs",
+                                allowEmpty: true
+                            )
+                        }
+                    }
+                }
+                dir("build/docs/latex"){
+                    stash(
+                        includes: "*.pdf",
+                        name: "resulting_pdf"
+                        )
+                }
+            } finally {
+                deleteDir()
+            }
+         }
+         dir(logsPath){
+            unstash "latexmk logs"
+         }
+         dir(destPath){
+            unstash "resulting_pdf"
+         }
+    }
+
+
 }
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
     script{
@@ -279,6 +359,59 @@ ${log_file}
     }
 }
 
+
+def testMsiInstall(dockerfilePath, dockerImageName, dockerContainerName, logsPath){
+    unstash 'STANDALONE_INSTALLERS'
+    dir(logsPath){
+        bat "dir > nul"
+    }
+    script{
+         withEnv([
+            "DOCKER_IMAGE_NAME=${dockerImageName.toLowerCase()}",
+            "DOCKER_CONTAINER_NAME=${dockerContainerName.toLowerCase()}",
+            "DOCKER_LOGS_PATH=${logsPath}"
+            ]){
+            bat(
+                label: "Build Windows Docker Container",
+                script: "docker build  -t %DOCKER_IMAGE_NAME% -f ${dockerfilePath} ./source "
+                )
+            try{
+
+                def dockerSha = powershell(
+                    label: "Run Docker Container with ${logsPath} mounted",
+                    script: 'docker run -d -t -v "$((Get-Location).Path)\\$($env:DOCKER_LOGS_PATH):c:\\logs" -v "$((Get-Location).Path)\\dist:c:\\dist" --name $($env:DOCKER_CONTAINER_NAME) $($env:DOCKER_IMAGE_NAME)',
+                    returnStdout: true
+                ).trim()
+
+                bat(
+                    label: "Run install script",
+                    script: "docker exec ${dockerSha} powershell.exe -executionpolicy bypass -file c:/scripts/run_install.ps1"
+                )
+
+            } finally {
+                bat(
+                    label: "Stopping ${DOCKER_CONTAINER_NAME} container",
+                    returnStatus: true,
+                    script: "docker stop --time=1 ${DOCKER_CONTAINER_NAME}"
+                    )
+
+                bat(
+                    label: "Removing ${DOCKER_CONTAINER_NAME} container",
+                    returnStatus: true,
+                    script: "docker rm ${DOCKER_CONTAINER_NAME}"
+                    )
+
+            }
+        }
+
+//        bat(
+//            label: "Install msi inside a Windows Docker container",
+//            script: "docker build  -t ${currentBuild.projectName}-windows-install -f source\\ci\\docker\\windowsserver\\Dockerfile . && docker run --name ${currentBuild.projectName}-windows-installer-test --rm ${currentBuild.projectName}-windows-install"
+//        )
+    }
+}
+
+
 pipeline {
     agent {
         label "Windows && Python3 && longfilenames && WIX"
@@ -308,7 +441,6 @@ pipeline {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
         booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
-
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: false, description: "Create a standalone wix based .msi installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: false, description: "Create a standalone NULLSOFT NSIS based .exe installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_ZIP", defaultValue: false, description: "Create a standalone portable package")
@@ -323,6 +455,7 @@ pipeline {
     }
 
     stages {
+
         stage("Configure"){
             environment{
                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
@@ -365,70 +498,41 @@ pipeline {
                     }
                 }
 
-                stage("Cleanup"){
-                    steps {
-                        dir("source") {
-                            stash includes: 'deployment.yml', name: "Deployment"
-                        }
-                    }
-                }
+//                stage("Cleanup"){
+//                    steps {
+//                        dir("source") {
+//                            stash includes: 'deployment.yml', name: "Deployment"
+//                        }
+//                    }
+//                }
                 stage("Install Python Dependencies"){
                     steps{
-                        lock("system_python_${env.NODE_NAME}"){
-                            bat(
-                                label: "Install Python System Dependencies",
-                                script:"(if not exist logs mkdir logs) && python -m pip install pip --upgrade --quiet && python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
-                                )
-                        }
+                        install_system_python_deps()
                         bat (
                             label: "Install Python Virtual Environment Dependencies",
                             script: "python -m venv venv && venv\\Scripts\\pip.exe install \"tox<3.10\" sphinx pylint && venv\\Scripts\\pip list > logs/pippackages_venv_${env.NODE_NAME}.log"
                             )
-
-
-                    }
-                    post{
-                        always{
-                            archiveArtifacts artifacts: "logs/pippackages_system_*.log"
-                            archiveArtifacts artifacts: "logs/pippackages_venv_*.log"
-                        }
-                        cleanup{
-                            cleanWs(patterns: [[pattern: "logs/pippackages_system_*.log", type: 'INCLUDE']])
-                        }
-                    }
-                }
-                stage("Installing Pipfile"){
-                    options{
-                        timeout(5)
-                    }
-
-                    steps {
-                        dir("source"){
-                            bat "pipenv install --dev --deploy && pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log && pipenv check"
-
-                        }
-                    }
-                    post{
-                        always{
-                            archiveArtifacts artifacts: "logs/pippackages_pipenv_*.log"
-                        }
-                        failure {
-                            dir("source"){
-                                bat "pipenv --rm"
-                            }
-                        }
-                        cleanup{
-                            cleanWs(patterns: [[pattern: "logs/pippackages_pipenv_*.log", type: 'INCLUDE']])
-                        }
+                        install_pipfile("source")
                     }
                 }
             }
             post{
                 always{
+                    archiveArtifacts artifacts: "logs/pippackages_pipenv_*.log,logs/pippackages_system_*.log,logs/pippackages_venv_*.log"
                     echo "Configured ${env.PKG_NAME}, version ${env.PKG_VERSION}, for testing."
                 }
                 failure{
+                    dir("source"){
+                        bat "pipenv --rm"
+                    }
                     deleteDir()
+                }
+                cleanup{
+                    cleanWs(patterns: [
+                        [pattern: "logs/pippackages_pipenv_*.log", type: 'INCLUDE'],
+                        [pattern: "logs/pippackages_system_*.log", type: 'INCLUDE']
+                        ]
+                    )
                 }
             }
         }
@@ -457,19 +561,22 @@ pipeline {
                     }
                 }
                 stage("Sphinx Documentation"){
-                    options{
-                        timeout(2)
-                    }
+                     options{
+                         // The only reason it might be taking this long is if
+                         // the Docker container needs to be built from scratch
+                         timeout(10)
+                     }
                     environment{
                         PDFLATEX = tool name: 'TexLive', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
                     }
                     steps {
                         build_sphinx()
+                        convert_latex_to_pdf("build/docs/latex", "dist/docs", "logs/latex")
                     }
                     post{
                         always {
                             recordIssues(tools: [pep8(pattern: 'logs/build_sphinx.log')])
-                            archiveArtifacts artifacts: 'logs/build_sphinx.log'
+                            archiveArtifacts artifacts: 'logs/build_sphinx.log,logs/latex/speedwagon.log'
                             postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
                         }
                         success{
@@ -480,9 +587,13 @@ pipeline {
 
                         }
                         cleanup{
-                            cleanWs(patterns:
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns:
                                     [
                                         [pattern: 'logs/build_sphinx.log', type: 'INCLUDE'],
+                                        [pattern: "build/docs/latex", type: 'INCLUDE'],
+                                        [pattern: "dist/docs/*.pdf", type: 'INCLUDE'],
                                         [pattern: "dist/${env.DOC_ZIP_FILENAME}", type: 'INCLUDE']
                                     ]
                                 )
@@ -804,6 +915,44 @@ pipeline {
                                 failure {
 
                                     archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log,dist/**/*.wxs"
+                                }
+                            }
+                        }
+                        stage("Testing MSI Install"){
+                            agent {
+                                label "Docker"
+                            }
+                            environment{
+                                PATH = "${tool name: 'Docker', type: 'org.jenkinsci.plugins.docker.commons.tools.DockerTool'};${PATH}"
+
+                            }
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                    triggeredBy "TimerTriggerCause"
+                                }
+                            }
+                            steps{
+                                testMsiInstall(
+                                    "source/ci/docker/windowsserver/Dockerfile",
+                                    "${JOB_NAME.replaceAll('/', '-').toLowerCase()}-install",
+                                    "${JOB_NAME.replaceAll('/', '-').toLowerCase()}-testenv",
+                                    "logs"
+                                    )
+
+                            }
+                            post{
+                                always{
+                                    archiveArtifacts artifacts: "logs/*.log"
+                                }
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        patterns: [
+                                            [pattern: 'logs', type: 'INCLUDE'],
+                                            [pattern: 'dist', type: 'INCLUDE']
+                                            ]
+                                        )
                                 }
                             }
                         }
