@@ -547,9 +547,11 @@ pipeline {
                     }
                 }
                 stage("Sphinx Documentation"){
-                    // options{
-                    //     timeout(2)
-                    // }
+                     options{
+                         // The only reason it might be taking this long is if
+                         // the Docker container needs to be built from scratch
+                         timeout(10)
+                     }
                     environment{
                         PDFLATEX = tool name: 'TexLive', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
                     }
