@@ -572,7 +572,7 @@ pipeline {
                     }
                     post{
                         always {
-                            recordIssues(tools: [pep8(pattern: 'logs/build_sphinx.log')])
+                            recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
                             archiveArtifacts artifacts: 'logs/build_sphinx.log,logs/latex/speedwagon.log'
                             postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
                         }
