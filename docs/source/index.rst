@@ -19,6 +19,7 @@ This documented is for version |version|.
    :maxdepth: 1
    :caption: Appendices:
 
+   glossary
    vendor_specs
    development
    history
