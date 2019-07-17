@@ -53,7 +53,40 @@ def build_sphinx(){
         }
 
 }
+def install_system_python_deps(){
+    lock("system_python_${env.NODE_NAME}"){
+        bat(
+            label: "Install Python System Dependencies",
+            script:"(if not exist logs mkdir logs) && python -m pip install pip --upgrade --quiet"
+            )
 
+        bat(
+            label: "Generating a log of python packages installed system-wide",
+            script: "python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
+        )
+
+    }
+}
+
+def install_pipfile(pipfilePath){
+    dir(pipfilePath){
+        bat(
+            label: "Installing Python packages from pipfile in ${pipfilePath}",
+            script: "pipenv install --dev --deploy"
+        )
+
+        bat(
+            label: "Generating a log of python packages installed from pipfile",
+            script: "pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log"
+            )
+
+        bat(
+            label: "Checking packages installed by pipfile for security issues",
+            script: "pipenv check"
+            )
+
+    }
+}
 def convert_latex_to_pdf(latexPath, destPath, logsPath){
     script{
         stash includes: "${latexPath}/*", name: 'latex_docs'
@@ -63,19 +96,19 @@ def convert_latex_to_pdf(latexPath, destPath, logsPath){
                 withEnv([
                     "Path=${docker_path};${env.PATH}",
                     "latex_docs_path=${latexPath}",
-                    "DOCKER_CONTAINER_NAME=latexmk-env"
+                    "DOCKER_IMAGE_NAME=${JOB_NAME.replaceAll('/', '.').toLowerCase()}.latexmk"
                     ]) {
                     checkout scm
                     unstash "latex_docs"
                     bat(
                         label: "Build Docker Image with texlive",
-                        script: "docker build  -t latexmk -f ci/docker/makepdf/lite/Dockerfile ."
+                        script: "docker build  -t %DOCKER_IMAGE_NAME% -f ci/docker/makepdf/lite/Dockerfile ."
                     )
                     try{
 
                         powershell(
                             label: "Run Docker Container",
-                            script: 'docker run --rm -t -v "$((Get-Location).Path)\\build\\docs\\latex:/latex" --name $($env:DOCKER_CONTAINER_NAME) --workdir /latex latexmk make',
+                            script: 'docker run --rm -t -v "$((Get-Location).Path)\\build\\docs\\latex:/latex" --workdir /latex $($env:DOCKER_IMAGE_NAME) make',
                         )
 
                     } finally {
@@ -86,17 +119,6 @@ def convert_latex_to_pdf(latexPath, destPath, logsPath){
                                 allowEmpty: true
                             )
                         }
-                        bat(
-                            label: "Stopping ${DOCKER_CONTAINER_NAME} container",
-                            returnStatus: true,
-                            script: "docker stop --time=1 ${DOCKER_CONTAINER_NAME}"
-                            )
-
-                        bat(
-                            label: "Removing ${DOCKER_CONTAINER_NAME} container",
-                            returnStatus: true,
-                            script: "docker rm ${DOCKER_CONTAINER_NAME}"
-                            )
                     }
                 }
                 dir("build/docs/latex"){
@@ -485,20 +507,12 @@ pipeline {
 //                }
                 stage("Install Python Dependencies"){
                     steps{
-                        lock("system_python_${env.NODE_NAME}"){
-                            bat(
-                                label: "Install Python System Dependencies",
-                                script:"(if not exist logs mkdir logs) && python -m pip install pip --upgrade --quiet && python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
-                                )
-                        }
+                        install_system_python_deps()
                         bat (
                             label: "Install Python Virtual Environment Dependencies",
                             script: "python -m venv venv && venv\\Scripts\\pip.exe install \"tox<3.10\" sphinx pylint && venv\\Scripts\\pip list > logs/pippackages_venv_${env.NODE_NAME}.log"
                             )
-                        dir("source"){
-                            bat "pipenv install --dev --deploy && pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log && pipenv check"
-
-                        }
+                        install_pipfile("source")
                     }
                 }
             }
