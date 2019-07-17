@@ -566,9 +566,6 @@ pipeline {
                          // the Docker container needs to be built from scratch
                          timeout(10)
                      }
-                    environment{
-                        PDFLATEX = tool name: 'TexLive', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
-                    }
                     steps {
                         build_sphinx()
                         convert_latex_to_pdf("build/docs/latex", "dist/docs", "logs/latex")
