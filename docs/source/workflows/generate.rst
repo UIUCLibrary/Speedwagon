@@ -6,7 +6,8 @@ Generate Files
 
 .. autoworkflow:: Generate OCR Files
 
-    Create OCR text files for images.
+    Uses :term:`Google Tessaract` to create OCR text files for images.
+
 
     Settings:
         Path: Path containing tiff or jp2 files.
