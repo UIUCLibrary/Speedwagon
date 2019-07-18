@@ -243,9 +243,12 @@ def get_build_number(){
 def runtox(){
     script{
         try{
-            bat "pipenv run tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox --result-json=${WORKSPACE}\\logs\\tox_report.json"
+            // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
+            // Tox has a bug that fails when trying to write the json report
+            // when --parallel is run at the same time
+            bat "pipenv run tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox --result-json ${WORKSPACE}\\logs\\tox_report.json"
         } catch (exc) {
-            bat "pipenv run tox -vv --workdir ${WORKSPACE}\\.tox --result-json=${WORKSPACE}\\logs\\tox_report.json --recreate"
+            bat "pipenv run tox -vv --workdir ${WORKSPACE}\\.tox --result-json ${WORKSPACE}\\logs\\tox_report.json --recreate"
         }
     }
 
