@@ -79,11 +79,12 @@ def install_pipfile(pipfilePath){
             label: "Generating a log of python packages installed from pipfile",
             script: "pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log"
             )
-
-        bat(
-            label: "Checking packages installed by pipfile for security issues",
-            script: "pipenv check"
-            )
+        catchError(buildResult: "SUCCESS", message: 'Pipfile failed security checks', stageResult: "UNSTABLE") {
+            bat(
+                label: "Checking packages installed by pipfile for security issues",
+                script: "pipenv check"
+                )
+        }
 
     }
 }
