@@ -1,5 +1,4 @@
-﻿$MSIFILES = Get-ChildItem -Path . -Filter *.msi
-
+﻿$MSIFILES = Get-ChildItem -Path c:\dist -Filter *.msi
 # Only continue if one and only one msi file is located
 try
 {
@@ -28,23 +27,62 @@ catch
     exit 1
 }
 
+
 # At this point there should only be a single msi file to run
 try{
     foreach ($MSIFILE in $MSIFILES) {
-        echo "Running msiexec on $MSIFILE"
-        $install_process = Start-process -FilePath "msiexec.exe" -ArgumentList "/i","$MSIFILE","/q","/lp","dockerinstall.log" -Wait -PassThru
+        $InstallBlock = {
+            param
+            (
+                [string]$currentLocation,
+                [string]$msiFile,
+                [string]$logFileShortName
 
-        if ($install_process.ExitCode -ne 0) {
-            $EC = $install_process.ExitCode
-            Write-Error "Exit code is $EC."
-            throw "Problem running msiexec."
+            )
+
+            $MSIArguments = @(
+            "/i"
+            ('"{0}"' -f $msiFile)
+            "/qn"
+            "/norestart"
+            "/L*v!"
+            "$currentLocation/$logFileShortName"
+            )
+
+            New-Item  "$currentLocation/$logFileShortName"
+
+            $install_process = Start-Process "msiexec.exe" -ArgumentList $MSIArguments -Wait -WindowStyle Hidden -PassThru
+
+            Write-Host "Done installing with exit code $($install_process.ExitCode). Complete install log can be found at $logFileShortName"
+            if ($install_process.ExitCode -ne 0)
+            {
+                throw "Problem running msiexec."
+            }
         }
+        $DataStamp = get-date -Format yyyyMMddTHHmmss
+        $logFileShort = '{0}-{1}.log' -f $MSIFILE.Name, $DataStamp
 
-        Get-Content dockerinstall.log
+        $InstallMSIArgs = @(
+            "$PWD",
+            "$($msiFile.fullname)",
+            "$logFileShort"
+        )
 
-        if(Test-Path -isvalid c:\logs){
+        $job = Start-Job -ScriptBlock $InstallBlock -ArgumentList $InstallMSIArgs  -Name "Running msiexec"
+
+        while(Get-Job -State "Running")
+        {
+            if(Test-Path $logFileShort)
+            {
+                Get-Content "$logFileShort" -Tail 1
+            }
+            Start-Sleep 10
+        }
+        Get-Job | Receive-Job
+
+        if(Test-Path c:\logs){
             dir c:\logs
-            Move-Item -Path dockerinstall.log -Destination c:\logs
+            Move-Item -Path $logFileShort -Destination c:\logs
         }
 
     }

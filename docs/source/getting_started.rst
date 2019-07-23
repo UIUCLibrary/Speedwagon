@@ -22,11 +22,12 @@ Installation on Windows from MSI installer
 ++++++++++++++++++++++++++++++++++++++++++
 
 Normal Windows users can download and install a prebuilt Windows Installer
-.msi file. Unless you have experience with installing Python packages, you
-should use this method because it is the easiest. This installer uses the
-standard windows install wizard to help you install everything needed
-to run Speedwagon. In addition, the install wizard creates a start menu icon
-and adds an easy way to uninstall it later if you choose.
+.msi file. Unless you have experience with installing
+:term:`Python packages<Python Package>`, you should use this method because it
+is the easiest. This installer uses the standard Windows install wizard to
+help you install everything needed to run Speedwagon. In addition, the install
+wizard creates a start menu icon and adds an easy way to uninstall it later
+if you choose.
 
 Double click on the Speedwagon-version.number.msi file to start the
 installation wizard.
@@ -53,7 +54,7 @@ If you do not want to install the msi or the whl file.
 #. Download the latest `source release from github
    <https://github.com/UIUCLibrary/Speedwagon/releases>`_.
 
-#. Install Speedwagon as a Python package from the command line::
+#. Install Speedwagon as a :term:`Python package<Python Package>` from the command line::
 
     python setup.py install
 
