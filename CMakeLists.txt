@@ -310,7 +310,7 @@ if(WIN32)
     
     if(EXISTS "${SPEEDWAGON_DOC_PDF}")
         install(FILES ${SPEEDWAGON_DOC_PDF}
-            TYPE DOC
+            DESTINATION share/doc
         )
         set_property(INSTALL "${CMAKE_INSTALL_PREFIX}/share/doc/speedwagon.pdf"
             PROPERTY CPACK_START_MENU_SHORTCUTS "Documentation"
