@@ -3,7 +3,8 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
     <Fragment>
         <DirectoryRef Id="PROGRAM_MENU_FOLDER">
-            <Component Id="CM_SHORTCUT" Guid="*">
+            <Component Id="CM_SHORTCUT"
+            >
                 <Shortcut Id="CM_SP_bin.python.exe"
                           Name="@CMAKE_PROJECT_NAME@"
                           Description="Collection of tools and workflows for DS"

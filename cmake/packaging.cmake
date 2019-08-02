@@ -8,7 +8,17 @@ set(CPACK_PACKAGE_NAME Speedwagon)
 set(CPACK_PACKAGE_INSTALL_DIRECTORY Speedwagon)
 set(CPACK_WIX_PROGRAM_MENU_FOLDER Speedwagon)
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_BINARY_DIR}/LICENSE.txt")
+
 set(CPACK_WIX_EXTRA_SOURCES ${PROJECT_BINARY_DIR}/configs/install/wix_start_menu.wxs)
+
+if(SPEEDWAGON_DOC_PDF)
+    list(APPEND CPACK_WIX_EXTRA_SOURCES ${CMAKE_CURRENT_LIST_DIR}/docs.wxs)
+    set(CPACK_WIX_PDF_COMPONENTREF "<ComponentRef Id=\"DocumentationShortcut\"/>")
+ endif()
+
+configure_file(templates/shortcuts.wxs.in configs/install/shortcuts.wxs @ONLY)
+list(APPEND CPACK_WIX_EXTRA_SOURCES ${PROJECT_BINARY_DIR}/configs/install/shortcuts.wxs)
+
 set(CPACK_WIX_PATCH_FILE ${PROJECT_SOURCE_DIR}/cmake/patch_wix.xml)
 
 set(CPACK_NSIS_MENU_LINKS
@@ -33,3 +43,4 @@ if(DEFINED ENV{build_number})
 endif()
 
 configure_file(templates/wix_start_menu.wvs.in configs/install/wix_start_menu.wxs @ONLY)
+

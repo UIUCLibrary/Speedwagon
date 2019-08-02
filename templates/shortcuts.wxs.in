@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment Id='ShortcutFragment'>
+         <ComponentGroup Id="CM_SHORTCUTS">
+            <ComponentRef Id="CM_SHORTCUT"/>
+            @CPACK_WIX_PDF_COMPONENTREF@
+         </ComponentGroup>
+    </Fragment>
+</Wix>
