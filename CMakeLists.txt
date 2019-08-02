@@ -308,7 +308,7 @@ if(WIN32)
             PATTERN "python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth" EXCLUDE
         )
     
-    if(SPEEDWAGON_DOC_PDF)
+    if(EXISTS "${SPEEDWAGON_DOC_PDF}")
         install(FILES ${SPEEDWAGON_DOC_PDF}
             TYPE DOC
         )
