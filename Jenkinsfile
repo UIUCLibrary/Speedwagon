@@ -861,6 +861,7 @@ pipeline {
                                 if not exist "temp" mkdir temp
                                 """
                                 unstash "DOCS_ARCHIVE"
+                                bat "dir ${WORKSPACE}\\dist\\docs"
                                 cmakeBuild(
                                     buildDir: 'cmake_build',
                                     cleanBuild: true,
