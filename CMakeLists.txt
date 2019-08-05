@@ -7,6 +7,9 @@ find_package(PythonInterp REQUIRED)
 message(STATUS "Using Python ${PYTHON_VERSION_STRING} located at \"${PYTHON_EXECUTABLE}\".")
 option(SPEEDWAGON_CACHE_PYTHON_WHEEL_DEPENDENCIES "Cache python whl dependencies to a folder for reuse" ON)
 option(SPEEDWAGON_SYNC_PYTHON_BUILD_VENV "SYNC installed python packages in build virtual environment" ON)
+
+
+
 set(SPEEDWAGON_PYTHON_DEPENDENCY_CACHE ${CMAKE_CURRENT_BINARY_DIR}/_deps/python_wheels CACHE PATH "location to put Python deps")
 set(SPEEDWAGON_VENV_PATH ${CMAKE_CURRENT_BINARY_DIR}/venv CACHE PATH "Location for Python virtual environment needed for building")
 set(SPEEDWAGON_EXTRA_REQUIREMENTS_FILE "" CACHE FILEPATH "Extra requirements file to install to standalone build")
@@ -24,7 +27,11 @@ project(Speedwagon
     LANGUAGES NONE
     VERSION ${SPEEDWAGON_VERSION_MAJOR}.${SPEEDWAGON_VERSION_MINOR}.${SPEEDWAGON_VERSION_PATCH})
 
-get_embedded_python_url(
+find_file(SPEEDWAGON_DOC_PDF 
+    NAMES speedwagon.pdf
+    )
+
+    get_embedded_python_url(
     VERSION ${PYTHON_VERSION_STRING}
     URL_VAR EMBEDDED_PYTHON_URL
     )
@@ -294,12 +301,23 @@ if(WIN32)
 
     install(DIRECTORY ${PROJECT_BINARY_DIR}/standalone/
         DESTINATION bin
-        PATTERN "pytest" EXCLUDE
-        PATTERN "Lib" EXCLUDE
-        PATTERN "python.exe" EXCLUDE
-        PATTERN "pythonw.exe" EXCLUDE
-        PATTERN "python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth" EXCLUDE
+            PATTERN "pytest" EXCLUDE
+            PATTERN "Lib" EXCLUDE
+            PATTERN "python.exe" EXCLUDE
+            PATTERN "pythonw.exe" EXCLUDE
+            PATTERN "python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth" EXCLUDE
         )
+    
+    if(EXISTS "${SPEEDWAGON_DOC_PDF}")
+        install(FILES ${SPEEDWAGON_DOC_PDF}
+            DESTINATION share/doc
+        )
+        set_property(INSTALL "${CMAKE_INSTALL_PREFIX}/share/doc/speedwagon.pdf"
+            PROPERTY CPACK_START_MENU_SHORTCUTS "Documentation"
+
+        )
+
+    endif()
 
 endif()
 

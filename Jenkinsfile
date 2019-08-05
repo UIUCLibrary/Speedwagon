@@ -860,14 +860,17 @@ pipeline {
                                 if not exist "logs\\ctest" mkdir logs\\ctest
                                 if not exist "temp" mkdir temp
                                 """
-                                cmakeBuild buildDir: 'cmake_build',
+                                unstash "DOCS_ARCHIVE"
+                                cmakeBuild(
+                                    buildDir: 'cmake_build',
                                     cleanBuild: true,
-                                    cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\" -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest",
+                                    cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\" -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf" ,
                                     generator: 'Ninja',
 //                                    generator: 'Visual Studio 14 2015 Win64',
                                     installation: "${CMAKE_VERSION}",
                                     sourceDir: 'source',
                                     steps: [[args: "", withCmake: true]]
+                                    )
 
                             }
                         }
