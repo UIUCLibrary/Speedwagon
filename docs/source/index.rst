@@ -20,6 +20,7 @@ This documented is for version |version|.
    :caption: Appendices:
 
    glossary
+   faq
    vendor_specs
    development
    history

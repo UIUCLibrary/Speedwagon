@@ -6,7 +6,7 @@ Generate Files
 
 .. autoworkflow:: Generate OCR Files
 
-    Uses :term:`Google Tessaract` to create OCR text files for images.
+    Uses :term:`Google Tesseract` to create :term:`OCR <Optical Character Recognition>` text files for images.
 
 
     Settings:
