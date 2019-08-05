@@ -213,6 +213,7 @@ set(SPEEDWAGON_PYTHON_INTERP python.exe)
 
 include(CTest)
 if(WIN32)
+    list(APPEND TOP_LEVEL_FILES ${PROJECT_SOURCE_DIR}/cmake/speedwagon.vbs)
     configure_file(templates/speedwagon.bat.in ${PROJECT_BINARY_DIR}/speedwagon.bat @ONLY)
     list(APPEND TOP_LEVEL_FILES ${PROJECT_BINARY_DIR}/speedwagon.bat)
 
@@ -228,11 +229,14 @@ if(WIN32)
         COMMENT "Fixing up python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth"
     )
     install(FILES ${PYTHON_INSTALL_CONFIG_PTH_FILE} DESTINATION bin)
-    install(PROGRAMS ${PROJECT_BINARY_DIR}/standalone/python.exe ${PROJECT_BINARY_DIR}/standalone/pythonw.exe
+    install(PROGRAMS 
+            ${PROJECT_BINARY_DIR}/standalone/python.exe 
+            ${PROJECT_BINARY_DIR}/standalone/pythonw.exe
         DESTINATION bin
     )
 
-    install(DIRECTORY ${PROJECT_BINARY_DIR}/standalone/Lib/
+    install(DIRECTORY 
+            ${PROJECT_BINARY_DIR}/standalone/Lib/
         DESTINATION Lib
         )
 #    add_subdirectory(tests)

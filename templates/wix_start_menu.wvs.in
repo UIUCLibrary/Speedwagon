@@ -8,8 +8,7 @@
                 <Shortcut Id="CM_SP_bin.python.exe"
                           Name="@CMAKE_PROJECT_NAME@"
                           Description="Collection of tools and workflows for DS"
-                          Target="[#CM_FP_bin.python.exe]"
-                          Arguments="-m speedwagon"
+                          Target="[#CM_FP_speedwagon.vbs]"
                           WorkingDirectory="CM_DP_bin"
                         Icon="@CMAKE_PROJECT_NAME@Icon">
                     <Icon Id="@CMAKE_PROJECT_NAME@Icon" SourceFile="@CPACK_WIX_PRODUCT_ICON@" />
