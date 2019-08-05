@@ -6,3 +6,4 @@ Advanced Usage
 
        custom_workflow
        cli
+       console_mode
