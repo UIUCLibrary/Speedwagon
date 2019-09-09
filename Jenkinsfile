@@ -8,7 +8,7 @@ import static groovy.json.JsonOutput.* // For pretty printing json data
 def CMAKE_VERSION = "cmake3.13"
 def check_jira_issue(issue, outputFile){
     script{
-        def issue_response = jiraGetIssue idOrKey: issue, site: 'https://bugs.library.illinois.edu'
+        def issue_response = jiraGetIssue idOrKey: issue, site: 'bugs.library.illinois.edu'
         try{
             def input_data = readJSON text: toJson(issue_response.data)
             writeJSON file: outputFile, json: input_data
@@ -23,7 +23,7 @@ def check_jira_project(project, outputFile){
 
     script {
 
-        def jira_project = jiraGetProject idOrKey: project, site: 'https://bugs.library.illinois.edu'
+        def jira_project = jiraGetProject idOrKey: project, site: 'bugs.library.illinois.edu'
         try{
             def input_data = readJSON text: toJson(jira_project.data)
             writeJSON file: outputFile, json: input_data
