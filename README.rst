@@ -4,6 +4,8 @@ About Speedwagon
 Collection of tools and workflows for DS
 
 
+`Documentation <https://www.library.illinois.edu/dccdocs/speedwagon/>`_
+
 .. admonition:: Development Status
 
     .. container::
