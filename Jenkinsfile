@@ -576,6 +576,11 @@ pipeline {
                             }
                         }
                         stage("Convert to pdf"){
+                            agent{
+                                dockerfile {
+                                    filename 'ci/docker/makepdf/lite/Dockerfile'
+                                }
+                            }
                             steps{
                                 echo "converting"
                             }
