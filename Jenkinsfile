@@ -579,6 +579,7 @@ pipeline {
                             agent{
                                 dockerfile {
                                     filename 'ci/docker/makepdf/lite/Dockerfile'
+                                    label "docker && linux"
                                 }
                             }
                             steps{
