@@ -41,6 +41,7 @@ def check_jira(project, issue){
 }
 
 def build_sphinx(){
+        bat "set"
         dir("source"){
             bat(
                 label: "Building HTML docs on ${env.NODE_NAME}",
