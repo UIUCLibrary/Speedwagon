@@ -565,11 +565,7 @@ pipeline {
                     }
                 }
                 stage("Sphinx Documentation"){
-                     options{
-                         // The only reason it might be taking this long is if
-                         // the Docker container needs to be built from scratch
-                         timeout(10)
-                     }
+
                      stages{
                         stage("Build Sphinx"){
                             steps {
