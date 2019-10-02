@@ -91,7 +91,7 @@ def install_pipfile(pipfilePath){
 def convert_latex_to_pdf(latexPath, destPath, logsPath){
     script{
         stash includes: "${latexPath}/*", name: 'latex_docs'
-        node("Docker"){
+        node("docker&&linux"){
             try{
                 def docker_path = "${tool name: 'Docker', type: 'org.jenkinsci.plugins.docker.commons.tools.DockerTool'}"
                 withEnv([
@@ -101,15 +101,19 @@ def convert_latex_to_pdf(latexPath, destPath, logsPath){
                     ]) {
                     checkout scm
                     unstash "latex_docs"
-                    bat(
+                    sh(
                         label: "Build Docker Image with texlive",
-                        script: "docker build  -t %DOCKER_IMAGE_NAME% -f ci/docker/makepdf/lite/Dockerfile ."
+                        script: "docker build  -t $DOCKER_IMAGE_NAME -f ci/docker/makepdf/lite/Dockerfile ."
                     )
                     try{
 
-                        powershell(
+//                        powershell(
+//                            label: "Run Docker Container",
+//                            script: 'docker run --rm -t -v "$((Get-Location).Path)\\build\\docs\\latex:/latex" --workdir /latex $($env:DOCKER_IMAGE_NAME) make',
+//                        )
+                        sh(
                             label: "Run Docker Container",
-                            script: 'docker run --rm -t -v "$((Get-Location).Path)\\build\\docs\\latex:/latex" --workdir /latex $($env:DOCKER_IMAGE_NAME) make',
+                            script: 'docker run --rm -t -v "$(PWD)/build/docs/latex:/latex" --workdir /latex $($env:DOCKER_IMAGE_NAME) make',
                         )
 
                     } finally {
