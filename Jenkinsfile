@@ -481,6 +481,7 @@ pipeline {
                                 }
                             }
                         }
+                        /*
                         stage("Testing Jira epic"){
                             agent any
                             options {
@@ -499,6 +500,7 @@ pipeline {
                             }
 
                         }
+                        */
                     }
                 }
 
