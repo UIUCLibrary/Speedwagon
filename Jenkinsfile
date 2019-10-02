@@ -50,6 +50,7 @@ def build_sphinx(){
                 label: "Building LaTex docs on ${env.NODE_NAME}",
                 script: "python -m pipenv run sphinx-build docs/source ..\\build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
                 )
+        stash includes: "build/docs/latex/*", name: 'latex_docs'
         }
 
 }
