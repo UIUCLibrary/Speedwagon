@@ -583,12 +583,15 @@ pipeline {
                         }
                         stage("Convert to pdf"){
                             agent{
+                                label "docker && linux"
+                                /*
                                 dockerfile {
                                     filename 'source/ci/docker/makepdf/lite/Dockerfile'
-                                    label "docker && linux"
                                 }
+                                */
                             }
                             steps{
+                                sh "printenv"
                                 echo "converting"
                             }
                         }
