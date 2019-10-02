@@ -41,6 +41,7 @@ def check_jira(project, issue){
 }
 
 def build_sphinx(){
+        bat "set"
         dir("source"){
             bat(
                 label: "Building HTML docs on ${env.NODE_NAME}",
@@ -51,6 +52,7 @@ def build_sphinx(){
                 script: "python -m pipenv run sphinx-build docs/source ..\\build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
                 )
         }
+        stash includes: "build/docs/latex/*", name: 'latex_docs'
 
 }
 def install_system_python_deps(){
@@ -485,6 +487,7 @@ pipeline {
                                 }
                             }
                         }
+                        /*
                         stage("Testing Jira epic"){
                             agent any
                             options {
@@ -503,6 +506,7 @@ pipeline {
                             }
 
                         }
+                        */
                     }
                 }
 
@@ -569,15 +573,27 @@ pipeline {
                     }
                 }
                 stage("Sphinx Documentation"){
-                     options{
-                         // The only reason it might be taking this long is if
-                         // the Docker container needs to be built from scratch
-                         timeout(10)
+
+                     stages{
+                        stage("Build Sphinx"){
+                            steps {
+                                build_sphinx()
+                                //convert_latex_to_pdf("build/docs/latex", "dist/docs", "logs/latex")
+                            }
+                        }
+                        stage("Convert to pdf"){
+                            agent{
+                                dockerfile {
+                                    filename 'source/ci/docker/makepdf/lite/Dockerfile'
+                                    label "docker && linux"
+                                }
+                            }
+                            steps{
+                                echo "converting"
+                            }
+                        }
                      }
-                    steps {
-                        build_sphinx()
-                        convert_latex_to_pdf("build/docs/latex", "dist/docs", "logs/latex")
-                    }
+
                     post{
                         always {
                             recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
@@ -670,9 +686,14 @@ pipeline {
                             }
                             post {
                                 always {
-                                    archiveArtifacts "logs\\mypy.log"
-                                    recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
+                                    archiveArtifacts "logs/mypy.log"
                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
+                                    stash includes: "logs/mypy.log", name: "MYPY_LOGS"
+                                    node("Windows"){
+                                        checkout scm
+                                        unstash "MYPY_LOGS"
+                                        recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
+                                    }
                                 }
                                 cleanup{
                                     cleanWs(patterns: [[pattern: 'logs/mypy.log', type: 'INCLUDE']])
