@@ -570,10 +570,20 @@ pipeline {
                          // the Docker container needs to be built from scratch
                          timeout(10)
                      }
-                    steps {
-                        build_sphinx()
-                        convert_latex_to_pdf("build/docs/latex", "dist/docs", "logs/latex")
-                    }
+                     stages{
+                        stage("Build Sphinx"){
+                            steps {
+                                build_sphinx()
+                                //convert_latex_to_pdf("build/docs/latex", "dist/docs", "logs/latex")
+                            }
+                        }
+                        stage("Convert to pdf"){
+                            steps{
+                                echo "converting"
+                            }
+                        }
+                     }
+
                     post{
                         always {
                             recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
