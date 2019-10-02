@@ -666,9 +666,14 @@ pipeline {
                             }
                             post {
                                 always {
-                                    archiveArtifacts "logs\\mypy.log"
-                                    recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
+                                    archiveArtifacts "logs/mypy.log"
                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
+                                    stash includes: "logs/mypy.log", name: "MYPY_LOGS"
+                                    node("Windows"){
+                                        checkout scm
+                                        unstash "MYPY_LOGS"
+                                        recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
+                                    }
                                 }
                                 cleanup{
                                     cleanWs(patterns: [[pattern: 'logs/mypy.log', type: 'INCLUDE']])
