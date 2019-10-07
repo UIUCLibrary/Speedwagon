@@ -19,6 +19,16 @@ def check_jira_issue(issue, outputFile){
         }
     }
 }
+
+def process_mypy_logs(path){
+    archiveArtifacts "${path}"
+    stash includes: "${path}", name: "MYPY_LOGS"
+    node("Windows"){
+        checkout scm
+        unstash "MYPY_LOGS"
+        recordIssues(tools: [myPy(pattern: "${path}")])
+    }
+}
 def check_jira_project(project, outputFile){
 
     script {
@@ -90,10 +100,17 @@ def install_pipfile(pipfilePath){
 
     }
 }
+def convert_latex_to_pdf2(latex_path){
+    sh "mkdir -p dist/docs"
+    dir(latex_path){
+        sh "make"
+    }
+    sh "mv ${latex_path}/*.pdf dist/docs/"
+}
 def convert_latex_to_pdf(latexPath, destPath, logsPath){
     script{
         stash includes: "${latexPath}/*", name: 'latex_docs'
-        node("Docker"){
+        node("docker&&linux"){
             try{
                 def docker_path = "${tool name: 'Docker', type: 'org.jenkinsci.plugins.docker.commons.tools.DockerTool'}"
                 withEnv([
@@ -103,15 +120,19 @@ def convert_latex_to_pdf(latexPath, destPath, logsPath){
                     ]) {
                     checkout scm
                     unstash "latex_docs"
-                    bat(
+                    sh(
                         label: "Build Docker Image with texlive",
-                        script: "docker build  -t %DOCKER_IMAGE_NAME% -f ci/docker/makepdf/lite/Dockerfile ."
+                        script: "docker build  -t $DOCKER_IMAGE_NAME -f ci/docker/makepdf/lite/Dockerfile ."
                     )
                     try{
 
-                        powershell(
+//                        powershell(
+//                            label: "Run Docker Container",
+//                            script: 'docker run --rm -t -v "$((Get-Location).Path)\\build\\docs\\latex:/latex" --workdir /latex $($env:DOCKER_IMAGE_NAME) make',
+//                        )
+                        sh(
                             label: "Run Docker Container",
-                            script: 'docker run --rm -t -v "$((Get-Location).Path)\\build\\docs\\latex:/latex" --workdir /latex $($env:DOCKER_IMAGE_NAME) make',
+                            script: 'docker run --rm -t -v "$(PWD)/build/docs/latex:/latex" --workdir /latex $($env:DOCKER_IMAGE_NAME) make',
                         )
 
                     } finally {
@@ -545,11 +566,12 @@ pipeline {
             }
         }
         stage('Build') {
-            environment{
-                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-            }
+
             parallel {
                 stage("Building Python Library"){
+                    environment{
+                        PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                    }
                     steps {
 
                         dir("source"){
@@ -572,6 +594,9 @@ pipeline {
 
                      stages{
                         stage("Build Sphinx"){
+                            environment{
+                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                            }
                             steps {
                                 build_sphinx()
                                 //convert_latex_to_pdf("build/docs/latex", "dist/docs", "logs/latex")
@@ -585,7 +610,16 @@ pipeline {
                                 }
                             }
                             steps{
-                                echo "converting"
+                                unstash "latex_docs"
+                                convert_latex_to_pdf2("build/docs/latex")
+
+                            }
+                            post{
+                                success{
+                                    stash "SPEEDWAGON_DOC_PDF"
+                                    archiveArtifacts artifacts: "dist/docs/*.pdf"
+
+                                }
                             }
                         }
                      }
@@ -597,10 +631,11 @@ pipeline {
                             postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
                         }
                         success{
-                            archiveArtifacts artifacts: "dist/docs/*.pdf"
+                            unstash "SPEEDWAGON_DOC_PDF"
+                            stash includes: "dist/docs/${env.DOC_ZIP_FILENAME},build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                             zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/docs/${env.DOC_ZIP_FILENAME}"
-                            stash includes: "dist/docs/${env.DOC_ZIP_FILENAME},build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
+
 
                         }
                         cleanup{
@@ -682,14 +717,9 @@ pipeline {
                             }
                             post {
                                 always {
-                                    archiveArtifacts "logs/mypy.log"
+                                    process_mypy_logs("logs/mypy.log")
                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
-                                    stash includes: "logs/mypy.log", name: "MYPY_LOGS"
-                                    node("Windows"){
-                                        checkout scm
-                                        unstash "MYPY_LOGS"
-                                        recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
-                                    }
+
                                 }
                                 cleanup{
                                     cleanWs(patterns: [[pattern: 'logs/mypy.log', type: 'INCLUDE']])
