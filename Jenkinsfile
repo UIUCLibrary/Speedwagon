@@ -100,6 +100,9 @@ def install_pipfile(pipfilePath){
 
     }
 }
+def convert_latex_to_pdf2(){
+
+}
 def convert_latex_to_pdf(latexPath, destPath, logsPath){
     script{
         stash includes: "${latexPath}/*", name: 'latex_docs'
@@ -603,7 +606,8 @@ pipeline {
                                     }
                             }
                             steps{
-                                sh "printenv"
+                                unstash "latex_docs"
+                                sh "ls"
                             }
                         }
                      }
