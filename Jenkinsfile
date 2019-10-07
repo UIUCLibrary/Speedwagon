@@ -100,12 +100,12 @@ def install_pipfile(pipfilePath){
 
     }
 }
-def convert_latex_to_pdf2(){
-    sh "mkdir dist/docs"
-    dir("build/docs/latex"){
+def convert_latex_to_pdf2(latex_path){
+    sh "mkdir -pR dist/docs"
+    dir(latex_path){
         sh "make"
     }
-    sh "mv build/docs/latex/*.pdf dist/docs/"
+    sh "mv ${latex_path}/*.pdf dist/docs/"
 }
 def convert_latex_to_pdf(latexPath, destPath, logsPath){
     script{
@@ -611,7 +611,7 @@ pipeline {
                             }
                             steps{
                                 unstash "latex_docs"
-                                convert_latex_to_pdf2()
+                                convert_latex_to_pdf2("build/docs/latex")
 
                             }
                         }
