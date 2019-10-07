@@ -106,6 +106,7 @@ def convert_latex_to_pdf2(latex_path){
         sh "make && ls"
     }
     sh "mv ${latex_path}/*.pdf dist/docs/"
+    sh "ls dist/docs/"
 }
 def convert_latex_to_pdf(latexPath, destPath, logsPath){
     script{
