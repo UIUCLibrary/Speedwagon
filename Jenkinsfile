@@ -103,7 +103,7 @@ def install_pipfile(pipfilePath){
 def convert_latex_to_pdf2(latex_path){
     sh "mkdir -p dist/docs"
     dir(latex_path){
-        sh "make"
+        sh "make && ls"
     }
     sh "mv ${latex_path}/*.pdf dist/docs/"
 }
