@@ -101,7 +101,10 @@ def install_pipfile(pipfilePath){
     }
 }
 def convert_latex_to_pdf2(){
-
+    dir("build/docs/latex"){
+        sh "ls"
+        sh "make"
+    }
 }
 def convert_latex_to_pdf(latexPath, destPath, logsPath){
     script{
@@ -607,7 +610,8 @@ pipeline {
                             }
                             steps{
                                 unstash "latex_docs"
-                                sh "ls"
+                                convert_latex_to_pdf2()
+
                             }
                         }
                      }
