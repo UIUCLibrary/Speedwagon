@@ -587,6 +587,7 @@ pipeline {
                             }
                             steps{
                                 echo "converting"
+                                sh "pwd"
                                 sh "printenv"
                             }
                         }
