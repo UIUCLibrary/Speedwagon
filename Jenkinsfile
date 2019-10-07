@@ -51,7 +51,6 @@ def check_jira(project, issue){
 }
 
 def build_sphinx(){
-        bat "set"
         dir("source"){
             bat(
                 label: "Building HTML docs on ${env.NODE_NAME}",
@@ -103,10 +102,9 @@ def install_pipfile(pipfilePath){
 def convert_latex_to_pdf2(latex_path){
     sh "mkdir -p dist/docs"
     dir(latex_path){
-        sh "make && ls"
+        sh "make"
     }
     sh "mv ${latex_path}/*.pdf dist/docs/"
-    sh "ls dist/docs/"
 }
 def convert_latex_to_pdf(latexPath, destPath, logsPath){
     script{
@@ -608,7 +606,7 @@ pipeline {
                                 dockerfile {
                                     filename 'source/ci/docker/makepdf/lite/Dockerfile'
                                     label "docker && linux"
-                                    }
+                                }
                             }
                             steps{
                                 unstash "latex_docs"
