@@ -615,6 +615,13 @@ pipeline {
                                 convert_latex_to_pdf2("build/docs/latex")
 
                             }
+                            post{
+                                success{
+                                    stash "SPEEDWAGON_DOC_PDF"
+                                    archiveArtifacts artifacts: "dist/docs/*.pdf"
+
+                                }
+                            }
                         }
                      }
 
@@ -625,10 +632,11 @@ pipeline {
                             postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
                         }
                         success{
-                            archiveArtifacts artifacts: "dist/docs/*.pdf"
+                            unstash "SPEEDWAGON_DOC_PDF"
+                            stash includes: "dist/docs/${env.DOC_ZIP_FILENAME},build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                             zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/docs/${env.DOC_ZIP_FILENAME}"
-                            stash includes: "dist/docs/${env.DOC_ZIP_FILENAME},build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
+
 
                         }
                         cleanup{
