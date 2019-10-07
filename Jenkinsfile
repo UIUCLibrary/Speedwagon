@@ -549,11 +549,12 @@ pipeline {
             }
         }
         stage('Build') {
-            environment{
-                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-            }
+
             parallel {
                 stage("Building Python Library"){
+                    environment{
+                        PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                    }
                     steps {
 
                         dir("source"){
@@ -576,6 +577,9 @@ pipeline {
 
                      stages{
                         stage("Build Sphinx"){
+                            environment{
+                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                            }
                             steps {
                                 build_sphinx()
                                 //convert_latex_to_pdf("build/docs/latex", "dist/docs", "logs/latex")
