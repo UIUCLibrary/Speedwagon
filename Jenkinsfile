@@ -590,7 +590,6 @@ pipeline {
                                 label "docker && linux"
                             }
                             steps{
-                                echo "converting"
                                 sh "pwd"
                                 sh "printenv"
                             }
