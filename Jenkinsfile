@@ -101,10 +101,11 @@ def install_pipfile(pipfilePath){
     }
 }
 def convert_latex_to_pdf2(){
+    sh "mkdir dist/docs"
     dir("build/docs/latex"){
-        sh "ls"
         sh "make"
     }
+    sh "mv build/docs/latex/*.pdf dist/docs/"
 }
 def convert_latex_to_pdf(latexPath, destPath, logsPath){
     script{
