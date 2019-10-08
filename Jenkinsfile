@@ -862,7 +862,7 @@ pipeline {
                                 testPythonPackage(
                                     pythonToolName: "CPython-3.7",
                                     pkgRegex: "dist/*.whl,dist/*.tar.gz,dist/*.zip",
-                                    testNodeLabels: "Windows",
+                                    testNodeLabels: "Windows && Python3",
                                     testEnvs: ["py36", "py37"]
 
                                 )
