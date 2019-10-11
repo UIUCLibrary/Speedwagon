@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/windows/servercore:1709
+FROM mcr.microsoft.com/windows/servercore:ltsc2019
 WORKDIR c:/scripts
 RUN mkdir c:\\temp
 ADD ci/docker/windowsserver/run_install.ps1 c:/scripts/
