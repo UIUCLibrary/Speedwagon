@@ -19,7 +19,7 @@ def check_jira_issue(issue, outputFile){
         }
     }
 }
-def run_cmake_build(){
+def run_cmake_build(cmake_version){
     bat """if not exist "cmake_build" mkdir cmake_build
                                 if not exist "logs" mkdir logs
                                 if not exist "logs\\ctest" mkdir logs\\ctest
@@ -32,7 +32,7 @@ def run_cmake_build(){
                                     cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\" -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf" ,
                                     generator: 'Ninja',
 //                                    generator: 'Visual Studio 14 2015 Win64',
-                                    installation: "${CMAKE_VERSION}",
+                                    installation: "${cmake_version}",
                                     sourceDir: 'source',
                                     steps: [[args: "", withCmake: true]]
                                     )
@@ -930,7 +930,7 @@ pipeline {
                                 timeout(10)
                             }
                             steps {
-                                run_cmake_build()
+                                run_cmake_build("${CMAKE_VERSION}")
 
 
                             }
