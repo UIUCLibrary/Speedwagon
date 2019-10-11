@@ -985,7 +985,7 @@ pipeline {
                         }
                         stage("Testing MSI Install"){
                             agent {
-                                label "Docker"
+                                label "Docker && Windows"
                             }
                             environment{
                                 PATH = "${tool name: 'Docker', type: 'org.jenkinsci.plugins.docker.commons.tools.DockerTool'};${PATH}"
