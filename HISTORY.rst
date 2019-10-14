@@ -2,6 +2,23 @@
 
 Release History
 ---------------
+0.1.4
++++++
+
+* General
+   * Splash screen while loading UI
+   * Tabs can be configured
+   * Global settings can be configured
+
+* OCR
+   * Use Tesseract 4.0
+   * Selecting languages use full language names instead of language codes
+
+* Documentation
+   * User documentation
+
+* New Tools:
+   * Make JP2
 
 0.1.3
 +++++
@@ -95,5 +112,3 @@ Release History
 Dev
 +++
 
-* General
-   * Splash screen while loading UI
