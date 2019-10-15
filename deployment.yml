@@ -8,11 +8,6 @@ maintainer:
   email: hborcher@illinois.edu
 deployment:
   hostnames:
-    - LIBSTFDCC02
-    - LIBSTFDCC03
-    - LIBSTFDCC04
-    - LIBSTFDCC06
-    - LIBSTFDCC08
-    - LIBSTFDCC09
-    - LIBSTFDCC013
     - LIBSTFPRE12
+    - LIBSTFDCC06
+    - LIBSTFDCC02
