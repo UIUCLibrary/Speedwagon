@@ -476,7 +476,7 @@ pipeline {
         WORKON_HOME ="${WORKSPACE}\\pipenv"
         build_number = get_build_number()
         PIPENV_NOSPIN = "True"
-        DEVPI = credentials("DS_devpi")
+
 
     }
     parameters {
@@ -1135,6 +1135,7 @@ pipeline {
                 PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
                 PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
                 PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
+                DEVPI = credentials("DS_devpi")
             }
 
             stages{
