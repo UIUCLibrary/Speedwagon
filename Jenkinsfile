@@ -946,7 +946,7 @@ pipeline {
                             steps{
                                 testPythonPackage(
                                     pythonToolName: "CPython-3.7",
-                                    pkgRegex: "dist/*.whl,dist/*.tar.gz,dist/*.zip",
+                                    pkgRegex: "dist/*.whl,dist/*.tar.gz",
                                     testNodeLabels: "Windows && Python3",
                                     testEnvs: ["py36", "py37"]
 
