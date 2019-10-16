@@ -501,22 +501,22 @@ pipeline {
                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
             }
             stages{
-                stage("Initial setup"){
-                    parallel{
-                        stage("Purge all existing data in workspace"){
-                            when{
-                                anyOf{
-                                    equals expected: true, actual: params.FRESH_WORKSPACE
-                                    triggeredBy "TimerTriggerCause"
-                                }
-                            }
-                            steps{
-                                deleteDir()
-                                dir("source"){
-                                   checkout scm
-                                }
-                            }
-                        }
+//                stage("Initial setup"){
+//                    parallel{
+//                        stage("Purge all existing data in workspace"){
+//                            when{
+//                                anyOf{
+//                                    equals expected: true, actual: params.FRESH_WORKSPACE
+//                                    triggeredBy "TimerTriggerCause"
+//                                }
+//                            }
+//                            steps{
+//                                deleteDir()
+//                                dir("source"){
+//                                   checkout scm
+//                                }
+//                            }
+//                        }
 //                        /*
 //                        stage("Testing Jira epic"){
 //                            agent any
@@ -537,9 +537,9 @@ pipeline {
 //
 //                        }
 //                        */
-                    }
+//                    }
 //
-                }
+//                }
 //                    parallel{
 //                        stage("Purge all existing data in workspace"){
 //                            when{
@@ -1401,7 +1401,7 @@ pipeline {
     }
     post {
         failure {
-//            report_help_info()
+            report_help_info()
             dir("source"){
                 bat "\"${tool 'CPython-3.6'}\\Scripts\\pipenv\" --rm"
             }
