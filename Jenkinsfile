@@ -1297,7 +1297,11 @@ pipeline {
                     }
                     post{
                         success{
-                            jiraComment body: "Version ${env.PKG_VERSION} was added to https://devpi.library.illinois.edu/production/release index.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                            unstash "DIST-INFO"
+                            script{
+                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+                                jiraComment body: "Version ${props.Version} was added to https://devpi.library.illinois.edu/production/release index.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                            }
                         }
                     }
                 }
