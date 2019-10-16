@@ -1315,9 +1315,6 @@ pipeline {
             }
         }
         stage("Deploy"){
-            environment{
-                PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
-            }
             parallel {
                 stage("Deploy Online Documentation") {
                     when{
@@ -1381,7 +1378,11 @@ pipeline {
                     steps {
                         unstash "STANDALONE_INSTALLERS"
                         unstash "DOCS_ARCHIVE"
-                        deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${PKG_VERSION}/", params.JIRA_ISSUE_VALUE)
+                        unstash "DIST-INFO"
+                            script{
+                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+                                deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
+                            }
                     }
                     post{
                         cleanup{
@@ -1409,15 +1410,21 @@ pipeline {
                     steps {
                         unstash "STANDALONE_INSTALLERS"
                         unstash "Deployment"
+                        unstash "DIST-INFO"
                         script{
+                            def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                             dir("dist"){
-                                deploy_sscm("*.msi", "${env.PKG_VERSION}", "${params.JIRA_ISSUE_VALUE}")
+                                deploy_sscm("*.msi", "${props.Version}", "${params.JIRA_ISSUE_VALUE}")
                             }
                         }
                     }
                     post {
                         success {
-                            jiraComment body: "Deployment request was sent to SCCM for version ${env.PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                            unstash "DIST-INFO"
+                            script{
+                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+                                jiraComment body: "Deployment request was sent to SCCM for version ${props.Version}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                            }
                             archiveArtifacts artifacts: "logs/deployment_request.txt"
                         }
                     }
