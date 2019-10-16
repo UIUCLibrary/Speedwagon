@@ -1167,9 +1167,8 @@ pipeline {
                                     }
                                     steps {
                                         lock("system_python_${NODE_NAME}"){
-                                            bat "python -m venv venv"
+                                            bat "python -m venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
                                         }
-                                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
                                     }
                                 }
                                 stage("Testing sdist"){
