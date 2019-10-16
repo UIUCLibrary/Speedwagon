@@ -45,6 +45,17 @@ def check_jira_issue(issue, outputFile){
         }
     }
 }
+
+def deploy_hathi_beta(){
+    unstash "STANDALONE_INSTALLERS"
+    unstash "DOCS_ARCHIVE"
+    unstash "DIST-INFO"
+    script{
+        def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+        deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
+    }
+}
+
 def run_cmake_build(cmake_version){
     bat """if not exist "cmake_build" mkdir cmake_build
                                 if not exist "logs" mkdir logs
@@ -1376,13 +1387,7 @@ pipeline {
                         skipDefaultCheckout(true)
                     }
                     steps {
-                        unstash "STANDALONE_INSTALLERS"
-                        unstash "DOCS_ARCHIVE"
-                        unstash "DIST-INFO"
-                            script{
-                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                                deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
-                            }
+                        deploy_hathi_beta()
                     }
                     post{
                         cleanup{
