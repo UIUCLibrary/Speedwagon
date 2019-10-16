@@ -1212,7 +1212,7 @@ pipeline {
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
                                                 pkgName: "${props.Name}",
-                                                pkgVersion: "${props.Version}",
+                                                pkgVersion: "${PKG_VERSION}",
                                                 pkgRegex: "zip",
                                                 detox: false
                                             )
@@ -1264,7 +1264,7 @@ pipeline {
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
                                                 pkgName: "${props.Name}",
-                                                pkgVersion: "${props.Version}",
+                                                pkgVersion: "${PKG_VERSION}",
                                                 pkgRegex: "whl",
                                                 detox: false
                                             )
@@ -1294,7 +1294,7 @@ pipeline {
                                 def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                 bat(
                                     label: "it Worked. Pushing file to ${env.BRANCH_NAME} index",
-                                    script:"venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME}"
+                                    script:"venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${props.Name}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
                                 )
                             }
                         }
@@ -1311,17 +1311,13 @@ pipeline {
                         unstash "DIST-INFO"
                         script{
                             def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                            input "Release ${props.Name} ${props.Version} to DevPi Production?"
-                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${props.Name}==${props.Version} production/release"
+                            input "Release ${props.Name} ${PKG_VERSION} to DevPi Production?"
+                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${props.Name}==${PKG_VERSION} production/release"
                         }
                     }
                     post{
                         success{
-                            unstash "DIST-INFO"
-                            script{
-                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                                jiraComment body: "Version ${props.Version} was added to https://devpi.library.illinois.edu/production/release index.", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                            }
+                            jiraComment body: "Version ${PKG_VERSION} was added to https://devpi.library.illinois.edu/production/release index.", issueKey: "${params.JIRA_ISSUE_VALUE}"
                         }
                     }
                 }
@@ -1331,7 +1327,7 @@ pipeline {
                     unstash "DIST-INFO"
                     script{
                         def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                        remove_from_devpi("venv\\Scripts\\devpi.exe", "${props.Name}", "${props.Version}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
+                        remove_from_devpi("venv\\Scripts\\devpi.exe", "${props.Name}", "${PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
                     }
                 }
             }
