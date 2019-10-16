@@ -1265,8 +1265,9 @@ pipeline {
                     }
                     post {
                         success {
+                            unstash "DIST-INFO"
                             script{
-                                def props = readProperties interpolate: true, file: 'uiucprescon_getmarc.dist-info/METADATA'
+                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                 bat(
                                     label: "it Worked. Pushing file to ${env.BRANCH_NAME} index",
                                     script:"venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME}"
