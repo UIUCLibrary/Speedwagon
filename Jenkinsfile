@@ -1135,8 +1135,6 @@ pipeline {
             }
             environment{
                 PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-                PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
-                PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
                 DEVPI = credentials("DS_devpi")
             }
 
@@ -1308,11 +1306,19 @@ pipeline {
             }
             post{
                 cleanup{
-                    remove_from_devpi("venv\\Scripts\\devpi.exe", "${env.PKG_NAME}", "${env.PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
+                    unstash "DIST-INFO"
+                    script{
+                        def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+                        remove_from_devpi("venv\\Scripts\\devpi.exe", "${props.Name}", "${props.Version}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
+                    }
                 }
             }
         }
         stage("Deploy"){
+            environment{
+                PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
+                PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
+            }
             parallel {
                 stage("Deploy Online Documentation") {
                     when{
