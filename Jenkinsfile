@@ -1284,8 +1284,12 @@ pipeline {
                         }
                     }
                     steps {
-                        input "Release ${env.PKG_NAME} ${env.PKG_VERSION} to DevPi Production?"
-                        bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} production/release"
+                        unstash "DIST-INFO"
+                        script{
+                            def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+                            input "Release ${props.Name} ${props.Version} to DevPi Production?"
+                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${props.Name}==${props.Version} production/release"
+                        }
                     }
                     post{
                         success{
