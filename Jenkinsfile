@@ -663,9 +663,6 @@ pipeline {
                     }
                 }
                 stage("Sphinx Documentation"){
-                    environment{
-
-                    }
                     stages{
                         stage("Build Sphinx"){
                             environment{
