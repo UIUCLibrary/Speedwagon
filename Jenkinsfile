@@ -542,6 +542,25 @@ pipeline {
                         }
                         */
                     }
+
+                }
+                stage("Getting Distribution Info"){
+                    environment{
+                        PATH = "${tool 'CPython-3.7'};$PATH"
+                    }
+                    steps{
+                        dir("source"){
+                            bat "python setup.py dist_info"
+                        }
+                    }
+                    post{
+                        success{
+                            dir("source"){
+                                stash includes: "speedwagon.dist-info/**", name: 'DIST-INFO'
+                                archiveArtifacts artifacts: "speedwagon.dist-info/**"
+                            }
+                        }
+                    }
                 }
 
 //                stage("Cleanup"){
@@ -551,6 +570,7 @@ pipeline {
 //                        }
 //                    }
 //                }
+
                 stage("Install Python Dependencies"){
                     steps{
                         install_system_python_deps()
