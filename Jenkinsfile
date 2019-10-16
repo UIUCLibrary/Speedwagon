@@ -1236,7 +1236,7 @@ pipeline {
                                     steps {
                                         unstash "DIST-INFO"
                                         script{
-                                            def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA
+                                            def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                             devpiTest(
                                                 devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                                 url: "https://devpi.library.illinois.edu",
