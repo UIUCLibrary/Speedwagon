@@ -4,8 +4,34 @@ import org.ds.*
 import static groovy.json.JsonOutput.* // For pretty printing json data
 
 @Library(["devpi", "PythonHelpers"]) _
-
 def CMAKE_VERSION = "cmake3.13"
+
+def run_sonarScanner(){
+    withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
+        bat(
+            label: "Running sonar scanner",
+            script: '\
+"%scannerHome%/bin/sonar-scanner" \
+-D"sonar.projectBaseDir=%WORKSPACE%/source" \
+-D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
+-D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
+-D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
+-X'
+        )
+
+    }
+    script{
+        def sonarqube_result = waitForQualityGate(abortPipeline: false)
+        if (sonarqube_result.status != 'OK') {
+            unstable "SonarQube quality gate: ${sonarqube_result.status}"
+        }
+
+        def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
+        writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
+
+    }
+}
+
 def check_jira_issue(issue, outputFile){
     script{
         def issue_response = jiraGetIssue idOrKey: issue, site: 'bugs.library.illinois.edu'
@@ -868,29 +894,7 @@ pipeline {
                         PATH = "${WORKSPACE}\\venv\\Scripts;${PATH}"
                     }
                     steps{
-                        withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
-                            bat(
-                                label: "Running sonar scanner",
-                                script: '\
-"%scannerHome%/bin/sonar-scanner" \
--D"sonar.projectBaseDir=%WORKSPACE%/source" \
--D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
--D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
--D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
--X'
-                            )
-
-                        }
-                        script{
-                            def sonarqube_result = waitForQualityGate(abortPipeline: false)
-                            if (sonarqube_result.status != 'OK') {
-                                unstable "SonarQube quality gate: ${sonarqube_result.status}"
-                            }
-
-                            def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
-                            writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
-
-                        }
+                        run_sonarScanner()
                     }
                     post{
                         always{
