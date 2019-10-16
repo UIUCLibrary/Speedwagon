@@ -6,7 +6,14 @@ import static groovy.json.JsonOutput.* // For pretty printing json data
 @Library(["devpi", "PythonHelpers"]) _
 def CMAKE_VERSION = "cmake3.13"
 
-def get_package_version(stashName){
+def get_package_version(stashName, metadataFile){
+    ws {
+        unstash "${stashName}"
+        script{
+            def props = readProperties interpolate: true, file: "${metadataFile}"
+            return props.Version
+        }
+    }
 
 }
 def run_sonarScanner(){
@@ -1150,7 +1157,7 @@ pipeline {
             environment{
                 PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
                 DEVPI = credentials("DS_devpi")
-                PKG_VERSION = get_package_version("DIST-INFO")
+                PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
             }
 
             stages{
