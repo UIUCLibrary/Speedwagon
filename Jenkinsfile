@@ -478,7 +478,6 @@ pipeline {
         PIPENV_NOSPIN = "True"
         PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
         PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
-        DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
         DEVPI = credentials("DS_devpi")
 
     }
@@ -609,8 +608,10 @@ pipeline {
                     }
                 }
                 stage("Sphinx Documentation"){
-
-                     stages{
+                    environment{
+                        DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
+                    }
+                    stages{
                         stage("Build Sphinx"){
                             environment{
                                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
@@ -640,7 +641,7 @@ pipeline {
                                 }
                             }
                         }
-                     }
+                    }
 
                     post{
                         always {
@@ -650,9 +651,9 @@ pipeline {
                         }
                         success{
                             unstash "SPEEDWAGON_DOC_PDF"
-                            stash includes: "dist/docs/${env.DOC_ZIP_FILENAME},build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/docs/${env.DOC_ZIP_FILENAME}"
+                            zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${env.DOC_ZIP_FILENAME}"
+                            stash includes: "dist/docs/${env.DOC_ZIP_FILENAME},build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
 
 
                         }
@@ -664,7 +665,7 @@ pipeline {
                                         [pattern: 'logs/build_sphinx.log', type: 'INCLUDE'],
                                         [pattern: "build/docs/latex", type: 'INCLUDE'],
                                         [pattern: "dist/docs/*.pdf", type: 'INCLUDE'],
-                                        [pattern: "dist/${env.DOC_ZIP_FILENAME}", type: 'INCLUDE']
+                                        [pattern: "dist/*.docs.zip", type: 'INCLUDE']
                                     ]
                                 )
                         }
