@@ -1316,7 +1316,6 @@ pipeline {
         }
         stage("Deploy"){
             environment{
-                PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
                 PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
             }
             parallel {
