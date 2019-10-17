@@ -750,6 +750,9 @@ pipeline {
                                     archiveArtifacts artifacts: "dist/docs/*.pdf"
 
                                 }
+                                cleanup{
+                                    deleteDir()
+                                }
                             }
                         }
                     }
@@ -940,6 +943,7 @@ pipeline {
                                 checkout scm
                                 unstash "SONAR_REPORT"
                                 recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                                deleteDir()
                             }
                         }
                     }
