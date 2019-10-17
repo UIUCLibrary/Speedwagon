@@ -4,8 +4,56 @@ import org.ds.*
 import static groovy.json.JsonOutput.* // For pretty printing json data
 
 @Library(["devpi", "PythonHelpers"]) _
-
 def CMAKE_VERSION = "cmake3.13"
+
+def get_package_version(stashName, metadataFile){
+    ws {
+        unstash "${stashName}"
+        script{
+            def props = readProperties interpolate: true, file: "${metadataFile}"
+            deleteDir()
+            return props.Version
+        }
+    }
+}
+
+def get_package_name(stashName, metadataFile){
+    ws {
+        unstash "${stashName}"
+        script{
+            def props = readProperties interpolate: true, file: "${metadataFile}"
+            deleteDir()
+            return props.Name
+        }
+    }
+}
+
+def run_sonarScanner(){
+    withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
+        bat(
+            label: "Running sonar scanner",
+            script: '\
+"%scannerHome%/bin/sonar-scanner" \
+-D"sonar.projectBaseDir=%WORKSPACE%/source" \
+-D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
+-D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
+-D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
+-X'
+        )
+
+    }
+    script{
+        def sonarqube_result = waitForQualityGate(abortPipeline: false)
+        if (sonarqube_result.status != 'OK') {
+            unstable "SonarQube quality gate: ${sonarqube_result.status}"
+        }
+
+        def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
+        writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
+
+    }
+}
+
 def check_jira_issue(issue, outputFile){
     script{
         def issue_response = jiraGetIssue idOrKey: issue, site: 'bugs.library.illinois.edu'
@@ -19,6 +67,17 @@ def check_jira_issue(issue, outputFile){
         }
     }
 }
+
+def deploy_hathi_beta(){
+    unstash "STANDALONE_INSTALLERS"
+    unstash "DOCS_ARCHIVE"
+    unstash "DIST-INFO"
+    script{
+        def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+        deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
+    }
+}
+
 def run_cmake_build(cmake_version){
     bat """if not exist "cmake_build" mkdir cmake_build
                                 if not exist "logs" mkdir logs
@@ -31,7 +90,6 @@ def run_cmake_build(cmake_version){
                                     cleanBuild: true,
                                     cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\" -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf" ,
                                     generator: 'Ninja',
-//                                    generator: 'Visual Studio 14 2015 Win64',
                                     installation: "${cmake_version}",
                                     sourceDir: 'source',
                                     steps: [[args: "", withCmake: true]]
@@ -46,6 +104,7 @@ def process_mypy_logs(path){
         checkout scm
         unstash "MYPY_LOGS"
         recordIssues(tools: [myPy(pattern: "${path}")])
+        deleteDir()
     }
 }
 def check_jira_project(project, outputFile){
@@ -144,10 +203,6 @@ def convert_latex_to_pdf(latexPath, destPath, logsPath){
                     )
                     try{
 
-//                        powershell(
-//                            label: "Run Docker Container",
-//                            script: 'docker run --rm -t -v "$((Get-Location).Path)\\build\\docs\\latex:/latex" --workdir /latex $($env:DOCKER_IMAGE_NAME) make',
-//                        )
                         sh(
                             label: "Run Docker Container",
                             script: 'docker run --rm -t -v "$(PWD)/build/docs/latex:/latex" --workdir /latex $($env:DOCKER_IMAGE_NAME) make',
@@ -255,7 +310,6 @@ def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUse
                     echo "Failed to remove ${pkgName}==${pkgVersion} from ${devpiIndex}"
             }
 
-//        }
     }
 }
 
@@ -268,7 +322,6 @@ def report_help_info(){
         }
     }
 }
-//
 def get_build_number(){
     script{
         def versionPrefix = ""
@@ -449,10 +502,6 @@ def testMsiInstall(dockerfilePath, dockerImageName, dockerContainerName, logsPat
             }
         }
 
-//        bat(
-//            label: "Install msi inside a Windows Docker container",
-//            script: "docker build  -t ${currentBuild.projectName}-windows-install -f source\\ci\\docker\\windowsserver\\Dockerfile . && docker run --name ${currentBuild.projectName}-windows-installer-test --rm ${currentBuild.projectName}-windows-install"
-//        )
     }
 }
 
@@ -466,7 +515,6 @@ pipeline {
     }
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
-//        timeout(25)  // Timeout after 20 minutes. This shouldn't take this long but it hangs for some reason
         checkoutToSubdirectory("source")
         buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
         preserveStashes(buildCount: 5)
@@ -476,11 +524,6 @@ pipeline {
         WORKON_HOME ="${WORKSPACE}\\pipenv"
         build_number = get_build_number()
         PIPENV_NOSPIN = "True"
-        PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
-        PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
-        DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
-        DEVPI = credentials("DS_devpi")
-
     }
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
@@ -541,15 +584,26 @@ pipeline {
 
                         }
                     }
-                }
 
-//                stage("Cleanup"){
-//                    steps {
-//                        dir("source") {
-//                            stash includes: 'deployment.yml', name: "Deployment"
-//                        }
-//                    }
-//                }
+                }
+                stage("Getting Distribution Info"){
+                    environment{
+                        PATH = "${tool 'CPython-3.7'};$PATH"
+                    }
+                    steps{
+                        dir("source"){
+                            bat "python setup.py dist_info"
+                        }
+                    }
+                    post{
+                        success{
+                            dir("source"){
+                                stash includes: "speedwagon.dist-info/**", name: 'DIST-INFO'
+                                archiveArtifacts artifacts: "speedwagon.dist-info/**"
+                            }
+                        }
+                    }
+                }
                 stage("Install Python Dependencies"){
                     steps{
                         install_system_python_deps()
@@ -564,7 +618,6 @@ pipeline {
             post{
                 always{
                     archiveArtifacts artifacts: "logs/pippackages_pipenv_*.log,logs/pippackages_system_*.log,logs/pippackages_venv_*.log"
-                    echo "Configured ${env.PKG_NAME}, version ${env.PKG_VERSION}, for testing."
                 }
                 failure{
                     dir("source"){
@@ -590,10 +643,8 @@ pipeline {
                     }
                     steps {
 
-                        dir("source"){
-                            lock("system_pipenv_${NODE_NAME}"){
-                                bat "pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
-                            }
+                        lock("system_pipenv_${NODE_NAME}"){
+                            bat "cd source && pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
                         }
                     }
                     post{
@@ -607,15 +658,17 @@ pipeline {
                     }
                 }
                 stage("Sphinx Documentation"){
-
-                     stages{
+                    environment{
+                        PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
+                        PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
+                    }
+                    stages{
                         stage("Build Sphinx"){
                             environment{
                                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
                             }
                             steps {
                                 build_sphinx()
-                                //convert_latex_to_pdf("build/docs/latex", "dist/docs", "logs/latex")
                             }
                         }
                         stage("Convert to pdf"){
@@ -636,9 +689,12 @@ pipeline {
                                     archiveArtifacts artifacts: "dist/docs/*.pdf"
 
                                 }
+                                cleanup{
+                                    deleteDir()
+                                }
                             }
                         }
-                     }
+                    }
 
                     post{
                         always {
@@ -648,9 +704,12 @@ pipeline {
                         }
                         success{
                             unstash "SPEEDWAGON_DOC_PDF"
-                            stash includes: "dist/docs/${env.DOC_ZIP_FILENAME},build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/docs/${env.DOC_ZIP_FILENAME}"
+                            script{
+                                def DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
+                                zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
+                                stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
+                            }
 
 
                         }
@@ -661,8 +720,7 @@ pipeline {
                                     [
                                         [pattern: 'logs/build_sphinx.log', type: 'INCLUDE'],
                                         [pattern: "build/docs/latex", type: 'INCLUDE'],
-                                        [pattern: "dist/docs/*.pdf", type: 'INCLUDE'],
-                                        [pattern: "dist/${env.DOC_ZIP_FILENAME}", type: 'INCLUDE']
+                                        [pattern: "dist", type: 'INCLUDE'],
                                     ]
                                 )
                         }
@@ -765,10 +823,8 @@ pipeline {
                         }
                         stage("Run Flake8 Static Analysis") {
                             steps{
-                                dir("source"){
-                                    catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
-                                        bat script: "pipenv run flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
-                                    }
+                                catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
+                                    bat script: "cd source && pipenv run flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                 }
                             }
                             post {
@@ -810,29 +866,7 @@ pipeline {
                         PATH = "${WORKSPACE}\\venv\\Scripts;${PATH}"
                     }
                     steps{
-                        withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
-                            bat(
-                                label: "Running sonar scanner",
-                                script: '\
-"%scannerHome%/bin/sonar-scanner" \
--D"sonar.projectBaseDir=%WORKSPACE%/source" \
--D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
--D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
--D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
--X'
-                            )
-
-                        }
-                        script{
-                            def sonarqube_result = waitForQualityGate(abortPipeline: false)
-                            if (sonarqube_result.status != 'OK') {
-                                unstable "SonarQube quality gate: ${sonarqube_result.status}"
-                            }
-
-                            def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
-                            writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
-
-                        }
+                        run_sonarScanner()
                     }
                     post{
                         always{
@@ -846,6 +880,7 @@ pipeline {
                                 checkout scm
                                 unstash "SONAR_REPORT"
                                 recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                                deleteDir()
                             }
                         }
                     }
@@ -1073,6 +1108,9 @@ pipeline {
             }
             environment{
                 PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                DEVPI = credentials("DS_devpi")
+                PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
+                PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
             }
 
             stages{
@@ -1106,9 +1144,8 @@ pipeline {
                                     }
                                     steps {
                                         lock("system_python_${NODE_NAME}"){
-                                            bat "python -m venv venv"
+                                            bat "python -m venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
                                         }
-                                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
                                     }
                                 }
                                 stage("Testing sdist"){
@@ -1124,8 +1161,8 @@ pipeline {
                                             devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                             url: "https://devpi.library.illinois.edu",
                                             index: "${env.BRANCH_NAME}_staging",
-                                            pkgName: "${env.PKG_NAME}",
-                                            pkgVersion: "${env.PKG_VERSION}",
+                                            pkgName: "${PKG_NAME}",
+                                            pkgVersion: "${PKG_VERSION}",
                                             pkgRegex: "zip",
                                             detox: false
                                         )
@@ -1159,9 +1196,8 @@ pipeline {
                                 stage("Creating Env for DevPi to test whl"){
                                     steps{
                                         lock("system_python_${NODE_NAME}"){
-                                            bat "python -m pip install pip --upgrade && python -m venv venv "
+                                            bat "python -m pip install pip --upgrade && python -m venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\"  detox devpi-client"
                                         }
-                                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\"  detox devpi-client"
                                     }
                                 }
                                 stage("Testing Whl"){
@@ -1173,8 +1209,8 @@ pipeline {
                                             devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                             url: "https://devpi.library.illinois.edu",
                                             index: "${env.BRANCH_NAME}_staging",
-                                            pkgName: "${env.PKG_NAME}",
-                                            pkgVersion: "${env.PKG_VERSION}",
+                                            pkgName: "${PKG_NAME}",
+                                            pkgVersion: "${PKG_VERSION}",
                                             pkgRegex: "whl",
                                             detox: false
                                         )
@@ -1200,7 +1236,7 @@ pipeline {
                         success {
                             bat(
                                 label: "it Worked. Pushing file to ${env.BRANCH_NAME} index",
-                                script:"venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
+                                script:"venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
                             )
                         }
                     }
@@ -1213,19 +1249,19 @@ pipeline {
                         }
                     }
                     steps {
-                        input "Release ${env.PKG_NAME} ${env.PKG_VERSION} to DevPi Production?"
-                        bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} production/release"
+                        input "Release ${PKG_NAME} ${PKG_VERSION} to DevPi Production?"
+                        bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} production/release"
                     }
                     post{
                         success{
-                            jiraComment body: "Version ${env.PKG_VERSION} was added to https://devpi.library.illinois.edu/production/release index.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                            jiraComment body: "Version ${PKG_VERSION} was added to https://devpi.library.illinois.edu/production/release index.", issueKey: "${params.JIRA_ISSUE_VALUE}"
                         }
                     }
                 }
             }
             post{
                 cleanup{
-                    remove_from_devpi("venv\\Scripts\\devpi.exe", "${env.PKG_NAME}", "${env.PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
+                    remove_from_devpi("venv\\Scripts\\devpi.exe", "${PKG_NAME}", "${PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
                 }
             }
         }
@@ -1291,14 +1327,17 @@ pipeline {
                         skipDefaultCheckout(true)
                     }
                     steps {
-                        unstash "STANDALONE_INSTALLERS"
-                        unstash "DOCS_ARCHIVE"
-                        deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${PKG_VERSION}/", params.JIRA_ISSUE_VALUE)
+                        deploy_hathi_beta()
                     }
                     post{
                         cleanup{
-
-                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist.*', type: 'INCLUDE']]
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: '*dist-info', type: 'INCLUDE'],
+                                    [pattern: 'dist.*', type: 'INCLUDE']
+                                ]
+                            )
                         }
                     }
                 }
@@ -1318,18 +1357,20 @@ pipeline {
                     options {
                         skipDefaultCheckout(true)
                     }
+                    environment{
+                        PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
+                        PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
+                    }
                     steps {
                         unstash "STANDALONE_INSTALLERS"
                         unstash "Deployment"
-                        script{
-                            dir("dist"){
-                                deploy_sscm("*.msi", "${env.PKG_VERSION}", "${params.JIRA_ISSUE_VALUE}")
-                            }
+                        dir("dist"){
+                            deploy_sscm("*.msi", "${PKG_VERSION}", "${params.JIRA_ISSUE_VALUE}")
                         }
                     }
                     post {
                         success {
-                            jiraComment body: "Deployment request was sent to SCCM for version ${env.PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                            jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
                             archiveArtifacts artifacts: "logs/deployment_request.txt"
                         }
                     }
