@@ -720,6 +720,7 @@ pipeline {
                 stage("Sphinx Documentation"){
                     environment{
                         PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
+                        PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
                     }
                     stages{
                         stage("Build Sphinx"){
@@ -762,10 +763,10 @@ pipeline {
                         success{
                             unstash "SPEEDWAGON_DOC_PDF"
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            unstash "DIST-INFO"
+//                            unstash "DIST-INFO"
                             script{
-                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                                def DOC_ZIP_FILENAME = "${PKG_NAME}-${props.Version}.doc.zip"
+//                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+                                def DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
                                 zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
                                 stash includes: "dist/docs/${DOC_ZIP_FILENAME},build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
                             }
