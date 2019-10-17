@@ -1436,21 +1436,13 @@ pipeline {
                     steps {
                         unstash "STANDALONE_INSTALLERS"
                         unstash "Deployment"
-                        unstash "DIST-INFO"
-                        script{
-                            def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                            dir("dist"){
-                                deploy_sscm("*.msi", "${PKG_VERSION}", "${params.JIRA_ISSUE_VALUE}")
-                            }
+                        dir("dist"){
+                            deploy_sscm("*.msi", "${PKG_VERSION}", "${params.JIRA_ISSUE_VALUE}")
                         }
                     }
                     post {
                         success {
-                            unstash "DIST-INFO"
-                            script{
-                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                                jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                            }
+                            jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
                             archiveArtifacts artifacts: "logs/deployment_request.txt"
                         }
                     }
