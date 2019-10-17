@@ -560,7 +560,45 @@ pipeline {
                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
             }
             stages{
-//                stage("Initial setup"){
+                stage("Initial setup"){
+                    parallel{
+                        stage("Purge all existing data in workspace"){
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.FRESH_WORKSPACE
+                                    triggeredBy "TimerTriggerCause"
+                                }
+                            }
+                            steps{
+                                deleteDir()
+                                dir("source"){
+                                   checkout scm
+                                }
+                            }
+                        }
+                        /*
+                        stage("Testing Jira epic"){
+                            agent any
+                            options {
+                                skipDefaultCheckout(true)
+
+                            }
+                            steps {
+                                check_jira_project('PSR',, 'logs/jira_project_data.json')
+                                check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
+
+                            }
+                            post{
+                                cleanup{
+                                    cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
+                                }
+                            }
+
+                        }
+                        */
+                    }
+
+                }
 //                    parallel{
 //                        stage("Purge all existing data in workspace"){
 //                            when{
@@ -596,47 +634,9 @@ pipeline {
 //
 //                        }
 //                        */
-//                    }
+                    }
 //
-//                }
-//                    parallel{
-//                        stage("Purge all existing data in workspace"){
-//                            when{
-//                                anyOf{
-//                                    equals expected: true, actual: params.FRESH_WORKSPACE
-//                                    triggeredBy "TimerTriggerCause"
-//                                }
-//                            }
-//                            steps{
-//                                deleteDir()
-//                                dir("source"){
-//                                   checkout scm
-//                                }
-//                            }
-//                        }
-//                        /*
-//                        stage("Testing Jira epic"){
-//                            agent any
-//                            options {
-//                                skipDefaultCheckout(true)
-//
-//                            }
-//                            steps {
-//                                check_jira_project('PSR',, 'logs/jira_project_data.json')
-//                                check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
-//
-//                            }
-//                            post{
-//                                cleanup{
-//                                    cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
-//                                }
-//                            }
-//
-//                        }
-//                        */
-//                    }
-//
-//                }
+                }
                 stage("Getting Distribution Info"){
                     environment{
                         PATH = "${tool 'CPython-3.7'};$PATH"
