@@ -11,6 +11,7 @@ def get_package_version(stashName, metadataFile){
         unstash "${stashName}"
         script{
             def props = readProperties interpolate: true, file: "${metadataFile}"
+            deleteDir()
             return props.Version
         }
     }
@@ -21,6 +22,7 @@ def get_package_name(stashName, metadataFile){
         unstash "${stashName}"
         script{
             def props = readProperties interpolate: true, file: "${metadataFile}"
+            deleteDir()
             return props.Name
         }
     }
