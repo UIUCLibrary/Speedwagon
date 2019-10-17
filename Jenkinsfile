@@ -105,6 +105,7 @@ def process_mypy_logs(path){
         checkout scm
         unstash "MYPY_LOGS"
         recordIssues(tools: [myPy(pattern: "${path}")])
+        deleteDir()
     }
 }
 def check_jira_project(project, outputFile){
