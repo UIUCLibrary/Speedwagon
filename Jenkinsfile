@@ -701,11 +701,11 @@ pipeline {
                     }
                     steps {
 
-                        dir("source"){
-                            lock("system_pipenv_${NODE_NAME}"){
-                                bat "pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
-                            }
+//                        dir("source"){
+                        lock("system_pipenv_${NODE_NAME}"){
+                            bat "cd source && pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
                         }
+//                        }
                     }
                     post{
                         always{
