@@ -765,13 +765,9 @@ pipeline {
                         success{
                             unstash "SPEEDWAGON_DOC_PDF"
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-//                            unstash "DIST-INFO"
-                            script{
-//                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                                def DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
-                                zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
-                                stash includes: "dist/docs/${DOC_ZIP_FILENAME},build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
-                            }
+                            def DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
+                            zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
+                            stash includes: "dist/docs/${DOC_ZIP_FILENAME},build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
 
 
                         }
@@ -1313,12 +1309,9 @@ pipeline {
                         }
                     }
                     steps {
-                        unstash "DIST-INFO"
-                        script{
-                            def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                            input "Release ${PKG_NAME} ${PKG_VERSION} to DevPi Production?"
-                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} production/release"
-                        }
+                        input "Release ${PKG_NAME} ${PKG_VERSION} to DevPi Production?"
+                        bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} production/release"
+                    }
                     }
                     post{
                         success{
@@ -1329,11 +1322,7 @@ pipeline {
             }
             post{
                 cleanup{
-                    unstash "DIST-INFO"
-                    script{
-                        def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                        remove_from_devpi("venv\\Scripts\\devpi.exe", "${PKG_NAME}", "${PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
-                    }
+                    remove_from_devpi("venv\\Scripts\\devpi.exe", "${PKG_NAME}", "${PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
                 }
             }
         }
