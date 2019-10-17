@@ -634,9 +634,9 @@ pipeline {
 //
 //                        }
 //                        */
-                    }
+//                    }
 //
-                }
+//                }
                 stage("Getting Distribution Info"){
                     environment{
                         PATH = "${tool 'CPython-3.7'};$PATH"
