@@ -778,8 +778,7 @@ pipeline {
                                     [
                                         [pattern: 'logs/build_sphinx.log', type: 'INCLUDE'],
                                         [pattern: "build/docs/latex", type: 'INCLUDE'],
-                                        [pattern: "dist/docs/*.pdf", type: 'INCLUDE'],
-                                        [pattern: "dist/*.docs.zip", type: 'INCLUDE']
+                                        [pattern: "dist", type: 'INCLUDE'],
                                     ]
                                 )
                         }
