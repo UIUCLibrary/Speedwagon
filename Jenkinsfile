@@ -702,11 +702,9 @@ pipeline {
                     }
                     steps {
 
-//                        dir("source"){
                         lock("system_pipenv_${NODE_NAME}"){
                             bat "cd source && pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
                         }
-//                        }
                     }
                     post{
                         always{
@@ -885,11 +883,9 @@ pipeline {
                         }
                         stage("Run Flake8 Static Analysis") {
                             steps{
-//                                dir("source"){
                                 catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
                                     bat script: "cd source && pipenv run flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                 }
-//                                }
                             }
                             post {
                                 always {
