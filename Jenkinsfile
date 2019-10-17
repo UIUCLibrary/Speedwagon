@@ -14,8 +14,18 @@ def get_package_version(stashName, metadataFile){
             return props.Version
         }
     }
-
 }
+
+def get_package_name(stashName, metadataFile){
+    ws {
+        unstash "${stashName}"
+        script{
+            def props = readProperties interpolate: true, file: "${metadataFile}"
+            return props.Name
+        }
+    }
+}
+
 def run_sonarScanner(){
     withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
         bat(
@@ -708,6 +718,9 @@ pipeline {
                     }
                 }
                 stage("Sphinx Documentation"){
+                    environment{
+                        PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
+                    }
                     stages{
                         stage("Build Sphinx"){
                             environment{
@@ -752,7 +765,7 @@ pipeline {
                             unstash "DIST-INFO"
                             script{
                                 def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                                def DOC_ZIP_FILENAME = "${props.Name}-${props.Version}.doc.zip"
+                                def DOC_ZIP_FILENAME = "${PKG_NAME}-${props.Version}.doc.zip"
                                 zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
                                 stash includes: "dist/docs/${DOC_ZIP_FILENAME},build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
                             }
@@ -1158,6 +1171,7 @@ pipeline {
                 PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
                 DEVPI = credentials("DS_devpi")
                 PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
+                PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
             }
 
             stages{
@@ -1211,7 +1225,7 @@ pipeline {
                                                 devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
-                                                pkgName: "${props.Name}",
+                                                pkgName: "${PKG_NAME}",
                                                 pkgVersion: "${PKG_VERSION}",
                                                 pkgRegex: "zip",
                                                 detox: false
@@ -1263,7 +1277,7 @@ pipeline {
                                                 devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
-                                                pkgName: "${props.Name}",
+                                                pkgName: "${PKG_NAME}",
                                                 pkgVersion: "${PKG_VERSION}",
                                                 pkgRegex: "whl",
                                                 detox: false
@@ -1294,7 +1308,7 @@ pipeline {
                                 def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                 bat(
                                     label: "it Worked. Pushing file to ${env.BRANCH_NAME} index",
-                                    script:"venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${props.Name}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
+                                    script:"venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
                                 )
                             }
                         }
@@ -1311,8 +1325,8 @@ pipeline {
                         unstash "DIST-INFO"
                         script{
                             def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                            input "Release ${props.Name} ${PKG_VERSION} to DevPi Production?"
-                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${props.Name}==${PKG_VERSION} production/release"
+                            input "Release ${PKG_NAME} ${PKG_VERSION} to DevPi Production?"
+                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} production/release"
                         }
                     }
                     post{
@@ -1327,7 +1341,7 @@ pipeline {
                     unstash "DIST-INFO"
                     script{
                         def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                        remove_from_devpi("venv\\Scripts\\devpi.exe", "${props.Name}", "${PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
+                        remove_from_devpi("venv\\Scripts\\devpi.exe", "${PKG_NAME}", "${PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
                     }
                 }
             }
