@@ -1403,8 +1403,13 @@ pipeline {
                     }
                     post{
                         cleanup{
-
-                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist.*', type: 'INCLUDE']]
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: '*dist-info', type: 'INCLUDE'],
+                                    [pattern: 'dist.*', type: 'INCLUDE']
+                                ]
+                            )
                         }
                     }
                 }
