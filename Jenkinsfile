@@ -90,7 +90,6 @@ def run_cmake_build(cmake_version){
                                     cleanBuild: true,
                                     cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\" -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf" ,
                                     generator: 'Ninja',
-//                                    generator: 'Visual Studio 14 2015 Win64',
                                     installation: "${cmake_version}",
                                     sourceDir: 'source',
                                     steps: [[args: "", withCmake: true]]
@@ -204,10 +203,6 @@ def convert_latex_to_pdf(latexPath, destPath, logsPath){
                     )
                     try{
 
-//                        powershell(
-//                            label: "Run Docker Container",
-//                            script: 'docker run --rm -t -v "$((Get-Location).Path)\\build\\docs\\latex:/latex" --workdir /latex $($env:DOCKER_IMAGE_NAME) make',
-//                        )
                         sh(
                             label: "Run Docker Container",
                             script: 'docker run --rm -t -v "$(PWD)/build/docs/latex:/latex" --workdir /latex $($env:DOCKER_IMAGE_NAME) make',
@@ -315,7 +310,6 @@ def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUse
                     echo "Failed to remove ${pkgName}==${pkgVersion} from ${devpiIndex}"
             }
 
-//        }
     }
 }
 
@@ -328,7 +322,6 @@ def report_help_info(){
         }
     }
 }
-//
 def get_build_number(){
     script{
         def versionPrefix = ""
@@ -509,10 +502,6 @@ def testMsiInstall(dockerfilePath, dockerImageName, dockerContainerName, logsPat
             }
         }
 
-//        bat(
-//            label: "Install msi inside a Windows Docker container",
-//            script: "docker build  -t ${currentBuild.projectName}-windows-install -f source\\ci\\docker\\windowsserver\\Dockerfile . && docker run --name ${currentBuild.projectName}-windows-installer-test --rm ${currentBuild.projectName}-windows-install"
-//        )
     }
 }
 
@@ -526,7 +515,6 @@ pipeline {
     }
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
-//        timeout(25)  // Timeout after 20 minutes. This shouldn't take this long but it hangs for some reason
         checkoutToSubdirectory("source")
         buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
         preserveStashes(buildCount: 5)
@@ -598,44 +586,6 @@ pipeline {
                     }
 
                 }
-//                    parallel{
-//                        stage("Purge all existing data in workspace"){
-//                            when{
-//                                anyOf{
-//                                    equals expected: true, actual: params.FRESH_WORKSPACE
-//                                    triggeredBy "TimerTriggerCause"
-//                                }
-//                            }
-//                            steps{
-//                                deleteDir()
-//                                dir("source"){
-//                                   checkout scm
-//                                }
-//                            }
-//                        }
-//                        /*
-//                        stage("Testing Jira epic"){
-//                            agent any
-//                            options {
-//                                skipDefaultCheckout(true)
-//
-//                            }
-//                            steps {
-//                                check_jira_project('PSR',, 'logs/jira_project_data.json')
-//                                check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
-//
-//                            }
-//                            post{
-//                                cleanup{
-//                                    cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
-//                                }
-//                            }
-//
-//                        }
-//                        */
-//                    }
-//
-//                }
                 stage("Getting Distribution Info"){
                     environment{
                         PATH = "${tool 'CPython-3.7'};$PATH"
@@ -654,15 +604,6 @@ pipeline {
                         }
                     }
                 }
-
-//                stage("Cleanup"){
-//                    steps {
-//                        dir("source") {
-//                            stash includes: 'deployment.yml', name: "Deployment"
-//                        }
-//                    }
-//                }
-
                 stage("Install Python Dependencies"){
                     steps{
                         install_system_python_deps()
@@ -728,7 +669,6 @@ pipeline {
                             }
                             steps {
                                 build_sphinx()
-                                //convert_latex_to_pdf("build/docs/latex", "dist/docs", "logs/latex")
                             }
                         }
                         stage("Convert to pdf"){
