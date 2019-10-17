@@ -884,11 +884,11 @@ pipeline {
                         }
                         stage("Run Flake8 Static Analysis") {
                             steps{
-                                dir("source"){
-                                    catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
-                                        bat script: "pipenv run flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
-                                    }
+//                                dir("source"){
+                                catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
+                                    bat script: "cd source && pipenv run flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                 }
+//                                }
                             }
                             post {
                                 always {
