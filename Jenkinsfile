@@ -766,7 +766,7 @@ pipeline {
                             script{
                                 def DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
                                 zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
-                                stash includes: "dist/docs/${DOC_ZIP_FILENAME},build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
+                                stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
                             }
 
 
@@ -978,7 +978,7 @@ pipeline {
                             steps{
                                 testPythonPackage(
                                     pythonToolName: "CPython-3.7",
-                                    pkgRegex: "dist/*.whl,dist/*.tar.gz",
+                                    pkgRegex: "dist/*.whl,dist/*.tar.gz,dist/*.zip",
                                     testNodeLabels: "Windows && Python3",
                                     testEnvs: ["py36", "py37"]
 
