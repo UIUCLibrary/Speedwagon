@@ -6,7 +6,6 @@ ADD requirements.txt requirements-dev.txt c:\temp\
 RUN python -m pip install pip --upgrade ; `
         pip install --extra-index-url https://devpi.library.illinois.edu/production/release `
         --trusted-host devpi.library.illinois.edu `
-        --no-cache-dir `
         -r c:\temp\requirements.txt `
         -r c:\temp\requirements-dev.txt `
         pipenv

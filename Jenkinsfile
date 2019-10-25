@@ -561,20 +561,20 @@ pipeline {
             stages{
                 stage("Initial setup"){
                     parallel{
-                        stage("Purge all existing data in workspace"){
-                            when{
-                                anyOf{
-                                    equals expected: true, actual: params.FRESH_WORKSPACE
-                                    triggeredBy "TimerTriggerCause"
-                                }
-                            }
-                            steps{
-                                deleteDir()
-                                dir("source"){
-                                   checkout scm
-                                }
-                            }
-                        }
+                        //stage("Purge all existing data in workspace"){
+                        //    when{
+                        //        anyOf{
+                        //            equals expected: true, actual: params.FRESH_WORKSPACE
+                        //            triggeredBy "TimerTriggerCause"
+                        //        }
+                        //    }
+                        //    steps{
+                        //        deleteDir()
+                        //        dir("source"){
+                        //           checkout scm
+                        //        }
+                        //    }
+                        //}
                         stage("Testing Jira epic"){
                             agent any
                             options {
@@ -923,25 +923,38 @@ pipeline {
             }
         }
         stage("Packaging") {
-            environment{
-                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-            }
+
             failFast true
             parallel {
                 stage("Source and Wheel formats"){
                     stages{
-
                         stage("Packaging sdist and wheel"){
-
+                            agent {
+                              docker {
+                                image 'python:3.7'
+                              }
+                            }
                             steps{
                                 dir("source"){
-                                    bat script: "pipenv run python setup.py build -b ../build sdist -d ../dist --format zip bdist_wheel -d ../dist"
+                                    powershell "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
+                                    bat "pip install pyqt_distutils"
+                                    bat script: "python setup.py build -b ../build sdist -d ../dist --format zip bdist_wheel -d ../dist"
+                                }
+                            }
+                            post{
+                                success{
+                                    stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
                                 }
                             }
 
                         }
                         stage("Testing Python Packages"){
+                            // TODO: run python installing tests inside a docker container
+                            environment{
+                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                            }
                             steps{
+                                unstash 'PYTHON_PACKAGES'
                                 testPythonPackage(
                                     pythonToolName: "CPython-3.7",
                                     pkgRegex: "dist/*.whl,dist/*.tar.gz,dist/*.zip",
@@ -955,7 +968,7 @@ pipeline {
                     post {
                         success {
                             archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
-                            stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
+
                         }
                         cleanup{
                             cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', type: 'INCLUDE']]
@@ -963,6 +976,7 @@ pipeline {
                     }
                 }
                 stage("Windows Standalone"){
+                    // TODO: Make a dockerfile for that can be used to generate MSI
                     agent {
                         node {
                             label "Windows && Python3 && longfilenames && WIX"
