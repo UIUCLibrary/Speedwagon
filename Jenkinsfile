@@ -337,13 +337,23 @@ def get_build_number(){
 
 def runtox(){
     script{
-        try{
-            // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
-            // Tox has a bug that fails when trying to write the json report
-            // when --parallel is run at the same time
-            bat "pipenv run tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox --result-json ${WORKSPACE}\\logs\\tox_report.json"
-        } catch (exc) {
-            bat "pipenv run tox -vv --workdir ${WORKSPACE}\\.tox --result-json ${WORKSPACE}\\logs\\tox_report.json --recreate"
+        withEnv(
+            [
+                'PIP_INDEX_URL="https://devpi.library.illinois.edu/production/release"',
+                'PIP_TRUSTED_HOST="devpi.library.illinois.edu"',
+                'TOXENV="py"'
+            ]
+        ) {
+
+            bat "python -m pip install pipenv tox"
+            try{
+                // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
+                // Tox has a bug that fails when trying to write the json report
+                // when --parallel is run at the same time
+                bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
+            } catch (exc) {
+                bat "tox -vv --workdir ${WORKSPACE}\\.tox --recreate"
+            }
         }
     }
 
@@ -730,8 +740,15 @@ pipeline {
         }
         stage("Test") {
             environment{
-                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                //PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
                 junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
+            }
+            agent {
+                dockerfile {
+                    filename 'ci/docker/python37/Dockerfile'
+                    dir 'source'
+                    label 'Windows&&Docker'
+                  }
             }
             stages{
                 stage("Run Tests"){
@@ -739,9 +756,10 @@ pipeline {
                     parallel {
                         stage("Run Behave BDD Tests") {
                             steps {
+                                bat "if not exist reports mkdir reports"
                                 dir("source"){
                                     catchError(buildResult: "UNSTABLE", message: 'Did not pass all Behave BDD tests', stageResult: "UNSTABLE") {
-                                        bat "pipenv run coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\tests\\behave"
+                                        bat "coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\tests\\behave"
                                     }
                                 }
                             }
@@ -753,9 +771,10 @@ pipeline {
                         }
                         stage("Run PyTest Unit Tests"){
                             steps{
+                                bat "if not exist logs mkdir logs"
                                 dir("source"){
                                     catchError(buildResult: "UNSTABLE", message: 'Did not pass all pytest tests', stageResult: "UNSTABLE") {
-                                        bat "pipenv run coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
+                                        bat "coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
                                     }
                                 }
                             }
@@ -768,7 +787,7 @@ pipeline {
                         stage("Run Doctest Tests"){
                             steps {
                                 dir("source"){
-                                    bat "pipenv run sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}/logs/doctest.txt"
+                                    bat "sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}/logs/doctest.txt"
                                 }
                             }
                             post{
@@ -783,9 +802,10 @@ pipeline {
                         }
                         stage("Run MyPy Static Analysis") {
                             steps{
+                                bat "if not exist logs mkdir logs"
                                 dir("source"){
                                     catchError(buildResult: "SUCCESS", message: 'MyPy found issues', stageResult: "UNSTABLE") {
-                                        bat script: "pipenv run mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
+                                        bat script: "mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
                                     }
                                 }
                             }
@@ -793,7 +813,6 @@ pipeline {
                                 always {
                                     process_mypy_logs("logs/mypy.log")
                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
-
                                 }
                                 cleanup{
                                     cleanWs(patterns: [[pattern: 'logs/mypy.log', type: 'INCLUDE']])
@@ -804,27 +823,36 @@ pipeline {
                             when{
                                 equals expected: true, actual: params.TEST_RUN_TOX
                             }
+
+                            environment {
+                              PIP_INDEX_URL = "https://devpi.library.illinois.edu/production/release"
+                              PIP_TRUSTED_HOST = "devpi.library.illinois.edu"
+                              TOXENV = "py"
+                            }
+
+
                             steps {
+                                bat "if not exist logs mkdir logs"
                                 dir("source"){
                                     runtox()
                                 }
                             }
                             post{
                                 always{
-                                    archiveArtifacts allowEmptyArchive: true, artifacts: '.tox/py*/log/*.log,.tox/log/*.log,logs/tox_report.json'
+                                    archiveArtifacts allowEmptyArchive: true, artifacts: '.tox/py*/log/*.log,.tox/log/*.log'
                                 }
                                 cleanup{
                                     cleanWs deleteDirs: true, patterns: [
-                                        [pattern: '.tox/py*/log/*.log', type: 'INCLUDE'],
-                                        [pattern: '.tox/log/*.log', type: 'INCLUDE']
+                                        [pattern: '.tox', type: 'INCLUDE']
                                     ]
                                 }
                             }
                         }
                         stage("Run Flake8 Static Analysis") {
                             steps{
+                                bat "if not exist logs mkdir logs"
                                 catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
-                                    bat script: "cd source && pipenv run flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
+                                    bat script: "cd source && flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                 }
                             }
                             post {
@@ -842,8 +870,7 @@ pipeline {
                     post{
                         always{
                             dir("source"){
-                                bat "\"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage combine && \"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && \"${tool 'CPython-3.6'}\\python.exe\" -m pipenv run coverage html -d ${WORKSPACE}\\reports\\coverage"
-
+                                bat "coverage combine && coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && coverage html -d ${WORKSPACE}\\reports\\coverage"
                             }
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
                             publishCoverage adapters: [
@@ -851,16 +878,15 @@ pipeline {
                                             ],
                                         sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                         }
-
                     }
                 }
                 stage("Run Sonarqube Analysis"){
                     when{
                         equals expected: "master", actual: env.BRANCH_NAME
                     }
-                    options{
-                        timeout(5)
-                    }
+                   // options{
+                   //     timeout(5)
+                   // }
                     environment{
                         scannerHome = tool name: 'sonar-scanner-3.3.0', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                         PATH = "${WORKSPACE}\\venv\\Scripts;${PATH}"
@@ -958,9 +984,9 @@ pipeline {
                     }
                     stages{
                         stage("CMake Build"){
-                            options{
-                                timeout(10)
-                            }
+                            //options{
+                            //    timeout(10)
+                            //}
                             steps {
                                 run_cmake_build("${CMAKE_VERSION}")
 
