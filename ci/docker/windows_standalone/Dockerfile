@@ -30,18 +30,42 @@ RUN (C:\\TEMP\\vs_buildtools.exe `
   && del /S /F /Q %Windir%\Temp `
   && @echo Done cleaning up files in temp directories
 
+RUN powershell.exe -Command  `
+    $ErrorActionPreference = 'Stop'; `
+    Invoke-WebRequest https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-win.zip -OutFile c:\ninja-win.zip; `
+    Expand-Archive -LiteralPath c:\ninja-win.zip -DestinationPath C:\ninja ; `
+    Remove-Item c:\ninja-win.zip -Force ; `
+    setx /M PATH $($Env:PATH + ';C:\ninja')
+
 RUN @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" `
     && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
 
-RUN choco install -y git nsis wixtoolset ninja`
+RUN choco install -y git nsis wixtoolset`
     && choco install -y cmake --installargs 'ADD_CMAKE_TO_PATH=System' `
     && del /S /F /Q %ChocolateyInstall%
 
 RUN powershell.exe -Command  `
     $ErrorActionPreference = 'Stop'; `
-    Invoke-WebRequest https://www.python.org/ftp/python/3.7.5/python-3.7.5-amd64.exe -OutFile c:\python-3.7.5-amd64.exe ; `
-    Start-Process python-3.7.5-amd64.exe -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' -Wait ; `
-    Remove-Item c:\python-3.7.5-amd64.exe -Force
+    Invoke-WebRequest https://www.python.org/ftp/python/3.7.5/python-3.7.5-amd64.exe -OutFile c:\python-installer.exe ; `
+    Start-Process python-installer.exe -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' -Wait ; `
+    Remove-Item c:\python-installer.exe -Force
+
+RUN certutil -generateSSTFromWU roots.sst && certutil -addstore -f root roots.sst && del roots.sst
 
 RUN python -m pip install --upgrade pip `
     && pip install --upgrade setuptools
+
+ADD requirements.txt requirements-dev.txt c:\temp\
+RUN python -m pip install pip --upgrade && `
+        pip install --extra-index-url https://devpi.library.illinois.edu/production/release `
+        --trusted-host devpi.library.illinois.edu `
+        -r c:\temp\requirements.txt `
+        -r c:\temp\requirements-dev.txt `
+        pipenv
+
+RUN powershell.exe -Command  `
+    $ErrorActionPreference = 'Stop'; `
+    setx /M PATH $($Env:PATH + ';C:\Program Files (x86)\NSIS')
+
+#ENTRYPOINT C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 &&
+#CMD ["powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass"]

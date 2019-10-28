@@ -85,15 +85,18 @@ def run_cmake_build(cmake_version){
                                 if not exist "temp" mkdir temp
                                 """
                                 unstash "DOCS_ARCHIVE"
-                                cmakeBuild(
-                                    buildDir: 'cmake_build',
-                                    cleanBuild: true,
-                                    cmakeArgs: "--config Release --parallel ${NUMBER_OF_PROCESSORS} -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\" -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf" ,
-                                    generator: 'Ninja',
-                                    installation: "${cmake_version}",
-                                    sourceDir: 'source',
-                                    steps: [[args: "", withCmake: true]]
-                                    )
+                                bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf"
+                                bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\cmake_build && cmake --build . "
+
+                                //cmakeBuild(
+                                //    buildDir: 'cmake_build',
+                                //    cleanBuild: true,
+                                //    cmakeArgs: "--config Release -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\" -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf" ,
+                                //    generator: 'Ninja',
+                                //    installation: "InSearchPath",
+                                //    sourceDir: 'source',
+                                //    steps: [[args: "", withCmake: true]]
+                                //    )
 }
 
 
@@ -552,7 +555,7 @@ pipeline {
                           }
                     }
                     steps {
-
+                        bat "if not exist logs mkdir logs"
                         //lock("system_pipenv_${NODE_NAME}"){
                         bat "cd source && pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
                         //}
@@ -907,11 +910,16 @@ pipeline {
                 stage("Windows Standalone"){
                     // TODO: Make a dockerfile for that can be used to generate MSI
                     agent {
-                        node {
-                            label "Windows && Python3 && longfilenames && WIX"
-//                            Not sure why what is currently breaking build
-                            customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
-                        }
+                        dockerfile {
+                            filename 'ci/docker/windows_standalone/Dockerfile'
+                            dir 'source'
+                            label 'Windows&&Docker'
+                          }
+                       // node {
+                       //     label "Windows && Python3 && longfilenames && WIX"
+//                     //       Not sure why what is currently breaking build
+                       //     customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
+                       // }
                     }
 
                     when{
@@ -923,7 +931,9 @@ pipeline {
                         }
                     }
                     environment {
-                        PATH = "${tool 'CPython-3.6'};${tool(name: 'WixToolset_311', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool')};$PATH"
+                        PIP_INDEX_URL="https://devpi.library.illinois.edu/production/release"
+                        PIP_TRUSTED_HOST="devpi.library.illinois.edu"
+                    //    PATH = "${tool 'CPython-3.6'};${tool(name: 'WixToolset_311', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool')};$PATH"
                     }
                     stages{
                         stage("CMake Build"){
@@ -931,7 +941,7 @@ pipeline {
                             //    timeout(10)
                             //}
                             steps {
-                                run_cmake_build("${CMAKE_VERSION}")
+                                run_cmake_build("InSearchPath")
 
 
                             }
@@ -940,27 +950,26 @@ pipeline {
                             options{
                                 timeout(3)
                             }
-                            environment{
-                                TMPDIR = "${WORKSPACE}/temp"
-                            }
+                            // environment{
+                            //     TMPDIR = "${WORKSPACE}/temp"
+                            // }
                             steps {
                                     ctest(
                                         arguments: "-T test -C Release -j ${NUMBER_OF_PROCESSORS}",
-                                        installation: "${CMAKE_VERSION}",
+                                        installation: 'InSearchPath',
                                         workingDir: 'cmake_build'
                                         )
                             }
-                            post{
-                                always {
-                                    ctest(
-                                        arguments: "-T submit",
-                                        installation: "${CMAKE_VERSION}",
-                                        workingDir: 'cmake_build'
-                                        )
-                                    capture_ctest_results("logs/ctest")
-                                }
-
-                            }
+                            //post{
+                            //    always {
+                            //        ctest(
+                            //            arguments: "-T submit",
+                            //            installation: 'InSearchPath',
+                            //            workingDir: 'cmake_build'
+                            //            )
+                            //        capture_ctest_results("logs/ctest")
+                            //    }
+                            //}
 
                         }
                         stage("CPack"){
@@ -970,7 +979,7 @@ pipeline {
                             steps {
                                 cpack(
                                     arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} --config cmake_build/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
-                                    installation: "${CMAKE_VERSION}"
+                                    installation: 'InSearchPath'
                                 )
                                 stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
                             }
