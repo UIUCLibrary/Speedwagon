@@ -129,6 +129,7 @@ def check_jira(project, issue){
 }
 
 def build_sphinx(){
+        bat "if not exist logs mkdir logs"
         dir("source"){
             bat(
                 label: "Building HTML docs on ${env.NODE_NAME}",
@@ -139,105 +140,10 @@ def build_sphinx(){
                 script: "python -m pipenv run sphinx-build docs/source ..\\build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
                 )
         }
-        stash includes: "build/docs/latex/*", name: 'latex_docs'
-
-}
-def install_system_python_deps(){
-    lock("system_python_${env.NODE_NAME}"){
-        bat(
-            label: "Install Python System Dependencies",
-            script:"(if not exist logs mkdir logs) && python -m pip install pip --upgrade --quiet"
-            )
-
-        bat(
-            label: "Generating a log of python packages installed system-wide",
-            script: "python -m pip list > logs/pippackages_system_${env.NODE_NAME}.log"
-        )
-
-    }
-}
-
-def install_pipfile(pipfilePath){
-    dir(pipfilePath){
-        bat(
-            label: "Installing Python packages from pipfile in ${pipfilePath}",
-            script: "pipenv install --dev --deploy"
-        )
-
-        bat(
-            label: "Generating a log of python packages installed from pipfile",
-            script: "pipenv run pip list > ..\\logs\\pippackages_pipenv_${NODE_NAME}.log"
-            )
-        catchError(buildResult: "SUCCESS", message: 'Pipfile failed security checks', stageResult: "UNSTABLE") {
-            bat(
-                label: "Checking packages installed by pipfile for security issues",
-                script: "pipenv check"
-                )
-        }
-
-    }
-}
-def convert_latex_to_pdf2(latex_path){
-    sh "mkdir -p dist/docs"
-    dir(latex_path){
-        sh "make"
-    }
-    sh "mv ${latex_path}/*.pdf dist/docs/"
-}
-def convert_latex_to_pdf(latexPath, destPath, logsPath){
-    script{
-        stash includes: "${latexPath}/*", name: 'latex_docs'
-        node("docker&&linux"){
-            try{
-                def docker_path = "${tool name: 'Docker', type: 'org.jenkinsci.plugins.docker.commons.tools.DockerTool'}"
-                withEnv([
-                    "Path=${docker_path};${env.PATH}",
-                    "latex_docs_path=${latexPath}",
-                    "DOCKER_IMAGE_NAME=${JOB_NAME.replaceAll('/', '.').toLowerCase()}.latexmk"
-                    ]) {
-                    checkout scm
-                    unstash "latex_docs"
-                    sh(
-                        label: "Build Docker Image with texlive",
-                        script: "docker build  -t $DOCKER_IMAGE_NAME -f ci/docker/makepdf/lite/Dockerfile ."
-                    )
-                    try{
-
-                        sh(
-                            label: "Run Docker Container",
-                            script: 'docker run --rm -t -v "$(PWD)/build/docs/latex:/latex" --workdir /latex $($env:DOCKER_IMAGE_NAME) make',
-                        )
-
-                    } finally {
-                        dir("build/docs/latex"){
-                            stash(
-                                includes: "*.log",
-                                name: "latexmk logs",
-                                allowEmpty: true
-                            )
-                        }
-                    }
-                }
-                dir("build/docs/latex"){
-                    stash(
-                        includes: "*.pdf",
-                        name: "resulting_pdf"
-                        )
-                }
-            } finally {
-                deleteDir()
-            }
-         }
-         dir(logsPath){
-            unstash "latexmk logs"
-         }
-         dir(destPath){
-            unstash "resulting_pdf"
-         }
-    }
 
 
 }
+
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
     script{
         def cpack_generators = []
@@ -614,21 +520,8 @@ pipeline {
                         }
                     }
                 }
-                stage("Install Python Dependencies"){
-                    steps{
-                        install_system_python_deps()
-                        bat (
-                            label: "Install Python Virtual Environment Dependencies",
-                            script: "python -m venv venv && venv\\Scripts\\pip.exe install \"tox<3.10\" sphinx pylint && venv\\Scripts\\pip list > logs/pippackages_venv_${env.NODE_NAME}.log"
-                            )
-                        install_pipfile("source")
-                    }
-                }
             }
             post{
-                always{
-                    archiveArtifacts artifacts: "logs/pippackages_pipenv_*.log,logs/pippackages_system_*.log,logs/pippackages_venv_*.log"
-                }
                 failure{
                     dir("source"){
                         bat "pipenv --rm"
@@ -648,14 +541,21 @@ pipeline {
 
             parallel {
                 stage("Building Python Library"){
-                    environment{
-                        PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                    // environment{
+                    //     PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                    // }
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python37/Dockerfile'
+                            dir 'source'
+                            label 'Windows&&Docker'
+                          }
                     }
                     steps {
 
-                        lock("system_pipenv_${NODE_NAME}"){
-                            bat "cd source && pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
-                        }
+                        //lock("system_pipenv_${NODE_NAME}"){
+                        bat "cd source && pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
+                        //}
                     }
                     post{
                         always{
@@ -674,11 +574,41 @@ pipeline {
                     }
                     stages{
                         stage("Build Sphinx"){
-                            environment{
-                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                            // environment{
+                            //     PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                            // }
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/python37/Dockerfile'
+                                    dir 'source'
+                                    label 'Windows&&Docker'
+                                  }
                             }
                             steps {
                                 build_sphinx()
+                            }
+                            post{
+                                always{
+                                    archiveArtifacts artifacts: 'logs/build_sphinx.log,logs/latex/speedwagon.log'
+                                }
+                                success{
+                                    stash includes: "build/docs/latex/*", name: 'latex_docs'
+                                    script{
+                                        def DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
+                                        zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
+                                        stash includes: "build/docs/html/**", name: 'SPEEDWAGON_DOC_HTML'
+                                    }
+                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
+                                }
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        patterns:
+                                            [
+                                                [pattern: "dist", type: 'INCLUDE'],
+                                            ]
+                                    )
+                                }
                             }
                         }
                         stage("Convert to pdf"){
@@ -690,12 +620,16 @@ pipeline {
                             }
                             steps{
                                 unstash "latex_docs"
-                                convert_latex_to_pdf2("build/docs/latex")
+                                sh "mkdir -p dist/docs"
+                                dir("build/docs/latex"){
+                                    sh "make"
+                                }
+                                sh "mv build/docs/latex/*.pdf dist/docs/"
 
                             }
                             post{
                                 success{
-                                    stash "SPEEDWAGON_DOC_PDF"
+                                    stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
                                     archiveArtifacts artifacts: "dist/docs/*.pdf"
 
                                 }
@@ -709,17 +643,12 @@ pipeline {
                     post{
                         always {
                             recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
-                            archiveArtifacts artifacts: 'logs/build_sphinx.log,logs/latex/speedwagon.log'
                             postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
                         }
                         success{
                             unstash "SPEEDWAGON_DOC_PDF"
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            script{
-                                def DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
-                                zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
-                                stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
-                            }
+                            unstash "SPEEDWAGON_DOC_HTML"
+                            stash includes: "dist/*.docs.zip,build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
 
 
                         }
@@ -1422,9 +1351,9 @@ pipeline {
     post {
         failure {
             report_help_info()
-            dir("source"){
-                bat "\"${tool 'CPython-3.6'}\\Scripts\\pipenv\" --rm"
-            }
+            //dir("source"){
+            //    bat "\"${tool 'CPython-3.6'}\\Scripts\\pipenv\" --rm"
+            //}
         }
         cleanup {
             cleanWs(
