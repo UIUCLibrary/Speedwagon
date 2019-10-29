@@ -78,25 +78,14 @@ def deploy_hathi_beta(){
     }
 }
 
-def run_cmake_build(cmake_version){
+def run_cmake_build(){
     bat """if not exist "cmake_build" mkdir cmake_build
-                                if not exist "logs" mkdir logs
-                                if not exist "logs\\ctest" mkdir logs\\ctest
-                                if not exist "temp" mkdir temp
-                                """
-                                unstash "DOCS_ARCHIVE"
-                                bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf"
-                                bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\cmake_build && cmake --build . "
-
-                                //cmakeBuild(
-                                //    buildDir: 'cmake_build',
-                                //    cleanBuild: true,
-                                //    cmakeArgs: "--config Release -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=${WORKSPACE}/python_deps_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\" -DCTEST_DROP_LOCATION=${WORKSPACE}/logs/ctest -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf" ,
-                                //    generator: 'Ninja',
-                                //    installation: "InSearchPath",
-                                //    sourceDir: 'source',
-                                //    steps: [[args: "", withCmake: true]]
-                                //    )
+if not exist "logs" mkdir logs
+if not exist "logs\\ctest" mkdir logs\\ctest
+if not exist "temp" mkdir temp
+"""
+    bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf"
+    bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\cmake_build && cmake --build ."
 }
 
 
@@ -464,9 +453,9 @@ pipeline {
     stages {
 
         stage("Configure"){
-            environment{
-                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-            }
+            // environment{
+            //    PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+            //}
             stages{
                 stage("Initial setup"){
                     parallel{
@@ -502,41 +491,29 @@ pipeline {
                             }
 
                         }
-                    }
-
-                }
-                stage("Getting Distribution Info"){
-                    environment{
-                        PATH = "${tool 'CPython-3.7'};$PATH"
-                    }
-                    steps{
-                        dir("source"){
-                            bat "python setup.py dist_info"
-                        }
-                    }
-                    post{
-                        success{
-                            dir("source"){
-                                stash includes: "speedwagon.dist-info/**", name: 'DIST-INFO'
-                                archiveArtifacts artifacts: "speedwagon.dist-info/**"
+                        stage("Getting Distribution Info"){
+                            agent {
+                                dockerfile {
+                                    filename 'ci\\docker\\python37\\Dockerfile'
+                                    dir 'source'
+                                    label 'Windows&&Docker'
+                                 }
+                            }
+                            steps{
+                                dir("source"){
+                                    bat "python setup.py dist_info"
+                                }
+                            }
+                            post{
+                                success{
+                                    dir("source"){
+                                        stash includes: "speedwagon.dist-info/**", name: 'DIST-INFO'
+                                        archiveArtifacts artifacts: "speedwagon.dist-info/**"
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            }
-            post{
-                failure{
-                    dir("source"){
-                        bat "pipenv --rm"
-                    }
-                    deleteDir()
-                }
-                cleanup{
-                    cleanWs(patterns: [
-                        [pattern: "logs/pippackages_pipenv_*.log", type: 'INCLUDE'],
-                        [pattern: "logs/pippackages_system_*.log", type: 'INCLUDE']
-                        ]
-                    )
                 }
             }
         }
@@ -544,9 +521,6 @@ pipeline {
 
             parallel {
                 stage("Building Python Library"){
-                    // environment{
-                    //     PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-                    // }
                     agent {
                         dockerfile {
                             filename 'ci/docker/python37/Dockerfile'
@@ -567,6 +541,9 @@ pipeline {
                         }
                         cleanup{
                             cleanWs(patterns: [[pattern: 'logs/build_errors', type: 'INCLUDE']])
+                        }
+                        success{
+                            stash includes: "build/lib/**", name: 'PYTHON_BUILD_FILES'
                         }
                     }
                 }
@@ -684,7 +661,6 @@ pipeline {
             }
             stages{
                 stage("Run Tests"){
-
                     parallel {
                         stage("Run Behave BDD Tests") {
                             steps {
@@ -755,14 +731,11 @@ pipeline {
                             when{
                                 equals expected: true, actual: params.TEST_RUN_TOX
                             }
-
                             environment {
                               PIP_INDEX_URL = "https://devpi.library.illinois.edu/production/release"
                               PIP_TRUSTED_HOST = "devpi.library.illinois.edu"
                               TOXENV = "py"
                             }
-
-
                             steps {
                                 bat "if not exist logs mkdir logs"
                                 dir("source"){
@@ -867,6 +840,7 @@ pipeline {
                               }
                             }
                             steps{
+                                unstash "PYTHON_BUILD_FILES"
                                 dir("source"){
                                     powershell "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
                                     bat "pip install pyqt_distutils"
@@ -877,23 +851,32 @@ pipeline {
                                 success{
                                     stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
                                 }
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        patterns: [
+                                            [pattern: 'source', type: 'EXCLUDE']
+                                            ]
+                                        )
+                                }
                             }
 
                         }
                         stage("Testing Python Packages"){
                             // TODO: run python installing tests inside a docker container
-                            environment{
-                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-                            }
+                            //environment{
+                            //    PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                            //}
                             steps{
                                 unstash 'PYTHON_PACKAGES'
-                                testPythonPackage(
-                                    pythonToolName: "CPython-3.7",
-                                    pkgRegex: "dist/*.whl,dist/*.tar.gz,dist/*.zip",
-                                    testNodeLabels: "Windows && Python3",
-                                    testEnvs: ["py36", "py37"]
+                                //testPythonPackage(
 
-                                )
+                                //testPythonPackage(
+                                //    pythonToolName: "CPython-3.7",
+                                //    pkgRegex: "dist/*.whl,dist/*.tar.gz,dist/*.zip",
+                                //    testNodeLabels: "Windows && Python3",
+                                //    testEnvs: ["py36", "py37"]
+                                //)
                             }
                         }
                     }
@@ -908,20 +891,6 @@ pipeline {
                     }
                 }
                 stage("Windows Standalone"){
-                    // TODO: Make a dockerfile for that can be used to generate MSI
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/windows_standalone/Dockerfile'
-                            dir 'source'
-                            label 'Windows&&Docker'
-                          }
-                       // node {
-                       //     label "Windows && Python3 && longfilenames && WIX"
-//                     //       Not sure why what is currently breaking build
-                       //     customWorkspace "c:/Jenkins/temp/${JOB_NAME}/standalone_build"
-                       // }
-                    }
-
                     when{
                         anyOf{
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
@@ -931,34 +900,39 @@ pipeline {
                         }
                     }
                     environment {
-                        PIP_INDEX_URL="https://devpi.library.illinois.edu/production/release"
+                        PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
                         PIP_TRUSTED_HOST="devpi.library.illinois.edu"
                     //    PATH = "${tool 'CPython-3.6'};${tool(name: 'WixToolset_311', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool')};$PATH"
                     }
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/windows_standalone/Dockerfile'
+                            dir 'source'
+                            label 'Windows&&Docker'
+                          }
+                    }
                     stages{
                         stage("CMake Build"){
+
                             //options{
                             //    timeout(10)
                             //}
                             steps {
-                                run_cmake_build("InSearchPath")
-
-
+                                unstash "DOCS_ARCHIVE"
+                                run_cmake_build()
                             }
                         }
                         stage("CTest"){
                             options{
                                 timeout(3)
                             }
-                            // environment{
-                            //     TMPDIR = "${WORKSPACE}/temp"
-                            // }
                             steps {
-                                    ctest(
-                                        arguments: "-T test -C Release -j ${NUMBER_OF_PROCESSORS}",
-                                        installation: 'InSearchPath',
-                                        workingDir: 'cmake_build'
-                                        )
+                                ctest(
+                                    arguments: "-T test -C Release -j ${NUMBER_OF_PROCESSORS}",
+                                    installation: 'InSearchPath',
+                                    workingDir: 'cmake_build'
+                                    )
+
                             }
                             //post{
                             //    always {
@@ -981,53 +955,16 @@ pipeline {
                                     arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} --config cmake_build/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
                                     installation: 'InSearchPath'
                                 )
-                                stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
+
                             }
                             post {
                                 success{
+                                    stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
                                     archiveArtifacts artifacts: "dist/*.msi,dist/*.exe,dist/*.zip", fingerprint: true
 
                                 }
                                 failure {
                                     archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log,dist/**/*.wxs"
-                                }
-                            }
-                        }
-                        stage("Testing MSI Install"){
-                            agent {
-                                label "Docker && Windows && 1903"
-                            }
-                            environment{
-                                PATH = "${tool name: 'Docker', type: 'org.jenkinsci.plugins.docker.commons.tools.DockerTool'};${PATH}"
-
-                            }
-                            when{
-                                anyOf{
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                                    triggeredBy "TimerTriggerCause"
-                                }
-                            }
-                            steps{
-                                testMsiInstall(
-                                    "source/ci/docker/windowsserver/Dockerfile",
-                                    "${JOB_NAME.replaceAll('/', '-').toLowerCase()}-install",
-                                    "${JOB_NAME.replaceAll('/', '-').toLowerCase()}-testenv",
-                                    "logs"
-                                    )
-
-                            }
-                            post{
-                                always{
-                                    archiveArtifacts artifacts: "logs/*.log"
-                                }
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        patterns: [
-                                            [pattern: 'logs', type: 'INCLUDE'],
-                                            [pattern: 'dist', type: 'INCLUDE']
-                                            ]
-                                        )
                                 }
                             }
                         }
@@ -1067,6 +1004,54 @@ pipeline {
             }
 
 
+        }
+        stage("Testing MSI Install"){
+
+            agent {
+                label "Docker && Windows && 1903"
+            }
+            when{
+                anyOf{
+                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                    triggeredBy "TimerTriggerCause"
+                }
+            }
+            options{
+                timeout(3)
+                skipDefaultCheckout(true)
+            }
+            steps{
+
+                checkout scm
+                bat "if not exist logs mkdir logs"
+                script{
+                    unstash 'STANDALONE_INSTALLERS'
+                    def docker_image_name = "test-image:${env.BRANCH_NAME}_${currentBuild.number}"
+                    try {
+                        def testImage = docker.build(docker_image_name, "-f ./ci/docker/test_installation/Dockerfile .")
+                        testImage.inside{
+                            // Copy log files from c:\\logs in the docker container to workspace\\logs
+                            bat "cd ${WORKSPACE}\\logs && copy c:\\logs\\*.log"
+                            bat 'dir "%PROGRAMFILES%\\Speedwagon"'
+                        }
+                    } finally{
+                        bat "docker image rm -f ${docker_image_name}"
+                    }
+
+                }
+
+            }
+            post{
+                always{
+                    archiveArtifacts(
+                        allowEmptyArchive: true,
+                        artifacts: "logs/*.log"
+                        )
+                }
+                cleanup{
+                    cleanWs()
+                }
+            }
         }
         stage("Deploy to Devpi"){
             when {
@@ -1111,7 +1096,6 @@ pipeline {
                             }
                             options {
                                 skipDefaultCheckout(true)
-
                             }
 
                             stages{
