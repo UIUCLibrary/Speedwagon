@@ -401,16 +401,17 @@ def testPythonPackages(pkgRegex, testEnvs){
                                     label: "Installing Certs required to download python dependencies",
                                     script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
                                     )
-                                    bat(
-                                        script: "pip install tox --cache-dir ${PIP_DOWNLOAD_CACHE}",
-                                        label: "Installing Tox"
+                                bat "pip config --user set download-cache=${env.PIP_DOWNLOAD_CACHE}"
+                                bat(
+                                    script: "pip install tox --cache-dir ${env.PIP_DOWNLOAD_CACHE}",
+                                    label: "Installing Tox"
+                                )
+                                bat "dir"
+                                bat(
+                                    label:"Running tox tests with ${it['file']}",
+                                    script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
                                     )
-                                    bat "dir"
-                                    bat(
-                                        label:"Running tox tests with ${it['file']}",
-                                        script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
-                                        )
-                                    bat "dir %PIP_DOWNLOAD_CACHE%"
+                                bat "dir %PIP_DOWNLOAD_CACHE%"
 
                             }
                         }
