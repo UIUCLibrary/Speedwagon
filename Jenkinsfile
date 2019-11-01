@@ -1230,6 +1230,7 @@ pipeline {
                                         timeout(10)
                                     }
                                     steps {
+                                        // TODO: Rebuild devpiTest to work with Docker containers
                                         devpiTest(
                                             devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                             url: "https://devpi.library.illinois.edu",
