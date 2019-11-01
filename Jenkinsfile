@@ -396,6 +396,7 @@ def testPythonPackages(pkgRegex, testEnvs){
                                 bat "set"
                                 checkout scm
                                 unstash 'PYTHON_PACKAGES'
+                                bat "if not exist pipcache mkdir pipcache"
                                 powershell(
                                     label: "Installing Certs required to download python dependencies",
                                     script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
@@ -409,7 +410,7 @@ def testPythonPackages(pkgRegex, testEnvs){
                                         label:"Running tox tests with ${it['file']}",
                                         script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
                                         )
-                                    bat "dir"
+                                    bat "dir %PIP_DOWNLOAD_CACHE%"
 
                             }
                         }
