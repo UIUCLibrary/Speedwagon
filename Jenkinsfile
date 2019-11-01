@@ -626,6 +626,8 @@ pipeline {
                             post{
                                 always{
                                     archiveArtifacts artifacts: 'logs/build_sphinx.log,logs/latex/speedwagon.log'
+                                    recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
+                                    postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
                                 }
                                 success{
                                     stash includes: "build/docs/latex/*", name: 'latex_docs'
@@ -674,10 +676,7 @@ pipeline {
                         }
                     }
                     post{
-                        always {
-                            recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
-                            postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
-                        }
+
                         success{
                             unstash "SPEEDWAGON_DOC_PDF"
                             unstash "SPEEDWAGON_DOC_HTML"
