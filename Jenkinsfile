@@ -366,6 +366,62 @@ ${log_file}
 }
 
 
+def testPythonPackages(pkgRegex, testEnvs){
+    script{
+        def taskData = []
+        def pythonPkgs = findFiles glob: pkgRegex
+
+        pythonPkgs.each{ fileName ->
+            testEnvs.each{ testEnv->
+
+                testEnv['images'].each{ dockerImage ->
+                    taskData.add(
+                        [
+                            file: fileName,
+                            dockerImage: dockerImage,
+                            label: testEnv['label']
+                        ]
+                    )
+                }
+            }
+        }
+        def taskRunners = [:]
+        taskData.each{
+            taskRunners["Testing ${it['file']} with ${it['dockerImage']}"]={
+                node(it['label']){
+                    ws{
+                        try{
+                            def testImage = docker.image(it['dockerImage']).inside(){
+                                echo "Testing ${it['file']} with ${it['dockerImage']}"
+                                checkout scm
+                                unstash 'PYTHON_PACKAGES'
+                                powershell(
+                                    label: "Installing Certs required to download python dependencies",
+                                    script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
+                                    )
+                                bat(
+                                    script: "pip install tox",
+                                    label: "Installing Tox"
+                                )
+                                bat(
+                                    label:"Running tox tests with ${it['file']}",
+                                    script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
+                                    )
+
+                            }
+                        }
+                        finally{
+                            cleanWs()
+                        }
+                    }
+                }
+
+            }
+        }
+        parallel taskRunners
+    }
+}
+
 def testMsiInstall(dockerfilePath, dockerImageName, dockerContainerName, logsPath){
     unstash 'STANDALONE_INSTALLERS'
     dir(logsPath){
@@ -605,13 +661,11 @@ pipeline {
                                     sh "make"
                                 }
                                 sh "mv build/docs/latex/*.pdf dist/docs/"
-
                             }
                             post{
                                 success{
                                     stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
                                     archiveArtifacts artifacts: "dist/docs/*.pdf"
-
                                 }
                                 cleanup{
                                     deleteDir()
@@ -619,7 +673,6 @@ pipeline {
                             }
                         }
                     }
-
                     post{
                         always {
                             recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
@@ -629,8 +682,6 @@ pipeline {
                             unstash "SPEEDWAGON_DOC_PDF"
                             unstash "SPEEDWAGON_DOC_HTML"
                             stash includes: "dist/*.docs.zip,build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
-
-
                         }
                         cleanup{
                             cleanWs(
@@ -863,25 +914,37 @@ pipeline {
 
                         }
                         stage("Testing Python Packages"){
-                            // TODO: run python installing tests inside a docker container
-                            //environment{
-                            //    PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-                            //}
+                            agent any
+                            environment{
+                                PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
+                                PIP_TRUSTED_HOST="devpi.library.illinois.edu"
+                            }
                             steps{
                                 unstash 'PYTHON_PACKAGES'
-                                //testPythonPackage(
-
-                                //testPythonPackage(
-                                //    pythonToolName: "CPython-3.7",
-                                //    pkgRegex: "dist/*.whl,dist/*.tar.gz,dist/*.zip",
-                                //    testNodeLabels: "Windows && Python3",
-                                //    testEnvs: ["py36", "py37"]
-                                //)
+                                testPythonPackages(
+                                    "dist/*.whl,dist/*.tar.gz,dist/*.zip",
+                                    [
+                                        [
+                                            images:
+                                                [
+                                                    "python:3.6-windowsservercore",
+                                                    "python:3.7"
+                                                ],
+                                            label: "windows&&docker"
+                                        ]
+                                    ]
+                                )
+                            }
+                            post{
+                                cleanup{
+                                    cleanWs()
+                                }
                             }
                         }
                     }
                     post {
                         success {
+                            unstash 'PYTHON_PACKAGES'
                             archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
 
                         }
