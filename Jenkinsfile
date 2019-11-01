@@ -401,9 +401,9 @@ def testPythonPackages(pkgRegex, testEnvs){
                                     label: "Installing Certs required to download python dependencies",
                                     script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
                                     )
-                                bat "pip config --user set download-cache=${env.PIP_DOWNLOAD_CACHE}"
+                                bat "pip config --user set download-cache=%WORKSPACE%/pipcache"
                                 bat(
-                                    script: "pip install tox --cache-dir ${env.PIP_DOWNLOAD_CACHE}",
+                                    script: "pip install tox --cache-dir %WORKSPACE%/pipcache",
                                     label: "Installing Tox"
                                 )
                                 bat "dir"
