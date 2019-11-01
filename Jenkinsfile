@@ -402,7 +402,7 @@ def testPythonPackages(pkgRegex, testEnvs){
                                     script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
                                     )
                                     bat(
-                                        script: "pip install tox",
+                                        script: "pip install tox --cache-dir ${PIP_DOWNLOAD_CACHE}",
                                         label: "Installing Tox"
                                     )
                                     bat "dir"
