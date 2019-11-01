@@ -892,6 +892,9 @@ pipeline {
                                 image 'python:3.7'
                               }
                             }
+                            options{
+                                timeout(3)
+                            }
                             steps{
                                 unstash "PYTHON_BUILD_FILES"
                                 dir("source"){
