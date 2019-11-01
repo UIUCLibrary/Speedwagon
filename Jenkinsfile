@@ -388,7 +388,7 @@ def testPythonPackages(pkgRegex, testEnvs){
         def taskRunners = [:]
         taskData.each{
             taskRunners["Testing ${it['file']} with ${it['dockerImage']}"]={
-                node(it['label']){
+                //node(it['label']){
                     try{
                         def testImage = docker.image(it['dockerImage']).inside(){
                             echo "Testing ${it['file']} with ${it['dockerImage']}"
@@ -417,7 +417,7 @@ def testPythonPackages(pkgRegex, testEnvs){
                             patterns: [[pattern: 'pipcache/**', type: 'EXCLUDE']]
                             )
                     }
-                }
+                //}
 
             }
         }
@@ -916,7 +916,9 @@ pipeline {
 
                         }
                         stage("Testing Python Packages"){
-                            agent any
+                            agent {
+                                label "windows&&docker"
+                            }
                             environment{
                                 PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
                                 PIP_TRUSTED_HOST="devpi.library.illinois.edu"
