@@ -942,7 +942,7 @@ pipeline {
                                             label: "windows&&docker"
                                         ]
                                     ],
-                                    "${WORKSPACE}/pipcache"
+                                    "${WORKSPACE}\\pipcache"
                                 )
                             }
                             post{
