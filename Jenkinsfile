@@ -70,7 +70,8 @@ def check_jira_issue(issue, outputFile){
 
 def deploy_hathi_beta(){
     unstash "STANDALONE_INSTALLERS"
-    unstash "DOCS_ARCHIVE"
+    unstash "SPEEDWAGON_DOC_PDF"
+    unstash "SPEEDWAGON_DOC_HTML"
     unstash "DIST-INFO"
     script{
         def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
@@ -366,58 +367,60 @@ ${log_file}
 }
 
 
-def testMsiInstall(dockerfilePath, dockerImageName, dockerContainerName, logsPath){
-    unstash 'STANDALONE_INSTALLERS'
-    dir(logsPath){
-        bat "dir > nul"
-    }
+def testPythonPackages(pkgRegex, testEnvs, pipcache){
     script{
-         withEnv([
-            "DOCKER_IMAGE_NAME=${dockerImageName.toLowerCase()}",
-            "DOCKER_CONTAINER_NAME=${dockerContainerName.toLowerCase()}",
-            "DOCKER_LOGS_PATH=${logsPath}"
-            ]){
-            bat(
-                label: "Build Windows Docker Container",
-                script: "docker build  -t %DOCKER_IMAGE_NAME% -f ${dockerfilePath} ./source "
-                )
-            try{
+        def taskData = []
+        def pythonPkgs = findFiles glob: pkgRegex
 
-                def dockerSha = powershell(
-                    label: "Run Docker Container with ${logsPath} mounted",
-                    script: 'docker run -d -t -v "$((Get-Location).Path)\\$($env:DOCKER_LOGS_PATH):c:\\logs" -v "$((Get-Location).Path)\\dist:c:\\dist" --name $($env:DOCKER_CONTAINER_NAME) $($env:DOCKER_IMAGE_NAME)',
-                    returnStdout: true
-                ).trim()
+        pythonPkgs.each{ fileName ->
+            testEnvs.each{ testEnv->
 
-                bat(
-                    label: "Run install script",
-                    script: "docker exec ${dockerSha} powershell.exe -executionpolicy bypass -file c:/scripts/run_install.ps1"
-                )
-
-            } finally {
-                bat(
-                    label: "Stopping ${DOCKER_CONTAINER_NAME} container",
-                    returnStatus: true,
-                    script: "docker stop --time=1 ${DOCKER_CONTAINER_NAME}"
+                testEnv['images'].each{ dockerImage ->
+                    taskData.add(
+                        [
+                            file: fileName,
+                            dockerImage: dockerImage,
+                            label: testEnv['label']
+                        ]
                     )
+                }
+            }
+        }
+        def taskRunners = [:]
+        bat "docker volume create pipcache"
+        taskData.each{
+            taskRunners["Testing ${it['file']} with ${it['dockerImage']}"]={
+                ws{
+                    def testImage = docker.image(it['dockerImage']).inside("-v pipcache:C:/Users/ContainerAdministrator/AppData/Local/pip/Cache"){
+                        echo "Testing ${it['file']} with ${it['dockerImage']}"
+                        checkout scm
+                        unstash 'PYTHON_PACKAGES'
+                        powershell(
+                            label: "Installing Certs required to download python dependencies",
+                            script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
+                            )
+                        bat(
+                            script: "pip install tox",
+                            label: "Installing Tox"
+                        )
 
-                bat(
-                    label: "Removing ${DOCKER_CONTAINER_NAME} container",
-                    returnStatus: true,
-                    script: "docker rm ${DOCKER_CONTAINER_NAME}"
-                    )
+                        bat(
+                            label:"Running tox tests with ${it['file']}",
+                            script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
+                            )
+
+                    }
+                }
 
             }
         }
-
+        parallel taskRunners
     }
 }
 
 
 pipeline {
-    agent {
-        label "Windows && Python3 && longfilenames && WIX"
-    }
+    agent none
     triggers {
         cron('@daily')
     }
@@ -459,20 +462,6 @@ pipeline {
             stages{
                 stage("Initial setup"){
                     parallel{
-                        //stage("Purge all existing data in workspace"){
-                        //    when{
-                        //        anyOf{
-                        //            equals expected: true, actual: params.FRESH_WORKSPACE
-                        //            triggeredBy "TimerTriggerCause"
-                        //        }
-                        //    }
-                        //    steps{
-                        //        deleteDir()
-                        //        dir("source"){
-                        //           checkout scm
-                        //        }
-                        //    }
-                        //}
                         stage("Testing Jira epic"){
                             agent any
                             options {
@@ -530,9 +519,7 @@ pipeline {
                     }
                     steps {
                         bat "if not exist logs mkdir logs"
-                        //lock("system_pipenv_${NODE_NAME}"){
                         bat "cd source && pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
-                        //}
                     }
                     post{
                         always{
@@ -548,15 +535,14 @@ pipeline {
                     }
                 }
                 stage("Sphinx Documentation"){
-                    environment{
-                        PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
-                        PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
-                    }
+
+                    agent none
                     stages{
                         stage("Build Sphinx"){
-                            // environment{
-                            //     PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-                            // }
+                            environment{
+                                PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
+                                PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
+                            }
                             agent {
                                 dockerfile {
                                     filename 'ci/docker/python37/Dockerfile'
@@ -570,6 +556,8 @@ pipeline {
                             post{
                                 always{
                                     archiveArtifacts artifacts: 'logs/build_sphinx.log,logs/latex/speedwagon.log'
+                                    recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
+                                    postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
                                 }
                                 success{
                                     stash includes: "build/docs/latex/*", name: 'latex_docs'
@@ -579,15 +567,6 @@ pipeline {
                                         stash includes: "build/docs/html/**", name: 'SPEEDWAGON_DOC_HTML'
                                     }
                                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                                }
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        patterns:
-                                            [
-                                                [pattern: "dist", type: 'INCLUDE'],
-                                            ]
-                                    )
                                 }
                             }
                         }
@@ -605,13 +584,11 @@ pipeline {
                                     sh "make"
                                 }
                                 sh "mv build/docs/latex/*.pdf dist/docs/"
-
                             }
                             post{
                                 success{
                                     stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
                                     archiveArtifacts artifacts: "dist/docs/*.pdf"
-
                                 }
                                 cleanup{
                                     deleteDir()
@@ -619,37 +596,11 @@ pipeline {
                             }
                         }
                     }
-
-                    post{
-                        always {
-                            recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
-                            postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
-                        }
-                        success{
-                            unstash "SPEEDWAGON_DOC_PDF"
-                            unstash "SPEEDWAGON_DOC_HTML"
-                            stash includes: "dist/*.docs.zip,build/docs/html/**,dist/docs/*.pdf", name: 'DOCS_ARCHIVE'
-
-
-                        }
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns:
-                                    [
-                                        [pattern: 'logs/build_sphinx.log', type: 'INCLUDE'],
-                                        [pattern: "build/docs/latex", type: 'INCLUDE'],
-                                        [pattern: "dist", type: 'INCLUDE'],
-                                    ]
-                                )
-                        }
-                    }
                 }
             }
         }
         stage("Test") {
             environment{
-                //PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
                 junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
             }
             agent {
@@ -695,12 +646,13 @@ pipeline {
                         stage("Run Doctest Tests"){
                             steps {
                                 dir("source"){
-                                    bat "sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -w ${WORKSPACE}/logs/doctest.txt"
+                                    bat "sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees --no-color -w ${WORKSPACE}/logs/doctest.txt"
                                 }
                             }
                             post{
                                 always {
                                     archiveArtifacts artifacts: "logs/doctest.txt"
+                                    recordIssues(tools: [sphinxBuild(id: 'doctest', pattern: 'logs/doctest.txt')])
                                     postLogFileOnPullRequest("Doctest result",'logs/doctest.txt')
                                 }
                                 cleanup{
@@ -839,6 +791,9 @@ pipeline {
                                 image 'python:3.7'
                               }
                             }
+                            options{
+                                timeout(3)
+                            }
                             steps{
                                 unstash "PYTHON_BUILD_FILES"
                                 dir("source"){
@@ -860,33 +815,37 @@ pipeline {
                                         )
                                 }
                             }
-
                         }
                         stage("Testing Python Packages"){
-                            // TODO: run python installing tests inside a docker container
-                            //environment{
-                            //    PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-                            //}
+                            agent {
+                                label "windows&&docker"
+                            }
+                            environment{
+                                PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
+                                PIP_TRUSTED_HOST="devpi.library.illinois.edu"
+                            }
                             steps{
                                 unstash 'PYTHON_PACKAGES'
-                                //testPythonPackage(
-
-                                //testPythonPackage(
-                                //    pythonToolName: "CPython-3.7",
-                                //    pkgRegex: "dist/*.whl,dist/*.tar.gz,dist/*.zip",
-                                //    testNodeLabels: "Windows && Python3",
-                                //    testEnvs: ["py36", "py37"]
-                                //)
+                                testPythonPackages(
+                                    "dist/*.whl,dist/*.tar.gz,dist/*.zip",
+                                    [
+                                        [
+                                            images:
+                                                [
+                                                    "python:3.6-windowsservercore",
+                                                    "python:3.7"
+                                                ],
+                                            label: "windows&&docker"
+                                        ]
+                                    ],
+                                    "${WORKSPACE}\\pipcache"
+                                )
                             }
-                        }
-                    }
-                    post {
-                        success {
-                            archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
-
-                        }
-                        cleanup{
-                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', type: 'INCLUDE']]
+                            post{
+                                cleanup{
+                                    cleanWs()
+                                }
+                            }
                         }
                     }
                 }
@@ -902,7 +861,6 @@ pipeline {
                     environment {
                         PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
                         PIP_TRUSTED_HOST="devpi.library.illinois.edu"
-                    //    PATH = "${tool 'CPython-3.6'};${tool(name: 'WixToolset_311', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool')};$PATH"
                     }
                     agent {
                         dockerfile {
@@ -914,11 +872,8 @@ pipeline {
                     stages{
                         stage("CMake Build"){
 
-                            //options{
-                            //    timeout(10)
-                            //}
                             steps {
-                                unstash "DOCS_ARCHIVE"
+                                unstash "SPEEDWAGON_DOC_PDF"
                                 run_cmake_build()
                             }
                         }
@@ -932,19 +887,7 @@ pipeline {
                                     installation: 'InSearchPath',
                                     workingDir: 'cmake_build'
                                     )
-
                             }
-                            //post{
-                            //    always {
-                            //        ctest(
-                            //            arguments: "-T submit",
-                            //            installation: 'InSearchPath',
-                            //            workingDir: 'cmake_build'
-                            //            )
-                            //        capture_ctest_results("logs/ctest")
-                            //    }
-                            //}
-
                         }
                         stage("CPack"){
                             options{
@@ -955,13 +898,11 @@ pipeline {
                                     arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} --config cmake_build/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
                                     installation: 'InSearchPath'
                                 )
-
                             }
                             post {
                                 success{
                                     stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
                                     archiveArtifacts artifacts: "dist/*.msi,dist/*.exe,dist/*.zip", fingerprint: true
-
                                 }
                                 failure {
                                     archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log,dist/**/*.wxs"
@@ -1006,7 +947,6 @@ pipeline {
 
         }
         stage("Testing MSI Install"){
-
             agent {
                 label "Docker && Windows && 1903"
             }
@@ -1075,13 +1015,10 @@ pipeline {
                 PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
                 PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
             }
-
             stages{
-
                 stage("Deploy to Devpi Staging") {
-
                     steps {
-                        unstash 'DOCS_ARCHIVE'
+                        unstash 'SPEEDWAGON_DOC_HTML'
                         unstash 'PYTHON_PACKAGES'
                         bat "pip install devpi-client && devpi use https://devpi.library.illinois.edu && devpi login %DEVPI_USR% --password %DEVPI_PSW% && devpi use /%DEVPI_USR%/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
                     }
@@ -1097,9 +1034,7 @@ pipeline {
                             options {
                                 skipDefaultCheckout(true)
                             }
-
                             stages{
-
                                 stage("Creating Env for DevPi to test sdist"){
                                     environment{
                                         PATH = "${tool 'CPython-3.6'};${PATH}"
@@ -1141,7 +1076,6 @@ pipeline {
                                 }
                             }
                         }
-
                         stage("Built Distribution: .whl") {
                             agent {
                                 node {
@@ -1167,6 +1101,7 @@ pipeline {
                                         timeout(10)
                                     }
                                     steps {
+                                        // TODO: Rebuild devpiTest to work with Docker containers
                                         devpiTest(
                                             devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                             url: "https://devpi.library.illinois.edu",
@@ -1234,7 +1169,7 @@ pipeline {
                         equals expected: true, actual: params.DEPLOY_DOCS
                     }
                     steps{
-                        unstash "DOCS_ARCHIVE"
+                        unstash "SPEEDWAGON_DOC_HTML"
 
                         dir("build/docs/html/"){
                             input 'Update project documentation?'
@@ -1339,30 +1274,5 @@ pipeline {
                 }
             }
         }
-
-    }
-    post {
-        failure {
-            report_help_info()
-            //dir("source"){
-            //    bat "\"${tool 'CPython-3.6'}\\Scripts\\pipenv\" --rm"
-            //}
-        }
-        cleanup {
-            cleanWs(
-                deleteDirs: true,
-                patterns: [
-                    [pattern: 'logs', type: 'INCLUDE'],
-                    [pattern: '.scannerwork', type: 'INCLUDE'],
-                    [pattern: 'source', type: 'INCLUDE'],
-                    [pattern: 'dist', type: 'INCLUDE'],
-                    [pattern: 'build', type: 'INCLUDE'],
-                    [pattern: 'reports', type: 'INCLUDE'],
-                    [pattern: '*tmp', type: 'INCLUDE']
-                ],
-
-            )
-        }
-
     }
 }
