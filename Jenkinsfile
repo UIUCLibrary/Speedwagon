@@ -415,7 +415,7 @@ def testPythonPackages(pkgRegex, testEnvs){
                         finally{
                             cleanWs(
                                 deleteDirs: true,
-                                patterns: [[pattern: 'pipcache', type: 'EXCLUDE']]
+                                patterns: [[pattern: 'pipcache/**', type: 'EXCLUDE']]
                                 )
                         }
                     }
