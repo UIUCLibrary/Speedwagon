@@ -391,9 +391,8 @@ def testPythonPackages(pkgRegex, testEnvs){
                 node(it['label']){
                     ws{
                         try{
-                            def testImage = docker.image(it['dockerImage']).inside("-e \"PIP_DOWNLOAD_CACHE=\"${WORKSPACE}\\pipcache\"\""){
+                            def testImage = docker.image(it['dockerImage']).inside(){
                                 echo "Testing ${it['file']} with ${it['dockerImage']}"
-                                bat "set"
                                 checkout scm
                                 unstash 'PYTHON_PACKAGES'
                                 bat "if not exist pipcache mkdir pipcache"
@@ -406,12 +405,10 @@ def testPythonPackages(pkgRegex, testEnvs){
                                     script: "pip install tox --cache-dir %WORKSPACE%/pipcache",
                                     label: "Installing Tox"
                                 )
-                                bat "dir"
                                 bat(
                                     label:"Running tox tests with ${it['file']}",
                                     script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
                                     )
-                                bat "dir %PIP_DOWNLOAD_CACHE%"
 
                             }
                         }
