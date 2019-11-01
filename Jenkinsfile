@@ -391,31 +391,33 @@ def testPythonPackages(pkgRegex, testEnvs){
                 node(it['label']){
                     ws{
                         try{
-                            def testImage = docker.image(it['dockerImage']).inside(){
+                            def testImage = docker.image(it['dockerImage']).inside("-e \"PIP_DOWNLOAD_CACHE=\"${WORKSPACE}\\pipcache\"\""){
                                 echo "Testing ${it['file']} with ${it['dockerImage']}"
+                                bat "set"
                                 checkout scm
                                 unstash 'PYTHON_PACKAGES'
                                 powershell(
                                     label: "Installing Certs required to download python dependencies",
                                     script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
                                     )
-                                withEnv(["PIP_DOWNLOAD_CACHE=\"${WORKSPACE}\\pipcache\""]){
-
-                                        bat(
-                                            script: "pip install tox",
-                                            label: "Installing Tox"
+                                    bat(
+                                        script: "pip install tox",
+                                        label: "Installing Tox"
+                                    )
+                                    bat "dir"
+                                    bat(
+                                        label:"Running tox tests with ${it['file']}",
+                                        script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
                                         )
-                                        bat "dir"
-                                        bat(
-                                            label:"Running tox tests with ${it['file']}",
-                                            script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
-                                            )
+                                    bat "dir"
 
-                                    }
                             }
                         }
                         finally{
-                            cleanWs()
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [[pattern: 'pipcache', type: 'EXCLUDE']]
+                                )
                         }
                     }
                 }
