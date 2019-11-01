@@ -366,7 +366,7 @@ ${log_file}
 }
 
 
-def testPythonPackages(pkgRegex, testEnvs){
+def testPythonPackages(pkgRegex, testEnvs, pipcache){
     script{
         def taskData = []
         def pythonPkgs = findFiles glob: pkgRegex
@@ -389,8 +389,9 @@ def testPythonPackages(pkgRegex, testEnvs){
         taskData.each{
             taskRunners["Testing ${it['file']} with ${it['dockerImage']}"]={
                 //node(it['label']){
+                ws{
                     try{
-                        def testImage = docker.image(it['dockerImage']).inside(){
+                        def testImage = docker.image(it['dockerImage']).inside("-v ${pipcache}:c:/pipcache"){
                             echo "Testing ${it['file']} with ${it['dockerImage']}"
                             checkout scm
                             unstash 'PYTHON_PACKAGES'
@@ -399,9 +400,9 @@ def testPythonPackages(pkgRegex, testEnvs){
                                 label: "Installing Certs required to download python dependencies",
                                 script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
                                 )
-                            bat "pip config --user set global.download-cache %WORKSPACE%/pipcache"
+                            bat "pip config --user set global.download-cache c:/pipcache"
                             bat(
-                                script: "pip install tox --cache-dir %WORKSPACE%/pipcache",
+                                script: "pip install tox",
                                 label: "Installing Tox"
                             )
                             bat(
@@ -417,7 +418,7 @@ def testPythonPackages(pkgRegex, testEnvs){
                             patterns: [[pattern: 'pipcache/**', type: 'EXCLUDE']]
                             )
                     }
-                //}
+                }
 
             }
         }
@@ -928,6 +929,7 @@ pipeline {
                             }
                             steps{
                                 unstash 'PYTHON_PACKAGES'
+                                bat "if not exist pipcache mkdir pipcache"
                                 testPythonPackages(
                                     "dist/*.whl,dist/*.tar.gz,dist/*.zip",
                                     [
@@ -939,7 +941,8 @@ pipeline {
                                                 ],
                                             label: "windows&&docker"
                                         ]
-                                    ]
+                                    ],
+                                    "${WORKSPACE}/pipcache"
                                 )
                             }
                             post{
