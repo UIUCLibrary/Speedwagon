@@ -389,35 +389,33 @@ def testPythonPackages(pkgRegex, testEnvs){
         taskData.each{
             taskRunners["Testing ${it['file']} with ${it['dockerImage']}"]={
                 node(it['label']){
-                    ws{
-                        try{
-                            def testImage = docker.image(it['dockerImage']).inside(){
-                                echo "Testing ${it['file']} with ${it['dockerImage']}"
-                                checkout scm
-                                unstash 'PYTHON_PACKAGES'
-                                bat "if not exist pipcache mkdir pipcache"
-                                powershell(
-                                    label: "Installing Certs required to download python dependencies",
-                                    script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
-                                    )
-                                bat "pip config --user set global.download-cache %WORKSPACE%/pipcache"
-                                bat(
-                                    script: "pip install tox --cache-dir %WORKSPACE%/pipcache",
-                                    label: "Installing Tox"
+                    try{
+                        def testImage = docker.image(it['dockerImage']).inside(){
+                            echo "Testing ${it['file']} with ${it['dockerImage']}"
+                            checkout scm
+                            unstash 'PYTHON_PACKAGES'
+                            bat "if not exist pipcache mkdir pipcache"
+                            powershell(
+                                label: "Installing Certs required to download python dependencies",
+                                script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
                                 )
-                                bat(
-                                    label:"Running tox tests with ${it['file']}",
-                                    script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
-                                    )
+                            bat "pip config --user set global.download-cache %WORKSPACE%/pipcache"
+                            bat(
+                                script: "pip install tox --cache-dir %WORKSPACE%/pipcache",
+                                label: "Installing Tox"
+                            )
+                            bat(
+                                label:"Running tox tests with ${it['file']}",
+                                script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
+                                )
 
-                            }
                         }
-                        finally{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [[pattern: 'pipcache/**', type: 'EXCLUDE']]
-                                )
-                        }
+                    }
+                    finally{
+                        cleanWs(
+                            deleteDirs: true,
+                            patterns: [[pattern: 'pipcache/**', type: 'EXCLUDE']]
+                            )
                     }
                 }
 
