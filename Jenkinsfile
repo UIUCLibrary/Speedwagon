@@ -399,15 +399,19 @@ def testPythonPackages(pkgRegex, testEnvs){
                                     label: "Installing Certs required to download python dependencies",
                                     script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
                                     )
-                                bat(
-                                    script: "pip install tox",
-                                    label: "Installing Tox"
-                                )
-                                bat(
-                                    label:"Running tox tests with ${it['file']}",
-                                    script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
-                                    )
+                                withEnv(["PIP_DOWNLOAD_CACHE=\"${WORKSPACE}\\pipcache\""]){
 
+                                        bat(
+                                            script: "pip install tox",
+                                            label: "Installing Tox"
+                                        )
+                                        bat "dir"
+                                        bat(
+                                            label:"Running tox tests with ${it['file']}",
+                                            script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
+                                            )
+
+                                    }
                             }
                         }
                         finally{
