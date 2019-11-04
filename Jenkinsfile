@@ -797,6 +797,7 @@ pipeline {
                             agent {
                               docker {
                                 image 'python:3.7'
+                                label 'windows&&docker'
                               }
                             }
                             options{
