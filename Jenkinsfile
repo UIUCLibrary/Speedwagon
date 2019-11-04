@@ -124,13 +124,19 @@ def check_jira(project, issue){
 def build_sphinx(){
         bat "if not exist logs mkdir logs"
         dir("source"){
+            bat(label: "Install pipenv",
+                script: "python -m pipenv install --dev"
+                )
+            bat(label: "Run Build",
+                script: "pipenv run python setup.py build"
+                )
             bat(
                 label: "Building HTML docs on ${env.NODE_NAME}",
-                script: "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx.log"
+                script: "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx.log"
                 )
             bat(
                 label: "Building LaTex docs on ${env.NODE_NAME}",
-                script: "python -m pipenv run sphinx-build docs/source ..\\build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
+                script: "python -m pipenv run sphinx-build docs/source ..\\build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
                 )
         }
 
@@ -605,7 +611,7 @@ pipeline {
             }
             agent {
                 dockerfile {
-                    filename 'ci/docker/python37/Dockerfile'
+                    filename 'ci\\docker\\python37\\Dockerfile'
                     dir 'source'
                     label 'Windows&&Docker'
                   }
@@ -645,7 +651,9 @@ pipeline {
                         }
                         stage("Run Doctest Tests"){
                             steps {
+                                unstash "PYTHON_BUILD_FILES"
                                 dir("source"){
+                                    bat "python setup.py build"
                                     bat "sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees --no-color -w ${WORKSPACE}/logs/doctest.txt"
                                 }
                             }
@@ -957,7 +965,7 @@ pipeline {
                 }
             }
             options{
-                timeout(3)
+                timeout(5)
                 skipDefaultCheckout(true)
             }
             steps{
@@ -1008,6 +1016,9 @@ pipeline {
             }
             options{
                 timestamps()
+            }
+            agent{
+                label "windows && Python3"
             }
             environment{
                 PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
@@ -1163,11 +1174,13 @@ pipeline {
             }
         }
         stage("Deploy"){
+
             parallel {
                 stage("Deploy Online Documentation") {
                     when{
                         equals expected: true, actual: params.DEPLOY_DOCS
                     }
+                    agent any
                     steps{
                         unstash "SPEEDWAGON_DOC_HTML"
 
@@ -1258,6 +1271,7 @@ pipeline {
                         PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
                         PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
                     }
+                    agent any
                     steps {
                         unstash "STANDALONE_INSTALLERS"
                         unstash "Deployment"
