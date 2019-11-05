@@ -437,7 +437,7 @@ pipeline {
         preserveStashes(buildCount: 5)
     }
     environment {
-        PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\cache\\"
+        //PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\cache\\"
         WORKON_HOME ="${WORKSPACE}\\pipenv"
         build_number = get_build_number()
         PIPENV_NOSPIN = "True"
