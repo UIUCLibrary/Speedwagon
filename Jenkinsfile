@@ -568,7 +568,7 @@ pipeline {
                                     script{
                                         def DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
                                         zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
-                                        stash includes: "build/docs/html/**", name: 'SPEEDWAGON_DOC_HTML'
+                                        stash includes: "build/docs/html/**,dist/*.doc.zip", name: 'SPEEDWAGON_DOC_HTML'
                                     }
                                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                                 }
