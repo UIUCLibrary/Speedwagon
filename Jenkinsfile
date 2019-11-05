@@ -1028,7 +1028,7 @@ pipeline {
                 PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
             }
             stages{
-                stage("Installing to Devpi environment") {
+                stage("Installing Devpi Client") {
                     steps{
                         bat "python -m venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade"
                         bat "venv\\Scripts\\pip install devpi-client"
