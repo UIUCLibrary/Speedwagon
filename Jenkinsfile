@@ -1028,11 +1028,18 @@ pipeline {
                 PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
             }
             stages{
+                stage("Installing to Devpi environment") {
+                    steps{
+                        bat "python -v venv venv && venv\\script\\python.exe -m pip install pip --upgrade"
+                        bat "venv\\Scripts\\pip install devpi-client"
+                    }
+
+                }
                 stage("Deploy to Devpi Staging") {
                     steps {
                         unstash 'SPEEDWAGON_DOC_HTML'
                         unstash 'PYTHON_PACKAGES'
-                        bat "pip install devpi-client && devpi use https://devpi.library.illinois.edu && devpi login %DEVPI_USR% --password %DEVPI_PSW% && devpi use /%DEVPI_USR%/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
+                        bat "devpi use https://devpi.library.illinois.edu && devpi login %DEVPI_USR% --password %DEVPI_PSW% && devpi use /%DEVPI_USR%/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
                     }
                 }
                 stage("Test DevPi packages") {
