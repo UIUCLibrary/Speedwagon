@@ -28,31 +28,6 @@ def get_package_name(stashName, metadataFile){
     }
 }
 
-//def run_sonarScanner(){
-//    withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
-//        bat(
-//            label: "Running sonar scanner",
-//            script: '\
-//"%scannerHome%/bin/sonar-scanner" \
-//-D"sonar.projectBaseDir=%WORKSPACE%/source" \
-//-D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
-//-D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
-//-D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
-//-X'
-//        )
-//
-//    }
-//    script{
-//        def sonarqube_result = waitForQualityGate(abortPipeline: false)
-//        if (sonarqube_result.status != 'OK') {
-//            unstable "SonarQube quality gate: ${sonarqube_result.status}"
-//        }
-//
-//        def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
-//        writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
-//
-//    }
-//}
 
 def check_jira_issue(issue, outputFile){
     script{
@@ -67,39 +42,6 @@ def check_jira_issue(issue, outputFile){
         }
     }
 }
-
-//def deploy_hathi_beta(){
-//    unstash "STANDALONE_INSTALLERS"
-//    unstash "SPEEDWAGON_DOC_PDF"
-//    unstash "SPEEDWAGON_DOC_HTML"
-//    unstash "DIST-INFO"
-//    script{
-//        def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-//        deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
-//    }
-//}
-
-//def run_cmake_build(){
-//    bat """if not exist "cmake_build" mkdir cmake_build
-//if not exist "logs" mkdir logs
-//if not exist "logs\\ctest" mkdir logs\\ctest
-//if not exist "temp" mkdir temp
-//"""
-//    bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf"
-//    bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\cmake_build && cmake --build ."
-//}
-
-
-//def process_mypy_logs(path){
-//    archiveArtifacts "${path}"
-//    stash includes: "${path}", name: "MYPY_LOGS"
-//    node("Windows"){
-//        checkout scm
-//        unstash "MYPY_LOGS"
-//        recordIssues(tools: [myPy(pattern: "${path}")])
-//        deleteDir()
-//    }
-//}
 def check_jira_project(project, outputFile){
 
     script {
@@ -196,16 +138,6 @@ def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUse
 
     }
 }
-
-//def report_help_info(){
-//    script{
-//        def help_info = "Pipeline failed. If the problem is old cached data, you might need to purge the testing environment. Try manually running the pipeline again with the parameter FRESH_WORKSPACE checked."
-//        echo "${help_info}"
-//        if (env.BRANCH_NAME == "master"){
-//            emailext attachLog: true, body: "${help_info}\n${JOB_NAME} has current status of ${currentBuild.currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
-//        }
-//    }
-//}
 def get_build_number(){
     script{
         def versionPrefix = ""
@@ -218,30 +150,6 @@ def get_build_number(){
     }
 }
 
-
-//def runtox(){
-//    script{
-//        withEnv(
-//            [
-//                'PIP_INDEX_URL="https://devpi.library.illinois.edu/production/release"',
-//                'PIP_TRUSTED_HOST="devpi.library.illinois.edu"',
-//                'TOXENV="py"'
-//            ]
-//        ) {
-//
-//            bat "python -m pip install pipenv tox"
-//            try{
-//                // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
-//                // Tox has a bug that fails when trying to write the json report
-//                // when --parallel is run at the same time
-//                bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
-//            } catch (exc) {
-//                bat "tox -vv --workdir ${WORKSPACE}\\.tox --recreate"
-//            }
-//        }
-//    }
-//
-//}
 def deploy_to_nexus(filename, deployUrl, credId){
     script{
         withCredentials([usernamePassword(credentialsId: credId, passwordVariable: 'nexusPassword', usernameVariable: 'nexusUsername')]) {
