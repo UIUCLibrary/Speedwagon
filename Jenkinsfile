@@ -68,26 +68,26 @@ def check_jira_issue(issue, outputFile){
     }
 }
 
-def deploy_hathi_beta(){
-    unstash "STANDALONE_INSTALLERS"
-    unstash "SPEEDWAGON_DOC_PDF"
-    unstash "SPEEDWAGON_DOC_HTML"
-    unstash "DIST-INFO"
-    script{
-        def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-        deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
-    }
-}
+//def deploy_hathi_beta(){
+//    unstash "STANDALONE_INSTALLERS"
+//    unstash "SPEEDWAGON_DOC_PDF"
+//    unstash "SPEEDWAGON_DOC_HTML"
+//    unstash "DIST-INFO"
+//    script{
+//        def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+//        deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
+//    }
+//}
 
-def run_cmake_build(){
-    bat """if not exist "cmake_build" mkdir cmake_build
-if not exist "logs" mkdir logs
-if not exist "logs\\ctest" mkdir logs\\ctest
-if not exist "temp" mkdir temp
-"""
-    bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf"
-    bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\cmake_build && cmake --build ."
-}
+//def run_cmake_build(){
+//    bat """if not exist "cmake_build" mkdir cmake_build
+//if not exist "logs" mkdir logs
+//if not exist "logs\\ctest" mkdir logs\\ctest
+//if not exist "temp" mkdir temp
+//"""
+//    bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf"
+//    bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\cmake_build && cmake --build ."
+//}
 
 
 def process_mypy_logs(path){
@@ -219,29 +219,29 @@ def get_build_number(){
 }
 
 
-def runtox(){
-    script{
-        withEnv(
-            [
-                'PIP_INDEX_URL="https://devpi.library.illinois.edu/production/release"',
-                'PIP_TRUSTED_HOST="devpi.library.illinois.edu"',
-                'TOXENV="py"'
-            ]
-        ) {
-
-            bat "python -m pip install pipenv tox"
-            try{
-                // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
-                // Tox has a bug that fails when trying to write the json report
-                // when --parallel is run at the same time
-                bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
-            } catch (exc) {
-                bat "tox -vv --workdir ${WORKSPACE}\\.tox --recreate"
-            }
-        }
-    }
-
-}
+//def runtox(){
+//    script{
+//        withEnv(
+//            [
+//                'PIP_INDEX_URL="https://devpi.library.illinois.edu/production/release"',
+//                'PIP_TRUSTED_HOST="devpi.library.illinois.edu"',
+//                'TOXENV="py"'
+//            ]
+//        ) {
+//
+//            bat "python -m pip install pipenv tox"
+//            try{
+//                // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
+//                // Tox has a bug that fails when trying to write the json report
+//                // when --parallel is run at the same time
+//                bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
+//            } catch (exc) {
+//                bat "tox -vv --workdir ${WORKSPACE}\\.tox --recreate"
+//            }
+//        }
+//    }
+//
+//}
 def deploy_to_nexus(filename, deployUrl, credId){
     script{
         withCredentials([usernamePassword(credentialsId: credId, passwordVariable: 'nexusPassword', usernameVariable: 'nexusUsername')]) {
@@ -1293,7 +1293,14 @@ if not exist "temp" mkdir temp
                         skipDefaultCheckout(true)
                     }
                     steps {
-                        deploy_hathi_beta()
+                        unstash "STANDALONE_INSTALLERS"
+                        unstash "SPEEDWAGON_DOC_PDF"
+                        unstash "SPEEDWAGON_DOC_HTML"
+                        unstash "DIST-INFO"
+                        script{
+                            def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+                            deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
+                        }
                     }
                     post{
                         cleanup{
