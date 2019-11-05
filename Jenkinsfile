@@ -425,7 +425,10 @@ pipeline {
                             recordIssues(tools: [pyLint(pattern: 'logs/build_errors.log')])
                         }
                         cleanup{
-                            cleanWs(patterns: [[pattern: 'logs/build_errors', type: 'INCLUDE']])
+                            //cleanWs(patterns: [[pattern: 'logs/build_errors', type: 'INCLUDE']])
+                            cleanWs(deleteDirs: true,
+                                    notFailBuild: true
+                                )
                         }
                         success{
                             stash includes: "build/lib/**", name: 'PYTHON_BUILD_FILES'
