@@ -1,0 +1,9 @@
+.*/
+build*/
+reports/
+windows_build/
+mytox/
+logs/
+**/*.traineddata
+speedwagon/workflows/tessdata/*
+!/speedwagon/workflows/tessdata/__init__.py
