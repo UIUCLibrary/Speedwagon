@@ -393,12 +393,14 @@ def testPythonPackages(pkgRegex, testEnvs, pipcache){
             }
         }
         def taskRunners = [:]
-        bat "docker volume create pipcache"
+        bat(
+            label: "Creating a docker volume for a shared pipcache",
+            script: "docker volume create pipcache"
+        )
         taskData.each{
             taskRunners["Testing ${it['file']} with ${it['dockerImage']}"]={
                 ws{
                     def testImage = docker.image(it['dockerImage']).inside("-v pipcache:C:/Users/ContainerAdministrator/AppData/Local/pip/Cache"){
-                        echo "Testing ${it['file']} with ${it['dockerImage']}"
                         checkout scm
                         unstash 'PYTHON_PACKAGES'
                         powershell(
@@ -408,8 +410,7 @@ def testPythonPackages(pkgRegex, testEnvs, pipcache){
                         bat(
                             script: "pip install tox",
                             label: "Installing Tox"
-                        )
-
+                            )
                         bat(
                             label:"Running tox tests with ${it['file']}",
                             script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
