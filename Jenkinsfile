@@ -659,8 +659,7 @@ pipeline {
                             steps {
                                 unstash "PYTHON_BUILD_FILES"
                                 dir("source"){
-                                    bat "python setup.py build"
-                                    bat "sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees --no-color -w ${WORKSPACE}/logs/doctest.txt"
+                                    bat "python setup.py build_ui && sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees --no-color -w ${WORKSPACE}/logs/doctest.txt"
                                 }
                             }
                             post{
