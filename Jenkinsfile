@@ -121,27 +121,6 @@ def check_jira(project, issue){
 
 }
 
-def build_sphinx(){
-        bat "if not exist logs mkdir logs"
-        dir("source"){
-            bat(label: "Install pipenv",
-                script: "python -m pipenv install --dev"
-                )
-            bat(label: "Run build_ui",
-                script: "pipenv run python setup.py build_ui"
-                )
-            bat(
-                label: "Building HTML docs on ${env.NODE_NAME}",
-                script: "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx.log"
-                )
-            bat(
-                label: "Building LaTex docs on ${env.NODE_NAME}",
-                script: "python -m pipenv run sphinx-build docs/source ..\\build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
-                )
-        }
-
-
-}
 
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
     script{
@@ -560,7 +539,23 @@ pipeline {
                                   }
                             }
                             steps {
-                                build_sphinx()
+                                bat "if not exist logs mkdir logs"
+                                dir("source"){
+                                    bat(label: "Install pipenv",
+                                        script: "python -m pipenv install --dev"
+                                        )
+                                    bat(label: "Run build_ui",
+                                        script: "pipenv run python setup.py build_ui"
+                                        )
+                                    bat(
+                                        label: "Building HTML docs on ${env.NODE_NAME}",
+                                        script: "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx.log"
+                                        )
+                                    bat(
+                                        label: "Building LaTex docs on ${env.NODE_NAME}",
+                                        script: "python -m pipenv run sphinx-build docs/source ..\\build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
+                                        )
+                                }
                             }
                             post{
                                 always{
