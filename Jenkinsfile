@@ -1030,7 +1030,7 @@ pipeline {
             stages{
                 stage("Installing to Devpi environment") {
                     steps{
-                        bat "python -v venv venv && venv\\script\\python.exe -m pip install pip --upgrade"
+                        bat "python -v venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade"
                         bat "venv\\Scripts\\pip install devpi-client"
                     }
 
