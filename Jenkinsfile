@@ -28,31 +28,31 @@ def get_package_name(stashName, metadataFile){
     }
 }
 
-def run_sonarScanner(){
-    withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
-        bat(
-            label: "Running sonar scanner",
-            script: '\
-"%scannerHome%/bin/sonar-scanner" \
--D"sonar.projectBaseDir=%WORKSPACE%/source" \
--D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
--D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
--D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
--X'
-        )
-
-    }
-    script{
-        def sonarqube_result = waitForQualityGate(abortPipeline: false)
-        if (sonarqube_result.status != 'OK') {
-            unstable "SonarQube quality gate: ${sonarqube_result.status}"
-        }
-
-        def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
-        writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
-
-    }
-}
+//def run_sonarScanner(){
+//    withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
+//        bat(
+//            label: "Running sonar scanner",
+//            script: '\
+//"%scannerHome%/bin/sonar-scanner" \
+//-D"sonar.projectBaseDir=%WORKSPACE%/source" \
+//-D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
+//-D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
+//-D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
+//-X'
+//        )
+//
+//    }
+//    script{
+//        def sonarqube_result = waitForQualityGate(abortPipeline: false)
+//        if (sonarqube_result.status != 'OK') {
+//            unstable "SonarQube quality gate: ${sonarqube_result.status}"
+//        }
+//
+//        def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
+//        writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
+//
+//    }
+//}
 
 def check_jira_issue(issue, outputFile){
     script{
@@ -757,7 +757,29 @@ pipeline {
                         PATH = "${WORKSPACE}\\venv\\Scripts;${PATH}"
                     }
                     steps{
-                        run_sonarScanner()
+                        withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
+                            bat(
+                                label: "Running sonar scanner",
+                                script: '\
+                    "%scannerHome%/bin/sonar-scanner" \
+                    -D"sonar.projectBaseDir=%WORKSPACE%/source" \
+                    -D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
+                    -D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
+                    -D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
+                    -X'
+                            )
+
+                        }
+                        script{
+                            def sonarqube_result = waitForQualityGate(abortPipeline: false)
+                            if (sonarqube_result.status != 'OK') {
+                                unstable "SonarQube quality gate: ${sonarqube_result.status}"
+                            }
+
+                            def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
+                            writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
+
+                        }
                     }
                     post{
                         always{
