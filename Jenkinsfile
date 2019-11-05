@@ -90,16 +90,16 @@ def check_jira_issue(issue, outputFile){
 //}
 
 
-def process_mypy_logs(path){
-    archiveArtifacts "${path}"
-    stash includes: "${path}", name: "MYPY_LOGS"
-    node("Windows"){
-        checkout scm
-        unstash "MYPY_LOGS"
-        recordIssues(tools: [myPy(pattern: "${path}")])
-        deleteDir()
-    }
-}
+//def process_mypy_logs(path){
+//    archiveArtifacts "${path}"
+//    stash includes: "${path}", name: "MYPY_LOGS"
+//    node("Windows"){
+//        checkout scm
+//        unstash "MYPY_LOGS"
+//        recordIssues(tools: [myPy(pattern: "${path}")])
+//        deleteDir()
+//    }
+//}
 def check_jira_project(project, outputFile){
 
     script {
@@ -679,7 +679,15 @@ pipeline {
                             }
                             post {
                                 always {
-                                    process_mypy_logs("logs/mypy.log")
+                                    //process_mypy_logs("logs/mypy.log")
+                                    archiveArtifacts "logs/mypy.log"
+                                    stash includes: "logs/mypy.log", name: "MYPY_LOGS"
+                                    node("Windows"){
+                                        checkout scm
+                                        unstash "MYPY_LOGS"
+                                        recordIssues(tools: [myPy(pattern: "logs/mypy.log")])
+                                        deleteDir()
+                                    }
                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                                 }
                                 cleanup{
