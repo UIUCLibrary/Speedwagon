@@ -127,8 +127,8 @@ def build_sphinx(){
             bat(label: "Install pipenv",
                 script: "python -m pipenv install --dev"
                 )
-            bat(label: "Run Build",
-                script: "pipenv run python setup.py build"
+            bat(label: "Run build_ui",
+                script: "pipenv run python setup.py build_ui"
                 )
             bat(
                 label: "Building HTML docs on ${env.NODE_NAME}",
