@@ -401,20 +401,24 @@ def testPythonPackages(pkgRegex, testEnvs, pipcache){
             taskRunners["Testing ${it['file']} with ${it['dockerImage']}"]={
                 ws{
                     def testImage = docker.image(it['dockerImage']).inside("-v pipcache:C:/Users/ContainerAdministrator/AppData/Local/pip/Cache"){
-                        checkout scm
-                        unstash 'PYTHON_PACKAGES'
-                        powershell(
-                            label: "Installing Certs required to download python dependencies",
-                            script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
-                            )
-                        bat(
-                            script: "pip install tox",
-                            label: "Installing Tox"
-                            )
-                        bat(
-                            label:"Running tox tests with ${it['file']}",
-                            script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
-                            )
+                        try{
+                            checkout scm
+                            unstash 'PYTHON_PACKAGES'
+                            powershell(
+                                label: "Installing Certs required to download python dependencies",
+                                script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
+                                )
+                            bat(
+                                script: "pip install tox",
+                                label: "Installing Tox"
+                                )
+                            bat(
+                                label:"Running tox tests with ${it['file']}",
+                                script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
+                                )
+                        }finally {
+                            cleanWs()
+                        }
 
                     }
                 }
