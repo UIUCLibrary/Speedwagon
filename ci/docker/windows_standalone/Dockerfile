@@ -45,13 +45,15 @@ RUN choco install -y git nsis wixtoolset`
     && del /S /F /Q %ChocolateyInstall% `
     && setx path "%path%;C:\Program Files (x86)\NSIS"
 
-RUN powershell.exe -Command  `
-    $ErrorActionPreference = 'Stop'; `
-    Invoke-WebRequest https://www.python.org/ftp/python/3.7.5/python-3.7.5-amd64.exe -OutFile c:\python-installer.exe ; `
+SHELL ["powershell", "-command"]
+ARG PYTHON_INSTALLER_URL=https://www.python.org/ftp/python/3.7.5/python-3.7.5-amd64.exe
+
+RUN $ErrorActionPreference = 'Stop'; `
+    Invoke-WebRequest $Env:PYTHON_INSTALLER_URL -OutFile c:\python-installer.exe ; `
     Start-Process python-installer.exe -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' -Wait ; `
     Remove-Item c:\python-installer.exe -Force
 
-RUN certutil -generateSSTFromWU roots.sst && certutil -addstore -f root roots.sst && del roots.sst
+RUN certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst
 
 ENV PIPENV_CACHE_DIR=c:\pipenv_cache `
     WORKON_HOME=c:\venvs `
@@ -60,12 +62,12 @@ ENV PIPENV_CACHE_DIR=c:\pipenv_cache `
     PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release" `
     PIP_TRUSTED_HOST="devpi.library.illinois.edu"
 
-RUN python -m pip install --upgrade pip `
-    && pip install --upgrade setuptools
+RUN python -m pip install --upgrade pip ; `
+    pip install --upgrade setuptools
 
 ADD requirements.txt requirements-dev.txt c:\temp\
 
-RUN python -m pip install pip --upgrade && `
+RUN python -m pip install pip --upgrade ; `
         pip install --extra-index-url https://devpi.library.illinois.edu/production/release `
         --trusted-host devpi.library.illinois.edu `
         -r c:\temp\requirements.txt `
