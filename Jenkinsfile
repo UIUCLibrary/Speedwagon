@@ -573,6 +573,9 @@ pipeline {
                                     }
                                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                                 }
+                                cleanup{
+                                    cleanWs()
+                                }
                             }
                         }
                         stage("Convert to pdf"){
