@@ -385,16 +385,18 @@ pipeline {
                                  }
                             }
                             steps{
-                                dir("source"){
-                                    bat "python setup.py dist_info"
-                                }
+                                checkout scm
+                                bat "python setup.py dist_info"
                             }
                             post{
                                 success{
-                                    dir("source"){
-                                        stash includes: "speedwagon.dist-info/**", name: 'DIST-INFO'
-                                        archiveArtifacts artifacts: "speedwagon.dist-info/**"
-                                    }
+                                    stash includes: "speedwagon.dist-info/**", name: 'DIST-INFO'
+                                    archiveArtifacts artifacts: "speedwagon.dist-info/**"
+                                }
+                                cleanup{
+                                    cleanWs(deleteDirs: true,
+                                            notFailBuild: true
+                                        )
                                 }
                             }
                         }
