@@ -699,7 +699,26 @@ pipeline {
                             steps {
                                 bat "if not exist logs mkdir logs"
                                 dir("source"){
-                                    runtox()
+                                    script{
+                                        withEnv(
+                                            [
+                                                'PIP_INDEX_URL="https://devpi.library.illinois.edu/production/release"',
+                                                'PIP_TRUSTED_HOST="devpi.library.illinois.edu"',
+                                                'TOXENV="py"'
+                                            ]
+                                        ) {
+
+                                            bat "python -m pip install pipenv tox"
+                                            try{
+                                                // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
+                                                // Tox has a bug that fails when trying to write the json report
+                                                // when --parallel is run at the same time
+                                                bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
+                                            } catch (exc) {
+                                                bat "tox -vv --workdir ${WORKSPACE}\\.tox --recreate"
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             post{
