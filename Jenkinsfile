@@ -417,7 +417,7 @@ def testPythonPackages(pkgRegex, testEnvs, pipcache){
                                 script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
                                 )
                         }finally {
-                            cleanWs()
+                            cleanWs(patterns: [[pattern: ".git", type: 'EXCLUDE']])
                         }
 
                     }
