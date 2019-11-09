@@ -28,31 +28,6 @@ def get_package_name(stashName, metadataFile){
     }
 }
 
-def run_sonarScanner(){
-    withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
-        bat(
-            label: "Running sonar scanner",
-            script: '\
-"%scannerHome%/bin/sonar-scanner" \
--D"sonar.projectBaseDir=%WORKSPACE%/source" \
--D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
--D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
--D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
--X'
-        )
-
-    }
-    script{
-        def sonarqube_result = waitForQualityGate(abortPipeline: false)
-        if (sonarqube_result.status != 'OK') {
-            unstable "SonarQube quality gate: ${sonarqube_result.status}"
-        }
-
-        def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
-        writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
-
-    }
-}
 
 def check_jira_issue(issue, outputFile){
     script{
@@ -65,39 +40,6 @@ def check_jira_issue(issue, outputFile){
         catch (Exception ex) {
             echo "Unable to create ${outputFile}. Reason: ${ex}"
         }
-    }
-}
-
-def deploy_hathi_beta(){
-    unstash "STANDALONE_INSTALLERS"
-    unstash "SPEEDWAGON_DOC_PDF"
-    unstash "SPEEDWAGON_DOC_HTML"
-    unstash "DIST-INFO"
-    script{
-        def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-        deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
-    }
-}
-
-def run_cmake_build(){
-    bat """if not exist "cmake_build" mkdir cmake_build
-if not exist "logs" mkdir logs
-if not exist "logs\\ctest" mkdir logs\\ctest
-if not exist "temp" mkdir temp
-"""
-    bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf"
-    bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\cmake_build && cmake --build ."
-}
-
-
-def process_mypy_logs(path){
-    archiveArtifacts "${path}"
-    stash includes: "${path}", name: "MYPY_LOGS"
-    node("Windows"){
-        checkout scm
-        unstash "MYPY_LOGS"
-        recordIssues(tools: [myPy(pattern: "${path}")])
-        deleteDir()
     }
 }
 def check_jira_project(project, outputFile){
@@ -121,27 +63,6 @@ def check_jira(project, issue){
 
 }
 
-def build_sphinx(){
-        bat "if not exist logs mkdir logs"
-        dir("source"){
-            bat(label: "Install pipenv",
-                script: "python -m pipenv install --dev"
-                )
-            bat(label: "Run Build",
-                script: "pipenv run python setup.py build"
-                )
-            bat(
-                label: "Building HTML docs on ${env.NODE_NAME}",
-                script: "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx.log"
-                )
-            bat(
-                label: "Building LaTex docs on ${env.NODE_NAME}",
-                script: "python -m pipenv run sphinx-build docs/source ..\\build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
-                )
-        }
-
-
-}
 
 def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
     script{
@@ -217,16 +138,6 @@ def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUse
 
     }
 }
-
-def report_help_info(){
-    script{
-        def help_info = "Pipeline failed. If the problem is old cached data, you might need to purge the testing environment. Try manually running the pipeline again with the parameter FRESH_WORKSPACE checked."
-        echo "${help_info}"
-        if (env.BRANCH_NAME == "master"){
-            emailext attachLog: true, body: "${help_info}\n${JOB_NAME} has current status of ${currentBuild.currentResult}. Check attached logs or ${JENKINS_URL} for more details.", recipientProviders: [developers()], subject: "${JOB_NAME} Regression"
-        }
-    }
-}
 def get_build_number(){
     script{
         def versionPrefix = ""
@@ -239,30 +150,6 @@ def get_build_number(){
     }
 }
 
-
-def runtox(){
-    script{
-        withEnv(
-            [
-                'PIP_INDEX_URL="https://devpi.library.illinois.edu/production/release"',
-                'PIP_TRUSTED_HOST="devpi.library.illinois.edu"',
-                'TOXENV="py"'
-            ]
-        ) {
-
-            bat "python -m pip install pipenv tox"
-            try{
-                // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
-                // Tox has a bug that fails when trying to write the json report
-                // when --parallel is run at the same time
-                bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
-            } catch (exc) {
-                bat "tox -vv --workdir ${WORKSPACE}\\.tox --recreate"
-            }
-        }
-    }
-
-}
 def deploy_to_nexus(filename, deployUrl, credId){
     script{
         withCredentials([usernamePassword(credentialsId: credId, passwordVariable: 'nexusPassword', usernameVariable: 'nexusUsername')]) {
@@ -393,27 +280,32 @@ def testPythonPackages(pkgRegex, testEnvs, pipcache){
             }
         }
         def taskRunners = [:]
-        bat "docker volume create pipcache"
+        bat(
+            label: "Creating a docker volume for a shared pipcache",
+            script: "docker volume create pipcache"
+        )
         taskData.each{
             taskRunners["Testing ${it['file']} with ${it['dockerImage']}"]={
                 ws{
                     def testImage = docker.image(it['dockerImage']).inside("-v pipcache:C:/Users/ContainerAdministrator/AppData/Local/pip/Cache"){
-                        echo "Testing ${it['file']} with ${it['dockerImage']}"
-                        checkout scm
-                        unstash 'PYTHON_PACKAGES'
-                        powershell(
-                            label: "Installing Certs required to download python dependencies",
-                            script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
-                            )
-                        bat(
-                            script: "pip install tox",
-                            label: "Installing Tox"
-                        )
-
-                        bat(
-                            label:"Running tox tests with ${it['file']}",
-                            script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
-                            )
+                        try{
+                            checkout scm
+                            unstash 'PYTHON_PACKAGES'
+                            powershell(
+                                label: "Installing Certs required to download python dependencies",
+                                script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
+                                )
+                            bat(
+                                script: "pip install tox",
+                                label: "Installing Tox"
+                                )
+                            bat(
+                                label:"Running tox tests with ${it['file']}",
+                                script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
+                                )
+                        }finally {
+                            cleanWs deleteDirs: true, notFailBuild: true
+                        }
 
                     }
                 }
@@ -437,8 +329,6 @@ pipeline {
         preserveStashes(buildCount: 5)
     }
     environment {
-        PIPENV_CACHE_DIR="${WORKSPACE}\\..\\.virtualenvs\\cache\\"
-        WORKON_HOME ="${WORKSPACE}\\pipenv"
         build_number = get_build_number()
         PIPENV_NOSPIN = "True"
     }
@@ -495,16 +385,18 @@ pipeline {
                                  }
                             }
                             steps{
-                                dir("source"){
-                                    bat "python setup.py dist_info"
-                                }
+                                checkout scm
+                                bat "python setup.py dist_info"
                             }
                             post{
                                 success{
-                                    dir("source"){
-                                        stash includes: "speedwagon.dist-info/**", name: 'DIST-INFO'
-                                        archiveArtifacts artifacts: "speedwagon.dist-info/**"
-                                    }
+                                    stash includes: "speedwagon.dist-info/**", name: 'DIST-INFO'
+                                    archiveArtifacts artifacts: "speedwagon.dist-info/**"
+                                }
+                                cleanup{
+                                    cleanWs(deleteDirs: true,
+                                            notFailBuild: true
+                                        )
                                 }
                             }
                         }
@@ -533,7 +425,10 @@ pipeline {
                             recordIssues(tools: [pyLint(pattern: 'logs/build_errors.log')])
                         }
                         cleanup{
-                            cleanWs(patterns: [[pattern: 'logs/build_errors', type: 'INCLUDE']])
+                            //cleanWs(patterns: [[pattern: 'logs/build_errors', type: 'INCLUDE']])
+                            cleanWs(deleteDirs: true,
+                                    notFailBuild: true
+                                )
                         }
                         success{
                             stash includes: "build/lib/**", name: 'PYTHON_BUILD_FILES'
@@ -557,7 +452,23 @@ pipeline {
                                   }
                             }
                             steps {
-                                build_sphinx()
+                                bat "if not exist logs mkdir logs"
+                                dir("source"){
+                                    bat(label: "Install pipenv",
+                                        script: "python -m pipenv install --dev"
+                                        )
+                                    bat(label: "Run build_ui",
+                                        script: "pipenv run python setup.py build_ui"
+                                        )
+                                    bat(
+                                        label: "Building HTML docs on ${env.NODE_NAME}",
+                                        script: "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx.log"
+                                        )
+                                    bat(
+                                        label: "Building LaTex docs on ${env.NODE_NAME}",
+                                        script: "python -m pipenv run sphinx-build docs/source ..\\build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
+                                        )
+                                }
                             }
                             post{
                                 always{
@@ -570,9 +481,12 @@ pipeline {
                                     script{
                                         def DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
                                         zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
-                                        stash includes: "build/docs/html/**", name: 'SPEEDWAGON_DOC_HTML'
+                                        stash includes: "build/docs/html/**,dist/*.doc.zip", name: 'SPEEDWAGON_DOC_HTML'
                                     }
                                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
+                                }
+                                cleanup{
+                                    cleanWs(patterns: [[pattern: 'source', type: 'EXCLUDE']])
                                 }
                             }
                         }
@@ -653,8 +567,7 @@ pipeline {
                             steps {
                                 unstash "PYTHON_BUILD_FILES"
                                 dir("source"){
-                                    bat "python setup.py build"
-                                    bat "sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees --no-color -w ${WORKSPACE}/logs/doctest.txt"
+                                    bat "python setup.py build_ui && sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees --no-color -w ${WORKSPACE}/logs/doctest.txt"
                                 }
                             }
                             post{
@@ -679,7 +592,15 @@ pipeline {
                             }
                             post {
                                 always {
-                                    process_mypy_logs("logs/mypy.log")
+                                    //process_mypy_logs("logs/mypy.log")
+                                    archiveArtifacts "logs/mypy.log"
+                                    stash includes: "logs/mypy.log", name: "MYPY_LOGS"
+                                    node("Windows"){
+                                        checkout scm
+                                        unstash "MYPY_LOGS"
+                                        recordIssues(tools: [myPy(pattern: "logs/mypy.log")])
+                                        deleteDir()
+                                    }
                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                                 }
                                 cleanup{
@@ -699,7 +620,26 @@ pipeline {
                             steps {
                                 bat "if not exist logs mkdir logs"
                                 dir("source"){
-                                    runtox()
+                                    script{
+                                        withEnv(
+                                            [
+                                                'PIP_INDEX_URL="https://devpi.library.illinois.edu/production/release"',
+                                                'PIP_TRUSTED_HOST="devpi.library.illinois.edu"',
+                                                'TOXENV="py"'
+                                            ]
+                                        ) {
+
+                                            bat "python -m pip install pipenv tox"
+                                            try{
+                                                // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
+                                                // Tox has a bug that fails when trying to write the json report
+                                                // when --parallel is run at the same time
+                                                bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
+                                            } catch (exc) {
+                                                bat "tox -vv --workdir ${WORKSPACE}\\.tox --recreate"
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             post{
@@ -757,7 +697,29 @@ pipeline {
                         PATH = "${WORKSPACE}\\venv\\Scripts;${PATH}"
                     }
                     steps{
-                        run_sonarScanner()
+                        withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
+                            bat(
+                                label: "Running sonar scanner",
+                                script: '\
+                    "%scannerHome%/bin/sonar-scanner" \
+                    -D"sonar.projectBaseDir=%WORKSPACE%/source" \
+                    -D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
+                    -D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
+                    -D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
+                    -X'
+                            )
+
+                        }
+                        script{
+                            def sonarqube_result = waitForQualityGate(abortPipeline: false)
+                            if (sonarqube_result.status != 'OK') {
+                                unstable "SonarQube quality gate: ${sonarqube_result.status}"
+                            }
+
+                            def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
+                            writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
+
+                        }
                     }
                     post{
                         always{
@@ -883,7 +845,14 @@ pipeline {
 
                             steps {
                                 unstash "SPEEDWAGON_DOC_PDF"
-                                run_cmake_build()
+                                //run_cmake_build()
+                                bat """if not exist "cmake_build" mkdir cmake_build
+if not exist "logs" mkdir logs
+if not exist "logs\\ctest" mkdir logs\\ctest
+if not exist "temp" mkdir temp
+"""
+                                bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf"
+                                bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\cmake_build && cmake --build ."
                             }
                         }
                         stage("CTest"){
@@ -1028,11 +997,18 @@ pipeline {
                 PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
             }
             stages{
+                stage("Installing Devpi Client") {
+                    steps{
+                        bat "python -m venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade"
+                        bat "venv\\Scripts\\pip install devpi-client"
+                    }
+
+                }
                 stage("Deploy to Devpi Staging") {
                     steps {
                         unstash 'SPEEDWAGON_DOC_HTML'
                         unstash 'PYTHON_PACKAGES'
-                        bat "pip install devpi-client && devpi use https://devpi.library.illinois.edu && devpi login %DEVPI_USR% --password %DEVPI_PSW% && devpi use /%DEVPI_USR%/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
+                        bat "devpi use https://devpi.library.illinois.edu && devpi login %DEVPI_USR% --password %DEVPI_PSW% && devpi use /%DEVPI_USR%/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
                     }
                 }
                 stage("Test DevPi packages") {
@@ -1238,7 +1214,14 @@ pipeline {
                         skipDefaultCheckout(true)
                     }
                     steps {
-                        deploy_hathi_beta()
+                        unstash "STANDALONE_INSTALLERS"
+                        unstash "SPEEDWAGON_DOC_PDF"
+                        unstash "SPEEDWAGON_DOC_HTML"
+                        unstash "DIST-INFO"
+                        script{
+                            def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+                            deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
+                        }
                     }
                     post{
                         cleanup{
