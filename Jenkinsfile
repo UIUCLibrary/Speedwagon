@@ -560,6 +560,7 @@ pipeline {
                             post {
                                 always {
                                     junit "reports/tests/pytest/${junit_filename}"
+                                    stash includes: "reports/tests/pytest/*.xml", name: "PYTEST_UNIT_TEST_RESULTS"
                                 }
                             }
                         }
@@ -677,6 +678,7 @@ pipeline {
                             dir("source"){
                                 bat "coverage combine && coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && coverage html -d ${WORKSPACE}\\reports\\coverage"
                             }
+                            stash includes: "reports/coverage.xml", name: "COVERAGE_REPORT_DATA"
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
                             publishCoverage adapters: [
                                             coberturaAdapter('reports/coverage.xml')
@@ -689,14 +691,19 @@ pipeline {
                     when{
                         equals expected: "master", actual: env.BRANCH_NAME
                     }
+                    agent{
+                        label "windows"
+                    }
                    // options{
                    //     timeout(5)
                    // }
                     environment{
                         scannerHome = tool name: 'sonar-scanner-3.3.0', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-                        PATH = "${WORKSPACE}\\venv\\Scripts;${PATH}"
+//                        PATH = "${WORKSPACE}\\venv\\Scripts;${PATH}"
                     }
                     steps{
+                        unstash "COVERAGE_REPORT_DATA"
+                        unstash "PYTEST_UNIT_TEST_RESULTS"
                         withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
                             bat(
                                 label: "Running sonar scanner",
