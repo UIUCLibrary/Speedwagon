@@ -723,7 +723,7 @@ pipeline {
                                 label: "Running sonar scanner",
                                 script: '\
                     "%scannerHome%/bin/sonar-scanner" \
-                    -D"sonar.projectBaseDir=%WORKSPACE%/source" \
+                    -D"sonar.projectBaseDir=%WORKSPACE%" \
                     -D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
                     -D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
                     -D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
