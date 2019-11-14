@@ -523,17 +523,18 @@ pipeline {
             environment{
                 junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
             }
-            agent {
-                dockerfile {
-                    filename 'ci\\docker\\python37\\Dockerfile'
-                    dir 'source'
-                    label 'Windows&&Docker'
-                  }
-            }
+            agent none
             stages{
                 stage("Run Tests"){
                     parallel {
                         stage("Run Behave BDD Tests") {
+                            agent {
+                                dockerfile {
+                                    filename 'ci\\docker\\python37\\Dockerfile'
+                                    dir 'source'
+                                    label 'Windows&&Docker'
+                                  }
+                            }
                             steps {
                                 bat "if not exist reports mkdir reports"
                                 dir("source"){
@@ -549,6 +550,13 @@ pipeline {
                             }
                         }
                         stage("Run PyTest Unit Tests"){
+                            agent {
+                                dockerfile {
+                                    filename 'ci\\docker\\python37\\Dockerfile'
+                                    dir 'source'
+                                    label 'Windows&&Docker'
+                                  }
+                            }
                             steps{
                                 bat "if not exist logs mkdir logs"
                                 dir("source"){
@@ -565,6 +573,13 @@ pipeline {
                             }
                         }
                         stage("Run Doctest Tests"){
+                            agent {
+                                dockerfile {
+                                    filename 'ci\\docker\\python37\\Dockerfile'
+                                    dir 'source'
+                                    label 'Windows&&Docker'
+                                  }
+                            }
                             steps {
                                 unstash "PYTHON_BUILD_FILES"
                                 dir("source"){
@@ -583,6 +598,13 @@ pipeline {
                             }
                         }
                         stage("Run MyPy Static Analysis") {
+                            agent {
+                                dockerfile {
+                                    filename 'ci\\docker\\python37\\Dockerfile'
+                                    dir 'source'
+                                    label 'Windows&&Docker'
+                                  }
+                            }
                             steps{
                                 bat "if not exist logs mkdir logs"
                                 dir("source"){
@@ -612,6 +634,13 @@ pipeline {
                         stage("Run Tox test") {
                             when{
                                 equals expected: true, actual: params.TEST_RUN_TOX
+                            }
+                            agent {
+                                dockerfile {
+                                    filename 'ci\\docker\\python37\\Dockerfile'
+                                    dir 'source'
+                                    label 'Windows&&Docker'
+                                  }
                             }
                             environment {
                               PIP_INDEX_URL = "https://devpi.library.illinois.edu/production/release"
@@ -655,6 +684,13 @@ pipeline {
                             }
                         }
                         stage("Run Flake8 Static Analysis") {
+                            agent {
+                                dockerfile {
+                                    filename 'ci\\docker\\python37\\Dockerfile'
+                                    dir 'source'
+                                    label 'Windows&&Docker'
+                                  }
+                            }
                             steps{
                                 bat "if not exist logs mkdir logs"
                                 catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
