@@ -706,14 +706,16 @@ pipeline {
                     agent{
                         label "windows"
                     }
-                   // options{
+                   options{
+                       skipDefaultCheckout true
                    //     timeout(5)
-                   // }
+                   }
                     environment{
                         scannerHome = tool name: 'sonar-scanner-3.3.0', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
 //                        PATH = "${WORKSPACE}\\venv\\Scripts;${PATH}"
                     }
                     steps{
+                        checkout scm
                         unstash "COVERAGE_REPORT_DATA"
                         unstash "PYTEST_UNIT_TEST_RESULTS"
                         withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
