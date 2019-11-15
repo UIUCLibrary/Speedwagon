@@ -655,6 +655,11 @@ pipeline {
                                 }
                             }
                         }
+                        stage("Run Pylint Static Analysis") {
+                            steps{
+                                bat "if not exist logs mkdir logs"
+                            }
+                        }
                         stage("Run Flake8 Static Analysis") {
                             steps{
                                 bat "if not exist logs mkdir logs"
@@ -759,7 +764,7 @@ pipeline {
                         }
                         cleanup{
                             cleanWs(deleteDirs: true,
-                                    [pattern: 'source', type: 'EXCLUDE'],
+                                    patterns: [[pattern: 'source', type: 'EXCLUDE']],
                                     notFailBuild: true
                                 )
                         }
