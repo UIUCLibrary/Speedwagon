@@ -757,6 +757,11 @@ pipeline {
                                 deleteDir()
                             }
                         }
+                        cleanup{
+                            cleanWs(deleteDirs: true,
+                                    notFailBuild: true
+                                )
+                        }
                     }
                 }
         stage("Packaging") {
