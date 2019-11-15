@@ -658,6 +658,20 @@ pipeline {
                         stage("Run Pylint Static Analysis") {
                             steps{
                                 bat "if not exist logs mkdir logs"
+                                dir("source"){
+                                    catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+                                        bat(
+                                            script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ../reports/pylint.txt',
+                                            label: "Running pylint"
+                                        )
+                                    }
+                                }
+                            }
+                            post{
+                                always{
+                                    stash includes: "reports/pylint_issues.txt,reports/pylint.txt", name: 'PYLINT_REPORT'
+                                    archiveArtifacts allowEmptyArchive: true, artifacts: "reports/pylint.txt"
+                                }
                             }
                         }
                         stage("Run Flake8 Static Analysis") {
