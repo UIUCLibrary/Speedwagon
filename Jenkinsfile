@@ -767,10 +767,11 @@ pipeline {
                     stages{
                         stage("Packaging sdist and wheel"){
                             agent {
-                              docker {
-                                image 'python:3.7'
-                                label 'windows&&docker'
-                              }
+                                dockerfile {
+                                    filename 'ci/docker/python37/Dockerfile'
+                                    dir 'source'
+                                    label 'Windows&&Docker'
+                                  }
                             }
                             options{
                                 timeout(20)
@@ -778,9 +779,9 @@ pipeline {
                             steps{
                                 unstash "PYTHON_BUILD_FILES"
                                 dir("source"){
-                                    powershell "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
-                                    bat "python -m pip -upgrade pip && pip install --upgrade setuptools"
-                                    bat "pip install--upgrade pyqt_distutils wheel"
+//                                    powershell "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
+//                                    bat "python -m pip -upgrade pip && pip install --upgrade setuptools"
+//                                    bat "pip install--upgrade pyqt_distutils wheel"
                                     bat script: "python setup.py build -b ../build sdist -d ../dist --format zip bdist_wheel -d ../dist"
                                 }
                             }
