@@ -916,19 +916,22 @@ if not exist "temp" mkdir temp
                             }
                         }
                         cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                disableDeferredWipeout: true,
-                                patterns: [
-                                    [pattern: 'cmake_build', type: 'INCLUDE'],
-                                    [pattern: '*@tmp', type: 'INCLUDE'],
-                                    [pattern: 'source', type: 'INCLUDE'],
-                                    [pattern: 'temp', type: 'INCLUDE'],
-                                    [pattern: 'dist', type: 'INCLUDE'],
-                                    [pattern: 'logs', type: 'INCLUDE'],
-                                    [pattern: 'generatedJUnitFiles', type: 'INCLUDE']
-                                ]
-                            )
+                            cleanWs(deleteDirs: true,
+                                    notFailBuild: true
+                                )
+                            // cleanWs(
+                            //     deleteDirs: true,
+                            //     disableDeferredWipeout: true,
+                            //     patterns: [
+                            //         [pattern: 'cmake_build', type: 'INCLUDE'],
+                            //         [pattern: '*@tmp', type: 'INCLUDE'],
+                            //         [pattern: 'source', type: 'INCLUDE'],
+                            //         [pattern: 'temp', type: 'INCLUDE'],
+                            //         [pattern: 'dist', type: 'INCLUDE'],
+                            //         [pattern: 'logs', type: 'INCLUDE'],
+                            //         [pattern: 'generatedJUnitFiles', type: 'INCLUDE']
+                            //     ]
+                            // )
                         }
                     }
                 }
@@ -1069,10 +1072,13 @@ if not exist "temp" mkdir temp
                             }
                             post{
                                 cleanup{
-                                    cleanWs deleteDirs: true, patterns: [
-                                            [pattern: 'certs', type: 'INCLUDE'],
-                                            [pattern: '*tmp', type: 'INCLUDE']
-                                        ]
+                                    cleanWs(deleteDirs: true,
+                                        notFailBuild: true
+                                    )
+                                    // cleanWs deleteDirs: true, patterns: [
+                                    //         [pattern: 'certs', type: 'INCLUDE'],
+                                    //         [pattern: '*tmp', type: 'INCLUDE']
+                                    //     ]
                                 }
                             }
                         }
