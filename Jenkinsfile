@@ -774,7 +774,7 @@ pipeline {
                                   }
                             }
                             options{
-                                timeout(20)
+                                timeout(3)
                             }
                             steps{
                                 unstash "PYTHON_BUILD_FILES"
