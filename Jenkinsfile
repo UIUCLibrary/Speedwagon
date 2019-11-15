@@ -759,6 +759,7 @@ pipeline {
                         }
                         cleanup{
                             cleanWs(deleteDirs: true,
+                                    [pattern: 'source', type: 'EXCLUDE'],
                                     notFailBuild: true
                                 )
                         }
