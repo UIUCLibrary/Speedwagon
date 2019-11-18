@@ -440,7 +440,7 @@ pipeline {
                     post{
                         always{
                             archiveArtifacts artifacts: "logs/build_errors.log"
-                            recordIssues(tools: [pyLint(pattern: 'logs/build_errors.log')])
+                           
                         }
                         cleanup{
                             //cleanWs(patterns: [[pattern: 'logs/build_errors', type: 'INCLUDE']])
@@ -673,6 +673,9 @@ pipeline {
                                 always{
                                     stash includes: "reports/pylint_issues.txt,reports/pylint.txt", name: 'PYLINT_REPORT'
                                     archiveArtifacts allowEmptyArchive: true, artifacts: "reports/pylint.txt"
+
+                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
+
                                 }
                             }
                         }
