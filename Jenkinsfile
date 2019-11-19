@@ -663,10 +663,16 @@ pipeline {
                                 dir("source"){
                                     catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
                                         bat(
-                                            script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ../reports/pylint.txt',
+                                            script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ..\\reports\\pylint.txt',
                                             label: "Running pylint"
                                         )
                                     }
+                                    bat(
+                                        script: 'pylint speedwagon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ..\\reports\\pylint_issues.txt',
+                                            label: "Running pylint for sonarqube",
+                                            returnStatus: true
+
+                                    )
                                 }
                             }
                             post{
@@ -742,12 +748,14 @@ pipeline {
                         checkout scm
                         unstash "COVERAGE_REPORT_DATA"
                         unstash "PYTEST_UNIT_TEST_RESULTS"
+                        unstash "PYLINT_REPORT"
                         withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
                             bat(
                                 label: "Running sonar scanner",
                                 script: '\
                     "%scannerHome%/bin/sonar-scanner" \
                     -D"sonar.projectBaseDir=%WORKSPACE%" \
+                    -Dsonar.python.pylint.reportPath=${WORKSPACE}/reports/pylint.txt \
                     -D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
                     -D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
                     -D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
