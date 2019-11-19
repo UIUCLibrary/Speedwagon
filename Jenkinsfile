@@ -28,7 +28,25 @@ def get_package_name(stashName, metadataFile){
     }
 }
 
-
+def build_sphinx_stage(){
+    bat "if not exist logs mkdir logs"
+    dir("source"){
+        bat(label: "Install pipenv",
+            script: "python -m pipenv install --dev"
+            )
+        bat(label: "Run build_ui",
+            script: "pipenv run python setup.py build_ui"
+            )
+        bat(
+            label: "Building HTML docs on ${env.NODE_NAME}",
+            script: "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx.log"
+            )
+        bat(
+            label: "Building LaTex docs on ${env.NODE_NAME}",
+            script: "python -m pipenv run sphinx-build docs/source ..\\build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
+            )
+    }
+}
 def check_jira_issue(issue, outputFile){
     script{
         def issue_response = jiraGetIssue idOrKey: issue, site: 'bugs.library.illinois.edu'
@@ -422,7 +440,7 @@ pipeline {
                     post{
                         always{
                             archiveArtifacts artifacts: "logs/build_errors.log"
-                            recordIssues(tools: [pyLint(pattern: 'logs/build_errors.log')])
+                           
                         }
                         cleanup{
                             //cleanWs(patterns: [[pattern: 'logs/build_errors', type: 'INCLUDE']])
@@ -452,23 +470,7 @@ pipeline {
                                   }
                             }
                             steps {
-                                bat "if not exist logs mkdir logs"
-                                dir("source"){
-                                    bat(label: "Install pipenv",
-                                        script: "python -m pipenv install --dev"
-                                        )
-                                    bat(label: "Run build_ui",
-                                        script: "pipenv run python setup.py build_ui"
-                                        )
-                                    bat(
-                                        label: "Building HTML docs on ${env.NODE_NAME}",
-                                        script: "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx.log"
-                                        )
-                                    bat(
-                                        label: "Building LaTex docs on ${env.NODE_NAME}",
-                                        script: "python -m pipenv run sphinx-build docs/source ..\\build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
-                                        )
-                                }
+                                build_sphinx_stage()
                             }
                             post{
                                 always{
@@ -655,6 +657,34 @@ pipeline {
                                 }
                             }
                         }
+                        stage("Run Pylint Static Analysis") {
+                            steps{
+                                bat "if not exist logs mkdir logs"
+                                dir("source"){
+                                    catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+                                        bat(
+                                            script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ..\\reports\\pylint.txt',
+                                            label: "Running pylint"
+                                        )
+                                    }
+                                    bat(
+                                        script: 'pylint speedwagon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ..\\reports\\pylint_issues.txt',
+                                            label: "Running pylint for sonarqube",
+                                            returnStatus: true
+
+                                    )
+                                }
+                            }
+                            post{
+                                always{
+                                    stash includes: "reports/pylint_issues.txt,reports/pylint.txt", name: 'PYLINT_REPORT'
+                                    archiveArtifacts allowEmptyArchive: true, artifacts: "reports/pylint.txt"
+
+                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
+
+                                }
+                            }
+                        }
                         stage("Run Flake8 Static Analysis") {
                             steps{
                                 bat "if not exist logs mkdir logs"
@@ -718,12 +748,14 @@ pipeline {
                         checkout scm
                         unstash "COVERAGE_REPORT_DATA"
                         unstash "PYTEST_UNIT_TEST_RESULTS"
+                        unstash "PYLINT_REPORT"
                         withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
                             bat(
                                 label: "Running sonar scanner",
                                 script: '\
                     "%scannerHome%/bin/sonar-scanner" \
                     -D"sonar.projectBaseDir=%WORKSPACE%" \
+                    -Dsonar.python.pylint.reportPath=%WORKSPACE%/reports/pylint.txt \
                     -D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
                     -D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
                     -D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
@@ -759,7 +791,7 @@ pipeline {
                         }
                         cleanup{
                             cleanWs(deleteDirs: true,
-                                    [pattern: 'source', type: 'EXCLUDE'],
+                                    patterns: [[pattern: 'source', type: 'EXCLUDE']],
                                     notFailBuild: true
                                 )
                         }

@@ -12,7 +12,8 @@ RUN python -m pip install pip --upgrade ; `
         --trusted-host devpi.library.illinois.edu `
         -r c:\temp\requirements.txt `
         -r c:\temp\requirements-dev.txt `
-        pipenv
+        pipenv `
+        pylint
 
 ENV PIPENV_CACHE_DIR=c:\pipenv_cache `
     WORKON_HOME=c:\venvs `
