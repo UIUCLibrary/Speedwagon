@@ -755,7 +755,7 @@ pipeline {
                                 script: '\
                     "%scannerHome%/bin/sonar-scanner" \
                     -D"sonar.projectBaseDir=%WORKSPACE%" \
-                    -Dsonar.python.pylint.reportPath=${WORKSPACE}/reports/pylint.txt \
+                    -Dsonar.python.pylint.reportPath=%WORKSPACE%/reports/pylint.txt \
                     -D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
                     -D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
                     -D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
