@@ -402,6 +402,7 @@ pipeline {
                                     label 'Windows&&Docker'
                                  }
                             }
+
                             steps{
                                 checkout scm
                                 bat "python setup.py dist_info"
@@ -413,6 +414,7 @@ pipeline {
                                 }
                                 cleanup{
                                     cleanWs(deleteDirs: true,
+                                            patterns: [[pattern: "source", type: 'EXCLUDE']],
                                             notFailBuild: true
                                         )
                                 }
@@ -445,6 +447,7 @@ pipeline {
                         cleanup{
                             //cleanWs(patterns: [[pattern: 'logs/build_errors', type: 'INCLUDE']])
                             cleanWs(deleteDirs: true,
+                                    patterns: [[pattern: "source", type: 'EXCLUDE']],
                                     notFailBuild: true
                                 )
                         }
