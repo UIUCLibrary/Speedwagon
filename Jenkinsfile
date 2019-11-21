@@ -878,6 +878,7 @@ pipeline {
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
                             triggeredBy "TimerTriggerCause"
                         }
+                        beforeAgent true
                     }
                     environment {
                         PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
