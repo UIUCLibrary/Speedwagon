@@ -814,16 +814,15 @@ pipeline {
                                     label 'Windows&&Docker'
                                   }
                             }
-                            options{
-                                timeout(5)
-                            }
                             steps{
-                                unstash "PYTHON_BUILD_FILES"
-                                dir("source"){
-//                                    powershell "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
-//                                    bat "python -m pip -upgrade pip && pip install --upgrade setuptools"
-//                                    bat "pip install--upgrade pyqt_distutils wheel"
-                                    bat script: "python setup.py build -b ../build sdist -d ../dist --format zip bdist_wheel -d ../dist"
+                                timeout(5){
+                                    unstash "PYTHON_BUILD_FILES"
+                                    dir("source"){
+    //                                    powershell "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
+    //                                    bat "python -m pip -upgrade pip && pip install --upgrade setuptools"
+    //                                    bat "pip install--upgrade pyqt_distutils wheel"
+                                        bat script: "python setup.py build -b ../build sdist -d ../dist --format zip bdist_wheel -d ../dist"
+                                    }
                                 }
                             }
                             post{
