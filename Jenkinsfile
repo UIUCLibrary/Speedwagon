@@ -977,7 +977,18 @@ if not exist "temp" mkdir temp
                     }
                 }
             }
-
+        }
+        stage("Package for chocolatey"){
+            agent {
+                dockerfile {
+                    filename 'ci/docker/chocolatey/Dockerfile'
+                    dir 'source'
+                    label 'Windows&&Docker'
+                  }
+            }
+            steps{
+                echo "making chocolatey"
+            }
 
         }
         stage("Testing MSI Install"){
