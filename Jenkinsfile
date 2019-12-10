@@ -903,9 +903,11 @@ pipeline {
 if not exist "logs" mkdir logs
 if not exist "logs\\ctest" mkdir logs\\ctest
 if not exist "temp" mkdir temp
+C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64
+cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf
+C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64
+cd ${WORKSPACE}\\cmake_build && cmake --build .
 """
-                                bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf"
-                                bat "C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\cmake_build && cmake --build ."
                             }
                         }
                         stage("CTest"){
@@ -1066,8 +1068,7 @@ if not exist "temp" mkdir temp
             stages{
                 stage("Installing Devpi Client") {
                     steps{
-                        bat "python -m venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade"
-                        bat "venv\\Scripts\\pip install devpi-client"
+                        bat "python -m venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip install devpi-client"
                     }
 
                 }
