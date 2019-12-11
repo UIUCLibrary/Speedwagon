@@ -507,10 +507,7 @@ pipeline {
                             }
                             steps{
                                 unstash "latex_docs"
-                                sh "mkdir -p dist/docs"
-                                dir("build/docs/latex"){
-                                    sh "make"
-                                }
+                                sh "mkdir -p dist/docs && cd build/docs/latex && make"
                                 sh "mv build/docs/latex/*.pdf dist/docs/"
                             }
                             post{
