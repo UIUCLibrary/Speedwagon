@@ -879,7 +879,6 @@ pipeline {
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
-                            triggeredBy "TimerTriggerCause"
                         }
                         beforeAgent true
                     }
@@ -986,10 +985,7 @@ if not exist "temp" mkdir temp
                 label "Docker && Windows && 1903"
             }
             when{
-                anyOf{
-                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                    triggeredBy "TimerTriggerCause"
-                }
+                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
             }
             options{
                 timeout(5)
@@ -1031,10 +1027,7 @@ if not exist "temp" mkdir temp
         stage("Deploy to Devpi"){
             when {
                 allOf{
-                    anyOf{
-                        equals expected: true, actual: params.DEPLOY_DEVPI
-                        triggeredBy "TimerTriggerCause"
-                    }
+                    equals expected: true, actual: params.DEPLOY_DEVPI
                     anyOf {
                         equals expected: "master", actual: env.BRANCH_NAME
                         equals expected: "dev", actual: env.BRANCH_NAME
