@@ -338,7 +338,7 @@ def testPythonPackages(pkgRegex, testEnvs, pipcache){
 pipeline {
     agent none
     triggers {
-        cron('@daily')
+       parameterizedCron '@daily % PACKAGE_WINDOWS_STANDALONE_MSI=true; DEPLOY_DEVPI=true; TEST_RUN_TOX=true'
     }
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
@@ -351,8 +351,8 @@ pipeline {
         PIPENV_NOSPIN = "True"
     }
     parameters {
-//        booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
+        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: false, description: "Create a standalone wix based .msi installer")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
 
         // TODO: make this false
@@ -876,7 +876,6 @@ pipeline {
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
-                            triggeredBy "TimerTriggerCause"
                         }
                         beforeAgent true
                     }
@@ -1014,10 +1013,8 @@ if not exist "temp" mkdir temp
                 label "Docker && Windows && 1903"
             }
             when{
-                anyOf{
-                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                    triggeredBy "TimerTriggerCause"
-                }
+                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                beforeAgent true
             }
             options{
                 timeout(5)
@@ -1059,10 +1056,7 @@ if not exist "temp" mkdir temp
         stage("Deploy to Devpi"){
             when {
                 allOf{
-                    anyOf{
-                        equals expected: true, actual: params.DEPLOY_DEVPI
-                        triggeredBy "TimerTriggerCause"
-                    }
+                    equals expected: true, actual: params.DEPLOY_DEVPI
                     anyOf {
                         equals expected: "master", actual: env.BRANCH_NAME
                         equals expected: "dev", actual: env.BRANCH_NAME
