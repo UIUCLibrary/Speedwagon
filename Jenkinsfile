@@ -344,7 +344,7 @@ pipeline {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
         checkoutToSubdirectory("source")
         buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
-        preserveStashes(buildCount: 5)
+        //preserveStashes(buildCount: 5)
     }
     environment {
         build_number = get_build_number()
