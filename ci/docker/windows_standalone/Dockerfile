@@ -76,5 +76,8 @@ RUN python -m pip install pip --upgrade ; `
         wheel
 
 RUN python -m pip wheel -r c:\temp\requirements.txt -r c:\temp\requirements-dev.txt --wheel-dir c:\wheel_cache
+ADD ci/docker/windows_standalone/startup.bat c:\startup\startup.bat
+SHELL ["cmd", "/S", "/C"]
+RUN REG ADD "HKLM\Software\Microsoft\Command Processor" /v AutoRun /t REG_SZ /d c:\startup\startup.bat
 #ENTRYPOINT C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 &&
 #CMD ["powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass"]
