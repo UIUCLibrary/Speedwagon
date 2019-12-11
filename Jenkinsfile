@@ -2,9 +2,9 @@
 @Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
 import org.ds.*
 import static groovy.json.JsonOutput.* // For pretty printing json data
+//import java.util.regex.Pattern
 
 @Library(["devpi", "PythonHelpers"]) _
-def CMAKE_VERSION = "cmake3.13"
 
 def get_package_version(stashName, metadataFile){
     ws {
@@ -16,7 +16,49 @@ def get_package_version(stashName, metadataFile){
         }
     }
 }
+def sanitize_chocolatey_version(version){
+    script{
+        def dot_to_slash_pattern = '(?<=\\d)\\.?(?=(dev|b|a|rc)(\\d)?)'
 
+//        def rc_pattern = "(?<=\d(\.?))rc((?=\d)?)"
+        def dashed_version = version.replaceFirst(dot_to_slash_pattern, "-")
+
+        def beta_pattern = "(?<=\\d(\\.?))b((?=\\d)?)"
+        if(dashed_version.matches(beta_pattern)){
+            return dashed_version.replaceFirst(beta_pattern, "beta")
+        }
+
+        def alpha_pattern = "(?<=\\d(\\.?))a((?=\\d)?)"
+        if(dashed_version.matches(alpha_pattern)){
+            return dashed_version.replaceFirst(alpha_pattern, "alpha")
+        }
+        return dashed_version
+        return new_version
+    }
+}
+
+def make_chocolatey_distribution(install_file, packageversion){
+    script{
+        def maintainername = "Henry Borchers"
+        def sanitized_packageversion=sanitize_chocolatey_version(packageversion)
+        def packageSourceUrl="https://github.com/UIUCLibrary/Speedwagon"
+        def installerType='msi'
+        def install_file_name = findFiles(glob: "${install_file}")[0].name
+        powershell(
+            label: "Making chocolatey Package Configuration",
+            script: "choco new speedwagon packageversion=${sanitized_packageversion} maintainername='\"${maintainername}\"' packageSourceUrl='${packageSourceUrl}' InstallerType='${installerType}' InstallerFile='${install_file_name}'"
+        )
+        powershell(
+            label: "Adding ${install_file} to package",
+            script: "Copy-Item \"${install_file}\" -Destination speedwagon\\tools\\"
+        )
+
+        powershell(
+            label: "Creating Package",
+            script: "cd speedwagon; choco pack"
+        )
+    }
+}
 def get_package_name(stashName, metadataFile){
     ws {
         unstash "${stashName}"
@@ -335,6 +377,64 @@ def testPythonPackages(pkgRegex, testEnvs, pipcache){
 }
 
 
+def test_msi_install(){
+
+    bat "if not exist logs mkdir logs"
+    script{
+
+        def docker_image_name = "test-image:${env.BRANCH_NAME}_${currentBuild.number}"
+        try {
+            def testImage = docker.build(docker_image_name, "-f ./ci/docker/test_installation/Dockerfile .")
+            testImage.inside{
+                // Copy log files from c:\\logs in the docker container to workspace\\logs
+                bat "cd ${WORKSPACE}\\logs && copy c:\\logs\\*.log"
+                bat 'dir "%PROGRAMFILES%\\Speedwagon"'
+            }
+        } finally{
+            bat "docker image rm -f ${docker_image_name}"
+        }
+    }
+}
+def build_standalone(){
+    unstash "SPEEDWAGON_DOC_PDF"
+    bat """if not exist "cmake_build" mkdir cmake_build
+if not exist "logs" mkdir logs
+if not exist "logs\\ctest" mkdir logs\\ctest
+if not exist "temp" mkdir temp
+"""
+//C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64
+//cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf
+//C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\cmake_build && cmake --build .
+    cmakeBuild(
+        buildDir: 'cmake_build',
+        cmakeArgs: """-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache
+-DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv
+-DPYTHON_EXECUTABLE="${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}"
+-DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf""",
+        generator: 'Ninja',
+        installation: 'InSearchPath',
+        sourceDir: 'source',
+        steps: [
+            [withCmake: true]
+        ]
+    )
+    ctest(
+        arguments: "-T test -C Release -j ${NUMBER_OF_PROCESSORS}",
+        installation: 'InSearchPath',
+        workingDir: 'cmake_build'
+        )
+    script{
+        def packaging_msi = false
+        if(params.PACKAGE_WINDOWS_STANDALONE_MSI || params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY){
+            packaging_msi = true
+        }
+        def cpack_generators = generate_cpack_arguments(packaging_msi, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)
+        cpack(
+            arguments: "-C Release -G ${cpack_generators} --config cmake_build/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
+            installation: 'InSearchPath'
+        )
+    }
+}
 pipeline {
     agent none
     triggers {
@@ -343,7 +443,7 @@ pipeline {
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
         checkoutToSubdirectory("source")
-        buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
+//        buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
         //preserveStashes(buildCount: 5)
     }
     environment {
@@ -352,18 +452,18 @@ pipeline {
     }
     parameters {
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
-        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: false, description: "Create a standalone wix based .msi installer")
-        booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
+        booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
 
-        // TODO: make this false
-        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: true, description: "Create a standalone wix based .msi installer")
+        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: false, description: "Create a standalone wix based .msi installer")
 
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: false, description: "Create a standalone NULLSOFT NSIS based .exe installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_ZIP", defaultValue: false, description: "Create a standalone portable package")
+        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY", defaultValue: false, description: "Create package for the Chocolatey package manager")
 
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
 
+        booleanParam(name: "DEPLOY_CHOLOCATEY", defaultValue: false, description: "Deploy to Chocolatey repository")
         booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
@@ -371,32 +471,27 @@ pipeline {
     }
 
     stages {
-
         stage("Configure"){
-            // environment{
-            //    PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-            //}
             stages{
                 stage("Initial setup"){
                     parallel{
-                        stage("Testing Jira epic"){
-                            agent any
-                            options {
-                                skipDefaultCheckout(true)
-
-                            }
-                            steps {
-                                check_jira_project('PSR',, 'logs/jira_project_data.json')
-                                check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
-
-                            }
-                            post{
-                                cleanup{
-                                    cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
-                                }
-                            }
-
-                        }
+//                        stage("Testing Jira epic"){
+//                            agent any
+//                            options {
+//                                skipDefaultCheckout(true)
+//                            }
+//                            steps {
+//                                check_jira_project('PSR',, 'logs/jira_project_data.json')
+//                                check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
+//
+//                            }
+//                            post{
+//                                cleanup{
+//                                    cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
+//                                }
+//                            }
+//
+//                        }
                         stage("Getting Distribution Info"){
                             agent {
                                 dockerfile {
@@ -416,10 +511,13 @@ pipeline {
                                     archiveArtifacts artifacts: "speedwagon.dist-info/**"
                                 }
                                 cleanup{
-                                    cleanWs(deleteDirs: true,
-                                            patterns: [[pattern: "source", type: 'EXCLUDE']],
-                                            notFailBuild: true
-                                        )
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        patterns: [
+                                            [pattern: "source", type: 'EXCLUDE']
+                                        ],
+                                        notFailBuild: true
+                                    )
                                 }
                             }
                         }
@@ -444,14 +542,16 @@ pipeline {
                     post{
                         always{
                             archiveArtifacts artifacts: "logs/build_errors.log"
-                           
+
                         }
                         cleanup{
-                            //cleanWs(patterns: [[pattern: 'logs/build_errors', type: 'INCLUDE']])
-                            cleanWs(deleteDirs: true,
-                                    patterns: [[pattern: "source", type: 'EXCLUDE']],
-                                    notFailBuild: true
-                                )
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: "source", type: 'EXCLUDE']
+                                ],
+                                notFailBuild: true
+                            )
                         }
                         success{
                             stash includes: "build/lib/**", name: 'PYTHON_BUILD_FILES'
@@ -459,7 +559,6 @@ pipeline {
                     }
                 }
                 stage("Sphinx Documentation"){
-
                     agent none
                     stages{
                         stage("Build Sphinx"){
@@ -523,7 +622,6 @@ pipeline {
             }
         }
         stage("Test") {
-
             agent {
                 dockerfile {
                     filename 'ci\\docker\\python37\\Dockerfile'
@@ -633,7 +731,6 @@ pipeline {
                                                 'TOXENV="py"'
                                             ]
                                         ) {
-
                                             bat "python -m pip install pipenv tox"
                                             try{
                                                 // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
@@ -670,9 +767,8 @@ pipeline {
                                     }
                                     bat(
                                         script: 'pylint speedwagon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ..\\reports\\pylint_issues.txt',
-                                            label: "Running pylint for sonarqube",
-                                            returnStatus: true
-
+                                        label: "Running pylint for sonarqube",
+                                        returnStatus: true
                                     )
                                 }
                             }
@@ -680,17 +776,15 @@ pipeline {
                                 always{
                                     stash includes: "reports/pylint_issues.txt,reports/pylint.txt", name: 'PYLINT_REPORT'
                                     archiveArtifacts allowEmptyArchive: true, artifacts: "reports/pylint.txt"
-
                                     recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
-
                                 }
                             }
                         }
                         stage("Run Flake8 Static Analysis") {
                             steps{
-                                bat "if not exist logs mkdir logs"
+//                                bat "if not exist logs mkdir logs"
                                 catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
-                                    bat script: "cd source && flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
+                                    bat script: "(if not exist logs mkdir logs) && cd source && flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                 }
                             }
                             post {
@@ -711,11 +805,20 @@ pipeline {
                                 bat "coverage combine && coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && coverage html -d ${WORKSPACE}\\reports\\coverage"
                             }
                             stash includes: "reports/coverage.xml", name: "COVERAGE_REPORT_DATA"
-                            publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                            publishCoverage adapters: [
-                                            coberturaAdapter('reports/coverage.xml')
-                                            ],
-                                        sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                            publishHTML([
+                                allowMissing: true,
+                                alwaysLinkToLastBuild: false,
+                                keepAll: false,
+                                reportDir: "reports/coverage",
+                                reportFiles: 'index.html',
+                                reportName: 'Coverage', reportTitles: ''
+                            ])
+                            publishCoverage(
+                                adapters: [
+                                        coberturaAdapter('reports/coverage.xml')
+                                    ],
+                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                            )
                         }
                     }
                 }
@@ -731,73 +834,68 @@ pipeline {
             }
         }
         stage("Run Sonarqube Analysis"){
-                    when{
-                        equals expected: "master", actual: env.BRANCH_NAME
+            when{
+                equals expected: "master", actual: env.BRANCH_NAME
+            }
+            agent{
+                label "windows"
+            }
+           options{
+               skipDefaultCheckout true
+           }
+            environment{
+                scannerHome = tool name: 'sonar-scanner-3.3.0', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+            }
+            steps{
+                checkout scm
+                unstash "COVERAGE_REPORT_DATA"
+                unstash "PYTEST_UNIT_TEST_RESULTS"
+                unstash "PYLINT_REPORT"
+                withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
+                    bat(
+                        label: "Running sonar scanner",
+                        script: '\
+            "%scannerHome%/bin/sonar-scanner" \
+            -D"sonar.projectBaseDir=%WORKSPACE%" \
+            -Dsonar.python.pylint.reportPath=%WORKSPACE%/reports/pylint.txt \
+            -D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
+            -D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
+            -D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
+            -X'
+                    )
+                }
+                script{
+                    def sonarqube_result = waitForQualityGate(abortPipeline: false)
+                    if (sonarqube_result.status != 'OK') {
+                        unstable "SonarQube quality gate: ${sonarqube_result.status}"
                     }
-                    agent{
-                        label "windows"
-                    }
-                   options{
-                       skipDefaultCheckout true
-                   //     timeout(5)
-                   }
-                    environment{
-                        scannerHome = tool name: 'sonar-scanner-3.3.0', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-//                        PATH = "${WORKSPACE}\\venv\\Scripts;${PATH}"
-                    }
-                    steps{
+                    def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
+                    writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
+                }
+            }
+            post{
+                always{
+                    archiveArtifacts(
+                        allowEmptyArchive: true,
+                        artifacts: ".scannerwork/report-task.txt"
+                    )
+                    stash includes: "reports/sonar-report.json", name: 'SONAR_REPORT'
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
+                    node('Windows'){
                         checkout scm
-                        unstash "COVERAGE_REPORT_DATA"
-                        unstash "PYTEST_UNIT_TEST_RESULTS"
-                        unstash "PYLINT_REPORT"
-                        withSonarQubeEnv(installationName: "sonarqube.library.illinois.edu") {
-                            bat(
-                                label: "Running sonar scanner",
-                                script: '\
-                    "%scannerHome%/bin/sonar-scanner" \
-                    -D"sonar.projectBaseDir=%WORKSPACE%" \
-                    -Dsonar.python.pylint.reportPath=%WORKSPACE%/reports/pylint.txt \
-                    -D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
-                    -D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
-                    -D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
-                    -X'
-                            )
-
-                        }
-                        script{
-                            def sonarqube_result = waitForQualityGate(abortPipeline: false)
-                            if (sonarqube_result.status != 'OK') {
-                                unstable "SonarQube quality gate: ${sonarqube_result.status}"
-                            }
-
-                            def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
-                            writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
-
-                        }
-                    }
-                    post{
-                        always{
-                            archiveArtifacts(
-                                allowEmptyArchive: true,
-                                artifacts: ".scannerwork/report-task.txt"
-                            )
-                            stash includes: "reports/sonar-report.json", name: 'SONAR_REPORT'
-                            archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
-                            node('Windows'){
-                                checkout scm
-                                unstash "SONAR_REPORT"
-                                recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
-                                deleteDir()
-                            }
-                        }
-                        cleanup{
-                            cleanWs(deleteDirs: true,
-                                    patterns: [[pattern: 'source', type: 'EXCLUDE']],
-                                    notFailBuild: true
-                                )
-                        }
+                        unstash "SONAR_REPORT"
+                        recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                        deleteDir()
                     }
                 }
+                cleanup{
+                    cleanWs(deleteDirs: true,
+                            patterns: [[pattern: 'source', type: 'EXCLUDE']],
+                            notFailBuild: true
+                        )
+                }
+            }
+        }
         stage("Packaging") {
 
             failFast true
@@ -816,9 +914,6 @@ pipeline {
                                 timeout(5){
                                     unstash "PYTHON_BUILD_FILES"
                                     dir("source"){
-    //                                    powershell "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
-    //                                    bat "python -m pip -upgrade pip && pip install --upgrade setuptools"
-    //                                    bat "pip install--upgrade pyqt_distutils wheel"
                                         bat script: "python setup.py build -b ../build sdist -d ../dist --format zip bdist_wheel -d ../dist"
                                     }
                                 }
@@ -876,6 +971,8 @@ pipeline {
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
+                            equals expected: true, actual: params.DEPLOY_CHOLOCATEY
                         }
                         beforeAgent true
                     }
@@ -883,63 +980,19 @@ pipeline {
                         PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
                         PIP_TRUSTED_HOST="devpi.library.illinois.edu"
                     }
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/windows_standalone/Dockerfile'
-                            dir 'source'
-                            label 'Windows&&Docker'
-                          }
-                    }
+
                     stages{
                         stage("CMake Build"){
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/windows_standalone/Dockerfile'
+                                    dir 'source'
+                                    label 'Windows&&Docker'
+                                  }
+                            }
+                            steps {
+                                build_standalone()
 
-                            steps {
-                                unstash "SPEEDWAGON_DOC_PDF"
-                                //run_cmake_build()
-                                bat """if not exist "cmake_build" mkdir cmake_build
-if not exist "logs" mkdir logs
-if not exist "logs\\ctest" mkdir logs\\ctest
-if not exist "temp" mkdir temp
-"""
-//C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64
-//cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf
-//C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\cmake_build && cmake --build .
-                            cmakeBuild(
-                                buildDir: 'cmake_build',
-                                cmakeArgs: """-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache
--DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv
--DPYTHON_EXECUTABLE="${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}"
--DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf""",
-                                generator: 'Ninja',
-                                installation: 'InSearchPath',
-                                sourceDir: 'source',
-                                steps: [
-                                    [withCmake: true]
-                                ]
-                            )
-                            }
-                        }
-                        stage("CTest"){
-                            options{
-                                timeout(3)
-                            }
-                            steps {
-                                ctest(
-                                    arguments: "-T test -C Release -j ${NUMBER_OF_PROCESSORS}",
-                                    installation: 'InSearchPath',
-                                    workingDir: 'cmake_build'
-                                    )
-                            }
-                        }
-                        stage("CPack"){
-                            options{
-                                timeout(10)
-                            }
-                            steps {
-                                cpack(
-                                    arguments: "-C Release -G ${generate_cpack_arguments(params.PACKAGE_WINDOWS_STANDALONE_MSI, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)} --config cmake_build/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
-                                    installation: 'InSearchPath'
-                                )
                             }
                             post {
                                 success{
@@ -949,110 +1002,133 @@ if not exist "temp" mkdir temp
                                 failure {
                                     archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log,dist/**/*.wxs"
                                 }
+                                always{
+                                    archiveArtifacts(
+                                        allowEmptyArchive: true,
+                                        artifacts: "logs/*.log"
+                                        )
+                                }
+
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        notFailBuild: true
+                                    )
+                                }
+                            }
+                        }
+                        stage("Testing MSI Install"){
+                            //agent {
+                            //    label "Docker && Windows"
+                            //}
+                            agent {
+                              docker {
+                                args '-u ContainerAdministrator'
+                                image 'mcr.microsoft.com/windows/servercore:ltsc2019'
+                                label 'Windows&&Docker'
+                              }
+                            }
+
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                    equals expected: true, actual: params.DEPLOY_CHOLOCATEY
+                                }
+                                beforeAgent true
+                            }
+                            options{
+                                timeout(15)
+                                skipDefaultCheckout(true)
+                            }
+                            steps{
+                                unstash 'STANDALONE_INSTALLERS'
+                                script{
+                                    def msi_file = findFiles(glob: "dist/*.msi")[0].path
+                                    powershell "New-Item -ItemType Directory -Force -Path ${WORKSPACE}\\logs; msiexec /i ${msi_file} /qn /norestart /L*v! ${WORKSPACE}\\logs\\msiexec.log"
+                                }
+                                //test_msi_install()
+                            }
+                            post {
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        notFailBuild: true
+                                    )
+                                }
+                            }
+                        }
+                        stage("Package MSI for Chocolatey"){
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/chocolatey/Dockerfile'
+                                    dir 'source'
+                                    label 'Windows&&Docker'
+                                  }
+                            }
+                            options{
+                                timeout(15)
+                            }
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
+                                    equals expected: true, actual: params.DEPLOY_CHOLOCATEY
+                                }
+                                beforeAgent true
+                            }
+                            steps{
+                                unstash 'STANDALONE_INSTALLERS'
+                                script{
+                                    make_chocolatey_distribution(
+                                        findFiles(glob: "dist/*.msi")[0],
+                                        get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
+                                        )
+                                }
+                            }
+                            post {
+                                success{
+                                    stash includes: "speedwagon/*.nupkg", name: "CHOCOLATEY_PACKAGE"
+                                    //archiveArtifacts(
+                                    //    allowEmptyArchive: true,
+                                    //    artifacts: "speedwagon/*.nupkg"
+                                    //    )
+                                }
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        notFailBuild: true
+                                    )
+                                }
+                            }
+                        }
+                        stage("Testing Chocolatey Package: Install"){
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
+                                    equals expected: true, actual: params.DEPLOY_CHOLOCATEY
+                                }
+                                beforeAgent true
+                            }
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/chocolatey/Dockerfile'
+                                    dir 'source'
+                                    args '-u ContainerAdministrator'
+                                    label 'Windows&&Docker'
+                                  }
+                            }
+                            steps{
+                                unstash "CHOCOLATEY_PACKAGE"
+                                bat 'choco install speedwagon -y --pre -dv -s %WORKSPACE%\\speedwagon'
+                                bat "speedwagon --version"
                             }
                         }
                     }
-                    post {
-                        failure {
-                            cleanWs(
-                                deleteDirs: true,
-                                disableDeferredWipeout: true,
-                                patterns: [
-                                    [pattern: 'standalone_venv ', type: 'INCLUDE'],
-                                    [pattern: 'python_deps_cache', type: 'INCLUDE'],
-
-                                    ]
-                                )
-                            dir("standalone_venv"){
-                                deleteDir()
-                            }
-                        }
-                        cleanup{
-                            cleanWs(deleteDirs: true,
-                                    notFailBuild: true
-                                )
-                            // cleanWs(
-                            //     deleteDirs: true,
-                            //     disableDeferredWipeout: true,
-                            //     patterns: [
-                            //         [pattern: 'cmake_build', type: 'INCLUDE'],
-                            //         [pattern: '*@tmp', type: 'INCLUDE'],
-                            //         [pattern: 'source', type: 'INCLUDE'],
-                            //         [pattern: 'temp', type: 'INCLUDE'],
-                            //         [pattern: 'dist', type: 'INCLUDE'],
-                            //         [pattern: 'logs', type: 'INCLUDE'],
-                            //         [pattern: 'generatedJUnitFiles', type: 'INCLUDE']
-                            //     ]
-                            // )
-                        }
-                    }
                 }
             }
         }
-        stage("Package for chocolatey"){
-            agent {
-                dockerfile {
-                    filename 'ci/docker/chocolatey/Dockerfile'
-                    dir 'source'
-                    label 'Windows&&Docker'
-                  }
-            }
-            when{
-                anyOf{
-                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                    triggeredBy "TimerTriggerCause"
-                }
-            }
-            steps{
-                echo "making chocolatey"
-            }
 
-        }
-        stage("Testing MSI Install"){
-            agent {
-                label "Docker && Windows && 1903"
-            }
-            when{
-                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                beforeAgent true
-            }
-            options{
-                timeout(5)
-                skipDefaultCheckout(true)
-            }
-            steps{
 
-                checkout scm
-                bat "if not exist logs mkdir logs"
-                script{
-                    unstash 'STANDALONE_INSTALLERS'
-                    def docker_image_name = "test-image:${env.BRANCH_NAME}_${currentBuild.number}"
-                    try {
-                        def testImage = docker.build(docker_image_name, "-f ./ci/docker/test_installation/Dockerfile .")
-                        testImage.inside{
-                            // Copy log files from c:\\logs in the docker container to workspace\\logs
-                            bat "cd ${WORKSPACE}\\logs && copy c:\\logs\\*.log"
-                            bat 'dir "%PROGRAMFILES%\\Speedwagon"'
-                        }
-                    } finally{
-                        bat "docker image rm -f ${docker_image_name}"
-                    }
-
-                }
-
-            }
-            post{
-                always{
-                    archiveArtifacts(
-                        allowEmptyArchive: true,
-                        artifacts: "logs/*.log"
-                        )
-                }
-                cleanup{
-                    cleanWs()
-                }
-            }
-        }
         stage("Deploy to Devpi"){
             when {
                 allOf{
@@ -1063,9 +1139,9 @@ if not exist "temp" mkdir temp
                     }
                 }
             }
-            options{
-                timestamps()
-            }
+//            options{
+//                timestamps()
+//            }
             agent{
                 label "windows && Python3"
             }
@@ -1093,9 +1169,7 @@ if not exist "temp" mkdir temp
                     parallel {
                         stage("Source Distribution: .zip") {
                             agent {
-                                node {
-                                    label "Windows && Python3 && !Docker"
-                                }
+                                label "Windows && Python3"
                             }
                             options {
                                 skipDefaultCheckout(true)
@@ -1106,9 +1180,7 @@ if not exist "temp" mkdir temp
                                         PATH = "${tool 'CPython-3.6'};${PATH}"
                                     }
                                     steps {
-                                        lock("system_python_${NODE_NAME}"){
-                                            bat "python -m venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
-                                        }
+                                        bat "python -m venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
                                     }
                                 }
                                 stage("Testing sdist"){
@@ -1138,17 +1210,13 @@ if not exist "temp" mkdir temp
                                     cleanWs(deleteDirs: true,
                                         notFailBuild: true
                                     )
-                                    // cleanWs deleteDirs: true, patterns: [
-                                    //         [pattern: 'certs', type: 'INCLUDE'],
-                                    //         [pattern: '*tmp', type: 'INCLUDE']
-                                    //     ]
                                 }
                             }
                         }
                         stage("Built Distribution: .whl") {
                             agent {
                                 node {
-                                    label "Windows && Python3 && !Docker"
+                                    label "Windows && Python3"
                                 }
                             }
                             options {
@@ -1183,17 +1251,9 @@ if not exist "temp" mkdir temp
                                     }
                                 }
                             }
-
-
                             post{
-                                failure{
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'venv', type: 'INCLUDE']]
-                                }
                                 cleanup{
-                                    cleanWs deleteDirs: true, patterns: [
-                                            [pattern: 'certs', type: 'INCLUDE'],
-                                            [pattern: '*tmp', type: 'INCLUDE']
-                                        ]
+                                    cleanWs deleteDirs: true
                                 }
                             }
                         }
@@ -1234,6 +1294,39 @@ if not exist "temp" mkdir temp
         stage("Deploy"){
 
             parallel {
+                stage("Deploy to Chocolatey") {
+                    when{
+                        equals expected: true, actual: params.DEPLOY_CHOLOCATEY
+                        beforeInput true
+                        beforeAgent true
+                    }
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/chocolatey/Dockerfile'
+                            dir 'source'
+                            args '-u ContainerAdministrator'
+                            label 'Windows&&Docker'
+                          }
+                    }
+                    input {
+                      message 'Select Chocolatey server'
+                      parameters {
+                        choice choices: ['https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-beta/', 'https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-public/'], description: 'Chocolatey Server to deploy to', name: 'CHOCOLATEY_SERVER'
+                        credentials credentialType: 'org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl', defaultValue: 'NEXUS_NUGET_API_KEY', description: 'Nuget API key for Chocolatey', name: 'CHOCO_REPO_KEY', required: true
+                      }
+                    }
+                    steps{
+                        unstash "CHOCOLATEY_PACKAGE"
+                        withCredentials([string(credentialsId: "${CHOCO_REPO_KEY}", variable: 'KEY')]) {
+                            bat(
+                                label: "Deploying to Chocolatey",
+                                script: "cd speedwagon && choco push -s %CHOCOLATEY_SERVER% -k %KEY%"
+
+                            )
+                        }
+
+                    }
+                }
                 stage("Deploy Online Documentation") {
                     when{
                         equals expected: true, actual: params.DEPLOY_DOCS
@@ -1287,9 +1380,9 @@ if not exist "temp" mkdir temp
 
                     }
                     agent{
-                        node{
-                            label "Windows"
-                        }
+//                        node{
+                        label "Windows"
+//                        }
                     }
                     options {
                         skipDefaultCheckout(true)
