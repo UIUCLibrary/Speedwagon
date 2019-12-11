@@ -439,8 +439,7 @@ pipeline {
                           }
                     }
                     steps {
-                        bat "if not exist logs mkdir logs"
-                        bat "cd source && pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
+                        bat "(if not exist logs mkdir logs) && cd source && pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
                     }
                     post{
                         always{
