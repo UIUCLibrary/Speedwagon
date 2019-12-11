@@ -986,6 +986,7 @@ if not exist "temp" mkdir temp
             }
             when{
                 equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                beforeAgent true
             }
             options{
                 timeout(5)
