@@ -338,7 +338,8 @@ def testPythonPackages(pkgRegex, testEnvs, pipcache){
 pipeline {
     agent none
     triggers {
-        cron('@daily')
+       parameterizedCron '@daily % PACKAGE_WINDOWS_STANDALONE_MSI=true; DEPLOY_DEVPI=true'
+//        cron('@daily')
     }
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
