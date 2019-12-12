@@ -1,9 +1,9 @@
 #!groovy
-@Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
+// @Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
 import org.ds.*
 import static groovy.json.JsonOutput.* // For pretty printing json data
 
-@Library(["devpi", "PythonHelpers"]) _
+//@Library(["devpi", "PythonHelpers"]) _
 def CMAKE_VERSION = "cmake3.13"
 
 def get_package_version(stashName, metadataFile){
@@ -349,6 +349,10 @@ pipeline {
     environment {
         build_number = get_build_number()
         PIPENV_NOSPIN = "True"
+    }
+    libraries {
+      lib('devpi')
+      lib('PythonHelpers')
     }
     parameters {
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
