@@ -438,43 +438,51 @@ def test_msi_install(){
     }
 }
 def build_standalone(){
-    unstash "SPEEDWAGON_DOC_PDF"
-    bat """if not exist "cmake_build" mkdir cmake_build
-if not exist "logs" mkdir logs
-if not exist "logs\\ctest" mkdir logs\\ctest
-if not exist "temp" mkdir temp
-"""
-//C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64
-//cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf
-//C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\cmake_build && cmake --build .
-    cmakeBuild(
-        buildDir: 'cmake_build',
-        cmakeArgs: """-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache
--DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv
--DPYTHON_EXECUTABLE="${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}"
--DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf""",
-        generator: 'Ninja',
-        installation: 'InSearchPath',
-        sourceDir: 'source',
-        steps: [
-            [withCmake: true]
-        ]
-    )
-    ctest(
-        arguments: "-T test -C Release -j ${NUMBER_OF_PROCESSORS}",
-        installation: 'InSearchPath',
-        workingDir: 'cmake_build'
+    stage("Building Standalone"){
+
+        unstash "SPEEDWAGON_DOC_PDF"
+        bat """if not exist "cmake_build" mkdir cmake_build
+    if not exist "logs" mkdir logs
+    if not exist "logs\\ctest" mkdir logs\\ctest
+    if not exist "temp" mkdir temp
+    """
+    //C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64
+    //cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf
+    //C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\cmake_build && cmake --build .
+        cmakeBuild(
+            buildDir: 'cmake_build',
+            cmakeArgs: """-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache
+    -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv
+    -DPYTHON_EXECUTABLE="${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}"
+    -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf""",
+            generator: 'Ninja',
+            installation: 'InSearchPath',
+            sourceDir: 'source',
+            steps: [
+                [withCmake: true]
+            ]
         )
-    script{
-        def packaging_msi = false
-        if(params.PACKAGE_WINDOWS_STANDALONE_MSI || params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY){
-            packaging_msi = true
+    }
+    stage("Testing standalone"){
+
+        ctest(
+            arguments: "-T test -C Release -j ${NUMBER_OF_PROCESSORS}",
+            installation: 'InSearchPath',
+            workingDir: 'cmake_build'
+            )
+    }
+    stage("Packaging standalone"){
+        script{
+            def packaging_msi = false
+            if(params.PACKAGE_WINDOWS_STANDALONE_MSI || params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY){
+                packaging_msi = true
+            }
+            def cpack_generators = generate_cpack_arguments(packaging_msi, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)
+            cpack(
+                arguments: "-C Release -G ${cpack_generators} --config cmake_build/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
+                installation: 'InSearchPath'
+            )
         }
-        def cpack_generators = generate_cpack_arguments(packaging_msi, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)
-        cpack(
-            arguments: "-C Release -G ${cpack_generators} --config cmake_build/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
-            installation: 'InSearchPath'
-        )
     }
 }
 pipeline {
