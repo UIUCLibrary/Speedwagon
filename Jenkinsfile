@@ -37,6 +37,23 @@ def sanitize_chocolatey_version(version){
     }
 }
 
+def run_pylint(){
+    bat "if not exist logs mkdir logs"
+    dir("source"){
+        catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+            bat(
+                script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ..\\reports\\pylint.txt',
+                label: "Running pylint"
+            )
+        }
+        bat(
+            script: 'pylint speedwagon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ..\\reports\\pylint_issues.txt',
+            label: "Running pylint for sonarqube",
+            returnStatus: true
+        )
+    }
+}
+
 def make_chocolatey_distribution(install_file, packageversion){
     script{
         def maintainername = "Henry Borchers"
@@ -765,20 +782,21 @@ pipeline {
                         }
                         stage("Run Pylint Static Analysis") {
                             steps{
-                                bat "if not exist logs mkdir logs"
-                                dir("source"){
-                                    catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-                                        bat(
-                                            script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ..\\reports\\pylint.txt',
-                                            label: "Running pylint"
-                                        )
-                                    }
-                                    bat(
-                                        script: 'pylint speedwagon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ..\\reports\\pylint_issues.txt',
-                                        label: "Running pylint for sonarqube",
-                                        returnStatus: true
-                                    )
-                                }
+                                run_pylint()
+                                //bat "if not exist logs mkdir logs"
+                                //dir("source"){
+                                //    catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+                                //        bat(
+                                //            script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ..\\reports\\pylint.txt',
+                                //            label: "Running pylint"
+                                //        )
+                                //    }
+                                //    bat(
+                                //        script: 'pylint speedwagon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ..\\reports\\pylint_issues.txt',
+                                //        label: "Running pylint for sonarqube",
+                                //        returnStatus: true
+                                //    )
+                                //}
                             }
                             post{
                                 always{
