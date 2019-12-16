@@ -979,7 +979,7 @@ pipeline {
                                 }
                             }
                             post{
-                                success{
+                                always{
                                     stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
                                 }
                                 cleanup{
