@@ -39,24 +39,22 @@ def sanitize_chocolatey_version(version){
 
 def run_tox(){
     bat "if not exist logs mkdir logs"
-    dir("source"){
-        script{
-            withEnv(
-                [
-                    'PIP_INDEX_URL="https://devpi.library.illinois.edu/production/release"',
-                    'PIP_TRUSTED_HOST="devpi.library.illinois.edu"',
-                    'TOXENV="py"'
-                ]
-            ) {
-                bat "python -m pip install pipenv tox"
-                try{
-                    // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
-                    // Tox has a bug that fails when trying to write the json report
-                    // when --parallel is run at the same time
-                    bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
-                } catch (exc) {
-                    bat "tox -vv --workdir ${WORKSPACE}\\.tox --recreate"
-                }
+    script{
+        withEnv(
+            [
+                'PIP_INDEX_URL="https://devpi.library.illinois.edu/production/release"',
+                'PIP_TRUSTED_HOST="devpi.library.illinois.edu"',
+                'TOXENV="py"'
+            ]
+        ) {
+            bat "python -m pip install pipenv tox"
+            try{
+                // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
+                // Tox has a bug that fails when trying to write the json report
+                // when --parallel is run at the same time
+                bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
+            } catch (exc) {
+                bat "tox -vv --workdir ${WORKSPACE}\\.tox --recreate"
             }
         }
     }
@@ -64,19 +62,17 @@ def run_tox(){
 
 def run_pylint(){
     bat "if not exist logs mkdir logs"
-    dir("source"){
-        catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-            bat(
-                script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ..\\reports\\pylint.txt',
-                label: "Running pylint"
-            )
-        }
+    catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
         bat(
-            script: 'pylint speedwagon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ..\\reports\\pylint_issues.txt',
-            label: "Running pylint for sonarqube",
-            returnStatus: true
+            script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports\\pylint.txt',
+            label: "Running pylint"
         )
     }
+    bat(
+        script: 'pylint speedwagon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports\\pylint_issues.txt',
+        label: "Running pylint for sonarqube",
+        returnStatus: true
+    )
 }
 
 def make_chocolatey_distribution(install_file, packageversion){
@@ -114,22 +110,20 @@ def get_package_name(stashName, metadataFile){
 
 def build_sphinx_stage(){
     bat "if not exist logs mkdir logs"
-    dir("source"){
-        bat(label: "Install pipenv",
-            script: "python -m pipenv install --dev"
-            )
-        bat(label: "Run build_ui",
-            script: "pipenv run python setup.py build_ui"
-            )
-        bat(
-            label: "Building HTML docs on ${env.NODE_NAME}",
-            script: "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx.log"
-            )
-        bat(
-            label: "Building LaTex docs on ${env.NODE_NAME}",
-            script: "python -m pipenv run sphinx-build docs/source ..\\build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
-            )
-    }
+    bat(label: "Install pipenv",
+        script: "python -m pipenv install --dev"
+        )
+    bat(label: "Run build_ui",
+        script: "pipenv run python setup.py build_ui"
+        )
+    bat(
+        label: "Building HTML docs on ${env.NODE_NAME}",
+        script: "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx.log"
+        )
+    bat(
+        label: "Building LaTex docs on ${env.NODE_NAME}",
+        script: "python -m pipenv run sphinx-build docs/source build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
+        )
 }
 def check_jira_issue(issue, outputFile){
     script{
@@ -457,7 +451,6 @@ def build_standalone(){
     -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf""",
             generator: 'Ninja',
             installation: 'InSearchPath',
-            sourceDir: 'source',
             steps: [
                 [withCmake: true]
             ]
@@ -492,7 +485,6 @@ pipeline {
     }
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
-        checkoutToSubdirectory("source")
 //        buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
         //preserveStashes(buildCount: 5)
     }
@@ -555,7 +547,6 @@ pipeline {
                             agent {
                                 dockerfile {
                                     filename 'ci\\docker\\python37\\Dockerfile'
-                                    dir 'source'
                                     label 'Windows&&Docker'
                                  }
                             }
@@ -572,9 +563,9 @@ pipeline {
                                 cleanup{
                                     cleanWs(
                                         deleteDirs: true,
-                                        patterns: [
-                                            [pattern: "source", type: 'EXCLUDE']
-                                        ],
+                                        //patterns: [
+                                        //    [pattern: "source", type: 'EXCLUDE']
+                                        //],
                                         notFailBuild: true
                                     )
                                 }
@@ -591,12 +582,11 @@ pipeline {
                     agent {
                         dockerfile {
                             filename 'ci/docker/python37/Dockerfile'
-                            dir 'source'
                             label 'Windows&&Docker'
                           }
                     }
                     steps {
-                        bat "(if not exist logs mkdir logs) && cd source && pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
+                        bat "(if not exist logs mkdir logs) && pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
                     }
                     post{
                         always{
@@ -605,9 +595,9 @@ pipeline {
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
-                                patterns: [
-                                    [pattern: "source", type: 'EXCLUDE']
-                                ],
+                                //patterns: [
+                                //    [pattern: "source", type: 'EXCLUDE']
+                                //],
                                 notFailBuild: true
                             )
                         }
@@ -627,7 +617,6 @@ pipeline {
                             agent {
                                 dockerfile {
                                     filename 'ci/docker/python37/Dockerfile'
-                                    dir 'source'
                                     label 'Windows&&Docker'
                                   }
                             }
@@ -650,14 +639,14 @@ pipeline {
                                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                                 }
                                 cleanup{
-                                    cleanWs(patterns: [[pattern: 'source', type: 'EXCLUDE']])
+                                    cleanWs(notFailBuild: true)
                                 }
                             }
                         }
                         stage("Convert to pdf"){
                             agent{
                                 dockerfile {
-                                    filename 'source/ci/docker/makepdf/lite/Dockerfile'
+                                    filename 'ci/docker/makepdf/lite/Dockerfile'
                                     label "docker && linux"
                                 }
                             }
@@ -683,7 +672,6 @@ pipeline {
             agent {
                 dockerfile {
                     filename 'ci\\docker\\python37\\Dockerfile'
-                    dir 'source'
                     label 'Windows&&Docker'
                   }
             }
@@ -696,10 +684,8 @@ pipeline {
                         stage("Run Behave BDD Tests") {
                             steps {
                                 bat "if not exist reports mkdir reports"
-                                dir("source"){
-                                    catchError(buildResult: "UNSTABLE", message: 'Did not pass all Behave BDD tests', stageResult: "UNSTABLE") {
-                                        bat "coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\tests\\behave"
-                                    }
+                                catchError(buildResult: "UNSTABLE", message: 'Did not pass all Behave BDD tests', stageResult: "UNSTABLE") {
+                                    bat "coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\tests\\behave"
                                 }
                             }
                             post {
@@ -711,10 +697,8 @@ pipeline {
                         stage("Run PyTest Unit Tests"){
                             steps{
                                 bat "if not exist logs mkdir logs"
-                                dir("source"){
-                                    catchError(buildResult: "UNSTABLE", message: 'Did not pass all pytest tests', stageResult: "UNSTABLE") {
-                                        bat "coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
-                                    }
+                                catchError(buildResult: "UNSTABLE", message: 'Did not pass all pytest tests', stageResult: "UNSTABLE") {
+                                    bat "coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
                                 }
                             }
                             post {
@@ -727,9 +711,7 @@ pipeline {
                         stage("Run Doctest Tests"){
                             steps {
                                 unstash "PYTHON_BUILD_FILES"
-                                dir("source"){
-                                    bat "python setup.py build_ui && sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees --no-color -w ${WORKSPACE}/logs/doctest.txt"
-                                }
+                                bat "python setup.py build_ui && sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees --no-color -w ${WORKSPACE}/logs/doctest.txt"
                             }
                             post{
                                 always {
@@ -745,10 +727,8 @@ pipeline {
                         stage("Run MyPy Static Analysis") {
                             steps{
                                 bat "if not exist logs mkdir logs"
-                                dir("source"){
-                                    catchError(buildResult: "SUCCESS", message: 'MyPy found issues', stageResult: "UNSTABLE") {
-                                        bat script: "mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
-                                    }
+                                catchError(buildResult: "SUCCESS", message: 'MyPy found issues', stageResult: "UNSTABLE") {
+                                    bat script: "mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
                                 }
                             }
                             post {
@@ -844,7 +824,7 @@ pipeline {
                             steps{
 //                                bat "if not exist logs mkdir logs"
                                 catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
-                                    bat script: "(if not exist logs mkdir logs) && cd source && flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
+                                    bat script: "(if not exist logs mkdir logs) && flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                 }
                             }
                             post {
@@ -861,9 +841,7 @@ pipeline {
                     }
                     post{
                         always{
-                            dir("source"){
-                                bat "coverage combine && coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && coverage html -d ${WORKSPACE}\\reports\\coverage"
-                            }
+                            bat "coverage combine && coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && coverage html -d ${WORKSPACE}\\reports\\coverage"
                             stash includes: "reports/coverage.xml", name: "COVERAGE_REPORT_DATA"
                             publishHTML([
                                 allowMissing: true,
@@ -888,7 +866,7 @@ pipeline {
                     cleanWs(patterns: [
                             [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
                             [pattern: 'reports/coverage', type: 'INCLUDE'],
-                            [pattern: 'source/.coverage', type: 'INCLUDE']
+                            [pattern: '.coverage', type: 'INCLUDE']
                         ])
                 }
             }
@@ -950,7 +928,6 @@ pipeline {
                 }
                 cleanup{
                     cleanWs(deleteDirs: true,
-                            patterns: [[pattern: 'source', type: 'EXCLUDE']],
                             notFailBuild: true
                         )
                 }
@@ -966,16 +943,13 @@ pipeline {
                             agent {
                                 dockerfile {
                                     filename 'ci/docker/python37/Dockerfile'
-                                    dir 'source'
                                     label 'Windows&&Docker'
                                   }
                             }
                             steps{
                                 timeout(5){
                                     unstash "PYTHON_BUILD_FILES"
-                                    dir("source"){
-                                        bat script: "python setup.py build -b ../build sdist -d ../dist --format zip bdist_wheel -d ../dist"
-                                    }
+                                    bat script: "python setup.py build -b build sdist -d dist --format zip bdist_wheel -d dist"
                                 }
                             }
                             post{
@@ -1046,7 +1020,6 @@ pipeline {
                             agent {
                                 dockerfile {
                                     filename 'ci/docker/windows_standalone/Dockerfile'
-                                    dir 'source'
                                     label 'Windows&&Docker'
                                   }
                             }
@@ -1122,7 +1095,6 @@ pipeline {
                             agent {
                                 dockerfile {
                                     filename 'ci/docker/chocolatey/Dockerfile'
-                                    dir 'source'
                                     label 'Windows&&Docker'
                                   }
                             }
@@ -1172,7 +1144,6 @@ pipeline {
                             agent {
                                 dockerfile {
                                     filename 'ci/docker/chocolatey/Dockerfile'
-                                    dir 'source'
                                     args '-u ContainerAdministrator'
                                     label 'Windows&&Docker'
                                   }
@@ -1363,7 +1334,6 @@ pipeline {
                     agent {
                         dockerfile {
                             filename 'ci/docker/chocolatey/Dockerfile'
-                            dir 'source'
                             args '-u ContainerAdministrator'
                             label 'Windows&&Docker'
                           }
