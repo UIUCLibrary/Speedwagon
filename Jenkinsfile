@@ -527,9 +527,6 @@ pipeline {
     stages {
 
         stage("Configure"){
-            // environment{
-            //    PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-            //}
             stages{
                 stage("Initial setup"){
                     parallel{
@@ -571,9 +568,6 @@ pipeline {
                                 cleanup{
                                     cleanWs(
                                         deleteDirs: true,
-                                        //patterns: [
-                                        //    [pattern: "source", type: 'EXCLUDE']
-                                        //],
                                         notFailBuild: true
                                     )
                                 }
@@ -603,9 +597,6 @@ pipeline {
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
-                                //patterns: [
-                                //    [pattern: "source", type: 'EXCLUDE']
-                                //],
                                 notFailBuild: true
                             )
                         }
@@ -639,11 +630,8 @@ pipeline {
                                 }
                                 success{
                                     stash includes: "build/docs/latex/*", name: 'latex_docs'
-                                    //script{
-                                        //def DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
                                     zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${PKG_NAME}-${PKG_VERSION}.doc.zip"
                                     stash includes: "build/docs/html/**,dist/*.doc.zip", name: 'SPEEDWAGON_DOC_HTML'
-                                    //}
                                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                                 }
                                 cleanup{
@@ -741,16 +729,8 @@ pipeline {
                             }
                             post {
                                 always {
-                                    //process_mypy_logs("logs/mypy.log")
                                     archiveArtifacts "logs/mypy.log"
-                                    //stash includes: "logs/mypy.log", name: "MYPY_LOGS"
                                     recordIssues(tools: [myPy(pattern: "logs/mypy.log")])
-                                    //node("Windows"){
-                                    //    checkout scm
-                                    //    unstash "MYPY_LOGS"
-                                    //    recordIssues(tools: [myPy(pattern: "logs/mypy.log")])
-                                    //    deleteDir()
-                                    //}
                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                                 }
                                 cleanup{
@@ -769,28 +749,6 @@ pipeline {
                             }
                             steps {
                                 run_tox()
-                                //bat "if not exist logs mkdir logs"
-                                //dir("source"){
-                                //    script{
-                                //        withEnv(
-                                //            [
-                                //                'PIP_INDEX_URL="https://devpi.library.illinois.edu/production/release"',
-                                //                'PIP_TRUSTED_HOST="devpi.library.illinois.edu"',
-                                //                'TOXENV="py"'
-                                //            ]
-                                //        ) {
-                                //            bat "python -m pip install pipenv tox"
-                                //            try{
-                                //                // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
-                                //                // Tox has a bug that fails when trying to write the json report
-                                //                // when --parallel is run at the same time
-                                //                bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
-                                //            } catch (exc) {
-                                //                bat "tox -vv --workdir ${WORKSPACE}\\.tox --recreate"
-                                //            }
-                                //        }
-                                //    }
-                                //}
                             }
                             post{
                                 always{
@@ -806,20 +764,6 @@ pipeline {
                         stage("Run Pylint Static Analysis") {
                             steps{
                                 run_pylint()
-                                //bat "if not exist logs mkdir logs"
-                                //dir("source"){
-                                //    catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-                                //        bat(
-                                //            script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ..\\reports\\pylint.txt',
-                                //            label: "Running pylint"
-                                //        )
-                                //    }
-                                //    bat(
-                                //        script: 'pylint speedwagon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > ..\\reports\\pylint_issues.txt',
-                                //        label: "Running pylint for sonarqube",
-                                //        returnStatus: true
-                                //    )
-                                //}
                             }
                             post{
                                 always{
@@ -831,7 +775,7 @@ pipeline {
                         }
                         stage("Run Flake8 Static Analysis") {
                             steps{
-//                                bat "if not exist logs mkdir logs"
+                                bat "if not exist logs mkdir logs"
                                 catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
                                     bat script: "(if not exist logs mkdir logs) && flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                 }
@@ -929,12 +873,6 @@ pipeline {
                     stash includes: "reports/sonar-report.json", name: 'SONAR_REPORT'
                     archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
                     recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
-                    //node('Windows'){
-                    //    checkout scm
-                    //    unstash "SONAR_REPORT"
-                    //    recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
-                    //    deleteDir()
-                    //}
                 }
                 cleanup{
                     cleanWs(deleteDirs: true,
@@ -1061,9 +999,6 @@ pipeline {
                             }
                         }
                         stage("Testing MSI Install"){
-                            //agent {
-                            //    label "Docker && Windows"
-                            //}
                             agent {
                               docker {
                                 args '-u ContainerAdministrator'
@@ -1131,10 +1066,10 @@ pipeline {
                             post {
                                 success{
                                     stash includes: "chocolatey_package/speedwagon/*.nupkg", name: "CHOCOLATEY_PACKAGE"
-                                    //archiveArtifacts(
-                                    //    allowEmptyArchive: true,
-                                    //    artifacts: "speedwagon/*.nupkg"
-                                    //    )
+                                    archiveArtifacts(
+                                        allowEmptyArchive: true,
+                                        artifacts: "speedwagon/*.nupkg"
+                                        )
                                 }
                                 cleanup{
                                     cleanWs(
@@ -1421,9 +1356,7 @@ pipeline {
 
                     }
                     agent{
-//                        node{
                         label "Windows"
-//                        }
                     }
                     options {
                         skipDefaultCheckout(true)
