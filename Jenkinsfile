@@ -741,13 +741,14 @@ pipeline {
                                 always {
                                     //process_mypy_logs("logs/mypy.log")
                                     archiveArtifacts "logs/mypy.log"
-                                    stash includes: "logs/mypy.log", name: "MYPY_LOGS"
-                                    node("Windows"){
-                                        checkout scm
-                                        unstash "MYPY_LOGS"
-                                        recordIssues(tools: [myPy(pattern: "logs/mypy.log")])
-                                        deleteDir()
-                                    }
+                                    //stash includes: "logs/mypy.log", name: "MYPY_LOGS"
+                                    recordIssues(tools: [myPy(pattern: "logs/mypy.log")])
+                                    //node("Windows"){
+                                    //    checkout scm
+                                    //    unstash "MYPY_LOGS"
+                                    //    recordIssues(tools: [myPy(pattern: "logs/mypy.log")])
+                                    //    deleteDir()
+                                    //}
                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                                 }
                                 cleanup{
@@ -925,12 +926,13 @@ pipeline {
                     )
                     stash includes: "reports/sonar-report.json", name: 'SONAR_REPORT'
                     archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
-                    node('Windows'){
-                        checkout scm
-                        unstash "SONAR_REPORT"
-                        recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
-                        deleteDir()
-                    }
+                    recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                    //node('Windows'){
+                    //    checkout scm
+                    //    unstash "SONAR_REPORT"
+                    //    recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                    //    deleteDir()
+                    //}
                 }
                 cleanup{
                     cleanWs(deleteDirs: true,
