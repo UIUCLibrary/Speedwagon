@@ -95,7 +95,7 @@ def make_chocolatey_distribution(install_file, packageversion, dest){
             )
             powershell(
                 label: "Adding ${install_file} to package",
-                script: "$ErrorActionPreference = \"Stop\";Copy-Item \"${install_file_path}\" -Destination speedwagon\\tools\\"
+                script: "Copy-Item \"${install_file_path}\" -Destination speedwagon\\tools\\"
             )
 
             powershell(
@@ -1088,7 +1088,7 @@ pipeline {
                                 unstash 'STANDALONE_INSTALLERS'
                                 script{
                                     def msi_file = findFiles(glob: "dist/*.msi")[0].path
-                                    powershell "New-Item -ItemType Directory -Force -Path ${WORKSPACE}\\logs; msiexec /i ${msi_file} /qn /norestart /L*v! ${WORKSPACE}\\logs\\msiexec.log"
+                                    powershell "New-Item -ItemType Directory -Force -Path ${WORKSPACE}\\logs; Write-Host \"Installing ${msi_file}\"; msiexec /i ${msi_file} /qn /norestart /L*v! ${WORKSPACE}\\logs\\msiexec.log"
                                 }
                                 //test_msi_install()
                             }
