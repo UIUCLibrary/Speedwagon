@@ -1068,7 +1068,7 @@ pipeline {
                                     stash includes: "chocolatey_package/speedwagon/*.nupkg", name: "CHOCOLATEY_PACKAGE"
                                     archiveArtifacts(
                                         allowEmptyArchive: true,
-                                        artifacts: "speedwagon/*.nupkg"
+                                        artifacts: "chocolatey_package/speedwagon/*.nupkg"
                                         )
                                 }
                                 cleanup{
