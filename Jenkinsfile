@@ -75,26 +75,28 @@ def run_pylint(){
     )
 }
 
-def make_chocolatey_distribution(install_file, packageversion){
+def make_chocolatey_distribution(install_file, packageversion, dest){
     script{
         def maintainername = "Henry Borchers"
         def sanitized_packageversion=sanitize_chocolatey_version(packageversion)
         def packageSourceUrl="https://github.com/UIUCLibrary/Speedwagon"
         def installerType='msi'
         def install_file_name = findFiles(glob: "${install_file}")[0].name
-        powershell(
-            label: "Making chocolatey Package Configuration",
-            script: "choco new speedwagon packageversion=${sanitized_packageversion} maintainername='\"${maintainername}\"' packageSourceUrl='${packageSourceUrl}' InstallerType='${installerType}' InstallerFile='${install_file_name}'"
-        )
-        powershell(
-            label: "Adding ${install_file} to package",
-            script: "Copy-Item \"${install_file}\" -Destination speedwagon\\tools\\"
-        )
+        dir("${dest}"){
+            powershell(
+                label: "Making chocolatey Package Configuration",
+                script: "choco new speedwagon packageversion=${sanitized_packageversion} maintainername='\"${maintainername}\"' packageSourceUrl='${packageSourceUrl}' InstallerType='${installerType}' InstallerFile='${install_file_name}'"
+            )
+            powershell(
+                label: "Adding ${install_file} to package",
+                script: "Copy-Item \"${install_file}\" -Destination speedwagon\\tools\\"
+            )
 
-        powershell(
-            label: "Creating Package",
-            script: "cd speedwagon; choco pack"
-        )
+            powershell(
+                label: "Creating Package",
+                script: "cd speedwagon; choco pack"
+            )
+        }
     }
 }
 def get_package_name(stashName, metadataFile){
@@ -1113,13 +1115,14 @@ pipeline {
                                 script{
                                     make_chocolatey_distribution(
                                         findFiles(glob: "dist/*.msi")[0],
-                                        get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
+                                        get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA"),
+                                        "chocolatey_package"
                                         )
                                 }
                             }
                             post {
                                 success{
-                                    stash includes: "speedwagon/*.nupkg", name: "CHOCOLATEY_PACKAGE"
+                                    stash includes: "chocolatey_package/speedwagon/*.nupkg", name: "CHOCOLATEY_PACKAGE"
                                     //archiveArtifacts(
                                     //    allowEmptyArchive: true,
                                     //    artifacts: "speedwagon/*.nupkg"
@@ -1150,7 +1153,7 @@ pipeline {
                             }
                             steps{
                                 unstash "CHOCOLATEY_PACKAGE"
-                                bat 'choco install speedwagon -y --pre -dv -s %WORKSPACE%\\speedwagon'
+                                bat 'choco install speedwagon -y --pre -dv -s %WORKSPACE%\\chocolatey_package\\speedwagon'
                                 bat "speedwagon --version"
                             }
                         }
@@ -1350,7 +1353,7 @@ pipeline {
                         withCredentials([string(credentialsId: "${CHOCO_REPO_KEY}", variable: 'KEY')]) {
                             bat(
                                 label: "Deploying to Chocolatey",
-                                script: "cd speedwagon && choco push -s %CHOCOLATEY_SERVER% -k %KEY%"
+                                script: "cd chocolatey_package\\speedwagon && choco push -s %CHOCOLATEY_SERVER% -k %KEY%"
 
                             )
                         }
