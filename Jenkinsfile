@@ -85,7 +85,9 @@ def make_chocolatey_distribution(install_file, packageversion, dest){
         def sanitized_packageversion=sanitize_chocolatey_version(packageversion)
         def packageSourceUrl="https://github.com/UIUCLibrary/Speedwagon"
         def installerType='msi'
-        def install_file_name = findFiles(glob: "${install_file}")[0].name
+        def installer = findFiles(glob: "${install_file}")[0]
+        def install_file_name = installer.name
+        def install_file_path = installer.path
         dir("${dest}"){
             powershell(
                 label: "Making chocolatey Package Configuration",
@@ -93,7 +95,7 @@ def make_chocolatey_distribution(install_file, packageversion, dest){
             )
             powershell(
                 label: "Adding ${install_file} to package",
-                script: "Copy-Item \"${install_file}\" -Destination speedwagon\\tools\\"
+                script: "Copy-Item \"${install_file_path}\" -Destination speedwagon\\tools\\"
             )
 
             powershell(
