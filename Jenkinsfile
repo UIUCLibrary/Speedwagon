@@ -969,6 +969,7 @@ pipeline {
                                 dockerfile {
                                     filename 'ci/docker/windows_standalone/Dockerfile'
                                     label 'Windows&&Docker'
+                                    args "-u ContainerAdministrator"
                                   }
                             }
                             steps {

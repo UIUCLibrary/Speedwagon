@@ -30,20 +30,12 @@ RUN (C:\\TEMP\\vs_buildtools.exe `
   && del /S /F /Q %Windir%\Temp `
   && @echo Done cleaning up files in temp directories
 
-RUN powershell.exe -Command  `
-    $ErrorActionPreference = 'Stop'; `
-    Invoke-WebRequest https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-win.zip -OutFile c:\ninja-win.zip; `
-    Expand-Archive -LiteralPath c:\ninja-win.zip -DestinationPath C:\ninja ; `
-    Remove-Item c:\ninja-win.zip -Force ; `
-    setx /M PATH $($Env:PATH + ';C:\ninja')
-
 RUN @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" `
     && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
-
-RUN choco install -y git nsis wixtoolset`
-    && choco install -y cmake --installargs 'ADD_CMAKE_TO_PATH=System' `
-    && del /S /F /Q %ChocolateyInstall% `
-    && setx path "%path%;C:\Program Files (x86)\NSIS"
+ARG CHOCOLATEY_SOURCE=chocolatey
+RUN choco install -y --source=%CHOCOLATEY_SOURCE%  git nsis wixtoolset ninja `
+    && choco install -y --source=%CHOCOLATEY_SOURCE%  cmake --installargs 'ADD_CMAKE_TO_PATH=System' `
+    && del C:\ProgramData\chocolatey\bin\cpack.exe
 
 SHELL ["powershell", "-command"]
 ARG PYTHON_INSTALLER_URL=https://www.python.org/ftp/python/3.7.5/python-3.7.5-amd64.exe
