@@ -30,14 +30,15 @@ RUN (C:\\TEMP\\vs_buildtools.exe `
   && del /S /F /Q %Windir%\Temp `
   && @echo Done cleaning up files in temp directories
 
-RUN @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" `
-    && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
-ARG CHOCOLATEY_SOURCE=chocolatey
-RUN choco install -y --source=%CHOCOLATEY_SOURCE%  git nsis wixtoolset ninja `
-    && choco install -y --source=%CHOCOLATEY_SOURCE%  cmake --installargs 'ADD_CMAKE_TO_PATH=System' `
-    && del C:\ProgramData\chocolatey\bin\cpack.exe
-
 SHELL ["powershell", "-command"]
+RUN Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+
+ARG CHOCOLATEY_SOURCE=chocolatey
+ADD ci/docker/windows_standalone/packages.config packages.config
+RUN choco install -y --source=$env:CHOCOLATEY_SOURCE packages.config ; `
+    Remove-Item C:\ProgramData\chocolatey\bin\cpack.exe ; `
+    Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse
+
 ARG PYTHON_INSTALLER_URL=https://www.python.org/ftp/python/3.7.5/python-3.7.5-amd64.exe
 
 RUN $ErrorActionPreference = 'Stop'; `
