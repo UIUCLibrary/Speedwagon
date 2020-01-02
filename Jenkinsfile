@@ -441,7 +441,7 @@ def test_msi_install(){
 }
 def build_standalone(){
     stage("Building Standalone"){
-
+        bat "where cmake"
         unstash "SPEEDWAGON_DOC_PDF"
         bat """if not exist "cmake_build" mkdir cmake_build
     if not exist "logs" mkdir logs
