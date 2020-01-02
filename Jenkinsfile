@@ -457,7 +457,7 @@ def build_standalone(){
                 buildDir: 'cmake_build',
                 cmakeArgs: """-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache
         -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv
-        -DPYTHON_EXECUTABLE=\"${PYTHON_EXECUTABLE}\"
+//         -DPYTHON_EXECUTABLE=\"${PYTHON_EXECUTABLE}\"
         -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf""",
                 generator: 'Ninja',
                 installation: 'InSearchPath',
