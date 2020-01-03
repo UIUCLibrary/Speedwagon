@@ -981,13 +981,15 @@ pipeline {
                             }
                             post {
                                 success{
-                                    stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
+                                   
                                     archiveArtifacts artifacts: "dist/*.msi,dist/*.exe,dist/*.zip", fingerprint: true
                                 }
                                 failure {
                                     archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log,dist/**/*.wxs"
                                 }
                                 always{
+                                    stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
+
                                     archiveArtifacts(
                                         allowEmptyArchive: true,
                                         artifacts: "logs/*.log"
