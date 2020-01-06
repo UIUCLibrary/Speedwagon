@@ -121,6 +121,7 @@ def build_sphinx_stage(){
     //bat(label: "Install pipenv",
     //    script: "python -m pipenv install --dev"
     //    )
+    bat "dir"
     bat(label: "Run build_ui",
         script: "python setup.py build_ui"
         )
