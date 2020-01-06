@@ -1309,6 +1309,7 @@ pipeline {
                 stage("Deploy Online Documentation") {
                     when{
                         equals expected: true, actual: params.DEPLOY_DOCS
+                        beforeAgent true
                     }
                     agent any
                     steps{
