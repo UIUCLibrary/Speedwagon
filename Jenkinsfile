@@ -118,19 +118,19 @@ def get_package_name(stashName, metadataFile){
 
 def build_sphinx_stage(){
     bat "if not exist logs mkdir logs"
-    bat(label: "Install pipenv",
-        script: "python -m pipenv install --dev"
-        )
+    //bat(label: "Install pipenv",
+    //    script: "python -m pipenv install --dev"
+    //    )
     bat(label: "Run build_ui",
-        script: "pipenv run python setup.py build_ui"
+        script: "python setup.py build_ui"
         )
     bat(
         label: "Building HTML docs on ${env.NODE_NAME}",
-        script: "python -m pipenv run sphinx-build docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx.log"
+        script: "python -m sphinx docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx.log"
         )
     bat(
         label: "Building LaTex docs on ${env.NODE_NAME}",
-        script: "python -m pipenv run sphinx-build docs/source build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
+        script: "python -m sphinx docs/source build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
         )
 }
 def check_jira_issue(issue, outputFile){
@@ -618,7 +618,7 @@ pipeline {
                             }
                             agent {
                                 dockerfile {
-                                    filename 'ci/docker/python37/Dockerfile'
+                                    filename 'ci/docker/documentation/Dockerfile'
                                     label 'Windows&&Docker'
                                   }
                             }
