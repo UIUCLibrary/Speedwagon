@@ -677,7 +677,7 @@ pipeline {
             stages{
                 stage("Run Tests"){
                     environment{
-                        junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
+                        junit_filename = "pytest-junit.xml"
                     }
                     parallel {
                         stage("Run Behave BDD Tests") {
@@ -702,7 +702,7 @@ pipeline {
                             }
                             post {
                                 always {
-                                    junit "reports/tests/pytest/${junit_filename}"
+                                    junit "reports/tests/pytest/junit*.pytest.xml"
                                     stash includes: "reports/tests/pytest/*.xml", name: "PYTEST_UNIT_TEST_RESULTS"
                                 }
                             }
