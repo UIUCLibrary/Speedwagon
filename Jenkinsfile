@@ -676,9 +676,6 @@ pipeline {
             }
             stages{
                 stage("Run Tests"){
-                    environment{
-                        junit_filename = "pytest-junit.xml"
-                    }
                     parallel {
                         stage("Run Behave BDD Tests") {
                             steps {
@@ -697,12 +694,12 @@ pipeline {
                             steps{
                                 bat "if not exist logs mkdir logs"
                                 catchError(buildResult: "UNSTABLE", message: 'Did not pass all pytest tests', stageResult: "UNSTABLE") {
-                                    bat "coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/${junit_filename} --junit-prefix=${env.NODE_NAME}-pytest"
+                                    bat "coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/pytest-junit.xml"
                                 }
                             }
                             post {
                                 always {
-                                    junit "reports/tests/pytest/junit*.pytest.xml"
+                                    junit "reports/tests/pytest/pytest-junit.xml"
                                     stash includes: "reports/tests/pytest/*.xml", name: "PYTEST_UNIT_TEST_RESULTS"
                                 }
                             }
@@ -853,7 +850,7 @@ pipeline {
             -D"sonar.projectBaseDir=%WORKSPACE%" \
             -Dsonar.python.pylint.reportPath=%WORKSPACE%/reports/pylint.txt \
             -D"sonar.python.coverage.reportPaths=%WORKSPACE%/reports/coverage.xml" \
-            -D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/%junit_filename%" \
+            -D"sonar.python.xunit.reportPath=%WORKSPACE%/reports/tests/pytest/pytest-junit.xml" \
             -D"sonar.working.directory=%WORKSPACE%\\.scannerwork" \
             -X'
                     )
