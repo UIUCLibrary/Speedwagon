@@ -1153,7 +1153,8 @@ pipeline {
                     steps {
                         unstash 'SPEEDWAGON_DOC_HTML'
                         unstash 'PYTHON_PACKAGES'
-                        bat "devpi use https://devpi.library.illinois.edu && devpi login %DEVPI_USR% --password %DEVPI_PSW% && devpi use /%DEVPI_USR%/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
+                        sh "devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} --clientdir ${WORKSPACE}/devpi && devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi && devpi push --index ${env.DEVPI_USR}/${env.BRANCH_NAME}_staging ${env.PKG_NAME}==${env.PKG_VERSION} production/release --clientdir ${WORKSPACE}/devpi"
+                        //sh "devpi use https://devpi.library.illinois.edu && devpi login %DEVPI_USR% --password %DEVPI_PSW% && devpi use /%DEVPI_USR%/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
                     }
                 }
                 stage("Test DevPi packages") {
@@ -1264,9 +1265,14 @@ pipeline {
                             equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
                             branch "master"
                         }
+                        beforeAgent true
+                        beforeInput true
+                    }
+                    input {
+                        message 'Release to DevPi Production?'
                     }
                     steps {
-                        input "Release ${PKG_NAME} ${PKG_VERSION} to DevPi Production?"
+                        //input "Release ${PKG_NAME} ${PKG_VERSION} to DevPi Production?"
                         bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} production/release"
                     }
                     post{
