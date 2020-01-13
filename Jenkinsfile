@@ -1153,7 +1153,15 @@ pipeline {
                     steps {
                         unstash 'SPEEDWAGON_DOC_HTML'
                         unstash 'PYTHON_PACKAGES'
-                        sh "devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} --clientdir ${WORKSPACE}/devpi && devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi && devpi push --index ${env.DEVPI_USR}/${env.BRANCH_NAME}_staging ${env.PKG_NAME}==${env.PKG_VERSION} production/release --clientdir ${WORKSPACE}/devpi"
+                        sh(
+                                label: "Connecting to DevPi Server",
+                                script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
+                            )
+                            sh(
+                                label: "Uploading to DevPi Staging",
+                                script: """devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi
+    devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
+                            )
                         //sh "devpi use https://devpi.library.illinois.edu && devpi login %DEVPI_USR% --password %DEVPI_PSW% && devpi use /%DEVPI_USR%/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
                     }
                 }
