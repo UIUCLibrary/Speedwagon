@@ -1126,11 +1126,8 @@ pipeline {
 //                timestamps()
 //            }
             agent{
-                label "linux && docker"
+                label "windows && Python3"
             }
-            //agent{
-            //    label "windows && Python3"
-            //}
             environment{
                 //PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
                 DEVPI = credentials("DS_devpi")
