@@ -1119,27 +1119,37 @@ pipeline {
                         equals expected: "dev", actual: env.BRANCH_NAME
                     }
                 }
+                beforeAgent true
             }
 //            options{
 //                timestamps()
 //            }
             agent{
-                label "windows && Python3"
+                label "linux && docker"
             }
+            //agent{
+            //    label "windows && Python3"
+            //}
             environment{
-                PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                //PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
                 DEVPI = credentials("DS_devpi")
                 PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
                 PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
             }
             stages{
-                stage("Installing Devpi Client") {
-                    steps{
-                        bat "python -m venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip install devpi-client"
-                    }
-
-                }
+                //stage("Installing Devpi Client") {
+                //    steps{
+                //        bat "python -m venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip install devpi-client"
+                //    }
+                //}
                 stage("Deploy to Devpi Staging") {
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/deploy/devpi/Dockerfile'
+                            label 'linux&&docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                          }
+                    }
                     steps {
                         unstash 'SPEEDWAGON_DOC_HTML'
                         unstash 'PYTHON_PACKAGES'
