@@ -1259,107 +1259,6 @@ pipeline {
                         }
                     }
                 }
-                //stage("Test DevPi packages") {
-                //    parallel {
-                //        stage("Source Distribution: .zip") {
-                //            agent {
-                //                label "Windows && Python3"
-                //            }
-                //            options {
-                //                skipDefaultCheckout(true)
-                //            }
-                //            stages{
-                //                stage("Creating Env for DevPi to test sdist"){
-                //                    environment{
-                //                        PATH = "${tool 'CPython-3.6'};${PATH}"
-                //                    }
-                //                    steps {
-                //                        bat "python -m venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
-                //                    }
-                //                }
-                //                stage("Testing sdist"){
-                //                    environment{
-                //                        PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${tool 'CPython-3.7'};$PATH"
-                //                    }
-                //                    options{
-                //                        timeout(10)
-                //                    }
-                //                    steps{
-                //                        bat "devpi use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
-                //                        devpiTest(
-                //                            devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
-                //                            url: "https://devpi.library.illinois.edu",
-                //                            index: "${env.BRANCH_NAME}_staging",
-                //                            pkgName: "${PKG_NAME}",
-                //                            pkgVersion: "${PKG_VERSION}",
-                //                            pkgRegex: "zip",
-                //                            detox: false
-                //                        )
-                //                    }
-                //                }
-                //            }
-                //            post{
-                //                cleanup{
-                //                    cleanWs(deleteDirs: true,
-                //                        notFailBuild: true
-                //                    )
-                //                }
-                //            }
-                //        }
-                //        stage("Built Distribution: .whl") {
-                //            agent {
-                //                node {
-                //                    label "Windows && Python3"
-                //                }
-                //            }
-                //            options {
-                //                skipDefaultCheckout(true)
-                //            }
-                //            environment{
-                //                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${tool 'CPython-3.7'};$PATH"
-                //            }
-                //            stages{
-                //                stage("Creating Env for DevPi to test whl"){
-                //                    steps{
-                //                        lock("system_python_${NODE_NAME}"){
-                //                            bat "python -m pip install pip --upgrade && python -m venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\"  detox devpi-client"
-                //                        }
-                //                    }
-                //                }
-                //                stage("Testing Whl"){
-                //                    options{
-                //                        timeout(10)
-                //                    }
-                //                    steps {
-                //                        // TODO: Rebuild devpiTest to work with Docker containers
-                //                        devpiTest(
-                //                            devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
-                //                            url: "https://devpi.library.illinois.edu",
-                //                            index: "${env.BRANCH_NAME}_staging",
-                //                            pkgName: "${PKG_NAME}",
-                //                            pkgVersion: "${PKG_VERSION}",
-                //                            pkgRegex: "whl",
-                //                            detox: false
-                //                        )
-                //                    }
-                //                }
-                //            }
-                //            post{
-                //                cleanup{
-                //                    cleanWs deleteDirs: true
-                //                }
-                //            }
-                //        }
-                //    }
-                //    post {
-                //        success {
-                //            bat(
-                //                label: "it Worked. Pushing file to ${env.BRANCH_NAME} index",
-                //                script:"venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
-                //            )
-                //        }
-                //    }
-                //}
                 stage("Deploy to DevPi Production") {
                     when {
                         allOf{
@@ -1385,7 +1284,6 @@ pipeline {
                             def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
                             sh "devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME} && devpi push ${props.Name}==${props.Version} production/release"
                         }
-                        //input "Release ${PKG_NAME} ${PKG_VERSION} to DevPi Production?"
                     }
                     post{
                         success{
@@ -1393,11 +1291,6 @@ pipeline {
                         }
                     }
                 }
-            //}//
-            //post//{
-                //cleanup{
-                //    remove_from_devpi("venv\\Scripts\\devpi.exe", "${PKG_NAME}", "${PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
-                //}
             }
         }
         stage("Deploy"){
@@ -1439,13 +1332,15 @@ pipeline {
                     when{
                         equals expected: true, actual: params.DEPLOY_DOCS
                         beforeAgent true
+                        beforeInput true
                     }
                     agent any
+                    input {
+                        message 'Update project documentation?'
+                    }
                     steps{
                         unstash "SPEEDWAGON_DOC_HTML"
-
                         dir("build/docs/html/"){
-                            input 'Update project documentation?'
                             sshPublisher(
                                 publishers: [
                                     sshPublisherDesc(
@@ -1473,6 +1368,14 @@ pipeline {
                     post{
                         success{
                             jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                        }
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: 'build/', type: 'INCLUDE']
+                                ]
+                            )
                         }
                     }
                 }
