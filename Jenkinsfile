@@ -133,7 +133,6 @@ def build_sphinx_stage(){
     //bat(label: "Install pipenv",
     //    script: "python -m pipenv install --dev"
     //    )
-    bat "dir"
     bat(label: "Run build_ui",
         script: "python setup.py build_ui"
         )
@@ -287,7 +286,7 @@ def deploy_artifacts_to_url(regex, urlDestination, jiraIssueKey){
         }
 
 
-        input "Update standalone ${simple_file_names.join(', ')} to '${urlDestination}'? More information: ${currentBuild.absoluteUrl}"
+        //input "Update standalone ${simple_file_names.join(', ')} to '${urlDestination}'? More information: ${currentBuild.absoluteUrl}"
 
         def new_urls = []
         try{
@@ -377,37 +376,37 @@ ${log_file}
 }
 
 
-def testPythonPackages(pkgRegex, testEnvs, pipcache){
+def testPythonPackages(pkgRegex, testEnvs){
     script{
         def taskData = []
-        def pythonPkgs = findFiles glob: pkgRegex
+        node("windows"){
+            unstash 'PYTHON_PACKAGES'
+            def pythonPkgs = findFiles glob: pkgRegex
+            pythonPkgs.each{ fileName ->
+                testEnvs.each{ testEnv->
 
-        pythonPkgs.each{ fileName ->
-            testEnvs.each{ testEnv->
-
-                testEnv['images'].each{ dockerImage ->
-                    taskData.add(
-                        [
-                            file: fileName,
-                            dockerImage: dockerImage,
-                            label: testEnv['label']
-                        ]
-                    )
+                    testEnv['images'].each{ dockerImage ->
+                        stash includes: "${fileName}", name: "${fileName.name}"
+                        taskData.add(
+                            [
+                                file: fileName,
+                                dockerImage: dockerImage,
+                                label: testEnv['label'],
+                                stashName: "${fileName.name}"
+                            ]
+                        )
+                    }
                 }
             }
         }
         def taskRunners = [:]
-        bat(
-            label: "Creating a docker volume for a shared pipcache",
-            script: "docker volume create pipcache"
-        )
         taskData.each{
             taskRunners["Testing ${it['file']} with ${it['dockerImage']}"]={
-                ws{
+                node("docker && windows"){
                     def testImage = docker.image(it['dockerImage']).inside("-v pipcache:C:/Users/ContainerAdministrator/AppData/Local/pip/Cache"){
                         try{
                             checkout scm
-                            unstash 'PYTHON_PACKAGES'
+                            unstash "${it['stashName']}"
                             powershell(
                                 label: "Installing Certs required to download python dependencies",
                                 script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
@@ -416,10 +415,15 @@ def testPythonPackages(pkgRegex, testEnvs, pipcache){
                                 script: "pip install tox",
                                 label: "Installing Tox"
                                 )
-                            bat(
-                                label:"Running tox tests with ${it['file']}",
-                                script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
+                            withEnv([
+                                'PIP_EXTRA_INDEX_URL=https://devpi.library.illinois.edu/production/release',
+                                'PIP_TRUSTED_HOST=devpi.library.illinois.edu'
+                                ]) {
+                                bat(
+                                    label:"Running tox tests with ${it['file']}",
+                                    script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
                                 )
+                            }
                         }finally {
                             cleanWs deleteDirs: true, notFailBuild: true
                         }
@@ -509,8 +513,6 @@ pipeline {
     }
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
-//        buildDiscarder logRotator(artifactDaysToKeepStr: '10', artifactNumToKeepStr: '10')
-        //preserveStashes(buildCount: 5)
     }
     environment {
         build_number = get_build_number()
@@ -928,15 +930,8 @@ pipeline {
                             }
                         }
                         stage("Testing Python Packages"){
-                            agent {
-                                label "windows&&docker"
-                            }
-                            environment{
-                                PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
-                                PIP_TRUSTED_HOST="devpi.library.illinois.edu"
-                            }
+                            agent none
                             steps{
-                                unstash 'PYTHON_PACKAGES'
                                 testPythonPackages(
                                     "dist/*.whl,dist/*.tar.gz,dist/*.zip",
                                     [
@@ -948,14 +943,8 @@ pipeline {
                                                 ],
                                             label: "windows&&docker"
                                         ]
-                                    ],
-                                    "${WORKSPACE}\\pipcache"
+                                    ]
                                 )
-                            }
-                            post{
-                                cleanup{
-                                    cleanWs()
-                                }
                             }
                         }
                     }
@@ -1041,7 +1030,6 @@ pipeline {
                                     def msi_file = findFiles(glob: "dist/*.msi")[0].path
                                     powershell "New-Item -ItemType Directory -Force -Path ${WORKSPACE}\\logs; Write-Host \"Installing ${msi_file}\"; msiexec /i ${msi_file} /qn /norestart /L*v! ${WORKSPACE}\\logs\\msiexec.log"
                                 }
-                                //test_msi_install()
                             }
                             post {
                                 cleanup{
@@ -1133,25 +1121,11 @@ pipeline {
                 }
                 beforeAgent true
             }
-//            options{
-//                timestamps()
-//            }
             agent none
-            //agent{
-            //    label "windows && Python3"
-            //}
             environment{
-                //PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
                 DEVPI = credentials("DS_devpi")
-                //PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
-                //PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
             }
             stages{
-                //stage("Installing Devpi Client") {
-                //    steps{
-                //        bat "python -m venv venv && venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip install devpi-client"
-                //    }
-                //}
                 stage("Deploy to Devpi Staging") {
                     agent {
                         dockerfile {
@@ -1172,16 +1146,10 @@ pipeline {
                                 script: """devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi
     devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                             )
-                        //sh "devpi use https://devpi.library.illinois.edu && devpi login %DEVPI_USR% --password %DEVPI_PSW% && devpi use /%DEVPI_USR%/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
                     }
                 }
                 stage("Test DevPi packages") {
-                    //environment{
-                    //PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
-                    //PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
-                    //}
                     matrix {
-
                         axes {
                             axis {
                                 name 'FORMAT'
@@ -1322,10 +1290,8 @@ pipeline {
                             bat(
                                 label: "Deploying to Chocolatey",
                                 script: "cd chocolatey_package\\speedwagon && choco push -s %CHOCOLATEY_SERVER% -k %KEY%"
-
                             )
                         }
-
                     }
                 }
                 stage("Deploy Online Documentation") {
@@ -1389,7 +1355,12 @@ pipeline {
                                 equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
                             }
                         }
+                        beforeAgent true
+                        beforeInput true
 
+                    }
+                    input {
+                        message 'Update standalone to Hathi Beta'
                     }
                     agent{
                         label "Windows"
@@ -1419,7 +1390,6 @@ pipeline {
                         }
                     }
                 }
-
                 stage("Deploy Standalone Build to SCCM") {
                     when {
                         allOf{
