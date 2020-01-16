@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+import time
 import typing
 import concurrent.futures
 import pytest
@@ -18,12 +19,15 @@ class SimpleSubtask(speedwagon.tasks.Subtask):
 
     def work(self) -> bool:
         self.log("processing")
+        print("processing {}".format(self.message))
+        time.sleep(.01)
         self.set_results(self.message)
+        print("finished with {}".format(self.message))
         return True
 
     @property
     def settings(self):
-        return {"r": "ad"}
+        return {"message": self.message}
 
 
 class SimplePreTask(speedwagon.tasks.Subtask):
@@ -286,17 +290,29 @@ def test_adapter_results_with_posttask(tmpdir):
     builder.add_subtask(subtask=SimpleSubtask("Second"))
     new_task = builder.build_task()
 
+    queued_order = []
+
     with worker.ToolJobManager() as manager:
         for subtask in new_task.subtasks:
             adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
             manager.add_job(adapted_tool, adapted_tool.settings)
+
+        for message in manager._pending_jobs.queue:
+            print(message)
+            queued_order.append(message.args['message'])
+
         manager.start()
+
+        # Fuzz this
+        time.sleep(1)
+
         results = list()
+
         for r in manager.get_results():
             results.append(r.data)
 
         assert len(results) == 3
-        assert "First" == results[0]
+        assert "First" == results[0], "results = {}, queued_order={}".format(results, queued_order)
         assert "Second" == results[1]
         assert "Ending" == results[2]
 
