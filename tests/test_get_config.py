@@ -74,7 +74,8 @@ def test_read_settings(tmpdir):
 
     shutil.rmtree(tmpdir)
     shortcut = os.path.join(tmpdir.dirname, "test_read_settingscurrent")
-    os.unlink(shortcut)
+    if os.path.exists(shortcut):
+        os.unlink(shortcut)
 
 
 def test_serialize_settings_model():
