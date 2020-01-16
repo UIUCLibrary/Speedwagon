@@ -158,7 +158,10 @@ def simple_task_builder_with_2_subtasks(tmpdir_factory):
     builder.add_subtask(subtask=SimpleSubtask("Second"))
     yield builder
     shutil.rmtree(temp_path)
-    shortcut = os.path.join(tmpdir_factory.getbasetemp(), "task_buildercurrent")
+
+    shortcut = \
+        os.path.join(tmpdir_factory.getbasetemp(), "task_buildercurrent")
+
     if os.path.exists(shortcut):
         os.unlink(shortcut)
 
@@ -274,7 +277,10 @@ def test_adapter_results_with_pretask(tmpdir):
         assert "First" == results[1]
         assert "Second" == results[2]
     shutil.rmtree(tmpdir)
-    shortcut = os.path.join(tmpdir.dirname, "test_adapter_results_with_pretcurrent")
+
+    shortcut = \
+        os.path.join(tmpdir.dirname, "test_adapter_results_with_pretcurrent")
+
     if os.path.exists(shortcut):
         os.unlink(shortcut)
 
@@ -312,11 +318,17 @@ def test_adapter_results_with_posttask(tmpdir):
             results.append(r.data)
 
         assert len(results) == 3
-        assert "First" == results[0], "results = {}, queued_order={}".format(results, queued_order)
+
+        assert "First" == results[0], "results = {}, queued_order={}".format(
+            results, queued_order)
+
         assert "Second" == results[1]
         assert "Ending" == results[2]
 
     shutil.rmtree(tmpdir)
-    shortcut = os.path.join(tmpdir.dirname, "test_adapter_results_with_postcurrent")
+
+    shortcut = \
+        os.path.join(tmpdir.dirname, "test_adapter_results_with_postcurrent")
+
     if os.path.exists(shortcut):
         os.unlink(shortcut)
