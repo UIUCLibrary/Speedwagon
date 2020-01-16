@@ -126,7 +126,9 @@ def test_task_can_be_picked(tmpdir):
 
     shutil.rmtree(tmpdir)
     shortcut = os.path.join(tmpdir.dirname, "test_task_can_be_pickedcurrent")
-    os.unlink(shortcut)
+
+    if os.path.exists(shortcut):
+        os.unlink(shortcut)
 
 
 def execute_task(new_task):
@@ -154,8 +156,8 @@ def simple_task_builder_with_2_subtasks(tmpdir_factory):
     yield builder
     shutil.rmtree(temp_path)
     shortcut = os.path.join(tmpdir_factory.getbasetemp(), "task_buildercurrent")
-    # if os.path.exists(shortcut):
-    os.unlink(shortcut)
+    if os.path.exists(shortcut):
+        os.unlink(shortcut)
 
 
 @pytest.mark.adapter
@@ -222,7 +224,8 @@ def test_pretask_builder(tmpdir):
     assert task.pretask == pretask
     shutil.rmtree(tmpdir)
     shortcut = os.path.join(tmpdir.dirname, "test_pretask_buildercurrent")
-    os.unlink(shortcut)
+    if os.path.exists(shortcut):
+        os.unlink(shortcut)
 
 
 def test_posttask_builder(tmpdir):
@@ -239,7 +242,8 @@ def test_posttask_builder(tmpdir):
     assert task.posttask == posttask
     shutil.rmtree(tmpdir)
     shortcut = os.path.join(tmpdir.dirname, "test_posttask_buildercurrent")
-    os.unlink(shortcut)
+    if os.path.exists(shortcut):
+        os.unlink(shortcut)
 
 
 @pytest.mark.adapter
@@ -268,7 +272,8 @@ def test_adapter_results_with_pretask(tmpdir):
         assert "Second" == results[2]
     shutil.rmtree(tmpdir)
     shortcut = os.path.join(tmpdir.dirname, "test_adapter_results_with_pretcurrent")
-    os.unlink(shortcut)
+    if os.path.exists(shortcut):
+        os.unlink(shortcut)
 
 
 @pytest.mark.adapter
@@ -298,4 +303,5 @@ def test_adapter_results_with_posttask(tmpdir):
 
     shutil.rmtree(tmpdir)
     shortcut = os.path.join(tmpdir.dirname, "test_adapter_results_with_postcurrent")
-    os.unlink(shortcut)
+    if os.path.exists(shortcut):
+        os.unlink(shortcut)
