@@ -304,7 +304,6 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         return runner(*args, **kwargs, parent=parent)
 
     def add_job(self, new_job: ProcessJobWorker, settings: dict) -> None:
-
         self._pending_jobs.put(JobPair(new_job, settings))
 
     def start(self):
@@ -356,25 +355,25 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
     def get_results(self, timeout_callback=None):
         total_jobs = len(self.futures)
         completed = 0
+        futures = [(i, False) for i in self.futures]
         while self.active:
             try:
                 for f in concurrent.futures.as_completed(self.futures,
                                                          timeout=0.01):
-
-                    if not f.cancelled():
-                        result = f.result()
-                        if f in self.futures:
-                            self.futures.remove(f)
+                    self.flush_message_buffer()
+                    if not f.cancel() and f.done():
                         completed += 1
-
-                        self.flush_message_buffer()
+                        self.futures.remove(f)
                         if timeout_callback:
                             timeout_callback(completed, total_jobs)
-                        if result is not None:
-                            yield result
+                        for i, (future, reported) in enumerate(futures):
 
-                if timeout_callback:
-                    timeout_callback(completed, total_jobs)
+                            if not reported and future.done():
+                                result = future.result()
+                                yield result
+                                futures[i] = future, True
+                    if timeout_callback:
+                        timeout_callback(completed, total_jobs)
 
                 self.active = False
                 self.futures.clear()
