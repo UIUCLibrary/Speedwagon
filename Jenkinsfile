@@ -386,13 +386,13 @@ def testPythonPackages(pkgRegex, testEnvs){
                 testEnvs.each{ testEnv->
 
                     testEnv['images'].each{ dockerImage ->
-                        stash includes: "${fileName}", name: "${fileName.name}"
+                        stash includes: "${fileName}", name: "${testEnv}-${fileName.name}"
                         taskData.add(
                             [
                                 file: fileName,
                                 dockerImage: dockerImage,
                                 label: testEnv['label'],
-                                stashName: "${fileName.name}"
+                                stashName: "${testEnv}-${fileName.name}"
                             ]
                         )
                     }
