@@ -3,8 +3,7 @@
 import org.ds.*
 import static groovy.json.JsonOutput.* // For pretty printing json data
 
-def CMAKE_VERSION = "cmake3.13"
-@Library(["devpi", "PythonHelpers"]) _
+//@Library(["devpi", "PythonHelpers"]) _
 
 def CONFIGURATIONS = [
     '3.6': [
@@ -383,16 +382,16 @@ def testPythonPackages(pkgRegex, testEnvs){
             unstash 'PYTHON_PACKAGES'
             def pythonPkgs = findFiles glob: pkgRegex
             pythonPkgs.each{ fileName ->
+                def packageStashName = "${fileName.name}"
+                stash includes: "${fileName}", name: "${packageStashName}"
                 testEnvs.each{ testEnv->
-
                     testEnv['images'].each{ dockerImage ->
-                        stash includes: "${fileName}", name: "${testEnv}-${fileName.name}"
                         taskData.add(
                             [
                                 file: fileName,
                                 dockerImage: dockerImage,
                                 label: testEnv['label'],
-                                stashName: "${testEnv}-${fileName.name}"
+                                stashName: "${packageStashName}"
                             ]
                         )
                     }
