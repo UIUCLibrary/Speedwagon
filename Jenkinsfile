@@ -378,18 +378,14 @@ ${log_file}
 def testPythonPackages(pkgRegex, testEnvs){
     script{
         def taskData = []
-        def stashed = []
         node("windows"){
             unstash 'PYTHON_PACKAGES'
             def pythonPkgs = findFiles glob: pkgRegex
             pythonPkgs.each{ fileName ->
+                def packageStashName = "${fileName.name}"
+                stash includes: "${fileName}", name: "${packageStashName}"
                 testEnvs.each{ testEnv->
-                    def packageStashName = "${fileName.name}"
                     testEnv['images'].each{ dockerImage ->
-                        if(!stashed.contains(packageStashName)){
-                            stash includes: "${fileName}", name: "${packageStashName}"
-                            stashed.add(packageStashName)
-                        }
                         taskData.add(
                             [
                                 file: fileName,
