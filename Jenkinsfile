@@ -3,8 +3,7 @@
 import org.ds.*
 import static groovy.json.JsonOutput.* // For pretty printing json data
 
-def CMAKE_VERSION = "cmake3.13"
-@Library(["devpi", "PythonHelpers"]) _
+//@Library(["devpi", "PythonHelpers"]) _
 
 def CONFIGURATIONS = [
     '3.6': [
