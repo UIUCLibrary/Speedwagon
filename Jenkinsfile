@@ -971,6 +971,7 @@ pipeline {
                                     filename 'ci/docker/windows_standalone/Dockerfile'
                                     label 'Windows&&Docker'
                                     args "-u ContainerAdministrator"
+                                    additionalBuildArgs "${env.CHOCOLATEY_SOURCE?.trim() ? '--build-arg' + env.CHOCOLATEY_SOURCE : ''}"
                                   }
                             }
                             steps {
