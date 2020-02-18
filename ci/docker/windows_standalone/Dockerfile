@@ -10,11 +10,11 @@ ADD ci/docker/windows_standalone/install_choco.ps1 install_choco.ps1
 RUN Set-ExecutionPolicy Bypass -Scope Process -Force; ./install_choco.ps1 -packageRepo $env:CHOCOLATEY_REPO ; `
     choco source remove -n chocolatey ; choco source add -n=chocolatey_repo -s=\"$env:CHOCOLATEY_REPO\" ; `
     Remove-Item C:\ProgramData\chocolatey\bin\cpack.exe
-RUN choco source list
 # Install packages that can be installed by chocolatey
 ADD ci/docker/windows_standalone/packages.config packages.config
-RUN choco install -y packages.config ;`
-    Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse
+RUN choco install -y packages.config --no-progress --stoponfirstfailure;`
+    Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse ; `
+    Write-Host "Finished install packages with Chocolatey"
 
 # Install WiX toolset for making .msi installers and put the tools on the path
 RUN Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force ; `
