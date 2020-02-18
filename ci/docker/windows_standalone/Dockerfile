@@ -6,21 +6,23 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 ARG CHOCOLATEY_REPO=https://chocolatey.org/api/v2
 
 ARG ChocolateyEnvironmentDebug=false
-ADD ci/docker/windows_standalone/install_choco.ps1 install_choco.ps1
-RUN Set-ExecutionPolicy Bypass -Scope Process -Force; ./install_choco.ps1 -packageRepo $env:CHOCOLATEY_REPO ; `
+ADD ci/docker/windows_standalone/install_choco.ps1 choco/install_choco.ps1
+RUN Set-ExecutionPolicy Bypass -Scope Process -Force; ./choco/install_choco.ps1 -packageRepo $env:CHOCOLATEY_REPO ; `
     choco source remove -n chocolatey ; choco source add -n=chocolatey_repo -s=\"$env:CHOCOLATEY_REPO\" ; `
     Remove-Item C:\ProgramData\chocolatey\bin\cpack.exe
+
 # Install packages that can be installed by chocolatey
-ADD ci/docker/windows_standalone/packages.config packages.config
-RUN choco install -y packages.config --no-progress --stoponfirstfailure;`
+ADD ci/docker/windows_standalone/chocolatey/packages.config choco/packages.config
+RUN choco install -y choco/packages.config --no-progress --stoponfirstfailure;`
     Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse ; `
     Write-Host "Finished install packages with Chocolatey"
 
 # Install WiX toolset for making .msi installers and put the tools on the path
+ADD ci/docker/windows_standalone/nuget/packages.config nuget/packages.config
 RUN Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force ; `
     nuget update -self ;`
-    nuget install WiX.Toolset -OutputDirectory c:\wix ; `
-    [Environment]::SetEnvironmentVariable('PATH', \"$($env:Path);$((Get-Childitem -Path C:\wix -Include wix.dll -File -Recurse)[0].DirectoryName)\", [EnvironmentVariableTarget]::Machine)
+    nuget install nuget/packages.config -OutputDirectory c:\BuildTools\ ; `
+    [Environment]::SetEnvironmentVariable('PATH', \"$($env:Path);$((Get-Childitem -Path C:\BuildTools -Include wix.dll -File -Recurse)[0].DirectoryName)\", [EnvironmentVariableTarget]::Machine)
 
 # Install python version from URL
 ARG PYTHON_INSTALLER_URL=https://www.python.org/ftp/python/3.7.5/python-3.7.5-amd64.exe
