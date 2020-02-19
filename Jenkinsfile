@@ -15,7 +15,16 @@ def CONFIGURATIONS = [
         tox_env: "py37"
         ]
 ]
-
+def get_build_args(){
+    script{
+        def CHOCOLATEY_SOURCE = ""
+        try{
+            CHOCOLATEY_SOURCE = powershell(script: "(Get-ChildItem Env:Path).value", returnStdout: true).trim()
+        } finally {
+            return CHOCOLATEY_SOURCE?.trim() ? '--build-arg ' + "CHOCOLATEY_REPO=" + CHOCOLATEY_SOURCE : ''
+        }
+    }
+}
 def get_package_version(stashName, metadataFile){
     ws {
         unstash "${stashName}"
@@ -971,6 +980,7 @@ pipeline {
                                     filename 'ci/docker/windows_standalone/Dockerfile'
                                     label 'Windows&&Docker'
                                     args "-u ContainerAdministrator"
+                                    additionalBuildArgs "${get_build_args()}"
                                   }
                             }
                             steps {

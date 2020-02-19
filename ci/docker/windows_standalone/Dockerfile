@@ -1,44 +1,30 @@
 # escape=`
-ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:3.5
+ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8
 FROM ${FROM_IMAGE}
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 
-# Reset the shell.
-SHELL ["cmd", "/S", "/C"]
-RUN mkdir c:\\TEMP
-#COPY Install.cmd C:/TEMP/
-ADD https://aka.ms/vscollect.exe C:/TEMP/collect.exe
+ARG CHOCOLATEY_REPO=https://chocolatey.org/api/v2
 
-# Download channel for fixed install.
-ARG CHANNEL_URL=https://aka.ms/vs/16/release/channel
-ADD ${CHANNEL_URL} C:/TEMP/VisualStudio.chman
+ARG ChocolateyEnvironmentDebug=false
+ADD ci/docker/windows_standalone/install_choco.ps1 choco/install_choco.ps1
+RUN Set-ExecutionPolicy Bypass -Scope Process -Force; ./choco/install_choco.ps1 -packageRepo $env:CHOCOLATEY_REPO ; `
+    choco source remove -n chocolatey ; choco source add -n=chocolatey_repo -s=\"$env:CHOCOLATEY_REPO\" ; `
+    Remove-Item C:\ProgramData\chocolatey\bin\cpack.exe
 
-# Download and install Build Tools for Visual Studio 2017 for native desktop workload.
+# Install packages that can be installed by chocolatey
+ADD ci/docker/windows_standalone/chocolatey/packages.config choco/packages.config
+RUN choco install -y choco/packages.config --no-progress --stoponfirstfailure;`
+    Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse ; `
+    Write-Host "Finished install packages with Chocolatey"
 
-ADD https://aka.ms/vs/16/release/vs_buildtools.exe C:/TEMP/vs_buildtools.exe
+# Install WiX toolset for making .msi installers and put the tools on the path
+ADD ci/docker/windows_standalone/nuget/packages.config nuget/packages.config
+RUN Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force ; `
+    nuget update -self ;`
+    nuget install nuget/packages.config -OutputDirectory c:\BuildTools\ ; `
+    [Environment]::SetEnvironmentVariable('PATH', \"$($env:Path);$((Get-Childitem -Path C:\BuildTools -Include wix.dll -File -Recurse)[0].DirectoryName)\", [EnvironmentVariableTarget]::Machine)
 
-RUN (C:\\TEMP\\vs_buildtools.exe `
-    --quiet --wait --norestart --nocache `
-    --channelUri C:\\TEMP\\VisualStudio.chman `
-    --installChannelUri C:\\TEMP\\VisualStudio.chman `
-    --add Microsoft.VisualStudio.Component.Windows10SDK.18362 `
-    --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64	 `
-    --includeRecommended `
-    --installPath C:\BuildTools `
-  || IF "%ERRORLEVEL%"=="3010" EXIT 0 )`
-  && @echo Cleaning up temp files`
-  && del /S /F /Q %temp% `
-  && del /S /F /Q %Windir%\Temp `
-  && @echo Done cleaning up files in temp directories
-
-SHELL ["powershell", "-command"]
-RUN Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-
-ARG CHOCOLATEY_SOURCE=chocolatey
-ADD ci/docker/windows_standalone/packages.config packages.config
-RUN choco install -y --source=$env:CHOCOLATEY_SOURCE packages.config ; `
-    Remove-Item C:\ProgramData\chocolatey\bin\cpack.exe ; `
-    Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse
-
+# Install python version from URL
 ARG PYTHON_INSTALLER_URL=https://www.python.org/ftp/python/3.7.5/python-3.7.5-amd64.exe
 
 RUN $ErrorActionPreference = 'Stop'; `
@@ -46,7 +32,8 @@ RUN $ErrorActionPreference = 'Stop'; `
     Start-Process python-installer.exe -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' -Wait ; `
     Remove-Item c:\python-installer.exe -Force
 
-RUN certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst
+# install certs so additional pip packages can download without any trouble
+#RUN certutil -config - -ping; certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst
 
 ENV PIPENV_CACHE_DIR=c:\pipenv_cache `
     WORKON_HOME=c:\venvs `
@@ -72,6 +59,8 @@ RUN python -m pip wheel -r c:\temp\requirements.txt -r c:\temp\requirements-dev.
 ADD ci/docker/windows_standalone/startup.bat c:\startup\startup.bat
 
 SHELL ["cmd", "/S", "/C"]
+
+# Add script that runs on starting cmd that launches developer cli.
+# This is important because Jenkins won't be able to run bat() with the needed
+# tools on the path.
 RUN REG ADD "HKLM\Software\Microsoft\Command Processor" /v AutoRun /t REG_SZ /d c:\startup\startup.bat
-#ENTRYPOINT C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 &&
-#CMD ["powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass"]
