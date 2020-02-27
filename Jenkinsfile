@@ -641,7 +641,7 @@ pipeline {
                             }
                             agent {
                                 dockerfile {
-                                    filename 'ci/docker/documentation/Dockerfile'
+                                    filename 'ci/docker/python37/Dockerfile'
                                     label 'Windows&&Docker'
                                   }
                             }
