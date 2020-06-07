@@ -985,8 +985,6 @@ pipeline {
                                     [
                                         [
                                             images:
-                                                [
-                                                    "python:3.6-windowsservercore",
                                                     "python:3.7",
                                                     "python:3.8"
                                                 ],
