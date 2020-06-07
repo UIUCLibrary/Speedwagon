@@ -55,7 +55,7 @@ class AbsConfig(collections.abc.Mapping):
         return self._data[k]
 
 
-class MacOsConfig(AbsConfig):
+class NixConfig(AbsConfig):
 
     def get_user_data_directory(self) -> str:
         data_dir = os.path.join(self._get_app_dir(), "data")
@@ -155,7 +155,8 @@ def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
     If no argument is included, it will try to guess the best one."""
     configurations = {
         "Windows": WindowsConfig,
-        "Darwin": MacOsConfig
+        "Darwin": NixConfig,
+        "Linux": NixConfig,
     }
     if configuration is None:
         system_config = configurations.get(platform.system())
