@@ -72,7 +72,7 @@ def run_tox(){
                 'TOXENV="py"'
             ]
         ) {
-            sh "python -m pip install tox"
+            //sh "python -m pip install tox"
 //             bat "python -m pip install pipenv tox"
             try{
                 // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
