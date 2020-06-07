@@ -62,7 +62,8 @@ def sanitize_chocolatey_version(version){
 }
 
 def run_tox(){
-    bat "if not exist logs mkdir logs"
+    sh "mkdir -p logs"
+//     bat "if not exist logs mkdir logs"
     script{
         withEnv(
             [
@@ -71,26 +72,34 @@ def run_tox(){
                 'TOXENV="py"'
             ]
         ) {
-            bat "python -m pip install pipenv tox"
+            sh "python -m pip install tox"
+//             bat "python -m pip install pipenv tox"
             try{
                 // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
                 // Tox has a bug that fails when trying to write the json report
                 // when --parallel is run at the same time
-                bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
+                sh "tox -p=auto -o -vv --workdir .tox"
+//                 bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
             } catch (exc) {
-                bat "tox -vv --workdir ${WORKSPACE}\\.tox --recreate"
+                sh "tox -vv --workdir .tox --recreate"
+//                 bat "tox -vv --workdir ${WORKSPACE}\\.tox --recreate"
             }
         }
     }
 }
 
 def run_pylint(){
-    bat "if not exist logs mkdir logs"
+    sh "mkdir -p logs"
+//     bat "if not exist logs mkdir logs"
     catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-        bat(
-            script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports\\pylint.txt',
+        sh(
+            script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt',
             label: "Running pylint"
         )
+//         bat(
+//             script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports\\pylint.txt',
+//             label: "Running pylint"
+//         )
     }
     script{
         if(env.BRANCH_NAME == "master"){
@@ -712,8 +721,10 @@ pipeline {
         stage("Test") {
             agent {
                 dockerfile {
-                    filename 'ci\\docker\\python\\windows\\Dockerfile'
-                    label 'Windows&&Docker'
+                    filename 'ci/docker/python/linux/Dockerfile'
+                    label 'linux && docker'
+//                     filename 'ci\\docker\\python\\windows\\Dockerfile'
+//                     label 'Windows&&Docker'
                   }
             }
             stages{
@@ -721,9 +732,11 @@ pipeline {
                     parallel {
                         stage("Run Behave BDD Tests") {
                             steps {
-                                bat "if not exist reports mkdir reports"
+                                sh "mkdir -p reports"
+//                                 bat "if not exist reports mkdir reports"
                                 catchError(buildResult: "UNSTABLE", message: 'Did not pass all Behave BDD tests', stageResult: "UNSTABLE") {
-                                    bat "coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\tests\\behave"
+                                    sh "coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory reports/tests/behave"
+//                                     bat "coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\tests\\behave"
                                 }
                             }
                             post {
@@ -734,9 +747,11 @@ pipeline {
                         }
                         stage("Run PyTest Unit Tests"){
                             steps{
-                                bat "if not exist logs mkdir logs"
+                                sh "mkdir -p logs"
+//                                 bat "if not exist logs mkdir logs"
                                 catchError(buildResult: "UNSTABLE", message: 'Did not pass all pytest tests', stageResult: "UNSTABLE") {
-                                    bat "coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/pytest-junit.xml"
+                                    sh "coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/pytest-junit.xml"
+//                                     bat "coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/pytest-junit.xml"
                                 }
                             }
                             post {
@@ -748,8 +763,9 @@ pipeline {
                         }
                         stage("Run Doctest Tests"){
                             steps {
-                                unstash "PYTHON_BUILD_FILES"
-                                bat "python setup.py build_ui && sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees --no-color -w ${WORKSPACE}/logs/doctest.txt"
+//                                 unstash "PYTHON_BUILD_FILES"
+                                sh "python setup.py build build_ui && sphinx-build -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt"
+//                                 bat "python setup.py build_ui && sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees --no-color -w ${WORKSPACE}/logs/doctest.txt"
                             }
                             post{
                                 always {
@@ -764,9 +780,11 @@ pipeline {
                         }
                         stage("Run MyPy Static Analysis") {
                             steps{
-                                bat "if not exist logs mkdir logs"
+                                sh "mkdir -p logs"
+//                                 bat "if not exist logs mkdir logs"
                                 catchError(buildResult: "SUCCESS", message: 'MyPy found issues', stageResult: "UNSTABLE") {
-                                    bat script: "mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
+                                    sh( script: "mypy -p speedwagon --html-report reports/mypy/html > logs/mypy.log")
+//                                     bat script: "mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
                                 }
                             }
                             post {
@@ -817,9 +835,11 @@ pipeline {
                         }
                         stage("Run Flake8 Static Analysis") {
                             steps{
-                                bat "if not exist logs mkdir logs"
+                                sh "mkdir -p logs"
+//                                 bat "if not exist logs mkdir logs"
                                 catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
-                                    bat script: "(if not exist logs mkdir logs) && flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
+                                    sh script: "flake8 speedwagon --tee --output-file=logs/flake8.log"
+//                                     bat script: "(if not exist logs mkdir logs) && flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                 }
                             }
                             post {
