@@ -984,7 +984,7 @@ pipeline {
                                     "dist/*.whl,dist/*.tar.gz,dist/*.zip",
                                     [
                                         [
-                                            images:
+                                            images:[
                                                     "python:3.7",
                                                     "python:3.8"
                                                 ],
