@@ -13,6 +13,10 @@ def CONFIGURATIONS = [
     "3.7": [
         test_docker_image: "python:3.7",
         tox_env: "py37"
+        ],
+    "3.8": [
+        test_docker_image: "python:3.8",
+        tox_env: "py37"
         ]
 ]
 def get_build_args(){
@@ -443,7 +447,7 @@ def testPythonPackages(pkgRegex, testEnvs){
                                 ]) {
                                 bat(
                                     label:"Running tox tests with ${it['file']}",
-                                    script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
+                                    script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv --pre"
                                 )
                             }
                         }finally {
@@ -962,7 +966,8 @@ pipeline {
                                             images:
                                                 [
                                                     "python:3.6-windowsservercore",
-                                                    "python:3.7"
+                                                    "python:3.7",
+                                                    "python:3.8"
                                                 ],
                                             label: "windows&&docker"
                                         ]
