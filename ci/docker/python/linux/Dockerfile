@@ -26,7 +26,24 @@ ENV PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
 ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"
 
 RUN pip install --no-index --find-links=/wheels -r /tmp/requirements.txt && \
-    pip install behave flake8 pytest pytest-cov pytest-qt coverage pyqt-distutils pytest-runner sphinx sphinx-argparse tox mypy rinohtype
+    pip install behave \
+                flake8 \
+                pytest \
+                pytest-cov \
+                pytest-qt \
+                coverage \
+                pyqt-distutils \
+                pytest-runner \
+                sphinx \
+                sphinx-argparse \
+                tox \
+                mypy \
+                rinohtype \
+                sphinxcontrib-applehelp \
+                sphinxcontrib-devhelp \
+                sphinxcontrib-htmlhelp \
+                sphinxcontrib-jsmath \
+                sphinxcontrib-qthelp
 
 USER user
 WORKDIR /home/user
