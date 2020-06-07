@@ -577,7 +577,7 @@ pipeline {
                         stage("Getting Distribution Info"){
                             agent {
                                 dockerfile {
-                                    filename 'ci\\docker\\python37\\Dockerfile'
+                                    filename 'ci\\docker\\python\\windows\\Dockerfile'
                                     label 'Windows&&Docker'
                                  }
                             }
@@ -693,7 +693,7 @@ pipeline {
         stage("Test") {
             agent {
                 dockerfile {
-                    filename 'ci\\docker\\python37\\Dockerfile'
+                    filename 'ci\\docker\\python\\windows\\Dockerfile'
                     label 'Windows&&Docker'
                   }
             }
