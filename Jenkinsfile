@@ -137,21 +137,35 @@ def get_package_name(stashName, metadataFile){
 }
 
 def build_sphinx_stage(){
-    bat "if not exist logs mkdir logs"
+    sh "mkdir -p logs"
+//     bat "if not exist logs mkdir logs"
     //bat(label: "Install pipenv",
     //    script: "python -m pipenv install --dev"
     //    )
-    bat(label: "Run build_ui",
+//     bat(label: "Run build_ui",
+//         script: "python setup.py build_ui"
+//         )
+
+    sh(label: "Run build_ui",
         script: "python setup.py build_ui"
         )
-    bat(
+
+    sh(
         label: "Building HTML docs on ${env.NODE_NAME}",
-        script: "python -m sphinx docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx.log"
+        script: "python -m sphinx docs/source build/docs/html -d build/docs/.doctrees --no-color -w logs/build_sphinx.log"
         )
-    bat(
+// bat(
+//         label: "Building HTML docs on ${env.NODE_NAME}",
+//         script: "python -m sphinx docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx.log"
+//         )
+    sh(
         label: "Building LaTex docs on ${env.NODE_NAME}",
-        script: "python -m sphinx docs/source build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
+        script: "python -m sphinx docs/source build/docs/latex -b latex -d build/docs/.doctrees --no-color -w logs/build_sphinx_latex.log"
         )
+//     bat(
+//         label: "Building LaTex docs on ${env.NODE_NAME}",
+//         script: "python -m sphinx docs/source build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
+//         )
 }
 def check_jira_issue(issue, outputFile){
     script{
@@ -640,8 +654,10 @@ pipeline {
                             }
                             agent {
                                 dockerfile {
-                                    filename 'ci/docker/python/windows/Dockerfile'
-                                    label 'Windows&&Docker'
+                                    filename 'ci/docker/python/linux/Dockerfile'
+                                    label 'linux && docker'
+//                                     filename 'ci/docker/python/windows/Dockerfile'
+//                                     label 'Windows&&Docker'
                                   }
                             }
                             steps {
