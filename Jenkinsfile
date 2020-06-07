@@ -856,7 +856,8 @@ pipeline {
                     }
                     post{
                         always{
-                            bat "coverage combine && coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && coverage html -d ${WORKSPACE}\\reports\\coverage"
+                            sh "coverage combine && coverage xml -o reports/coverage.xml && coverage html -d reports/coverage"
+//                             bat "coverage combine && coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && coverage html -d ${WORKSPACE}\\reports\\coverage"
                             stash includes: "reports/coverage.xml", name: "COVERAGE_REPORT_DATA"
                             publishHTML([
                                 allowMissing: true,
