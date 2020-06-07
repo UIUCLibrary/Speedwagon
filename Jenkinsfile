@@ -577,14 +577,13 @@ pipeline {
                         stage("Getting Distribution Info"){
                             agent {
                                 dockerfile {
-                                    filename 'ci\\docker\\python\\windows\\Dockerfile'
-                                    label 'Windows&&Docker'
+                                    filename 'ci/docker/python/linux/Dockerfile'
+                                    label 'linux && docker'
                                  }
                             }
 
                             steps{
-                                checkout scm
-                                bat "python setup.py dist_info"
+                                sh "python setup.py dist_info"
                             }
                             post{
                                 success{
