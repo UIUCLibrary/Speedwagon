@@ -608,7 +608,7 @@ pipeline {
                 stage("Building Python Library"){
                     agent {
                         dockerfile {
-                            filename 'ci/docker/python37/Dockerfile'
+                            filename 'ci/docker/python/windows/Dockerfile'
                             label 'Windows&&Docker'
                           }
                     }
@@ -640,7 +640,7 @@ pipeline {
                             }
                             agent {
                                 dockerfile {
-                                    filename 'ci/docker/python37/Dockerfile'
+                                    filename 'ci/docker/python/windows/Dockerfile'
                                     label 'Windows&&Docker'
                                   }
                             }
@@ -912,7 +912,7 @@ pipeline {
                         stage("Packaging sdist and wheel"){
                             agent {
                                 dockerfile {
-                                    filename 'ci/docker/python37/Dockerfile'
+                                    filename 'ci/docker/python/windows/Dockerfile'
                                     label 'Windows&&Docker'
                                   }
                             }
