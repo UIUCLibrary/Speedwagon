@@ -447,7 +447,7 @@ def testPythonPackages(pkgRegex, testEnvs){
                                 ]) {
                                 bat(
                                     label:"Running tox tests with ${it['file']}",
-                                    script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv --pre"
+                                    script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
                                 )
                             }
                         }finally {
