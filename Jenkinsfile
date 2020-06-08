@@ -630,12 +630,17 @@ pipeline {
                 stage("Building Python Library"){
                     agent {
                         dockerfile {
-                            filename 'ci/docker/python/windows/Dockerfile'
-                            label 'Windows&&Docker'
+                            filename 'ci/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
                           }
+//                         dockerfile {
+//                             filename 'ci/docker/python/windows/Dockerfile'
+//                             label 'Windows&&Docker'
+//                           }
                     }
                     steps {
-                        bat "(if not exist logs mkdir logs) && pipenv run python setup.py build -b ${WORKSPACE}\\build 2> ${WORKSPACE}\\logs\\build_errors.log"
+                        sh """mkdir -p logs
+                              && pipenv run python setup.py build -b build 2> logs/build_errors.log"""
                     }
                     post{
                         always{
