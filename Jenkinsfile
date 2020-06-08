@@ -880,7 +880,7 @@ pipeline {
         stage("Run Sonarqube Analysis"){
             agent {
               dockerfile {
-                filename 'ci/docker/sonarcloud/Dockerfile'
+                filename 'ci/docker/python/linux/Dockerfile'
                 label 'linux && docker'
               }
             }
@@ -893,9 +893,10 @@ pipeline {
                 unstash "COVERAGE_REPORT_DATA"
                 unstash "PYTEST_UNIT_TEST_RESULTS"
                 unstash "PYLINT_REPORT"
-                withSonarQubeEnv(installationName:"sonarcloud", credentialsId: 'sonarcloud-speedwagon') {
-                    sh "sonar-scanner -Dsonar.branch.name=${env.BRANCH_NAME} -X"
-                    script{
+                script{
+                    def scannerHome = tool 'sonar-scanner-4.3.0';
+                    withSonarQubeEnv(installationName:"sonarcloud", credentialsId: 'sonarcloud-speedwagon') {
+                        sh "${scannerHome} -Dsonar.branch.name=${env.BRANCH_NAME} -X"
                         def sonarqube_result = waitForQualityGate(abortPipeline: false)
                         if (sonarqube_result.status != 'OK') {
                             unstable "SonarQube quality gate: ${sonarqube_result.status}"
