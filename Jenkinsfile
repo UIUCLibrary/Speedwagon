@@ -893,7 +893,7 @@ pipeline {
                 unstash "PYTEST_UNIT_TEST_RESULTS"
                 unstash "PYLINT_REPORT"
                 withCredentials([string(credentialsId: 'sonarcloud-speedwagon', variable: 'login')]) {
-                    sh "sonar-scanner -Dsonar.login=$login -X"
+                    sh "sonar-scanner -Dsonar.login=$login -Dsonar.branch.name=${env.BRANCH_NAME} -X"
                 }
             }
         }
