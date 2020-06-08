@@ -640,7 +640,7 @@ pipeline {
                     }
                     steps {
                         sh """mkdir -p logs
-                              && pipenv run python setup.py build -b build 2> logs/build_errors.log"""
+                              python setup.py build -b build 2> logs/build_errors.log"""
                     }
                     post{
                         always{
