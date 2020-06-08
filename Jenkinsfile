@@ -808,7 +808,7 @@ pipeline {
                               
                             }
                             steps {
-                                sh "tox -e py -vv"
+                                sh "tox -e py -vv -i https://devpi.library.illinois.edu/production/release"
 //                                 run_tox()
                             }
                             post{
