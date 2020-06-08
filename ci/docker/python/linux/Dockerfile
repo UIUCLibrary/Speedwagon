@@ -47,6 +47,6 @@ RUN pip install --no-index --find-links=/wheels -r /tmp/requirements.txt && \
                 sphinxcontrib-jsmath \
                 sphinxcontrib-qthelp \
                 pylint
-
+ENV PIP_FIND_LINKS=/wheels
 USER user
 WORKDIR /home/user
