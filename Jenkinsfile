@@ -576,9 +576,7 @@ pipeline {
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
-
     stages {
-
         stage("Configure"){
             stages{
                 stage("Initial setup"){
@@ -592,14 +590,12 @@ pipeline {
                             steps {
                                 check_jira_project('PSR',, 'logs/jira_project_data.json')
                                 check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
-
                             }
                             post{
                                 cleanup{
                                     cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
                                 }
                             }
-
                         }
                         stage("Getting Distribution Info"){
                             agent {
@@ -608,7 +604,6 @@ pipeline {
                                     label 'linux && docker'
                                  }
                             }
-
                             steps{
                                 sh "python setup.py dist_info"
                             }
@@ -669,8 +664,6 @@ pipeline {
                                 dockerfile {
                                     filename 'ci/docker/python/linux/Dockerfile'
                                     label 'linux && docker'
-//                                     filename 'ci/docker/python/windows/Dockerfile'
-//                                     label 'Windows&&Docker'
                                   }
                             }
                             steps {
@@ -723,8 +716,6 @@ pipeline {
                 dockerfile {
                     filename 'ci/docker/python/linux/Dockerfile'
                     label 'linux && docker'
-//                     filename 'ci\\docker\\python\\windows\\Dockerfile'
-//                     label 'Windows&&Docker'
                   }
             }
             stages{
@@ -732,11 +723,11 @@ pipeline {
                     parallel {
                         stage("Run Behave BDD Tests") {
                             steps {
-                                sh "mkdir -p reports"
-//                                 bat "if not exist reports mkdir reports"
                                 catchError(buildResult: "UNSTABLE", message: 'Did not pass all Behave BDD tests', stageResult: "UNSTABLE") {
-                                    sh "coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory reports/tests/behave"
-//                                     bat "coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\tests\\behave"
+                                    sh(
+                                        script: """mkdir -p reports
+                                                   coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory reports/tests/behave"""
+                                        )
                                 }
                             }
                             post {
@@ -747,11 +738,12 @@ pipeline {
                         }
                         stage("Run PyTest Unit Tests"){
                             steps{
-                                sh "mkdir -p logs"
-//                                 bat "if not exist logs mkdir logs"
                                 catchError(buildResult: "UNSTABLE", message: 'Did not pass all pytest tests', stageResult: "UNSTABLE") {
-                                    sh "coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/pytest-junit.xml"
-//                                     bat "coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/pytest-junit.xml"
+                                    sh(
+                                        script: """mkdir -p logs
+                                                   coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/pytest-junit.xml
+                                        """
+                                    )
                                 }
                             }
                             post {
@@ -765,7 +757,6 @@ pipeline {
                             steps {
 //                                 unstash "PYTHON_BUILD_FILES"
                                 sh "python setup.py build build_ui && sphinx-build -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt"
-//                                 bat "python setup.py build_ui && sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees --no-color -w ${WORKSPACE}/logs/doctest.txt"
                             }
                             post{
                                 always {
@@ -780,11 +771,12 @@ pipeline {
                         }
                         stage("Run MyPy Static Analysis") {
                             steps{
-                                sh "mkdir -p logs"
-//                                 bat "if not exist logs mkdir logs"
                                 catchError(buildResult: "SUCCESS", message: 'MyPy found issues', stageResult: "UNSTABLE") {
-                                    sh( script: "mypy -p speedwagon --html-report reports/mypy/html > logs/mypy.log")
-//                                     bat script: "mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
+                                    sh(
+                                        script: """mkdir -p logs
+                                                   mypy -p speedwagon --html-report reports/mypy/html > logs/mypy.log
+                                                   """
+                                   )
                                 }
                             }
                             post {
@@ -809,7 +801,6 @@ pipeline {
                             }
                             steps {
                                 sh "tox -e py -vv -i https://devpi.library.illinois.edu/production/release"
-//                                 run_tox()
                             }
                             post{
                                 always{
@@ -837,10 +828,8 @@ pipeline {
                         stage("Run Flake8 Static Analysis") {
                             steps{
                                 sh "mkdir -p logs"
-//                                 bat "if not exist logs mkdir logs"
                                 catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
                                     sh script: "flake8 speedwagon --tee --output-file=logs/flake8.log"
-//                                     bat script: "(if not exist logs mkdir logs) && flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                 }
                             }
                             post {
@@ -858,7 +847,6 @@ pipeline {
                     post{
                         always{
                             sh "coverage combine && coverage xml -o reports/coverage.xml && coverage html -d reports/coverage"
-//                             bat "coverage combine && coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && coverage html -d ${WORKSPACE}\\reports\\coverage"
                             stash includes: "reports/coverage.xml", name: "COVERAGE_REPORT_DATA"
                             publishHTML([
                                 allowMissing: true,
