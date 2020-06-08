@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION=3.8
+ARG PYTHON_VERSION=3.7
 FROM python:${PYTHON_VERSION} as wheel_builder
 
 ARG CMAKE_DOWNLOAD_URL=https://github.com/Kitware/CMake/releases/download/v3.17.3/cmake-3.17.3-Linux-x86_64.sh
