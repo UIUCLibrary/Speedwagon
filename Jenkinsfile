@@ -884,6 +884,9 @@ pipeline {
                 label 'linux && docker'
               }
             }
+            options{
+                lock("speedwagon-sonarscanner")
+            }
             steps{
                 checkout scm
                 unstash "COVERAGE_REPORT_DATA"
