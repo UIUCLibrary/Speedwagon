@@ -808,7 +808,8 @@ pipeline {
                               
                             }
                             steps {
-                                run_tox()
+                                sh "tox -e py -vv"
+//                                 run_tox()
                             }
                             post{
                                 always{
