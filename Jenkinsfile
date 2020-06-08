@@ -895,7 +895,11 @@ pipeline {
                 unstash "PYLINT_REPORT"
                 script{
                     withSonarQubeEnv(installationName:"sonarcloud", credentialsId: 'sonarcloud-speedwagon') {
-                        sh "sonar-scanner -Dsonar.branch.name=${env.BRANCH_NAME} -X"
+                        if (env.CHANGE_ID){
+                            sh "sonar-scanner -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET} -X"
+                        } else {
+                            sh "sonar-scanner -Dsonar.branch.name=${env.BRANCH_NAME} -X"
+                        }
                     }
                     def sonarqube_result = waitForQualityGate(abortPipeline: false)
                     if (sonarqube_result.status != 'OK') {
