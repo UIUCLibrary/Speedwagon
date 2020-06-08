@@ -905,10 +905,20 @@ pipeline {
                     if (sonarqube_result.status != 'OK') {
                         unstable "SonarQube quality gate: ${sonarqube_result.status}"
                     }
+                    def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
+                    writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
                 }
-//                 withCredentials([string(credentialsId: 'sonarcloud-speedwagon', variable: 'login')]) {
-//
-//                 }
+            }
+            post {
+                always{
+                    archiveArtifacts(
+                        allowEmptyArchive: true,
+                        artifacts: ".scannerwork/report-task.txt"
+                    )
+                    stash includes: "reports/sonar-report.json", name: 'SONAR_REPORT'
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
+                    recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                }
             }
         }
 
