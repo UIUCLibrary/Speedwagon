@@ -13,6 +13,10 @@ def CONFIGURATIONS = [
     "3.7": [
         test_docker_image: "python:3.7",
         tox_env: "py37"
+        ],
+    "3.8": [
+        test_docker_image: "python:3.8",
+        tox_env: "py37"
         ]
 ]
 def get_build_args(){
@@ -58,7 +62,8 @@ def sanitize_chocolatey_version(version){
 }
 
 def run_tox(){
-    bat "if not exist logs mkdir logs"
+    sh "mkdir -p logs"
+//     bat "if not exist logs mkdir logs"
     script{
         withEnv(
             [
@@ -67,26 +72,34 @@ def run_tox(){
                 'TOXENV="py"'
             ]
         ) {
-            bat "python -m pip install pipenv tox"
+            //sh "python -m pip install tox"
+//             bat "python -m pip install pipenv tox"
             try{
                 // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
                 // Tox has a bug that fails when trying to write the json report
                 // when --parallel is run at the same time
-                bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
+                sh "tox -p=auto -o -vv --workdir .tox -e py"
+//                 bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
             } catch (exc) {
-                bat "tox -vv --workdir ${WORKSPACE}\\.tox --recreate"
+                sh "tox -vv --workdir .tox --recreate -e py"
+//                 bat "tox -vv --workdir ${WORKSPACE}\\.tox --recreate"
             }
         }
     }
 }
 
 def run_pylint(){
-    bat "if not exist logs mkdir logs"
+    sh "mkdir -p logs"
+//     bat "if not exist logs mkdir logs"
     catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-        bat(
-            script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports\\pylint.txt',
+        sh(
+            script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt',
             label: "Running pylint"
         )
+//         bat(
+//             script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports\\pylint.txt',
+//             label: "Running pylint"
+//         )
     }
     script{
         if(env.BRANCH_NAME == "master"){
@@ -137,21 +150,35 @@ def get_package_name(stashName, metadataFile){
 }
 
 def build_sphinx_stage(){
-    bat "if not exist logs mkdir logs"
+    sh "mkdir -p logs"
+//     bat "if not exist logs mkdir logs"
     //bat(label: "Install pipenv",
     //    script: "python -m pipenv install --dev"
     //    )
-    bat(label: "Run build_ui",
+//     bat(label: "Run build_ui",
+//         script: "python setup.py build_ui"
+//         )
+
+    sh(label: "Run build_ui",
         script: "python setup.py build_ui"
         )
-    bat(
+
+    sh(
         label: "Building HTML docs on ${env.NODE_NAME}",
-        script: "python -m sphinx docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx.log"
+        script: "python -m sphinx docs/source build/docs/html -d build/docs/.doctrees --no-color -w logs/build_sphinx.log"
         )
-    bat(
+// bat(
+//         label: "Building HTML docs on ${env.NODE_NAME}",
+//         script: "python -m sphinx docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx.log"
+//         )
+    sh(
         label: "Building LaTex docs on ${env.NODE_NAME}",
-        script: "python -m sphinx docs/source build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
+        script: "python -m sphinx docs/source build/docs/latex -b latex -d build/docs/.doctrees --no-color -w logs/build_sphinx_latex.log"
         )
+//     bat(
+//         label: "Building LaTex docs on ${env.NODE_NAME}",
+//         script: "python -m sphinx docs/source build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
+//         )
 }
 def check_jira_issue(issue, outputFile){
     script{
@@ -549,9 +576,7 @@ pipeline {
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
-
     stages {
-
         stage("Configure"){
             stages{
                 stage("Initial setup"){
@@ -565,26 +590,22 @@ pipeline {
                             steps {
                                 check_jira_project('PSR',, 'logs/jira_project_data.json')
                                 check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
-
                             }
                             post{
                                 cleanup{
                                     cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
                                 }
                             }
-
                         }
                         stage("Getting Distribution Info"){
                             agent {
                                 dockerfile {
-                                    filename 'ci\\docker\\python37\\Dockerfile'
-                                    label 'Windows&&Docker'
+                                    filename 'ci/docker/python/linux/Dockerfile'
+                                    label 'linux && docker'
                                  }
                             }
-
                             steps{
-                                checkout scm
-                                bat "python setup.py dist_info"
+                                sh "python setup.py dist_info"
                             }
                             post{
                                 success{
@@ -609,7 +630,7 @@ pipeline {
                 stage("Building Python Library"){
                     agent {
                         dockerfile {
-                            filename 'ci/docker/python37/Dockerfile'
+                            filename 'ci/docker/python/windows/Dockerfile'
                             label 'Windows&&Docker'
                           }
                     }
@@ -641,8 +662,8 @@ pipeline {
                             }
                             agent {
                                 dockerfile {
-                                    filename 'ci/docker/python37/Dockerfile'
-                                    label 'Windows&&Docker'
+                                    filename 'ci/docker/python/linux/Dockerfile'
+                                    label 'linux && docker'
                                   }
                             }
                             steps {
@@ -693,8 +714,8 @@ pipeline {
         stage("Test") {
             agent {
                 dockerfile {
-                    filename 'ci\\docker\\python37\\Dockerfile'
-                    label 'Windows&&Docker'
+                    filename 'ci/docker/python/linux/Dockerfile'
+                    label 'linux && docker'
                   }
             }
             stages{
@@ -702,9 +723,11 @@ pipeline {
                     parallel {
                         stage("Run Behave BDD Tests") {
                             steps {
-                                bat "if not exist reports mkdir reports"
                                 catchError(buildResult: "UNSTABLE", message: 'Did not pass all Behave BDD tests', stageResult: "UNSTABLE") {
-                                    bat "coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory ${WORKSPACE}\\reports\\tests\\behave"
+                                    sh(
+                                        script: """mkdir -p reports
+                                                   coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory reports/tests/behave"""
+                                        )
                                 }
                             }
                             post {
@@ -715,9 +738,12 @@ pipeline {
                         }
                         stage("Run PyTest Unit Tests"){
                             steps{
-                                bat "if not exist logs mkdir logs"
                                 catchError(buildResult: "UNSTABLE", message: 'Did not pass all pytest tests', stageResult: "UNSTABLE") {
-                                    bat "coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/pytest-junit.xml"
+                                    sh(
+                                        script: """mkdir -p logs
+                                                   coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/pytest-junit.xml
+                                        """
+                                    )
                                 }
                             }
                             post {
@@ -729,8 +755,8 @@ pipeline {
                         }
                         stage("Run Doctest Tests"){
                             steps {
-                                unstash "PYTHON_BUILD_FILES"
-                                bat "python setup.py build_ui && sphinx-build -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees --no-color -w ${WORKSPACE}/logs/doctest.txt"
+//                                 unstash "PYTHON_BUILD_FILES"
+                                sh "python setup.py build build_ui && sphinx-build -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt"
                             }
                             post{
                                 always {
@@ -745,9 +771,12 @@ pipeline {
                         }
                         stage("Run MyPy Static Analysis") {
                             steps{
-                                bat "if not exist logs mkdir logs"
                                 catchError(buildResult: "SUCCESS", message: 'MyPy found issues', stageResult: "UNSTABLE") {
-                                    bat script: "mypy -p speedwagon --html-report ${WORKSPACE}\\reports\\mypy\\html > ${WORKSPACE}\\logs\\mypy.log"
+                                    sh(
+                                        script: """mkdir -p logs
+                                                   mypy -p speedwagon --html-report reports/mypy/html > logs/mypy.log
+                                                   """
+                                   )
                                 }
                             }
                             post {
@@ -768,10 +797,10 @@ pipeline {
                             environment {
                               PIP_INDEX_URL = "https://devpi.library.illinois.edu/production/release"
                               PIP_TRUSTED_HOST = "devpi.library.illinois.edu"
-                              TOXENV = "py"
+                              
                             }
                             steps {
-                                run_tox()
+                                sh "tox -e py -vv -i https://devpi.library.illinois.edu/production/release"
                             }
                             post{
                                 always{
@@ -798,9 +827,9 @@ pipeline {
                         }
                         stage("Run Flake8 Static Analysis") {
                             steps{
-                                bat "if not exist logs mkdir logs"
+                                sh "mkdir -p logs"
                                 catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
-                                    bat script: "(if not exist logs mkdir logs) && flake8 speedwagon --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
+                                    sh script: "flake8 speedwagon --tee --output-file=logs/flake8.log"
                                 }
                             }
                             post {
@@ -817,7 +846,7 @@ pipeline {
                     }
                     post{
                         always{
-                            bat "coverage combine && coverage xml -o ${WORKSPACE}\\reports\\coverage.xml && coverage html -d ${WORKSPACE}\\reports\\coverage"
+                            sh "coverage combine && coverage xml -o reports/coverage.xml && coverage html -d reports/coverage"
                             stash includes: "reports/coverage.xml", name: "COVERAGE_REPORT_DATA"
                             publishHTML([
                                 allowMissing: true,
@@ -913,7 +942,7 @@ pipeline {
                         stage("Packaging sdist and wheel"){
                             agent {
                                 dockerfile {
-                                    filename 'ci/docker/python37/Dockerfile'
+                                    filename 'ci/docker/python/windows/Dockerfile'
                                     label 'Windows&&Docker'
                                   }
                             }
@@ -944,10 +973,9 @@ pipeline {
                                     "dist/*.whl,dist/*.tar.gz,dist/*.zip",
                                     [
                                         [
-                                            images:
-                                                [
-                                                    "python:3.6-windowsservercore",
-                                                    "python:3.7"
+                                            images:[
+                                                    "python:3.7",
+                                                    "python:3.8"
                                                 ],
                                             label: "windows&&docker"
                                         ]

@@ -9,7 +9,7 @@ import io
 import abc
 import collections.abc
 from typing import Optional, Dict
-
+import platform
 from speedwagon.models import SettingsModel
 
 
@@ -53,6 +53,20 @@ class AbsConfig(collections.abc.Mapping):
             return self.get_app_data_directory()
 
         return self._data[k]
+
+
+class NixConfig(AbsConfig):
+
+    def get_user_data_directory(self) -> str:
+        data_dir = os.path.join(self._get_app_dir(), "data")
+        return data_dir
+
+    def get_app_data_directory(self) -> str:
+        data_dir = self._get_app_dir()
+        return data_dir
+
+    def _get_app_dir(self) -> str:
+        return os.path.join(str(Path.home()), ".config", "Speedwagon")
 
 
 class WindowsConfig(AbsConfig):
@@ -139,9 +153,16 @@ def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
         AbsConfig:
     """Load a configuration of config.AbsConfig
     If no argument is included, it will try to guess the best one."""
-
+    configurations = {
+        "Windows": WindowsConfig,
+        "Darwin": NixConfig,
+        "Linux": NixConfig,
+    }
     if configuration is None:
-        return WindowsConfig()
+        system_config = configurations.get(platform.system())
+        if system_config is None:
+            raise ValueError(f"Platform {platform.system()} not supported")
+        return system_config()
     else:
         return configuration
 
