@@ -885,6 +885,7 @@ pipeline {
               }
             }
             steps{
+                checkout scm
                 unstash "COVERAGE_REPORT_DATA"
                 unstash "PYTEST_UNIT_TEST_RESULTS"
                 unstash "PYLINT_REPORT"
