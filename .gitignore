@@ -159,3 +159,5 @@ ENV/
 speedwagon/ui/*.py
 !speedwagon/ui/__init__.py
 *.traineddata
+!/.sonar/
+!/.scannerwork/

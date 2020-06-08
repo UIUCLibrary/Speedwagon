@@ -874,10 +874,18 @@ pipeline {
                 unstash "FLAKE8_REPORT"
                 script{
                     withSonarQubeEnv(installationName:"sonarcloud", credentialsId: 'sonarcloud-speedwagon') {
+                        unstash "DIST-INFO"
+                        def props = readProperties(interpolate: true, file: "speedwagon.dist-info/METADATA")
                         if (env.CHANGE_ID){
-                            sh "sonar-scanner -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
+                            sh(
+                                label: "Running Sonar Scanner",
+                                script:"sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
+                                )
                         } else {
-                            sh "sonar-scanner -Dsonar.branch.name=${env.BRANCH_NAME}"
+                            sh(
+                                label: "Running Sonar Scanner",
+                                script: "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.branch.name=${env.BRANCH_NAME}"
+                                )
                         }
                     }
                     def sonarqube_result = waitForQualityGate(abortPipeline: false)

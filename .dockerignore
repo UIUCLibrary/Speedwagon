@@ -7,3 +7,4 @@ logs/
 **/*.traineddata
 speedwagon/workflows/tessdata/*
 !/speedwagon/workflows/tessdata/__init__.py
+/.scannerwork/
