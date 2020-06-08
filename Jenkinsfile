@@ -889,11 +889,11 @@ pipeline {
             }
             steps{
                 checkout scm
-                sh "git fetch --unshallow"
+                sh "git fetch --all"
                 unstash "COVERAGE_REPORT_DATA"
                 unstash "PYTEST_UNIT_TEST_RESULTS"
                 unstash "PYLINT_REPORT"
-                withSonarQubeEnv('sonarcloud-speedwagon') {
+                withSonarQubeEnv(installationName:"sonarcloud", credentialsId: 'sonarcloud-speedwagon') {
                     sh "sonar-scanner -Dsonar.branch.name=${env.BRANCH_NAME} -X"
                     script{
                         def sonarqube_result = waitForQualityGate(abortPipeline: false)
