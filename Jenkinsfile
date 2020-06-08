@@ -63,7 +63,6 @@ def sanitize_chocolatey_version(version){
 
 def run_tox(){
     sh "mkdir -p logs"
-//     bat "if not exist logs mkdir logs"
     script{
         withEnv(
             [
@@ -72,8 +71,6 @@ def run_tox(){
                 'TOXENV="py"'
             ]
         ) {
-            //sh "python -m pip install tox"
-//             bat "python -m pip install pipenv tox"
             try{
                 // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
                 // Tox has a bug that fails when trying to write the json report
@@ -82,24 +79,18 @@ def run_tox(){
 //                 bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
             } catch (exc) {
                 sh "tox -vv --workdir .tox --recreate -e py"
-//                 bat "tox -vv --workdir ${WORKSPACE}\\.tox --recreate"
             }
         }
     }
 }
 
 def run_pylint(){
-    sh "mkdir -p logs"
-//     bat "if not exist logs mkdir logs"
     catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
         sh(
-            script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt',
+            script: '''mkdir -p logs
+                       pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt''',
             label: "Running pylint"
         )
-//         bat(
-//             script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports\\pylint.txt',
-//             label: "Running pylint"
-//         )
     }
     sh(
         script: 'pylint speedwagon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt',
@@ -147,14 +138,6 @@ def get_package_name(stashName, metadataFile){
 
 def build_sphinx_stage(){
     sh "mkdir -p logs"
-//     bat "if not exist logs mkdir logs"
-    //bat(label: "Install pipenv",
-    //    script: "python -m pipenv install --dev"
-    //    )
-//     bat(label: "Run build_ui",
-//         script: "python setup.py build_ui"
-//         )
-
     sh(label: "Run build_ui",
         script: "python setup.py build_ui"
         )
@@ -163,18 +146,10 @@ def build_sphinx_stage(){
         label: "Building HTML docs on ${env.NODE_NAME}",
         script: "python -m sphinx docs/source build/docs/html -d build/docs/.doctrees --no-color -w logs/build_sphinx.log"
         )
-// bat(
-//         label: "Building HTML docs on ${env.NODE_NAME}",
-//         script: "python -m sphinx docs/source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx.log"
-//         )
     sh(
         label: "Building LaTex docs on ${env.NODE_NAME}",
         script: "python -m sphinx docs/source build/docs/latex -b latex -d build/docs/.doctrees --no-color -w logs/build_sphinx_latex.log"
         )
-//     bat(
-//         label: "Building LaTex docs on ${env.NODE_NAME}",
-//         script: "python -m sphinx docs/source build\\docs\\latex -b latex -d ${WORKSPACE}\\build\\docs\\.doctrees --no-color -w ${WORKSPACE}\\logs\\build_sphinx_latex.log"
-//         )
 }
 def check_jira_issue(issue, outputFile){
     script{
@@ -756,8 +731,10 @@ pipeline {
                         }
                         stage("Run Doctest Tests"){
                             steps {
-//                                 unstash "PYTHON_BUILD_FILES"
-                                sh "python setup.py build build_ui && sphinx-build -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt"
+                                sh(
+                                    label: "Running Doctest Tests",
+                                    script: "python setup.py build build_ui && sphinx-build -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt")
+
                             }
                             post{
                                 always {
@@ -836,6 +813,7 @@ pipeline {
                             post {
                                 always {
                                       archiveArtifacts 'logs/flake8.log'
+                                      stash includes: 'logs/flake8.log', name: "FLAKE8_REPORT"
                                       recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
                                       postLogFileOnPullRequest("flake8 result",'logs/flake8.log')
                                 }
@@ -893,6 +871,7 @@ pipeline {
                 unstash "COVERAGE_REPORT_DATA"
                 unstash "PYTEST_UNIT_TEST_RESULTS"
                 unstash "PYLINT_REPORT"
+                unstash "FLAKE8_REPORT"
                 script{
                     withSonarQubeEnv(installationName:"sonarcloud", credentialsId: 'sonarcloud-speedwagon') {
                         if (env.CHANGE_ID){
