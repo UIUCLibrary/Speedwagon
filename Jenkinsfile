@@ -893,14 +893,13 @@ pipeline {
                 unstash "COVERAGE_REPORT_DATA"
                 unstash "PYTEST_UNIT_TEST_RESULTS"
                 unstash "PYLINT_REPORT"
-                echo "HERE"
                 script{
                     withSonarQubeEnv(installationName:"sonarcloud", credentialsId: 'sonarcloud-speedwagon') {
                         sh "sonar-scanner -Dsonar.branch.name=${env.BRANCH_NAME} -X"
-                            def sonarqube_result = waitForQualityGate(abortPipeline: false)
-                            if (sonarqube_result.status != 'OK') {
-                                unstable "SonarQube quality gate: ${sonarqube_result.status}"
-                            }
+                    }
+                    def sonarqube_result = waitForQualityGate(abortPipeline: false)
+                    if (sonarqube_result.status != 'OK') {
+                        unstable "SonarQube quality gate: ${sonarqube_result.status}"
                     }
                 }
 //                 withCredentials([string(credentialsId: 'sonarcloud-speedwagon', variable: 'login')]) {
