@@ -982,14 +982,14 @@ pipeline {
                         stage("Packaging sdist and wheel"){
                             agent {
                                 dockerfile {
-                                    filename 'ci/docker/python/windows/Dockerfile'
-                                    label 'Windows&&Docker'
+                                    filename 'ci/docker/python/linux/Dockerfile'
+                                    label 'linux && docker'
                                   }
                             }
                             steps{
                                 timeout(5){
                                     unstash "PYTHON_BUILD_FILES"
-                                    bat script: "python setup.py build -b build sdist -d dist --format zip bdist_wheel -d dist"
+                                    sh script: "python setup.py build -b build sdist -d dist --format zip bdist_wheel -d dist"
                                 }
                             }
                             post{
