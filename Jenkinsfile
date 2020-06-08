@@ -875,9 +875,9 @@ pipeline {
                 script{
                     withSonarQubeEnv(installationName:"sonarcloud", credentialsId: 'sonarcloud-speedwagon') {
                         if (env.CHANGE_ID){
-                            sh "sonar-scanner -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET} -X"
+                            sh "sonar-scanner -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
                         } else {
-                            sh "sonar-scanner -Dsonar.branch.name=${env.BRANCH_NAME} -X"
+                            sh "sonar-scanner -Dsonar.branch.name=${env.BRANCH_NAME}"
                         }
                     }
                     def sonarqube_result = waitForQualityGate(abortPipeline: false)
