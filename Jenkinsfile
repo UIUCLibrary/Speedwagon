@@ -889,13 +889,22 @@ pipeline {
             }
             steps{
                 checkout scm
-                sh "git fetch --all"
+                sh "git fetch --unshallow"
                 unstash "COVERAGE_REPORT_DATA"
                 unstash "PYTEST_UNIT_TEST_RESULTS"
                 unstash "PYLINT_REPORT"
-                withCredentials([string(credentialsId: 'sonarcloud-speedwagon', variable: 'login')]) {
-                    sh "sonar-scanner -Dsonar.login=$login -Dsonar.branch.name=${env.BRANCH_NAME} -X"
+                withSonarQubeEnv('sonarcloud-speedwagon') {
+                    sh "sonar-scanner -Dsonar.branch.name=${env.BRANCH_NAME} -X"
+                    script{
+                        def sonarqube_result = waitForQualityGate(abortPipeline: false)
+                        if (sonarqube_result.status != 'OK') {
+                            unstable "SonarQube quality gate: ${sonarqube_result.status}"
+                        }
+                    }
                 }
+//                 withCredentials([string(credentialsId: 'sonarcloud-speedwagon', variable: 'login')]) {
+//
+//                 }
             }
         }
 
