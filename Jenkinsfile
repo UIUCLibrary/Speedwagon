@@ -888,7 +888,9 @@ pipeline {
                 unstash "COVERAGE_REPORT_DATA"
                 unstash "PYTEST_UNIT_TEST_RESULTS"
                 unstash "PYLINT_REPORT"
-                sh "sonar-scanner -X"
+                withCredentials([string(credentialsId: 'sonarcloud-speedwagon', variable: 'login')]) {
+                    sh "sonar-scanner -Dsonar.login=$login -X"
+                }
             }
         }
 
