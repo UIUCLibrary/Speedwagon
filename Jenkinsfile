@@ -892,6 +892,7 @@ pipeline {
                 unstash "COVERAGE_REPORT_DATA"
                 unstash "PYTEST_UNIT_TEST_RESULTS"
                 unstash "PYLINT_REPORT"
+                sh "sonar-scanner -X"
             }
         }
 
