@@ -101,15 +101,11 @@ def run_pylint(){
 //             label: "Running pylint"
 //         )
     }
-    script{
-        if(env.BRANCH_NAME == "master"){
-            sh(
-                script: 'pylint speedwagon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt',
-                label: "Running pylint for sonarqube",
-                returnStatus: true
-            )
-        }
-    }
+    sh(
+        script: 'pylint speedwagon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt',
+        label: "Running pylint for sonarqube",
+        returnStatus: true
+    )
 }
 
 def make_chocolatey_distribution(install_file, packageversion, dest){
