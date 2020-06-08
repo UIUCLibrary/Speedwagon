@@ -103,8 +103,8 @@ def run_pylint(){
     }
     script{
         if(env.BRANCH_NAME == "master"){
-            bat(
-                script: 'pylint speedwagon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports\\pylint_issues.txt',
+            sh(
+                script: 'pylint speedwagon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt',
                 label: "Running pylint for sonarqube",
                 returnStatus: true
             )
