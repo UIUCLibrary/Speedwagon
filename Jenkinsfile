@@ -78,10 +78,10 @@ def run_tox(){
                 // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
                 // Tox has a bug that fails when trying to write the json report
                 // when --parallel is run at the same time
-                sh "tox -p=auto -o -vv --workdir .tox"
+                sh "tox -p=auto -o -vv --workdir .tox -e py"
 //                 bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
             } catch (exc) {
-                sh "tox -vv --workdir .tox --recreate"
+                sh "tox -vv --workdir .tox --recreate -e py"
 //                 bat "tox -vv --workdir ${WORKSPACE}\\.tox --recreate"
             }
         }
@@ -805,7 +805,7 @@ pipeline {
                             environment {
                               PIP_INDEX_URL = "https://devpi.library.illinois.edu/production/release"
                               PIP_TRUSTED_HOST = "devpi.library.illinois.edu"
-                              TOXENV = "py"
+                              
                             }
                             steps {
                                 run_tox()
