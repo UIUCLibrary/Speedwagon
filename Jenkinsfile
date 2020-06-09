@@ -430,8 +430,8 @@ def testPythonPackages(pkgRegex, testEnvs){
                                     script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
                                 )
                             }
-                        }finally {
                             archiveArtifacts(artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true)
+                        }finally {
                             cleanWs deleteDirs: true, notFailBuild: true
                         }
 
