@@ -433,6 +433,7 @@ def testPythonPackages(pkgRegex, testEnvs){
                         }finally {
                             cleanWs deleteDirs: true, notFailBuild: true
                         }
+                        archiveArtifacts(artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true)
 
                     }
                 }
