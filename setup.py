@@ -1,8 +1,6 @@
 import glob
 import os
-
 from setuptools import setup
-
 import extra_commands
 
 try:
@@ -11,6 +9,7 @@ try:
         "build_ui": build_ui,
         "build_py": extra_commands.CustomBuildPy,
         "clean": extra_commands.Clean,
+        # "build_py": extra_commands.build_py,
     }
 
 except ImportError:
@@ -69,3 +68,5 @@ setup(
     cmdclass=cmdclass
 )
 
+# TODO: Overwrite install command class to check if the UI file have converted
+#  into py files. if not, run build_ui
