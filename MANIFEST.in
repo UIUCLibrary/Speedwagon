@@ -1,6 +1,6 @@
 include LICENSE README.rst requirements.txt requirements-dev.txt tox.ini extra_commands.py pyuic.json
-recursive-exclude speedwagon/ui *.py
-recursive-include speedwagon/ui *.ui
+recursive-include speedwagon/ui *.py
+recursive-exclude speedwagon/ui *.ui
 include speedwagon/ui/__init__.py
 recursive-include tests *.py
 recursive-include features/steps *.py
