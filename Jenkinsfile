@@ -87,7 +87,7 @@ def run_tox(){
 def run_pylint(){
     catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
         sh(
-            script: '''mkdir -p logs
+            script: '''mkdir -p reports
                        pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt''',
             label: "Running pylint"
         )
