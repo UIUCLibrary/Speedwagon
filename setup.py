@@ -30,7 +30,7 @@ setup(
         "uiucprescon-getmarc>=0.1.1",
         "uiucprescon.imagevalidate>=0.1.5b1",
         "uiucprescon.ocr>=0.1.1b1",
-        "uiucprescon-packager[kdu]>=0.2.10",
+        "uiucprescon.packager[kdu]>=0.2.11b1",
         "uiucprescon.images",
         "pykdu-compress>=0.1.3b1",
         "setuptools>=30.3.0",
