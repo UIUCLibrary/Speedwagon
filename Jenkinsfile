@@ -1204,44 +1204,6 @@ pipeline {
 
                         }
                     }
-                    post{
-                        success{
-                            node('linux && docker') {
-                               script{
-                                    docker.build("speedwagon:devpi.${env.BUILD_ID}",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
-                                        unstash "DIST-INFO"
-                                        def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                                        sh(
-                                            label: "Connecting to DevPi Server",
-                                            script: '''devpi use https://devpi.library.illinois.edu --clientdir ./devpi
-                                                       devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-                                                       '''
-                                        )
-                                        sh "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi"
-                                        sh "devpi push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME} --clientdir ./devpi"
-                                    }
-                               }
-                            }
-                        }
-                        cleanup{
-                            node('linux && docker') {
-                               script{
-                                    docker.build("speedwagon:devpi.${env.BUILD_ID}",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
-                                        unstash "DIST-INFO"
-                                        def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                                        sh(
-                                            label: "Connecting to DevPi Server",
-                                            script: '''devpi use https://devpi.library.illinois.edu --clientdir ./devpi
-                                                       devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-                                                       '''
-                                        )
-                                        sh "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi"
-                                        sh "devpi remove -y ${props.Name}==${props.Version} --clientdir ./devpi"
-                                    }
-                               }
-                            }
-                        }
-                    }
                 }
                 stage("Deploy to DevPi Production") {
                     when {
@@ -1250,12 +1212,11 @@ pipeline {
                             branch "master"
                         }
                         beforeAgent true
-                        beforeInput true
                     }
                     agent {
                         dockerfile {
                             filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
-                            label 'linux&&docker'
+                            label 'linux && docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                           }
                     }
@@ -1266,13 +1227,51 @@ pipeline {
                         unstash "DIST-INFO"
                         script{
                             def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
-                            sh "devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME} && devpi push ${props.Name}==${props.Version} production/release"
+                            sh(label: "Pushing to production index",
+                               script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+                                          devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
+                                          devpi push --index DS_Jenkins/${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} production/release --clientdir ./devpi
+                                       """
+                            )
                         }
                     }
-                    post{
-                        success{
-                            jiraComment body: "Version ${PKG_VERSION} was added to https://devpi.library.illinois.edu/production/release index.", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                        }
+                }
+            }
+            post{
+                success{
+                    node('linux && docker') {
+                       script{
+                            docker.build("speedwagon:devpi.${env.BUILD_ID}",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                                unstash "DIST-INFO"
+                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+                                sh(
+                                    label: "Connecting to DevPi Server",
+                                    script: '''devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+                                               devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
+                                               '''
+                                )
+                                sh "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi"
+                                sh "devpi push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME} --clientdir ./devpi"
+                            }
+                       }
+                    }
+                }
+                cleanup{
+                    node('linux && docker') {
+                       script{
+                            docker.build("speedwagon:devpi.${env.BUILD_ID}",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                                unstash "DIST-INFO"
+                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+                                sh(
+                                    label: "Connecting to DevPi Server",
+                                    script: '''devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+                                               devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
+                                               '''
+                                )
+                                sh "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi"
+                                sh "devpi remove -y ${props.Name}==${props.Version} --clientdir ./devpi"
+                            }
+                       }
                     }
                 }
             }
