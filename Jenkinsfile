@@ -630,75 +630,79 @@ pipeline {
                         }
                     }
                 }
-                stage("Sphinx Documentation"){
-                    agent none
-                    stages{
-                        stage("Build Sphinx"){
-                            environment{
-                                PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
-                                PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
-                            }
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/makepdf/lite/Dockerfile'
-                                    label 'linux && docker'
-                                  }
-                            }
-                            steps {
-                                sh(
-                                    label: "Building docs on ${env.NODE_NAME}",
-                                    script: '''mkdir -p logs
-                                               python setup.py build_ui
-                                               python -m sphinx docs/source build/docs/html -d build/docs/.doctrees --no-color -w logs/build_sphinx.log
-                                               python -m sphinx docs/source build/docs/latex -b latex -d build/docs/.doctrees --no-color -w logs/build_sphinx_latex.log
-                                               '''
-                                    )
+                stage("Build Sphinx Documentation"){
+                    environment{
+                        PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
+                        PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
+                    }
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/makepdf/lite/Dockerfile'
+                            label 'linux && docker'
+                          }
+                    }
+                    steps {
+                        sh(
+                            label: "Building HTML docs on ${env.NODE_NAME}",
+                            script: '''mkdir -p logs
+                                       python setup.py build_ui
+                                       python -m sphinx docs/source build/docs/html -d build/docs/.doctrees --no-color -w logs/build_sphinx.log
+                                       '''
+                            )
+                            sh(label: "Building PDF docs on ${env.NODE_NAME}",
+                               script: '''python -m sphinx docs/source build/docs/latex -b latex -d build/docs/.doctrees --no-color -w logs/build_sphinx_latex.log
+                                          make -C build/docs/latex
+                                          mkdir -p dist/docs
+                                          mv build/docs/latex/*.pdf dist/docs/
+                                          '''
+                            )
 
-                            }
-                            post{
-                                always{
-                                    archiveArtifacts artifacts: 'logs/build_sphinx.log,logs/latex/speedwagon.log'
-                                    recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
-                                    postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
-                                }
-                                success{
-                                    stash includes: "build/docs/latex/*", name: 'latex_docs'
-                                    zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${PKG_NAME}-${PKG_VERSION}.doc.zip"
-                                    stash includes: "build/docs/html/**,dist/*.doc.zip", name: 'SPEEDWAGON_DOC_HTML'
-                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                                }
-                                cleanup{
-                                    cleanWs(notFailBuild: true)
-                                }
-                            }
+                    }
+                    post{
+                        always{
+                            archiveArtifacts artifacts: 'logs/build_sphinx.log,logs/latex/speedwagon.log'
+                            recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
+                            postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
+                            stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
+                            stash includes: "build/docs/html/**,dist/*.doc.zip", name: 'SPEEDWAGON_DOC_HTML'
                         }
-                        stage("Convert to pdf"){
-                            agent{
-                                dockerfile {
-                                    filename 'ci/docker/makepdf/lite/Dockerfile'
-                                    label "docker && linux"
-                                }
-                            }
-                            steps{
-                                unstash "latex_docs"
-                                sh """mkdir -p dist/docs
-                                      make -C build/docs/latex
-                                      mv build/docs/latex/*.pdf dist/docs/
-                                      """
-                            }
-                            post{
-                                success{
-                                    stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
-                                    archiveArtifacts artifacts: "dist/docs/*.pdf"
-                                }
-                                cleanup{
-                                    deleteDir()
-                                }
-                            }
+                        success{
+                            zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${PKG_NAME}-${PKG_VERSION}.doc.zip"
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
+                            archiveArtifacts artifacts: "dist/docs/*.pdf"
+                        }
+                        cleanup{
+                            cleanWs(notFailBuild: true)
                         }
                     }
                 }
+//                         stage("Convert to pdf"){
+//                             agent{
+//                                 dockerfile {
+//                                     filename 'ci/docker/makepdf/lite/Dockerfile'
+//                                     label "docker && linux"
+//                                 }
+//                             }
+//                             steps{
+//                                 unstash "latex_docs"
+//                                 sh """mkdir -p dist/docs
+//                                       make -C build/docs/latex
+//                                       mv build/docs/latex/*.pdf dist/docs/
+//                                       """
+//                             }
+//                             post{
+//                                 success{
+//                                     stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
+//                                     archiveArtifacts artifacts: "dist/docs/*.pdf"
+//                                 }
+//                                 cleanup{
+//                                     deleteDir()
+//                                 }
+//                             }
+//                         }
             }
+//                 }
+//             }
         }
         stage("Test") {
             agent {
