@@ -631,10 +631,6 @@ pipeline {
                     }
                 }
                 stage("Build Sphinx Documentation"){
-                    environment{
-                        PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
-                        PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
-                    }
                     agent {
                         dockerfile {
                             filename 'ci/docker/makepdf/lite/Dockerfile'
@@ -656,7 +652,6 @@ pipeline {
                                           mv build/docs/latex/*.pdf dist/docs/
                                           '''
                             )
-
                     }
                     post{
                         always{
@@ -664,45 +659,30 @@ pipeline {
                             recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
                             postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
                             stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
-                            stash includes: "build/docs/html/**,dist/*.doc.zip", name: 'SPEEDWAGON_DOC_HTML'
                         }
                         success{
-                            zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${PKG_NAME}-${PKG_VERSION}.doc.zip"
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            archiveArtifacts artifacts: "dist/docs/*.pdf"
+                            unstash "DIST-INFO"
+                            script{
+                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+                                def DOC_ZIP_FILENAME = "${props.Name}-${props.Version}.doc.zip"
+                                zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
+                                stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
+                            }
                         }
                         cleanup{
-                            cleanWs(notFailBuild: true)
+                            cleanWs(
+                                notFailBuild: true,
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: "dist/", type: 'INCLUDE'],
+                                    [pattern: 'build/', type: 'INCLUDE'],
+                                    [pattern: "speedwagon.dist-info/", type: 'INCLUDE'],
+                                ]
+                            )
                         }
                     }
                 }
-//                         stage("Convert to pdf"){
-//                             agent{
-//                                 dockerfile {
-//                                     filename 'ci/docker/makepdf/lite/Dockerfile'
-//                                     label "docker && linux"
-//                                 }
-//                             }
-//                             steps{
-//                                 unstash "latex_docs"
-//                                 sh """mkdir -p dist/docs
-//                                       make -C build/docs/latex
-//                                       mv build/docs/latex/*.pdf dist/docs/
-//                                       """
-//                             }
-//                             post{
-//                                 success{
-//                                     stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
-//                                     archiveArtifacts artifacts: "dist/docs/*.pdf"
-//                                 }
-//                                 cleanup{
-//                                     deleteDir()
-//                                 }
-//                             }
-//                         }
             }
-//                 }
-//             }
         }
         stage("Test") {
             agent {
