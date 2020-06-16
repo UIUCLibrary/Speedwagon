@@ -1144,7 +1144,7 @@ pipeline {
                           }
                     }
                     steps {
-                        unstash 'SPEEDWAGON_DOC_HTML'
+                        unstash 'DOCS_ARCHIVE'
                         unstash 'PYTHON_PACKAGES'
                         sh(
                                 label: "Connecting to DevPi Server",
