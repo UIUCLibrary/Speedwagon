@@ -519,9 +519,6 @@ pipeline {
     triggers {
        parameterizedCron '@daily % PACKAGE_WINDOWS_STANDALONE_MSI=true; DEPLOY_DEVPI=true; TEST_RUN_TOX=true'
     }
-    options {
-        disableConcurrentBuilds()  //each branch has 1 job running at a time
-    }
     environment {
         build_number = get_build_number()
         PIPENV_NOSPIN = "True"
@@ -1119,8 +1116,6 @@ pipeline {
                 }
             }
         }
-
-
         stage("Deploy to Devpi"){
             when {
                 allOf{
@@ -1135,6 +1130,9 @@ pipeline {
             agent none
             environment{
                 DEVPI = credentials("DS_devpi")
+            }
+            options{
+                lock("speedwagon-devpi")
             }
             stages{
                 stage("Deploy to Devpi Staging") {
