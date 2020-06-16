@@ -87,7 +87,7 @@ def run_tox(){
 def run_pylint(){
     catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
         sh(
-            script: '''mkdir -p logs
+            script: '''mkdir -p reports
                        pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt''',
             label: "Running pylint"
         )
@@ -340,7 +340,7 @@ def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
 
         jiraComment body: "Version ${pkgVersion} sent to staging for user testing.", issueKey: "${jiraIssueKey}"
         input("Deploy to production?")
-        writeFile file: "${WORKSPACE}/logs/deployment_request.txt", text: deployment_request
+        writeFile file: "logs/deployment_request.txt", text: deployment_request
         echo deployment_request
         cifsPublisher(
             publishers: [[
@@ -445,25 +445,25 @@ def testPythonPackages(pkgRegex, testEnvs){
     }
 }
 
-
-def test_msi_install(){
-
-    bat "if not exist logs mkdir logs"
-    script{
-
-        def docker_image_name = "test-image:${env.BRANCH_NAME}_${currentBuild.number}"
-        try {
-            def testImage = docker.build(docker_image_name, "-f ./ci/docker/test_installation/Dockerfile .")
-            testImage.inside{
-                // Copy log files from c:\\logs in the docker container to workspace\\logs
-                bat "cd ${WORKSPACE}\\logs && copy c:\\logs\\*.log"
-                bat 'dir "%PROGRAMFILES%\\Speedwagon"'
-            }
-        } finally{
-            bat "docker image rm -f ${docker_image_name}"
-        }
-    }
-}
+//
+// def test_msi_install(){
+//
+//     bat "if not exist logs mkdir logs"
+//     script{
+//
+//         def docker_image_name = "test-image:${env.BRANCH_NAME}_${currentBuild.number}"
+//         try {
+//             def testImage = docker.build(docker_image_name, "-f ./ci/docker/test_installation/Dockerfile .")
+//             testImage.inside{
+//                 // Copy log files from c:\\logs in the docker container to workspace\\logs
+//                 bat "cd ${WORKSPACE}\\logs && copy c:\\logs\\*.log"
+//                 bat 'dir "%PROGRAMFILES%\\Speedwagon"'
+//             }
+//         } finally{
+//             bat "docker image rm -f ${docker_image_name}"
+//         }
+//     }
+// }
 def build_standalone(){
     stage("Building Standalone"){
         bat "where cmake"
@@ -519,9 +519,6 @@ pipeline {
     triggers {
        parameterizedCron '@daily % PACKAGE_WINDOWS_STANDALONE_MSI=true; DEPLOY_DEVPI=true; TEST_RUN_TOX=true'
     }
-    options {
-        disableConcurrentBuilds()  //each branch has 1 job running at a time
-    }
     environment {
         build_number = get_build_number()
         PIPENV_NOSPIN = "True"
@@ -542,7 +539,7 @@ pipeline {
 
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
-
+        booleanParam(name: "DEPLOY_ADD_TAG", defaultValue: false, description: "Tag commit to current version")
         booleanParam(name: "DEPLOY_CHOLOCATEY", defaultValue: false, description: "Deploy to Chocolatey repository")
         booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
@@ -630,60 +627,56 @@ pipeline {
                         }
                     }
                 }
-                stage("Sphinx Documentation"){
-                    agent none
-                    stages{
-                        stage("Build Sphinx"){
-                            environment{
-                                PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
-                                PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
-                            }
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/python/linux/Dockerfile'
-                                    label 'linux && docker'
-                                  }
-                            }
-                            steps {
-                                build_sphinx_stage()
-                            }
-                            post{
-                                always{
-                                    archiveArtifacts artifacts: 'logs/build_sphinx.log,logs/latex/speedwagon.log'
-                                    recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
-                                    postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
-                                }
-                                success{
-                                    stash includes: "build/docs/latex/*", name: 'latex_docs'
-                                    zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${PKG_NAME}-${PKG_VERSION}.doc.zip"
-                                    stash includes: "build/docs/html/**,dist/*.doc.zip", name: 'SPEEDWAGON_DOC_HTML'
-                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                                }
-                                cleanup{
-                                    cleanWs(notFailBuild: true)
-                                }
+                stage("Build Sphinx Documentation"){
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/makepdf/lite/Dockerfile'
+                            label 'linux && docker'
+                          }
+                    }
+                    steps {
+                        sh(
+                            label: "Building HTML docs on ${env.NODE_NAME}",
+                            script: '''mkdir -p logs
+                                       python setup.py build_ui
+                                       python -m sphinx docs/source build/docs/html -d build/docs/.doctrees --no-color -w logs/build_sphinx.log
+                                       '''
+                            )
+                            sh(label: "Building PDF docs on ${env.NODE_NAME}",
+                               script: '''python -m sphinx docs/source build/docs/latex -b latex -d build/docs/.doctrees --no-color -w logs/build_sphinx_latex.log
+                                          make -C build/docs/latex
+                                          mkdir -p dist/docs
+                                          mv build/docs/latex/*.pdf dist/docs/
+                                          '''
+                            )
+                    }
+                    post{
+                        always{
+                            archiveArtifacts artifacts: 'logs/build_sphinx.log,logs/latex/speedwagon.log'
+                            recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
+                            postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
+                            stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
+                        }
+                        success{
+                            unstash "DIST-INFO"
+                            script{
+                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+                                def DOC_ZIP_FILENAME = "${props.Name}-${props.Version}.doc.zip"
+                                zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
+                                stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
+                                archiveArtifacts artifacts: 'dist/docs/*.pdf'
                             }
                         }
-                        stage("Convert to pdf"){
-                            agent{
-                                dockerfile {
-                                    filename 'ci/docker/makepdf/lite/Dockerfile'
-                                    label "docker && linux"
-                                }
-                            }
-                            steps{
-                                unstash "latex_docs"
-                                sh "mkdir -p dist/docs && cd build/docs/latex && make && cd ${WORKSPACE} && mv build/docs/latex/*.pdf dist/docs/"
-                            }
-                            post{
-                                success{
-                                    stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
-                                    archiveArtifacts artifacts: "dist/docs/*.pdf"
-                                }
-                                cleanup{
-                                    deleteDir()
-                                }
-                            }
+                        cleanup{
+                            cleanWs(
+                                notFailBuild: true,
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: "dist/", type: 'INCLUDE'],
+                                    [pattern: 'build/', type: 'INCLUDE'],
+                                    [pattern: "speedwagon.dist-info/", type: 'INCLUDE'],
+                                ]
+                            )
                         }
                     }
                 }
@@ -719,7 +712,7 @@ pipeline {
                                 catchError(buildResult: "UNSTABLE", message: 'Did not pass all pytest tests', stageResult: "UNSTABLE") {
                                     sh(
                                         script: """mkdir -p logs
-                                                   coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/pytest-junit.xml
+                                                   coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml
                                         """
                                     )
                                 }
@@ -754,7 +747,7 @@ pipeline {
                                 catchError(buildResult: "SUCCESS", message: 'MyPy found issues', stageResult: "UNSTABLE") {
                                     sh(
                                         script: """mkdir -p logs
-                                                   mypy -p speedwagon --html-report reports/mypy/html > logs/mypy.log
+                                                   mypy -p speedwagon --html-report reports/mypy/html | tee logs/mypy.log
                                                    """
                                    )
                                 }
@@ -1043,7 +1036,7 @@ pipeline {
                                 unstash 'STANDALONE_INSTALLERS'
                                 script{
                                     def msi_file = findFiles(glob: "dist/*.msi")[0].path
-                                    powershell "New-Item -ItemType Directory -Force -Path ${WORKSPACE}\\logs; Write-Host \"Installing ${msi_file}\"; msiexec /i ${msi_file} /qn /norestart /L*v! ${WORKSPACE}\\logs\\msiexec.log"
+                                    powershell "New-Item -ItemType Directory -Force -Path logs; Write-Host \"Installing ${msi_file}\"; msiexec /i ${msi_file} /qn /norestart /L*v! logs\\msiexec.log"
                                 }
                             }
                             post {
@@ -1123,8 +1116,6 @@ pipeline {
                 }
             }
         }
-
-
         stage("Deploy to Devpi"){
             when {
                 allOf{
@@ -1140,6 +1131,9 @@ pipeline {
             environment{
                 DEVPI = credentials("DS_devpi")
             }
+            options{
+                lock("speedwagon-devpi")
+            }
             stages{
                 stage("Deploy to Devpi Staging") {
                     agent {
@@ -1154,12 +1148,15 @@ pipeline {
                         unstash 'PYTHON_PACKAGES'
                         sh(
                                 label: "Connecting to DevPi Server",
-                                script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
+                                script: '''devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+                                           devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
+                                           '''
                             )
                             sh(
                                 label: "Uploading to DevPi Staging",
-                                script: """devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi
-    devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
+                                script: """devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ./devpi
+                                           devpi upload --from-dir dist --clientdir ./devpi
+                                           """
                             )
                     }
                 }
@@ -1216,10 +1213,12 @@ pipeline {
                                         def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                         sh(
                                             label: "Connecting to DevPi Server",
-                                            script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
+                                            script: '''devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+                                                       devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
+                                                       '''
                                         )
-                                        sh "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi"
-                                        sh "devpi push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME} --clientdir ${WORKSPACE}/devpi"
+                                        sh "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi"
+                                        sh "devpi push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME} --clientdir ./devpi"
                                     }
                                }
                             }
@@ -1232,10 +1231,12 @@ pipeline {
                                         def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                         sh(
                                             label: "Connecting to DevPi Server",
-                                            script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
+                                            script: '''devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+                                                       devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
+                                                       '''
                                         )
-                                        sh "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi"
-                                        sh "devpi remove -y ${props.Name}==${props.Version} --clientdir ${WORKSPACE}/devpi"
+                                        sh "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi"
+                                        sh "devpi remove -y ${props.Name}==${props.Version} --clientdir ./devpi"
                                     }
                                }
                             }
@@ -1277,8 +1278,53 @@ pipeline {
             }
         }
         stage("Deploy"){
-
             parallel {
+                stage("Tagging git Commit"){
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        }
+                    }
+                    when{
+                        allOf{
+                            equals expected: true, actual: params.DEPLOY_ADD_TAG
+                        }
+                        beforeAgent true
+                        beforeInput true
+                    }
+                    options{
+                        timeout(time: 1, unit: 'DAYS')
+                        retry(3)
+                    }
+                    input {
+                          message 'Add a version tag to git commit?'
+                          parameters {
+                                credentials credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl', defaultValue: 'github.com', description: '', name: 'gitCreds', required: true
+                          }
+                    }
+                    steps{
+                        unstash "DIST-INFO"
+                        script{
+                            def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
+                            def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
+                            withCredentials([usernamePassword(credentialsId: gitCreds, passwordVariable: 'password', usernameVariable: 'username')]) {
+                                sh(label: "Tagging ${commitTag}",
+                                   script: """git config --local credential.helper "!f() { echo username=\\$username; echo password=\\$password; }; f"
+                                              git tag -a ${commitTag} -m 'Tagged by Jenkins'
+                                              git push origin --tags
+                                              """
+                                )
+                            }
+                        }
+                    }
+                    post{
+                        cleanup{
+                            deleteDir()
+                        }
+                    }
+                }
                 stage("Deploy to Chocolatey") {
                     when{
                         equals expected: true, actual: params.DEPLOY_CHOLOCATEY
