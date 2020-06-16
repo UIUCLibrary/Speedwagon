@@ -640,7 +640,7 @@ pipeline {
                             }
                             agent {
                                 dockerfile {
-                                    filename 'ci/docker/python/linux/Dockerfile'
+                                    filename 'ci/docker/makepdf/lite/Dockerfile'
                                     label 'linux && docker'
                                   }
                             }
