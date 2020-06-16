@@ -340,7 +340,7 @@ def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
 
         jiraComment body: "Version ${pkgVersion} sent to staging for user testing.", issueKey: "${jiraIssueKey}"
         input("Deploy to production?")
-        writeFile file: "${WORKSPACE}/logs/deployment_request.txt", text: deployment_request
+        writeFile file: "logs/deployment_request.txt", text: deployment_request
         echo deployment_request
         cifsPublisher(
             publishers: [[
@@ -445,25 +445,25 @@ def testPythonPackages(pkgRegex, testEnvs){
     }
 }
 
-
-def test_msi_install(){
-
-    bat "if not exist logs mkdir logs"
-    script{
-
-        def docker_image_name = "test-image:${env.BRANCH_NAME}_${currentBuild.number}"
-        try {
-            def testImage = docker.build(docker_image_name, "-f ./ci/docker/test_installation/Dockerfile .")
-            testImage.inside{
-                // Copy log files from c:\\logs in the docker container to workspace\\logs
-                bat "cd ${WORKSPACE}\\logs && copy c:\\logs\\*.log"
-                bat 'dir "%PROGRAMFILES%\\Speedwagon"'
-            }
-        } finally{
-            bat "docker image rm -f ${docker_image_name}"
-        }
-    }
-}
+//
+// def test_msi_install(){
+//
+//     bat "if not exist logs mkdir logs"
+//     script{
+//
+//         def docker_image_name = "test-image:${env.BRANCH_NAME}_${currentBuild.number}"
+//         try {
+//             def testImage = docker.build(docker_image_name, "-f ./ci/docker/test_installation/Dockerfile .")
+//             testImage.inside{
+//                 // Copy log files from c:\\logs in the docker container to workspace\\logs
+//                 bat "cd ${WORKSPACE}\\logs && copy c:\\logs\\*.log"
+//                 bat 'dir "%PROGRAMFILES%\\Speedwagon"'
+//             }
+//         } finally{
+//             bat "docker image rm -f ${docker_image_name}"
+//         }
+//     }
+// }
 def build_standalone(){
     stage("Building Standalone"){
         bat "where cmake"
@@ -655,7 +655,7 @@ pipeline {
                                 }
                                 success{
                                     stash includes: "build/docs/latex/*", name: 'latex_docs'
-                                    zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "dist/${PKG_NAME}-${PKG_VERSION}.doc.zip"
+                                    zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${PKG_NAME}-${PKG_VERSION}.doc.zip"
                                     stash includes: "build/docs/html/**,dist/*.doc.zip", name: 'SPEEDWAGON_DOC_HTML'
                                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                                 }
@@ -673,7 +673,12 @@ pipeline {
                             }
                             steps{
                                 unstash "latex_docs"
-                                sh "mkdir -p dist/docs && cd build/docs/latex && make && cd ${WORKSPACE} && mv build/docs/latex/*.pdf dist/docs/"
+                                sh """mkdir -p dist/docs
+                                      cd build/docs/latex
+                                      make
+                                      cd ${WORKSPACE}
+                                      mv build/docs/latex/*.pdf dist/docs/
+                                      """
                             }
                             post{
                                 success{
@@ -719,7 +724,7 @@ pipeline {
                                 catchError(buildResult: "UNSTABLE", message: 'Did not pass all pytest tests', stageResult: "UNSTABLE") {
                                     sh(
                                         script: """mkdir -p logs
-                                                   coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=${WORKSPACE}/reports/tests/pytest/pytest-junit.xml
+                                                   coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml
                                         """
                                     )
                                 }
@@ -1043,7 +1048,7 @@ pipeline {
                                 unstash 'STANDALONE_INSTALLERS'
                                 script{
                                     def msi_file = findFiles(glob: "dist/*.msi")[0].path
-                                    powershell "New-Item -ItemType Directory -Force -Path ${WORKSPACE}\\logs; Write-Host \"Installing ${msi_file}\"; msiexec /i ${msi_file} /qn /norestart /L*v! ${WORKSPACE}\\logs\\msiexec.log"
+                                    powershell "New-Item -ItemType Directory -Force -Path logs; Write-Host \"Installing ${msi_file}\"; msiexec /i ${msi_file} /qn /norestart /L*v! logs\\msiexec.log"
                                 }
                             }
                             post {
@@ -1154,12 +1159,15 @@ pipeline {
                         unstash 'PYTHON_PACKAGES'
                         sh(
                                 label: "Connecting to DevPi Server",
-                                script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
+                                script: '''devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+                                           devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
+                                           '''
                             )
                             sh(
                                 label: "Uploading to DevPi Staging",
-                                script: """devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi
-    devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
+                                script: """devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ./devpi
+                                           devpi upload --from-dir dist --clientdir ./devpi
+                                           """
                             )
                     }
                 }
@@ -1216,10 +1224,12 @@ pipeline {
                                         def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                         sh(
                                             label: "Connecting to DevPi Server",
-                                            script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
+                                            script: '''devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+                                                       devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
+                                                       '''
                                         )
-                                        sh "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi"
-                                        sh "devpi push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME} --clientdir ${WORKSPACE}/devpi"
+                                        sh "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi"
+                                        sh "devpi push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME} --clientdir ./devpi"
                                     }
                                }
                             }
@@ -1232,10 +1242,12 @@ pipeline {
                                         def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                         sh(
                                             label: "Connecting to DevPi Server",
-                                            script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
+                                            script: '''devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+                                                       devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
+                                                       '''
                                         )
-                                        sh "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi"
-                                        sh "devpi remove -y ${props.Name}==${props.Version} --clientdir ${WORKSPACE}/devpi"
+                                        sh "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi"
+                                        sh "devpi remove -y ${props.Name}==${props.Version} --clientdir ./devpi"
                                     }
                                }
                             }
@@ -1277,7 +1289,6 @@ pipeline {
             }
         }
         stage("Deploy"){
-
             parallel {
                 stage("Deploy to Chocolatey") {
                     when{
