@@ -16,7 +16,7 @@ def CONFIGURATIONS = [
         ],
     "3.8": [
         test_docker_image: "python:3.8",
-        tox_env: "py37"
+        tox_env: "py38"
         ]
 ]
 def get_build_args(){
