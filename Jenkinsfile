@@ -645,7 +645,15 @@ pipeline {
                                   }
                             }
                             steps {
-                                build_sphinx_stage()
+                                sh(
+                                    label: "Building docs on ${env.NODE_NAME}",
+                                    script: '''mkdir -p logs
+                                               python setup.py build_ui
+                                               python -m sphinx docs/source build/docs/html -d build/docs/.doctrees --no-color -w logs/build_sphinx.log
+                                               python -m sphinx docs/source build/docs/latex -b latex -d build/docs/.doctrees --no-color -w logs/build_sphinx_latex.log
+                                               '''
+                                    )
+
                             }
                             post{
                                 always{
@@ -674,9 +682,7 @@ pipeline {
                             steps{
                                 unstash "latex_docs"
                                 sh """mkdir -p dist/docs
-                                      cd build/docs/latex
-                                      make
-                                      cd ${WORKSPACE}
+                                      make -C build/docs/latex
                                       mv build/docs/latex/*.pdf dist/docs/
                                       """
                             }
