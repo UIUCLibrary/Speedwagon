@@ -47,7 +47,7 @@ ADD requirements.txt requirements-dev.txt c:\temp\
 RUN python -m pip wheel -r c:\temp\requirements.txt -r c:\temp\requirements-dev.txt --wheel-dir c:\wheels
 
 RUN python -m pip install pip --upgrade ; `
-        pip install --no-index --find-links=c:\wheels\'
+        pip install --no-index --find-links=c:\wheels\ `
         --trusted-host devpi.library.illinois.edu `
         -r c:\temp\requirements.txt `
         -r c:\temp\requirements-dev.txt `
