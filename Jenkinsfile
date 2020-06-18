@@ -480,7 +480,7 @@ def build_standalone(){
             def PYTHON_EXECUTABLE = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
             cmakeBuild(
                 buildDir: 'cmake_build',
-                cmakeArgs: """-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache
+                cmakeArgs: """-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels
         -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv
 //         -DPYTHON_EXECUTABLE=\"${PYTHON_EXECUTABLE}\"
         -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf""",
