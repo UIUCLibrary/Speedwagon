@@ -50,8 +50,8 @@ RUN python -m pip install pip --upgrade ; `
         pip install --no-index --find-links=c:\wheels\ `
         --trusted-host devpi.library.illinois.edu `
         -r c:\temp\requirements.txt `
-        -r c:\temp\requirements-dev.txt `
-        pipenv
+        -r c:\temp\requirements-dev.txt
+
 ENV PIP_FIND_LINKS=c:\wheels\
 ADD ci/docker/windows_standalone/startup.bat c:\startup\startup.bat
 
