@@ -35,27 +35,24 @@ RUN $ErrorActionPreference = 'Stop'; `
 # install certs so additional pip packages can download without any trouble
 #RUN certutil -config - -ping; certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst
 
-ENV PIPENV_CACHE_DIR=c:\pipenv_cache `
-    WORKON_HOME=c:\venvs `
-    PIPENV_NOSPIN=True `
-    PIP_DOWNLOAD_CACHE=c:\pip_cache `
-    PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release" `
-    PIP_TRUSTED_HOST="devpi.library.illinois.edu"
+ENV PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
+ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"
 
 RUN python -m pip install --upgrade pip ; `
+    pip install wheel ; `
     pip install --upgrade setuptools
 
+
 ADD requirements.txt requirements-dev.txt c:\temp\
+RUN python -m pip wheel -r c:\temp\requirements.txt -r c:\temp\requirements-dev.txt --wheel-dir c:\wheels
 
 RUN python -m pip install pip --upgrade ; `
-        pip install --extra-index-url https://devpi.library.illinois.edu/production/release `
+        pip install --no-index --find-links=c:\wheels\'
         --trusted-host devpi.library.illinois.edu `
         -r c:\temp\requirements.txt `
         -r c:\temp\requirements-dev.txt `
-        pipenv `
-        wheel
-
-RUN python -m pip wheel -r c:\temp\requirements.txt -r c:\temp\requirements-dev.txt --wheel-dir c:\wheel_cache
+        pipenv
+ENV PIP_FIND_LINKS=c:\wheels\
 ADD ci/docker/windows_standalone/startup.bat c:\startup\startup.bat
 
 SHELL ["cmd", "/S", "/C"]
