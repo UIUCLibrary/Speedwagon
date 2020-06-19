@@ -1000,17 +1000,17 @@ pipeline {
                             }
                         }
                         steps{
-                            echo "test ${PYTHON_PACKAGE_TYPE}-${PYTHON_VERSION}"
                             unstash "PYTHON_PACKAGES"
                             script{
-                                findFiles(glob: "**/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex[PYTHON_PACKAGE_TYPE]}").each{
-                                    timeout(15){
-                                        bat(
-                                            script: "tox --installpkg=${WORKSPACE}\\${it} -e py",
-                                            label: "Testing ${it}"
-                                        )
-                                    }
-                                }
+                                echo "test ${PYTHON_PACKAGE_TYPE}-${PYTHON_VERSION}"
+//                                 findFiles(glob: "**/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex[PYTHON_PACKAGE_TYPE]}").each{
+//                                     timeout(15){
+//                                         bat(
+//                                             script: "tox --installpkg=${WORKSPACE}\\${it} -e py",
+//                                             label: "Testing ${it}"
+//                                         )
+//                                     }
+//                                 }
                             }
 //                             bat(
 //                                 label: "Checking Python version",
