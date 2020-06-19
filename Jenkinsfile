@@ -825,7 +825,7 @@ pipeline {
                                       archiveArtifacts 'logs/flake8.log'
                                       stash includes: 'logs/flake8.log', name: "FLAKE8_REPORT"
                                       recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
-                                      postLogFileOnPullRequest("flake8 result",'logs/flake8.log')
+//                                       postLogFileOnPullRequest("flake8 result",'logs/flake8.log')
                                 }
                                 cleanup{
                                     cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
