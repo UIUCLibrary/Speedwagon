@@ -960,7 +960,13 @@ pipeline {
         }
         stage('Testing all Package') {
             matrix{
-                agent none
+                agent {
+                            dockerfile {
+                                filename 'ci/docker/python/windows/Dockerfile'
+                                label 'windows && docker'
+                                additionalBuildArgs '--build-arg PYTHON_VERSION=%PYTHON_VERSION%'
+                            }
+                        }
                 axes{
                     axis {
                         name "PYTHON_VERSION"
@@ -979,13 +985,7 @@ pipeline {
                 }
                 stages{
                     stage("Testing Package"){
-                        agent {
-                            dockerfile {
-                                filename 'ci/docker/python/windows/Dockerfile'
-                                label 'windows && docker'
-                                additionalBuildArgs '--build-arg PYTHON_VERSION=%PYTHON_VERSION%'
-//                             }
-                        }
+
                         steps{
                             echo "test ${PYTHON_PACKAGE_TYPE}-${PYTHON_VERSION}"
 //                             unstash "PYTHON_PACKAGES"
