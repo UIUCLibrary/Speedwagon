@@ -984,7 +984,7 @@ pipeline {
                             dockerfile {
                                 filename 'ci/docker/python/windows/Dockerfile'
                                 label 'windows && docker'
-//                                 additionalBuildArgs '--build-arg PYTHON_VERSION=%PYTHON_VERSION%'
+                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION}"
                             }
                         }
                         steps{
