@@ -1188,6 +1188,7 @@ stage('Testing all Package') {
                     }
                 }
                 beforeAgent true
+                beforeOptions true
             }
             agent none
             environment{
