@@ -10,24 +10,24 @@ def CONFIGURATIONS = [
         test_docker_image: "python:3.6-windowsservercore",
         tox_env: "py36",
         pkgRegex: [
-            wheel: "whl",
-            sdist: "zip"
+            wheel: "*.whl",
+            sdist: "*.zip"
         ]
     ],
     "3.7": [
         test_docker_image: "python:3.7",
         tox_env: "py37",
         pkgRegex: [
-            wheel: "whl",
-            sdist: "zip"
+            wheel: "*.whl",
+            sdist: "*.zip"
         ]
     ],
     "3.8": [
         test_docker_image: "python:3.8",
         tox_env: "py38",
         pkgRegex: [
-            wheel: "whl",
-            sdist: "zip"
+            wheel: "*.whl",
+            sdist: "*.zip"
         ]
     ]
 ]
@@ -1005,7 +1005,7 @@ pipeline {
                         steps{
                             unstash "PYTHON_PACKAGES"
                             script{
-                                findFiles(glob: "**/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex[PYTHON_PACKAGE_TYPE]}").each{
+                                findFiles(glob: "dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex[PYTHON_PACKAGE_TYPE]}").each{
 //                                     echo "test ${PYTHON_PACKAGE_TYPE}-${PYTHON_VERSION}"
 //                                     timeout(15){
                                         bat(
