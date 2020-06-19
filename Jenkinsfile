@@ -959,14 +959,13 @@ stage('Testing all Package') {
                 }
                 stages{
                     stage("Testing Package"){
-                        agent any
-//                         agent {
-//                             dockerfile {
-//                                 filename 'ci/docker/python/windows/build/msvc/Dockerfile'
-//                                 label "windows && docker"
-//                                 additionalBuildArgs "--build-arg PYTHON_DOCKER_IMAGE_BASE=${CONFIGURATIONS[PYTHON_VERSION].test_docker_image}"
-//                             }
-//                         }
+                        agent {
+                            dockerfile {
+                                filename 'ci/docker/python/windows/Dockerfile'
+                                label "windows && docker"
+                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION}"
+                            }
+                        }
                         steps{
                             echo "test ${PYTHON_PACKAGE_TYPE}-${PYTHON_VERSION}"
 //                             unstash "PYTHON_PACKAGES"
