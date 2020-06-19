@@ -938,23 +938,86 @@ pipeline {
                         }
                     }
                 }
-                stage("Testing Python Packages"){
-                    agent none
-                    steps{
-                        testPythonPackages(
-                            "dist/*.whl,dist/*.tar.gz,dist/*.zip",
-                            [
-                                [
-                                    images:[
-                                            "python:3.7",
-                                            "python:3.8"
-                                        ],
-                                    label: "windows&&docker"
-                                ]
-                            ]
+stage('Testing all Package') {
+            matrix{
+                agent none
+                axes{
+                    axis {
+                        name "PYTHON_VERSION"
+                        values(
+                            "3.7",
+                            "3.8"
+                        )
+                    }
+                    axis {
+                        name "PYTHON_PACKAGE_TYPE"
+                        values(
+                            "whl",
+                            "sdist"
                         )
                     }
                 }
+                stages{
+                    stage("Testing Package"){
+                        agent any
+//                         agent {
+//                             dockerfile {
+//                                 filename 'ci/docker/python/windows/build/msvc/Dockerfile'
+//                                 label "windows && docker"
+//                                 additionalBuildArgs "--build-arg PYTHON_DOCKER_IMAGE_BASE=${CONFIGURATIONS[PYTHON_VERSION].test_docker_image}"
+//                             }
+//                         }
+                        steps{
+                            echo "test"
+//                             unstash "PYTHON_PACKAGES"
+//                             bat(
+//                                 label: "Checking Python version",
+//                                 script: "python --version"
+//                             )
+//                             script{
+//                                 findFiles(glob: "**/${CONFIGURATIONS[PYTHON_VERSION].package_testing[PYTHON_PACKAGE_TYPE].pkgRegex}").each{
+//                                     timeout(15){
+//                                         bat(
+//                                             script: "tox --installpkg=${WORKSPACE}\\${it} -e py",
+//                                             label: "Testing ${it}"
+//                                         )
+//                                     }
+//                                 }
+//                             }
+                        }
+//                         post{
+//                             cleanup{
+//                                 cleanWs(
+//                                     deleteDirs: true,
+//                                     patterns: [
+//                                         [pattern: 'dist/', type: 'INCLUDE'],
+//                                         [pattern: 'build/', type: 'INCLUDE'],
+//                                         [pattern: '.tox/', type: 'INCLUDE'],
+//                                         ]
+//                                 )
+//                             }
+//                         }
+                    }
+                }
+            }
+         }
+//                 stage("Testing Python Packages"){
+//                     agent none
+//                     steps{
+//                         testPythonPackages(
+//                             "dist/*.whl,dist/*.tar.gz,dist/*.zip",
+//                             [
+//                                 [
+//                                     images:[
+//                                             "python:3.7",
+//                                             "python:3.8"
+//                                         ],
+//                                     label: "windows&&docker"
+//                                 ]
+//                             ]
+//                         )
+//                     }
+//                 }
             }
         }
         stage("Windows Standalone"){
