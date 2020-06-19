@@ -538,7 +538,7 @@ pipeline {
         PIPENV_NOSPIN = "True"
     }
     libraries {
-      lib('devpi')
+//       lib('devpi')
       lib('PythonHelpers')
     }
     parameters {
@@ -1001,8 +1001,8 @@ pipeline {
                         }
                         steps{
                             unstash "PYTHON_PACKAGES"
+                            script{
                                 echo "test ${PYTHON_PACKAGE_TYPE}-${PYTHON_VERSION}"
-//                             script{
 //                                 findFiles(glob: "**/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex[PYTHON_PACKAGE_TYPE]}").each{
 //                                     timeout(15){
 //                                         bat(
@@ -1038,7 +1038,7 @@ pipeline {
 //                                         ]
 //                                 )
 //                             }
-//                         }
+                        }
                     }
                 }
             }
