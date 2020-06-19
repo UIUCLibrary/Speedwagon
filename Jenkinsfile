@@ -623,13 +623,14 @@ pipeline {
 //                           }
                     }
                     steps {
-                        sh """mkdir -p logs
-                              python setup.py build -b build 2> logs/build_errors.log"""
+                        sh '''mkdir -p logs
+                              python setup.py build -b build
+                              '''
                     }
                     post{
-                        always{
-                            archiveArtifacts artifacts: "logs/build_errors.log"
-                        }
+//                         always{
+//                             archiveArtifacts artifacts: "logs/build_errors.log"
+//                         }
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
