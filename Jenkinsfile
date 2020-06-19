@@ -877,7 +877,6 @@ pipeline {
             }
             steps{
                 checkout scm
-                sh "git fetch --all"
                 unstash "COVERAGE_REPORT_DATA"
                 unstash "PYTEST_UNIT_TEST_RESULTS"
                 unstash "PYLINT_REPORT"
@@ -889,7 +888,9 @@ pipeline {
                         if (env.CHANGE_ID){
                             sh(
                                 label: "Running Sonar Scanner",
-                                script:"sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
+                                script:"""git fetch --all
+                                          sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}
+                                          """
                                 )
                         } else {
                             sh(
