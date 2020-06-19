@@ -8,16 +8,28 @@ import static groovy.json.JsonOutput.* // For pretty printing json data
 def CONFIGURATIONS = [
     '3.6': [
         test_docker_image: "python:3.6-windowsservercore",
-        tox_env: "py36"
-        ],
+        tox_env: "py36",
+        pkgRegex: [
+            wheel: "whl",
+            sdist: "zip"
+        ]
+    ],
     "3.7": [
         test_docker_image: "python:3.7",
-        tox_env: "py37"
-        ],
+        tox_env: "py37",
+        pkgRegex: [
+            wheel: "whl",
+            sdist: "zip"
+        ]
+    ],
     "3.8": [
         test_docker_image: "python:3.8",
-        tox_env: "py38"
+        tox_env: "py38",
+        pkgRegex: [
+            wheel: "whl",
+            sdist: "zip"
         ]
+    ]
 ]
 def get_build_args(){
     script{
@@ -973,7 +985,7 @@ pipeline {
                     axis {
                         name "PYTHON_PACKAGE_TYPE"
                         values(
-                            "whl",
+                            "wheel",
                             "sdist"
                         )
                     }
@@ -989,7 +1001,17 @@ pipeline {
                         }
                         steps{
                             echo "test ${PYTHON_PACKAGE_TYPE}-${PYTHON_VERSION}"
-//                             unstash "PYTHON_PACKAGES"
+                            unstash "PYTHON_PACKAGES"
+                            script{
+                                findFiles(glob: "**/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex[PYTHON_PACKAGE_TYPE]}").each{
+                                    timeout(15){
+                                        bat(
+                                            script: "tox --installpkg=${WORKSPACE}\\${it} -e py",
+                                            label: "Testing ${it}"
+                                        )
+                                    }
+                                }
+                            }
 //                             bat(
 //                                 label: "Checking Python version",
 //                                 script: "python --version"
