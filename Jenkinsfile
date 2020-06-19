@@ -668,7 +668,7 @@ pipeline {
                         always{
                             archiveArtifacts artifacts: 'logs/build_sphinx.log,logs/latex/speedwagon.log'
                             recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
-                            postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
+//                             postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
                             stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
                         }
                         success{
