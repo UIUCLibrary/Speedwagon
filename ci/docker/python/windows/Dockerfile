@@ -4,10 +4,12 @@ FROM python:${PYTHON_VERSION} as certsgen
 RUN certutil -generateSSTFromWU roots.sst
 
 FROM python:${PYTHON_VERSION} as wheel_maker
-COPY requirements.txt requirements-dev.txt c:/temp/
 RUN python -m pip install pip --upgrade ;`
     pip install setuptools --upgrade ; `
     pip install wheel
+
+COPY requirements.txt requirements-dev.txt c:/temp/
+
 RUN python -m pip wheel --wheel-dir c:\wheels `
     --extra-index-url https://devpi.library.illinois.edu/production/release `
     -r c:\temp\requirements.txt `
