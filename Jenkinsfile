@@ -968,7 +968,7 @@ stage('Testing all Package') {
 //                             }
 //                         }
                         steps{
-                            echo "test"
+                            echo "test ${PYTHON_PACKAGE_TYPE}-${PYTHON_VERSION}"
 //                             unstash "PYTHON_PACKAGES"
 //                             bat(
 //                                 label: "Checking Python version",
