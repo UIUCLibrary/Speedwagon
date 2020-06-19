@@ -823,7 +823,7 @@ pipeline {
                             }
                             post {
                                 always {
-                                      archiveArtifacts 'logs/flake8.log'
+//                                       archiveArtifacts 'logs/flake8.log'
                                       stash includes: 'logs/flake8.log', name: "FLAKE8_REPORT"
                                       recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
 //                                       postLogFileOnPullRequest("flake8 result",'logs/flake8.log')
