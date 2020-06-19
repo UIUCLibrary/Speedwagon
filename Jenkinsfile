@@ -628,9 +628,6 @@ pipeline {
                               '''
                     }
                     post{
-//                         always{
-//                             archiveArtifacts artifacts: "logs/build_errors.log"
-//                         }
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
@@ -743,7 +740,10 @@ pipeline {
                             steps {
                                 sh(
                                     label: "Running Doctest Tests",
-                                    script: "python setup.py build build_ui && sphinx-build -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt")
+                                    script: '''python setup.py build build_ui
+                                               sphinx-build -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt
+                                               '''
+                                    )
 
                             }
                             post{
