@@ -1003,14 +1003,14 @@ pipeline {
                         steps{
                             unstash "PYTHON_PACKAGES"
                             script{
-                                echo "test ${PYTHON_PACKAGE_TYPE}-${PYTHON_VERSION}"
-//                                 findFiles(glob: "**/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex[PYTHON_PACKAGE_TYPE]}").each{
+                                findFiles(glob: "**/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex[PYTHON_PACKAGE_TYPE]}").each{
+                                    echo "test ${PYTHON_PACKAGE_TYPE}-${PYTHON_VERSION}"
 //                                     timeout(15){
 //                                         bat(
 //                                             script: "tox --installpkg=${WORKSPACE}\\${it} -e py",
 //                                             label: "Testing ${it}"
 //                                         )
-//                                     }
+                                    }
 //                                 }
 //                             }
 //                             bat(
