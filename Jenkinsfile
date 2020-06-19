@@ -938,7 +938,27 @@ pipeline {
                         }
                     }
                 }
-stage('Testing all Package') {
+
+//                 stage("Testing Python Packages"){
+//                     agent none
+//                     steps{
+//                         testPythonPackages(
+//                             "dist/*.whl,dist/*.tar.gz,dist/*.zip",
+//                             [
+//                                 [
+//                                     images:[
+//                                             "python:3.7",
+//                                             "python:3.8"
+//                                         ],
+//                                     label: "windows&&docker"
+//                                 ]
+//                             ]
+//                         )
+//                     }
+//                 }
+            }
+        }
+        stage('Testing all Package') {
             matrix{
                 agent none
                 axes{
@@ -963,8 +983,8 @@ stage('Testing all Package') {
                             dockerfile {
                                 filename 'ci/docker/python/windows/Dockerfile'
                                 label 'windows && docker'
-//                                 additionalBuildArgs '--build-arg PYTHON_VERSION=%PYTHON_VERSION%'
-                            }
+                                additionalBuildArgs '--build-arg PYTHON_VERSION=%PYTHON_VERSION%'
+//                             }
                         }
                         steps{
                             echo "test ${PYTHON_PACKAGE_TYPE}-${PYTHON_VERSION}"
@@ -1000,25 +1020,6 @@ stage('Testing all Package') {
                 }
             }
          }
-//                 stage("Testing Python Packages"){
-//                     agent none
-//                     steps{
-//                         testPythonPackages(
-//                             "dist/*.whl,dist/*.tar.gz,dist/*.zip",
-//                             [
-//                                 [
-//                                     images:[
-//                                             "python:3.7",
-//                                             "python:3.8"
-//                                         ],
-//                                     label: "windows&&docker"
-//                                 ]
-//                             ]
-//                         )
-//                     }
-//                 }
-            }
-        }
         stage("Windows Standalone"){
             when{
                 anyOf{
