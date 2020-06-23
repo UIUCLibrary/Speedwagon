@@ -800,7 +800,6 @@ pipeline {
                                 equals expected: true, actual: params.TEST_RUN_TOX
                             }
                             environment {
-                              PIP_INDEX_URL = "https://devpi.library.illinois.edu/production/release"
                               PIP_TRUSTED_HOST = "devpi.library.illinois.edu"
                               
                             }
