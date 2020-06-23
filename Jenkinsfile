@@ -980,6 +980,13 @@ pipeline {
         }
         stage('Testing all Package') {
             matrix{
+                agent {
+                    dockerfile {
+                        filename "ci/docker/python/${PLATFORM}/Dockerfile"
+                        label 'windows && docker'
+                        additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION}"
+                    }
+                }
                 axes{
                     axis {
                         name "PYTHON_VERSION"
@@ -995,23 +1002,10 @@ pipeline {
                             'windows'
                         )
                     }
-//                     axis {
-//                         name "PYTHON_PACKAGE_TYPE"
-//                         values(
-//                             "wheel",
-//                             "sdist"
-//                         )
-//                     }
                 }
                 stages{
-                    stage("Testing Package"){
-                        agent {
-                            dockerfile {
-                                filename "ci/docker/python/${PLATFORM}/Dockerfile"
-                                label 'windows && docker'
-                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION}"
-                            }
-                        }
+                    stage("Testing sdist Package"){
+
                         steps{
                             unstash "PYTHON_PACKAGES"
                             testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['sdist']}")
