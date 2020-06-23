@@ -1214,6 +1214,7 @@ pipeline {
                             branch "master"
                         }
                         beforeAgent true
+                        beforeInput true
                     }
                     agent {
                         dockerfile {
