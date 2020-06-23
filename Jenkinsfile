@@ -1311,8 +1311,9 @@ pipeline {
                                                devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
                                                '''
                                 )
-                                sh "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi"
-                                sh "devpi push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME} --clientdir ./devpi"
+                                sh """devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi
+                                      devpi push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME} --clientdir ./devpi
+                                      """
                             }
                        }
                     }
