@@ -936,7 +936,7 @@ pipeline {
                     steps{
                         timeout(5){
                             unstash "PYTHON_BUILD_FILES"
-                            sh script: "python setup.py build -b build sdist -d dist --format zip bdist_wheel -d dist"
+                            sh script: 'python setup.py build -b build sdist -d dist --format zip bdist_wheel -d dist'
                         }
                     }
                     post{
