@@ -777,10 +777,10 @@ pipeline {
                         stage("Run MyPy Static Analysis") {
                             steps{
                                 catchError(buildResult: "SUCCESS", message: 'MyPy found issues', stageResult: "UNSTABLE") {
-                                    sh(
-                                        script: """mkdir -p logs
+                                    sh(label: 'Running MyPy',
+                                        script: '''mkdir -p logs
                                                    mypy -p speedwagon --html-report reports/mypy/html | tee logs/mypy.log
-                                                   """
+                                                   '''
                                    )
                                 }
                             }
