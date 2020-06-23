@@ -768,7 +768,6 @@ pipeline {
                                 always {
                                     archiveArtifacts artifacts: "logs/doctest.txt"
                                     recordIssues(tools: [sphinxBuild(id: 'doctest', pattern: 'logs/doctest.txt')])
-                                    postLogFileOnPullRequest("Doctest result",'logs/doctest.txt')
                                 }
                                 cleanup{
                                     cleanWs(patterns: [[pattern: 'logs/doctest.txt', type: 'INCLUDE']])
