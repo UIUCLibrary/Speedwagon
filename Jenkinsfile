@@ -585,7 +585,6 @@ pipeline {
     }
     environment {
         build_number = get_build_number()
-        PIPENV_NOSPIN = "True"
     }
     libraries {
 //       lib('devpi')
