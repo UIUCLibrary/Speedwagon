@@ -708,7 +708,6 @@ pipeline {
                     }
                     post{
                         always{
-                            archiveArtifacts artifacts: 'logs/build_sphinx.log,logs/latex/speedwagon.log'
                             recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
                             stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
                         }
@@ -790,7 +789,6 @@ pipeline {
                             }
                             post{
                                 always {
-                                    archiveArtifacts artifacts: "logs/doctest.txt"
                                     recordIssues(tools: [sphinxBuild(id: 'doctest', pattern: 'logs/doctest.txt')])
                                 }
                                 cleanup{
@@ -810,7 +808,6 @@ pipeline {
                             }
                             post {
                                 always {
-                                    archiveArtifacts "logs/mypy.log"
                                     recordIssues(tools: [myPy(pattern: "logs/mypy.log")])
                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                                 }
@@ -831,9 +828,6 @@ pipeline {
                                 sh "tox -e py -vv -i https://devpi.library.illinois.edu/production/release"
                             }
                             post{
-                                always{
-                                    archiveArtifacts allowEmptyArchive: true, artifacts: '.tox/py*/log/*.log,.tox/log/*.log'
-                                }
                                 cleanup{
                                     cleanWs deleteDirs: true, patterns: [
                                         [pattern: '.tox', type: 'INCLUDE']
@@ -848,7 +842,6 @@ pipeline {
                             post{
                                 always{
                                     stash includes: "reports/pylint_issues.txt,reports/pylint.txt", name: 'PYLINT_REPORT'
-                                    archiveArtifacts allowEmptyArchive: true, artifacts: "reports/pylint.txt"
                                     recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
                                 }
                             }
@@ -1033,11 +1026,9 @@ pipeline {
                     }
                     steps {
                         build_standalone()
-
                     }
                     post {
                         success{
-
                             archiveArtifacts artifacts: "dist/*.msi,dist/*.exe,dist/*.zip", fingerprint: true
                         }
                         failure {
@@ -1045,13 +1036,7 @@ pipeline {
                         }
                         always{
                             stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
-
-                            archiveArtifacts(
-                                allowEmptyArchive: true,
-                                artifacts: "logs/*.log"
-                                )
                         }
-
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
