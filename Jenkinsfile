@@ -1249,15 +1249,14 @@ pipeline {
                                         script{
                                             def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
                                             cleanWs(patterns: [[pattern: "speedwagon.dist-info/METADATA", type: 'INCLUDE']])
-                                            bat(
-                                                label: "Connecting to DevPi index",
-                                                script: "devpi use https://devpi.library.illinois.edu --clientdir certs\\ && devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\ && devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\"
-                                                )
 
-                                            bat(
-                                                label: "Running tests on Devpi",
-                                                script: "devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${FORMAT} --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v"
-                                            )
+                                            bat(label: "Running tests on packages stored on DevPi ",
+                                                script: """devpi use https://devpi.library.illinois.edu --clientdir certs\\
+                                                           devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\
+                                                           devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
+                                                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${FORMAT} --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v
+                                                           """
+                                                )
                                         }
                                     }
                                 }
