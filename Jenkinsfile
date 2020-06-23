@@ -1248,8 +1248,6 @@ pipeline {
                                         unstash "DIST-INFO"
                                         script{
                                             def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
-                                            cleanWs(patterns: [[pattern: "speedwagon.dist-info/METADATA", type: 'INCLUDE']])
-
                                             bat(label: "Running tests on packages stored on DevPi ",
                                                 script: """devpi use https://devpi.library.illinois.edu --clientdir certs\\
                                                            devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\
