@@ -558,6 +558,26 @@ def runSonarScanner(propsFile){
     }
 }
 
+def testPythonPackagesWithTox(glob){
+    script{
+        findFiles(glob: glob).each{
+            timeout(15){
+                if(isUnix()){
+                    sh(
+                        script: "tox --installpkg=${it.path} -e py",
+                        label: "Testing ${it.name}"
+                    )
+                } else{
+                    bat(
+                        script: "tox --installpkg=${it.path} -e py",
+                        label: "Testing ${it.name}"
+                    )
+                }
+            }
+        }
+    }
+}
+
 pipeline {
     agent none
     triggers {
@@ -987,7 +1007,6 @@ pipeline {
                     stage("Testing Package"){
                         agent {
                             dockerfile {
-//                                 filename CONFIGURATIONS[PYTHON_VERSION]['dockerfiles'][PLATFORM]
                                 filename "ci/docker/python/windows/Dockerfile"
                                 label 'windows && docker'
                                 additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION}"
@@ -995,24 +1014,7 @@ pipeline {
                         }
                         steps{
                             unstash "PYTHON_PACKAGES"
-                            script{
-                                findFiles(glob: "dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['sdist']}").each{
-                                    timeout(15){
-                                        if(isUnix()){
-                                            sh(
-                                                script: "tox --installpkg=${it.path} -e py",
-                                                label: "Testing ${it.name}"
-                                            )
-                                        } else{
-                                            bat(
-                                                script: "tox --installpkg=${it.path} -e py",
-                                                label: "Testing ${it.name}"
-                                            )
-                                        }
-
-                                    }
-                                }
-                            }
+                            testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['sdist']}")
                         }
                     }
                 }
