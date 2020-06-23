@@ -1,0 +1,5 @@
+pyqt-distutils
+pytest
+pytest-qt
+PyQt5
+behave
