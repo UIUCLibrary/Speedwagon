@@ -1007,7 +1007,7 @@ pipeline {
                     stage("Testing Package"){
                         agent {
                             dockerfile {
-                                filename "ci/docker/python/windows/Dockerfile"
+                                filename "ci/docker/python/${PLATFORM}/Dockerfile"
                                 label 'windows && docker'
                                 additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION}"
                             }
