@@ -1324,12 +1324,12 @@ pipeline {
                                 def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                 sh(
                                     label: "Connecting to DevPi Server",
-                                    script: '''devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+                                    script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
                                                devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-                                               '''
+                                               devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi
+                                               devpi remove -y ${props.Name}==${props.Version} --clientdir ./devpi
+                                               """
                                 )
-                                sh "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi"
-                                sh "devpi remove -y ${props.Name}==${props.Version} --clientdir ./devpi"
                             }
                        }
                     }
