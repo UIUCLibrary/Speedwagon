@@ -948,30 +948,10 @@ pipeline {
                         }
                     }
                 }
-
-//                 stage("Testing Python Packages"){
-//                     agent none
-//                     steps{
-//                         testPythonPackages(
-//                             "dist/*.whl,dist/*.tar.gz,dist/*.zip",
-//                             [
-//                                 [
-//                                     images:[
-//                                             "python:3.7",
-//                                             "python:3.8"
-//                                         ],
-//                                     label: "windows&&docker"
-//                                 ]
-//                             ]
-//                         )
-//                     }
-//                 }
             }
         }
         stage('Testing all Package') {
-
             matrix{
-
                 axes{
                     axis {
                         name "PYTHON_VERSION"
@@ -995,6 +975,18 @@ pipeline {
                         )
                     }
                 }
+                excludes{
+                    exclude {
+                        axis {
+                            name 'PLATFORM'
+                            values 'linux'
+                        }
+                        axis {
+                            name 'FORMAT'
+                            values 'wheel'
+                        }
+                    }
+                }
                 stages{
                     stage("Testing Package"){
                         agent {
@@ -1009,18 +1001,17 @@ pipeline {
                             script{
                                 findFiles(glob: "dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex[PYTHON_PACKAGE_TYPE]}").each{
                                     timeout(15){
-                                        echo "Here"
-//                                         if(isUnix()){
-//                                             sh(
-//                                                 script: "tox --installpkg=${it.path} -e py",
-//                                                 label: "Testing ${it.name}"
-//                                             )
-//                                         } else{
-//                                             bat(
-//                                                 script: "tox --installpkg=${it.path} -e py",
-//                                                 label: "Testing ${it.name}"
-//                                             )
-//                                         }
+                                        if(isUnix()){
+                                            sh(
+                                                script: "tox --installpkg=${it.path} -e py",
+                                                label: "Testing ${it.name}"
+                                            )
+                                        } else{
+                                            bat(
+                                                script: "tox --installpkg=${it.path} -e py",
+                                                label: "Testing ${it.name}"
+                                            )
+                                        }
 
                                     }
                                 }
