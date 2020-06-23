@@ -587,7 +587,6 @@ pipeline {
         build_number = get_build_number()
     }
     libraries {
-//       lib('devpi')
       lib('PythonHelpers')
     }
     parameters {
@@ -666,10 +665,6 @@ pipeline {
                             filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux && docker'
                           }
-//                         dockerfile {
-//                             filename 'ci/docker/python/windows/Dockerfile'
-//                             label 'Windows&&Docker'
-//                           }
                     }
                     steps {
                         sh '''mkdir -p logs
@@ -693,7 +688,7 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/makepdf/lite/Dockerfile'
                             label 'linux && docker'
-                          }
+                        }
                     }
                     steps {
                         sh(
@@ -715,7 +710,6 @@ pipeline {
                         always{
                             archiveArtifacts artifacts: 'logs/build_sphinx.log,logs/latex/speedwagon.log'
                             recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
-//                             postLogFileOnPullRequest("Sphinx build result",'logs/build_sphinx.log')
                             stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
                         }
                         success{
@@ -793,7 +787,6 @@ pipeline {
                                                sphinx-build -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt
                                                '''
                                     )
-
                             }
                             post{
                                 always {
@@ -812,7 +805,7 @@ pipeline {
                                         script: '''mkdir -p logs
                                                    mypy -p speedwagon --html-report reports/mypy/html | tee logs/mypy.log
                                                    '''
-                                   )
+                                    )
                                 }
                             }
                             post {
@@ -870,10 +863,8 @@ pipeline {
                             }
                             post {
                                 always {
-//                                       archiveArtifacts 'logs/flake8.log'
                                       stash includes: 'logs/flake8.log', name: "FLAKE8_REPORT"
                                       recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
-//                                       postLogFileOnPullRequest("flake8 result",'logs/flake8.log')
                                 }
                                 cleanup{
                                     cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
@@ -946,10 +937,6 @@ pipeline {
                 }
             }
         }
-
-//         stage("Packaging") {
-//             failFast true
-//             parallel {
         stage("Packaging sdist and wheel"){
             agent {
                 dockerfile {
@@ -1009,7 +996,7 @@ pipeline {
                             testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['sdist']}")
                         }
                     }
-                    stage("Testing wheel Package"){
+                    stage("Testing bdist_wheel Package"){
                         steps{
                             unstash "PYTHON_PACKAGES"
                             testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
