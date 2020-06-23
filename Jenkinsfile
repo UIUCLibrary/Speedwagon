@@ -975,13 +975,13 @@ pipeline {
                             'windows'
                         )
                     }
-                    axis {
-                        name "PYTHON_PACKAGE_TYPE"
-                        values(
-                            "wheel",
-                            "sdist"
-                        )
-                    }
+//                     axis {
+//                         name "PYTHON_PACKAGE_TYPE"
+//                         values(
+//                             "wheel",
+//                             "sdist"
+//                         )
+//                     }
                 }
                 stages{
                     stage("Testing Package"){
