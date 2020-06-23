@@ -19,7 +19,7 @@ RUN python -m pip install --upgrade pip &&  \
 
 RUN pip wheel --wheel-dir=/wheels \
     -i ${PYTHON_INDEX} -v \
-    -r /tmp/requirements.txt
+    -r /tmp/requirements.txt \
     -r /tmp/requirements-ci.txt
 
 FROM python:${PYTHON_VERSION}
