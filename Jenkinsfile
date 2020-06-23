@@ -528,6 +528,24 @@ def build_standalone(){
         }
     }
 }
+
+def runSonarScanner(propsFile){
+    def props = readProperties(interpolate: true, file: propsFile)
+    if (env.CHANGE_ID){
+        sh(
+            label: "Running Sonar Scanner",
+            script:"""git fetch --all
+                      sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}
+                      """
+            )
+    } else {
+        sh(
+            label: "Running Sonar Scanner",
+            script: "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.branch.name=${env.BRANCH_NAME}"
+            )
+    }
+}
+
 pipeline {
     agent none
     triggers {
@@ -885,20 +903,21 @@ pipeline {
                 script{
                     withSonarQubeEnv(installationName:"sonarcloud", credentialsId: 'sonarcloud-speedwagon') {
                         unstash "DIST-INFO"
-                        def props = readProperties(interpolate: true, file: "speedwagon.dist-info/METADATA")
-                        if (env.CHANGE_ID){
-                            sh(
-                                label: "Running Sonar Scanner",
-                                script:"""git fetch --all
-                                          sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}
-                                          """
-                                )
-                        } else {
-                            sh(
-                                label: "Running Sonar Scanner",
-                                script: "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.branch.name=${env.BRANCH_NAME}"
-                                )
-                        }
+                        runSonarScanner("speedwagon.dist-info/METADATA")
+//                         def props = readProperties(interpolate: true, file: "speedwagon.dist-info/METADATA")
+//                         if (env.CHANGE_ID){
+//                             sh(
+//                                 label: "Running Sonar Scanner",
+//                                 script:"""git fetch --all
+//                                           sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}
+//                                           """
+//                                 )
+//                         } else {
+//                             sh(
+//                                 label: "Running Sonar Scanner",
+//                                 script: "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.branch.name=${env.BRANCH_NAME}"
+//                                 )
+//                         }
                     }
                     def sonarqube_result = waitForQualityGate(abortPipeline: false)
                     if (sonarqube_result.status != 'OK') {
