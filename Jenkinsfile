@@ -1019,164 +1019,165 @@ pipeline {
                 }
             }
          }
-//         stage("Windows Standalone"){
-//             when{
-//                 anyOf{
-//                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-//                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
-//                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
-//                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
-//                     equals expected: true, actual: params.DEPLOY_CHOLOCATEY
-//                 }
-//                 beforeAgent true
-//             }
-//             environment {
-//                 PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
-//                 PIP_TRUSTED_HOST="devpi.library.illinois.edu"
-//             }
-//
-//             stages{
-//                 stage("CMake Build"){
-//                     agent {
-//                         dockerfile {
-//                             filename 'ci/docker/windows_standalone/Dockerfile'
-//                             label 'Windows&&Docker'
-//                             args "-u ContainerAdministrator"
-//                             additionalBuildArgs "${get_build_args()}"
-//                           }
-//                     }
-//                     steps {
-//                         build_standalone()
-//
-//                     }
-//                     post {
-//                         success{
-//
-//                             archiveArtifacts artifacts: "dist/*.msi,dist/*.exe,dist/*.zip", fingerprint: true
-//                         }
-//                         failure {
-//                             archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log,dist/**/*.wxs"
-//                         }
-//                         always{
-//                             stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
-//
-//                             archiveArtifacts(
-//                                 allowEmptyArchive: true,
-//                                 artifacts: "logs/*.log"
-//                                 )
-//                         }
-//
-//                         cleanup{
-//                             cleanWs(
-//                                 deleteDirs: true,
-//                                 notFailBuild: true
-//                             )
-//                         }
-//                     }
-//                 }
-//                 stage("Testing MSI Install"){
-//                     agent {
-//                       docker {
-//                         args '-u ContainerAdministrator'
-//                         image 'mcr.microsoft.com/windows/servercore:ltsc2019'
-//                         label 'Windows&&Docker'
-//                       }
-//                     }
-//
-//                     when{
-//                         anyOf{
-//                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
-//                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-//                             equals expected: true, actual: params.DEPLOY_CHOLOCATEY
-//                         }
-//                         beforeAgent true
-//                     }
-//                     options{
-//                         timeout(15)
-//                         skipDefaultCheckout(true)
-//                     }
-//                     steps{
-//                         unstash 'STANDALONE_INSTALLERS'
-//                         script{
-//                             def msi_file = findFiles(glob: "dist/*.msi")[0].path
-//                             powershell "New-Item -ItemType Directory -Force -Path logs; Write-Host \"Installing ${msi_file}\"; msiexec /i ${msi_file} /qn /norestart /L*v! logs\\msiexec.log"
-//                         }
-//                     }
-//                     post {
-//                         cleanup{
-//                             cleanWs(
-//                                 deleteDirs: true,
-//                                 notFailBuild: true
-//                             )
-//                         }
-//                     }
-//                 }
-//                 stage("Package MSI for Chocolatey"){
-//                     agent {
-//                         dockerfile {
-//                             filename 'ci/docker/chocolatey/Dockerfile'
-//                             label 'Windows&&Docker'
-//                           }
-//                     }
-//                     options{
-//                         timeout(15)
-//                     }
-//                     when{
-//                         anyOf{
-//                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
-//                             equals expected: true, actual: params.DEPLOY_CHOLOCATEY
-//                         }
-//                         beforeAgent true
-//                     }
-//                     steps{
-//                         unstash 'STANDALONE_INSTALLERS'
-//                         script{
-//                             make_chocolatey_distribution(
-//                                 findFiles(glob: "dist/*.msi")[0],
-//                                 get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA"),
-//                                 "chocolatey_package"
-//                                 )
-//                         }
-//                     }
-//                     post {
-//                         success{
-//                             stash includes: "chocolatey_package/speedwagon/*.nupkg", name: "CHOCOLATEY_PACKAGE"
-//                             archiveArtifacts(
-//                                 allowEmptyArchive: true,
-//                                 artifacts: "chocolatey_package/speedwagon/*.nupkg"
-//                                 )
-//                         }
-//                         cleanup{
-//                             cleanWs(
-//                                 deleteDirs: true,
-//                                 notFailBuild: true
-//                             )
-//                         }
-//                     }
-//                 }
-//                 stage("Testing Chocolatey Package: Install"){
-//                     when{
-//                         anyOf{
-//                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
-//                             equals expected: true, actual: params.DEPLOY_CHOLOCATEY
-//                         }
-//                         beforeAgent true
-//                     }
-//                     agent {
-//                         dockerfile {
-//                             filename 'ci/docker/chocolatey/Dockerfile'
-//                             args '-u ContainerAdministrator'
-//                             label 'Windows&&Docker'
-//                           }
-//                     }
-//                     steps{
-//                         unstash "CHOCOLATEY_PACKAGE"
-//                         bat 'choco install speedwagon -y --pre -dv -s %WORKSPACE%\\chocolatey_package\\speedwagon'
-//                         bat "speedwagon --version"
-//                     }
-//                 }
-//             }
-//         }
+        stage("Windows Standalone"){
+            when{
+                anyOf{
+                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
+                    equals expected: true, actual: params.DEPLOY_CHOLOCATEY
+                }
+                beforeAgent true
+            }
+            environment {
+                PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
+                PIP_TRUSTED_HOST="devpi.library.illinois.edu"
+            }
+
+            stages{
+                stage("CMake Build"){
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/windows_standalone/Dockerfile'
+                            label 'Windows&&Docker'
+                            args "-u ContainerAdministrator"
+                            additionalBuildArgs "${get_build_args()}"
+                          }
+                    }
+                    steps {
+                        build_standalone()
+
+                    }
+                    post {
+                        success{
+
+                            archiveArtifacts artifacts: "dist/*.msi,dist/*.exe,dist/*.zip", fingerprint: true
+                        }
+                        failure {
+                            archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log,dist/**/*.wxs"
+                        }
+                        always{
+                            stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
+
+                            archiveArtifacts(
+                                allowEmptyArchive: true,
+                                artifacts: "logs/*.log"
+                                )
+                        }
+
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                notFailBuild: true
+                            )
+                        }
+                    }
+                }
+                stage("Testing MSI Install"){
+                    agent {
+                      docker {
+                        args '-u ContainerAdministrator'
+                        image 'mcr.microsoft.com/windows/servercore:ltsc2019'
+                        label 'Windows&&Docker'
+                      }
+                    }
+
+                    when{
+                        anyOf{
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                            equals expected: true, actual: params.DEPLOY_CHOLOCATEY
+                        }
+                        beforeAgent true
+                    }
+                    options{
+                        skipDefaultCheckout(true)
+                    }
+                    steps{
+                        timeout(15){
+                            unstash 'STANDALONE_INSTALLERS'
+                            script{
+                                def msi_file = findFiles(glob: "dist/*.msi")[0].path
+                                powershell "New-Item -ItemType Directory -Force -Path logs; Write-Host \"Installing ${msi_file}\"; msiexec /i ${msi_file} /qn /norestart /L*v! logs\\msiexec.log"
+                            }
+                        }
+                    }
+                    post {
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                notFailBuild: true
+                            )
+                        }
+                    }
+                }
+                stage("Package MSI for Chocolatey"){
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/chocolatey/Dockerfile'
+                            label 'Windows&&Docker'
+                          }
+                    }
+                    options{
+                        timeout(15)
+                    }
+                    when{
+                        anyOf{
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
+                            equals expected: true, actual: params.DEPLOY_CHOLOCATEY
+                        }
+                        beforeAgent true
+                    }
+                    steps{
+                        unstash 'STANDALONE_INSTALLERS'
+                        script{
+                            make_chocolatey_distribution(
+                                findFiles(glob: "dist/*.msi")[0],
+                                get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA"),
+                                "chocolatey_package"
+                                )
+                        }
+                    }
+                    post {
+                        success{
+                            stash includes: "chocolatey_package/speedwagon/*.nupkg", name: "CHOCOLATEY_PACKAGE"
+                            archiveArtifacts(
+                                allowEmptyArchive: true,
+                                artifacts: "chocolatey_package/speedwagon/*.nupkg"
+                                )
+                        }
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                notFailBuild: true
+                            )
+                        }
+                    }
+                }
+                stage("Testing Chocolatey Package: Install"){
+                    when{
+                        anyOf{
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
+                            equals expected: true, actual: params.DEPLOY_CHOLOCATEY
+                        }
+                        beforeAgent true
+                    }
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/chocolatey/Dockerfile'
+                            args '-u ContainerAdministrator'
+                            label 'Windows&&Docker'
+                          }
+                    }
+                    steps{
+                        unstash "CHOCOLATEY_PACKAGE"
+                        bat 'choco install speedwagon -y --pre -dv -s %WORKSPACE%\\chocolatey_package\\speedwagon'
+                        bat "speedwagon --version"
+                    }
+                }
+            }
+        }
         stage("Deploy to Devpi"){
             when {
                 allOf{
