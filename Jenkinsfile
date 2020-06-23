@@ -795,28 +795,28 @@ pipeline {
                                 }
                             }
                         }
-//                         stage("Run Tox test") {
-//                             when{
-//                                 equals expected: true, actual: params.TEST_RUN_TOX
-//                             }
-//                             environment {
-//                               PIP_TRUSTED_HOST = "devpi.library.illinois.edu"
-//
-//                             }
-//                             steps {
-//                                 sh "tox -e py -vv -i https://devpi.library.illinois.edu/production/release"
-//                             }
-//                             post{
-//                                 always{
-//                                     archiveArtifacts allowEmptyArchive: true, artifacts: '.tox/py*/log/*.log,.tox/log/*.log'
-//                                 }
-//                                 cleanup{
-//                                     cleanWs deleteDirs: true, patterns: [
-//                                         [pattern: '.tox', type: 'INCLUDE']
-//                                     ]
-//                                 }
-//                             }
-//                         }
+                        stage("Run Tox test") {
+                            when{
+                                equals expected: true, actual: params.TEST_RUN_TOX
+                            }
+                            environment {
+                              PIP_TRUSTED_HOST = "devpi.library.illinois.edu"
+
+                            }
+                            steps {
+                                sh "tox -e py -vv -i https://devpi.library.illinois.edu/production/release"
+                            }
+                            post{
+                                always{
+                                    archiveArtifacts allowEmptyArchive: true, artifacts: '.tox/py*/log/*.log,.tox/log/*.log'
+                                }
+                                cleanup{
+                                    cleanWs deleteDirs: true, patterns: [
+                                        [pattern: '.tox', type: 'INCLUDE']
+                                    ]
+                                }
+                            }
+                        }
                         stage("Run Pylint Static Analysis") {
                             steps{
                                 run_pylint()
@@ -1009,17 +1009,18 @@ pipeline {
                             script{
                                 findFiles(glob: "dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex[PYTHON_PACKAGE_TYPE]}").each{
                                     timeout(15){
-                                        if(isUnix()){
-                                            sh(
-                                                script: "tox --installpkg=${it.path} -e py",
-                                                label: "Testing ${it.name}"
-                                            )
-                                        } else{
-                                            bat(
-                                                script: "tox --installpkg=${it.path} -e py",
-                                                label: "Testing ${it.name}"
-                                            )
-                                        }
+                                        echo "Here"
+//                                         if(isUnix()){
+//                                             sh(
+//                                                 script: "tox --installpkg=${it.path} -e py",
+//                                                 label: "Testing ${it.name}"
+//                                             )
+//                                         } else{
+//                                             bat(
+//                                                 script: "tox --installpkg=${it.path} -e py",
+//                                                 label: "Testing ${it.name}"
+//                                             )
+//                                         }
 
                                     }
                                 }
