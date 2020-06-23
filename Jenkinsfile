@@ -1119,9 +1119,6 @@ pipeline {
                             label 'Windows&&Docker'
                           }
                     }
-                    options{
-                        timeout(15)
-                    }
                     when{
                         anyOf{
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
@@ -1131,12 +1128,14 @@ pipeline {
                     }
                     steps{
                         unstash 'STANDALONE_INSTALLERS'
-                        script{
-                            make_chocolatey_distribution(
-                                findFiles(glob: "dist/*.msi")[0],
-                                get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA"),
-                                "chocolatey_package"
-                                )
+                        timeout(15){
+                            script{
+                                make_chocolatey_distribution(
+                                    findFiles(glob: "dist/*.msi")[0],
+                                    get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA"),
+                                    "chocolatey_package"
+                                    )
+                            }
                         }
                     }
                     post {
