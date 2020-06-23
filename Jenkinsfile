@@ -855,14 +855,6 @@ pipeline {
                         always{
                             sh "coverage combine && coverage xml -o reports/coverage.xml && coverage html -d reports/coverage"
                             stash includes: "reports/coverage.xml", name: "COVERAGE_REPORT_DATA"
-                            publishHTML([
-                                allowMissing: true,
-                                alwaysLinkToLastBuild: false,
-                                keepAll: false,
-                                reportDir: "reports/coverage",
-                                reportFiles: 'index.html',
-                                reportName: 'Coverage', reportTitles: ''
-                            ])
                             publishCoverage(
                                 adapters: [
                                         coberturaAdapter('reports/coverage.xml')
