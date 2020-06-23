@@ -1005,10 +1005,15 @@ pipeline {
                 }
                 stages{
                     stage("Testing sdist Package"){
-
                         steps{
                             unstash "PYTHON_PACKAGES"
                             testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['sdist']}")
+                        }
+                    }
+                    stage("Testing wheel Package"){
+                        steps{
+                            unstash "PYTHON_PACKAGES"
+                            testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
                         }
                     }
                 }
