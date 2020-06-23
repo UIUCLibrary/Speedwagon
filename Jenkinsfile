@@ -991,6 +991,13 @@ pipeline {
                         )
                     }
                     axis {
+                        name "PLATFORM"
+                        values(
+                            'linux',
+                            'windows'
+                        )
+                    }
+                    axis {
                         name "PYTHON_PACKAGE_TYPE"
                         values(
                             "wheel",
@@ -1002,7 +1009,7 @@ pipeline {
                     stage("Testing Package"){
                         agent {
                             dockerfile {
-                                filename 'ci/docker/python/windows/Dockerfile'
+                                filename "ci/docker/python/${PLATFORM}/Dockerfile"
                                 label 'windows && docker'
                                 additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION}"
                             }
