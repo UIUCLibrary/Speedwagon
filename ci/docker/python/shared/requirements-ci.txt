@@ -1,5 +1,16 @@
+behave
+coverage
+flake8
 pyqt-distutils
 pytest
 pytest-qt
 PyQt5
-behave
+pytest-cov
+pytest-runner
+sphinx
+sphinx-argparse
+sphinxcontrib-applehelp
+sphinxcontrib-devhelp
+sphinxcontrib-htmlhelp
+sphinxcontrib-jsmath
+sphinxcontrib-qthelp

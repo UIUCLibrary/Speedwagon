@@ -30,30 +30,12 @@ RUN groupadd -g $GROUP_ID user && \
 RUN apt update -y && apt install -y libgl1-mesa-glx
 
 COPY --from=wheel_builder /wheels /wheels/
-ADD requirements.txt /tmp/
+ADD requirements.txt ci/docker/python/shared/requirements-ci.txt /tmp/
 ENV PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
 ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"
 
 RUN pip install --no-index --find-links=/wheels -r /tmp/requirements.txt && \
-    pip install behave \
-                flake8 \
-                pytest \
-                pytest-cov \
-                pytest-qt \
-                coverage \
-                pyqt-distutils \
-                pytest-runner \
-                sphinx \
-                sphinx-argparse \
-                tox \
-                mypy \
-                rinohtype \
-                sphinxcontrib-applehelp \
-                sphinxcontrib-devhelp \
-                sphinxcontrib-htmlhelp \
-                sphinxcontrib-jsmath \
-                sphinxcontrib-qthelp \
-                pylint
+    pip install --no-index --find-links=/wheels -r /tmp/requirements-ci.txt
 ENV PIP_FIND_LINKS=/wheels
 USER user
 WORKDIR /home/user
