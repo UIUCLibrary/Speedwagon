@@ -983,7 +983,7 @@ pipeline {
                 agent {
                     dockerfile {
                         filename "ci/docker/python/${PLATFORM}/Dockerfile"
-                        label 'windows && docker'
+                        label "${PLATFORM} && docker"
                         additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION}"
                     }
                 }
