@@ -904,20 +904,6 @@ pipeline {
                     withSonarQubeEnv(installationName:"sonarcloud", credentialsId: 'sonarcloud-speedwagon') {
                         unstash "DIST-INFO"
                         runSonarScanner("speedwagon.dist-info/METADATA")
-//                         def props = readProperties(interpolate: true, file: "speedwagon.dist-info/METADATA")
-//                         if (env.CHANGE_ID){
-//                             sh(
-//                                 label: "Running Sonar Scanner",
-//                                 script:"""git fetch --all
-//                                           sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}
-//                                           """
-//                                 )
-//                         } else {
-//                             sh(
-//                                 label: "Running Sonar Scanner",
-//                                 script: "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.branch.name=${env.BRANCH_NAME}"
-//                                 )
-//                         }
                     }
                     def sonarqube_result = waitForQualityGate(abortPipeline: false)
                     if (sonarqube_result.status != 'OK') {
@@ -1025,12 +1011,19 @@ pipeline {
                             unstash "PYTHON_PACKAGES"
                             script{
                                 findFiles(glob: "dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex[PYTHON_PACKAGE_TYPE]}").each{
-//                                     echo "test ${PYTHON_PACKAGE_TYPE}-${PYTHON_VERSION}"
                                     timeout(15){
-                                        bat(
-                                            script: "tox --installpkg=${WORKSPACE}\\${it} -e py",
-                                            label: "Testing ${it}"
-                                        )
+                                        if(isUnix()){
+                                            sh(
+                                                script: "tox --installpkg=${it.path} -e py",
+                                                label: "Testing ${it.name}"
+                                            )
+                                        } else{
+                                            bat(
+                                                script: "tox --installpkg=${it.path} -e py",
+                                                label: "Testing ${it.name}"
+                                            )
+                                        }
+
                                     }
                                 }
                             }
