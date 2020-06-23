@@ -9,6 +9,10 @@ def CONFIGURATIONS = [
     '3.6': [
         test_docker_image: "python:3.6-windowsservercore",
         tox_env: "py36",
+        dockerfiles:[
+            windows: "ci/docker/python/windows/Dockerfile",
+            linux: "ci/docker/python/linux/Dockerfile"
+        ],
         pkgRegex: [
             wheel: "*.whl",
             sdist: "*.zip"
@@ -17,6 +21,10 @@ def CONFIGURATIONS = [
     "3.7": [
         test_docker_image: "python:3.7",
         tox_env: "py37",
+        dockerfiles:[
+            windows: "ci/docker/python/windows/Dockerfile",
+            linux: "ci/docker/python/linux/Dockerfile"
+        ],
         pkgRegex: [
             wheel: "*.whl",
             sdist: "*.zip"
@@ -25,6 +33,10 @@ def CONFIGURATIONS = [
     "3.8": [
         test_docker_image: "python:3.8",
         tox_env: "py38",
+        dockerfiles:[
+            windows: "ci/docker/python/windows/Dockerfile",
+            linux: "ci/docker/python/linux/Dockerfile"
+        ],
         pkgRegex: [
             wheel: "*.whl",
             sdist: "*.zip"
@@ -975,7 +987,7 @@ pipeline {
                     stage("Testing Package"){
                         agent {
                             dockerfile {
-                                filename "ci/docker/python/${PLATFORM}/Dockerfile"
+                                filename CONFIGURATIONS[PYTHON_VERSION]['dockerfiles'][PLATFORM]
                                 label 'windows && docker'
                                 additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION}"
                             }
