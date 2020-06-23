@@ -919,34 +919,30 @@ pipeline {
 //         stage("Packaging") {
 //             failFast true
 //             parallel {
-        stage("Source and Wheel formats"){
-            stages{
-                stage("Packaging sdist and wheel"){
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/Dockerfile'
-                            label 'linux && docker'
-                          }
-                    }
-                    steps{
-                        timeout(5){
-                            unstash "PYTHON_BUILD_FILES"
-                            sh script: 'python setup.py build -b build sdist -d dist --format zip bdist_wheel -d dist'
-                        }
-                    }
-                    post{
-                        always{
-                            stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
-                        }
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: 'source', type: 'EXCLUDE']
-                                    ]
-                                )
-                        }
-                    }
+        stage("Packaging sdist and wheel"){
+            agent {
+                dockerfile {
+                    filename 'ci/docker/python/linux/Dockerfile'
+                    label 'linux && docker'
+                  }
+            }
+            steps{
+                timeout(5){
+                    unstash "PYTHON_BUILD_FILES"
+                    sh script: 'python setup.py build -b build sdist -d dist --format zip bdist_wheel -d dist'
+                }
+            }
+            post{
+                always{
+                    stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
+                }
+                cleanup{
+                    cleanWs(
+                        deleteDirs: true,
+                        patterns: [
+                            [pattern: 'source', type: 'EXCLUDE']
+                            ]
+                        )
                 }
             }
         }
@@ -973,18 +969,6 @@ pipeline {
                             "wheel",
                             "sdist"
                         )
-                    }
-                }
-                excludes{
-                    exclude {
-                        axis {
-                            name 'PLATFORM'
-                            values 'linux'
-                        }
-                        axis {
-                            name 'FORMAT'
-                            values 'wheel'
-                        }
                     }
                 }
                 stages{
