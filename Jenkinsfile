@@ -1007,40 +1007,14 @@ pipeline {
                             script{
                                 findFiles(glob: "dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex[PYTHON_PACKAGE_TYPE]}").each{
 //                                     echo "test ${PYTHON_PACKAGE_TYPE}-${PYTHON_VERSION}"
-//                                     timeout(15){
+                                    timeout(15){
                                         bat(
                                             script: "tox --installpkg=${WORKSPACE}\\${it} -e py",
                                             label: "Testing ${it}"
                                         )
                                     }
-//                                 }
-//                             }
-//                             bat(
-//                                 label: "Checking Python version",
-//                                 script: "python --version"
-//                             )
-//                             script{
-//                                 findFiles(glob: "**/${CONFIGURATIONS[PYTHON_VERSION].package_testing[PYTHON_PACKAGE_TYPE].pkgRegex}").each{
-//                                     timeout(15){
-//                                         bat(
-//                                             script: "tox --installpkg=${WORKSPACE}\\${it} -e py",
-//                                             label: "Testing ${it}"
-//                                         )
-//                                     }
-//                                 }
-//                             }
-                        }
-//                         post{
-//                             cleanup{
-//                                 cleanWs(
-//                                     deleteDirs: true,
-//                                     patterns: [
-//                                         [pattern: 'dist/', type: 'INCLUDE'],
-//                                         [pattern: 'build/', type: 'INCLUDE'],
-//                                         [pattern: '.tox/', type: 'INCLUDE'],
-//                                         ]
-//                                 )
-//                             }
+                                }
+                            }
                         }
                     }
                 }
