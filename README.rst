@@ -6,6 +6,8 @@ Collection of tools and workflows for DS
 
 `Documentation <https://www.library.illinois.edu/dccdocs/speedwagon/>`_
 
+`Download <https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-dist/speedwagon/>`_
+
 .. admonition:: Development Status
 
     .. container::
