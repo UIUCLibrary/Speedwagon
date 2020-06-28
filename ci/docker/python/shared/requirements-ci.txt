@@ -1,4 +1,5 @@
 behave
+conan
 coverage
 flake8
 pylint
