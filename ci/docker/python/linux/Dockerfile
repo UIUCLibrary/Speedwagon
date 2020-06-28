@@ -27,7 +27,12 @@ ARG GROUP_ID=1000
 RUN groupadd -g $GROUP_ID user && \
     useradd -u $USER_ID -s /bin/sh -m -d /home/user -g user user
 
-RUN apt update -y && apt install -y libgl1-mesa-glx cmake 
+RUN wget -O /tmp/install_cmake.sh ${CMAKE_DOWNLOAD_URL}
+
+RUN chmod +x /tmp/install_cmake.sh  && \
+    /tmp/install_cmake.sh  --skip-license
+
+RUN apt update -y && apt install -y libgl1-mesa-glx
 
 COPY --from=wheel_builder /wheels /wheels/
 ADD requirements.txt ci/docker/python/shared/requirements-ci.txt /tmp/
