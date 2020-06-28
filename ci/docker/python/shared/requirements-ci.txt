@@ -1,5 +1,6 @@
 behave
 conan
+pykdu_compress >= 0.1.3b4
 coverage
 flake8
 pylint
