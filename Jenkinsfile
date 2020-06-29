@@ -900,6 +900,10 @@ pipeline {
             options{
                 lock("speedwagon-sonarscanner")
             }
+            when{
+                equals expected: true, actual: params.USE_SONARQUBE
+                beforeAgent true
+            }
             steps{
                 checkout scm
                 unstash "COVERAGE_REPORT_DATA"
