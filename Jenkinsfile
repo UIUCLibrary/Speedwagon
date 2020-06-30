@@ -1225,7 +1225,7 @@ pipeline {
                           dockerfile {
                             additionalBuildArgs "--build-arg PYTHON_DOCKER_IMAGE_BASE=${CONFIGURATIONS[PYTHON_VERSION].test_docker_image}"
                             filename 'ci/docker/deploy/devpi/test/windows/Dockerfile'
-                            label '${PLATFORM} && docker'
+                            label "${PLATFORM} && docker"
                           }
                         }
                         stages{
