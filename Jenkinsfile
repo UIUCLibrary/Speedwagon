@@ -1253,20 +1253,10 @@ pipeline {
                             }
                             stage("Testing DevPi Package wheel"){
                                 steps{
-//                                     timeout(10){
+                                    timeout(10){
                                         unstash "DIST-INFO"
                                         testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "whl", env.DEVPI_USR, env.DEVPI_PSW)
-//                                         script{
-//                                             def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
-//                                             bat(label: "Running tests on packages stored on DevPi ",
-//                                                 script: """devpi use https://devpi.library.illinois.edu --clientdir certs\\
-//                                                            devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\
-//                                                            devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
-//                                                            devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s whl --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v
-//                                                            """
-//                                                 )
-//                                         }
-//                                     }
+                                    }
                                 }
                             }
 
