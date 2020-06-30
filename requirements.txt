@@ -25,7 +25,7 @@ ruamel.yaml==0.16.10
 ruamel.yaml.clib==0.2.0
 tzlocal==2.1
 uiucprescon-getmarc==0.1.2
-uiucprescon.packager[kdu]>=0.2.11b2
+uiucprescon.packager[kdu]>=0.2.11b3
 uiucprescon.images>=0.0.4b1
 uiucprescon.imagevalidate==0.1.5b1
 uiucprescon.ocr==0.1.1b2
