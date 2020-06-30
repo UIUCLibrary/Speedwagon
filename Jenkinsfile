@@ -806,9 +806,6 @@ pipeline {
                                 always {
                                     recordIssues(tools: [sphinxBuild(id: 'doctest', pattern: 'logs/doctest.txt')])
                                 }
-                                cleanup{
-                                    cleanWs(patterns: [[pattern: 'logs/doctest.txt', type: 'INCLUDE']])
-                                }
                             }
                         }
                         stage("Run MyPy Static Analysis") {
@@ -897,6 +894,7 @@ pipeline {
             post{
                 cleanup{
                     cleanWs(patterns: [
+                            [pattern: 'logs/*', type: 'INCLUDE'],
                             [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
                             [pattern: 'reports/coverage', type: 'INCLUDE'],
                             [pattern: '.coverage', type: 'INCLUDE']
