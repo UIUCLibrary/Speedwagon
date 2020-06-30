@@ -1,15 +1,8 @@
-behave
 conan
-pykdu_compress >= 0.1.3b4
-coverage
+devpi-client
 flake8
+pykdu_compress >= 0.1.3b4
 pylint
-pyqt-distutils
-pytest
-pytest-qt
-PyQt5
-pytest-cov
-pytest-runner
 sphinx
 sphinx-argparse
 sphinxcontrib-applehelp
@@ -17,4 +10,3 @@ sphinxcontrib-devhelp
 sphinxcontrib-htmlhelp
 sphinxcontrib-jsmath
 sphinxcontrib-qthelp
-tox

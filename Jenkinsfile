@@ -3,21 +3,8 @@
 import org.ds.*
 import static groovy.json.JsonOutput.* // For pretty printing json data
 
-//@Library(["devpi", "PythonHelpers"]) _
 
 def CONFIGURATIONS = [
-    '3.6': [
-        test_docker_image: "python:3.6-windowsservercore",
-        tox_env: "py36",
-        dockerfiles:[
-            windows: "ci/docker/python/windows/Dockerfile",
-            linux: "ci/docker/python/linux/Dockerfile"
-        ],
-        pkgRegex: [
-            wheel: "*.whl",
-            sdist: "*.zip"
-        ]
-    ],
     "3.7": [
         test_docker_image: "python:3.7",
         tox_env: "py37",
@@ -43,6 +30,8 @@ def CONFIGURATIONS = [
         ]
     ]
 ]
+
+
 def get_build_args(){
     script{
         def CHOCOLATEY_SOURCE = ""
@@ -558,6 +547,30 @@ def runSonarScanner(propsFile){
     }
 }
 
+def testDevpiPackages(devpiUrl, metadataFile, selector, DEVPI_USR, DEVPI_PSW){
+    script{
+        def props = readProperties(interpolate: true, file: metadataFile)
+        if(isUnix()){
+            sh(label: "Running tests on packages stored on DevPi ",
+               script: """devpi use ${devpiUrl} --clientdir certs
+                           devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs
+                           devpi use ${env.BRANCH_NAME}_staging --clientdir certs
+                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v
+                           """
+               )
+
+        } else{
+            bat(label: "Running tests on packages stored on DevPi ",
+                script: """devpi use ${devpiUrl} --clientdir certs\\
+                           devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs\\
+                           devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
+                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v
+                           """
+                )
+        }
+    }
+}
+
 def testPythonPackagesWithTox(glob){
     script{
         findFiles(glob: glob).each{
@@ -583,12 +596,10 @@ pipeline {
     triggers {
        parameterizedCron '@daily % PACKAGE_WINDOWS_STANDALONE_MSI=true; DEPLOY_DEVPI=true; TEST_RUN_TOX=true'
     }
-    environment {
-        build_number = get_build_number()
-    }
-    libraries {
-      lib('PythonHelpers')
-    }
+
+//     libraries {
+//       lib('PythonHelpers')
+//     }
     parameters {
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
@@ -635,6 +646,7 @@ pipeline {
                                 dockerfile {
                                     filename 'ci/docker/python/linux/Dockerfile'
                                     label 'linux && docker'
+                                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                                  }
                             }
                             steps{
@@ -665,6 +677,7 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux && docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                           }
                     }
                     steps {
@@ -719,8 +732,8 @@ pipeline {
                                 def DOC_ZIP_FILENAME = "${props.Name}-${props.Version}.doc.zip"
                                 zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
                                 stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
-                                archiveArtifacts artifacts: 'dist/docs/*.pdf'
                             }
+                            archiveArtifacts artifacts: 'dist/docs/*.pdf'
                         }
                         cleanup{
                             cleanWs(
@@ -742,6 +755,7 @@ pipeline {
                 dockerfile {
                     filename 'ci/docker/python/linux/Dockerfile'
                     label 'linux && docker'
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                   }
             }
             stages{
@@ -791,9 +805,6 @@ pipeline {
                             post{
                                 always {
                                     recordIssues(tools: [sphinxBuild(id: 'doctest', pattern: 'logs/doctest.txt')])
-                                }
-                                cleanup{
-                                    cleanWs(patterns: [[pattern: 'logs/doctest.txt', type: 'INCLUDE']])
                                 }
                             }
                         }
@@ -883,6 +894,7 @@ pipeline {
             post{
                 cleanup{
                     cleanWs(patterns: [
+                            [pattern: 'logs/*', type: 'INCLUDE'],
                             [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
                             [pattern: 'reports/coverage', type: 'INCLUDE'],
                             [pattern: '.coverage', type: 'INCLUDE']
@@ -940,6 +952,7 @@ pipeline {
                 dockerfile {
                     filename 'ci/docker/python/linux/Dockerfile'
                     label 'linux && docker'
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                   }
             }
             steps{
@@ -1015,6 +1028,7 @@ pipeline {
                 beforeAgent true
             }
             environment {
+                build_number = get_build_number()
                 PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
                 PIP_TRUSTED_HOST="devpi.library.illinois.edu"
             }
@@ -1176,7 +1190,7 @@ pipeline {
                 stage("Deploy to Devpi Staging") {
                     agent {
                         dockerfile {
-                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
+                            filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux&&docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                           }
@@ -1186,13 +1200,9 @@ pipeline {
                         unstash 'PYTHON_PACKAGES'
                         sh(
                             label: "Connecting to DevPi Server",
-                            script: '''devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+                            script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
                                        devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-                                       '''
-                        )
-                        sh(
-                            label: "Uploading to DevPi Staging",
-                            script: """devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ./devpi
+                                       devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ./devpi
                                        devpi upload --from-dir dist --clientdir ./devpi
                                        """
                         )
@@ -1202,8 +1212,11 @@ pipeline {
                     matrix {
                         axes {
                             axis {
-                                name 'FORMAT'
-                                values 'zip', "whl"
+                                name 'PLATFORM'
+                                values(
+                                    'windows',
+                                    "linux"
+                                    )
                             }
                             axis {
                                 name 'PYTHON_VERSION'
@@ -1213,8 +1226,8 @@ pipeline {
                         agent {
                           dockerfile {
                             additionalBuildArgs "--build-arg PYTHON_DOCKER_IMAGE_BASE=${CONFIGURATIONS[PYTHON_VERSION].test_docker_image}"
-                            filename 'ci/docker/deploy/devpi/test/windows/Dockerfile'
-                            label 'windows && docker'
+                            filename "ci/docker/python/${PLATFORM}/Dockerfile"
+                            label "${PLATFORM} && docker"
                           }
                         }
                         stages{
@@ -1222,16 +1235,25 @@ pipeline {
                                 steps{
                                     timeout(10){
                                         unstash "DIST-INFO"
-                                        script{
-                                            def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
-                                            bat(label: "Running tests on packages stored on DevPi ",
-                                                script: """devpi use https://devpi.library.illinois.edu --clientdir certs\\
-                                                           devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\
-                                                           devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
-                                                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${FORMAT} --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v
-                                                           """
-                                                )
-                                        }
+                                        testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "zip", env.DEVPI_USR, env.DEVPI_PSW)
+//                                         script{
+//                                             def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
+//                                             bat(label: "Running tests on packages stored on DevPi ",
+//                                                 script: """devpi use https://devpi.library.illinois.edu --clientdir certs\\
+//                                                            devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\
+//                                                            devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
+//                                                            devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s zip --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v
+//                                                            """
+//                                                 )
+//                                         }
+                                    }
+                                }
+                            }
+                            stage("Testing DevPi Package wheel"){
+                                steps{
+                                    timeout(10){
+                                        unstash "DIST-INFO"
+                                        testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "whl", env.DEVPI_USR, env.DEVPI_PSW)
                                     }
                                 }
                             }
@@ -1250,7 +1272,7 @@ pipeline {
                     }
                     agent {
                         dockerfile {
-                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
+                            filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux && docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                           }
@@ -1276,7 +1298,7 @@ pipeline {
                 success{
                     node('linux && docker') {
                        script{
-                            docker.build("speedwagon:devpi.${env.BUILD_ID}",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("speedwagon:devpi.${env.BUILD_ID}",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
                                 unstash "DIST-INFO"
                                 def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                 sh(label: "Connecting to DevPi Server",
@@ -1293,7 +1315,7 @@ pipeline {
                 cleanup{
                     node('linux && docker') {
                        script{
-                            docker.build("speedwagon:devpi.${env.BUILD_ID}",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("speedwagon:devpi.${env.BUILD_ID}",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
                                 unstash "DIST-INFO"
                                 def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                 sh(
