@@ -3,6 +3,7 @@ from typing import List, Any
 from speedwagon.job import Workflow
 from . import shared_custom_widgets as options
 
+
 class HathiLimitedToDLWorkflow(Workflow):
     name = "Convert HathiTrust limited view to Digital library"
     description = '''This tool converts HathiTrust limited view packages to 
@@ -16,7 +17,6 @@ class HathiLimitedToDLWorkflow(Workflow):
 
     def user_options(self):
         return [
-
-        options.UserOptionCustomDataType("Input", options.FolderData),
-        options.UserOptionCustomDataType("Output", options.FolderData)
+            options.UserOptionCustomDataType("Input", options.FolderData),
+            options.UserOptionCustomDataType("Output", options.FolderData)
         ]
