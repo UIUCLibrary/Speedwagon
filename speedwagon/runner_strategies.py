@@ -141,9 +141,11 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 logger.addHandler(runner.progress_dialog_box_handler)
 
                 # Run the main tasks. Keep track of the progress
-                metadata_tasks = job.discover_task_metadata(pretask_results,
-                                                      additional_data,
-                                                      **options) or []
+                metadata_tasks = \
+                    job.discover_task_metadata(pretask_results,
+                                               additional_data,
+                                               **options) or []
+
                 for new_task_metadata in metadata_tasks:
 
                     main_task_builder = tasks.TaskBuilder(
