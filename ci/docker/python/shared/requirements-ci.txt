@@ -1,6 +1,7 @@
 conan
 devpi-client
 flake8
+pep517
 pykdu_compress >= 0.1.3b4
 pylint
 sphinx
