@@ -1,9 +1,10 @@
 # escape=`
-ARG PYTHON_VERSION=3.7
-FROM python:${PYTHON_VERSION} as certsgen
+#ARG PYTHON_VERSION=3.7
+ARG PYTHON_DOCKER_IMAGE_BASE=python:3.7
+FROM ${PYTHON_DOCKER_IMAGE_BASE} as certsgen
 RUN certutil -generateSSTFromWU roots.sst
 
-FROM python:${PYTHON_VERSION} as wheel_maker
+FROM ${PYTHON_DOCKER_IMAGE_BASE} as wheel_maker
 RUN python -m pip install pip --upgrade ;`
     pip install setuptools --upgrade ; `
     pip install wheel
@@ -19,7 +20,7 @@ RUN pip wheel --wheel-dir c:\wheels `
     -r c:\temp\requirements-ci.txt
 
 
-FROM python:${PYTHON_VERSION}
+FROM ${PYTHON_DOCKER_IMAGE_BASE}
 COPY --from=certsgen c:/roots.sst roots.sst
 RUN certutil -addstore -f root roots.sst ; `
     del roots.sst

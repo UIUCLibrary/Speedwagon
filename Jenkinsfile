@@ -6,18 +6,6 @@ import static groovy.json.JsonOutput.* // For pretty printing json data
 //@Library(["devpi", "PythonHelpers"]) _
 
 def CONFIGURATIONS = [
-    '3.6': [
-        test_docker_image: "python:3.6-windowsservercore",
-        tox_env: "py36",
-        dockerfiles:[
-            windows: "ci/docker/python/windows/Dockerfile",
-            linux: "ci/docker/python/linux/Dockerfile"
-        ],
-        pkgRegex: [
-            wheel: "*.whl",
-            sdist: "*.zip"
-        ]
-    ],
     "3.7": [
         test_docker_image: "python:3.7",
         tox_env: "py37",
@@ -1209,13 +1197,9 @@ pipeline {
                                 name 'PLATFORM'
                                 values(
                                     'windows',
-//                                     "linux"
+                                    "linux"
                                     )
                             }
-//                             axis {
-//                                 name 'FORMAT'
-//                                 values 'zip', "whl"
-//                             }
                             axis {
                                 name 'PYTHON_VERSION'
                                 values '3.7', "3.8"
@@ -1224,7 +1208,7 @@ pipeline {
                         agent {
                           dockerfile {
                             additionalBuildArgs "--build-arg PYTHON_DOCKER_IMAGE_BASE=${CONFIGURATIONS[PYTHON_VERSION].test_docker_image}"
-                            filename 'ci/docker/deploy/devpi/test/windows/Dockerfile'
+                            filename "ci/docker/python/${PLATFORM}/Dockerfile"
                             label "${PLATFORM} && docker"
                           }
                         }
