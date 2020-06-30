@@ -570,9 +570,7 @@ pipeline {
     triggers {
        parameterizedCron '@daily % PACKAGE_WINDOWS_STANDALONE_MSI=true; DEPLOY_DEVPI=true; TEST_RUN_TOX=true'
     }
-    environment {
-        build_number = get_build_number()
-    }
+
 //     libraries {
 //       lib('PythonHelpers')
 //     }
@@ -1006,6 +1004,7 @@ pipeline {
                 beforeAgent true
             }
             environment {
+                build_number = get_build_number()
                 PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
                 PIP_TRUSTED_HOST="devpi.library.illinois.edu"
             }
