@@ -30,6 +30,8 @@ def CONFIGURATIONS = [
         ]
     ]
 ]
+
+
 def get_build_args(){
     script{
         def CHOCOLATEY_SOURCE = ""
@@ -543,6 +545,19 @@ def runSonarScanner(propsFile){
             script: "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.branch.name=${env.BRANCH_NAME}"
             )
     }
+}
+
+def testDevpiPackages(){
+//     script{
+//         def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
+//         bat(label: "Running tests on packages stored on DevPi ",
+//             script: """devpi use https://devpi.library.illinois.edu --clientdir certs\\
+//                        devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\
+//                        devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
+//                        devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s whl --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v
+//                        """
+//             )
+//     }
 }
 
 def testPythonPackagesWithTox(glob){
@@ -1228,16 +1243,17 @@ pipeline {
                                 steps{
                                     timeout(10){
                                         unstash "DIST-INFO"
-                                        script{
-                                            def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
-                                            bat(label: "Running tests on packages stored on DevPi ",
-                                                script: """devpi use https://devpi.library.illinois.edu --clientdir certs\\
-                                                           devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\
-                                                           devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
-                                                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s whl --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v
-                                                           """
-                                                )
-                                        }
+                                        testDevpiPackages()
+//                                         script{
+//                                             def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
+//                                             bat(label: "Running tests on packages stored on DevPi ",
+//                                                 script: """devpi use https://devpi.library.illinois.edu --clientdir certs\\
+//                                                            devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\
+//                                                            devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
+//                                                            devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s whl --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v
+//                                                            """
+//                                                 )
+//                                         }
                                     }
                                 }
                             }
@@ -1318,52 +1334,52 @@ pipeline {
         }
         stage("Deploy"){
             parallel {
-//                 stage("Tagging git Commit"){
-//                     agent {
-//                         dockerfile {
-//                             filename 'ci/docker/python/linux/Dockerfile'
-//                             label 'linux && docker'
-//                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-//                         }
-//                     }
-//                     when{
-//                         allOf{
-//                             equals expected: true, actual: params.DEPLOY_ADD_TAG
-//                         }
-//                         beforeAgent true
-//                         beforeInput true
-//                     }
-//                     options{
-//                         timeout(time: 1, unit: 'DAYS')
-//                         retry(3)
-//                     }
-//                     input {
-//                           message 'Add a version tag to git commit?'
-//                           parameters {
-//                                 credentials credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl', defaultValue: 'github.com', description: '', name: 'gitCreds', required: true
-//                           }
-//                     }
-//                     steps{
-//                         unstash "DIST-INFO"
-//                         script{
-//                             def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
-//                             def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
-//                             withCredentials([usernamePassword(credentialsId: gitCreds, passwordVariable: 'password', usernameVariable: 'username')]) {
-//                                 sh(label: "Tagging ${commitTag}",
-//                                    script: """git config --local credential.helper "!f() { echo username=\\$username; echo password=\\$password; }; f"
-//                                               git tag -a ${commitTag} -m 'Tagged by Jenkins'
-//                                               git push origin --tags
-//                                               """
-//                                 )
-//                             }
-//                         }
-//                     }
-//                     post{
-//                         cleanup{
-//                             deleteDir()
-//                         }
-//                     }
-//                 }
+                stage("Tagging git Commit"){
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        }
+                    }
+                    when{
+                        allOf{
+                            equals expected: true, actual: params.DEPLOY_ADD_TAG
+                        }
+                        beforeAgent true
+                        beforeInput true
+                    }
+                    options{
+                        timeout(time: 1, unit: 'DAYS')
+                        retry(3)
+                    }
+                    input {
+                          message 'Add a version tag to git commit?'
+                          parameters {
+                                credentials credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl', defaultValue: 'github.com', description: '', name: 'gitCreds', required: true
+                          }
+                    }
+                    steps{
+                        unstash "DIST-INFO"
+                        script{
+                            def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
+                            def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
+                            withCredentials([usernamePassword(credentialsId: gitCreds, passwordVariable: 'password', usernameVariable: 'username')]) {
+                                sh(label: "Tagging ${commitTag}",
+                                   script: """git config --local credential.helper "!f() { echo username=\\$username; echo password=\\$password; }; f"
+                                              git tag -a ${commitTag} -m 'Tagged by Jenkins'
+                                              git push origin --tags
+                                              """
+                                )
+                            }
+                        }
+                    }
+                    post{
+                        cleanup{
+                            deleteDir()
+                        }
+                    }
+                }
                 stage("Deploy to Chocolatey") {
                     when{
                         equals expected: true, actual: params.DEPLOY_CHOLOCATEY
