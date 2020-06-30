@@ -1235,7 +1235,7 @@ pipeline {
                         stages{
                             stage("Testing DevPi Package"){
                                 steps{
-//                                     timeout(10){
+                                    timeout(10){
                                         unstash "DIST-INFO"
                                         testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "zip", env.DEVPI_USR, env.DEVPI_PSW)
 //                                         script{
@@ -1248,7 +1248,7 @@ pipeline {
 //                                                            """
 //                                                 )
 //                                         }
-//                                     }
+                                    }
                                 }
                             }
                             stage("Testing DevPi Package wheel"){
