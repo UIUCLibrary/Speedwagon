@@ -31,10 +31,11 @@ ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"
 
 COPY --from=wheel_maker c:\wheels\ c:\wheels\
 
-COPY requirements.txt requirements-dev.txt c:/temp/
+COPY requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt c:/temp/
 
 RUN pip install --no-index --find-links c:\wheels `
     -r c:\temp\requirements.txt `
-    -r c:\temp\requirements-dev.txt
+    -r c:\temp\requirements-dev.txt `
+    -r c:\temp\requirements-ci.txt
 
 ENV PIP_EXTRA_INDEX_URL https://devpi.library.illinois.edu/production/release

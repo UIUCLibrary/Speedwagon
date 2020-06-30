@@ -635,6 +635,7 @@ pipeline {
                                 dockerfile {
                                     filename 'ci/docker/python/linux/Dockerfile'
                                     label 'linux && docker'
+                                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                                  }
                             }
                             steps{
@@ -665,6 +666,7 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux && docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                           }
                     }
                     steps {
@@ -742,6 +744,7 @@ pipeline {
                 dockerfile {
                     filename 'ci/docker/python/linux/Dockerfile'
                     label 'linux && docker'
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                   }
             }
             stages{
@@ -940,6 +943,7 @@ pipeline {
                 dockerfile {
                     filename 'ci/docker/python/linux/Dockerfile'
                     label 'linux && docker'
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                   }
             }
             steps{
@@ -1176,7 +1180,7 @@ pipeline {
                 stage("Deploy to Devpi Staging") {
                     agent {
                         dockerfile {
-                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
+                            filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux&&docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                           }
@@ -1202,6 +1206,13 @@ pipeline {
                     matrix {
                         axes {
                             axis {
+                                name 'PLATFORM'
+                                values(
+                                    'windows',
+//                                     "linux"
+                                    )
+                            }
+                            axis {
                                 name 'FORMAT'
                                 values 'zip', "whl"
                             }
@@ -1214,7 +1225,7 @@ pipeline {
                           dockerfile {
                             additionalBuildArgs "--build-arg PYTHON_DOCKER_IMAGE_BASE=${CONFIGURATIONS[PYTHON_VERSION].test_docker_image}"
                             filename 'ci/docker/deploy/devpi/test/windows/Dockerfile'
-                            label 'windows && docker'
+                            label '${PLATFORM} && docker'
                           }
                         }
                         stages{
@@ -1250,7 +1261,7 @@ pipeline {
                     }
                     agent {
                         dockerfile {
-                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
+                            filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux && docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                           }
@@ -1276,7 +1287,7 @@ pipeline {
                 success{
                     node('linux && docker') {
                        script{
-                            docker.build("speedwagon:devpi.${env.BUILD_ID}",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("speedwagon:devpi.${env.BUILD_ID}",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
                                 unstash "DIST-INFO"
                                 def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                 sh(label: "Connecting to DevPi Server",
@@ -1293,7 +1304,7 @@ pipeline {
                 cleanup{
                     node('linux && docker') {
                        script{
-                            docker.build("speedwagon:devpi.${env.BUILD_ID}",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("speedwagon:devpi.${env.BUILD_ID}",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
                                 unstash "DIST-INFO"
                                 def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                 sh(

@@ -12,6 +12,5 @@ RUN certutil -addstore -f root roots.sst ; `
 
 RUN python -m pip install --upgrade pip ; pip install devpi-client "tox<3.7"
 
-ENV TMP=c:\temp `
-    TMPDIR=c:\temp `
-    TEMP=c:\temp
+ENV PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
+ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"

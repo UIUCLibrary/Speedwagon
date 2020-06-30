@@ -17,8 +17,9 @@ RUN python -m pip install --upgrade pip &&  \
     pip install wheel && \
     pip install conan
 
-ADD requirements.txt ci/docker/python/shared/requirements-ci.txt /tmp/
+ADD requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt /tmp/
 RUN pip wheel --wheel-dir=/wheels -i ${PYTHON_INDEX} -r /tmp/requirements.txt && \
+    pip wheel --wheel-dir=/wheels -i ${PYTHON_INDEX} -r /tmp/requirements-dev.txt && \
     pip wheel --wheel-dir=/wheels -i ${PYTHON_INDEX} -r /tmp/requirements-ci.txt
 
 FROM python:${PYTHON_VERSION}
