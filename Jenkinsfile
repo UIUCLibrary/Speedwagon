@@ -1178,13 +1178,9 @@ pipeline {
                         unstash 'PYTHON_PACKAGES'
                         sh(
                             label: "Connecting to DevPi Server",
-                            script: '''devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+                            script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
                                        devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-                                       '''
-                        )
-                        sh(
-                            label: "Uploading to DevPi Staging",
-                            script: """devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ./devpi
+                                       devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ./devpi
                                        devpi upload --from-dir dist --clientdir ./devpi
                                        """
                         )
