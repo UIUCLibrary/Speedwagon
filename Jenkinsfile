@@ -547,7 +547,7 @@ def runSonarScanner(propsFile){
     }
 }
 
-def testDevpiPackages(devpiUrl, metadataFile, selector, DEVPI_USR, DEVPI_PSW){
+def testDevpiPackages(devpiUrl, metadataFile, selector, toxEnv, DEVPI_USR, DEVPI_PSW){
     script{
         def props = readProperties(interpolate: true, file: metadataFile)
         if(isUnix()){
@@ -555,7 +555,7 @@ def testDevpiPackages(devpiUrl, metadataFile, selector, DEVPI_USR, DEVPI_PSW){
                script: """devpi use ${devpiUrl} --clientdir certs
                            devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs
                            devpi use ${env.BRANCH_NAME}_staging --clientdir certs
-                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v
+                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} --clientdir certs\\ -e toxEnv -v
                            """
                )
 
@@ -1235,17 +1235,7 @@ pipeline {
                                 steps{
                                     timeout(10){
                                         unstash "DIST-INFO"
-                                        testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "zip", env.DEVPI_USR, env.DEVPI_PSW)
-//                                         script{
-//                                             def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
-//                                             bat(label: "Running tests on packages stored on DevPi ",
-//                                                 script: """devpi use https://devpi.library.illinois.edu --clientdir certs\\
-//                                                            devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\
-//                                                            devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
-//                                                            devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s zip --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v
-//                                                            """
-//                                                 )
-//                                         }
+                                        testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "zip", CONFIGURATIONS[PYTHON_VERSION].tox_env,  env.DEVPI_USR, env.DEVPI_PSW)
                                     }
                                 }
                             }
@@ -1253,7 +1243,7 @@ pipeline {
                                 steps{
                                     timeout(10){
                                         unstash "DIST-INFO"
-                                        testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "whl", env.DEVPI_USR, env.DEVPI_PSW)
+                                        testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "whl", CONFIGURATIONS[PYTHON_VERSION].tox_env, env.DEVPI_USR, env.DEVPI_PSW)
                                     }
                                 }
                             }
