@@ -73,6 +73,20 @@ def sanitize_chocolatey_version(version){
         return new_version
     }
 }
+def gitAddVersionTag(metadataFile){
+    script{
+        def props = readProperties( interpolate: true, file: metadataFile)
+        def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
+        withCredentials([usernamePassword(credentialsId: gitCreds, passwordVariable: 'password', usernameVariable: 'username')]) {
+            sh(label: "Tagging ${commitTag}",
+               script: """git config --local credential.helper "!f() { echo username=\\$username; echo password=\\$password; }; f"
+                          git tag -a ${commitTag} -m 'Tagged by Jenkins'
+                          git push origin --tags
+                          """
+            )
+        }
+    }
+}
 
 def run_tox(){
     sh "mkdir -p logs"
@@ -1351,18 +1365,8 @@ pipeline {
                     }
                     steps{
                         unstash "DIST-INFO"
-                        script{
-                            def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
-                            def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
-                            withCredentials([usernamePassword(credentialsId: gitCreds, passwordVariable: 'password', usernameVariable: 'username')]) {
-                                sh(label: "Tagging ${commitTag}",
-                                   script: """git config --local credential.helper "!f() { echo username=\\$username; echo password=\\$password; }; f"
-                                              git tag -a ${commitTag} -m 'Tagged by Jenkins'
-                                              git push origin --tags
-                                              """
-                                )
-                            }
-                        }
+                        gitAddVersionTag("speedwagon.dist-info/METADATA")
+
                     }
                     post{
                         cleanup{
