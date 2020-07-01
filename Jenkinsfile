@@ -798,7 +798,7 @@ pipeline {
                                 sh(
                                     label: "Running Doctest Tests",
                                     script: '''python setup.py build build_ui
-                                               sphinx-build -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt
+                                               coverage run --parallel-mode --source=speedwagon -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt
                                                '''
                                     )
                             }
@@ -870,9 +870,6 @@ pipeline {
                                 always {
                                       stash includes: 'logs/flake8.log', name: "FLAKE8_REPORT"
                                       recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
-                                }
-                                cleanup{
-                                    cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
                                 }
                             }
                         }
