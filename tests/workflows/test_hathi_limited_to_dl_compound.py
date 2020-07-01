@@ -10,8 +10,6 @@ from uiucprescon import packager
 from speedwagon.workflows.workflow_hathi_limited_to_dl_compound import \
     HathiLimitedToDLWorkflow
 
-
-
 @pytest.fixture(scope="module")
 def hathi_limited_view_package_dirs(tmpdir_factory):
     test_dir = tmpdir_factory.mktemp(f"hathi_limited", numbered=True)
@@ -60,8 +58,6 @@ def hathi_limited_view_package_dirs(tmpdir_factory):
         ]
     }
 
-
-    # pkg_data = sample_package_names[request.param]
     # eg: 5285248v1924/
     for pkg_name, pkg_data in sample_package_names.items():
         pkg_dir = test_dir.mkdir(pkg_name)
@@ -85,9 +81,20 @@ def hathi_limited_view_package_dirs(tmpdir_factory):
     return test_dir
 
 
+def test_output_input_same_is_invalid(tool_job_manager_spy, tmpdir):
+    temp_dir = tmpdir / "temp"
+    temp_dir.mkdir()
+    with pytest.raises(ValueError) as e:
+        workflow = HathiLimitedToDLWorkflow()
+        workflow.validate_user_options(Input=temp_dir.realpath(),
+                                       Output=temp_dir.realpath())
+    assert "Input cannot be the same as Output" in str(e.value)
+
+
 def test_hathi_limited_to_dl_compound_run(tool_job_manager_spy,
                                           hathi_limited_view_package_dirs,
                                           monkeypatch,
+                                          caplog,
                                           tmpdir):
     output_dir = tmpdir / "output"
     output_dir.mkdir()
@@ -109,6 +116,7 @@ def test_hathi_limited_to_dl_compound_run(tool_job_manager_spy,
 
     exp_res = output_dir / "40"
     assert os.path.exists(exp_res.realpath()), f"Missing expected directory '{exp_res.relto(tmpdir)}'"
+
 
 options = [
     (0, "Input"),
