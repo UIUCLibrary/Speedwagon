@@ -52,8 +52,8 @@ class HathiLimitedToDLWorkflow(Workflow):
                         **user_args) -> Optional[str]:
         total = len(results)
 
-        return f"""All done. Converted {total} packages. 
-Results located at {user_args['Output']}
+        return f"""All done. Converted {total} packages.
+ Results located at {user_args['Output']}
 """
 
     @staticmethod
@@ -71,9 +71,6 @@ Results located at {user_args['Output']}
 
         if not os.path.exists(user_args['Output']):
             raise ValueError("Output does not exist")
-
-
-
 
 
 class PackageConverter(tasks.Subtask):
