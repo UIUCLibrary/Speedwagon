@@ -566,19 +566,21 @@ def testDevpiPackages(devpiUrl, metadataFile, selector, toxEnv, DEVPI_USR, DEVPI
         def props = readProperties(interpolate: true, file: metadataFile)
         if(isUnix()){
             sh(label: "Running tests on packages stored on DevPi ",
-               script: """devpi use ${devpiUrl} --clientdir certs
-                           devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs
-                           devpi use ${env.BRANCH_NAME}_staging --clientdir certs
-                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} --clientdir certs\\ -e ${toxEnv} -v
-                           """
+               script: """devpi --version
+                          devpi use ${devpiUrl} --clientdir certs
+                          devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs
+                          devpi use ${env.BRANCH_NAME}_staging --clientdir certs
+                          devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} -e ${toxEnv} --clientdir certs\\ -v
+                          """
                )
 
         } else{
             bat(label: "Running tests on packages stored on DevPi ",
-                script: """devpi use ${devpiUrl} --clientdir certs\\
+                script: """devpi --version
+                           devpi use ${devpiUrl} --clientdir certs\\
                            devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs\\
                            devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
-                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} --clientdir certs\\ -e ${toxEnv} -v
+                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} -e ${toxEnv} --clientdir certs\\  -v
                            """
                 )
         }
@@ -1245,7 +1247,7 @@ pipeline {
                           }
                         }
                         stages{
-                            stage("Testing DevPi Package"){
+                            stage("Testing DevPi sdist Package"){
                                 steps{
                                     timeout(10){
                                         unstash "DIST-INFO"
