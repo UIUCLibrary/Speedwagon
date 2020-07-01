@@ -1,4 +1,5 @@
 import logging
+import os
 from contextlib import contextmanager
 from typing import List, Any, Optional
 
@@ -57,8 +58,22 @@ Results located at {user_args['Output']}
 
     @staticmethod
     def validate_user_options(**user_args):
+        required = ['Input', "Output"]
+        for arg in required:
+            if user_args[arg] is None or str(user_args[arg]).strip() == "":
+                raise ValueError("Missing required value for {}".format(arg))
+
         if user_args['Output'] == user_args['Input']:
             raise ValueError("Input cannot be the same as Output")
+
+        if not os.path.exists(user_args['Input']):
+            raise ValueError("Input does not exist")
+
+        if not os.path.exists(user_args['Output']):
+            raise ValueError("Output does not exist")
+
+
+
 
 
 class PackageConverter(tasks.Subtask):

@@ -81,7 +81,7 @@ def hathi_limited_view_package_dirs(tmpdir_factory):
     return test_dir
 
 
-def test_output_input_same_is_invalid(tool_job_manager_spy, tmpdir):
+def test_output_input_same_is_invalid(tmpdir):
     temp_dir = tmpdir / "temp"
     temp_dir.mkdir()
     with pytest.raises(ValueError) as e:
@@ -89,6 +89,40 @@ def test_output_input_same_is_invalid(tool_job_manager_spy, tmpdir):
         workflow.validate_user_options(Input=temp_dir.realpath(),
                                        Output=temp_dir.realpath())
     assert "Input cannot be the same as Output" in str(e.value)
+
+
+def test_output_must_exist(tmpdir):
+    temp_dir = tmpdir / "temp"
+    temp_dir.mkdir()
+    with pytest.raises(ValueError) as e:
+        workflow = HathiLimitedToDLWorkflow()
+        workflow.validate_user_options(Input=temp_dir.realpath(),
+                                       Output="./invalid_folder/")
+    assert "Output does not exist" in str(e.value)
+
+@pytest.mark.parametrize("missing", ["Input", "Output"])
+def test_no_missing_required(missing, tmpdir):
+    temp_dir = tmpdir / "temp"
+    temp_dir.mkdir()
+    user_args = {
+        "Input": temp_dir.realpath(),
+        "Output": temp_dir.realpath()
+    }
+    with pytest.raises(ValueError) as e:
+        workflow = HathiLimitedToDLWorkflow()
+        user_args[missing] = ""
+        workflow.validate_user_options(**user_args)
+    assert f"Missing required value for {missing}" in str(e.value)
+
+
+def test_input_must_exist(tmpdir):
+    temp_dir = tmpdir / "temp"
+    temp_dir.mkdir()
+    with pytest.raises(ValueError) as e:
+        workflow = HathiLimitedToDLWorkflow()
+        workflow.validate_user_options(Input="./invalid_folder/",
+                                       Output=temp_dir.realpath())
+    assert "Input does not exist" in str(e.value)
 
 
 def test_hathi_limited_to_dl_compound_run(tool_job_manager_spy,
