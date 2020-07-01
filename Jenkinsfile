@@ -1241,7 +1241,7 @@ pipeline {
                         }
                         agent {
                           dockerfile {
-                            additionalBuildArgs "--build-arg PYTHON_DOCKER_IMAGE_BASE=${CONFIGURATIONS[PYTHON_VERSION].test_docker_image}"
+                          additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION}"
                             filename "ci/docker/python/${PLATFORM}/Dockerfile"
                             label "${PLATFORM} && docker"
                           }
