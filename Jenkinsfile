@@ -591,7 +591,7 @@ def testPythonPackagesWithTox(glob){
             timeout(15){
                 if(isUnix()){
                     sh(
-                        script: "tox --installpkg=${it.path} -e py --recreate",
+                        script: "tox --installpkg=${it.path} -e py --recreate -v",
                         label: "Testing ${it.name}"
                     )
                 } else{
