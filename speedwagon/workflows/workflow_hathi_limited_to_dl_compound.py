@@ -6,8 +6,8 @@ from . import shared_custom_widgets as options
 
 class HathiLimitedToDLWorkflow(Workflow):
     name = "Convert HathiTrust limited view to Digital library"
-    description = '''This tool converts HathiTrust limited view packages to 
-    Digital library'''
+    description = 'This tool converts HathiTrust limited view packages to '\
+                  'Digital library'
 
     active = True
 
