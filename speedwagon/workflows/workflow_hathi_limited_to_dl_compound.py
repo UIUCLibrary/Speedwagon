@@ -93,7 +93,6 @@ class PackageConverter(tasks.Subtask):
 
     def work(self) -> bool:
 
-
         my_logger = logging.getLogger(packager.__name__)
         my_logger.setLevel(logging.INFO)
 
