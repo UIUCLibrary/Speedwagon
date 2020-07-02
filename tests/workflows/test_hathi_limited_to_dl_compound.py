@@ -137,8 +137,8 @@ def test_hathi_limited_to_dl_compound_run(tool_job_manager_spy,
     def mock_kdu_convert(infile: str, outfile: str, in_args=None, out_args=None):
         shutil.copyfile(infile, outfile)
 
-    monkeypatch.setattr(pykdu_compress, "kdu_compress_cli2", mock_kdu_convert)
-    monkeypatch.setattr(pykdu_compress, "kdu_expand_cli", mock_kdu_convert)
+    monkeypatch.setattr("pykdu_compress.kdu_compress_cli2", mock_kdu_convert)
+    monkeypatch.setattr("pykdu_compress.kdu_expand_cli", mock_kdu_convert)
 
     tool_job_manager_spy.run(None,
                HathiLimitedToDLWorkflow(),
