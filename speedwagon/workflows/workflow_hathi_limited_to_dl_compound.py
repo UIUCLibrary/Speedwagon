@@ -88,17 +88,18 @@ class PackageConverter(tasks.Subtask):
         super().__init__()
         self.src = src
         self.dst = dst
+        self.output_packager = packager.PackageFactory(
+            packager.packages.DigitalLibraryCompound())
 
     def work(self) -> bool:
-        output_packager = packager.PackageFactory(
-            packager.packages.DigitalLibraryCompound())
+
 
         my_logger = logging.getLogger(packager.__name__)
         my_logger.setLevel(logging.INFO)
 
         with self.log_config(my_logger):
             self.log("Converting package from {}".format(self.src))
-            output_packager.transform(self.src, self.dst)
+            self.output_packager.transform(self.src, self.dst)
             self.set_results({
                 "destination": self.dst
             })

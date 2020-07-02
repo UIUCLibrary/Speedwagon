@@ -6,9 +6,14 @@ from zipfile import ZipFile
 import pykdu_compress
 import pytest
 from uiucprescon import packager
+from uiucprescon.packager import transformations
+from uiucprescon.packager.packages import DigitalLibraryCompound
+from uiucprescon.packager.packages.collection import Package
+from uiucprescon.packager.packages.digital_library_compound import Transform
+from uiucprescon.packager.transformations import AbsTransformation
 
 from speedwagon.workflows.workflow_hathi_limited_to_dl_compound import \
-    HathiLimitedToDLWorkflow
+    HathiLimitedToDLWorkflow, PackageConverter
 
 @pytest.fixture(scope="module")
 def hathi_limited_view_package_dirs(tmpdir_factory):
@@ -125,6 +130,36 @@ def test_input_must_exist(tmpdir):
     assert "Input does not exist" in str(e.value)
 
 
+class MockHathiLimitedToDLWorkflow(HathiLimitedToDLWorkflow):
+
+    def create_new_task(self, task_builder, **job_args):
+        task_builder.add_subtask(
+            MockPackageConverter(src=job_args['package'],
+                                 dst=job_args['destination'])
+        )
+
+
+class MockPackageConverter(PackageConverter):
+
+    def __init__(self, src, dst) -> None:
+        super().__init__(src, dst)
+        self.output_packager = MockDigitalLibraryCompound()
+
+
+class MockDigitalLibraryCompound(DigitalLibraryCompound):
+
+    @staticmethod
+    def _get_transformer(logger, package_builder, destination_root):
+        transformer = \
+            DigitalLibraryCompound._get_transformer(logger, package_builder,
+                                                    destination_root)
+        transformer._strategies['ConvertJp2Standard'] = transformations.CopyFile()
+        transformer._strategies['ConvertTiff'] = transformations.CopyFile()
+        return transformer
+    @staticmethod
+    def mock_transform(i, source: str, destination: str, logger: logging.Logger) -> str:
+        pass
+
 def test_hathi_limited_to_dl_compound_run(tool_job_manager_spy,
                                           hathi_limited_view_package_dirs,
                                           monkeypatch,
@@ -134,14 +169,20 @@ def test_hathi_limited_to_dl_compound_run(tool_job_manager_spy,
     output_dir.mkdir()
     my_logger = logging.getLogger(__file__)
 
-    def mock_kdu_convert(infile: str, outfile: str, in_args=None, out_args=None):
-        shutil.copyfile(infile, outfile)
+    def mock_transform(*args, **kwargs):
+        if len(args) == 3:
+            source = args[1]
+            destination = args[2]
+        else:
+            source = kwargs['source']
+            destination = kwargs['destination']
+        shutil.copyfile(source, destination)
 
-    monkeypatch.setattr("pykdu_compress.kdu_compress_cli2", mock_kdu_convert)
-    monkeypatch.setattr("pykdu_compress.kdu_expand_cli", mock_kdu_convert)
+    from uiucprescon.packager.transformations import Transformers
+    monkeypatch.setattr(Transformers, "transform", mock_transform)
 
     tool_job_manager_spy.run(None,
-               HathiLimitedToDLWorkflow(),
+               MockHathiLimitedToDLWorkflow(),
                options={
                    "Input": str(hathi_limited_view_package_dirs),
                    "Output": str(output_dir.realpath())
