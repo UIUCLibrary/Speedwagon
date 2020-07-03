@@ -22,6 +22,7 @@ ADD requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-c
 RUN pip wheel --wheel-dir=/wheels --no-cache-dir -i ${PYTHON_INDEX} -r /tmp/requirements.txt && \
     pip wheel --wheel-dir=/wheels --no-cache-dir -i ${PYTHON_INDEX} -r /tmp/requirements-dev.txt && \
     pip wheel --wheel-dir=/wheels --no-cache-dir -i ${PYTHON_INDEX} -r /tmp/requirements-ci.txt && \
+    pip wheel --wheel-dir=/wheels -i ${PYTHON_INDEX} "six>=1.11" && \
     rm -rf  /root/.cache
 
 FROM python:${PYTHON_VERSION}

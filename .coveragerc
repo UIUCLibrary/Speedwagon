@@ -1,0 +1,14 @@
+[run]
+branch = True
+source = speedwagon
+omit =
+    speedwagon/ui/*
+    speedwagon/workflows/tessdata/*
+
+
+[paths]
+source = speedwagon
+
+[report]
+exclude_lines =
+    if TYPE_CHECKING:
