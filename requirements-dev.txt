@@ -59,7 +59,6 @@ tzlocal==2.1
 uiucprescon-getmarc==0.1.2
 uiucprescon.imagevalidate==0.1.5b1
 uiucprescon.ocr==0.1.1b2
-uiucprescon.packager[kdu]>=0.2.11b2
 uiucprescon.images>=0.0.4b1
 urllib3>=1.25.3
 virtualenv>=16.6.0
