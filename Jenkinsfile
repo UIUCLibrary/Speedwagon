@@ -609,13 +609,6 @@ def testPythonPackagesWithTox(glob){
 
 pipeline {
     agent none
-    triggers {
-       parameterizedCron '@daily % PACKAGE_WINDOWS_STANDALONE_MSI=true; DEPLOY_DEVPI=true; TEST_RUN_TOX=true'
-    }
-
-//     libraries {
-//       lib('PythonHelpers')
-//     }
     parameters {
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
