@@ -16,7 +16,7 @@ RUN pip wheel --wheel-dir c:\wheels `
         -r c:\temp\requirements-dev.txt ; `
     pip wheel --wheel-dir c:\wheels `
         --extra-index-url https://devpi.library.illinois.edu/production/release `
-        -r c:\temp\requirements-ci.txt ;
+        -r c:\temp\requirements-ci.txt ; `
     pip wheel --wheel-dir c:\wheels `
         --extra-index-url https://devpi.library.illinois.edu/production/release `
         -r c:\temp\requirements-extra.txt
