@@ -8,16 +8,18 @@ RUN python -m pip install pip --upgrade ;`
     pip install setuptools --upgrade ; `
     pip install wheel
 
-COPY requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt c:/temp/
+COPY requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt ci/docker/python/shared/requirements-extra.txt c:/temp/
 
 RUN pip wheel --wheel-dir c:\wheels `
-    --extra-index-url https://devpi.library.illinois.edu/production/release `
-    -r c:\temp\requirements.txt `
-    -r c:\temp\requirements-dev.txt ; `
+        --extra-index-url https://devpi.library.illinois.edu/production/release `
+        -r c:\temp\requirements.txt `
+        -r c:\temp\requirements-dev.txt ; `
     pip wheel --wheel-dir c:\wheels `
-    --extra-index-url https://devpi.library.illinois.edu/production/release `
-    -r c:\temp\requirements-ci.txt
-
+        --extra-index-url https://devpi.library.illinois.edu/production/release `
+        -r c:\temp\requirements-ci.txt ;
+    pip wheel --wheel-dir c:\wheels `
+        --extra-index-url https://devpi.library.illinois.edu/production/release `
+        -r c:\temp\requirements-extra.txt
 
 FROM python:${PYTHON_VERSION}
 COPY --from=certsgen c:/roots.sst roots.sst
