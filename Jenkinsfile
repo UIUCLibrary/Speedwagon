@@ -14,7 +14,7 @@ def CONFIGURATIONS = [
         ],
         pkgRegex: [
             wheel: "*.whl",
-            sdist: "*.zip"
+            sdist: "*.tar.gz"
         ]
     ],
     "3.8": [
@@ -26,7 +26,7 @@ def CONFIGURATIONS = [
         ],
         pkgRegex: [
             wheel: "*.whl",
-            sdist: "*.zip"
+            sdist: "*.tar.gz"
         ]
     ]
 ]
@@ -965,7 +965,7 @@ pipeline {
             steps{
                 timeout(5){
                     unstash "PYTHON_BUILD_FILES"
-                    sh script: 'python setup.py build -b build sdist -d dist --format zip bdist_wheel -d dist'
+                    sh script: 'python -m pep517.build .'
                 }
             }
             post{
@@ -1478,7 +1478,7 @@ pipeline {
                         unstash "DIST-INFO"
                         script{
                             def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                            deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
+                            deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
                         }
                     }
                     post{
