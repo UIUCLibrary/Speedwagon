@@ -73,6 +73,20 @@ def sanitize_chocolatey_version(version){
         return new_version
     }
 }
+def gitAddVersionTag(metadataFile){
+    script{
+        def props = readProperties( interpolate: true, file: metadataFile)
+        def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
+        withCredentials([usernamePassword(credentialsId: gitCreds, passwordVariable: 'password', usernameVariable: 'username')]) {
+            sh(label: "Tagging ${commitTag}",
+               script: """git config --local credential.helper "!f() { echo username=\\$username; echo password=\\$password; }; f"
+                          git tag -a ${commitTag} -m 'Tagged by Jenkins'
+                          git push origin --tags
+                          """
+            )
+        }
+    }
+}
 
 def run_tox(){
     sh "mkdir -p logs"
@@ -547,24 +561,26 @@ def runSonarScanner(propsFile){
     }
 }
 
-def testDevpiPackages(devpiUrl, metadataFile, selector, DEVPI_USR, DEVPI_PSW){
+def testDevpiPackages(devpiUrl, metadataFile, selector, toxEnv, DEVPI_USR, DEVPI_PSW){
     script{
         def props = readProperties(interpolate: true, file: metadataFile)
         if(isUnix()){
             sh(label: "Running tests on packages stored on DevPi ",
-               script: """devpi use ${devpiUrl} --clientdir certs
-                           devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs
-                           devpi use ${env.BRANCH_NAME}_staging --clientdir certs
-                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v
-                           """
+               script: """devpi --version --clientdir certs
+                          devpi use ${devpiUrl} --clientdir certs
+                          devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs
+                          devpi use ${env.BRANCH_NAME}_staging --clientdir certs
+                          devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} -e ${toxEnv} --clientdir certs -v
+                          """
                )
 
         } else{
             bat(label: "Running tests on packages stored on DevPi ",
-                script: """devpi use ${devpiUrl} --clientdir certs\\
+                script: """devpi --version
+                           devpi use ${devpiUrl} --clientdir certs\\ --clientdir certs
                            devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs\\
                            devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
-                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v
+                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} -e ${toxEnv} --clientdir certs\\  -v
                            """
                 )
         }
@@ -577,7 +593,7 @@ def testPythonPackagesWithTox(glob){
             timeout(15){
                 if(isUnix()){
                     sh(
-                        script: "tox --installpkg=${it.path} -e py --recreate",
+                        script: "tox --installpkg=${it.path} -e py --recreate -v",
                         label: "Testing ${it.name}"
                     )
                 } else{
@@ -593,13 +609,6 @@ def testPythonPackagesWithTox(glob){
 
 pipeline {
     agent none
-    triggers {
-       parameterizedCron '@daily % PACKAGE_WINDOWS_STANDALONE_MSI=true; DEPLOY_DEVPI=true; TEST_RUN_TOX=true'
-    }
-
-//     libraries {
-//       lib('PythonHelpers')
-//     }
     parameters {
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
@@ -798,7 +807,7 @@ pipeline {
                                 sh(
                                     label: "Running Doctest Tests",
                                     script: '''python setup.py build build_ui
-                                               sphinx-build -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt
+                                               coverage run --parallel-mode --source=speedwagon -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt
                                                '''
                                     )
                             }
@@ -871,9 +880,6 @@ pipeline {
                                       stash includes: 'logs/flake8.log', name: "FLAKE8_REPORT"
                                       recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
                                 }
-                                cleanup{
-                                    cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
-                                }
                             }
                         }
                     }
@@ -915,6 +921,7 @@ pipeline {
             when{
                 equals expected: true, actual: params.USE_SONARQUBE
                 beforeAgent true
+                beforeOptions true
             }
             steps{
                 checkout scm
@@ -1225,27 +1232,17 @@ pipeline {
                         }
                         agent {
                           dockerfile {
-                            additionalBuildArgs "--build-arg PYTHON_DOCKER_IMAGE_BASE=${CONFIGURATIONS[PYTHON_VERSION].test_docker_image}"
+                          additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION}"
                             filename "ci/docker/python/${PLATFORM}/Dockerfile"
                             label "${PLATFORM} && docker"
                           }
                         }
                         stages{
-                            stage("Testing DevPi Package"){
+                            stage("Testing DevPi sdist Package"){
                                 steps{
                                     timeout(10){
                                         unstash "DIST-INFO"
-                                        testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "zip", env.DEVPI_USR, env.DEVPI_PSW)
-//                                         script{
-//                                             def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
-//                                             bat(label: "Running tests on packages stored on DevPi ",
-//                                                 script: """devpi use https://devpi.library.illinois.edu --clientdir certs\\
-//                                                            devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\
-//                                                            devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
-//                                                            devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s zip --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v
-//                                                            """
-//                                                 )
-//                                         }
+                                        testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "zip", CONFIGURATIONS[PYTHON_VERSION].tox_env,  env.DEVPI_USR, env.DEVPI_PSW)
                                     }
                                 }
                             }
@@ -1253,7 +1250,7 @@ pipeline {
                                 steps{
                                     timeout(10){
                                         unstash "DIST-INFO"
-                                        testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "whl", env.DEVPI_USR, env.DEVPI_PSW)
+                                        testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "whl", CONFIGURATIONS[PYTHON_VERSION].tox_env, env.DEVPI_USR, env.DEVPI_PSW)
                                     }
                                 }
                             }
@@ -1298,7 +1295,7 @@ pipeline {
                 success{
                     node('linux && docker') {
                        script{
-                            docker.build("speedwagon:devpi.${env.BUILD_ID}",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("speedwagon:devpi",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
                                 unstash "DIST-INFO"
                                 def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                 sh(label: "Connecting to DevPi Server",
@@ -1315,7 +1312,7 @@ pipeline {
                 cleanup{
                     node('linux && docker') {
                        script{
-                            docker.build("speedwagon:devpi.${env.BUILD_ID}",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("speedwagon:devpi",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
                                 unstash "DIST-INFO"
                                 def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                 sh(
@@ -1361,18 +1358,8 @@ pipeline {
                     }
                     steps{
                         unstash "DIST-INFO"
-                        script{
-                            def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
-                            def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
-                            withCredentials([usernamePassword(credentialsId: gitCreds, passwordVariable: 'password', usernameVariable: 'username')]) {
-                                sh(label: "Tagging ${commitTag}",
-                                   script: """git config --local credential.helper "!f() { echo username=\\$username; echo password=\\$password; }; f"
-                                              git tag -a ${commitTag} -m 'Tagged by Jenkins'
-                                              git push origin --tags
-                                              """
-                                )
-                            }
-                        }
+                        gitAddVersionTag("speedwagon.dist-info/METADATA")
+
                     }
                     post{
                         cleanup{

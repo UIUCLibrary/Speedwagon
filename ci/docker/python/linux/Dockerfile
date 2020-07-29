@@ -10,7 +10,8 @@ RUN chmod +x /tmp/install_cmake.sh  && \
 
 RUN apt update && apt install -y ninja-build
 
-ARG PYTHON_INDEX=https://devpi.library.illinois.edu/production/release
+ARG PIP_EXTRA_INDEX_URL=https://devpi.library.illinois.edu/production/release
+ARG PYTHON_INDEX=https://pypi.org/simple
 
 RUN python -m pip install --upgrade pip &&  \
     pip install setuptools && \
@@ -18,9 +19,12 @@ RUN python -m pip install --upgrade pip &&  \
     pip install conan
 
 ADD requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt /tmp/
-RUN pip wheel --wheel-dir=/wheels -i ${PYTHON_INDEX} -r /tmp/requirements.txt && \
-    pip wheel --wheel-dir=/wheels -i ${PYTHON_INDEX} -r /tmp/requirements-dev.txt && \
-    pip wheel --wheel-dir=/wheels -i ${PYTHON_INDEX} -r /tmp/requirements-ci.txt
+RUN pip wheel --wheel-dir=/wheels --no-cache-dir -i ${PYTHON_INDEX} \
+        -r /tmp/requirements.txt \
+        -r /tmp/requirements-dev.txt \
+        -r /tmp/requirements-ci.txt && \
+    pip wheel --wheel-dir=/wheels -i ${PYTHON_INDEX} "six>=1.11" && \
+    rm -rf  /root/.cache
 
 FROM python:${PYTHON_VERSION}
 ARG USER_ID=1000

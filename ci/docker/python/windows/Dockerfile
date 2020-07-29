@@ -1,26 +1,27 @@
 # escape=`
-#ARG PYTHON_VERSION=3.7
-ARG PYTHON_DOCKER_IMAGE_BASE=python:3.7
-FROM ${PYTHON_DOCKER_IMAGE_BASE} as certsgen
+ARG PYTHON_VERSION=3.7
+FROM python:${PYTHON_VERSION} as certsgen
 RUN certutil -generateSSTFromWU roots.sst
 
-FROM ${PYTHON_DOCKER_IMAGE_BASE} as wheel_maker
+FROM python:${PYTHON_VERSION} as wheel_maker
 RUN python -m pip install pip --upgrade ;`
     pip install setuptools --upgrade ; `
     pip install wheel
 
-COPY requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt c:/temp/
+COPY requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt ci/docker/python/shared/requirements-extra.txt c:/temp/
 
 RUN pip wheel --wheel-dir c:\wheels `
-    --extra-index-url https://devpi.library.illinois.edu/production/release `
-    -r c:\temp\requirements.txt `
-    -r c:\temp\requirements-dev.txt ; `
+        --extra-index-url https://devpi.library.illinois.edu/production/release `
+        -r c:\temp\requirements.txt `
+        -r c:\temp\requirements-dev.txt ; `
     pip wheel --wheel-dir c:\wheels `
-    --extra-index-url https://devpi.library.illinois.edu/production/release `
-    -r c:\temp\requirements-ci.txt
+        --extra-index-url https://devpi.library.illinois.edu/production/release `
+        -r c:\temp\requirements-ci.txt ; `
+    pip wheel --wheel-dir c:\wheels `
+        --extra-index-url https://devpi.library.illinois.edu/production/release `
+        -r c:\temp\requirements-extra.txt
 
-
-FROM ${PYTHON_DOCKER_IMAGE_BASE}
+FROM python:${PYTHON_VERSION}
 COPY --from=certsgen c:/roots.sst roots.sst
 RUN certutil -addstore -f root roots.sst ; `
     del roots.sst
