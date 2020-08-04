@@ -1007,12 +1007,32 @@ pipeline {
                 stages{
                     stage("Testing sdist Package"){
                         steps{
+                            cleanWs(
+                                notFailBuild: true,
+                                deleteDirs: true,
+                                disableDeferredWipeout: true,
+                                patterns: [
+                                        [pattern: '.git/**', type: 'EXCLUDE'],
+                                        [pattern: 'tests/**', type: 'EXCLUDE'],
+                                        [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                    ]
+                            )
                             unstash "PYTHON_PACKAGES"
                             testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['sdist']}")
                         }
                     }
                     stage("Testing bdist_wheel Package"){
                         steps{
+                            cleanWs(
+                                notFailBuild: true,
+                                deleteDirs: true,
+                                disableDeferredWipeout: true,
+                                patterns: [
+                                        [pattern: '.git/**', type: 'EXCLUDE'],
+                                        [pattern: 'tests/**', type: 'EXCLUDE'],
+                                        [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                    ]
+                            )
                             unstash "PYTHON_PACKAGES"
                             testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
                         }
