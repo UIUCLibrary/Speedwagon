@@ -655,7 +655,7 @@ pipeline {
                                 dockerfile {
                                     filename 'ci/docker/python/linux/Dockerfile'
                                     label 'linux && docker'
-                                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                  }
                             }
                             steps{
@@ -679,14 +679,13 @@ pipeline {
             }
         }
         stage('Build') {
-
             parallel {
                 stage("Building Python Library"){
                     agent {
                         dockerfile {
                             filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                           }
                     }
                     steps {
@@ -764,7 +763,7 @@ pipeline {
                 dockerfile {
                     filename 'ci/docker/python/linux/Dockerfile'
                     label 'linux && docker'
-                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                   }
             }
             stages{
@@ -959,7 +958,7 @@ pipeline {
                 dockerfile {
                     filename 'ci/docker/python/linux/Dockerfile'
                     label 'linux && docker'
-                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                   }
             }
             steps{
@@ -1199,7 +1198,7 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux&&docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                           }
                     }
                     steps {
@@ -1271,7 +1270,7 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                           }
                     }
                     input {
@@ -1295,7 +1294,7 @@ pipeline {
                 success{
                     node('linux && docker') {
                        script{
-                            docker.build("speedwagon:devpi",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("speedwagon:devpi",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
                                 unstash "DIST-INFO"
                                 def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                 sh(label: "Connecting to DevPi Server",
@@ -1312,7 +1311,7 @@ pipeline {
                 cleanup{
                     node('linux && docker') {
                        script{
-                            docker.build("speedwagon:devpi",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("speedwagon:devpi",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
                                 unstash "DIST-INFO"
                                 def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                 sh(
@@ -1336,7 +1335,7 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/Dockerfile'
                             label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         }
                     }
                     when{
