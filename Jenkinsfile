@@ -731,7 +731,7 @@ pipeline {
                     }
                     post{
                         always{
-                            recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')], skipPublishingChecks: true)
+                            recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
                             stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
                         }
                         success{
