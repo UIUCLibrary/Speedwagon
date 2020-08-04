@@ -42,14 +42,12 @@ RUN apt update -y && apt install -y libgl1-mesa-glx
 
 COPY --from=wheel_builder /wheels /wheels/
 ADD requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt /tmp/
-#ENV PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
-#ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"
 
-RUN pip install --no-index --find-links=/wheels \
-    -r /tmp/requirements.txt \
-    -r /tmp/requirements-dev.txt \
-    -r /tmp/requirements-ci.txt
-
+RUN  python -m pip install --upgrade pip && \
+    pip install --no-index --find-links=/wheels \
+        -r /tmp/requirements.txt \
+        -r /tmp/requirements-dev.txt \
+        -r /tmp/requirements-ci.txt
 
 ENV PIP_FIND_LINKS=/wheels
 USER user
