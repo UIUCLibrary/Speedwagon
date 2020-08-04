@@ -812,7 +812,7 @@ pipeline {
                             }
                             post{
                                 always {
-                                    recordIssues(tools: [sphinxBuild(id: 'doctest', pattern: 'logs/doctest.txt')])
+                                    recordIssues(tools: [sphinxBuild(id: 'doctest', name: 'Doctest', pattern: 'logs/doctest.txt')])
                                 }
                             }
                         }
