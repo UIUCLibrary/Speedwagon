@@ -13,12 +13,12 @@ RUN python -m pip install pip --upgrade ;`
 
 COPY requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt ci/docker/python/shared/requirements-extra.txt c:/temp/
 
-RUN pip wheel --wheel-dir c:\wheels `
+RUN pip wheel --wheel-dir c:\wheels --no-cache-dir `
         -r c:\temp\requirements.txt `
         -r c:\temp\requirements-dev.txt ; `
-    pip wheel --wheel-dir c:\wheels `
+    pip wheel --wheel-dir c:\wheels  --no-cache-dir `
         -r c:\temp\requirements-ci.txt ; `
-    pip wheel --wheel-dir c:\wheels `
+    pip wheel --wheel-dir c:\wheels  --no-cache-dir `
         -r c:\temp\requirements-extra.txt
 
 FROM python:${PYTHON_VERSION}
