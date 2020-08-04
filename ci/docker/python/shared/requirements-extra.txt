@@ -1,1 +1,3 @@
 PyQt5
+ruamel.yaml
+six>=1.11
