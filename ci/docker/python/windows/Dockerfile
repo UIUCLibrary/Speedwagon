@@ -4,6 +4,9 @@ FROM python:${PYTHON_VERSION} as certsgen
 RUN certutil -generateSSTFromWU roots.sst
 
 FROM python:${PYTHON_VERSION} as wheel_maker
+ARG PIP_EXTRA_INDEX_URL
+ARG PIP_TRUSTED_HOST
+ARG PIP_INDEX_URL
 RUN python -m pip install pip --upgrade ;`
     pip install setuptools --upgrade ; `
     pip install wheel
@@ -11,14 +14,11 @@ RUN python -m pip install pip --upgrade ;`
 COPY requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt ci/docker/python/shared/requirements-extra.txt c:/temp/
 
 RUN pip wheel --wheel-dir c:\wheels `
-        --extra-index-url https://devpi.library.illinois.edu/production/release `
         -r c:\temp\requirements.txt `
         -r c:\temp\requirements-dev.txt ; `
     pip wheel --wheel-dir c:\wheels `
-        --extra-index-url https://devpi.library.illinois.edu/production/release `
         -r c:\temp\requirements-ci.txt ; `
     pip wheel --wheel-dir c:\wheels `
-        --extra-index-url https://devpi.library.illinois.edu/production/release `
         -r c:\temp\requirements-extra.txt
 
 FROM python:${PYTHON_VERSION}
@@ -29,8 +29,6 @@ RUN certutil -addstore -f root roots.sst ; `
 RUN python -m pip install pip --upgrade ; `
     pip install setuptools --upgrade
 
-ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"
-
 COPY --from=wheel_maker c:\wheels\ c:\wheels\
 
 COPY requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt c:/temp/
@@ -39,5 +37,3 @@ RUN pip install --no-index --find-links c:\wheels `
     -r c:\temp\requirements.txt `
     -r c:\temp\requirements-dev.txt `
     -r c:\temp\requirements-ci.txt
-
-ENV PIP_EXTRA_INDEX_URL https://devpi.library.illinois.edu/production/release
