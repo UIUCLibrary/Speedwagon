@@ -45,7 +45,7 @@ ADD requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-c
 ENV PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
 ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"
 
-RUN pip install --no-index --find-links=/wheels --verbose \
+RUN pip install --no-index --find-links=/wheels \
     -r /tmp/requirements.txt \
     -r /tmp/requirements-dev.txt \
     -r /tmp/requirements-ci.txt
