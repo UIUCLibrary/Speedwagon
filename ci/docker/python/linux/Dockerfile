@@ -31,7 +31,8 @@ ARG USER_ID=1000
 ARG GROUP_ID=1000
 
 RUN groupadd -g $GROUP_ID user && \
-    useradd -u $USER_ID -s /bin/sh -m -d /home/user -g user user
+    useradd -u $USER_ID -s /bin/sh -m -d /home/user -g user user && \
+    mkdir -p /.cache/pip && chown -R user /.cache/pip
 
 COPY --from=wheel_builder /tmp/install_cmake.sh /tmp/install_cmake.sh
 RUN chmod +x /tmp/install_cmake.sh  && \
@@ -44,10 +45,11 @@ ADD requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-c
 ENV PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
 ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"
 
-RUN pip install --no-index --find-links=/wheels \
+RUN pip install --no-index --find-links=/wheels --verbose \
     -r /tmp/requirements.txt \
     -r /tmp/requirements-dev.txt \
     -r /tmp/requirements-ci.txt
+
 
 ENV PIP_FIND_LINKS=/wheels
 USER user
