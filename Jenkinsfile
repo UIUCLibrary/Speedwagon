@@ -812,7 +812,7 @@ pipeline {
                             }
                             post{
                                 always {
-                                    recordIssues(tools: [sphinxBuild(id: 'doctest', pattern: 'logs/doctest.txt')])
+                                    recordIssues(tools: [sphinxBuild(id: 'doctest', name: 'Doctest', pattern: 'logs/doctest.txt')])
                                 }
                             }
                         }
@@ -1008,12 +1008,34 @@ pipeline {
                 stages{
                     stage("Testing sdist Package"){
                         steps{
+                            cleanWs(
+                                notFailBuild: true,
+                                deleteDirs: true,
+                                disableDeferredWipeout: true,
+                                patterns: [
+                                        [pattern: 'features/', type: 'EXCLUDE'],
+                                        [pattern: '.git/**', type: 'EXCLUDE'],
+                                        [pattern: 'tests/**', type: 'EXCLUDE'],
+                                        [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                    ]
+                            )
                             unstash "PYTHON_PACKAGES"
                             testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['sdist']}")
                         }
                     }
                     stage("Testing bdist_wheel Package"){
                         steps{
+                            cleanWs(
+                                notFailBuild: true,
+                                deleteDirs: true,
+                                disableDeferredWipeout: true,
+                                patterns: [
+                                        [pattern: 'features/', type: 'EXCLUDE'],
+                                        [pattern: '.git/**', type: 'EXCLUDE'],
+                                        [pattern: 'tests/**', type: 'EXCLUDE'],
+                                        [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                    ]
+                            )
                             unstash "PYTHON_PACKAGES"
                             testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
                         }
