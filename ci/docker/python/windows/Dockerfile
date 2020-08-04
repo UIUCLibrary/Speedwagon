@@ -37,3 +37,4 @@ RUN pip install --no-index --find-links c:\wheels `
     -r c:\temp\requirements.txt `
     -r c:\temp\requirements-dev.txt `
     -r c:\temp\requirements-ci.txt
+ENV PIP_FIND_LINKS=c:\wheels
