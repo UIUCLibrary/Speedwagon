@@ -909,10 +909,12 @@ pipeline {
         }
         stage("Run Sonarqube Analysis"){
             agent {
-              dockerfile {
-                filename 'ci/docker/sonarcloud/Dockerfile'
-                label 'linux && docker'
-              }
+                dockerfile {
+                    filename 'ci/docker/python/linux/Dockerfile'
+                    label 'linux && docker'
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                    args '--mount source=sonar-cache-ocr,target=/home/user/.sonar/cache'
+                }
             }
             options{
                 lock("speedwagon-sonarscanner")
