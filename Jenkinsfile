@@ -549,9 +549,7 @@ def runSonarScanner(propsFile){
     if (env.CHANGE_ID){
         sh(
             label: "Running Sonar Scanner",
-            script:"""git fetch --all
-                      sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}
-                      """
+            script:"sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
             )
     } else {
         sh(
@@ -909,10 +907,12 @@ pipeline {
         }
         stage("Run Sonarqube Analysis"){
             agent {
-              dockerfile {
-                filename 'ci/docker/sonarcloud/Dockerfile'
-                label 'linux && docker'
-              }
+                dockerfile {
+                    filename 'ci/docker/python/linux/Dockerfile'
+                    label 'linux && docker'
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                    args '--mount source=sonar-cache-speedwagon,target=/home/user/.sonar/cache'
+                }
             }
             options{
                 lock("speedwagon-sonarscanner")
