@@ -927,282 +927,286 @@ pipeline {
                 }
             }
         }
-        stage("Packaging sdist and wheel"){
-            agent {
-                dockerfile {
-                    filename 'ci/docker/python/linux/Dockerfile'
-                    label 'linux && docker'
-                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                  }
-            }
-            steps{
-                timeout(5){
-                    sh script: 'python -m pep517.build .'
-                }
-            }
-            post{
-                always{
-                    stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
-                }
-                cleanup{
-                    cleanWs(
-                        deleteDirs: true,
-                        patterns: [
-                            [pattern: 'source', type: 'EXCLUDE']
-                            ]
-                        )
-                }
-            }
-        }
-        stage("Test Mac"){
-            agent {
-                label 'mac'
-            }
-            when{
-                equals expected: true, actual: params.TEST_PACKAGES_ON_MAC
-                beforeAgent true
-            }
-            steps{
-                sh(
-                    label:"Installing tox",
-                    script: """python3 -m venv venv
-                               venv/bin/python -m pip install pip --upgrade
-                               venv/bin/python -m pip install wheel
-                               venv/bin/python -m pip install --upgrade setuptools
-                               venv/bin/python -m pip install tox
-                               """
-                    )
-                unstash "PYTHON_PACKAGES"
-                script{
-                    findFiles(glob: "dist/*.tar.gz,dist/*.zip").each{
-                        sh(
-                            label: "Testing ${it}",
-                            script: "venv/bin/tox --installpkg=${it.path} -e py -vv --recreate"
-                        )
-                    }
-                }
-            }
-            post{
-                cleanup{
-                    cleanWs(
-                        deleteDirs: true,
-                        patterns: [
-                            [pattern: 'venv/', type: 'INCLUDE'],
-                        ]
-                    )
-                }
-            }
-        }
-        stage('Testing all Package') {
-            matrix{
-                agent {
-                    dockerfile {
-                        filename "ci/docker/python/${PLATFORM}/Dockerfile"
-                        label "${PLATFORM} && docker"
-                        additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
-                    }
-                }
-                axes{
-                    axis {
-                        name "PYTHON_VERSION"
-                        values(
-                            "3.7",
-                            "3.8"
-                        )
-                    }
-                    axis {
-                        name "PLATFORM"
-                        values(
-                            'linux',
-                            'windows'
-                        )
-                    }
-                }
-                stages{
-                    stage("Testing sdist Package"){
-                        steps{
-                            cleanWs(
-                                notFailBuild: true,
-                                deleteDirs: true,
-                                disableDeferredWipeout: true,
-                                patterns: [
-                                        [pattern: 'features/', type: 'EXCLUDE'],
-                                        [pattern: '.git/**', type: 'EXCLUDE'],
-                                        [pattern: 'tests/**', type: 'EXCLUDE'],
-                                        [pattern: 'tox.ini', type: 'EXCLUDE'],
-                                    ]
-                            )
-                            unstash "PYTHON_PACKAGES"
-                            testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['sdist']}")
-                        }
-                    }
-                    stage("Testing bdist_wheel Package"){
-                        steps{
-                            cleanWs(
-                                notFailBuild: true,
-                                deleteDirs: true,
-                                disableDeferredWipeout: true,
-                                patterns: [
-                                        [pattern: 'features/', type: 'EXCLUDE'],
-                                        [pattern: '.git/**', type: 'EXCLUDE'],
-                                        [pattern: 'tests/**', type: 'EXCLUDE'],
-                                        [pattern: 'tox.ini', type: 'EXCLUDE'],
-                                    ]
-                            )
-                            unstash "PYTHON_PACKAGES"
-                            testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
-                        }
-                    }
-                }
-            }
-         }
-        stage("Windows Standalone"){
-            when{
-                anyOf{
-                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
-                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
-                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
-                    equals expected: true, actual: params.DEPLOY_CHOLOCATEY
-                }
-                beforeAgent true
-            }
-            environment {
-                build_number = get_build_number()
-                PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
-                PIP_TRUSTED_HOST="devpi.library.illinois.edu"
-            }
-
+        stage("Packaging"){
             stages{
-                stage("CMake Build"){
+                stage("Packaging sdist and wheel"){
                     agent {
                         dockerfile {
-                            filename 'ci/docker/windows_standalone/Dockerfile'
-                            label 'Windows&&Docker'
-                            args "-u ContainerAdministrator"
-                            additionalBuildArgs "${get_build_args()}"
+                            filename 'ci/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                           }
                     }
-                    steps {
-                        build_standalone()
+                    steps{
+                        timeout(5){
+                            sh script: 'python -m pep517.build .'
+                        }
                     }
-                    post {
-                        success{
-                            archiveArtifacts artifacts: "dist/*.msi,dist/*.exe,dist/*.zip", fingerprint: true
-                        }
-                        failure {
-                            archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log,dist/**/*.wxs"
-                        }
+                    post{
                         always{
-                            stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
+                            stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
                         }
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
-                                notFailBuild: true
-                            )
-                        }
-                    }
-                }
-                stage("Testing MSI Install"){
-                    agent {
-                      docker {
-                        args '-u ContainerAdministrator'
-                        image 'mcr.microsoft.com/windows/servercore:ltsc2019'
-                        label 'Windows&&Docker'
-                      }
-                    }
-
-                    when{
-                        anyOf{
-                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
-                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                            equals expected: true, actual: params.DEPLOY_CHOLOCATEY
-                        }
-                        beforeAgent true
-                    }
-                    options{
-                        skipDefaultCheckout(true)
-                    }
-                    steps{
-                        timeout(15){
-                            unstash 'STANDALONE_INSTALLERS'
-                            script{
-                                def msi_file = findFiles(glob: "dist/*.msi")[0].path
-                                powershell "New-Item -ItemType Directory -Force -Path logs; Write-Host \"Installing ${msi_file}\"; msiexec /i ${msi_file} /qn /norestart /L*v! logs\\msiexec.log"
-                            }
-                        }
-                    }
-                    post {
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                notFailBuild: true
-                            )
-                        }
-                    }
-                }
-                stage("Package MSI for Chocolatey"){
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/chocolatey/Dockerfile'
-                            label 'Windows&&Docker'
-                          }
-                    }
-                    when{
-                        anyOf{
-                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
-                            equals expected: true, actual: params.DEPLOY_CHOLOCATEY
-                        }
-                        beforeAgent true
-                    }
-                    steps{
-                        unstash 'STANDALONE_INSTALLERS'
-                        timeout(15){
-                            script{
-                                make_chocolatey_distribution(
-                                    findFiles(glob: "dist/*.msi")[0],
-                                    get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA"),
-                                    "chocolatey_package"
-                                    )
-                            }
-                        }
-                    }
-                    post {
-                        success{
-                            stash includes: "chocolatey_package/speedwagon/*.nupkg", name: "CHOCOLATEY_PACKAGE"
-                            archiveArtifacts(
-                                allowEmptyArchive: true,
-                                artifacts: "chocolatey_package/speedwagon/*.nupkg"
+                                patterns: [
+                                    [pattern: 'source', type: 'EXCLUDE']
+                                    ]
                                 )
                         }
+                    }
+                }
+                stage("Test Mac"){
+                    agent {
+                        label 'mac'
+                    }
+                    when{
+                        equals expected: true, actual: params.TEST_PACKAGES_ON_MAC
+                        beforeAgent true
+                    }
+                    steps{
+                        sh(
+                            label:"Installing tox",
+                            script: """python3 -m venv venv
+                                       venv/bin/python -m pip install pip --upgrade
+                                       venv/bin/python -m pip install wheel
+                                       venv/bin/python -m pip install --upgrade setuptools
+                                       venv/bin/python -m pip install tox
+                                       """
+                            )
+                        unstash "PYTHON_PACKAGES"
+                        script{
+                            findFiles(glob: "dist/*.tar.gz,dist/*.zip").each{
+                                sh(
+                                    label: "Testing ${it}",
+                                    script: "venv/bin/tox --installpkg=${it.path} -e py -vv --recreate"
+                                )
+                            }
+                        }
+                    }
+                    post{
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
-                                notFailBuild: true
+                                patterns: [
+                                    [pattern: 'venv/', type: 'INCLUDE'],
+                                ]
                             )
                         }
                     }
                 }
-                stage("Testing Chocolatey Package: Install"){
+                stage('Testing all Package') {
+                    matrix{
+                        agent {
+                            dockerfile {
+                                filename "ci/docker/python/${PLATFORM}/Dockerfile"
+                                label "${PLATFORM} && docker"
+                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                            }
+                        }
+                        axes{
+                            axis {
+                                name "PYTHON_VERSION"
+                                values(
+                                    "3.7",
+                                    "3.8"
+                                )
+                            }
+                            axis {
+                                name "PLATFORM"
+                                values(
+                                    'linux',
+                                    'windows'
+                                )
+                            }
+                        }
+                        stages{
+                            stage("Testing sdist Package"){
+                                steps{
+                                    cleanWs(
+                                        notFailBuild: true,
+                                        deleteDirs: true,
+                                        disableDeferredWipeout: true,
+                                        patterns: [
+                                                [pattern: 'features/', type: 'EXCLUDE'],
+                                                [pattern: '.git/**', type: 'EXCLUDE'],
+                                                [pattern: 'tests/**', type: 'EXCLUDE'],
+                                                [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                            ]
+                                    )
+                                    unstash "PYTHON_PACKAGES"
+                                    testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['sdist']}")
+                                }
+                            }
+                            stage("Testing bdist_wheel Package"){
+                                steps{
+                                    cleanWs(
+                                        notFailBuild: true,
+                                        deleteDirs: true,
+                                        disableDeferredWipeout: true,
+                                        patterns: [
+                                                [pattern: 'features/', type: 'EXCLUDE'],
+                                                [pattern: '.git/**', type: 'EXCLUDE'],
+                                                [pattern: 'tests/**', type: 'EXCLUDE'],
+                                                [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                            ]
+                                    )
+                                    unstash "PYTHON_PACKAGES"
+                                    testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
+                                }
+                            }
+                        }
+                    }
+                 }
+                stage("Windows Standalone"){
                     when{
                         anyOf{
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
                             equals expected: true, actual: params.DEPLOY_CHOLOCATEY
                         }
                         beforeAgent true
                     }
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/chocolatey/Dockerfile'
-                            args '-u ContainerAdministrator'
-                            label 'Windows&&Docker'
-                          }
+                    environment {
+                        build_number = get_build_number()
+                        PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
+                        PIP_TRUSTED_HOST="devpi.library.illinois.edu"
                     }
-                    steps{
-                        unstash "CHOCOLATEY_PACKAGE"
-                        bat 'choco install speedwagon -y --pre -dv -s %WORKSPACE%\\chocolatey_package\\speedwagon'
-                        bat "speedwagon --version"
+
+                    stages{
+                        stage("CMake Build"){
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/windows_standalone/Dockerfile'
+                                    label 'Windows&&Docker'
+                                    args "-u ContainerAdministrator"
+                                    additionalBuildArgs "${get_build_args()}"
+                                  }
+                            }
+                            steps {
+                                build_standalone()
+                            }
+                            post {
+                                success{
+                                    archiveArtifacts artifacts: "dist/*.msi,dist/*.exe,dist/*.zip", fingerprint: true
+                                }
+                                failure {
+                                    archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log,dist/**/*.wxs"
+                                }
+                                always{
+                                    stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
+                                }
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        notFailBuild: true
+                                    )
+                                }
+                            }
+                        }
+                        stage("Testing MSI Install"){
+                            agent {
+                              docker {
+                                args '-u ContainerAdministrator'
+                                image 'mcr.microsoft.com/windows/servercore:ltsc2019'
+                                label 'Windows&&Docker'
+                              }
+                            }
+
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                    equals expected: true, actual: params.DEPLOY_CHOLOCATEY
+                                }
+                                beforeAgent true
+                            }
+                            options{
+                                skipDefaultCheckout(true)
+                            }
+                            steps{
+                                timeout(15){
+                                    unstash 'STANDALONE_INSTALLERS'
+                                    script{
+                                        def msi_file = findFiles(glob: "dist/*.msi")[0].path
+                                        powershell "New-Item -ItemType Directory -Force -Path logs; Write-Host \"Installing ${msi_file}\"; msiexec /i ${msi_file} /qn /norestart /L*v! logs\\msiexec.log"
+                                    }
+                                }
+                            }
+                            post {
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        notFailBuild: true
+                                    )
+                                }
+                            }
+                        }
+                        stage("Package MSI for Chocolatey"){
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/chocolatey/Dockerfile'
+                                    label 'Windows&&Docker'
+                                  }
+                            }
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
+                                    equals expected: true, actual: params.DEPLOY_CHOLOCATEY
+                                }
+                                beforeAgent true
+                            }
+                            steps{
+                                unstash 'STANDALONE_INSTALLERS'
+                                timeout(15){
+                                    script{
+                                        make_chocolatey_distribution(
+                                            findFiles(glob: "dist/*.msi")[0],
+                                            get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA"),
+                                            "chocolatey_package"
+                                            )
+                                    }
+                                }
+                            }
+                            post {
+                                success{
+                                    stash includes: "chocolatey_package/speedwagon/*.nupkg", name: "CHOCOLATEY_PACKAGE"
+                                    archiveArtifacts(
+                                        allowEmptyArchive: true,
+                                        artifacts: "chocolatey_package/speedwagon/*.nupkg"
+                                        )
+                                }
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        notFailBuild: true
+                                    )
+                                }
+                            }
+                        }
+                        stage("Testing Chocolatey Package: Install"){
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
+                                    equals expected: true, actual: params.DEPLOY_CHOLOCATEY
+                                }
+                                beforeAgent true
+                            }
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/chocolatey/Dockerfile'
+                                    args '-u ContainerAdministrator'
+                                    label 'Windows&&Docker'
+                                  }
+                            }
+                            steps{
+                                unstash "CHOCOLATEY_PACKAGE"
+                                bat 'choco install speedwagon -y --pre -dv -s %WORKSPACE%\\chocolatey_package\\speedwagon'
+                                bat "speedwagon --version"
+                            }
+                        }
                     }
                 }
             }
