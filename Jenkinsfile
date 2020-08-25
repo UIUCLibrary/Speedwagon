@@ -678,31 +678,31 @@ pipeline {
         }
         stage('Build') {
             parallel {
-                stage("Building Python Library"){
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/Dockerfile'
-                            label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                          }
-                    }
-                    steps {
-                        sh '''mkdir -p logs
-                              python setup.py build -b build
-                              '''
-                    }
-                    post{
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                notFailBuild: true
-                            )
-                        }
-                        success{
-                            stash includes: "build/lib/**", name: 'PYTHON_BUILD_FILES'
-                        }
-                    }
-                }
+//                 stage("Building Python Library"){
+//                     agent {
+//                         dockerfile {
+//                             filename 'ci/docker/python/linux/Dockerfile'
+//                             label 'linux && docker'
+//                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+//                           }
+//                     }
+//                     steps {
+//                         sh '''mkdir -p logs
+//                               python setup.py build -b build
+//                               '''
+//                     }
+//                     post{
+//                         cleanup{
+//                             cleanWs(
+//                                 deleteDirs: true,
+//                                 notFailBuild: true
+//                             )
+//                         }
+//                         success{
+//                             stash includes: "build/lib/**", name: 'PYTHON_BUILD_FILES'
+//                         }
+//                     }
+//                 }
                 stage("Build Sphinx Documentation"){
                     agent {
                         dockerfile {
@@ -997,7 +997,6 @@ pipeline {
             }
             steps{
                 timeout(5){
-                    unstash "PYTHON_BUILD_FILES"
                     sh script: 'python -m pep517.build .'
                 }
             }
