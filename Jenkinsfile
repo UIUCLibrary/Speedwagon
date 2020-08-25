@@ -980,7 +980,8 @@ pipeline {
                             )
                         unstash "PYTHON_PACKAGES"
                         script{
-                            findFiles(glob: "dist/*.tar.gz,dist/*.zip").each{
+                            findFiles(glob: "dist/*.whl").each{
+//                             findFiles(glob: "dist/*.tar.gz,dist/*.zip").each{
                                 sh(
                                     label: "Testing ${it}",
                                     script: "venv/bin/tox --installpkg=${it.path} -e py -vv --recreate"
