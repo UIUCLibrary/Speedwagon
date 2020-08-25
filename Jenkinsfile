@@ -815,10 +815,6 @@ pipeline {
                                     when{
                                         equals expected: true, actual: params.TEST_RUN_TOX
                                     }
-                                    environment {
-                                      PIP_TRUSTED_HOST = "devpi.library.illinois.edu"
-
-                                    }
                                     steps {
                                         sh "tox -e py -vv -i https://devpi.library.illinois.edu/production/release"
                                     }
