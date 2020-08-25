@@ -927,6 +927,34 @@ pipeline {
                 }
             }
         }
+
+        stage("Packaging sdist and wheel"){
+            agent {
+                dockerfile {
+                    filename 'ci/docker/python/linux/Dockerfile'
+                    label 'linux && docker'
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                  }
+            }
+            steps{
+                timeout(5){
+                    sh script: 'python -m pep517.build .'
+                }
+            }
+            post{
+                always{
+                    stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
+                }
+                cleanup{
+                    cleanWs(
+                        deleteDirs: true,
+                        patterns: [
+                            [pattern: 'source', type: 'EXCLUDE']
+                            ]
+                        )
+                }
+            }
+        }
         stage("Test Mac"){
             agent {
                 label 'mac'
@@ -959,33 +987,6 @@ pipeline {
                             [pattern: 'venv/', type: 'INCLUDE'],
                         ]
                     )
-                }
-            }
-        }
-        stage("Packaging sdist and wheel"){
-            agent {
-                dockerfile {
-                    filename 'ci/docker/python/linux/Dockerfile'
-                    label 'linux && docker'
-                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                  }
-            }
-            steps{
-                timeout(5){
-                    sh script: 'python -m pep517.build .'
-                }
-            }
-            post{
-                always{
-                    stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
-                }
-                cleanup{
-                    cleanWs(
-                        deleteDirs: true,
-                        patterns: [
-                            [pattern: 'source', type: 'EXCLUDE']
-                            ]
-                        )
                 }
             }
         }
