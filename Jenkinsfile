@@ -995,6 +995,7 @@ pipeline {
                                 deleteDirs: true,
                                 patterns: [
                                     [pattern: 'venv/', type: 'INCLUDE'],
+                                    [pattern: '.tox/', type: 'INCLUDE'],
                                 ]
                             )
                         }
