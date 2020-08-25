@@ -952,6 +952,41 @@ pipeline {
                 }
             }
         }
+        stage("Test Mac"){
+            agent {
+                label 'mac'
+            }
+            steps{
+                sh(
+                    label:"Installing tox",
+                    script: """python3 -m venv venv
+                               venv/bin/python -m pip install pip --upgrade
+                               venv/bin/python -m pip install wheel
+                               venv/bin/python -m pip install --upgrade setuptools
+                               venv/bin/python -m pip install tox
+                               """
+                    )
+                unstash "PYTHON_PACKAGES"
+                script{
+                    findFiles(glob: "dist/*.tar.gz,dist/*.zip").each{
+                        sh(
+                            label: "Testing ${it}",
+                            script: "venv/bin/tox --installpkg=${it.path} -e py -vv --recreate"
+                        )
+                    }
+                }
+            }
+            post{
+                cleanup{
+                    cleanWs(
+                        deleteDirs: true,
+                        patterns: [
+                            [pattern: 'venv/', type: 'INCLUDE'],
+                        ]
+                    )
+                }
+            }
+        }
         stage("Packaging sdist and wheel"){
             agent {
                 dockerfile {
