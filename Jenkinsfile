@@ -946,14 +946,6 @@ pipeline {
                         always{
                             stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
                         }
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: 'source', type: 'EXCLUDE']
-                                    ]
-                                )
-                        }
                     }
                 }
                 stage("Test Mac"){
