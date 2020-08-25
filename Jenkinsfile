@@ -609,6 +609,7 @@ pipeline {
     agent none
     parameters {
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
+        booleanParam(name: "RUN_CHECKS", defaultValue: true, description: "Run checks on code")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: "USE_SONARQUBE", defaultValue: true, description: "Send data test data to SonarQube")
 
@@ -728,6 +729,9 @@ pipeline {
             }
         }
         stage("Checks"){
+            when{
+                equals expected: true, actual: params.RUN_CHECKS
+            }
             stages{
                 stage("Test") {
                     agent {
@@ -927,7 +931,6 @@ pipeline {
                 }
             }
         }
-
         stage("Packaging sdist and wheel"){
             agent {
                 dockerfile {
