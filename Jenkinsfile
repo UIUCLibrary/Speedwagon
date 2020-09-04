@@ -1021,6 +1021,7 @@ pipeline {
                                         [pattern: '.git/**', type: 'EXCLUDE'],
                                         [pattern: 'tests/**', type: 'EXCLUDE'],
                                         [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                        [pattern: 'setup.cfg', type: 'EXCLUDE'],
                                     ]
                             )
                             unstash "PYTHON_PACKAGES"
@@ -1038,6 +1039,7 @@ pipeline {
                                         [pattern: '.git/**', type: 'EXCLUDE'],
                                         [pattern: 'tests/**', type: 'EXCLUDE'],
                                         [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                        [pattern: 'setup.cfg', type: 'EXCLUDE'],
                                     ]
                             )
                             unstash "PYTHON_PACKAGES"
