@@ -934,12 +934,12 @@ pipeline {
                     }
                     timeout(60){
                         def sonarqube_result = waitForQualityGate(abortPipeline: false)
+                        if (sonarqube_result.status != 'OK') {
+                            unstable "SonarQube quality gate: ${sonarqube_result.status}"
+                        }
+                        def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
+                        writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
                     }
-                    if (sonarqube_result.status != 'OK') {
-                        unstable "SonarQube quality gate: ${sonarqube_result.status}"
-                    }
-                    def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
-                    writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
                 }
             }
             post {
