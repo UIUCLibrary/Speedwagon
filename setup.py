@@ -4,18 +4,13 @@ import sys
 from setuptools import setup
 sys.path.insert(0, os.path.dirname(__file__))
 import extra_commands
-
-try:
-    from pyqt_distutils.build_ui import build_ui
-    cmdclass = {
-        "build_ui": build_ui,
-        "build_py": extra_commands.CustomBuildPy,
-        "clean": extra_commands.Clean,
-        # "build_py": extra_commands.build_py,
-    }
-
-except ImportError:
-    cmdclass = {}
+from pyqt_distutils.build_ui import build_ui
+cmdclass = {
+    "build_ui": build_ui,
+    "build_py": extra_commands.CustomBuildPy,
+    "clean": extra_commands.Clean,
+    # "build_py": extra_commands.build_py,
+}
 
 cmdclass['dl_tessdata'] = extra_commands.TesseractData
 

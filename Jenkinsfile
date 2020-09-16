@@ -615,7 +615,10 @@ node('linux && docker') {
                         sh(
                            label: "Running setup.py with dist_info",
                            script: """python --version
-                                      python setup.py dist_info
+                                      python -m venv venv
+                                      venv/bin/python -m pip install pip --upgrade
+                                      venv/bin/pip install pyqt_distutils wheel
+                                      venv/bin/python setup.py dist_info
                                    """
                         )
                         stash includes: "speedwagon.dist-info/**", name: 'DIST-INFO'
