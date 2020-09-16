@@ -1,4 +1,5 @@
 import os
+import platform
 
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 
@@ -40,10 +41,17 @@ class SettingsDialog(QtWidgets.QDialog):
         self.tabsWidget.addTab(tab, tab_name)
 
     def open_settings_dir(self):
-
         if self.settings_location is not None:
             print("Opening")
-            os.startfile(self.settings_location)
+            if platform.system() == "Windows":
+                os.startfile(self.settings_location)
+            elif platform.system() == "Darwin":
+                os.system("open {}".format(self.settings_location))
+            else:
+                msg = QtWidgets.QMessageBox(parent=self)
+                msg.setIcon(QtWidgets.QMessageBox.Warning)
+                msg.setText("Don't know how to do that on {}".format(platform.system()))
+                msg.show()
 
 
 class GlobalSettingsTab(QtWidgets.QWidget):
