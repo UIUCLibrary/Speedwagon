@@ -615,6 +615,8 @@ node('linux && docker') {
                         sh(
                            label: "Running setup.py with dist_info",
                            script: """python --version
+                                      python -m venv venv
+                                      source venv/bin/activate
                                       pip install pyqt_distutils
                                       python setup.py dist_info
                                    """
