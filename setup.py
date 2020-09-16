@@ -43,7 +43,7 @@ if __name__ == "__main__":
             "speedwagon.ui",
 
         ],
-        setup_requires=['pytest-runner'],
+        setup_requires=['pytest-runner','PyQt5', 'pyqt-distutils'],
         tests_require=['pytest', "behave", "pytest-qt"],
         python_requires=">=3.6",
 
