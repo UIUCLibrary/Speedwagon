@@ -1059,8 +1059,8 @@ pipeline {
                         stage("Creating dependencies wheels"){
                             agent {
                                 dockerfile {
-                                    filename "ci/docker/python/${PLATFORM}/Dockerfile"
-                                    label "${PLATFORM} && docker"
+                                    filename 'ci/docker/python/windows/Dockerfile'
+                                    label "windows && docker"
                                     additionalBuildArgs "--build-arg PYTHON_VERSION=3.8 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
                                 }
                             }
