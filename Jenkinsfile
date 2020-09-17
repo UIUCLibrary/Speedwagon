@@ -1551,6 +1551,70 @@ pipeline {
                         }
                     }
                 }
+                stage("Deploy to Chocolatey") {
+                    when{
+                        equals expected: true, actual: params.DEPLOY_CHOCOLATEY
+                        beforeInput true
+                        beforeAgent true
+                    }
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/chocolatey_package/Dockerfile'
+                            label 'windows && docker'
+                            additionalBuildArgs "--build-arg CHOCOLATEY_SOURCE"
+                          }
+                    }
+                    options{
+                        timeout(time: 1, unit: 'DAYS')
+                        retry(3)
+                    }
+                    input {
+                        message 'Deploy to Chocolatey server'
+                        id 'CHOCOLATEY_DEPLOYMENT'
+                        parameters {
+                            choice(
+                                choices: [
+                                    'https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-beta/',
+                                    'https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-public/'
+                                ],
+                                description: 'Chocolatey Server to deploy to',
+                                name: 'CHOCOLATEY_SERVER'
+                            )
+                        }
+                    }
+                    steps{
+                        unstash "CHOCOLATEY_PACKAGE"
+                        script{
+                            def pkgs = []
+                            findFiles(glob: "packages/*.nupkg").each{
+                                pkgs << it.path
+                            }
+                            def deployment_options = input(
+                                message: 'Chocolatey server',
+                                parameters: [
+                                    credentials(
+                                        credentialType: 'org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl',
+                                        defaultValue: 'NEXUS_NUGET_API_KEY',
+                                        description: 'Nuget API key for Chocolatey',
+                                        name: 'CHOCO_REPO_KEY',
+                                        required: true
+                                    ),
+                                    choice(
+                                        choices: pkgs,
+                                        description: 'Package to use',
+                                        name: 'NUPKG'
+                                    ),
+                                ]
+                            )
+                            withCredentials([string(credentialsId: deployment_options['CHOCO_REPO_KEY'], variable: 'KEY')]) {
+                                bat(
+                                    label: "Deploying ${deployment_options['NUPKG']} to Chocolatey",
+                                    script: "choco push ${deployment_options['NUPKG']} -s ${CHOCOLATEY_SERVER} -k %KEY%"
+                                )
+                            }
+                        }
+                    }
+                }
                 stage("Deploy Online Documentation") {
                     when{
                         equals expected: true, actual: params.DEPLOY_DOCS
