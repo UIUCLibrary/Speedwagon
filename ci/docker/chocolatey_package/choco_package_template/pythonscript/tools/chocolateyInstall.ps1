@@ -29,4 +29,10 @@ Install-ChocolateyShortcut `
   -WorkingDirectory "C:\" `
   -Description "This is the description"
 
+Install-ChocolateyShortcut `
+  -ShortcutFilePath "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\$packageName\Manual.lnk" `
+  -TargetPath "$installDir\documentation\$packageName.pdf" `
+  -WorkingDirectory "C:\" `
+  -Description "This is the description"
+
 Install-BinFile -Name $packageName -Path "$installDir\venv\Scripts\$packageName.exe"
