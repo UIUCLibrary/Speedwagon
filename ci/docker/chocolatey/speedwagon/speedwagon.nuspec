@@ -16,5 +16,6 @@
   </metadata>
   <files>
     <file src="tools\**" target="tools" />
+    <file src="deps\**" target="deps" />
   </files>
 </package>
