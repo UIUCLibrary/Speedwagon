@@ -1067,7 +1067,7 @@ pipeline {
                             steps{
                                 script {
                                    unstash "DIST-INFO"
-                                    def props = readProperties interpolate: true, file: 'speedwagon.dist-info.dist-info/METADATA'
+                                    def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                     unstash "PYTHON_PACKAGES"
                                     findFiles(glob: "dist/*.whl").each{
                                         echo "Doing something with ${it} for ${props.Version}"
