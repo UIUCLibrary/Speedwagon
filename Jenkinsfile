@@ -677,8 +677,62 @@ pipeline {
 //                 }
 //             }
 //         }
-        stage('Build') {
-            parallel {
+        stage("Build Sphinx Documentation"){
+            agent {
+                dockerfile {
+                    filename 'ci/docker/makepdf/lite/Dockerfile'
+                    label 'linux && docker'
+                }
+            }
+            steps {
+                sh(
+                    label: "Building HTML docs on ${env.NODE_NAME}",
+                    script: '''mkdir -p logs
+                               python setup.py build_ui
+                               python -m sphinx docs/source build/docs/html -d build/docs/.doctrees --no-color -w logs/build_sphinx.log
+                               '''
+                    )
+                    sh(label: "Building PDF docs on ${env.NODE_NAME}",
+                       script: '''python -m sphinx docs/source build/docs/latex -b latex -d build/docs/.doctrees --no-color -w logs/build_sphinx_latex.log
+                                  make -C build/docs/latex
+                                  mkdir -p dist/docs
+                                  mv build/docs/latex/*.pdf dist/docs/
+                                  '''
+                    )
+            }
+            post{
+                always{
+                    recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
+                    stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
+                }
+                success{
+                    unstash "DIST-INFO"
+                    script{
+                        def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+                        def DOC_ZIP_FILENAME = "${props.Name}-${props.Version}.doc.zip"
+                        zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
+                        stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
+                    }
+                    archiveArtifacts artifacts: 'dist/docs/*.pdf'
+                }
+                cleanup{
+                    cleanWs(
+                        notFailBuild: true,
+                        deleteDirs: true,
+                        patterns: [
+                            [pattern: "dist/", type: 'INCLUDE'],
+                            [pattern: 'build/', type: 'INCLUDE'],
+                            [pattern: "speedwagon.dist-info/", type: 'INCLUDE'],
+                        ]
+                    )
+                }
+            }
+        }
+        stage("Checks"){
+            when{
+                equals expected: true, actual: params.RUN_CHECKS
+            }
+            stages{
                 stage("Building Python Library"){
                     agent {
                         dockerfile {
@@ -704,64 +758,6 @@ pipeline {
                         }
                     }
                 }
-                stage("Build Sphinx Documentation"){
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/makepdf/lite/Dockerfile'
-                            label 'linux && docker'
-                        }
-                    }
-                    steps {
-                        sh(
-                            label: "Building HTML docs on ${env.NODE_NAME}",
-                            script: '''mkdir -p logs
-                                       python setup.py build_ui
-                                       python -m sphinx docs/source build/docs/html -d build/docs/.doctrees --no-color -w logs/build_sphinx.log
-                                       '''
-                            )
-                            sh(label: "Building PDF docs on ${env.NODE_NAME}",
-                               script: '''python -m sphinx docs/source build/docs/latex -b latex -d build/docs/.doctrees --no-color -w logs/build_sphinx_latex.log
-                                          make -C build/docs/latex
-                                          mkdir -p dist/docs
-                                          mv build/docs/latex/*.pdf dist/docs/
-                                          '''
-                            )
-                    }
-                    post{
-                        always{
-                            recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
-                            stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
-                        }
-                        success{
-                            unstash "DIST-INFO"
-                            script{
-                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
-                                def DOC_ZIP_FILENAME = "${props.Name}-${props.Version}.doc.zip"
-                                zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
-                                stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
-                            }
-                            archiveArtifacts artifacts: 'dist/docs/*.pdf'
-                        }
-                        cleanup{
-                            cleanWs(
-                                notFailBuild: true,
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: "dist/", type: 'INCLUDE'],
-                                    [pattern: 'build/', type: 'INCLUDE'],
-                                    [pattern: "speedwagon.dist-info/", type: 'INCLUDE'],
-                                ]
-                            )
-                        }
-                    }
-                }
-            }
-        }
-        stage("Checks"){
-            when{
-                equals expected: true, actual: params.RUN_CHECKS
-            }
-            stages{
                 stage("Test") {
                     agent {
                         dockerfile {
