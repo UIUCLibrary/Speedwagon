@@ -1056,6 +1056,23 @@ pipeline {
                         beforeInput true
                     }
                     stages{
+                        stage("Creating dependencies wheels"){
+                            agent {
+                                dockerfile {
+                                    filename "ci/docker/python/${PLATFORM}/Dockerfile"
+                                    label "${PLATFORM} && docker"
+                                    additionalBuildArgs "--build-arg PYTHON_VERSION=3.8 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                }
+                            }
+                            steps{
+                                unstash "PYTHON_PACKAGES"
+                                script{
+                                    findFiles(glob: "dist/*.whl").each{
+                                        bat "pip wheel ${it} -w .\\deps\\"
+                                    }
+                                }
+                            }
+                        }
                         stage("Package for Chocolatey"){
                             agent {
                                 dockerfile {
@@ -1077,7 +1094,6 @@ pipeline {
                                                        choco new speedwagon packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
                                                        New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
                                                        Move-Item -Path "${it.path}"  -Destination "./packages/speedwagon/${it.path}"  -Force | Out-Null
-                                                       python -m pip wheel ${it} -w ./packages/speedwagon/
                                                        choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages
                                                        """
                                         )
