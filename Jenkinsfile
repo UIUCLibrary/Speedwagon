@@ -1104,6 +1104,10 @@ pipeline {
                                             label: "Configuring new package for Chocolatey",
                                             script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
                                                        choco new speedwagon packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
+                                                       """
+                                        )
+                                        powershell(label: "Adding files to package for Chocolatey",
+                                                       script: """
                                                        New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
                                                        Move-Item -Path "${it.path}"  -Destination "./packages/speedwagon/${it.path}"  -Force | Out-Null
                                                        Get-ChildItem -Path ".\\deps"
