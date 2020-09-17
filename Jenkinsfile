@@ -653,7 +653,6 @@ pipeline {
 
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
-        booleanParam(name: "DEPLOY_ADD_TAG", defaultValue: false, description: "Tag commit to current version")
         booleanParam(name: "DEPLOY_CHOCOLATEY", defaultValue: false, description: "Deploy to Chocolatey repository")
         booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
@@ -1383,42 +1382,41 @@ pipeline {
         }
         stage("Deploy"){
             parallel {
-                stage("Tagging git Commit"){
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/Dockerfile'
-                            label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                        }
-                    }
-                    when{
-                        allOf{
-                            equals expected: true, actual: params.DEPLOY_ADD_TAG
-                        }
-                        beforeAgent true
-                        beforeInput true
-                    }
-                    options{
-                        timeout(time: 1, unit: 'DAYS')
-                        retry(3)
-                    }
-                    input {
-                          message 'Add a version tag to git commit?'
-                          parameters {
-                                credentials credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl', defaultValue: 'github.com', description: '', name: 'gitCreds', required: true
-                          }
-                    }
-                    steps{
-                        unstash "DIST-INFO"
-                        gitAddVersionTag("speedwagon.dist-info/METADATA")
-
-                    }
-                    post{
-                        cleanup{
-                            deleteDir()
-                        }
-                    }
-                }
+//                 stage("Tagging git Commit"){
+//                     agent {
+//                         dockerfile {
+//                             filename 'ci/docker/python/linux/Dockerfile'
+//                             label 'linux && docker'
+//                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+//                         }
+//                     }
+//                     when{
+//                         allOf{
+//                         }
+//                         beforeAgent true
+//                         beforeInput true
+//                     }
+//                     options{
+//                         timeout(time: 1, unit: 'DAYS')
+//                         retry(3)
+//                     }
+//                     input {
+//                           message 'Add a version tag to git commit?'
+//                           parameters {
+//                                 credentials credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl', defaultValue: 'github.com', description: '', name: 'gitCreds', required: true
+//                           }
+//                     }
+//                     steps{
+//                         unstash "DIST-INFO"
+//                         gitAddVersionTag("speedwagon.dist-info/METADATA")
+//
+//                     }
+//                     post{
+//                         cleanup{
+//                             deleteDir()
+//                         }
+//                     }
+//                 }
                 stage("Deploy to Chocolatey") {
                     when{
                         equals expected: true, actual: params.DEPLOY_CHOCOLATEY
