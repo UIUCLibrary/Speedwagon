@@ -644,7 +644,8 @@ pipeline {
         booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Packages")
 //         TODO: Turn this back to false when done
         booleanParam(name: 'BUILD_CHOCOLATEY_PACKAGE', defaultValue: true, description: 'Build package for chocolatey package manager')
-        booleanParam(name: "TEST_PACKAGES", defaultValue: true, description: "Test Python packages by installing them and running tests on the installed package")
+//         TODO: Turn this back to true when done
+        booleanParam(name: "TEST_PACKAGES", defaultValue: false, description: "Test Python packages by installing them and running tests on the installed package")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: false, description: "Create a standalone wix based .msi installer")
 
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: false, description: "Create a standalone NULLSOFT NSIS based .exe installer")
