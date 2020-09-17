@@ -1041,6 +1041,91 @@ pipeline {
                         }
                     }
                  }
+//                  stage("Chocolatey"){
+//                     when{
+//                         anyOf{
+//                             equals expected: true, actual: params.DEPLOY_CHOCOLATEY
+//                             equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
+//                         }
+//                         beforeInput true
+//                     }
+//                     stages{
+//                         stage("Package for Chocolatey"){
+//                             agent {
+//                                 dockerfile {
+//                                     filename 'ci/docker/chocolatey_package/Dockerfile'
+//                                     label 'windows && docker'
+//                                     additionalBuildArgs "--build-arg CHOCOLATEY_SOURCE"
+//                                   }
+//                             }
+//                             steps{
+//                                 script {
+//                                    unstash "DIST-INFO"
+//                                     def props = readProperties interpolate: true, file: 'uiucprescon.getmarc2.dist-info/METADATA'
+//                                     unstash "PYTHON_PACKAGES"
+//                                     findFiles(glob: "dist/*.whl").each{
+//                                         def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
+//                                         powershell(
+//                                             label: "Configuring new package for Chocolatey",
+//                                             script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
+//                                                        choco new getmarc packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
+//                                                        New-Item -ItemType File -Path ".\\packages\\getmarc\\${it.path}" -Force | Out-Null
+//                                                        Move-Item -Path "${it.path}"  -Destination "./packages/getmarc/${it.path}"  -Force | Out-Null
+//                                                        choco pack .\\packages\\getmarc\\getmarc.nuspec --outputdirectory .\\packages
+//                                                        """
+//                                         )
+//                                     }
+//                                 }
+//                             }
+//                             post{
+//                                 always{
+//                                     archiveArtifacts artifacts: "packages/**/*.nuspec"
+//                                     stash includes: 'packages/*.nupkg', name: "CHOCOLATEY_PACKAGE"
+//                                 }
+//                             }
+//                         }
+//                         stage("Testing Chocolatey Package"){
+//                             agent {
+//                                 dockerfile {
+//                                     filename 'ci/docker/chocolatey_package/Dockerfile'
+//                                     label 'windows && docker'
+//                                     additionalBuildArgs "--build-arg CHOCOLATEY_SOURCE"
+//                                   }
+//                             }
+//                             steps{
+//                                 unstash "DIST-INFO"
+//                                 unstash "CHOCOLATEY_PACKAGE"
+//                                 script{
+//                                     def props = readProperties interpolate: true, file: 'uiucprescon.getmarc2.dist-info/METADATA'
+//                                     def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
+//                                     powershell(
+//                                         label: "Installing Chocolatey Package",
+//                                         script:"""\$ErrorActionPreference = 'Stop'; # stop on all errors
+//                                                   choco install getmarc -y -dv  --version=${sanitized_packageversion} -s './packages/;CHOCOLATEY_SOURCE;chocolatey' --no-progress
+//                                                   """
+//                                     )
+//                                 }
+//                                 bat "getmarc --help"
+//
+//                             }
+//                             post{
+//                                 success{
+//                                     archiveArtifacts artifacts: "packages/*.nupkg", fingerprint: true
+//                                 }
+//                                 cleanup{
+//                                     cleanWs(
+//                                         notFailBuild: true,
+//                                         deleteDirs: true,
+//                                         patterns: [
+//                                             [pattern: 'packages/', type: 'INCLUDE'],
+//                                             [pattern: 'uiucprescon.getmarc2.dist-info/', type: 'INCLUDE'],
+//                                         ]
+//                                     )
+//                                 }
+//                             }
+//                         }
+//                     }
+//                 }
                 stage("Windows Standalone"){
                     when{
                         anyOf{
@@ -1126,69 +1211,69 @@ pipeline {
                                 }
                             }
                         }
-                        stage("Package MSI for Chocolatey"){
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/chocolatey/Dockerfile'
-                                    label 'Windows&&Docker'
-                                  }
-                            }
-                            when{
-                                anyOf{
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
-                                    equals expected: true, actual: params.DEPLOY_CHOCOLATEY
-                                }
-                                beforeAgent true
-                            }
-                            steps{
-                                unstash 'STANDALONE_INSTALLERS'
-                                timeout(15){
-                                    script{
-                                        make_chocolatey_distribution(
-                                            findFiles(glob: "dist/*.msi")[0],
-                                            get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA"),
-                                            "chocolatey_package"
-                                            )
-                                    }
-                                }
-                            }
-                            post {
-                                success{
-                                    stash includes: "chocolatey_package/speedwagon/*.nupkg", name: "CHOCOLATEY_PACKAGE"
-                                    archiveArtifacts(
-                                        allowEmptyArchive: true,
-                                        artifacts: "chocolatey_package/speedwagon/*.nupkg"
-                                        )
-                                }
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        notFailBuild: true
-                                    )
-                                }
-                            }
-                        }
-                        stage("Testing Chocolatey Package: Install"){
-                            when{
-                                anyOf{
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
-                                    equals expected: true, actual: params.DEPLOY_CHOCOLATEY
-                                }
-                                beforeAgent true
-                            }
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/chocolatey/Dockerfile'
-                                    args '-u ContainerAdministrator'
-                                    label 'Windows&&Docker'
-                                  }
-                            }
-                            steps{
-                                unstash "CHOCOLATEY_PACKAGE"
-                                bat 'choco install speedwagon -y --pre -dv -s %WORKSPACE%\\chocolatey_package\\speedwagon'
-                                bat "speedwagon --version"
-                            }
-                        }
+//                         stage("Package MSI for Chocolatey"){
+//                             agent {
+//                                 dockerfile {
+//                                     filename 'ci/docker/chocolatey/Dockerfile'
+//                                     label 'Windows&&Docker'
+//                                   }
+//                             }
+//                             when{
+//                                 anyOf{
+//                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
+//                                     equals expected: true, actual: params.DEPLOY_CHOCOLATEY
+//                                 }
+//                                 beforeAgent true
+//                             }
+//                             steps{
+//                                 unstash 'STANDALONE_INSTALLERS'
+//                                 timeout(15){
+//                                     script{
+//                                         make_chocolatey_distribution(
+//                                             findFiles(glob: "dist/*.msi")[0],
+//                                             get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA"),
+//                                             "chocolatey_package"
+//                                             )
+//                                     }
+//                                 }
+//                             }
+//                             post {
+//                                 success{
+//                                     stash includes: "chocolatey_package/speedwagon/*.nupkg", name: "CHOCOLATEY_PACKAGE"
+//                                     archiveArtifacts(
+//                                         allowEmptyArchive: true,
+//                                         artifacts: "chocolatey_package/speedwagon/*.nupkg"
+//                                         )
+//                                 }
+//                                 cleanup{
+//                                     cleanWs(
+//                                         deleteDirs: true,
+//                                         notFailBuild: true
+//                                     )
+//                                 }
+//                             }
+//                         }
+//                         stage("Testing Chocolatey Package: Install"){
+//                             when{
+//                                 anyOf{
+//                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
+//                                     equals expected: true, actual: params.DEPLOY_CHOCOLATEY
+//                                 }
+//                                 beforeAgent true
+//                             }
+//                             agent {
+//                                 dockerfile {
+//                                     filename 'ci/docker/chocolatey/Dockerfile'
+//                                     args '-u ContainerAdministrator'
+//                                     label 'Windows&&Docker'
+//                                   }
+//                             }
+//                             steps{
+//                                 unstash "CHOCOLATEY_PACKAGE"
+//                                 bat 'choco install speedwagon -y --pre -dv -s %WORKSPACE%\\chocolatey_package\\speedwagon'
+//                                 bat "speedwagon --version"
+//                             }
+//                         }
                     }
                 }
             }
