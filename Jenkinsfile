@@ -780,9 +780,7 @@ pipeline {
                                     steps{
                                         catchError(buildResult: "UNSTABLE", message: 'Did not pass all pytest tests', stageResult: "UNSTABLE") {
                                             sh(
-                                                script: '''mkdir -p logs
-                                                           coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml
-                                                           '''
+                                                script: 'coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml'
                                             )
                                         }
                                     }
@@ -797,9 +795,7 @@ pipeline {
                                     steps {
                                         sh(
                                             label: "Running Doctest Tests",
-                                            script: '''python setup.py build build_ui
-                                                       coverage run --parallel-mode --source=speedwagon -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt
-                                                       '''
+                                            script: 'coverage run --parallel-mode --source=speedwagon -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt'
                                             )
                                     }
                                     post{
@@ -813,9 +809,7 @@ pipeline {
                                         catchError(buildResult: "SUCCESS", message: 'MyPy found issues', stageResult: "UNSTABLE") {
                                             tee("logs/mypy.log"){
                                                 sh(label: 'Running MyPy',
-                                                    script: '''mkdir -p logs
-                                                               mypy -p speedwagon --html-report reports/mypy/html
-                                                               '''
+                                                   script: 'mypy -p speedwagon --html-report reports/mypy/html'
                                                 )
                                             }
                                         }
@@ -863,9 +857,7 @@ pipeline {
                                 stage("Run Flake8 Static Analysis") {
                                     steps{
                                         catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
-                                            sh script: '''mkdir -p logs
-                                                          flake8 speedwagon --tee --output-file=logs/flake8.log
-                                                          '''
+                                            sh script: 'flake8 speedwagon --tee --output-file=logs/flake8.log'
                                         }
                                     }
                                     post {
