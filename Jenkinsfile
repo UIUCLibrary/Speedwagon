@@ -1179,6 +1179,9 @@ pipeline {
                                     additionalBuildArgs "--build-arg CHOCOLATEY_SOURCE"
                                   }
                             }
+                            when{
+                                equals expected: true, actual: params.TEST_PACKAGES
+                            }
                             steps{
                                 unstash "CHOCOLATEY_PACKAGE"
                                 script{
