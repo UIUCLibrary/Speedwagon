@@ -732,31 +732,6 @@ pipeline {
                 equals expected: true, actual: params.RUN_CHECKS
             }
             stages{
-                stage("Building Python Library"){
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/Dockerfile'
-                            label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                          }
-                    }
-                    steps {
-                        sh '''mkdir -p logs
-                              python setup.py build -b build
-                              '''
-                    }
-                    post{
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                notFailBuild: true
-                            )
-                        }
-                        success{
-                            stash includes: "build/lib/**", name: 'PYTHON_BUILD_FILES'
-                        }
-                    }
-                }
                 stage("Test") {
                     agent {
                         dockerfile {
@@ -766,6 +741,24 @@ pipeline {
                           }
                     }
                     stages{
+                        stage("Building Python Library"){
+                            steps {
+                                sh '''mkdir -p logs
+                                      python setup.py build -b build
+                                      '''
+                            }
+                            post{
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        notFailBuild: true
+                                    )
+                                }
+                                success{
+                                    stash includes: "build/lib/**", name: 'PYTHON_BUILD_FILES'
+                                }
+                            }
+                        }
                         stage("Run Tests"){
                             parallel {
                                 stage("Run Behave BDD Tests") {
