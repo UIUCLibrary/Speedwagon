@@ -1224,7 +1224,6 @@ pipeline {
                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
-                                    equals expected: true, actual: params.DEPLOY_CHOCOLATEY
                                 }
                                 beforeAgent true
                             }
@@ -1277,7 +1276,6 @@ pipeline {
                                         anyOf{
                                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
                                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                                            equals expected: true, actual: params.DEPLOY_CHOCOLATEY
                                         }
                                         beforeAgent true
                                     }
