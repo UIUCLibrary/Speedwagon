@@ -1064,24 +1064,23 @@ pipeline {
                                   }
                             }
                             steps{
-                                echo "Package for Chocolatey "
-//                                 script {
-//                                    unstash "DIST-INFO"
-//                                     def props = readProperties interpolate: true, file: 'uiucprescon.getmarc2.dist-info/METADATA'
-//                                     unstash "PYTHON_PACKAGES"
-//                                     findFiles(glob: "dist/*.whl").each{
-//                                         def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
-//                                         powershell(
-//                                             label: "Configuring new package for Chocolatey",
-//                                             script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
-//                                                        choco new getmarc packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
-//                                                        New-Item -ItemType File -Path ".\\packages\\getmarc\\${it.path}" -Force | Out-Null
-//                                                        Move-Item -Path "${it.path}"  -Destination "./packages/getmarc/${it.path}"  -Force | Out-Null
-//                                                        choco pack .\\packages\\getmarc\\getmarc.nuspec --outputdirectory .\\packages
-//                                                        """
-//                                         )
-//                                     }
-//                                 }
+                                script {
+                                   unstash "DIST-INFO"
+                                    def props = readProperties interpolate: true, file: 'speedwagon.dist-info.dist-info/METADATA'
+                                    unstash "PYTHON_PACKAGES"
+                                    findFiles(glob: "dist/*.whl").each{
+                                        def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
+                                        powershell(
+                                            label: "Configuring new package for Chocolatey",
+                                            script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
+                                                       choco new getmarc packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
+                                                       New-Item -ItemType File -Path ".\\packages\\getmarc\\${it.path}" -Force | Out-Null
+                                                       Move-Item -Path "${it.path}"  -Destination "./packages/getmarc/${it.path}"  -Force | Out-Null
+                                                       choco pack .\\packages\\getmarc\\getmarc.nuspec --outputdirectory .\\packages
+                                                       """
+                                        )
+                                    }
+                                }
                             }
 //                             post{
 //                                 always{
@@ -1102,7 +1101,7 @@ pipeline {
 //                                 unstash "DIST-INFO"
 //                                 unstash "CHOCOLATEY_PACKAGE"
 //                                 script{
-//                                     def props = readProperties interpolate: true, file: 'uiucprescon.getmarc2.dist-info/METADATA'
+//                                     def props = readProperties interpolate: true, file: 'speedwagon.dist-info.dist-info/METADATA'
 //                                     def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
 //                                     powershell(
 //                                         label: "Installing Chocolatey Package",
@@ -1124,7 +1123,7 @@ pipeline {
 //                                         deleteDirs: true,
 //                                         patterns: [
 //                                             [pattern: 'packages/', type: 'INCLUDE'],
-//                                             [pattern: 'uiucprescon.getmarc2.dist-info/', type: 'INCLUDE'],
+//                                             [pattern: 'speedwagon.dist-info.dist-info/', type: 'INCLUDE'],
 //                                         ]
 //                                     )
 //                                 }
