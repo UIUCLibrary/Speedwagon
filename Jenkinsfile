@@ -1064,7 +1064,7 @@ pipeline {
                         beforeInput true
                     }
                     stages{
-                        stage("Creating dependencies wheels"){
+                        stage("Packaging python dependencies"){
                             agent {
                                 dockerfile {
                                     filename 'ci/docker/python/windows/Dockerfile'
@@ -1073,16 +1073,11 @@ pipeline {
                                 }
                             }
                             steps{
-//                                 unstash "PYTHON_PACKAGES"
-//                                 script{
-//                                     findFiles(glob: "dist/*.whl").each{
                                 bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
-//                                     }
-//                                 }
                             }
                             post{
                                 success{
-                                    stash includes: "deps/*.whl", name: 'PYTHON_DEPS'
+                                    stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.8'
                                 }
                             }
                         }
@@ -1099,7 +1094,7 @@ pipeline {
                                 script {
                                     findFiles(glob: "dist/*.whl").each{
                                         def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
-                                        unstash "PYTHON_DEPS"
+                                        unstash "PYTHON_DEPS_3.8"
                                         powershell(
                                             label: "Creating new package for Chocolatey",
                                             script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
