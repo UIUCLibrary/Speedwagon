@@ -532,7 +532,7 @@ def build_standalone(){
     stage("Packaging standalone"){
         script{
             def packaging_msi = false
-            if(params.PACKAGE_WINDOWS_STANDALONE_MSI || params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY){
+            if(params.PACKAGE_WINDOWS_STANDALONE_MSI || params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY){
                 packaging_msi = true
             }
             def cpack_generators = generate_cpack_arguments(packaging_msi, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)
@@ -639,16 +639,18 @@ pipeline {
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: "USE_SONARQUBE", defaultValue: true, description: "Send data test data to SonarQube")
 
+        booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Packages")
+        booleanParam(name: 'BUILD_CHOCOLATEY_PACKAGE', defaultValue: false, description: 'Build package for chocolatey package manager')
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: false, description: "Create a standalone wix based .msi installer")
 
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: false, description: "Create a standalone NULLSOFT NSIS based .exe installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_ZIP", defaultValue: false, description: "Create a standalone portable package")
-        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY", defaultValue: false, description: "Create package for the Chocolatey package manager")
+        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY", defaultValue: false, description: "Create package for the Chocolatey package manager")
 
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
         booleanParam(name: "DEPLOY_ADD_TAG", defaultValue: false, description: "Tag commit to current version")
-        booleanParam(name: "DEPLOY_CHOLOCATEY", defaultValue: false, description: "Deploy to Chocolatey repository")
+        booleanParam(name: "DEPLOY_CHOCOLATEY", defaultValue: false, description: "Deploy to Chocolatey repository")
         booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
@@ -960,6 +962,17 @@ pipeline {
             }
         }
         stage("Packaging"){
+            when{
+                anyOf{
+                    equals expected: true, actual: params.BUILD_PACKAGES
+                    equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
+//                     equals expected: true, actual: params.TEST_PACKAGES_ON_MAC
+                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+                    equals expected: true, actual: params.DEPLOY_CHOCOLATEY
+                }
+                beforeAgent true
+            }
             stages{
                 stage("Packaging sdist and wheel"){
                     agent {
@@ -1060,8 +1073,8 @@ pipeline {
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
                             equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
-                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
-                            equals expected: true, actual: params.DEPLOY_CHOLOCATEY
+                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
+                            equals expected: true, actual: params.DEPLOY_CHOCOLATEY
                         }
                         beforeAgent true
                     }
@@ -1113,9 +1126,9 @@ pipeline {
 
                             when{
                                 anyOf{
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                                    equals expected: true, actual: params.DEPLOY_CHOLOCATEY
+                                    equals expected: true, actual: params.DEPLOY_CHOCOLATEY
                                 }
                                 beforeAgent true
                             }
@@ -1149,8 +1162,8 @@ pipeline {
                             }
                             when{
                                 anyOf{
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
-                                    equals expected: true, actual: params.DEPLOY_CHOLOCATEY
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
+                                    equals expected: true, actual: params.DEPLOY_CHOCOLATEY
                                 }
                                 beforeAgent true
                             }
@@ -1185,8 +1198,8 @@ pipeline {
                         stage("Testing Chocolatey Package: Install"){
                             when{
                                 anyOf{
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
-                                    equals expected: true, actual: params.DEPLOY_CHOLOCATEY
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
+                                    equals expected: true, actual: params.DEPLOY_CHOCOLATEY
                                 }
                                 beforeAgent true
                             }
@@ -1407,7 +1420,7 @@ pipeline {
                 }
                 stage("Deploy to Chocolatey") {
                     when{
-                        equals expected: true, actual: params.DEPLOY_CHOLOCATEY
+                        equals expected: true, actual: params.DEPLOY_CHOCOLATEY
                         beforeInput true
                         beforeAgent true
                     }
