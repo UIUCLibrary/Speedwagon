@@ -16,5 +16,6 @@
   <files>
     <file src="tools\**" target="tools" />
     <file src="[[InstallerFile]]" target="tools\[[InstallerFile]]" />
+    <file src="deps\**" target="tools\dist\deps" />
   </files>
 </package>
