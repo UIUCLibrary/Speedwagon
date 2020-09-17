@@ -1070,7 +1070,6 @@ pipeline {
                                     def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                     unstash "PYTHON_PACKAGES"
                                     findFiles(glob: "dist/*.whl").each{
-                                        echo "Doing something with ${it} for ${props.Version}"
                                         def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
                                         powershell(
                                             label: "Configuring new package for Chocolatey",
@@ -1084,37 +1083,37 @@ pipeline {
                                     }
                                 }
                             }
-//                             post{
-//                                 always{
-//                                     archiveArtifacts artifacts: "packages/**/*.nuspec"
-//                                     stash includes: 'packages/*.nupkg', name: "CHOCOLATEY_PACKAGE"
-//                                 }
-//                             }
-//                         }
-//                         stage("Testing Chocolatey Package"){
-//                             agent {
-//                                 dockerfile {
-//                                     filename 'ci/docker/chocolatey_package/Dockerfile'
-//                                     label 'windows && docker'
-//                                     additionalBuildArgs "--build-arg CHOCOLATEY_SOURCE"
-//                                   }
-//                             }
-//                             steps{
-//                                 unstash "DIST-INFO"
-//                                 unstash "CHOCOLATEY_PACKAGE"
-//                                 script{
-//                                     def props = readProperties interpolate: true, file: 'speedwagon.dist-info.dist-info/METADATA'
-//                                     def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
-//                                     powershell(
-//                                         label: "Installing Chocolatey Package",
-//                                         script:"""\$ErrorActionPreference = 'Stop'; # stop on all errors
-//                                                   choco install getmarc -y -dv  --version=${sanitized_packageversion} -s './packages/;CHOCOLATEY_SOURCE;chocolatey' --no-progress
-//                                                   """
-//                                     )
-//                                 }
-//                                 bat "getmarc --help"
-//
-//                             }
+                            post{
+                                always{
+                                    archiveArtifacts artifacts: "packages/**/*.nuspec"
+                                    stash includes: 'packages/*.nupkg', name: "CHOCOLATEY_PACKAGE"
+                                }
+                            }
+                        }
+                        stage("Testing Chocolatey Package"){
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/chocolatey_package/Dockerfile'
+                                    label 'windows && docker'
+                                    additionalBuildArgs "--build-arg CHOCOLATEY_SOURCE"
+                                  }
+                            }
+                            steps{
+                                unstash "DIST-INFO"
+                                unstash "CHOCOLATEY_PACKAGE"
+                                script{
+                                    def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+                                    def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
+                                    powershell(
+                                        label: "Installing Chocolatey Package",
+                                        script:"""\$ErrorActionPreference = 'Stop'; # stop on all errors
+                                                  choco install getmarc -y -dv  --version=${sanitized_packageversion} -s './packages/;CHOCOLATEY_SOURCE;chocolatey' --no-progress
+                                                  """
+                                    )
+                                }
+//                                 bat "speedwagon --help"
+
+                            }
 //                             post{
 //                                 success{
 //                                     archiveArtifacts artifacts: "packages/*.nupkg", fingerprint: true
