@@ -1139,6 +1139,7 @@ pipeline {
                                                   """
                                     )
                                 }
+                                powershell "Get-ChildItem \"$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\\" -Recurse -Include *.lnk"
                                 bat "speedwagon --help"
 
                             }
