@@ -748,12 +748,6 @@ pipeline {
                                       '''
                             }
                             post{
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        notFailBuild: true
-                                    )
-                                }
                                 success{
                                     stash includes: "build/lib/**", name: 'PYTHON_BUILD_FILES'
                                 }
