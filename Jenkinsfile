@@ -1567,7 +1567,6 @@ pipeline {
                     agent any
                     steps {
                         unstash "STANDALONE_INSTALLERS"
-                        unstash "Deployment"
                         dir("dist"){
                             deploy_sscm("*.msi", "${PKG_VERSION}", "${params.JIRA_ISSUE_VALUE}")
                         }
