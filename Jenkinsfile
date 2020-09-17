@@ -634,8 +634,12 @@ def startup(){
 
 startup()
 def get_props(){
-    unstash "DIST-INFO"
-    return readProperties(interpolate: true, file: 'speedwagon.dist-info/METADATA')
+    stage("Reading Package Metadata"){
+        node(){
+            unstash "DIST-INFO"
+            return readProperties(interpolate: true, file: 'speedwagon.dist-info/METADATA')
+        }
+    }
 }
 def props = get_props()
 
