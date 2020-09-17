@@ -1140,7 +1140,7 @@ pipeline {
                                     )
                                 }
                                 powershell "Get-ChildItem c:\\"
-                                powershell "Get-ChildItem \"$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\\" -Recurse -Include *.lnk"
+                                powershell "Get-ChildItem \$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\\" -Recurse -Include *.lnk"
                                 bat "speedwagon --help"
 
                             }
