@@ -660,27 +660,19 @@ pipeline {
         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
     stages {
-        stage("Configure"){
-            stages{
-                stage("Initial setup"){
-                    parallel{
-                        stage("Testing Jira epic"){
-                            agent any
-                            options {
-                                skipDefaultCheckout(true)
+        stage("Testing Jira epic"){
+            agent any
+            options {
+                skipDefaultCheckout(true)
 
-                            }
-                            steps {
-                                check_jira_project('PSR',, 'logs/jira_project_data.json')
-                                check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
-                            }
-                            post{
-                                cleanup{
-                                    cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
-                                }
-                            }
-                        }
-                    }
+            }
+            steps {
+                check_jira_project('PSR',, 'logs/jira_project_data.json')
+                check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
+            }
+            post{
+                cleanup{
+                    cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
                 }
             }
         }
