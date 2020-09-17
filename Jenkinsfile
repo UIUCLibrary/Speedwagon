@@ -1487,9 +1487,9 @@ pipeline {
                         }
                     }
                     post{
-//                         success{
-//                             jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: "${params.JIRA_ISSUE_VALUE}"
-//                         }
+                        success{
+                            jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                        }
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
@@ -1572,12 +1572,12 @@ pipeline {
                             deploy_sscm("*.msi", "${PKG_VERSION}", "${params.JIRA_ISSUE_VALUE}")
                         }
                     }
-//                     post {
-//                         success {
-//                             jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
-//                             archiveArtifacts artifacts: "logs/deployment_request.txt"
-//                         }
-//                     }
+                    post {
+                        success {
+                            jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                            archiveArtifacts artifacts: "logs/deployment_request.txt"
+                        }
+                    }
                 }
             }
         }
