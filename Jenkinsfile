@@ -1101,20 +1101,15 @@ pipeline {
                                         def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
                                         unstash "PYTHON_DEPS"
                                         powershell(
-                                            label: "Configuring new package for Chocolatey",
+                                            label: "Creating new package for Chocolatey",
                                             script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
                                                        choco new speedwagon packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
-                                                       """
-                                        )
-                                        powershell(label: "Adding files to package for Chocolatey",
-                                                       script: """
                                                        New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
                                                        Move-Item -Path "${it.path}"  -Destination "./packages/speedwagon/${it.path}"  -Force | Out-Null
                                                        Copy-Item -Path ".\\deps"  -Destination ".\\packages\\speedwagon\\deps\\" -Force -Recurse
                                                        choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages
                                                        """
                                         )
-//                                                         Copy-Item -Path .\deps -Destination .\dist\deps\
                                     }
                                 }
                             }
@@ -1144,7 +1139,7 @@ pipeline {
                                                   """
                                     )
                                 }
-//                                 bat "speedwagon --help"
+                                bat "speedwagon --help"
 
                             }
 //                             post{
