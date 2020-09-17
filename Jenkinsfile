@@ -633,6 +633,11 @@ def startup(){
 }
 
 startup()
+def get_props(){
+    unstash "DIST-INFO"
+    return readProperties(interpolate: true, file: 'speedwagon.dist-info/METADATA')
+}
+def props = get_props()
 
 pipeline {
     agent none
@@ -709,7 +714,7 @@ pipeline {
                 success{
                     unstash "DIST-INFO"
                     script{
-                        def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+//                         def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                         def DOC_ZIP_FILENAME = "${props.Name}-${props.Version}.doc.zip"
                         zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
                         stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
@@ -1084,7 +1089,7 @@ pipeline {
                             steps{
                                 script {
                                    unstash "DIST-INFO"
-                                    def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+//                                     def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                     unstash "PYTHON_PACKAGES"
                                     findFiles(glob: "dist/*.whl").each{
                                         def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
@@ -1119,7 +1124,7 @@ pipeline {
                                 unstash "DIST-INFO"
                                 unstash "CHOCOLATEY_PACKAGE"
                                 script{
-                                    def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+//                                     def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                     def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
                                     powershell(
                                         label: "Installing Chocolatey Package",
@@ -1412,7 +1417,7 @@ pipeline {
                     steps {
                         unstash "DIST-INFO"
                         script{
-                            def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
+//                             def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
                             sh(label: "Pushing to production index",
                                script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
                                           devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
@@ -1429,7 +1434,7 @@ pipeline {
                        script{
                             docker.build("speedwagon:devpi",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
                                 unstash "DIST-INFO"
-                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+//                                 def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                 sh(label: "Connecting to DevPi Server",
                                    script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
                                               devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
@@ -1446,7 +1451,7 @@ pipeline {
                        script{
                             docker.build("speedwagon:devpi",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
                                 unstash "DIST-INFO"
-                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+//                                 def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                 sh(
                                     label: "Connecting to DevPi Server",
                                     script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
@@ -1608,7 +1613,7 @@ pipeline {
                         unstash "SPEEDWAGON_DOC_HTML"
                         unstash "DIST-INFO"
                         script{
-                            def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
+//                             def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                             deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
                         }
                     }
