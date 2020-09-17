@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>[[PackageNameLower]]</id>
+    <title>[[PackageName]]</title>
+    <version>[[PackageVersion]]</version>
+    <authors>University Library at The University of Illinois at Urbana Champaign: Preservation Services</authors>
+    <owners>[[MaintainerName]]</owners>
+    <description>[[PythonSummary]]
+    </description>
+    <tags>[[PackageNameLower]] UIUC</tags>
+    <dependencies>
+      <dependency id="python3" version="3.7.0"/>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+    <file src="[[InstallerFile]]" target="tools\[[InstallerFile]]" />
+  </files>
+</package>
