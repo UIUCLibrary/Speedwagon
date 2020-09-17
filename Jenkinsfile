@@ -1529,36 +1529,6 @@ pipeline {
                     }
                     agent {
                         dockerfile {
-                            filename 'ci/docker/chocolatey/Dockerfile'
-                            args '-u ContainerAdministrator'
-                            label 'Windows&&Docker'
-                          }
-                    }
-                    input {
-                      message 'Select Chocolatey server'
-                      parameters {
-                        choice choices: ['https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-beta/', 'https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-public/'], description: 'Chocolatey Server to deploy to', name: 'CHOCOLATEY_SERVER'
-                        credentials credentialType: 'org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl', defaultValue: 'NEXUS_NUGET_API_KEY', description: 'Nuget API key for Chocolatey', name: 'CHOCO_REPO_KEY', required: true
-                      }
-                    }
-                    steps{
-                        unstash "CHOCOLATEY_PACKAGE"
-                        withCredentials([string(credentialsId: "${CHOCO_REPO_KEY}", variable: 'KEY')]) {
-                            bat(
-                                label: "Deploying to Chocolatey",
-                                script: "cd chocolatey_package\\speedwagon && choco push -s %CHOCOLATEY_SERVER% -k %KEY%"
-                            )
-                        }
-                    }
-                }
-                stage("Deploy to Chocolatey") {
-                    when{
-                        equals expected: true, actual: params.DEPLOY_CHOCOLATEY
-                        beforeInput true
-                        beforeAgent true
-                    }
-                    agent {
-                        dockerfile {
                             filename 'ci/docker/chocolatey_package/Dockerfile'
                             label 'windows && docker'
                             additionalBuildArgs "--build-arg CHOCOLATEY_SOURCE"
