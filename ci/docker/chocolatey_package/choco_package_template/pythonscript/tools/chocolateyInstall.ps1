@@ -23,4 +23,10 @@ foreach ($file in $files) {
   #generate an ignore file
   New-Item "$file.ignore" -type file -force | Out-Null
 }
+Install-ChocolateyShortcut `
+  -ShortcutFilePath "C:\$packageName.lnk" `
+  -TargetPath "$installDir\venv\Scripts\$packageName.exe" `
+  -WorkingDirectory "C:\" `
+  -Description "This is the description"
+
 Install-BinFile -Name $packageName -Path "$installDir\venv\Scripts\$packageName.exe"
