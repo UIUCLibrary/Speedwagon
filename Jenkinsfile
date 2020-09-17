@@ -1073,12 +1073,12 @@ pipeline {
                                 }
                             }
                             steps{
-                                unstash "PYTHON_PACKAGES"
-                                script{
-                                    findFiles(glob: "dist/*.whl").each{
-                                        bat "pip wheel ${it} -w .\\deps\\"
-                                    }
-                                }
+//                                 unstash "PYTHON_PACKAGES"
+//                                 script{
+//                                     findFiles(glob: "dist/*.whl").each{
+                                bat "pip wheel -r requirements-vendor.txt -w .\\deps\\"
+//                                     }
+//                                 }
                             }
                             post{
                                 success{
