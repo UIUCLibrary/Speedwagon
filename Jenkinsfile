@@ -1064,37 +1064,41 @@ pipeline {
                         beforeInput true
                     }
                     stages{
-                        stage("Packaging python dependencies for 3.8"){
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/python/windows/Dockerfile'
-                                    label "windows && docker"
-                                    additionalBuildArgs "--build-arg PYTHON_VERSION=3.8 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                        stage("Packaging python dependencies"){
+                            stages{
+                                stage("Packaging wheels for 3.8"){
+                                    agent {
+                                        dockerfile {
+                                            filename 'ci/docker/python/windows/Dockerfile'
+                                            label "windows && docker"
+                                            additionalBuildArgs "--build-arg PYTHON_VERSION=3.8 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                        }
+                                    }
+                                    steps{
+                                        bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
+                                    }
+                                    post{
+                                        success{
+                                            stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.8'
+                                        }
+                                    }
                                 }
-                            }
-                            steps{
-                                bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
-                            }
-                            post{
-                                success{
-                                    stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.8'
-                                }
-                            }
-                        }
-                        stage("Packaging python dependencies for 3.7"){
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/python/windows/Dockerfile'
-                                    label "windows && docker"
-                                    additionalBuildArgs "--build-arg PYTHON_VERSION=3.7 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
-                                }
-                            }
-                            steps{
-                                bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
-                            }
-                            post{
-                                success{
-                                    stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.7'
+                                stage("Packaging wheels for 3.7"){
+                                    agent {
+                                        dockerfile {
+                                            filename 'ci/docker/python/windows/Dockerfile'
+                                            label "windows && docker"
+                                            additionalBuildArgs "--build-arg PYTHON_VERSION=3.7 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                        }
+                                    }
+                                    steps{
+                                        bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
+                                    }
+                                    post{
+                                        success{
+                                            stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.7'
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1152,7 +1156,6 @@ pipeline {
                                                   """
                                     )
                                 }
-                                powershell "Get-ChildItem c:\\"
                                 powershell "Get-ChildItem \"\$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\" -Recurse -Include *.lnk"
                                 bat "speedwagon --help"
 
