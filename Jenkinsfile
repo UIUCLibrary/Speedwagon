@@ -1183,6 +1183,7 @@ pipeline {
                                     }
                                     when{
                                         equals expected: true, actual: params.TEST_PACKAGES
+                                        beforeAgent true
                                     }
                                     steps{
                                         unstash "CHOCOLATEY_PACKAGE"
