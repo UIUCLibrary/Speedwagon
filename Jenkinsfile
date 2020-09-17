@@ -1149,6 +1149,7 @@ pipeline {
                                         def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
                                         unstash "PYTHON_DEPS_3.8"
                                         unstash "PYTHON_DEPS_3.7"
+                                        unstash "SPEEDWAGON_DOC_PDF"
                                         powershell(
                                             label: "Creating new package for Chocolatey",
                                             script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
@@ -1156,6 +1157,7 @@ pipeline {
                                                        New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
                                                        Move-Item -Path "${it.path}"  -Destination "./packages/speedwagon/${it.path}"  -Force | Out-Null
                                                        Copy-Item -Path ".\\deps"  -Destination ".\\packages\\speedwagon\\deps\\" -Force -Recurse
+                                                       Copy-Item -Path ".\\dist\\docs"  -Destination ".\\packages\\speedwagon\\docs\\" -Force -Recurse
                                                        choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages
                                                        """
                                         )
