@@ -1045,24 +1045,25 @@ pipeline {
                          }
                     }
                 }
-//                  stage("Chocolatey"){
-//                     when{
-//                         anyOf{
-//                             equals expected: true, actual: params.DEPLOY_CHOCOLATEY
-//                             equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
-//                         }
-//                         beforeInput true
-//                     }
-//                     stages{
-//                         stage("Package for Chocolatey"){
-//                             agent {
-//                                 dockerfile {
-//                                     filename 'ci/docker/chocolatey_package/Dockerfile'
-//                                     label 'windows && docker'
-//                                     additionalBuildArgs "--build-arg CHOCOLATEY_SOURCE"
-//                                   }
-//                             }
-//                             steps{
+                 stage("Chocolatey"){
+                    when{
+                        anyOf{
+                            equals expected: true, actual: params.DEPLOY_CHOCOLATEY
+                            equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
+                        }
+                        beforeInput true
+                    }
+                    stages{
+                        stage("Package for Chocolatey"){
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/chocolatey_package/Dockerfile'
+                                    label 'windows && docker'
+                                    additionalBuildArgs "--build-arg CHOCOLATEY_SOURCE"
+                                  }
+                            }
+                            steps{
+                                echo "Package for Chocolatey "
 //                                 script {
 //                                    unstash "DIST-INFO"
 //                                     def props = readProperties interpolate: true, file: 'uiucprescon.getmarc2.dist-info/METADATA'
@@ -1080,7 +1081,7 @@ pipeline {
 //                                         )
 //                                     }
 //                                 }
-//                             }
+                            }
 //                             post{
 //                                 always{
 //                                     archiveArtifacts artifacts: "packages/**/*.nuspec"
@@ -1127,9 +1128,9 @@ pipeline {
 //                                     )
 //                                 }
 //                             }
-//                         }
-//                     }
-//                 }
+                        }
+                    }
+                }
                 stage("Windows Standalone"){
                     when{
                         anyOf{
