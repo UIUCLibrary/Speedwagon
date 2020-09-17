@@ -125,6 +125,38 @@ def run_pylint(){
     )
 }
 
+def deploy_to_chocolatey(ChocolateyServer){
+    script{
+        def pkgs = []
+        findFiles(glob: "packages/*.nupkg").each{
+            pkgs << it.path
+        }
+        def deployment_options = input(
+            message: 'Chocolatey server',
+            parameters: [
+                credentials(
+                    credentialType: 'org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl',
+                    defaultValue: 'NEXUS_NUGET_API_KEY',
+                    description: 'Nuget API key for Chocolatey',
+                    name: 'CHOCO_REPO_KEY',
+                    required: true
+                ),
+                choice(
+                    choices: pkgs,
+                    description: 'Package to use',
+                    name: 'NUPKG'
+                ),
+            ]
+        )
+        withCredentials([string(credentialsId: deployment_options['CHOCO_REPO_KEY'], variable: 'KEY')]) {
+            bat(
+                label: "Deploying ${deployment_options['NUPKG']} to Chocolatey",
+                script: "choco push ${deployment_options['NUPKG']} -s ${ChocolateyServer} -k %KEY%"
+            )
+        }
+    }
+}
+
 def make_chocolatey_distribution(install_file, packageversion, dest){
     script{
         def maintainername = "Henry Borchers"
@@ -1486,41 +1518,6 @@ pipeline {
         }
         stage("Deploy"){
             parallel {
-//                 stage("Tagging git Commit"){
-//                     agent {
-//                         dockerfile {
-//                             filename 'ci/docker/python/linux/Dockerfile'
-//                             label 'linux && docker'
-//                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-//                         }
-//                     }
-//                     when{
-//                         allOf{
-//                         }
-//                         beforeAgent true
-//                         beforeInput true
-//                     }
-//                     options{
-//                         timeout(time: 1, unit: 'DAYS')
-//                         retry(3)
-//                     }
-//                     input {
-//                           message 'Add a version tag to git commit?'
-//                           parameters {
-//                                 credentials credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl', defaultValue: 'github.com', description: '', name: 'gitCreds', required: true
-//                           }
-//                     }
-//                     steps{
-//                         unstash "DIST-INFO"
-//                         gitAddVersionTag("speedwagon.dist-info/METADATA")
-//
-//                     }
-//                     post{
-//                         cleanup{
-//                             deleteDir()
-//                         }
-//                     }
-//                 }
                 stage("Deploy to Chocolatey") {
                     when{
                         equals expected: true, actual: params.DEPLOY_CHOCOLATEY
@@ -1554,35 +1551,8 @@ pipeline {
                     }
                     steps{
                         unstash "CHOCOLATEY_PACKAGE"
-                        script{
-                            def pkgs = []
-                            findFiles(glob: "packages/*.nupkg").each{
-                                pkgs << it.path
-                            }
-                            def deployment_options = input(
-                                message: 'Chocolatey server',
-                                parameters: [
-                                    credentials(
-                                        credentialType: 'org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl',
-                                        defaultValue: 'NEXUS_NUGET_API_KEY',
-                                        description: 'Nuget API key for Chocolatey',
-                                        name: 'CHOCO_REPO_KEY',
-                                        required: true
-                                    ),
-                                    choice(
-                                        choices: pkgs,
-                                        description: 'Package to use',
-                                        name: 'NUPKG'
-                                    ),
-                                ]
-                            )
-                            withCredentials([string(credentialsId: deployment_options['CHOCO_REPO_KEY'], variable: 'KEY')]) {
-                                bat(
-                                    label: "Deploying ${deployment_options['NUPKG']} to Chocolatey",
-                                    script: "choco push ${deployment_options['NUPKG']} -s ${CHOCOLATEY_SERVER} -k %KEY%"
-                                )
-                            }
-                        }
+                        deploy_to_chocolatey(CHOCOLATEY_SERVER)
+
                     }
                 }
                 stage("Deploy Online Documentation") {
