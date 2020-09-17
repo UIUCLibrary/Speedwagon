@@ -757,203 +757,207 @@ pipeline {
                 }
             }
         }
-        stage("Test") {
-            agent {
-                dockerfile {
-                    filename 'ci/docker/python/linux/Dockerfile'
-                    label 'linux && docker'
-                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                  }
-            }
+        stage("Checks"){
             stages{
-                stage("Run Tests"){
-                    parallel {
-                        stage("Run Behave BDD Tests") {
-                            steps {
-                                catchError(buildResult: "UNSTABLE", message: 'Did not pass all Behave BDD tests', stageResult: "UNSTABLE") {
-                                    sh(
-                                        script: """mkdir -p reports
-                                                   coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory reports/tests/behave"""
-                                        )
+                stage("Test") {
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                          }
+                    }
+                    stages{
+                        stage("Run Tests"){
+                            parallel {
+                                stage("Run Behave BDD Tests") {
+                                    steps {
+                                        catchError(buildResult: "UNSTABLE", message: 'Did not pass all Behave BDD tests', stageResult: "UNSTABLE") {
+                                            sh(
+                                                script: """mkdir -p reports
+                                                           coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory reports/tests/behave"""
+                                                )
+                                        }
+                                    }
+                                    post {
+                                        always {
+                                            junit "reports/tests/behave/*.xml"
+                                        }
+                                    }
                                 }
-                            }
-                            post {
-                                always {
-                                    junit "reports/tests/behave/*.xml"
+                                stage("Run PyTest Unit Tests"){
+                                    steps{
+                                        catchError(buildResult: "UNSTABLE", message: 'Did not pass all pytest tests', stageResult: "UNSTABLE") {
+                                            sh(
+                                                script: '''mkdir -p logs
+                                                           coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml
+                                                           '''
+                                            )
+                                        }
+                                    }
+                                    post {
+                                        always {
+                                            junit "reports/tests/pytest/pytest-junit.xml"
+                                            stash includes: "reports/tests/pytest/*.xml", name: "PYTEST_UNIT_TEST_RESULTS"
+                                        }
+                                    }
                                 }
-                            }
-                        }
-                        stage("Run PyTest Unit Tests"){
-                            steps{
-                                catchError(buildResult: "UNSTABLE", message: 'Did not pass all pytest tests', stageResult: "UNSTABLE") {
-                                    sh(
-                                        script: '''mkdir -p logs
-                                                   coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml
-                                                   '''
-                                    )
-                                }
-                            }
-                            post {
-                                always {
-                                    junit "reports/tests/pytest/pytest-junit.xml"
-                                    stash includes: "reports/tests/pytest/*.xml", name: "PYTEST_UNIT_TEST_RESULTS"
-                                }
-                            }
-                        }
-                        stage("Run Doctest Tests"){
-                            steps {
-                                sh(
-                                    label: "Running Doctest Tests",
-                                    script: '''python setup.py build build_ui
-                                               coverage run --parallel-mode --source=speedwagon -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt
-                                               '''
-                                    )
-                            }
-                            post{
-                                always {
-                                    recordIssues(tools: [sphinxBuild(id: 'doctest', name: 'Doctest', pattern: 'logs/doctest.txt')])
-                                }
-                            }
-                        }
-                        stage("Run MyPy Static Analysis") {
-                            steps{
-                                catchError(buildResult: "SUCCESS", message: 'MyPy found issues', stageResult: "UNSTABLE") {
-                                    tee("logs/mypy.log"){
-                                        sh(label: 'Running MyPy',
-                                            script: '''mkdir -p logs
-                                                       mypy -p speedwagon --html-report reports/mypy/html
+                                stage("Run Doctest Tests"){
+                                    steps {
+                                        sh(
+                                            label: "Running Doctest Tests",
+                                            script: '''python setup.py build build_ui
+                                                       coverage run --parallel-mode --source=speedwagon -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt
                                                        '''
-                                        )
+                                            )
+                                    }
+                                    post{
+                                        always {
+                                            recordIssues(tools: [sphinxBuild(id: 'doctest', name: 'Doctest', pattern: 'logs/doctest.txt')])
+                                        }
+                                    }
+                                }
+                                stage("Run MyPy Static Analysis") {
+                                    steps{
+                                        catchError(buildResult: "SUCCESS", message: 'MyPy found issues', stageResult: "UNSTABLE") {
+                                            tee("logs/mypy.log"){
+                                                sh(label: 'Running MyPy',
+                                                    script: '''mkdir -p logs
+                                                               mypy -p speedwagon --html-report reports/mypy/html
+                                                               '''
+                                                )
+                                            }
+                                        }
+                                    }
+                                    post {
+                                        always {
+                                            recordIssues(tools: [myPy(pattern: "logs/mypy.log")])
+                                            publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
+                                        }
+                                        cleanup{
+                                            cleanWs(patterns: [[pattern: 'logs/mypy.log', type: 'INCLUDE']])
+                                        }
+                                    }
+                                }
+                                stage("Run Tox test") {
+                                    when{
+                                        equals expected: true, actual: params.TEST_RUN_TOX
+                                    }
+                                    environment {
+                                      PIP_TRUSTED_HOST = "devpi.library.illinois.edu"
+
+                                    }
+                                    steps {
+                                        sh "tox -e py -vv -i https://devpi.library.illinois.edu/production/release"
+                                    }
+                                    post{
+                                        cleanup{
+                                            cleanWs deleteDirs: true, patterns: [
+                                                [pattern: '.tox', type: 'INCLUDE']
+                                            ]
+                                        }
+                                    }
+                                }
+                                stage("Run Pylint Static Analysis") {
+                                    steps{
+                                        run_pylint()
+                                    }
+                                    post{
+                                        always{
+                                            stash includes: "reports/pylint_issues.txt,reports/pylint.txt", name: 'PYLINT_REPORT'
+                                            recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
+                                        }
+                                    }
+                                }
+                                stage("Run Flake8 Static Analysis") {
+                                    steps{
+                                        catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
+                                            sh script: '''mkdir -p logs
+                                                          flake8 speedwagon --tee --output-file=logs/flake8.log
+                                                          '''
+                                        }
+                                    }
+                                    post {
+                                        always {
+                                              stash includes: 'logs/flake8.log', name: "FLAKE8_REPORT"
+                                              recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
+                                        }
                                     }
                                 }
                             }
-                            post {
-                                always {
-                                    recordIssues(tools: [myPy(pattern: "logs/mypy.log")])
-                                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
-                                }
-                                cleanup{
-                                    cleanWs(patterns: [[pattern: 'logs/mypy.log', type: 'INCLUDE']])
-                                }
-                            }
-                        }
-                        stage("Run Tox test") {
-                            when{
-                                equals expected: true, actual: params.TEST_RUN_TOX
-                            }
-                            environment {
-                              PIP_TRUSTED_HOST = "devpi.library.illinois.edu"
-
-                            }
-                            steps {
-                                sh "tox -e py -vv -i https://devpi.library.illinois.edu/production/release"
-                            }
-                            post{
-                                cleanup{
-                                    cleanWs deleteDirs: true, patterns: [
-                                        [pattern: '.tox', type: 'INCLUDE']
-                                    ]
-                                }
-                            }
-                        }
-                        stage("Run Pylint Static Analysis") {
-                            steps{
-                                run_pylint()
-                            }
                             post{
                                 always{
-                                    stash includes: "reports/pylint_issues.txt,reports/pylint.txt", name: 'PYLINT_REPORT'
-                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
-                                }
-                            }
-                        }
-                        stage("Run Flake8 Static Analysis") {
-                            steps{
-                                catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
-                                    sh script: '''mkdir -p logs
-                                                  flake8 speedwagon --tee --output-file=logs/flake8.log
-                                                  '''
-                                }
-                            }
-                            post {
-                                always {
-                                      stash includes: 'logs/flake8.log', name: "FLAKE8_REPORT"
-                                      recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
+                                    sh "coverage combine && coverage xml -o reports/coverage.xml && coverage html -d reports/coverage"
+                                    stash includes: "reports/coverage.xml", name: "COVERAGE_REPORT_DATA"
+                                    publishCoverage(
+                                        adapters: [
+                                                coberturaAdapter('reports/coverage.xml')
+                                            ],
+                                        sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                                    )
                                 }
                             }
                         }
                     }
                     post{
+                        cleanup{
+                            cleanWs(patterns: [
+                                    [pattern: 'logs/*', type: 'INCLUDE'],
+                                    [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
+                                    [pattern: 'reports/coverage', type: 'INCLUDE'],
+                                    [pattern: '.coverage', type: 'INCLUDE']
+                                ])
+                        }
+                    }
+                }
+                stage("Run Sonarqube Analysis"){
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                            args '--mount source=sonar-cache-speedwagon,target=/home/user/.sonar/cache'
+                        }
+                    }
+                    options{
+                        lock("speedwagon-sonarscanner")
+                    }
+                    when{
+                        equals expected: true, actual: params.USE_SONARQUBE
+                        beforeAgent true
+                        beforeOptions true
+                    }
+                    steps{
+                        unstash "COVERAGE_REPORT_DATA"
+                        unstash "PYTEST_UNIT_TEST_RESULTS"
+                        unstash "PYLINT_REPORT"
+                        unstash "FLAKE8_REPORT"
+                        script{
+                            withSonarQubeEnv(installationName:"sonarcloud", credentialsId: 'sonarcloud-speedwagon') {
+                                unstash "DIST-INFO"
+                                runSonarScanner("speedwagon.dist-info/METADATA")
+                            }
+                            timeout(60){
+                                def sonarqube_result = waitForQualityGate(abortPipeline: false)
+                                if (sonarqube_result.status != 'OK') {
+                                    unstable "SonarQube quality gate: ${sonarqube_result.status}"
+                                }
+                                def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
+                                writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
+                            }
+                        }
+                    }
+                    post {
                         always{
-                            sh "coverage combine && coverage xml -o reports/coverage.xml && coverage html -d reports/coverage"
-                            stash includes: "reports/coverage.xml", name: "COVERAGE_REPORT_DATA"
-                            publishCoverage(
-                                adapters: [
-                                        coberturaAdapter('reports/coverage.xml')
-                                    ],
-                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                            archiveArtifacts(
+                                allowEmptyArchive: true,
+                                artifacts: ".scannerwork/report-task.txt"
                             )
+                            stash includes: "reports/sonar-report.json", name: 'SONAR_REPORT'
+                            archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
+                            recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                         }
                     }
-                }
-            }
-            post{
-                cleanup{
-                    cleanWs(patterns: [
-                            [pattern: 'logs/*', type: 'INCLUDE'],
-                            [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
-                            [pattern: 'reports/coverage', type: 'INCLUDE'],
-                            [pattern: '.coverage', type: 'INCLUDE']
-                        ])
-                }
-            }
-        }
-        stage("Run Sonarqube Analysis"){
-            agent {
-                dockerfile {
-                    filename 'ci/docker/python/linux/Dockerfile'
-                    label 'linux && docker'
-                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                    args '--mount source=sonar-cache-speedwagon,target=/home/user/.sonar/cache'
-                }
-            }
-            options{
-                lock("speedwagon-sonarscanner")
-            }
-            when{
-                equals expected: true, actual: params.USE_SONARQUBE
-                beforeAgent true
-                beforeOptions true
-            }
-            steps{
-                unstash "COVERAGE_REPORT_DATA"
-                unstash "PYTEST_UNIT_TEST_RESULTS"
-                unstash "PYLINT_REPORT"
-                unstash "FLAKE8_REPORT"
-                script{
-                    withSonarQubeEnv(installationName:"sonarcloud", credentialsId: 'sonarcloud-speedwagon') {
-                        unstash "DIST-INFO"
-                        runSonarScanner("speedwagon.dist-info/METADATA")
-                    }
-                    timeout(60){
-                        def sonarqube_result = waitForQualityGate(abortPipeline: false)
-                        if (sonarqube_result.status != 'OK') {
-                            unstable "SonarQube quality gate: ${sonarqube_result.status}"
-                        }
-                        def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
-                        writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
-                    }
-                }
-            }
-            post {
-                always{
-                    archiveArtifacts(
-                        allowEmptyArchive: true,
-                        artifacts: ".scannerwork/report-task.txt"
-                    )
-                    stash includes: "reports/sonar-report.json", name: 'SONAR_REPORT'
-                    archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
-                    recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                 }
             }
         }
