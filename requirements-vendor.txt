@@ -8,4 +8,4 @@ uiucprescon.images==0.0.4b1
 uiucprescon.imagevalidate==0.1.5b5
 uiucprescon.ocr
 uiucprescon.packager==0.2.11b5
-
+hathichecksumupdater
