@@ -1106,6 +1106,7 @@ pipeline {
                                                        choco new speedwagon packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
                                                        New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
                                                        Move-Item -Path "${it.path}"  -Destination "./packages/speedwagon/${it.path}"  -Force | Out-Null
+                                                       Get-ChildItem -Path .
                                                        Copy-Item -Path "deps\\*.whl"  -Destination ".\\packages\\speedwagon\\deps"  -Force
                                                        choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages
                                                        """
