@@ -661,22 +661,22 @@ pipeline {
         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
     stages {
-//         stage("Testing Jira epic"){
-//             agent any
-//             options {
-//                 skipDefaultCheckout(true)
-//
-//             }
-//             steps {
-//                 check_jira_project('PSR',, 'logs/jira_project_data.json')
-//                 check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
-//             }
-//             post{
-//                 cleanup{
-//                     cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
-//                 }
-//             }
-//         }
+        stage("Testing Jira epic"){
+            agent any
+            options {
+                skipDefaultCheckout(true)
+
+            }
+            steps {
+                check_jira_project('PSR',, 'logs/jira_project_data.json')
+                check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
+            }
+            post{
+                cleanup{
+                    cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
+                }
+            }
+        }
         stage("Build Sphinx Documentation"){
             agent {
                 dockerfile {
@@ -1125,7 +1125,6 @@ pipeline {
                                 label 'Windows&&Docker'
                               }
                             }
-
                             when{
                                 anyOf{
                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
