@@ -70,7 +70,6 @@ def sanitize_chocolatey_version(version){
             return dashed_version.replaceFirst(alpha_pattern, "alpha")
         }
         return dashed_version
-        return new_version
     }
 }
 def gitAddVersionTag(metadataFile){
@@ -1073,10 +1072,10 @@ pipeline {
                                         powershell(
                                             label: "Configuring new package for Chocolatey",
                                             script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
-                                                       choco new getmarc packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
-                                                       New-Item -ItemType File -Path ".\\packages\\getmarc\\${it.path}" -Force | Out-Null
-                                                       Move-Item -Path "${it.path}"  -Destination "./packages/getmarc/${it.path}"  -Force | Out-Null
-                                                       choco pack .\\packages\\getmarc\\getmarc.nuspec --outputdirectory .\\packages
+                                                       choco new speedwagon packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
+                                                       New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
+                                                       Move-Item -Path "${it.path}"  -Destination "./packages/speedwagon/${it.path}"  -Force | Out-Null
+                                                       choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages
                                                        """
                                         )
                                     }
