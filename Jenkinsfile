@@ -661,22 +661,22 @@ pipeline {
         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
     stages {
-        stage("Testing Jira epic"){
-            agent any
-            options {
-                skipDefaultCheckout(true)
-
-            }
-            steps {
-                check_jira_project('PSR',, 'logs/jira_project_data.json')
-                check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
-            }
-            post{
-                cleanup{
-                    cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
-                }
-            }
-        }
+//         stage("Testing Jira epic"){
+//             agent any
+//             options {
+//                 skipDefaultCheckout(true)
+//
+//             }
+//             steps {
+//                 check_jira_project('PSR',, 'logs/jira_project_data.json')
+//                 check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
+//             }
+//             post{
+//                 cleanup{
+//                     cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
+//                 }
+//             }
+//         }
         stage('Build') {
             parallel {
                 stage("Building Python Library"){
@@ -1485,9 +1485,9 @@ pipeline {
                         }
                     }
                     post{
-                        success{
-                            jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                        }
+//                         success{
+//                             jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: "${params.JIRA_ISSUE_VALUE}"
+//                         }
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
@@ -1570,12 +1570,12 @@ pipeline {
                             deploy_sscm("*.msi", "${PKG_VERSION}", "${params.JIRA_ISSUE_VALUE}")
                         }
                     }
-                    post {
-                        success {
-                            jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                            archiveArtifacts artifacts: "logs/deployment_request.txt"
-                        }
-                    }
+//                     post {
+//                         success {
+//                             jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+//                             archiveArtifacts artifacts: "logs/deployment_request.txt"
+//                         }
+//                     }
                 }
             }
         }
