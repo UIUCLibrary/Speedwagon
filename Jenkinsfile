@@ -1076,7 +1076,7 @@ pipeline {
 //                                 unstash "PYTHON_PACKAGES"
 //                                 script{
 //                                     findFiles(glob: "dist/*.whl").each{
-                                bat "pip wheel -r requirements-vendor.txt -w .\\deps\\"
+                                bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\"
 //                                     }
 //                                 }
                             }
