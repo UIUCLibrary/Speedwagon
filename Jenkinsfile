@@ -1107,7 +1107,7 @@ pipeline {
                                                        New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
                                                        Move-Item -Path "${it.path}"  -Destination "./packages/speedwagon/${it.path}"  -Force | Out-Null
                                                        Get-ChildItem -Path ".\\deps"
-                                                       Copy-Item -Path ".\\deps"  -Destination ".\\packages\\speedwagon\\deps\\"  -Force
+                                                       Copy-Item -Path ".\\deps" -Filter *.whl  -Destination ".\\packages\\speedwagon\\deps\\"  -Force
                                                        Get-ChildItem -Path packages\\speedwagon\\ -Recurse
                                                        choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages
                                                        """
