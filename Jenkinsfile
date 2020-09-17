@@ -1070,7 +1070,7 @@ pipeline {
                                     def props = readProperties interpolate: true, file: 'speedwagon.dist-info.dist-info/METADATA'
                                     unstash "PYTHON_PACKAGES"
                                     findFiles(glob: "dist/*.whl").each{
-                                        echo "Doing something with ${it}"
+                                        echo "Doing something with ${it} for ${props.Version}"
                                         def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
                                         powershell(
                                             label: "Configuring new package for Chocolatey",
