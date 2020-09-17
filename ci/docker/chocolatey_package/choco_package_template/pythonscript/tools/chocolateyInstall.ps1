@@ -24,7 +24,7 @@ foreach ($file in $files) {
   New-Item "$file.ignore" -type file -force | Out-Null
 }
 Install-ChocolateyShortcut `
-  -ShortcutFilePath "C:\$packageName.lnk" `
+  -ShortcutFilePath "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\$packageName.lnk" `
   -TargetPath "$installDir\venv\Scripts\$packageName.exe" `
   -WorkingDirectory "C:\" `
   -Description "This is the description"
