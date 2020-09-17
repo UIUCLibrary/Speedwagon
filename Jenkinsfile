@@ -1087,216 +1087,220 @@ pipeline {
                          }
                     }
                 }
-                 stage("Chocolatey"){
-                    when{
-                        anyOf{
-                            equals expected: true, actual: params.DEPLOY_CHOCOLATEY
-                            equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
-                        }
-                        beforeInput true
-                    }
-                    stages{
-                        stage("Packaging python dependencies"){
-                            stages{
-                                stage("Packaging wheels for 3.8"){
-                                    agent {
-                                        dockerfile {
-                                            filename 'ci/docker/python/windows/Dockerfile'
-                                            label "windows && docker"
-                                            additionalBuildArgs "--build-arg PYTHON_VERSION=3.8 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
-                                        }
-                                    }
-                                    steps{
-                                        bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
-                                    }
-                                    post{
-                                        success{
-                                            stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.8'
-                                        }
-                                    }
-                                }
-                                stage("Packaging wheels for 3.7"){
-                                    agent {
-                                        dockerfile {
-                                            filename 'ci/docker/python/windows/Dockerfile'
-                                            label "windows && docker"
-                                            additionalBuildArgs "--build-arg PYTHON_VERSION=3.7 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
-                                        }
-                                    }
-                                    steps{
-                                        bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
-                                    }
-                                    post{
-                                        success{
-                                            stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.7'
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        stage("Package for Chocolatey"){
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/chocolatey_package/Dockerfile'
-                                    label 'windows && docker'
-                                    additionalBuildArgs "--build-arg CHOCOLATEY_SOURCE"
-                                  }
-                            }
-                            steps{
-                                unstash "PYTHON_PACKAGES"
-                                script {
-                                    findFiles(glob: "dist/*.whl").each{
-                                        def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
-                                        unstash "PYTHON_DEPS_3.8"
-                                        unstash "PYTHON_DEPS_3.7"
-                                        unstash "SPEEDWAGON_DOC_PDF"
-                                        powershell(
-                                            label: "Creating new package for Chocolatey",
-                                            script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
-                                                       choco new speedwagon packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
-                                                       New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
-                                                       Move-Item -Path "${it.path}"  -Destination "./packages/speedwagon/${it.path}"  -Force | Out-Null
-                                                       Copy-Item -Path ".\\deps"  -Destination ".\\packages\\speedwagon\\deps\\" -Force -Recurse
-                                                       Copy-Item -Path ".\\dist\\docs"  -Destination ".\\packages\\speedwagon\\docs\\" -Force -Recurse
-                                                       choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages
-                                                       """
-                                        )
-                                    }
-                                }
-                            }
-                            post{
-                                always{
-                                    archiveArtifacts artifacts: "packages/**/*.nuspec,packages/*.nupkg"
-                                    stash includes: 'packages/*.nupkg', name: "CHOCOLATEY_PACKAGE"
-                                }
-                            }
-                        }
-                        stage("Testing Chocolatey Package"){
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/chocolatey_package/Dockerfile'
-                                    label 'windows && docker'
-                                    additionalBuildArgs "--build-arg CHOCOLATEY_SOURCE"
-                                  }
-                            }
-                            when{
-                                equals expected: true, actual: params.TEST_PACKAGES
-                            }
-                            steps{
-                                unstash "CHOCOLATEY_PACKAGE"
-                                script{
-                                    def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
-                                    powershell(
-                                        label: "Installing Chocolatey Package",
-                                        script:"""\$ErrorActionPreference = 'Stop'; # stop on all errors
-                                                  choco install speedwagon -y -dv  --version=${sanitized_packageversion} -s './packages/;CHOCOLATEY_SOURCE;chocolatey' --no-progress
-                                                  """
-                                    )
-                                }
-                                powershell "Get-ChildItem \"\$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\" -Recurse -Include *.lnk"
-                                bat "speedwagon --help"
-
-                            }
-//                             post{
-//                                 success{
-//                                     archiveArtifacts artifacts: "packages/*.nupkg", fingerprint: true
-//                                 }
-//                                 cleanup{
-//                                     cleanWs(
-//                                         notFailBuild: true,
-//                                         deleteDirs: true,
-//                                         patterns: [
-//                                             [pattern: 'packages/', type: 'INCLUDE'],
-//                                             [pattern: 'speedwagon.dist-info.dist-info/', type: 'INCLUDE'],
-//                                         ]
-//                                     )
-//                                 }
-//                             }
-                        }
-                    }
-                }
-                stage("Windows Standalone"){
-                    when{
-                        anyOf{
-                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
-                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
-                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
-                            equals expected: true, actual: params.DEPLOY_CHOCOLATEY
-                        }
-                        beforeAgent true
-                    }
-                    environment {
-                        build_number = get_build_number()
-                        PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
-                        PIP_TRUSTED_HOST="devpi.library.illinois.edu"
-                    }
-
-                    stages{
-                        stage("CMake Build"){
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/windows_standalone/Dockerfile'
-                                    label 'Windows&&Docker'
-                                    args "-u ContainerAdministrator"
-                                    additionalBuildArgs "${get_build_args()}"
-                                  }
-                            }
-                            steps {
-                                build_standalone()
-                            }
-                            post {
-                                success{
-                                    archiveArtifacts artifacts: "dist/*.msi,dist/*.exe,dist/*.zip", fingerprint: true
-                                }
-                                failure {
-                                    archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log,dist/**/*.wxs"
-                                }
-                                always{
-                                    stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
-                                }
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        notFailBuild: true
-                                    )
-                                }
-                            }
-                        }
-                        stage("Testing MSI Install"){
-                            agent {
-                              docker {
-                                args '-u ContainerAdministrator'
-                                image 'mcr.microsoft.com/windows/servercore:ltsc2019'
-                                label 'Windows&&Docker'
-                              }
-                            }
+                stage("End-user packages"){
+                    parallel{
+                        stage("Chocolatey"){
                             when{
                                 anyOf{
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
+                                    equals expected: true, actual: params.DEPLOY_CHOCOLATEY
+                                    equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
+                                }
+                                beforeInput true
+                            }
+                            stages{
+                                stage("Packaging python dependencies"){
+                                    stages{
+                                        stage("Packaging wheels for 3.8"){
+                                            agent {
+                                                dockerfile {
+                                                    filename 'ci/docker/python/windows/Dockerfile'
+                                                    label "windows && docker"
+                                                    additionalBuildArgs "--build-arg PYTHON_VERSION=3.8 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                                }
+                                            }
+                                            steps{
+                                                bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
+                                            }
+                                            post{
+                                                success{
+                                                    stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.8'
+                                                }
+                                            }
+                                        }
+                                        stage("Packaging wheels for 3.7"){
+                                            agent {
+                                                dockerfile {
+                                                    filename 'ci/docker/python/windows/Dockerfile'
+                                                    label "windows && docker"
+                                                    additionalBuildArgs "--build-arg PYTHON_VERSION=3.7 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                                }
+                                            }
+                                            steps{
+                                                bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
+                                            }
+                                            post{
+                                                success{
+                                                    stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.7'
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                stage("Package for Chocolatey"){
+                                    agent {
+                                        dockerfile {
+                                            filename 'ci/docker/chocolatey_package/Dockerfile'
+                                            label 'windows && docker'
+                                            additionalBuildArgs "--build-arg CHOCOLATEY_SOURCE"
+                                          }
+                                    }
+                                    steps{
+                                        unstash "PYTHON_PACKAGES"
+                                        script {
+                                            findFiles(glob: "dist/*.whl").each{
+                                                def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
+                                                unstash "PYTHON_DEPS_3.8"
+                                                unstash "PYTHON_DEPS_3.7"
+                                                unstash "SPEEDWAGON_DOC_PDF"
+                                                powershell(
+                                                    label: "Creating new package for Chocolatey",
+                                                    script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
+                                                               choco new speedwagon packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
+                                                               New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
+                                                               Move-Item -Path "${it.path}"  -Destination "./packages/speedwagon/${it.path}"  -Force | Out-Null
+                                                               Copy-Item -Path ".\\deps"  -Destination ".\\packages\\speedwagon\\deps\\" -Force -Recurse
+                                                               Copy-Item -Path ".\\dist\\docs"  -Destination ".\\packages\\speedwagon\\docs\\" -Force -Recurse
+                                                               choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages
+                                                               """
+                                                )
+                                            }
+                                        }
+                                    }
+                                    post{
+                                        always{
+                                            archiveArtifacts artifacts: "packages/**/*.nuspec,packages/*.nupkg"
+                                            stash includes: 'packages/*.nupkg', name: "CHOCOLATEY_PACKAGE"
+                                        }
+                                    }
+                                }
+                                stage("Testing Chocolatey Package"){
+                                    agent {
+                                        dockerfile {
+                                            filename 'ci/docker/chocolatey_package/Dockerfile'
+                                            label 'windows && docker'
+                                            additionalBuildArgs "--build-arg CHOCOLATEY_SOURCE"
+                                          }
+                                    }
+                                    when{
+                                        equals expected: true, actual: params.TEST_PACKAGES
+                                    }
+                                    steps{
+                                        unstash "CHOCOLATEY_PACKAGE"
+                                        script{
+                                            def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
+                                            powershell(
+                                                label: "Installing Chocolatey Package",
+                                                script:"""\$ErrorActionPreference = 'Stop'; # stop on all errors
+                                                          choco install speedwagon -y -dv  --version=${sanitized_packageversion} -s './packages/;CHOCOLATEY_SOURCE;chocolatey' --no-progress
+                                                          """
+                                            )
+                                        }
+                                        powershell "Get-ChildItem \"\$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\" -Recurse -Include *.lnk"
+                                        bat "speedwagon --help"
+
+                                    }
+        //                             post{
+        //                                 success{
+        //                                     archiveArtifacts artifacts: "packages/*.nupkg", fingerprint: true
+        //                                 }
+        //                                 cleanup{
+        //                                     cleanWs(
+        //                                         notFailBuild: true,
+        //                                         deleteDirs: true,
+        //                                         patterns: [
+        //                                             [pattern: 'packages/', type: 'INCLUDE'],
+        //                                             [pattern: 'speedwagon.dist-info.dist-info/', type: 'INCLUDE'],
+        //                                         ]
+        //                                     )
+        //                                 }
+        //                             }
+                                }
+                            }
+                        }
+                        stage("Windows Standalone"){
+                            when{
+                                anyOf{
                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
                                     equals expected: true, actual: params.DEPLOY_CHOCOLATEY
                                 }
                                 beforeAgent true
                             }
-                            options{
-                                skipDefaultCheckout(true)
+                            environment {
+                                build_number = get_build_number()
+                                PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
+                                PIP_TRUSTED_HOST="devpi.library.illinois.edu"
                             }
-                            steps{
-                                timeout(15){
-                                    unstash 'STANDALONE_INSTALLERS'
-                                    script{
-                                        def msi_file = findFiles(glob: "dist/*.msi")[0].path
-                                        powershell "New-Item -ItemType Directory -Force -Path logs; Write-Host \"Installing ${msi_file}\"; msiexec /i ${msi_file} /qn /norestart /L*v! logs\\msiexec.log"
+
+                            stages{
+                                stage("CMake Build"){
+                                    agent {
+                                        dockerfile {
+                                            filename 'ci/docker/windows_standalone/Dockerfile'
+                                            label 'Windows&&Docker'
+                                            args "-u ContainerAdministrator"
+                                            additionalBuildArgs "${get_build_args()}"
+                                          }
+                                    }
+                                    steps {
+                                        build_standalone()
+                                    }
+                                    post {
+                                        success{
+                                            archiveArtifacts artifacts: "dist/*.msi,dist/*.exe,dist/*.zip", fingerprint: true
+                                        }
+                                        failure {
+                                            archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log,dist/**/*.wxs"
+                                        }
+                                        always{
+                                            stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
+                                        }
+                                        cleanup{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                notFailBuild: true
+                                            )
+                                        }
                                     }
                                 }
-                            }
-                            post {
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        notFailBuild: true
-                                    )
+                                stage("Testing MSI Install"){
+                                    agent {
+                                      docker {
+                                        args '-u ContainerAdministrator'
+                                        image 'mcr.microsoft.com/windows/servercore:ltsc2019'
+                                        label 'Windows&&Docker'
+                                      }
+                                    }
+                                    when{
+                                        anyOf{
+                                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
+                                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                            equals expected: true, actual: params.DEPLOY_CHOCOLATEY
+                                        }
+                                        beforeAgent true
+                                    }
+                                    options{
+                                        skipDefaultCheckout(true)
+                                    }
+                                    steps{
+                                        timeout(15){
+                                            unstash 'STANDALONE_INSTALLERS'
+                                            script{
+                                                def msi_file = findFiles(glob: "dist/*.msi")[0].path
+                                                powershell "New-Item -ItemType Directory -Force -Path logs; Write-Host \"Installing ${msi_file}\"; msiexec /i ${msi_file} /qn /norestart /L*v! logs\\msiexec.log"
+                                            }
+                                        }
+                                    }
+                                    post {
+                                        cleanup{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                notFailBuild: true
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
