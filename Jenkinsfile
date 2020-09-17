@@ -946,101 +946,105 @@ pipeline {
                 beforeAgent true
             }
             stages{
-                stage("Packaging sdist and wheel"){
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/Dockerfile'
-                            label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                          }
-                    }
-                    steps{
-                        timeout(5){
-                            sh script: 'python -m pep517.build .'
+                stage("Python Packages"){
+                    stages{
+                        stage("Packaging sdist and wheel"){
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/python/linux/Dockerfile'
+                                    label 'linux && docker'
+                                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                  }
+                            }
+                            steps{
+                                timeout(5){
+                                    sh script: 'python -m pep517.build .'
+                                }
+                            }
+                            post{
+                                always{
+                                    stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
+                                }
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        patterns: [
+                                            [pattern: 'source', type: 'EXCLUDE']
+                                            ]
+                                        )
+                                }
+                            }
                         }
-                    }
-                    post{
-                        always{
-                            stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
-                        }
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: 'source', type: 'EXCLUDE']
-                                    ]
-                                )
-                        }
+                        stage('Testing all Package') {
+                            when{
+                                equals expected: true, actual: params.TEST_PACKAGES
+                            }
+                            matrix{
+                                agent {
+                                    dockerfile {
+                                        filename "ci/docker/python/${PLATFORM}/Dockerfile"
+                                        label "${PLATFORM} && docker"
+                                        additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                    }
+                                }
+                                axes{
+                                    axis {
+                                        name "PYTHON_VERSION"
+                                        values(
+                                            "3.7",
+                                            "3.8"
+                                        )
+                                    }
+                                    axis {
+                                        name "PLATFORM"
+                                        values(
+                                            'linux',
+                                            'windows'
+                                        )
+                                    }
+                                }
+                                stages{
+                                    stage("Testing sdist Package"){
+                                        steps{
+                                            cleanWs(
+                                                notFailBuild: true,
+                                                deleteDirs: true,
+                                                disableDeferredWipeout: true,
+                                                patterns: [
+                                                        [pattern: 'features/', type: 'EXCLUDE'],
+                                                        [pattern: '.git/**', type: 'EXCLUDE'],
+                                                        [pattern: 'tests/**', type: 'EXCLUDE'],
+                                                        [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                                        [pattern: 'setup.cfg', type: 'EXCLUDE'],
+                                                    ]
+                                            )
+                                            unstash "PYTHON_PACKAGES"
+                                            testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['sdist']}")
+                                        }
+                                    }
+                                    stage("Testing bdist_wheel Package"){
+                                        steps{
+                                            cleanWs(
+                                                notFailBuild: true,
+                                                deleteDirs: true,
+                                                disableDeferredWipeout: true,
+                                                patterns: [
+                                                        [pattern: 'features/', type: 'EXCLUDE'],
+                                                        [pattern: '.git/**', type: 'EXCLUDE'],
+                                                        [pattern: 'tests/**', type: 'EXCLUDE'],
+                                                        [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                                        [pattern: 'setup.cfg', type: 'EXCLUDE'],
+                                                    ]
+                                            )
+                                            unstash "PYTHON_PACKAGES"
+                                            testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
+                                        }
+                                    }
+                                }
+                            }
+                         }
                     }
                 }
-                stage('Testing all Package') {
-                    when{
-                        equals expected: true, actual: params.TEST_PACKAGES
-                    }
-                    matrix{
-                        agent {
-                            dockerfile {
-                                filename "ci/docker/python/${PLATFORM}/Dockerfile"
-                                label "${PLATFORM} && docker"
-                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
-                            }
-                        }
-                        axes{
-                            axis {
-                                name "PYTHON_VERSION"
-                                values(
-                                    "3.7",
-                                    "3.8"
-                                )
-                            }
-                            axis {
-                                name "PLATFORM"
-                                values(
-                                    'linux',
-                                    'windows'
-                                )
-                            }
-                        }
-                        stages{
-                            stage("Testing sdist Package"){
-                                steps{
-                                    cleanWs(
-                                        notFailBuild: true,
-                                        deleteDirs: true,
-                                        disableDeferredWipeout: true,
-                                        patterns: [
-                                                [pattern: 'features/', type: 'EXCLUDE'],
-                                                [pattern: '.git/**', type: 'EXCLUDE'],
-                                                [pattern: 'tests/**', type: 'EXCLUDE'],
-                                                [pattern: 'tox.ini', type: 'EXCLUDE'],
-                                                [pattern: 'setup.cfg', type: 'EXCLUDE'],
-                                            ]
-                                    )
-                                    unstash "PYTHON_PACKAGES"
-                                    testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['sdist']}")
-                                }
-                            }
-                            stage("Testing bdist_wheel Package"){
-                                steps{
-                                    cleanWs(
-                                        notFailBuild: true,
-                                        deleteDirs: true,
-                                        disableDeferredWipeout: true,
-                                        patterns: [
-                                                [pattern: 'features/', type: 'EXCLUDE'],
-                                                [pattern: '.git/**', type: 'EXCLUDE'],
-                                                [pattern: 'tests/**', type: 'EXCLUDE'],
-                                                [pattern: 'tox.ini', type: 'EXCLUDE'],
-                                                [pattern: 'setup.cfg', type: 'EXCLUDE'],
-                                            ]
-                                    )
-                                    unstash "PYTHON_PACKAGES"
-                                    testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
-                                }
-                            }
-                        }
-                    }
-                 }
 //                  stage("Chocolatey"){
 //                     when{
 //                         anyOf{
