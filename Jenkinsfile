@@ -563,7 +563,7 @@ def build_standalone(){
     stage("Packaging standalone"){
         script{
             def packaging_msi = false
-            if(params.PACKAGE_WINDOWS_STANDALONE_MSI || params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY){
+            if(params.PACKAGE_WINDOWS_STANDALONE_MSI){
                 packaging_msi = true
             }
             def cpack_generators = generate_cpack_arguments(packaging_msi, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)
@@ -1221,7 +1221,6 @@ pipeline {
                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
                                 }
                                 beforeAgent true
                             }
@@ -1271,10 +1270,7 @@ pipeline {
                                       }
                                     }
                                     when{
-                                        anyOf{
-                                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY
-                                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                                        }
+                                        equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
                                         beforeAgent true
                                     }
                                     options{
