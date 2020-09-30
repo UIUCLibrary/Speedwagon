@@ -70,7 +70,6 @@ def sanitize_chocolatey_version(version){
             return dashed_version.replaceFirst(alpha_pattern, "alpha")
         }
         return dashed_version
-        return new_version
     }
 }
 def gitAddVersionTag(metadataFile){
@@ -124,6 +123,38 @@ def run_pylint(){
         label: "Running pylint for sonarqube",
         returnStatus: true
     )
+}
+
+def deploy_to_chocolatey(ChocolateyServer){
+    script{
+        def pkgs = []
+        findFiles(glob: "packages/*.nupkg").each{
+            pkgs << it.path
+        }
+        def deployment_options = input(
+            message: 'Chocolatey server',
+            parameters: [
+                credentials(
+                    credentialType: 'org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl',
+                    defaultValue: 'NEXUS_NUGET_API_KEY',
+                    description: 'Nuget API key for Chocolatey',
+                    name: 'CHOCO_REPO_KEY',
+                    required: true
+                ),
+                choice(
+                    choices: pkgs,
+                    description: 'Package to use',
+                    name: 'NUPKG'
+                ),
+            ]
+        )
+        withCredentials([string(credentialsId: deployment_options['CHOCO_REPO_KEY'], variable: 'KEY')]) {
+            bat(
+                label: "Deploying ${deployment_options['NUPKG']} to Chocolatey",
+                script: "choco push ${deployment_options['NUPKG']} -s ${ChocolateyServer} -k %KEY%"
+            )
+        }
+    }
 }
 
 def make_chocolatey_distribution(install_file, packageversion, dest){
@@ -532,7 +563,7 @@ def build_standalone(){
     stage("Packaging standalone"){
         script{
             def packaging_msi = false
-            if(params.PACKAGE_WINDOWS_STANDALONE_MSI || params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY){
+            if(params.PACKAGE_WINDOWS_STANDALONE_MSI){
                 packaging_msi = true
             }
             def cpack_generators = generate_cpack_arguments(packaging_msi, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)
@@ -604,25 +635,64 @@ def testPythonPackagesWithTox(glob){
         }
     }
 }
+def startup(){
+    node('linux && docker') {
+        timeout(2){
+            ws{
+                checkout scm
+                try{
+                    docker.image('python:3.8').inside {
+                        stage("Getting Distribution Info"){
+                            sh(
+                               label: "Running setup.py with dist_info",
+                               script: """python --version
+                                          python -m venv venv
+                                          venv/bin/python -m pip install pip --upgrade
+                                          venv/bin/pip install pyqt_distutils wheel
+                                          venv/bin/python setup.py dist_info
+                                       """
+                            )
+                            stash includes: "speedwagon.dist-info/**", name: 'DIST-INFO'
+                            archiveArtifacts artifacts: "speedwagon.dist-info/**"
+                        }
+                    }
+                } finally{
+                    deleteDir()
+                }
+            }
+        }
+    }
+}
+
+startup()
+def get_props(){
+    stage("Reading Package Metadata"){
+        node(){
+            unstash "DIST-INFO"
+            return readProperties(interpolate: true, file: 'speedwagon.dist-info/METADATA')
+        }
+    }
+}
+def props = get_props()
 
 pipeline {
     agent none
     parameters {
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
+        booleanParam(name: "USE_SONARQUBE", defaultValue: true, description: "Send data test data to SonarQube")
         booleanParam(name: "RUN_CHECKS", defaultValue: true, description: "Run checks on code")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
-        booleanParam(name: "USE_SONARQUBE", defaultValue: true, description: "Send data test data to SonarQube")
-        booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Python packages")
-        booleanParam(name: "TEST_PACKAGES_ON_MAC", defaultValue: false, description: "Test Python packages on Mac")
+        booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Packages")
+        booleanParam(name: 'BUILD_CHOCOLATEY_PACKAGE', defaultValue: false, description: 'Build package for chocolatey package manager')
+        booleanParam(name: "TEST_PACKAGES", defaultValue: true, description: "Test Python packages by installing them and running tests on the installed package")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: false, description: "Create a standalone wix based .msi installer")
 
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: false, description: "Create a standalone NULLSOFT NSIS based .exe installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_ZIP", defaultValue: false, description: "Create a standalone portable package")
-        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY", defaultValue: false, description: "Create package for the Chocolatey package manager")
+        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY", defaultValue: false, description: "Create package for the Chocolatey package manager")
 
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
-//         booleanParam(name: "DEPLOY_ADD_TAG", defaultValue: false, description: "Tag commit to current version")
         booleanParam(name: "DEPLOY_CHOCOLATEY", defaultValue: false, description: "Deploy to Chocolatey repository")
         booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
@@ -630,51 +700,19 @@ pipeline {
         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
     stages {
-        stage("Configure"){
-            stages{
-                stage("Initial setup"){
-                    parallel{
-                        stage("Testing Jira epic"){
-                            agent any
-                            options {
-                                skipDefaultCheckout(true)
+        stage("Testing Jira epic"){
+            agent any
+            options {
+                skipDefaultCheckout(true)
 
-                            }
-                            steps {
-                                check_jira_project('PSR',, 'logs/jira_project_data.json')
-                                check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
-                            }
-                            post{
-                                cleanup{
-                                    cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
-                                }
-                            }
-                        }
-                        stage("Getting Distribution Info"){
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/python/linux/Dockerfile'
-                                    label 'linux && docker'
-                                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                 }
-                            }
-                            steps{
-                                sh "python setup.py dist_info"
-                            }
-                            post{
-                                success{
-                                    stash includes: "speedwagon.dist-info/**", name: 'DIST-INFO'
-                                    archiveArtifacts artifacts: "speedwagon.dist-info/**"
-                                }
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        notFailBuild: true
-                                    )
-                                }
-                            }
-                        }
-                    }
+            }
+            steps {
+                check_jira_project('PSR',, 'logs/jira_project_data.json')
+                check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
+            }
+            post{
+                cleanup{
+                    cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
                 }
             }
         }
@@ -709,7 +747,6 @@ pipeline {
                 success{
                     unstash "DIST-INFO"
                     script{
-                        def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                         def DOC_ZIP_FILENAME = "${props.Name}-${props.Version}.doc.zip"
                         zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
                         stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
@@ -743,6 +780,13 @@ pipeline {
                           }
                     }
                     stages{
+                        stage("Building Python Library"){
+                            steps {
+                                sh '''mkdir -p logs
+                                      python setup.py build -b build
+                                      '''
+                            }
+                        }
                         stage("Run Tests"){
                             parallel {
                                 stage("Run Behave BDD Tests") {
@@ -764,9 +808,7 @@ pipeline {
                                     steps{
                                         catchError(buildResult: "UNSTABLE", message: 'Did not pass all pytest tests', stageResult: "UNSTABLE") {
                                             sh(
-                                                script: '''mkdir -p logs
-                                                           coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml
-                                                           '''
+                                                script: 'coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml'
                                             )
                                         }
                                     }
@@ -781,9 +823,7 @@ pipeline {
                                     steps {
                                         sh(
                                             label: "Running Doctest Tests",
-                                            script: '''python setup.py build build_ui
-                                                       coverage run --parallel-mode --source=speedwagon -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt
-                                                       '''
+                                            script: 'coverage run --parallel-mode --source=speedwagon -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt'
                                             )
                                     }
                                     post{
@@ -795,11 +835,11 @@ pipeline {
                                 stage("Run MyPy Static Analysis") {
                                     steps{
                                         catchError(buildResult: "SUCCESS", message: 'MyPy found issues', stageResult: "UNSTABLE") {
-                                            sh(label: 'Running MyPy',
-                                                script: '''mkdir -p logs
-                                                           mypy -p speedwagon --html-report reports/mypy/html | tee logs/mypy.log
-                                                           '''
-                                            )
+                                            tee("logs/mypy.log"){
+                                                sh(label: 'Running MyPy',
+                                                   script: 'mypy -p speedwagon --html-report reports/mypy/html'
+                                                )
+                                            }
                                         }
                                     }
                                     post {
@@ -815,6 +855,10 @@ pipeline {
                                 stage("Run Tox test") {
                                     when{
                                         equals expected: true, actual: params.TEST_RUN_TOX
+                                    }
+                                    environment {
+                                      PIP_TRUSTED_HOST = "devpi.library.illinois.edu"
+
                                     }
                                     steps {
                                         sh "tox -e py -vv -i https://devpi.library.illinois.edu/production/release"
@@ -841,9 +885,7 @@ pipeline {
                                 stage("Run Flake8 Static Analysis") {
                                     steps{
                                         catchError(buildResult: "SUCCESS", message: 'Flake8 found issues', stageResult: "UNSTABLE") {
-                                            sh script: '''mkdir -p logs
-                                                          flake8 speedwagon --tee --output-file=logs/flake8.log
-                                                          '''
+                                            sh script: 'flake8 speedwagon --tee --output-file=logs/flake8.log'
                                         }
                                     }
                                     post {
@@ -906,12 +948,14 @@ pipeline {
                                 unstash "DIST-INFO"
                                 runSonarScanner("speedwagon.dist-info/METADATA")
                             }
-                            def sonarqube_result = waitForQualityGate(abortPipeline: false)
-                            if (sonarqube_result.status != 'OK') {
-                                unstable "SonarQube quality gate: ${sonarqube_result.status}"
+                            timeout(60){
+                                def sonarqube_result = waitForQualityGate(abortPipeline: false)
+                                if (sonarqube_result.status != 'OK') {
+                                    unstable "SonarQube quality gate: ${sonarqube_result.status}"
+                                }
+                                def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
+                                writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
                             }
-                            def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
-                            writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
                         }
                     }
                     post {
@@ -932,8 +976,8 @@ pipeline {
             when{
                 anyOf{
                     equals expected: true, actual: params.BUILD_PACKAGES
-//                     equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
-                    equals expected: true, actual: params.TEST_PACKAGES_ON_MAC
+                    equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
+//                     equals expected: true, actual: params.TEST_PACKAGES_ON_MAC
                     equals expected: true, actual: params.DEPLOY_DEVPI
                     equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
                     equals expected: true, actual: params.DEPLOY_CHOCOLATEY
@@ -941,278 +985,315 @@ pipeline {
                 beforeAgent true
             }
             stages{
-                stage("Packaging sdist and wheel"){
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/Dockerfile'
-                            label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                          }
-                    }
-                    steps{
-                        timeout(5){
-                            sh script: 'python -m pep517.build .'
-                        }
-                    }
-                    post{
-                        always{
-                            stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
-                        }
-                    }
-                }
-                stage("Test Mac"){
-                    agent {
-                        label 'mac'
-                    }
-                    when{
-                        equals expected: true, actual: params.TEST_PACKAGES_ON_MAC
-                        beforeAgent true
-                    }
-                    steps{
-                        sh(
-                            label:"Installing tox",
-                            script: """python3 -m venv venv
-                                       venv/bin/python -m pip install pip --upgrade
-                                       venv/bin/python -m pip install wheel
-                                       venv/bin/python -m pip install --upgrade setuptools
-                                       venv/bin/python -m pip install tox
-                                       """
-                            )
-                        unstash "PYTHON_PACKAGES"
-                        script{
-                            findFiles(glob: "dist/*.tar.gz,dist/*.zip,dist/*.whl").each{
-                                catchError(buildResult: 'UNSTABLE', message: "Speedwagon failed test on mac with ${it.path}", stageResult: 'UNSTABLE') {
-                                    sh(
-                                        label: "Testing ${it}",
-                                        script: "venv/bin/tox --installpkg=${it.path} -e py -vv --recreate"
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    post{
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: 'venv/', type: 'INCLUDE'],
-                                    [pattern: '.tox/', type: 'INCLUDE'],
-                                    [pattern: '**/__pycache__', type: 'INCLUDE'],
-                                ]
-                            )
-                        }
-                    }
-                }
-                stage('Testing all Package') {
-                    matrix{
-                        agent {
-                            dockerfile {
-                                filename "ci/docker/python/${PLATFORM}/Dockerfile"
-                                label "${PLATFORM} && docker"
-                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
-                            }
-                        }
-                        axes{
-                            axis {
-                                name "PYTHON_VERSION"
-                                values(
-                                    "3.7",
-                                    "3.8"
-                                )
-                            }
-                            axis {
-                                name "PLATFORM"
-                                values(
-                                    'linux',
-                                    'windows'
-                                )
-                            }
-                        }
-                        stages{
-                            stage("Testing sdist Package"){
-                                steps{
-                                    cleanWs(
-                                        notFailBuild: true,
-                                        deleteDirs: true,
-                                        disableDeferredWipeout: true,
-                                        patterns: [
-                                                [pattern: 'features/', type: 'EXCLUDE'],
-                                                [pattern: '.git/**', type: 'EXCLUDE'],
-                                                [pattern: 'tests/**', type: 'EXCLUDE'],
-                                                [pattern: 'tox.ini', type: 'EXCLUDE'],
-                                            ]
-                                    )
-                                    unstash "PYTHON_PACKAGES"
-                                    testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['sdist']}")
-                                }
-                            }
-                            stage("Testing bdist_wheel Package"){
-                                steps{
-                                    cleanWs(
-                                        notFailBuild: true,
-                                        deleteDirs: true,
-                                        disableDeferredWipeout: true,
-                                        patterns: [
-                                                [pattern: 'features/', type: 'EXCLUDE'],
-                                                [pattern: '.git/**', type: 'EXCLUDE'],
-                                                [pattern: 'tests/**', type: 'EXCLUDE'],
-                                                [pattern: 'tox.ini', type: 'EXCLUDE'],
-                                            ]
-                                    )
-                                    unstash "PYTHON_PACKAGES"
-                                    testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
-                                }
-                            }
-                        }
-                    }
-                 }
-                stage("Windows Standalone"){
-                    when{
-                        anyOf{
-                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
-                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
-                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
-                            equals expected: true, actual: params.DEPLOY_CHOCOLATEY
-                        }
-                        beforeAgent true
-                    }
-                    environment {
-                        build_number = get_build_number()
-                        PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
-                        PIP_TRUSTED_HOST="devpi.library.illinois.edu"
-                    }
-
+                stage("Python Packages"){
                     stages{
-                        stage("CMake Build"){
+                        stage("Packaging sdist and wheel"){
                             agent {
                                 dockerfile {
-                                    filename 'ci/docker/windows_standalone/Dockerfile'
-                                    label 'Windows&&Docker'
-                                    args "-u ContainerAdministrator"
-                                    additionalBuildArgs "${get_build_args()}"
+                                    filename 'ci/docker/python/linux/Dockerfile'
+                                    label 'linux && docker'
+                                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                   }
                             }
-                            steps {
-                                build_standalone()
+                            steps{
+                                timeout(5){
+                                    sh script: 'python -m pep517.build .'
+                                }
                             }
-                            post {
-                                success{
-                                    archiveArtifacts artifacts: "dist/*.msi,dist/*.exe,dist/*.zip", fingerprint: true
-                                }
-                                failure {
-                                    archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log,dist/**/*.wxs"
-                                }
+                            post{
                                 always{
-                                    stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
+                                    stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
                                 }
                                 cleanup{
                                     cleanWs(
                                         deleteDirs: true,
-                                        notFailBuild: true
-                                    )
-                                }
-                            }
-                        }
-                        stage("Testing MSI Install"){
-                            agent {
-                              docker {
-                                args '-u ContainerAdministrator'
-                                image 'mcr.microsoft.com/windows/servercore:ltsc2019'
-                                label 'Windows&&Docker'
-                              }
-                            }
-
-                            when{
-                                anyOf{
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                                    equals expected: true, actual: params.DEPLOY_CHOCOLATEY
-                                }
-                                beforeAgent true
-                            }
-                            options{
-                                skipDefaultCheckout(true)
-                            }
-                            steps{
-                                timeout(15){
-                                    unstash 'STANDALONE_INSTALLERS'
-                                    script{
-                                        def msi_file = findFiles(glob: "dist/*.msi")[0].path
-                                        powershell "New-Item -ItemType Directory -Force -Path logs; Write-Host \"Installing ${msi_file}\"; msiexec /i ${msi_file} /qn /norestart /L*v! logs\\msiexec.log"
-                                    }
-                                }
-                            }
-                            post {
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        notFailBuild: true
-                                    )
-                                }
-                            }
-                        }
-                        stage("Package MSI for Chocolatey"){
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/chocolatey/Dockerfile'
-                                    label 'Windows&&Docker'
-                                  }
-                            }
-                            when{
-                                anyOf{
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
-                                    equals expected: true, actual: params.DEPLOY_CHOCOLATEY
-                                }
-                                beforeAgent true
-                            }
-                            steps{
-                                unstash 'STANDALONE_INSTALLERS'
-                                timeout(15){
-                                    script{
-                                        make_chocolatey_distribution(
-                                            findFiles(glob: "dist/*.msi")[0],
-                                            get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA"),
-                                            "chocolatey_package"
-                                            )
-                                    }
-                                }
-                            }
-                            post {
-                                success{
-                                    stash includes: "chocolatey_package/speedwagon/*.nupkg", name: "CHOCOLATEY_PACKAGE"
-                                    archiveArtifacts(
-                                        allowEmptyArchive: true,
-                                        artifacts: "chocolatey_package/speedwagon/*.nupkg"
+                                        patterns: [
+                                            [pattern: 'source', type: 'EXCLUDE']
+                                            ]
                                         )
                                 }
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        notFailBuild: true
-                                    )
+                            }
+                        }
+                        stage('Testing all Package') {
+                            when{
+                                equals expected: true, actual: params.TEST_PACKAGES
+                            }
+                            matrix{
+                                agent {
+                                    dockerfile {
+                                        filename "ci/docker/python/${PLATFORM}/Dockerfile"
+                                        label "${PLATFORM} && docker"
+                                        additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                    }
+                                }
+                                axes{
+                                    axis {
+                                        name "PYTHON_VERSION"
+                                        values(
+                                            "3.7",
+                                            "3.8"
+                                        )
+                                    }
+                                    axis {
+                                        name "PLATFORM"
+                                        values(
+                                            'linux',
+                                            'windows'
+                                        )
+                                    }
+                                }
+                                stages{
+                                    stage("Testing sdist Package"){
+                                        steps{
+                                            cleanWs(
+                                                notFailBuild: true,
+                                                deleteDirs: true,
+                                                disableDeferredWipeout: true,
+                                                patterns: [
+                                                        [pattern: 'features/', type: 'EXCLUDE'],
+                                                        [pattern: '.git/**', type: 'EXCLUDE'],
+                                                        [pattern: 'tests/**', type: 'EXCLUDE'],
+                                                        [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                                        [pattern: 'setup.cfg', type: 'EXCLUDE'],
+                                                    ]
+                                            )
+                                            unstash "PYTHON_PACKAGES"
+                                            testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['sdist']}")
+                                        }
+                                    }
+                                    stage("Testing bdist_wheel Package"){
+                                        steps{
+                                            cleanWs(
+                                                notFailBuild: true,
+                                                deleteDirs: true,
+                                                disableDeferredWipeout: true,
+                                                patterns: [
+                                                        [pattern: 'features/', type: 'EXCLUDE'],
+                                                        [pattern: '.git/**', type: 'EXCLUDE'],
+                                                        [pattern: 'tests/**', type: 'EXCLUDE'],
+                                                        [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                                        [pattern: 'setup.cfg', type: 'EXCLUDE'],
+                                                    ]
+                                            )
+                                            unstash "PYTHON_PACKAGES"
+                                            testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
+                                        }
+                                    }
+                                }
+                            }
+                         }
+                    }
+                }
+                stage("End-user packages"){
+                    parallel{
+                        stage("Chocolatey"){
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.DEPLOY_CHOCOLATEY
+                                    equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
+                                }
+                                beforeInput true
+                            }
+                            stages{
+                                stage("Packaging python dependencies"){
+                                    stages{
+                                        stage("Packaging wheels for 3.8"){
+                                            agent {
+                                                dockerfile {
+                                                    filename 'ci/docker/python/windows/Dockerfile'
+                                                    label "windows && docker"
+                                                    additionalBuildArgs "--build-arg PYTHON_VERSION=3.8 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                                }
+                                            }
+                                            steps{
+                                                bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
+                                            }
+                                            post{
+                                                success{
+                                                    stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.8'
+                                                }
+                                            }
+                                        }
+                                        stage("Packaging wheels for 3.7"){
+                                            agent {
+                                                dockerfile {
+                                                    filename 'ci/docker/python/windows/Dockerfile'
+                                                    label "windows && docker"
+                                                    additionalBuildArgs "--build-arg PYTHON_VERSION=3.7 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                                }
+                                            }
+                                            steps{
+                                                bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
+                                            }
+                                            post{
+                                                success{
+                                                    stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.7'
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                stage("Package for Chocolatey"){
+                                    agent {
+                                        dockerfile {
+                                            filename 'ci/docker/chocolatey_package/Dockerfile'
+                                            label 'windows && docker'
+                                            additionalBuildArgs "--build-arg CHOCOLATEY_SOURCE"
+                                          }
+                                    }
+                                    steps{
+                                        unstash "PYTHON_PACKAGES"
+                                        script {
+                                            findFiles(glob: "dist/*.whl").each{
+                                                def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
+                                                unstash "PYTHON_DEPS_3.8"
+                                                unstash "PYTHON_DEPS_3.7"
+                                                unstash "SPEEDWAGON_DOC_PDF"
+                                                powershell(
+                                                    label: "Creating new package for Chocolatey",
+                                                    script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
+                                                               choco new speedwagon packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
+                                                               New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
+                                                               Move-Item -Path "${it.path}"  -Destination "./packages/speedwagon/${it.path}"  -Force | Out-Null
+                                                               Copy-Item -Path ".\\deps"  -Destination ".\\packages\\speedwagon\\deps\\" -Force -Recurse
+                                                               Copy-Item -Path ".\\dist\\docs"  -Destination ".\\packages\\speedwagon\\docs\\" -Force -Recurse
+                                                               choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages
+                                                               """
+                                                )
+                                            }
+                                        }
+                                    }
+                                    post{
+                                        always{
+                                            archiveArtifacts artifacts: "packages/**/*.nuspec,packages/*.nupkg"
+                                            stash includes: 'packages/*.nupkg', name: "CHOCOLATEY_PACKAGE"
+                                        }
+                                    }
+                                }
+                                stage("Testing Chocolatey Package"){
+                                    agent {
+                                        dockerfile {
+                                            filename 'ci/docker/chocolatey_package/Dockerfile'
+                                            label 'windows && docker'
+                                            additionalBuildArgs "--build-arg CHOCOLATEY_SOURCE"
+                                          }
+                                    }
+                                    when{
+                                        equals expected: true, actual: params.TEST_PACKAGES
+                                        beforeAgent true
+                                    }
+                                    steps{
+                                        unstash "CHOCOLATEY_PACKAGE"
+                                        script{
+                                            def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
+                                            powershell(
+                                                label: "Installing Chocolatey Package",
+                                                script:"""\$ErrorActionPreference = 'Stop'; # stop on all errors
+                                                          choco install speedwagon -y -dv  --version=${sanitized_packageversion} -s './packages/;CHOCOLATEY_SOURCE;chocolatey' --no-progress
+                                                          """
+                                            )
+                                        }
+                                        powershell "Get-ChildItem \"\$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\" -Recurse -Include *.lnk"
+                                        bat "speedwagon --help"
+
+                                    }
+        //                             post{
+        //                                 success{
+        //                                     archiveArtifacts artifacts: "packages/*.nupkg", fingerprint: true
+        //                                 }
+        //                                 cleanup{
+        //                                     cleanWs(
+        //                                         notFailBuild: true,
+        //                                         deleteDirs: true,
+        //                                         patterns: [
+        //                                             [pattern: 'packages/', type: 'INCLUDE'],
+        //                                             [pattern: 'speedwagon.dist-info.dist-info/', type: 'INCLUDE'],
+        //                                         ]
+        //                                     )
+        //                                 }
+        //                             }
                                 }
                             }
                         }
-                        stage("Testing Chocolatey Package: Install"){
+                        stage("Windows Standalone"){
                             when{
                                 anyOf{
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_CHOLOCATEY
-                                    equals expected: true, actual: params.DEPLOY_CHOCOLATEY
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
                                 }
                                 beforeAgent true
                             }
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/chocolatey/Dockerfile'
-                                    args '-u ContainerAdministrator'
-                                    label 'Windows&&Docker'
-                                  }
+                            environment {
+                                build_number = get_build_number()
+                                PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
+                                PIP_TRUSTED_HOST="devpi.library.illinois.edu"
                             }
-                            steps{
-                                unstash "CHOCOLATEY_PACKAGE"
-                                bat 'choco install speedwagon -y --pre -dv -s %WORKSPACE%\\chocolatey_package\\speedwagon'
-                                bat "speedwagon --version"
+
+                            stages{
+                                stage("CMake Build"){
+                                    agent {
+                                        dockerfile {
+                                            filename 'ci/docker/windows_standalone/Dockerfile'
+                                            label 'Windows&&Docker'
+                                            args "-u ContainerAdministrator"
+                                            additionalBuildArgs "${get_build_args()}"
+                                          }
+                                    }
+                                    steps {
+                                        build_standalone()
+                                    }
+                                    post {
+                                        success{
+                                            archiveArtifacts artifacts: "dist/*.msi,dist/*.exe,dist/*.zip", fingerprint: true
+                                        }
+                                        failure {
+                                            archiveArtifacts allowEmptyArchive: true, artifacts: "dist/**/wix.log,dist/**/*.wxs"
+                                        }
+                                        always{
+                                            stash includes: "dist/*.msi,dist/*.exe,dist/*.zip", name: "STANDALONE_INSTALLERS"
+                                        }
+                                        cleanup{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                notFailBuild: true
+                                            )
+                                        }
+                                    }
+                                }
+                                stage("Testing MSI Install"){
+                                    agent {
+                                      docker {
+                                        args '-u ContainerAdministrator'
+                                        image 'mcr.microsoft.com/windows/servercore:ltsc2019'
+                                        label 'Windows&&Docker'
+                                      }
+                                    }
+                                    when{
+                                        equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                        beforeAgent true
+                                    }
+                                    options{
+                                        skipDefaultCheckout(true)
+                                    }
+                                    steps{
+                                        timeout(15){
+                                            unstash 'STANDALONE_INSTALLERS'
+                                            script{
+                                                def msi_file = findFiles(glob: "dist/*.msi")[0].path
+                                                powershell "New-Item -ItemType Directory -Force -Path logs; Write-Host \"Installing ${msi_file}\"; msiexec /i ${msi_file} /qn /norestart /L*v! logs\\msiexec.log"
+                                            }
+                                        }
+                                    }
+                                    post {
+                                        cleanup{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                notFailBuild: true
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -1226,6 +1307,7 @@ pipeline {
                     anyOf {
                         equals expected: "master", actual: env.BRANCH_NAME
                         equals expected: "dev", actual: env.BRANCH_NAME
+                        tag "*"
                     }
                 }
                 beforeAgent true
@@ -1287,7 +1369,7 @@ pipeline {
                                 steps{
                                     timeout(10){
                                         unstash "DIST-INFO"
-                                        testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "zip", CONFIGURATIONS[PYTHON_VERSION].tox_env,  env.DEVPI_USR, env.DEVPI_PSW)
+                                        testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "tar.gz", CONFIGURATIONS[PYTHON_VERSION].tox_env,  env.DEVPI_USR, env.DEVPI_PSW)
                                     }
                                 }
                             }
@@ -1308,6 +1390,10 @@ pipeline {
                         allOf{
                             equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
                             branch "master"
+                            anyOf {
+                                equals expected: "master", actual: env.BRANCH_NAME
+                                tag "*"
+                            }
                         }
                         beforeAgent true
                         beforeInput true
@@ -1323,9 +1409,7 @@ pipeline {
                         message 'Release to DevPi Production?'
                     }
                     steps {
-                        unstash "DIST-INFO"
                         script{
-                            def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
                             sh(label: "Pushing to production index",
                                script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
                                           devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
@@ -1341,8 +1425,6 @@ pipeline {
                     node('linux && docker') {
                        script{
                             docker.build("speedwagon:devpi",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
-                                unstash "DIST-INFO"
-                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                 sh(label: "Connecting to DevPi Server",
                                    script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
                                               devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
@@ -1358,8 +1440,6 @@ pipeline {
                     node('linux && docker') {
                        script{
                             docker.build("speedwagon:devpi",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
-                                unstash "DIST-INFO"
-                                def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                                 sh(
                                     label: "Connecting to DevPi Server",
                                     script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
@@ -1376,42 +1456,6 @@ pipeline {
         }
         stage("Deploy"){
             parallel {
-//                 stage("Tagging git Commit"){
-//                     agent {
-//                         dockerfile {
-//                             filename 'ci/docker/python/linux/Dockerfile'
-//                             label 'linux && docker'
-//                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-//                         }
-//                     }
-//                     when{
-//                         allOf{
-//                             equals expected: true, actual: params.DEPLOY_ADD_TAG
-//                         }
-//                         beforeAgent true
-//                         beforeInput true
-//                     }
-//                     options{
-//                         timeout(time: 1, unit: 'DAYS')
-//                         retry(3)
-//                     }
-//                     input {
-//                           message 'Add a version tag to git commit?'
-//                           parameters {
-//                                 credentials credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl', defaultValue: 'github.com', description: '', name: 'gitCreds', required: true
-//                           }
-//                     }
-//                     steps{
-//                         unstash "DIST-INFO"
-//                         gitAddVersionTag("speedwagon.dist-info/METADATA")
-//
-//                     }
-//                     post{
-//                         cleanup{
-//                             deleteDir()
-//                         }
-//                     }
-//                 }
                 stage("Deploy to Chocolatey") {
                     when{
                         equals expected: true, actual: params.DEPLOY_CHOCOLATEY
@@ -1420,26 +1464,33 @@ pipeline {
                     }
                     agent {
                         dockerfile {
-                            filename 'ci/docker/chocolatey/Dockerfile'
-                            args '-u ContainerAdministrator'
-                            label 'Windows&&Docker'
+                            filename 'ci/docker/chocolatey_package/Dockerfile'
+                            label 'windows && docker'
+                            additionalBuildArgs "--build-arg CHOCOLATEY_SOURCE"
                           }
                     }
+                    options{
+                        timeout(time: 1, unit: 'DAYS')
+                        retry(3)
+                    }
                     input {
-                      message 'Select Chocolatey server'
-                      parameters {
-                        choice choices: ['https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-beta/', 'https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-public/'], description: 'Chocolatey Server to deploy to', name: 'CHOCOLATEY_SERVER'
-                        credentials credentialType: 'org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl', defaultValue: 'NEXUS_NUGET_API_KEY', description: 'Nuget API key for Chocolatey', name: 'CHOCO_REPO_KEY', required: true
-                      }
+                        message 'Deploy to Chocolatey server'
+                        id 'CHOCOLATEY_DEPLOYMENT'
+                        parameters {
+                            choice(
+                                choices: [
+                                    'https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-beta/',
+                                    'https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-public/'
+                                ],
+                                description: 'Chocolatey Server to deploy to',
+                                name: 'CHOCOLATEY_SERVER'
+                            )
+                        }
                     }
                     steps{
                         unstash "CHOCOLATEY_PACKAGE"
-                        withCredentials([string(credentialsId: "${CHOCO_REPO_KEY}", variable: 'KEY')]) {
-                            bat(
-                                label: "Deploying to Chocolatey",
-                                script: "cd chocolatey_package\\speedwagon && choco push -s %CHOCOLATEY_SERVER% -k %KEY%"
-                            )
-                        }
+                        deploy_to_chocolatey(CHOCOLATEY_SERVER)
+
                     }
                 }
                 stage("Deploy Online Documentation") {
@@ -1520,9 +1571,7 @@ pipeline {
                         unstash "STANDALONE_INSTALLERS"
                         unstash "SPEEDWAGON_DOC_PDF"
                         unstash "SPEEDWAGON_DOC_HTML"
-                        unstash "DIST-INFO"
                         script{
-                            def props = readProperties interpolate: true, file: 'speedwagon.dist-info/METADATA'
                             deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
                         }
                     }
@@ -1531,7 +1580,6 @@ pipeline {
                             cleanWs(
                                 deleteDirs: true,
                                 patterns: [
-                                    [pattern: '*dist-info', type: 'INCLUDE'],
                                     [pattern: 'dist.*', type: 'INCLUDE']
                                 ]
                             )
@@ -1560,7 +1608,6 @@ pipeline {
                     agent any
                     steps {
                         unstash "STANDALONE_INSTALLERS"
-                        unstash "Deployment"
                         dir("dist"){
                             deploy_sscm("*.msi", "${PKG_VERSION}", "${params.JIRA_ISSUE_VALUE}")
                         }

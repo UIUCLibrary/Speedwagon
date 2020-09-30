@@ -6,15 +6,17 @@
     <version>[[PackageVersion]]</version>
     <authors>University Library at The University of Illinois at Urbana Champaign: Preservation Services</authors>
     <owners>[[MaintainerName]]</owners>
-    <description>__REPLACE__MarkDown_Okay [[AutomaticPackageNotesNuspec]]
+    <description>[[PythonSummary]]
     </description>
     <tags>[[PackageNameLower]] UIUC</tags>
-    <!--<dependencies>
-      <dependency id="" version="__VERSION__" />
-      <dependency id="" />
-    </dependencies>-->
+    <dependencies>
+      <dependency id="python3" version="3.7.0"/>
+    </dependencies>
   </metadata>
   <files>
     <file src="tools\**" target="tools" />
+    <file src="[[InstallerFile]]" target="tools\[[InstallerFile]]" />
+    <file src="deps\**" target="tools\dist\deps" />
+    <file src="docs\*.pdf" target="documentation" />
   </files>
 </package>
