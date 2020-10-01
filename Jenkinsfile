@@ -1148,6 +1148,7 @@ pipeline {
                                             }
                                             stage("Testing bdist_wheel Package"){
                                                 steps{
+                                                    unstash "PYTHON_PACKAGES"
                                                     test_pkg("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}", 20)
 //                                                     cleanWs(
 //                                                         notFailBuild: true,
@@ -1161,7 +1162,6 @@ pipeline {
 //                                                                 [pattern: 'setup.cfg', type: 'EXCLUDE'],
 //                                                             ]
 //                                                     )
-//                                                     unstash "PYTHON_PACKAGES"
 //                                                     testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
                                                 }
                                             }
