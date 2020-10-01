@@ -1157,20 +1157,21 @@ pipeline {
                                             }
                                             stage("Testing bdist_wheel Package"){
                                                 steps{
-                                                    cleanWs(
-                                                        notFailBuild: true,
-                                                        deleteDirs: true,
-                                                        disableDeferredWipeout: true,
-                                                        patterns: [
-                                                                [pattern: 'features/', type: 'EXCLUDE'],
-                                                                [pattern: '.git/**', type: 'EXCLUDE'],
-                                                                [pattern: 'tests/**', type: 'EXCLUDE'],
-                                                                [pattern: 'tox.ini', type: 'EXCLUDE'],
-                                                                [pattern: 'setup.cfg', type: 'EXCLUDE'],
-                                                            ]
-                                                    )
-                                                    unstash "PYTHON_PACKAGES"
-                                                    testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
+                                                    test_pkg("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}", 20)
+//                                                     cleanWs(
+//                                                         notFailBuild: true,
+//                                                         deleteDirs: true,
+//                                                         disableDeferredWipeout: true,
+//                                                         patterns: [
+//                                                                 [pattern: 'features/', type: 'EXCLUDE'],
+//                                                                 [pattern: '.git/**', type: 'EXCLUDE'],
+//                                                                 [pattern: 'tests/**', type: 'EXCLUDE'],
+//                                                                 [pattern: 'tox.ini', type: 'EXCLUDE'],
+//                                                                 [pattern: 'setup.cfg', type: 'EXCLUDE'],
+//                                                             ]
+//                                                     )
+//                                                     unstash "PYTHON_PACKAGES"
+//                                                     testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
                                                 }
                                             }
                                         }
