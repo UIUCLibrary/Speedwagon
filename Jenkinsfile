@@ -1098,12 +1098,6 @@ pipeline {
                                             }
                                         }
                                         stage('Testing sdist Package') {
-                                            when{
-                                                anyOf{
-                                                    equals expected: true, actual: params.TEST_PACKAGES
-                                                }
-                                                beforeAgent true
-                                            }
                                             agent {
                                                 label 'mac && 10.14 && python3.8'
                                             }
