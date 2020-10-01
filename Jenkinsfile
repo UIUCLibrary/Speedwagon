@@ -1072,7 +1072,7 @@ pipeline {
                                     cleanWs(
                                         deleteDirs: true,
                                         patterns: [
-                                            [pattern: 'source', type: 'EXCLUDE']
+                                            [pattern: 'dist/', type: 'INCLUDE']
                                             ]
                                         )
                                 }
