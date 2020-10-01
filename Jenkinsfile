@@ -700,6 +700,7 @@ def test_package_on_mac(glob){
         patterns: [
                 [pattern: '.git/**', type: 'EXCLUDE'],
                 [pattern: 'tests/**', type: 'EXCLUDE'],
+                [pattern: 'features/', type: 'EXCLUDE'],
                 [pattern: 'tox.ini', type: 'EXCLUDE'],
                 [pattern: 'dist/', type: 'EXCLUDE'],
                 [pattern: 'pyproject.toml', type: 'EXCLUDE'],
