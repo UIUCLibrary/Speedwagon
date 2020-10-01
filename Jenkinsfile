@@ -664,6 +664,41 @@ def startup(){
     }
 }
 
+
+def test_package_on_mac(glob){
+    cleanWs(
+        notFailBuild: true,
+        deleteDirs: true,
+        disableDeferredWipeout: true,
+        patterns: [
+                [pattern: '.git/**', type: 'EXCLUDE'],
+                [pattern: 'tests/**', type: 'EXCLUDE'],
+                [pattern: 'tox.ini', type: 'EXCLUDE'],
+                [pattern: 'dist/', type: 'EXCLUDE'],
+                [pattern: 'pyproject.toml', type: 'EXCLUDE'],
+                [pattern: 'setup.cfg', type: 'EXCLUDE'],
+                [pattern: glob, type: 'EXCLUDE'],
+            ]
+    )
+    script{
+        def pkgs = findFiles(glob: glob)
+        if(pkgs.size() == 0){
+            error "No packages found for ${glob}"
+        }
+        pkgs.each{
+            sh(
+                label: "Testing ${it}",
+                script: """python3 -m venv venv
+                           venv/bin/python -m pip install pip --upgrade
+                           venv/bin/python -m pip install wheel
+                           venv/bin/python -m pip install --upgrade setuptools
+                           venv/bin/python -m pip install tox
+                           venv/bin/tox --installpkg=${it.path} -e py -vv --recreate
+                           """
+            )
+        }
+    }
+}
 startup()
 def get_props(){
     stage("Reading Package Metadata"){
@@ -684,6 +719,7 @@ pipeline {
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Packages")
         booleanParam(name: 'BUILD_CHOCOLATEY_PACKAGE', defaultValue: false, description: 'Build package for chocolatey package manager')
+        booleanParam(name: "TEST_MAC_PACKAGES", defaultValue: false, description: "Test Python packages on Mac")
         booleanParam(name: "TEST_PACKAGES", defaultValue: true, description: "Test Python packages by installing them and running tests on the installed package")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: false, description: "Create a standalone wix based .msi installer")
 
@@ -977,7 +1013,7 @@ pipeline {
                 anyOf{
                     equals expected: true, actual: params.BUILD_PACKAGES
                     equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
-//                     equals expected: true, actual: params.TEST_PACKAGES_ON_MAC
+                    equals expected: true, actual: params.TEST_MAC_PACKAGES
                     equals expected: true, actual: params.DEPLOY_DEVPI
                     equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
                     equals expected: true, actual: params.DEPLOY_CHOCOLATEY
@@ -1018,65 +1054,117 @@ pipeline {
                             when{
                                 equals expected: true, actual: params.TEST_PACKAGES
                             }
-                            matrix{
-                                agent {
-                                    dockerfile {
-                                        filename "ci/docker/python/${PLATFORM}/Dockerfile"
-                                        label "${PLATFORM} && docker"
-                                        additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                            stages{
+                                    stage("macOS 10.14"){
+                            when{
+                                equals expected: true, actual: params.TEST_MAC_PACKAGES
+                            }
+                            stages{
+                                stage("Testing Packages"){
+                                    when{
+                                        equals expected: true, actual: params.TEST_PACKAGES
                                     }
-                                }
-                                axes{
-                                    axis {
-                                        name "PYTHON_VERSION"
-                                        values(
-                                            "3.7",
-                                            "3.8"
-                                        )
-                                    }
-                                    axis {
-                                        name "PLATFORM"
-                                        values(
-                                            'linux',
-                                            'windows'
-                                        )
-                                    }
-                                }
-                                stages{
-                                    stage("Testing sdist Package"){
-                                        steps{
-                                            cleanWs(
-                                                notFailBuild: true,
-                                                deleteDirs: true,
-                                                disableDeferredWipeout: true,
-                                                patterns: [
-                                                        [pattern: 'features/', type: 'EXCLUDE'],
-                                                        [pattern: '.git/**', type: 'EXCLUDE'],
-                                                        [pattern: 'tests/**', type: 'EXCLUDE'],
-                                                        [pattern: 'tox.ini', type: 'EXCLUDE'],
-                                                        [pattern: 'setup.cfg', type: 'EXCLUDE'],
-                                                    ]
-                                            )
-                                            unstash "PYTHON_PACKAGES"
-                                            testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['sdist']}")
+                                    parallel{
+                                        stage('Testing Wheel Package') {
+                                            agent {
+                                                label 'mac && 10.14 && python3.8'
+                                            }
+                                            steps{
+                                                unstash "PYTHON_PACKAGES"
+                                                test_package_on_mac("dist/*.whl")
+                                            }
+                                            post{
+                                                cleanup{
+                                                    deleteDir()
+                                                }
+                                            }
+                                        }
+                                        stage('Testing sdist Package') {
+                                            when{
+                                                anyOf{
+                                                    equals expected: true, actual: params.TEST_PACKAGES
+                                                }
+                                                beforeAgent true
+                                            }
+                                            agent {
+                                                label 'mac && 10.14 && python3.8'
+                                            }
+                                            steps{
+                                                unstash "sdist"
+                                                test_package_on_mac("dist/*.tar.gz,dist/*.zip")
+                                            }
+                                            post{
+                                                cleanup{
+                                                    deleteDir()
+                                                }
+                                            }
                                         }
                                     }
-                                    stage("Testing bdist_wheel Package"){
-                                        steps{
-                                            cleanWs(
-                                                notFailBuild: true,
-                                                deleteDirs: true,
-                                                disableDeferredWipeout: true,
-                                                patterns: [
-                                                        [pattern: 'features/', type: 'EXCLUDE'],
-                                                        [pattern: '.git/**', type: 'EXCLUDE'],
-                                                        [pattern: 'tests/**', type: 'EXCLUDE'],
-                                                        [pattern: 'tox.ini', type: 'EXCLUDE'],
-                                                        [pattern: 'setup.cfg', type: 'EXCLUDE'],
-                                                    ]
-                                            )
-                                            unstash "PYTHON_PACKAGES"
-                                            testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
+                                }
+                            }
+                        }
+                                stage("Windows and Linux"){
+                                    matrix{
+                                        agent {
+                                            dockerfile {
+                                                filename "ci/docker/python/${PLATFORM}/Dockerfile"
+                                                label "${PLATFORM} && docker"
+                                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                            }
+                                        }
+                                        axes{
+                                            axis {
+                                                name "PYTHON_VERSION"
+                                                values(
+                                                    "3.7",
+                                                    "3.8"
+                                                )
+                                            }
+                                            axis {
+                                                name "PLATFORM"
+                                                values(
+                                                    'linux',
+                                                    'windows'
+                                                )
+                                            }
+                                        }
+                                        stages{
+                                            stage("Testing sdist Package"){
+                                                steps{
+                                                    cleanWs(
+                                                        notFailBuild: true,
+                                                        deleteDirs: true,
+                                                        disableDeferredWipeout: true,
+                                                        patterns: [
+                                                                [pattern: 'features/', type: 'EXCLUDE'],
+                                                                [pattern: '.git/**', type: 'EXCLUDE'],
+                                                                [pattern: 'tests/**', type: 'EXCLUDE'],
+                                                                [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                                                [pattern: 'setup.cfg', type: 'EXCLUDE'],
+                                                            ]
+                                                    )
+                                                    unstash "PYTHON_PACKAGES"
+                                                    testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['sdist']}")
+                                                }
+                                            }
+                                            stage("Testing bdist_wheel Package"){
+                                                steps{
+                                                    cleanWs(
+                                                        notFailBuild: true,
+                                                        deleteDirs: true,
+                                                        disableDeferredWipeout: true,
+                                                        patterns: [
+                                                                [pattern: 'features/', type: 'EXCLUDE'],
+                                                                [pattern: '.git/**', type: 'EXCLUDE'],
+                                                                [pattern: 'tests/**', type: 'EXCLUDE'],
+                                                                [pattern: 'tox.ini', type: 'EXCLUDE'],
+                                                                [pattern: 'setup.cfg', type: 'EXCLUDE'],
+                                                            ]
+                                                    )
+                                                    unstash "PYTHON_PACKAGES"
+                                                    testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
+                                                }
+                                            }
                                         }
                                     }
                                 }
