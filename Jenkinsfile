@@ -524,6 +524,33 @@ def testPythonPackages(pkgRegex, testEnvs){
 //         }
 //     }
 // }
+
+def test_pkg(glob, timeout_time){
+
+    def pkgFiles = findFiles( glob: glob)
+    if( pkgFiles.size() == 0){
+        error "Unable to check package. No files found with ${glob}"
+    }
+
+    pkgFiles.each{
+        timeout(timeout_time){
+            if(isUnix()){
+                sh(label: "Testing ${it}",
+                   script: """python --version
+                              tox --installpkg=${it.path} -e py -vv
+                              """
+                )
+            } else {
+                bat(label: "Testing ${it}",
+                    script: """python --version
+                               tox --installpkg=${it.path} -e py -vv
+                               """
+                )
+            }
+        }
+    }
+}
+
 def build_standalone(){
     stage("Building Standalone"){
         bat "where cmake"
@@ -1109,7 +1136,7 @@ pipeline {
                                             axis {
                                                 name "PYTHON_VERSION"
                                                 values(
-//                                                     "3.7",
+                                                    "3.7",
                                                     "3.8"
                                                 )
                                             }
@@ -1124,20 +1151,8 @@ pipeline {
                                         stages{
                                             stage("Testing sdist Package"){
                                                 steps{
-                                                    cleanWs(
-                                                        notFailBuild: true,
-                                                        deleteDirs: true,
-                                                        disableDeferredWipeout: true,
-                                                        patterns: [
-                                                                [pattern: 'features/', type: 'EXCLUDE'],
-                                                                [pattern: '.git/**', type: 'EXCLUDE'],
-                                                                [pattern: 'tests/**', type: 'EXCLUDE'],
-                                                                [pattern: 'tox.ini', type: 'EXCLUDE'],
-                                                                [pattern: 'setup.cfg', type: 'EXCLUDE'],
-                                                            ]
-                                                    )
                                                     unstash "PYTHON_PACKAGES"
-                                                    testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['sdist']}")
+                                                    test_pkg("dist/*.zip,dist/*.tar.gz", 20)
                                                 }
                                             }
                                             stage("Testing bdist_wheel Package"){
