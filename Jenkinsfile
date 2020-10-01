@@ -724,6 +724,7 @@ def test_package_on_mac(glob){
                            """
             )
         }
+        deleteDir()
     }
 }
 startup()
@@ -1095,11 +1096,6 @@ pipeline {
                                                 unstash "PYTHON_PACKAGES"
                                                 test_package_on_mac("dist/*.whl")
                                             }
-                                            post{
-                                                cleanup{
-                                                    deleteDir()
-                                                }
-                                            }
                                         }
                                         stage('Testing sdist Package') {
                                             when{
@@ -1114,11 +1110,6 @@ pipeline {
                                             steps{
                                                 unstash "sdist"
                                                 test_package_on_mac("dist/*.tar.gz,dist/*.zip")
-                                            }
-                                            post{
-                                                cleanup{
-                                                    deleteDir()
-                                                }
                                             }
                                         }
                                     }
