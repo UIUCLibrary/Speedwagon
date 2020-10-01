@@ -831,7 +831,7 @@ pipeline {
                                             sh(
                                                 script: """mkdir -p reports
                                                            coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory reports/tests/behave"""
-                                                )
+                                            )
                                         }
                                     }
                                     post {
@@ -1055,14 +1055,9 @@ pipeline {
                                 equals expected: true, actual: params.TEST_PACKAGES
                             }
                             stages{
-                                    stage("macOS 10.14"){
-                            when{
-                                equals expected: true, actual: params.TEST_MAC_PACKAGES
-                            }
-                            stages{
-                                stage("Testing Packages"){
+                                stage("macOS 10.14"){
                                     when{
-                                        equals expected: true, actual: params.TEST_PACKAGES
+                                        equals expected: true, actual: params.TEST_MAC_PACKAGES
                                     }
                                     parallel{
                                         stage('Testing Wheel Package') {
@@ -1101,8 +1096,6 @@ pipeline {
                                         }
                                     }
                                 }
-                            }
-                        }
                                 stage("Windows and Linux"){
                                     matrix{
                                         agent {
@@ -1581,57 +1574,57 @@ pipeline {
 
                     }
                 }
-//                 stage("Deploy Online Documentation") {
-//                     when{
-//                         equals expected: true, actual: params.DEPLOY_DOCS
-//                         beforeAgent true
-//                         beforeInput true
-//                     }
-//                     agent any
-//                     input {
-//                         message 'Update project documentation?'
-//                     }
-//                     steps{
-//                         unstash "SPEEDWAGON_DOC_HTML"
-//                         dir("build/docs/html/"){
-//                             sshPublisher(
-//                                 publishers: [
-//                                     sshPublisherDesc(
-//                                         configName: 'apache-ns - lib-dccuser-updater',
-//                                         sshLabel: [label: 'Linux'],
-//                                         transfers: [sshTransfer(excludes: '',
-//                                         execCommand: '',
-//                                         execTimeout: 120000,
-//                                         flatten: false,
-//                                         makeEmptyDirs: false,
-//                                         noDefaultExcludes: false,
-//                                         patternSeparator: '[, ]+',
-//                                         remoteDirectory: "${params.DEPLOY_DOCS_URL_SUBFOLDER}",
-//                                         remoteDirectorySDF: false,
-//                                         removePrefix: '',
-//                                         sourceFiles: '**')],
-//                                     usePromotionTimestamp: false,
-//                                     useWorkspaceInPromotion: false,
-//                                     verbose: true
-//                                     )
-//                                 ]
-//                             )
-//                         }
-//                     }
-//                     post{
-//                         success{
-//                             jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: "${params.JIRA_ISSUE_VALUE}"
-//                         }
-//                         cleanup{
-//                             cleanWs(
-//                                 deleteDirs: true,
-//                                 patterns: [
-//                                     [pattern: 'build/', type: 'INCLUDE']
-//                                 ]
-//                             )
-//                         }
-//                     }
-//                 }
+                stage("Deploy Online Documentation") {
+                    when{
+                        equals expected: true, actual: params.DEPLOY_DOCS
+                        beforeAgent true
+                        beforeInput true
+                    }
+                    agent any
+                    input {
+                        message 'Update project documentation?'
+                    }
+                    steps{
+                        unstash "SPEEDWAGON_DOC_HTML"
+                        dir("build/docs/html/"){
+                            sshPublisher(
+                                publishers: [
+                                    sshPublisherDesc(
+                                        configName: 'apache-ns - lib-dccuser-updater',
+                                        sshLabel: [label: 'Linux'],
+                                        transfers: [sshTransfer(excludes: '',
+                                        execCommand: '',
+                                        execTimeout: 120000,
+                                        flatten: false,
+                                        makeEmptyDirs: false,
+                                        noDefaultExcludes: false,
+                                        patternSeparator: '[, ]+',
+                                        remoteDirectory: "${params.DEPLOY_DOCS_URL_SUBFOLDER}",
+                                        remoteDirectorySDF: false,
+                                        removePrefix: '',
+                                        sourceFiles: '**')],
+                                    usePromotionTimestamp: false,
+                                    useWorkspaceInPromotion: false,
+                                    verbose: true
+                                    )
+                                ]
+                            )
+                        }
+                    }
+                    post{
+                        success{
+                            jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                        }
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: 'build/', type: 'INCLUDE']
+                                ]
+                            )
+                        }
+                    }
+                }
                 stage("Deploy standalone to Hathi tools Beta"){
                     when {
                         allOf{
