@@ -1109,7 +1109,7 @@ pipeline {
                                             axis {
                                                 name "PYTHON_VERSION"
                                                 values(
-                                                    "3.7",
+//                                                     "3.7",
                                                     "3.8"
                                                 )
                                             }
