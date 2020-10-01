@@ -1581,57 +1581,57 @@ pipeline {
 
                     }
                 }
-                stage("Deploy Online Documentation") {
-                    when{
-                        equals expected: true, actual: params.DEPLOY_DOCS
-                        beforeAgent true
-                        beforeInput true
-                    }
-                    agent any
-                    input {
-                        message 'Update project documentation?'
-                    }
-                    steps{
-                        unstash "SPEEDWAGON_DOC_HTML"
-                        dir("build/docs/html/"){
-                            sshPublisher(
-                                publishers: [
-                                    sshPublisherDesc(
-                                        configName: 'apache-ns - lib-dccuser-updater',
-                                        sshLabel: [label: 'Linux'],
-                                        transfers: [sshTransfer(excludes: '',
-                                        execCommand: '',
-                                        execTimeout: 120000,
-                                        flatten: false,
-                                        makeEmptyDirs: false,
-                                        noDefaultExcludes: false,
-                                        patternSeparator: '[, ]+',
-                                        remoteDirectory: "${params.DEPLOY_DOCS_URL_SUBFOLDER}",
-                                        remoteDirectorySDF: false,
-                                        removePrefix: '',
-                                        sourceFiles: '**')],
-                                    usePromotionTimestamp: false,
-                                    useWorkspaceInPromotion: false,
-                                    verbose: true
-                                    )
-                                ]
-                            )
-                        }
-                    }
-                    post{
-                        success{
-                            jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: "${params.JIRA_ISSUE_VALUE}"
-                        }
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: 'build/', type: 'INCLUDE']
-                                ]
-                            )
-                        }
-                    }
-                }
+//                 stage("Deploy Online Documentation") {
+//                     when{
+//                         equals expected: true, actual: params.DEPLOY_DOCS
+//                         beforeAgent true
+//                         beforeInput true
+//                     }
+//                     agent any
+//                     input {
+//                         message 'Update project documentation?'
+//                     }
+//                     steps{
+//                         unstash "SPEEDWAGON_DOC_HTML"
+//                         dir("build/docs/html/"){
+//                             sshPublisher(
+//                                 publishers: [
+//                                     sshPublisherDesc(
+//                                         configName: 'apache-ns - lib-dccuser-updater',
+//                                         sshLabel: [label: 'Linux'],
+//                                         transfers: [sshTransfer(excludes: '',
+//                                         execCommand: '',
+//                                         execTimeout: 120000,
+//                                         flatten: false,
+//                                         makeEmptyDirs: false,
+//                                         noDefaultExcludes: false,
+//                                         patternSeparator: '[, ]+',
+//                                         remoteDirectory: "${params.DEPLOY_DOCS_URL_SUBFOLDER}",
+//                                         remoteDirectorySDF: false,
+//                                         removePrefix: '',
+//                                         sourceFiles: '**')],
+//                                     usePromotionTimestamp: false,
+//                                     useWorkspaceInPromotion: false,
+//                                     verbose: true
+//                                     )
+//                                 ]
+//                             )
+//                         }
+//                     }
+//                     post{
+//                         success{
+//                             jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: "${params.JIRA_ISSUE_VALUE}"
+//                         }
+//                         cleanup{
+//                             cleanWs(
+//                                 deleteDirs: true,
+//                                 patterns: [
+//                                     [pattern: 'build/', type: 'INCLUDE']
+//                                 ]
+//                             )
+//                         }
+//                     }
+//                 }
                 stage("Deploy standalone to Hathi tools Beta"){
                     when {
                         allOf{
