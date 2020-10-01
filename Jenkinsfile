@@ -1102,7 +1102,7 @@ pipeline {
                                                 label 'mac && 10.14 && python3.8'
                                             }
                                             steps{
-                                                unstash "sdist"
+                                                unstash "PYTHON_PACKAGES"
                                                 test_package_on_mac("dist/*.tar.gz,dist/*.zip")
                                             }
                                         }
