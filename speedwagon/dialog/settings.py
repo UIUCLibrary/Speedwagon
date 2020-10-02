@@ -50,7 +50,10 @@ class SettingsDialog(QtWidgets.QDialog):
             else:
                 msg = QtWidgets.QMessageBox(parent=self)
                 msg.setIcon(QtWidgets.QMessageBox.Warning)
-                msg.setText("Don't know how to do that on {}".format(platform.system()))
+                msg.setText(
+                    "Don't know how to do that on {}".format(platform.system())
+                )
+
                 msg.show()
 
 
