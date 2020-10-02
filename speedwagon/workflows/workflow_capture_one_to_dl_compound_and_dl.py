@@ -110,6 +110,7 @@ class PackageConverter(tasks.Subtask):
         "Digital Library Compound": packager.packages.DigitalLibraryCompound(),
         "HathiTrust jp2": packager.packages.HathiJp2()
     }
+
     @contextmanager
     def log_config(self, logger):
         gui_logger = GuiLogHandler(self.log)

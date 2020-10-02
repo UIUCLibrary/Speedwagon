@@ -482,7 +482,7 @@ class ValidateOCRFilesTask(CompletenessSubTask):
 
             if ocr_errors:
                 self.log(
-                    "No validation errors found in ".format(self.package_path)
+                    "No validation errors found in {}".format(self.package_path)
                 )
 
                 for error in ocr_errors:
