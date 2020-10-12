@@ -748,7 +748,7 @@ pipeline {
         booleanParam(name: "RUN_CHECKS", defaultValue: false, description: "Run checks on code")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
 //         TODO: set to defaultValue false
-        booleanParam(name: "BUILD_PACKAGES", defaultValue: trye, description: "Build Packages")
+        booleanParam(name: "BUILD_PACKAGES", defaultValue: true, description: "Build Packages")
 //         TODO: set to defaultValue false
         booleanParam(name: 'BUILD_CHOCOLATEY_PACKAGE', defaultValue: true, description: 'Build package for chocolatey package manager')
         booleanParam(name: "TEST_MAC_PACKAGES", defaultValue: false, description: "Test Python packages on Mac")
