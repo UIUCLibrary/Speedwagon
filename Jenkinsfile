@@ -746,12 +746,15 @@ def create_wheel_stash(nodeLabels, pythonVersion){
 def create_wheels(){
 
     parallel(
+        "Packaging wheels for 3.7": {
+            create_wheel_stash('windows && docker', "3.7")
+        },
         "Packaging wheels for 3.8": {
             create_wheel_stash('windows && docker', "3.8")
         },
-        "Packaging wheels for 3.7": {
-            create_wheel_stash('windows && docker', "3.7")
-        }
+        "Packaging wheels for 3.9": {
+            create_wheel_stash('windows && docker', "3.9")
+        },
     )
 }
 startup()
