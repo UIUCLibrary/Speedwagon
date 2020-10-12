@@ -770,13 +770,10 @@ pipeline {
     parameters {
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
         booleanParam(name: "USE_SONARQUBE", defaultValue: true, description: "Send data test data to SonarQube")
-//         TODO: set to defaultValue true
-        booleanParam(name: "RUN_CHECKS", defaultValue: false, description: "Run checks on code")
+        booleanParam(name: "RUN_CHECKS", defaultValue: true, description: "Run checks on code")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
-//         TODO: set to defaultValue false
-        booleanParam(name: "BUILD_PACKAGES", defaultValue: true, description: "Build Packages")
-//         TODO: set to defaultValue false
-        booleanParam(name: 'BUILD_CHOCOLATEY_PACKAGE', defaultValue: true, description: 'Build package for chocolatey package manager')
+        booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Packages")
+        booleanParam(name: 'BUILD_CHOCOLATEY_PACKAGE', defaultValue: false, description: 'Build package for chocolatey package manager')
         booleanParam(name: "TEST_MAC_PACKAGES", defaultValue: false, description: "Test Python packages on Mac")
         booleanParam(name: "TEST_PACKAGES", defaultValue: true, description: "Test Python packages by installing them and running tests on the installed package")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_MSI", defaultValue: false, description: "Create a standalone wix based .msi installer")
@@ -1137,61 +1134,60 @@ pipeline {
                                         }
                                     }
                                 }
-//                                 TODO turn Windows and Linux back on
-//                                 stage("Windows and Linux"){
-//                                     matrix{
-//                                         agent {
-//                                             dockerfile {
-//                                                 filename "ci/docker/python/${PLATFORM}/Dockerfile"
-//                                                 label "${PLATFORM} && docker"
-//                                                 additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
-//                                             }
-//                                         }
-//                                         axes{
-//                                             axis {
-//                                                 name "PYTHON_VERSION"
-//                                                 values(
-//                                                     "3.7",
-//                                                     "3.8"
-//                                                 )
-//                                             }
-//                                             axis {
-//                                                 name "PLATFORM"
-//                                                 values(
-//                                                     'linux',
-//                                                     'windows'
-//                                                 )
-//                                             }
-//                                         }
-//                                         stages{
-//                                             stage("Testing sdist Package"){
-//                                                 steps{
-//                                                     unstash "PYTHON_PACKAGES"
-//                                                     test_pkg("dist/*.zip,dist/*.tar.gz", 20)
-//                                                 }
-//                                             }
-//                                             stage("Testing bdist_wheel Package"){
-//                                                 steps{
-//                                                     unstash "PYTHON_PACKAGES"
-//                                                     test_pkg("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}", 20)
-// //                                                     cleanWs(
-// //                                                         notFailBuild: true,
-// //                                                         deleteDirs: true,
-// //                                                         disableDeferredWipeout: true,
-// //                                                         patterns: [
-// //                                                                 [pattern: 'features/', type: 'EXCLUDE'],
-// //                                                                 [pattern: '.git/**', type: 'EXCLUDE'],
-// //                                                                 [pattern: 'tests/**', type: 'EXCLUDE'],
-// //                                                                 [pattern: 'tox.ini', type: 'EXCLUDE'],
-// //                                                                 [pattern: 'setup.cfg', type: 'EXCLUDE'],
-// //                                                             ]
-// //                                                     )
-// //                                                     testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
-//                                                 }
-//                                             }
-//                                         }
-//                                     }
-//                                 }
+                                stage("Windows and Linux"){
+                                    matrix{
+                                        agent {
+                                            dockerfile {
+                                                filename "ci/docker/python/${PLATFORM}/Dockerfile"
+                                                label "${PLATFORM} && docker"
+                                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                            }
+                                        }
+                                        axes{
+                                            axis {
+                                                name "PYTHON_VERSION"
+                                                values(
+                                                    "3.7",
+                                                    "3.8"
+                                                )
+                                            }
+                                            axis {
+                                                name "PLATFORM"
+                                                values(
+                                                    'linux',
+                                                    'windows'
+                                                )
+                                            }
+                                        }
+                                        stages{
+                                            stage("Testing sdist Package"){
+                                                steps{
+                                                    unstash "PYTHON_PACKAGES"
+                                                    test_pkg("dist/*.zip,dist/*.tar.gz", 20)
+                                                }
+                                            }
+                                            stage("Testing bdist_wheel Package"){
+                                                steps{
+                                                    unstash "PYTHON_PACKAGES"
+                                                    test_pkg("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}", 20)
+//                                                     cleanWs(
+//                                                         notFailBuild: true,
+//                                                         deleteDirs: true,
+//                                                         disableDeferredWipeout: true,
+//                                                         patterns: [
+//                                                                 [pattern: 'features/', type: 'EXCLUDE'],
+//                                                                 [pattern: '.git/**', type: 'EXCLUDE'],
+//                                                                 [pattern: 'tests/**', type: 'EXCLUDE'],
+//                                                                 [pattern: 'tox.ini', type: 'EXCLUDE'],
+//                                                                 [pattern: 'setup.cfg', type: 'EXCLUDE'],
+//                                                             ]
+//                                                     )
+//                                                     testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                          }
                     }
