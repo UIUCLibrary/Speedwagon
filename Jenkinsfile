@@ -745,89 +745,14 @@ def create_wheel_stash(nodeLabels, pythonVersion){
 }
 def create_wheels(){
 
-    parallel "Packaging wheels for 3.8": {
-        create_wheel_stash('windows && docker', "3.8")
-//             node('windows && docker') {
-//                 ws{
-//                     checkout scm
-//                     try{
-//                         docker.build("speedwagon:wheelbuilder38",'-f ci/docker/python/windows/Dockerfile --build-arg PYTHON_VERSION=3.8 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL .').inside{
-//                             bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
-//                             stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.8'
-//                         }
-//                     } finally{
-//                         deleteDir()
-//                     }
-//                 }
-//             }
+    parallel(
+        "Packaging wheels for 3.8": {
+            create_wheel_stash('windows && docker', "3.8")
         },
         "Packaging wheels for 3.7": {
             create_wheel_stash('windows && docker', "3.7")
-//             node('windows && docker') {
-//                 ws{
-//                     checkout scm
-//                     try{
-//                         docker.build("speedwagon:wheelbuilder37",'-f ci/docker/python/windows/Dockerfile --build-arg PYTHON_VERSION=3.7 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL .').inside{
-//                             bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
-//                             stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.7'
-//                         }
-//                     } finally{
-//                         deleteDir()
-//                     }
-//                 }
-//             }
         }
-//         stage("Packaging wheels for 3.7"){
-//             node('windows && docker') {
-//                 ws{
-//                     checkout scm
-//                     try{
-//                         docker.build("speedwagon:wheelbuilder37",'-f ci/docker/python/windows/Dockerfile --build-arg PYTHON_VERSION=3.7 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL .').inside{
-//                             bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
-//                             stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.7'
-//                         }
-//                     } finally{
-//                         deleteDir()
-//                     }
-//                 }
-//             }
-//         }
-//     }
-
-//                 agent {
-//                     dockerfile {
-//                         filename 'ci/docker/python/windows/Dockerfile'
-//                         label "windows && docker"
-//                         additionalBuildArgs "--build-arg PYTHON_VERSION=3.8 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
-//                     }
-//                 }
-//                 steps{
-//                     bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
-//                 }
-//                 post{
-//                     success{
-//                         stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.8'
-//                     }
-//                 }
-//             }
-//             stage("Packaging wheels for 3.7"){
-//                 agent {
-//                     dockerfile {
-//                         filename 'ci/docker/python/windows/Dockerfile'
-//                         label "windows && docker"
-//                         additionalBuildArgs "--build-arg PYTHON_VERSION=3.7 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
-//                     }
-//                 }
-//                 steps{
-//                     bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
-//                 }
-//                 post{
-//                     success{
-//                         stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.7'
-//                     }
-//                 }
-//             }
-//         }
+    )
 }
 startup()
 def get_props(){
