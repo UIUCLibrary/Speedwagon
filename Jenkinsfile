@@ -761,7 +761,7 @@ def create_wheels(){
 //                     }
 //                 }
             }
-            stage("Packaging wheels for 3.7"){
+//             stage("Packaging wheels for 3.7"){
 //                 agent {
 //                     dockerfile {
 //                         filename 'ci/docker/python/windows/Dockerfile'
@@ -769,15 +769,15 @@ def create_wheels(){
 //                         additionalBuildArgs "--build-arg PYTHON_VERSION=3.7 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
 //                     }
 //                 }
-                steps{
-                    bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
-                }
+//                 steps{
+//                     bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
+//                 }
 //                 post{
 //                     success{
 //                         stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.7'
 //                     }
 //                 }
-            }
+//             }
 //         }
 }
 startup()
