@@ -728,6 +728,32 @@ def test_package_on_mac(glob){
         deleteDir()
     }
 }
+def create_wheel_stash(nodeLabels, pythonVersion){
+    node(nodeLabels) {
+        ws{
+            checkout scm
+            try{
+                docker.build("speedwagon:wheelbuilder${pythonVersion}","-f ci/docker/python/windows/Dockerfile --build-arg PYTHON_VERSION=${pythonVersion} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL .").inside{
+                    bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
+                    stash includes: "deps/*.whl", name: "PYTHON_DEPS_${pythonVersion}"
+                }
+            } finally{
+                deleteDir()
+            }
+        }
+    }
+}
+def create_wheels(){
+
+    parallel(
+        "Packaging wheels for 3.7": {
+            create_wheel_stash('windows && docker', "3.7")
+        },
+        "Packaging wheels for 3.8": {
+            create_wheel_stash('windows && docker', "3.8")
+        }
+    )
+}
 startup()
 def get_props(){
     stage("Reading Package Metadata"){
@@ -754,7 +780,6 @@ pipeline {
 
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_NSIS", defaultValue: false, description: "Create a standalone NULLSOFT NSIS based .exe installer")
         booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_ZIP", defaultValue: false, description: "Create a standalone portable package")
-        booleanParam(name: "PACKAGE_WINDOWS_STANDALONE_CHOCOLATEY", defaultValue: false, description: "Create package for the Chocolatey package manager")
 
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
@@ -1179,41 +1204,8 @@ pipeline {
                             }
                             stages{
                                 stage("Packaging python dependencies"){
-                                    stages{
-                                        stage("Packaging wheels for 3.8"){
-                                            agent {
-                                                dockerfile {
-                                                    filename 'ci/docker/python/windows/Dockerfile'
-                                                    label "windows && docker"
-                                                    additionalBuildArgs "--build-arg PYTHON_VERSION=3.8 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
-                                                }
-                                            }
-                                            steps{
-                                                bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
-                                            }
-                                            post{
-                                                success{
-                                                    stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.8'
-                                                }
-                                            }
-                                        }
-                                        stage("Packaging wheels for 3.7"){
-                                            agent {
-                                                dockerfile {
-                                                    filename 'ci/docker/python/windows/Dockerfile'
-                                                    label "windows && docker"
-                                                    additionalBuildArgs "--build-arg PYTHON_VERSION=3.7 --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
-                                                }
-                                            }
-                                            steps{
-                                                bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
-                                            }
-                                            post{
-                                                success{
-                                                    stash includes: "deps/*.whl", name: 'PYTHON_DEPS_3.7'
-                                                }
-                                            }
-                                        }
+                                    steps{
+                                        create_wheels()
                                     }
                                 }
                                 stage("Package for Chocolatey"){
