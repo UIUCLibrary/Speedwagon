@@ -108,5 +108,6 @@ RUN pip install --no-index --find-links=c:\wheels\ `
         -r c:\temp\requirements-dev.txt
 
 ENV PIP_FIND_LINKS=c:\wheels\
-
-SHELL ["cmd", "/S", "/C"]
+COPY ci/docker/windows_standalone/build_standalone.ps1 c:\scripts\build_standalone.ps1
+CMD c:\scripts\build_standalone.ps1
+#SHELL ["cmd", "/S", "/C"]
