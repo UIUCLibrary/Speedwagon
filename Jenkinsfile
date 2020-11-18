@@ -790,22 +790,22 @@ pipeline {
         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
     stages {
-        stage("Testing Jira epic"){
-            agent any
-            options {
-                skipDefaultCheckout(true)
-
-            }
-            steps {
-                check_jira_project('PSR',, 'logs/jira_project_data.json')
-                check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
-            }
-            post{
-                cleanup{
-                    cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
-                }
-            }
-        }
+//         stage("Testing Jira epic"){
+//             agent any
+//             options {
+//                 skipDefaultCheckout(true)
+//
+//             }
+//             steps {
+//                 check_jira_project('PSR',, 'logs/jira_project_data.json')
+//                 check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
+//             }
+//             post{
+//                 cleanup{
+//                     cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
+//                 }
+//             }
+//         }
         stage("Build Sphinx Documentation"){
             agent {
                 dockerfile {
@@ -1138,7 +1138,7 @@ pipeline {
                                     matrix{
                                         agent {
                                             dockerfile {
-                                                filename "ci/docker/python/${PLATFORM}/Dockerfile"
+                                                filename "ci/docker/python/${PLATFORM}/jenkins/Dockerfile"
                                                 label "${PLATFORM} && docker"
                                                 additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
                                             }
