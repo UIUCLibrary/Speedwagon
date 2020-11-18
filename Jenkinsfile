@@ -10,7 +10,7 @@ def CONFIGURATIONS = [
         tox_env: "py37",
         dockerfiles:[
             windows: "ci/docker/python/windows/Dockerfile",
-            linux: "ci/docker/python/linux/Dockerfile"
+            linux: "ci/docker/python/linux/jenkins/Dockerfile"
         ],
         pkgRegex: [
             wheel: "*.whl",
@@ -22,7 +22,7 @@ def CONFIGURATIONS = [
         tox_env: "py38",
         dockerfiles:[
             windows: "ci/docker/python/windows/Dockerfile",
-            linux: "ci/docker/python/linux/Dockerfile"
+            linux: "ci/docker/python/linux/jenkins/Dockerfile"
         ],
         pkgRegex: [
             wheel: "*.whl",
@@ -790,22 +790,22 @@ pipeline {
         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
     stages {
-        stage("Testing Jira epic"){
-            agent any
-            options {
-                skipDefaultCheckout(true)
-
-            }
-            steps {
-                check_jira_project('PSR',, 'logs/jira_project_data.json')
-                check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
-            }
-            post{
-                cleanup{
-                    cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
-                }
-            }
-        }
+//         stage("Testing Jira epic"){
+//             agent any
+//             options {
+//                 skipDefaultCheckout(true)
+//
+//             }
+//             steps {
+//                 check_jira_project('PSR',, 'logs/jira_project_data.json')
+//                 check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
+//             }
+//             post{
+//                 cleanup{
+//                     cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
+//                 }
+//             }
+//         }
         stage("Build Sphinx Documentation"){
             agent {
                 dockerfile {
@@ -864,7 +864,7 @@ pipeline {
                 stage("Test") {
                     agent {
                         dockerfile {
-                            filename 'ci/docker/python/linux/Dockerfile'
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                           }
@@ -1014,7 +1014,7 @@ pipeline {
                 stage("Run Sonarqube Analysis"){
                     agent {
                         dockerfile {
-                            filename 'ci/docker/python/linux/Dockerfile'
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                             args '--mount source=sonar-cache-speedwagon,target=/home/user/.sonar/cache'
@@ -1080,7 +1080,7 @@ pipeline {
                         stage("Packaging sdist and wheel"){
                             agent {
                                 dockerfile {
-                                    filename 'ci/docker/python/linux/Dockerfile'
+                                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
                                     label 'linux && docker'
                                     additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                   }
@@ -1138,7 +1138,7 @@ pipeline {
                                     matrix{
                                         agent {
                                             dockerfile {
-                                                filename "ci/docker/python/${PLATFORM}/Dockerfile"
+                                                filename "ci/docker/python/${PLATFORM}/jenkins/Dockerfile"
                                                 label "${PLATFORM} && docker"
                                                 additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
                                             }
@@ -1399,7 +1399,7 @@ pipeline {
                 stage("Deploy to Devpi Staging") {
                     agent {
                         dockerfile {
-                            filename 'ci/docker/python/linux/Dockerfile'
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux&&docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                           }
@@ -1475,7 +1475,7 @@ pipeline {
                     }
                     agent {
                         dockerfile {
-                            filename 'ci/docker/python/linux/Dockerfile'
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                           }
@@ -1499,7 +1499,7 @@ pipeline {
                 success{
                     node('linux && docker') {
                        script{
-                            docker.build("speedwagon:devpi",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
+                            docker.build("speedwagon:devpi",'-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
                                 sh(label: "Connecting to DevPi Server",
                                    script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
                                               devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
@@ -1514,7 +1514,7 @@ pipeline {
                 cleanup{
                     node('linux && docker') {
                        script{
-                            docker.build("speedwagon:devpi",'-f ./ci/docker/python/linux/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
+                            docker.build("speedwagon:devpi",'-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
                                 sh(
                                     label: "Connecting to DevPi Server",
                                     script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
