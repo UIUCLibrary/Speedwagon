@@ -9,9 +9,14 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 ARG USER_ID=1000
 ARG GROUP_ID=1000
-
-RUN groupadd -g $GROUP_ID user && \
-    useradd -u $USER_ID -s /bin/sh -m -d /home/user -g user user
+RUN if id $USER_ID ; then \
+        echo 'Existing user id found: Creating an alias' ;\
+        groupadd --non-unique --gid $GROUP_ID user ; \
+        useradd  --non-unique --uid $USER_ID -s /bin/sh -m -d /home/user -g user user  ; \
+    else \
+        groupadd -g $GROUP_ID user ; \
+        useradd  -u $USER_ID -s /bin/sh -m -d /home/user -g user user ;\
+    fi
 
 FROM wheel_builder_base as WHEEL_BUILDER_PY36
 ARG PIP_EXTRA_INDEX_URL
@@ -21,8 +26,7 @@ COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-d
 ENV PYTHON=python3.6
 RUN $PYTHON -m pip install pip --upgrade pip && \
     $PYTHON -m pip install wheel && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-dev.txt && \
+    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements.txt -r /tmp/requirements-dev.txt && \
     $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-vendor.txt && \
     $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-ci.txt && \
     $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-extra.txt
@@ -36,8 +40,7 @@ COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-d
 ENV PYTHON=python3.7
 RUN $PYTHON -m pip install pip --upgrade pip && \
     $PYTHON -m pip install wheel && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-dev.txt && \
+    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements.txt -r /tmp/requirements-dev.txt && \
     $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-vendor.txt && \
     $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-ci.txt && \
     $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-extra.txt
@@ -51,8 +54,7 @@ COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-d
 ENV PYTHON=python3.8
 RUN $PYTHON -m pip install pip --upgrade pip && \
     $PYTHON -m pip install wheel && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-dev.txt && \
+    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements.txt -r /tmp/requirements-dev.txt && \
     $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-vendor.txt && \
     $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-ci.txt && \
     $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-extra.txt
@@ -66,8 +68,7 @@ COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-d
 ENV PYTHON=python3.9
 RUN $PYTHON -m pip install pip --upgrade pip && \
     $PYTHON -m pip install wheel && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-dev.txt && \
+    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements.txt -r /tmp/requirements-dev.txt && \
     $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-vendor.txt && \
     $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-ci.txt && \
     $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-extra.txt

@@ -4,13 +4,18 @@ import sys
 from setuptools import setup
 sys.path.insert(0, os.path.dirname(__file__))
 import extra_commands
-from pyqt_distutils.build_ui import build_ui
+
 cmdclass = {
-    "build_ui": build_ui,
+    # "build_ui": build_ui,
     "build_py": extra_commands.CustomBuildPy,
     "clean": extra_commands.Clean,
     # "build_py": extra_commands.build_py,
 }
+try:
+    from pyqt_distutils.build_ui import build_ui
+    cmdclass["build_ui"] = build_ui
+except ModuleNotFoundError:
+    pass
 
 cmdclass['dl_tessdata'] = extra_commands.TesseractData
 
@@ -19,13 +24,13 @@ if __name__ == "__main__":
         test_suite="tests",
         install_requires=[
             "PyQt5",
-            "HathiZip",
-            "HathiValidate>=0.3.4",
-            "pyhathiprep",
+            "HathiZip>=0.1.6b1",
+            "HathiValidate>=0.3.6b1",
+            "pyhathiprep>=0.1.5b3",
             "pyyaml",
             "hathichecksumupdater",
             "uiucprescon-getmarc>=0.1.1",
-            "uiucprescon.imagevalidate>=0.1.5b1",
+            "uiucprescon.imagevalidate>=0.1.5b8",
             "uiucprescon.ocr>=0.1.1b2",
             "uiucprescon.packager[kdu]>=0.2.11b2",
             "uiucprescon.images",
