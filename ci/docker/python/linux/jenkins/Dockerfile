@@ -33,8 +33,18 @@ RUN if id $USER_ID ; then \
     fi && \
     mkdir -p /.cache/pip && chown -R user /.cache/pip
 
-RUN apt update -y && apt install -y libgl1-mesa-glx
 
+RUN apt-get update && apt-get install -y tzdata \
+    && ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime \
+    && dpkg-reconfigure --frontend noninteractive tzdata
+
+RUN apt-get install -y libgl1-mesa-glx \
+                       locales \
+                       locales-all \
+                       latexmk \
+                       texlive-formats-extra
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
 COPY --from=wheel_builder /wheels /wheels/
 COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt /tmp/
 
