@@ -814,6 +814,7 @@ pipeline {
                 dockerfile {
                     filename 'ci/docker/makepdf/lite/Dockerfile'
                     label 'linux && docker'
+                    additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL"
                 }
             }
             steps {
