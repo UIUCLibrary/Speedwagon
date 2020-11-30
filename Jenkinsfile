@@ -663,6 +663,13 @@ def testPythonPackagesWithTox(glob){
     }
 }
 def startup(){
+    node(){
+        checkout scm
+        tox = load("ci/jenkins/scripts/tox.groovy")
+        mac = load("ci/jenkins/scripts/mac.groovy")
+        devpi = load("ci/jenkins/scripts/devpi.groovy")
+//         configurations = load("ci/jenkins/scripts/configs.groovy").getConfigurations()
+    }
     node('linux && docker') {
         timeout(2){
             ws{
@@ -672,12 +679,7 @@ def startup(){
                         stage("Getting Distribution Info"){
                             sh(
                                label: "Running setup.py with dist_info",
-                               script: """python --version
-                                          python -m venv venv
-                                          venv/bin/python -m pip install pip --upgrade
-                                          venv/bin/pip install pyqt_distutils wheel
-                                          venv/bin/python setup.py dist_info
-                                       """
+                               script: "python setup.py dist_info"
                             )
                             stash includes: "speedwagon.dist-info/**", name: 'DIST-INFO'
                             archiveArtifacts artifacts: "speedwagon.dist-info/**"
@@ -790,6 +792,39 @@ pipeline {
         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
     stages {
+        stage("Run Tox"){
+            when{
+                equals expected: true, actual: params.TEST_RUN_TOX
+            }
+            steps {
+                script{
+                    def windowsJobs = [:]
+                    def linuxJobs = [:]
+                    stage("Scanning Tox Environments"){
+                        parallel(
+                            "Linux":{
+                                linuxJobs = tox.getToxTestsParallel(
+                                        envNamePrefix: "Tox Linux",
+                                        label: "linux && docker",
+                                        dockerfile: "ci/docker/python/linux/tox/Dockerfile",
+                                        dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                                    )
+                            },
+                            "Windows":{
+                                windowsJobs = tox.getToxTestsParallel(
+                                        envNamePrefix: "Tox Windows",
+                                        label: "windows && docker",
+                                        dockerfile: "ci/docker/python/windows/tox/Dockerfile",
+                                        dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE"
+                                 )
+                            },
+                            failFast: true
+                        )
+                    }
+                    parallel(windowsJobs + linuxJobs)
+                }
+            }
+        }
 //         stage("Testing Jira epic"){
 //             agent any
 //             options {
@@ -870,6 +905,26 @@ pipeline {
                           }
                     }
                     stages{
+
+//                         stage("Run Tox test") {
+// //                             when{
+// //                                 equals expected: true, actual: params.TEST_RUN_TOX
+// //                             }
+//                             environment {
+//                               PIP_TRUSTED_HOST = "devpi.library.illinois.edu"
+//
+//                             }
+//                             steps {
+//                                 sh "tox -e py -vv -i https://devpi.library.illinois.edu/production/release"
+//                             }
+//                             post{
+//                                 cleanup{
+//                                     cleanWs deleteDirs: true, patterns: [
+//                                         [pattern: '.tox', type: 'INCLUDE']
+//                                     ]
+//                                 }
+//                             }
+//                         }
                         stage("Building Python Library"){
                             steps {
                                 sh '''mkdir -p logs
@@ -942,25 +997,7 @@ pipeline {
                                         }
                                     }
                                 }
-                                stage("Run Tox test") {
-                                    when{
-                                        equals expected: true, actual: params.TEST_RUN_TOX
-                                    }
-                                    environment {
-                                      PIP_TRUSTED_HOST = "devpi.library.illinois.edu"
 
-                                    }
-                                    steps {
-                                        sh "tox -e py -vv -i https://devpi.library.illinois.edu/production/release"
-                                    }
-                                    post{
-                                        cleanup{
-                                            cleanWs deleteDirs: true, patterns: [
-                                                [pattern: '.tox', type: 'INCLUDE']
-                                            ]
-                                        }
-                                    }
-                                }
                                 stage("Run Pylint Static Analysis") {
                                     steps{
                                         run_pylint()
@@ -1154,7 +1191,7 @@ pipeline {
                                             axis {
                                                 name "PLATFORM"
                                                 values(
-                                                    'linux',
+//                                                     'linux',
                                                     'windows'
                                                 )
                                             }
