@@ -859,39 +859,6 @@ pipeline {
                 }
             }
         }
-        stage("Run Tox"){
-            when{
-                equals expected: true, actual: params.TEST_RUN_TOX
-            }
-            steps {
-                script{
-                    def windowsJobs = [:]
-                    def linuxJobs = [:]
-                    stage("Scanning Tox Environments"){
-                        parallel(
-                            "Linux":{
-                                linuxJobs = tox.getToxTestsParallel(
-                                        envNamePrefix: "Tox Linux",
-                                        label: "linux && docker",
-                                        dockerfile: "ci/docker/python/linux/tox/Dockerfile",
-                                        dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                    )
-                            },
-                            "Windows":{
-                                windowsJobs = tox.getToxTestsParallel(
-                                        envNamePrefix: "Tox Windows",
-                                        label: "windows && docker",
-                                        dockerfile: "ci/docker/python/windows/tox/Dockerfile",
-                                        dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE"
-                                 )
-                            },
-                            failFast: true
-                        )
-                    }
-                    parallel(windowsJobs + linuxJobs)
-                }
-            }
-        }
         stage("Checks"){
             when{
                 equals expected: true, actual: params.RUN_CHECKS
@@ -1079,6 +1046,39 @@ pipeline {
                                     recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                 }
                             }
+                        }
+                    }
+                }
+                stage("Run Tox"){
+                    when{
+                        equals expected: true, actual: params.TEST_RUN_TOX
+                    }
+                    steps {
+                        script{
+                            def windowsJobs = [:]
+                            def linuxJobs = [:]
+                            stage("Scanning Tox Environments"){
+                                parallel(
+                                    "Linux":{
+                                        linuxJobs = tox.getToxTestsParallel(
+                                                envNamePrefix: "Tox Linux",
+                                                label: "linux && docker",
+                                                dockerfile: "ci/docker/python/linux/tox/Dockerfile",
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                                            )
+                                    },
+                                    "Windows":{
+                                        windowsJobs = tox.getToxTestsParallel(
+                                                envNamePrefix: "Tox Windows",
+                                                label: "windows && docker",
+                                                dockerfile: "ci/docker/python/windows/tox/Dockerfile",
+                                                dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE"
+                                         )
+                                    },
+                                    failFast: true
+                                )
+                            }
+                            parallel(windowsJobs + linuxJobs)
                         }
                     }
                 }
