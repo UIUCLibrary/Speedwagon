@@ -30,7 +30,6 @@ if __name__ == "__main__":
             "pyyaml",
             "hathichecksumupdater",
             "uiucprescon-getmarc>=0.1.1",
-            "uiucprescon-getmarc2>=0.1.0b4",
             "uiucprescon.imagevalidate>=0.1.5b8",
             "uiucprescon.ocr>=0.1.1b2",
             "uiucprescon.packager[kdu]>=0.2.11b2",

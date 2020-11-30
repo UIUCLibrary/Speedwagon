@@ -7,7 +7,6 @@ py3exiv2bind==0.1.5b15
 pyhathiprep==0.1.5b3
 pykdu-compress==0.1.3b14
 uiucprescon-getmarc==0.1.2
-uiucprescon-getmarc2==0.1.0b4
 uiucprescon.images==0.0.4b1
 uiucprescon.imagevalidate==0.1.5b9
 uiucprescon.ocr==0.1.1b9
