@@ -674,8 +674,11 @@ def startup(){
         timeout(2){
             ws{
                 checkout scm
+                sh "printenv"
+                sh "ls -la"
                 try{
                     docker.image('python:3.8').inside {
+                        sh "ls -la"
                         stage("Getting Distribution Info"){
                             sh(
                                label: "Running setup.py with dist_info",
@@ -735,7 +738,7 @@ def create_wheel_stash(nodeLabels, pythonVersion){
         ws{
             checkout scm
             try{
-                docker.build("speedwagon:wheelbuilder${pythonVersion}","-f ci/docker/python/windows/Dockerfile --build-arg PYTHON_VERSION=${pythonVersion} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL .").inside{
+                docker.build("speedwagon:wheelbuilder${pythonVersion}","-f ci/docker/python/windows/jenkins/Dockerfile --build-arg PYTHON_VERSION=${pythonVersion} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL .").inside{
                     bat "pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release"
                     stash includes: "deps/*.whl", name: "PYTHON_DEPS_${pythonVersion}"
                 }
@@ -772,7 +775,7 @@ pipeline {
     parameters {
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
         booleanParam(name: "USE_SONARQUBE", defaultValue: true, description: "Send data test data to SonarQube")
-        booleanParam(name: "RUN_CHECKS", defaultValue: true, description: "Run checks on code")
+        booleanParam(name: "RUN_CHECKS", defaultValue: false, description: "Run checks on code")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Packages")
         booleanParam(name: 'BUILD_CHOCOLATEY_PACKAGE', defaultValue: false, description: 'Build package for chocolatey package manager')
@@ -817,13 +820,6 @@ pipeline {
                     additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                   }
             }
-//             agent {
-//                 dockerfile {
-//                     filename 'ci/docker/makepdf/lite/Dockerfile'
-//                     label 'linux && docker'
-//                     additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL"
-//                 }
-//             }
             steps {
                 sh(
                     label: "Building HTML docs on ${env.NODE_NAME}",
