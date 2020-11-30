@@ -674,11 +674,8 @@ def startup(){
         timeout(2){
             ws{
                 checkout scm
-                sh "printenv"
-                sh "ls -la"
                 try{
                     docker.image('python:3.8').inside {
-                        sh "ls -la"
                         stage("Getting Distribution Info"){
                             sh(
                                label: "Running setup.py with dist_info",
