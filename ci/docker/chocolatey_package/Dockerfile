@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/windows/servercore:ltsc2019
 #FROM mcr.microsoft.com/windows/servercore:ltsc2019 as choco_builder
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 
-ADD ci/docker/chocolatey_package/chocolatey/install_choco.ps1 choco/install_choco.ps1
+ADD ci/docker/shared/chocolatey/install_choco.ps1 choco/install_choco.ps1
 ARG CHOCOLATEY_SOURCE=https://chocolatey.org/api/v2
 ARG ChocolateyEnvironmentDebug=false
 RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
