@@ -812,11 +812,18 @@ pipeline {
         stage("Build Sphinx Documentation"){
             agent {
                 dockerfile {
-                    filename 'ci/docker/makepdf/lite/Dockerfile'
+                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
                     label 'linux && docker'
-                    additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL"
-                }
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                  }
             }
+//             agent {
+//                 dockerfile {
+//                     filename 'ci/docker/makepdf/lite/Dockerfile'
+//                     label 'linux && docker'
+//                     additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL"
+//                 }
+//             }
             steps {
                 sh(
                     label: "Building HTML docs on ${env.NODE_NAME}",
