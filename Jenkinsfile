@@ -1456,7 +1456,7 @@ pipeline {
                         agent {
                           dockerfile {
                           additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL"
-                            filename "ci/docker/python/${PLATFORM}/Dockerfile"
+                            filename "ci/docker/python/${PLATFORM}/jenkins/Dockerfile"
                             label "${PLATFORM} && docker"
                           }
                         }
