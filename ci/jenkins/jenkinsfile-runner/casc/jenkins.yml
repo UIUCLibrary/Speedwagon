@@ -1,0 +1,4 @@
+jenkins:
+  numExecutors: 4
+  mode: NORMAL
+  labelString: "master linux docker"

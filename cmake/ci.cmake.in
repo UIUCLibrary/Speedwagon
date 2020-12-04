@@ -1,0 +1,29 @@
+find_file(IIDFILE
+        NAMES .jenkinsci
+        PATHS
+            @PROJECT_BINARY_DIR@
+        REQUIRED
+    )
+
+execute_process(OUTPUT_VARIABLE TOP_LEVEL_SCM
+        COMMAND @GIT_EXECUTABLE@ ls-tree --name-only HEAD
+        WORKING_DIRECTORY @PROJECT_SOURCE_DIR@
+        )
+string(REPLACE "\n" ";" TOP_LEVEL_SCM ${TOP_LEVEL_SCM})
+
+
+foreach(item ${TOP_LEVEL_SCM})
+    if(IS_DIRECTORY "@PROJECT_SOURCE_DIR@/${item}")
+        list(APPEND DOCKER_VOLUMES_COMMANDS --mount type=bind,source=@PROJECT_SOURCE_DIR@/${item}/,target=/workspace/${item}/)
+    else()
+        list(APPEND DOCKER_VOLUMES_COMMANDS --mount type=bind,source=@PROJECT_SOURCE_DIR@/${item},target=/workspace/${item})
+    endif()
+endforeach()
+list(APPEND DOCKER_VOLUMES_COMMANDS "--mount" "type=bind,source=@JENKINS_CI_CASC_PATH@,target=/usr/share/jenkins/ref/casc/")
+list(APPEND DOCKER_VOLUMES_COMMANDS "--mount" "type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock")
+list(JOIN DOCKER_VOLUMES_COMMANDS " " DOCKER_VOLUME_MOUNTING_COMMAND)
+execute_process(
+        WORKING_DIRECTORY @PROJECT_BINARY_DIR@
+        COMMAND
+            @DOCKER@ run -it --rm ${DOCKER_VOLUMES_COMMANDS}  @JENKINS_CI_DOCKER_IMAGE_NAME@ --runWorkspace /build/@PROJECT_NAME@ --job-name @PROJECT_NAME@
+)
