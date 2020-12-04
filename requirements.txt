@@ -12,7 +12,7 @@ importlib-metadata==1.6.1
 importlib-resources>=1.5.0
 lxml>=4.5.1
 pluggy==0.13.1
-py3exiv2bind>=0.1.5b7
+py3exiv2bind>=0.1.5b15
 pyhathiprep>=0.1.5b3
 pyqt-distutils>=0.7.3
 PyQt5>=5.15.0

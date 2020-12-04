@@ -38,7 +38,7 @@ if __name__ == "__main__":
             "setuptools>=30.3.0",
             'importlib_resources;python_version<"3.7"',
             'lxml',
-            "py3exiv2bind>=0.1.5b3",
+            "py3exiv2bind>=0.1.5b15",
         ],
         packages=[
             "speedwagon",
