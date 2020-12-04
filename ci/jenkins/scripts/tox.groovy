@@ -129,10 +129,10 @@ def getToxTestsParallel(args = [:]){
         def TOX_RESULT_FILE_NAME = "tox_result.json"
         def envs
         def originalNodeLabel
+        def dockerImageName = "${currentBuild.fullProjectName}:tox".replaceAll("-", "").replaceAll('/', "").replaceAll(' ', "").toLowerCase()
         node(label){
             originalNodeLabel = env.NODE_NAME
             checkout scm
-            def dockerImageName = "tox${currentBuild.fullProjectName}".replaceAll("-", "").replaceAll('/', "").replaceAll(' ', "").toLowerCase()
             def dockerImage = docker.build(dockerImageName, "-f ${dockerfile} ${dockerArgs} .")
             dockerImage.inside{
                 envs = getToxEnvs()
@@ -153,7 +153,6 @@ def getToxTestsParallel(args = [:]){
         echo "Found tox environments for ${envs.join(', ')}"
         def dockerImageForTesting
         node(originalNodeLabel){
-            def dockerImageName = "tox"
             checkout scm
             dockerImageForTesting = docker.build(dockerImageName, "-f ${dockerfile} ${dockerArgs} . ")
 
