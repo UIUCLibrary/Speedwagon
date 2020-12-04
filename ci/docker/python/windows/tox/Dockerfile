@@ -15,7 +15,7 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 
 ARG CHOCOLATEY_SOURCE=https://chocolatey.org/api/v2
 ARG ChocolateyEnvironmentDebug=false
-ADD ci/docker/shared/chocolatey/install_choco.ps1 choco/install_choco.ps1
+COPY ci/docker/shared/chocolatey/install_choco.ps1 choco/install_choco.ps1
 RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
     ./choco/install_choco.ps1 -packageRepo $env:CHOCOLATEY_SOURCE ; `
     if( -not ([string]::IsNullOrEmpty($Env:CHOCOLATEY_SOURCE ))) `
@@ -105,18 +105,18 @@ RUN py -m pip list
 
 # ==============================================================================
 
-#FROM BASE_BUILDER as WHEEL_BUILDER_PY39
-#SHELL ["cmd", "/S", "/C" ]
-#COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt c:/requirements/
-#ARG PIP_EXTRA_INDEX_URL
-#ARG PIP_INDEX_URL
-#ENV PY_PYTHON=3.9
-#RUN py -m pip install --upgrade pip wheel && `
-#    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements.txt -r c:/requirements/requirements-dev.txt && `
-#    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-vendor.txt && `
-#    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt && `
-#    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt
-#RUN py -m pip list
+FROM BASE_BUILDER as WHEEL_BUILDER_PY39
+SHELL ["cmd", "/S", "/C" ]
+COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt c:/requirements/
+ARG PIP_EXTRA_INDEX_URL
+ARG PIP_INDEX_URL
+ENV PY_PYTHON=3.9
+RUN py -m pip install --upgrade pip wheel && `
+    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements.txt -r c:/requirements/requirements-dev.txt && `
+    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-vendor.txt && `
+    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt && `
+    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt
+RUN py -m pip list
 # ==============================================================================
 
 #FROM BASE_BUILDER as CONAN_BUILDER
@@ -155,7 +155,7 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 COPY --from=WHEEL_BUILDER_PY36 c:/wheels/ c:/wheels/
 COPY --from=WHEEL_BUILDER_PY37 c:/wheels/ c:/wheels/
 COPY --from=WHEEL_BUILDER_PY38 c:/wheels/ c:/wheels/
-#COPY --from=WHEEL_BUILDER_PY39 c:/wheels/ c:/wheels/
+COPY --from=WHEEL_BUILDER_PY39 c:/wheels/ c:/wheels/
 
 ENV PIP_FIND_LINKS=c:\wheels
 
