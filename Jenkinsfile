@@ -1377,7 +1377,11 @@ pipeline {
                                             unstash 'STANDALONE_INSTALLERS'
                                             script{
                                                 def msi_file = findFiles(glob: "dist/*.msi")[0].path
-                                                powershell "New-Item -ItemType Directory -Force -Path logs; Write-Host \"Installing ${msi_file}\"; msiexec /i ${msi_file} /qn /norestart /L*v! logs\\msiexec.log"
+                                                powershell(label:"Installing msi file",
+                                                           script: """New-Item -ItemType Directory -Force -Path logs; Write-Host \"Installing ${msi_file}\"
+                                                                      msiexec /i ${msi_file} /qn /norestart /L*v! logs\\msiexec.log
+                                                                      """
+                                                          )
                                             }
                                         }
                                     }
