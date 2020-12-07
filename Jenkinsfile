@@ -1184,31 +1184,6 @@ pipeline {
                                         }
                                     }
                                 }
-//                                 stage("macOS 10.14"){
-//                                     when{
-//                                         equals expected: true, actual: params.TEST_MAC_PACKAGES
-//                                     }
-//                                     parallel{
-//                                         stage('Testing Wheel Package') {
-//                                             agent {
-//                                                 label 'mac && 10.14 && python3.8'
-//                                             }
-//                                             steps{
-//                                                 unstash "PYTHON_PACKAGES"
-//                                                 test_package_on_mac("dist/*.whl")
-//                                             }
-//                                         }
-//                                         stage('Testing sdist Package') {
-//                                             agent {
-//                                                 label 'mac && 10.14 && python3.8'
-//                                             }
-//                                             steps{
-//                                                 unstash "PYTHON_PACKAGES"
-//                                                 test_package_on_mac("dist/*.tar.gz,dist/*.zip")
-//                                             }
-//                                         }
-//                                     }
-//                                 }
                                 stage("Windows and Linux"){
                                     matrix{
                                         agent {
