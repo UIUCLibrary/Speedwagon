@@ -1130,31 +1130,83 @@ pipeline {
                                 equals expected: true, actual: params.TEST_PACKAGES
                             }
                             stages{
-                                stage("macOS 10.14"){
+                                stage("Mac Versions"){
                                     when{
                                         equals expected: true, actual: params.TEST_MAC_PACKAGES
+                                        beforeAgent true
                                     }
-                                    parallel{
-                                        stage('Testing Wheel Package') {
-                                            agent {
-                                                label 'mac && 10.14 && python3.8'
-                                            }
-                                            steps{
-                                                unstash "PYTHON_PACKAGES"
-                                                test_package_on_mac("dist/*.whl")
+                                    matrix{
+                                        agent none
+                                        axes{
+                                            axis {
+                                                name "PYTHON_VERSION"
+                                                values(
+                                                    "3.8",
+                                                    '3.9'
+                                                )
                                             }
                                         }
-                                        stage('Testing sdist Package') {
-                                            agent {
-                                                label 'mac && 10.14 && python3.8'
-                                            }
-                                            steps{
-                                                unstash "PYTHON_PACKAGES"
-                                                test_package_on_mac("dist/*.tar.gz,dist/*.zip")
+                                        stages{
+                                            stage("Test Packages"){
+                                                when{
+                                                     equals expected: true, actual: params.TEST_PACKAGES
+                                                }
+                                                stages{
+                                                    stage("Test wheel"){
+                                                        steps{
+                                                            script{
+
+                                                                mac.test_mac_package(
+                                                                    label: "mac && 10.14 && python${PYTHON_VERSION}",
+                                                                    pythonPath: "python${PYTHON_VERSION}",
+                                                                    stash: "PYTHON_WHL_PACKAGE",
+                                                                    glob: "dist/*.whl"
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                    stage("Test sdist"){
+                                                        steps{
+                                                            script{
+                                                                mac.test_mac_package(
+                                                                    label: "mac && 10.14 && python${PYTHON_VERSION}",
+                                                                    pythonPath: "python${PYTHON_VERSION}",
+                                                                    stash: "PYTHON_SDIST_PACKAGE",
+                                                                    glob: "dist/*.tar.gz,dist/*.zip"
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     }
                                 }
+//                                 stage("macOS 10.14"){
+//                                     when{
+//                                         equals expected: true, actual: params.TEST_MAC_PACKAGES
+//                                     }
+//                                     parallel{
+//                                         stage('Testing Wheel Package') {
+//                                             agent {
+//                                                 label 'mac && 10.14 && python3.8'
+//                                             }
+//                                             steps{
+//                                                 unstash "PYTHON_PACKAGES"
+//                                                 test_package_on_mac("dist/*.whl")
+//                                             }
+//                                         }
+//                                         stage('Testing sdist Package') {
+//                                             agent {
+//                                                 label 'mac && 10.14 && python3.8'
+//                                             }
+//                                             steps{
+//                                                 unstash "PYTHON_PACKAGES"
+//                                                 test_package_on_mac("dist/*.tar.gz,dist/*.zip")
+//                                             }
+//                                         }
+//                                     }
+//                                 }
                                 stage("Windows and Linux"){
                                     matrix{
                                         agent {
