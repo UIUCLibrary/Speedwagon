@@ -2,47 +2,53 @@
 // @Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
 import org.ds.*
 import static groovy.json.JsonOutput.* // For pretty printing json data
-
-
-def CONFIGURATIONS = [
-    "3.7": [
-        test_docker_image: "python:3.7",
-        tox_env: "py37",
-        dockerfiles:[
-            windows: "ci/docker/python/windows/Dockerfile",
-            linux: "ci/docker/python/linux/jenkins/Dockerfile"
-        ],
-        pkgRegex: [
-            wheel: "*.whl",
-            sdist: "*.tar.gz"
-        ]
-    ],
-    "3.8": [
-        test_docker_image: "python:3.8",
-        tox_env: "py38",
-        dockerfiles:[
-            windows: "ci/docker/python/windows/Dockerfile",
-            linux: "ci/docker/python/linux/jenkins/Dockerfile"
-        ],
-        pkgRegex: [
-            wheel: "*.whl",
-            sdist: "*.tar.gz"
-        ]
-    ],
-    "3.9": [
-        test_docker_image: "python:3.9",
-        tox_env: "py39",
-        dockerfiles:[
-            windows: "ci/docker/python/windows/Dockerfile",
-            linux: "ci/docker/python/linux/jenkins/Dockerfile"
-        ],
-        pkgRegex: [
-            wheel: "*.whl",
-            sdist: "*.tar.gz"
-        ]
-    ]
-]
-
+def loadConfigs(){
+    node(){
+        echo "loading configurations"
+        checkout scm
+        return load("ci/jenkins/scripts/configs.groovy").getConfigurations()
+    }
+}
+//
+def CONFIGURATIONS = loadConfigs()
+//     "3.7": [
+//         test_docker_image: "python:3.7",
+//         tox_env: "py37",
+//         dockerfiles:[
+//             windows: "ci/docker/python/windows/Dockerfile",
+//             linux: "ci/docker/python/linux/jenkins/Dockerfile"
+//         ],
+//         pkgRegex: [
+//             wheel: "*.whl",
+//             sdist: "*.tar.gz"
+//         ]
+//     ],
+//     "3.8": [
+//         test_docker_image: "python:3.8",
+//         tox_env: "py38",
+//         dockerfiles:[
+//             windows: "ci/docker/python/windows/Dockerfile",
+//             linux: "ci/docker/python/linux/jenkins/Dockerfile"
+//         ],
+//         pkgRegex: [
+//             wheel: "*.whl",
+//             sdist: "*.tar.gz"
+//         ]
+//     ],
+//     "3.9": [
+//         test_docker_image: "python:3.9",
+//         tox_env: "py39",
+//         dockerfiles:[
+//             windows: "ci/docker/python/windows/Dockerfile",
+//             linux: "ci/docker/python/linux/jenkins/Dockerfile"
+//         ],
+//         pkgRegex: [
+//             wheel: "*.whl",
+//             sdist: "*.tar.gz"
+//         ]
+//     ]
+// ]
+//
 
 def get_build_args(){
     script{
@@ -255,34 +261,6 @@ def check_jira(project, issue){
 
 }
 
-
-def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
-    script{
-        def cpack_generators = []
-        def item_selected = false
-        def default_generator = "WIX"
-
-        if(BuildWix){
-            cpack_generators << "WIX"
-            item_selected = true
-        }
-
-        if(BuildNSIS){
-            cpack_generators << "NSIS"
-            item_selected = true
-        }
-        if(BuildZip){
-            cpack_generators << "ZIP"
-            item_selected = true
-        }
-        if(item_selected == false){
-            cpack_generators << default_generator
-        }
-
-        return "${cpack_generators.join(";")}"
-    }
-
-}
 
 def capture_ctest_results(PATH){
     script {
@@ -562,57 +540,57 @@ def test_pkg(glob, timeout_time){
         }
     }
 }
-
-def build_standalone(){
-    stage("Building Standalone"){
-        bat "where cmake"
-        unstash "SPEEDWAGON_DOC_PDF"
-        bat """if not exist "cmake_build" mkdir cmake_build
-    if not exist "logs" mkdir logs
-    if not exist "logs\\ctest" mkdir logs\\ctest
-    if not exist "temp" mkdir temp
-    """
-    //C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64
-    //cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf
-    //C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\cmake_build && cmake --build .
-        script{
-            def PYTHON_EXECUTABLE = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
-            cmakeBuild(
-                buildDir: 'cmake_build',
-                cmakeArgs: """-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels
-        -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv
-//         -DPYTHON_EXECUTABLE=\"${PYTHON_EXECUTABLE}\"
-        -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf""",
-                generator: 'Ninja',
-                installation: 'InSearchPath',
-                steps: [
-                    [withCmake: true]
-                ]
-            )
-        }
-    }
-    stage("Testing standalone"){
-
-        ctest(
-            arguments: "-T test -C Release -j ${NUMBER_OF_PROCESSORS}",
-            installation: 'InSearchPath',
-            workingDir: 'cmake_build'
-            )
-    }
-    stage("Packaging standalone"){
-        script{
-            def packaging_msi = false
-            if(params.PACKAGE_WINDOWS_STANDALONE_MSI){
-                packaging_msi = true
-            }
-            def cpack_generators = generate_cpack_arguments(packaging_msi, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)
-            cpack(
-                arguments: "-C Release -G ${cpack_generators} --config cmake_build/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
-                installation: 'InSearchPath'
-            )
-        }
-    }
-}
+//
+// def build_standalone(){
+//     stage("Building Standalone"){
+//         bat "where cmake"
+//         unstash "SPEEDWAGON_DOC_PDF"
+//         bat """if not exist "cmake_build" mkdir cmake_build
+//     if not exist "logs" mkdir logs
+//     if not exist "logs\\ctest" mkdir logs\\ctest
+//     if not exist "temp" mkdir temp
+//     """
+//     //C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64
+//     //cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf
+//     //C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\cmake_build && cmake --build .
+//         script{
+//             def PYTHON_EXECUTABLE = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
+//             cmakeBuild(
+//                 buildDir: 'cmake_build',
+//                 cmakeArgs: """-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels
+//         -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv
+// //         -DPYTHON_EXECUTABLE=\"${PYTHON_EXECUTABLE}\"
+//         -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf""",
+//                 generator: 'Ninja',
+//                 installation: 'InSearchPath',
+//                 steps: [
+//                     [withCmake: true]
+//                 ]
+//             )
+//         }
+//     }
+//     stage("Testing standalone"){
+//
+//         ctest(
+//             arguments: "-T test -C Release -j ${NUMBER_OF_PROCESSORS}",
+//             installation: 'InSearchPath',
+//             workingDir: 'cmake_build'
+//             )
+//     }
+//     stage("Packaging standalone"){
+//         script{
+//             def packaging_msi = false
+//             if(params.PACKAGE_WINDOWS_STANDALONE_MSI){
+//                 packaging_msi = true
+//             }
+//             def cpack_generators = generate_cpack_arguments(packaging_msi, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)
+//             cpack(
+//                 arguments: "-C Release -G ${cpack_generators} --config cmake_build/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
+//                 installation: 'InSearchPath'
+//             )
+//         }
+//     }
+// }
 
 def runSonarScanner(propsFile){
     def props = readProperties(interpolate: true, file: propsFile)
@@ -680,6 +658,8 @@ def startup(){
         tox = load("ci/jenkins/scripts/tox.groovy")
         mac = load("ci/jenkins/scripts/mac.groovy")
         devpi = load("ci/jenkins/scripts/devpi.groovy")
+        standalone = load("ci/jenkins/scripts/standalone.groovy")
+
 //         configurations = load("ci/jenkins/scripts/configs.groovy").getConfigurations()
     }
     node('linux && docker') {
@@ -1213,13 +1193,13 @@ pipeline {
                                                 values(
                                                     "3.7",
                                                     "3.8",
-                                                    "3.9",
+//                                                     "3.9",
                                                 )
                                             }
                                             axis {
                                                 name "PLATFORM"
                                                 values(
-//                                                     'linux',
+                                                    'linux',
                                                     'windows'
                                                 )
                                             }
@@ -1235,19 +1215,6 @@ pipeline {
                                                 steps{
                                                     unstash "PYTHON_PACKAGES"
                                                     test_pkg("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}", 20)
-//                                                     cleanWs(
-//                                                         notFailBuild: true,
-//                                                         deleteDirs: true,
-//                                                         disableDeferredWipeout: true,
-//                                                         patterns: [
-//                                                                 [pattern: 'features/', type: 'EXCLUDE'],
-//                                                                 [pattern: '.git/**', type: 'EXCLUDE'],
-//                                                                 [pattern: 'tests/**', type: 'EXCLUDE'],
-//                                                                 [pattern: 'tox.ini', type: 'EXCLUDE'],
-//                                                                 [pattern: 'setup.cfg', type: 'EXCLUDE'],
-//                                                             ]
-//                                                     )
-//                                                     testPythonPackagesWithTox("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}")
                                                 }
                                             }
                                         }
@@ -1382,7 +1349,16 @@ pipeline {
                                           }
                                     }
                                     steps {
-                                        build_standalone()
+                                        script{
+                                            unstash "SPEEDWAGON_DOC_PDF"
+                                            standalone.build_standalone(
+                                                packageFormat: [
+                                                    msi: params.PACKAGE_WINDOWS_STANDALONE_MSI,
+                                                    nsis: params.PACKAGE_WINDOWS_STANDALONE_NSIS,
+                                                    zipFile: params.PACKAGE_WINDOWS_STANDALONE_ZIP,
+                                                ]
+                                            )
+                                        }
                                     }
                                     post {
                                         success{
