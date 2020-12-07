@@ -765,6 +765,9 @@ def create_wheels(){
         },
         "Packaging wheels for 3.8": {
             create_wheel_stash('windows && docker', "3.8")
+        },
+        "Packaging wheels for 3.9": {
+            create_wheel_stash('windows && docker', "3.9")
         }
     )
 }
