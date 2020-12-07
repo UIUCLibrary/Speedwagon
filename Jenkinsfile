@@ -28,6 +28,18 @@ def CONFIGURATIONS = [
             wheel: "*.whl",
             sdist: "*.tar.gz"
         ]
+    ],
+    "3.9": [
+        test_docker_image: "python:3.9",
+        tox_env: "py39",
+        dockerfiles:[
+            windows: "ci/docker/python/windows/Dockerfile",
+            linux: "ci/docker/python/linux/jenkins/Dockerfile"
+        ],
+        pkgRegex: [
+            wheel: "*.whl",
+            sdist: "*.tar.gz"
+        ]
     ]
 ]
 
