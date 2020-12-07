@@ -781,14 +781,13 @@ def get_props(){
     }
 }
 def props = get_props()
-
 pipeline {
     agent none
     parameters {
         string(name: 'JIRA_ISSUE_VALUE', defaultValue: "PSR-83", description: 'Jira task to generate about updates.')
-        booleanParam(name: "USE_SONARQUBE", defaultValue: true, description: "Send data test data to SonarQube")
+        booleanParam(name: "USE_SONARQUBE", defaultValue: false, description: "Send data test data to SonarQube")
         booleanParam(name: "RUN_CHECKS", defaultValue: true, description: "Run checks on code")
-        booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
+        booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
         booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Packages")
         booleanParam(name: 'BUILD_CHOCOLATEY_PACKAGE', defaultValue: false, description: 'Build package for chocolatey package manager')
         booleanParam(name: "TEST_MAC_PACKAGES", defaultValue: false, description: "Test Python packages on Mac")
@@ -848,7 +847,7 @@ pipeline {
             }
             post{
                 always{
-                    recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
+//                     recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
                     stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
                 }
                 success{
@@ -935,11 +934,11 @@ pipeline {
                                                     script: 'coverage run --parallel-mode --source=speedwagon -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt'
                                                     )
                                             }
-                                            post{
-                                                always {
-                                                    recordIssues(tools: [sphinxBuild(id: 'doctest', name: 'Doctest', pattern: 'logs/doctest.txt')])
-                                                }
-                                            }
+//                                             post{
+//                                                 always {
+//                                                     recordIssues(tools: [sphinxBuild(id: 'doctest', name: 'Doctest', pattern: 'logs/doctest.txt')])
+//                                                 }
+//                                             }
                                         }
                                         stage("Run MyPy Static Analysis") {
                                             steps{
@@ -953,7 +952,7 @@ pipeline {
                                             }
                                             post {
                                                 always {
-                                                    recordIssues(tools: [myPy(pattern: "logs/mypy.log")])
+//                                                     recordIssues(tools: [myPy(pattern: "logs/mypy.log")])
                                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                                                 }
                                                 cleanup{
@@ -969,7 +968,7 @@ pipeline {
                                             post{
                                                 always{
                                                     stash includes: "reports/pylint_issues.txt,reports/pylint.txt", name: 'PYLINT_REPORT'
-                                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
+//                                                     recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
                                                 }
                                             }
                                         }
@@ -982,7 +981,7 @@ pipeline {
                                             post {
                                                 always {
                                                       stash includes: 'logs/flake8.log', name: "FLAKE8_REPORT"
-                                                      recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
+//                                                       recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
                                                 }
                                             }
                                         }
@@ -1057,7 +1056,7 @@ pipeline {
                                     )
                                     stash includes: "reports/sonar-report.json", name: 'SONAR_REPORT'
                                     archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
-                                    recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+//                                     recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                 }
                             }
                         }
