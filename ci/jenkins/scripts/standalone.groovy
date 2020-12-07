@@ -29,12 +29,12 @@ def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
 
 
 def build_standalone(args=[:]){
+    def buildDir =   args['buildDir'] ? args['buildDir']: "cmake_build"
+    def pythonExec = args['pythonExec'] ? args['pythonExec']: powershell(script: '(Get-Command python).path', returnStdout: true).trim()
+    def packaging_msi  = args.packageFormat['msi'] ? args.packageFormat['msi']: false
+    def packaging_nsis = args.packageFormat['nsis'] ? args.packageFormat['nsis']: false
+    def packaging_zip  = args.packageFormat['zipFile'] ? args.packageFormat['zipFile']: false
     stage("Building Standalone"){
-        def pythonExec = args['pythonExec'] ? args['pythonExec']: powershell(script: '(Get-Command python).path', returnStdout: true).trim()
-        def buildDir =   args['buildDir'] ? args['buildDir']: "cmake_build"
-        def packaging_msi  = args.packageFormat['msi'] ? args.packageFormat['msi']: false
-        def packaging_nsis = args.packageFormat['nsis'] ? args.packageFormat['nsis']: false
-        def packaging_zip  = args.packageFormat['zipFile'] ? args.packageFormat['zipFile']: false
 //         bat "where cmake"
 
         bat(label: "Creating expected directories",
