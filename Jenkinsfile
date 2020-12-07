@@ -691,7 +691,7 @@ def startup(){
                         stage("Getting Distribution Info"){
                             sh(
                                label: "Running setup.py with dist_info",
-                               script: "python setup.py dist_info"
+                               script: 'PIP_NO_CACHE_DIR=off python setup.py dist_info'
                             )
                             stash includes: "speedwagon.dist-info/**", name: 'DIST-INFO'
                             archiveArtifacts artifacts: "speedwagon.dist-info/**"
