@@ -1287,6 +1287,7 @@ pipeline {
                                         script {
                                             findFiles(glob: "dist/*.whl").each{
                                                 def sanitized_packageversion=sanitize_chocolatey_version(props.Version)
+                                                unstash "PYTHON_DEPS_3.9"
                                                 unstash "PYTHON_DEPS_3.8"
                                                 unstash "PYTHON_DEPS_3.7"
                                                 unstash "SPEEDWAGON_DOC_PDF"
