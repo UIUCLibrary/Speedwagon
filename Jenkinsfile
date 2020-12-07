@@ -1114,6 +1114,8 @@ pipeline {
                             post{
                                 always{
                                     stash includes: "dist/*.whl,dist/*.tar.gz,dist/*.zip", name: 'PYTHON_PACKAGES'
+                                    stash includes: 'dist/*.whl', name: 'PYTHON_WHL_PACKAGE'
+                                    stash includes: 'dist/*.tar.gz,dist/*.zip', name: 'PYTHON_SDIST_PACKAGE'
                                 }
                                 cleanup{
                                     cleanWs(
