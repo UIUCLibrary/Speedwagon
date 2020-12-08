@@ -80,9 +80,9 @@ def deploy_to_chocolatey(ChocolateyServer){
     }
 }
 def install_chocolatey_package(args=[:]){
-    def packageName = arg['name']
-    def version = arg['version']
-    def source = arg['source']
+    def packageName = args['name']
+    def version = args['version']
+    def source = args['source']
     powershell(
         label: "Installing Chocolatey Package",
         script:"""$process = start-process -NoNewWindow -PassThru -FilePath C:\\ProgramData\\chocolatey\\bin\\choco.exe -ArgumentList '${packageName} -y -dv  --version=${version} -s \'${source}]\' --no-progress', "-my" -Wait ;
