@@ -52,6 +52,8 @@ def submitToSonarcloud(args = [:]){
                 )
             }
             sh "printenv"
+            sh "ls -la"
+            sh "ls -laR .scannerwork/"
             timeout(60){
                 def sonarqube_result = waitForQualityGate(abortPipeline: false)
                 if (sonarqube_result.status != 'OK') {
