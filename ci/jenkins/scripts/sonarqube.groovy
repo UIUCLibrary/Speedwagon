@@ -57,18 +57,20 @@ def submitToSonarcloud(args = [:]){
                         script: "sonar-scanner -Dsonar.projectVersion=${projectVersion} -Dsonar.buildString=\"${buildString}\" -Dsonar.branch.name=${branchName}"
                         )
                 }
-                sh "printenv"
-                sh "ls -la"
-                sh "ls -laR .scannerwork/"
-                timeout(60){
-                    def sonarqube_result = waitForQualityGate(abortPipeline: false)
-                    if (sonarqube_result.status != 'OK') {
-                        unstable "SonarQube quality gate: ${sonarqube_result.status}"
-                    }
-                    def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
-                    writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
-                }
             }
+
+            timeout(60){
+                def sonarqube_result = waitForQualityGate(abortPipeline: false)
+                if (sonarqube_result.status != 'OK') {
+                    unstable "SonarQube quality gate: ${sonarqube_result.status}"
+                }
+                def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
+                writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
+            }
+        } catch(e){
+            sh "printenv"
+            sh "ls -la"
+            sh "ls -laR .scannerwork/"
         } finally {
             cleanWs(
                 deleteDirs: true,
