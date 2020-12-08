@@ -594,6 +594,10 @@ pipeline {
                                     def sonarqube = load("ci/jenkins/scripts/sonarqube.groovy")
                                     if (env.CHANGE_ID){
                                         sonarqube.submitToSonarcloud(
+                                            sonarqube:[
+                                                installationName: "sonarcloud",
+                                                credentialsId: 'sonarcloud-speedwagon',
+                                            ],
                                             pullRequest: [
                                                 source: env.CHANGE_ID,
                                                 destination: env.BRANCH_NAME,
@@ -605,6 +609,10 @@ pipeline {
                                             )
                                     } else {
                                         sonarqube.submitToSonarcloud(
+                                            sonarqube:[
+                                                installationName: "sonarcloud",
+                                                credentialsId: 'sonarcloud-speedwagon',
+                                            ],
                                             package: [
                                                 version: props.Version,
                                                 name: props.Name
