@@ -33,7 +33,7 @@ def get_sonarqube_unresolved_issues(report_task_file){
 def submitToSonarcloud(args = [:]){
     def pkg = args.package
     def isPullRequest = args['pullRequest'] ? true: false
-    def buildString = args.buildString
+    def buildString = args['buildString'] ? args['buildString']: env.BUILD_TAG
     withSonarQubeEnv(
         installationName: args.sonarqube.installationName,
         credentialsId: args.sonarqube.credentialsId) {
