@@ -625,7 +625,7 @@ pipeline {
                                         allowEmptyArchive: true,
                                         artifacts: ".scannerwork/report-task.txt"
                                     )
-                                    stash includes: "reports/sonar-report.json", name: 'SONAR_REPORT'
+//                                     stash includes: "reports/sonar-report.json", name: 'SONAR_REPORT'
                                     archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
 //                                     recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                 }
@@ -1026,10 +1026,10 @@ pipeline {
                 beforeOptions true
             }
             agent none
-            environment{
-                devpiStagingIndex = getDevPiStagingIndex()
-//                 DEVPI = credentials("DS_devpi")
-            }
+//             environment{
+//                 devpiStagingIndex = getDevPiStagingIndex()
+// //                 DEVPI = credentials("DS_devpi")
+//             }
             options{
                 lock("speedwagon-devpi")
             }
@@ -1067,7 +1067,7 @@ pipeline {
                             }
                             axis {
                                 name 'PYTHON_VERSION'
-                                values '3.7', "3.8"
+                                values '3.7', '3.8', '3.9'
                             }
                         }
                         agent {
