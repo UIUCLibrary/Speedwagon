@@ -853,12 +853,13 @@ pipeline {
                                     steps{
                                         unstash "PYTHON_PACKAGES"
                                         script {
-                                            findFiles(glob: "dist/*.whl").each{
+                                            findFiles(glob: 'dist/*.whl').each{
                                                 def sanitized_packageversion=chocolatey.sanitize_chocolatey_version(props.Version)
                                                 [
                                                     "PYTHON_DEPS_3.9",
                                                     "PYTHON_DEPS_3.8",
                                                     "PYTHON_DEPS_3.7",
+                                                    "SPEEDWAGON_DOC_PDF"
                                                 ].each{
                                                     unstash "${it}"
                                                 }
@@ -899,12 +900,10 @@ pipeline {
                                     steps{
                                         unstash "CHOCOLATEY_PACKAGE"
                                         script{
-                                            def sanitized_packageversion=chocolatey.sanitize_chocolatey_version(props.Version)
-                                            powershell(
-                                                label: "Installing Chocolatey Package",
-                                                script:"""\$ErrorActionPreference = 'Stop'; # stop on all errors
-                                                          choco install speedwagon -y -dv  --version=${sanitized_packageversion} -s './packages/;CHOCOLATEY_SOURCE;chocolatey' --no-progress
-                                                          """
+                                            chocolatey.install_chocolatey_package(
+                                                name:"speedwagon",
+                                                version:chocolatey.sanitize_chocolatey_version(props.Version),
+                                                source: './packages/;CHOCOLATEY_SOURCE;chocolatey'
                                             )
                                         }
                                         powershell "Get-ChildItem \"\$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\" -Recurse -Include *.lnk"
