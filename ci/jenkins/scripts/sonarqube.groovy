@@ -34,11 +34,12 @@ def submitToSonarcloud(args = [:]){
     def pkg = args.package
     def isPullRequest = args['pullRequest'] ? true: false
     def buildString = args['buildString'] ? args['buildString']: env.BUILD_TAG
+    def installationName = args.sonarqube.installationName
+    def credentialsId = args.sonarqube.credentialsId
+    echo "using installationName = ${installationName} credentialsId = ${credentialsId}"
     script{
         try{
-            withSonarQubeEnv(
-                installationName: args.sonarqube.installationName,
-                credentialsId: args.sonarqube.credentialsId) {
+            withSonarQubeEnv(installationName: installationName, credentialsId: credentialsId) {
 
                 def projectVersion = args.package.version
 
