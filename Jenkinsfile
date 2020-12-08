@@ -589,6 +589,10 @@ pipeline {
                                         "PYLINT_REPORT",
                                         "FLAKE8_REPORT"
                                     ]
+                                    def sonarqubeConfig = [
+                                                installationName: "sonarcloud",
+                                                credentialsId: 'sonarcloud-speedwagon',
+                                            ]
                                     def agent = [
                                                     dockerfile: [
                                                         filename: 'ci/docker/python/linux/jenkins/Dockerfile',
@@ -602,10 +606,7 @@ pipeline {
                                             agent: agent,
                                             reportStashes: stashes,
                                             artifactStash: "sonarqube artifacts",
-                                            sonarqube:[
-                                                installationName: "sonarcloud",
-                                                credentialsId: 'sonarcloud-speedwagon',
-                                            ],
+                                            sonarqube: sonarqubeConfig,
                                             pullRequest: [
                                                 source: env.CHANGE_ID,
                                                 destination: env.BRANCH_NAME,
@@ -620,10 +621,7 @@ pipeline {
                                             agent: agent,
                                             reportStashes: stashes,
                                             artifactStash: "sonarqube artifacts",
-                                            sonarqube:[
-                                                installationName: "sonarcloud",
-                                                credentialsId: 'sonarcloud-speedwagon',
-                                            ],
+                                            sonarqube: sonarqubeConfig,
                                             package: [
                                                 version: props.Version,
                                                 name: props.Name
@@ -636,15 +634,8 @@ pipeline {
                                 always{
                                     node(""){
                                         unstash "sonarqube artifacts"
-                                        archiveArtifacts(
-                                            allowEmptyArchive: true,
-                                            artifacts: ".scannerwork/report-task.txt"
-                                        )
                                         recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                     }
-//                                     stash includes: "reports/sonar-report.json", name: 'SONAR_REPORT'
-//                                     archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
-//                                     recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                 }
                             }
                         }
@@ -695,7 +686,6 @@ pipeline {
                 anyOf{
                     equals expected: true, actual: params.BUILD_PACKAGES
                     equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
-                    equals expected: true, actual: params.TEST_MAC_PACKAGES
                     equals expected: true, actual: params.DEPLOY_DEVPI
                     equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
                     equals expected: true, actual: params.DEPLOY_CHOCOLATEY
