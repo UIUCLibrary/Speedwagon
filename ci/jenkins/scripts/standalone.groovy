@@ -77,4 +77,15 @@ def build_standalone(args=[:]){
         }
     }
 }
+
+def testInstall(glob){
+    def msi_file = findFiles(glob: glob)[0].path
+    powershell(label:"Installing msi file",
+               script: """New-Item -ItemType Directory -Force -Path logs
+                          Write-Host \"Installing ${msi_file}\"
+                          msiexec /i ${msi_file} /qn /norestart /L*v! logs\\msiexec.log
+                          """
+              )
+}
+
 return this

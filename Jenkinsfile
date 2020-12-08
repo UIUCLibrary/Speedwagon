@@ -988,13 +988,7 @@ pipeline {
                                         timeout(15){
                                             unstash 'STANDALONE_INSTALLERS'
                                             script{
-                                                def msi_file = findFiles(glob: 'dist/*.msi')[0].path
-                                                powershell(label:"Installing msi file",
-                                                           script: """New-Item -ItemType Directory -Force -Path logs
-                                                                      Write-Host \"Installing ${msi_file}\"
-                                                                      msiexec /i ${msi_file} /qn /norestart /L*v! logs\\msiexec.log
-                                                                      """
-                                                          )
+                                                load("ci/jenkins/scripts/standalone.groovy").testInstall('dist/*.msi')
                                             }
                                         }
                                     }
