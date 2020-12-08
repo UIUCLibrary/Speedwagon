@@ -39,9 +39,9 @@ def submitToSonarcloud(args = [:]){
     def buildString = args['buildString'] ? args['buildString']: env.BUILD_TAG
     def installationName = args.sonarqube.installationName
     def credentialsId = args.sonarqube.credentialsId
-    script{
-        node(dockerfileAgent.label){
-            docker.build(dockerImageName, "'-f ${dockerfileAgent.filename} ${dockerfileAgent.additionalBuildArgs}").inside(dockerfileAgent.args){
+    node(dockerfileAgent.label){
+        docker.build(dockerImageName, "-f ${dockerfileAgent.filename} ${dockerfileAgent.additionalBuildArgs}").inside(dockerfileAgent.args){
+            script{
                 try{
                     withSonarQubeEnv(installationName: installationName, credentialsId: credentialsId) {
                         stashes.each{
