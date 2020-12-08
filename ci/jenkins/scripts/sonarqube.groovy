@@ -1,23 +1,23 @@
-def runSonarScanner(args = [:]){
-    def projectVersion = args.projectVersion
-    def buildString = args.buildString
-    def isPullRequest = args['pullRequest'] ? true : false
-
-    if (isPullRequest == true){
-        def pullRequestKey = args.pullRequest.source
-        def pullRequestBase = args.pullRequest.destination
-        sh(
-            label: "Running Sonar Scanner",
-            script:"sonar-scanner -Dsonar.projectVersion=${projectVersion} -Dsonar.buildString=\"${buildString}\" -Dsonar.pullrequest.key=${pullRequestKey} -Dsonar.pullrequest.base=${pullRequestBase}"
-            )
-    } else {
-        def branchName =  args['branchName'] ? args['branchName']: env.BRANCH_NAME
-        sh(
-            label: "Running Sonar Scanner",
-            script: "sonar-scanner -Dsonar.projectVersion=${projectVersion} -Dsonar.buildString=\"${buildString}\" -Dsonar.branch.name=${branchName}"
-            )
-    }
-}
+// def runSonarScanner(args = [:]){
+//     def projectVersion = args.projectVersion
+//     def buildString = args.buildString
+//     def isPullRequest = args['pullRequest'] ? true : false
+//
+//     if (isPullRequest == true){
+//         def pullRequestKey = args.pullRequest.source
+//         def pullRequestBase = args.pullRequest.destination
+//         sh(
+//             label: "Running Sonar Scanner",
+//             script:"sonar-scanner -Dsonar.projectVersion=${projectVersion} -Dsonar.buildString=\"${buildString}\" -Dsonar.pullrequest.key=${pullRequestKey} -Dsonar.pullrequest.base=${pullRequestBase}"
+//             )
+//     } else {
+//         def branchName =  args['branchName'] ? args['branchName']: env.BRANCH_NAME
+//         sh(
+//             label: "Running Sonar Scanner",
+//             script: "sonar-scanner -Dsonar.projectVersion=${projectVersion} -Dsonar.buildString=\"${buildString}\" -Dsonar.branch.name=${branchName}"
+//             )
+//     }
+// }
 
 def get_sonarqube_unresolved_issues(report_task_file){
     script{
@@ -40,17 +40,21 @@ def submitToSonarcloud(args = [:]){
                 installationName: args.sonarqube.installationName,
                 credentialsId: args.sonarqube.credentialsId) {
 
+                def projectVersion = args.package.version
+
                 if (isPullRequest == true){
-                    runSonarScanner(
-                        projectVersion: pkg.version,
-                        buildString: buildString,
-                        pullRequest: args['pullRequest']
-                    )
-                } else{
-                    runSonarScanner(
-                        projectVersion: pkg.version,
-                        buildString: buildString,
-                    )
+                    def pullRequestKey = args.pullRequest.source
+                    def pullRequestBase = args.pullRequest.destination
+                    sh(
+                        label: "Running Sonar Scanner",
+                        script:"sonar-scanner -Dsonar.projectVersion=${projectVersion} -Dsonar.buildString=\"${buildString}\" -Dsonar.pullrequest.key=${pullRequestKey} -Dsonar.pullrequest.base=${pullRequestBase}"
+                        )
+                } else {
+                    def branchName =  args['branchName'] ? args['branchName']: env.BRANCH_NAME
+                    sh(
+                        label: "Running Sonar Scanner",
+                        script: "sonar-scanner -Dsonar.projectVersion=${projectVersion} -Dsonar.buildString=\"${buildString}\" -Dsonar.branch.name=${branchName}"
+                        )
                 }
                 sh "printenv"
                 sh "ls -la"
