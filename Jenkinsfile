@@ -925,8 +925,8 @@ pipeline {
                             }
                             environment {
                                 build_number = get_build_number()
-                                PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
-                                PIP_TRUSTED_HOST="devpi.library.illinois.edu"
+//                                 PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
+//                                 PIP_TRUSTED_HOST="devpi.library.illinois.edu"
                             }
 
                             stages{
@@ -1028,7 +1028,8 @@ pipeline {
             }
             agent none
             environment{
-                DEVPI = credentials("DS_devpi")
+                devpiStagingIndex = getDevPiStagingIndex()
+//                 DEVPI = credentials("DS_devpi")
             }
             options{
                 lock("speedwagon-devpi")
@@ -1045,14 +1046,22 @@ pipeline {
                     steps {
                         unstash 'DOCS_ARCHIVE'
                         unstash 'PYTHON_PACKAGES'
-                        sh(
-                            label: "Connecting to DevPi Server",
-                            script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
-                                       devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-                                       devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ./devpi
-                                       devpi upload --from-dir dist --clientdir ./devpi
-                                       """
-                        )
+                        script{
+                            devpi.upload(
+                                    server: "https://devpi.library.illinois.edu",
+                                    credentialsId: "DS_devpi",
+                                    index: getDevPiStagingIndex(),
+                                    clientDir: "./devpi"
+                                )
+                        }
+//                         sh(
+//                             label: "Connecting to DevPi Server",
+//                             script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+//                                        devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
+//                                        devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ./devpi
+//                                        devpi upload --from-dir dist --clientdir ./devpi
+//                                        """
+//                         )
                     }
                 }
                 stage("Test DevPi packages") {
@@ -1081,16 +1090,39 @@ pipeline {
                             stage("Testing DevPi sdist Package"){
                                 steps{
                                     timeout(10){
-                                        unstash "DIST-INFO"
-                                        testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "tar.gz", CONFIGURATIONS[PYTHON_VERSION].tox_env,  env.DEVPI_USR, env.DEVPI_PSW)
+                                        script{
+                                            devpi.testDevpiPackage(
+                                                    devpiIndex: getDevPiStagingIndex(),
+                                                    server: "https://devpi.library.illinois.edu",
+                                                    credentialsId: "DS_devpi",
+                                                    pkgName: props.Name,
+                                                    pkgVersion: props.Version,
+                                                    pkgSelector: "tar.gz",
+                                                    toxEnv: CONFIGURATIONS[PYTHON_VERSION].tox_env
+                                                )
+                                        }
+//                                         unstash "DIST-INFO"
+//                                         testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "tar.gz", CONFIGURATIONS[PYTHON_VERSION].tox_env,  env.DEVPI_USR, env.DEVPI_PSW)
+
                                     }
                                 }
                             }
                             stage("Testing DevPi Package wheel"){
                                 steps{
                                     timeout(10){
-                                        unstash "DIST-INFO"
-                                        testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "whl", CONFIGURATIONS[PYTHON_VERSION].tox_env, env.DEVPI_USR, env.DEVPI_PSW)
+                                        script{
+                                            devpi.testDevpiPackage(
+                                                devpiIndex: getDevPiStagingIndex(),
+                                                server: "https://devpi.library.illinois.edu",
+                                                credentialsId: "DS_devpi",
+                                                pkgName: props.Name,
+                                                pkgVersion: props.Version,
+                                                pkgSelector: "whl",
+                                                toxEnv: CONFIGURATIONS[PYTHON_VERSION].tox_env
+                                            )
+                                        }
+//                                         unstash "DIST-INFO"
+//                                         testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "whl", CONFIGURATIONS[PYTHON_VERSION].tox_env, env.DEVPI_USR, env.DEVPI_PSW)
                                     }
                                 }
                             }
@@ -1123,12 +1155,20 @@ pipeline {
                     }
                     steps {
                         script{
-                            sh(label: "Pushing to production index",
-                               script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
-                                          devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-                                          devpi push --index DS_Jenkins/${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} production/release --clientdir ./devpi
-                                       """
+                            devpi.pushPackageToIndex(
+                                pkgName: props.Name,
+                                pkgVersion: props.Version,
+                                server: "https://devpi.library.illinois.edu",
+                                indexSource: "DS_Jenkins/${getDevPiStagingIndex()}",
+                                indexDestination: "production/release",
+                                credentialsId: 'DS_devpi'
                             )
+//                             sh(label: "Pushing to production index",
+//                                script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+//                                           devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
+//                                           devpi push --index DS_Jenkins/${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} production/release --clientdir ./devpi
+//                                        """
+//                             )
                         }
                     }
                 }
@@ -1138,13 +1178,21 @@ pipeline {
                     node('linux && docker') {
                        script{
                             docker.build("speedwagon:devpi",'-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
-                                sh(label: "Connecting to DevPi Server",
-                                   script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
-                                              devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-                                              devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi
-                                              devpi push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME} --clientdir ./devpi
-                                              """
-                                )
+                                devpi.pushPackageToIndex(
+                                        pkgName: props.Name,
+                                        pkgVersion: props.Version,
+                                        server: "https://devpi.library.illinois.edu",
+                                        indexSource: "DS_Jenkins/${getDevPiStagingIndex()}",
+                                        indexDestination: "DS_Jenkins/${env.BRANCH_NAME}",
+                                        credentialsId: 'DS_devpi'
+                                    )
+//                                 sh(label: "Connecting to DevPi Server",
+//                                    script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+//                                               devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
+//                                               devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi
+//                                               devpi push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME} --clientdir ./devpi
+//                                               """
+//                                 )
                             }
                        }
                     }
@@ -1153,14 +1201,22 @@ pipeline {
                     node('linux && docker') {
                        script{
                             docker.build("speedwagon:devpi",'-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
-                                sh(
-                                    label: "Connecting to DevPi Server",
-                                    script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
-                                               devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-                                               devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi
-                                               devpi remove -y ${props.Name}==${props.Version} --clientdir ./devpi
-                                               """
+                                devpi.removePackage(
+                                    pkgName: props.Name,
+                                    pkgVersion: props.Version,
+                                    index: "DS_Jenkins/${getDevPiStagingIndex()}",
+                                    server: "https://devpi.library.illinois.edu",
+                                    credentialsId: 'DS_devpi',
+
                                 )
+//                                 sh(
+//                                     label: "Connecting to DevPi Server",
+//                                     script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
+//                                                devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
+//                                                devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi
+//                                                devpi remove -y ${props.Name}==${props.Version} --clientdir ./devpi
+//                                                """
+//                                 )
                             }
                        }
                     }
