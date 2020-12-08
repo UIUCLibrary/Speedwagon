@@ -96,15 +96,6 @@ def check_jira(project, issue){
 }
 
 
-def get_sonarqube_unresolved_issues(report_task_file){
-    script{
-
-        def props = readProperties  file: '.scannerwork/report-task.txt'
-        def response = httpRequest url : props['serverUrl'] + "/api/issues/search?componentKeys=" + props['projectKey'] + "&resolved=no"
-        def outstandingIssues = readJSON text: response.content
-        return outstandingIssues
-    }
-}
 
 def get_build_number(){
     script{
@@ -237,20 +228,20 @@ def test_pkg(glob, timeout_time){
     }
 }
 
-def runSonarScanner(propsFile){
-    def props = readProperties(interpolate: true, file: propsFile)
-    if (env.CHANGE_ID){
-        sh(
-            label: "Running Sonar Scanner",
-            script:"sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
-            )
-    } else {
-        sh(
-            label: "Running Sonar Scanner",
-            script: "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.branch.name=${env.BRANCH_NAME}"
-            )
-    }
-}
+// def runSonarScanner(propsFile){
+//     def props = readProperties(interpolate: true, file: propsFile)
+//     if (env.CHANGE_ID){
+//         sh(
+//             label: "Running Sonar Scanner",
+//             script:"sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
+//             )
+//     } else {
+//         sh(
+//             label: "Running Sonar Scanner",
+//             script: "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.branch.name=${env.BRANCH_NAME}"
+//             )
+//     }
+// }
 
 def testDevpiPackages(devpiUrl, metadataFile, selector, toxEnv, DEVPI_USR, DEVPI_PSW){
     script{
@@ -600,17 +591,25 @@ pipeline {
                                 unstash "PYLINT_REPORT"
                                 unstash "FLAKE8_REPORT"
                                 script{
-                                    withSonarQubeEnv(installationName:"sonarcloud", credentialsId: 'sonarcloud-speedwagon') {
-                                        unstash "DIST-INFO"
-                                        runSonarScanner("speedwagon.dist-info/METADATA")
-                                    }
-                                    timeout(60){
-                                        def sonarqube_result = waitForQualityGate(abortPipeline: false)
-                                        if (sonarqube_result.status != 'OK') {
-                                            unstable "SonarQube quality gate: ${sonarqube_result.status}"
-                                        }
-                                        def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
-                                        writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
+                                    def sonarqube = load("ci/jenkins/scripts/sonarqube.groovy")
+                                    if (env.CHANGE_ID){
+                                        sonarqube.submitToSonarcloud(
+                                            pullRequest: [
+                                                source: env.CHANGE_ID,
+                                                destination: env.BRANCH_NAME,
+                                            ],
+                                            package: [
+                                                version: props.Version,
+                                                name: props.Name
+                                                ],
+                                            )
+                                    } else {
+                                        sonarqube.submitToSonarcloud(
+                                            package: [
+                                                version: props.Version,
+                                                name: props.Name
+                                                ]
+                                            )
                                     }
                                 }
                             }
