@@ -600,7 +600,8 @@ pipeline {
                                     if (env.CHANGE_ID){
                                         sonarqube.submitToSonarcloud(
                                             agent: agent,
-                                            stashes: stashes,
+                                            reportStashes: stashes,
+                                            artifactStash: "sonarqube artifacts",
                                             sonarqube:[
                                                 installationName: "sonarcloud",
                                                 credentialsId: 'sonarcloud-speedwagon',
@@ -617,7 +618,8 @@ pipeline {
                                     } else {
                                         sonarqube.submitToSonarcloud(
                                             agent: agent,
-                                            stashes: stashes,
+                                            reportStashes: stashes,
+                                            artifactStash: "sonarqube artifacts",
                                             sonarqube:[
                                                 installationName: "sonarcloud",
                                                 credentialsId: 'sonarcloud-speedwagon',
@@ -632,10 +634,14 @@ pipeline {
                             }
                             post {
                                 always{
-                                    archiveArtifacts(
-                                        allowEmptyArchive: true,
-                                        artifacts: ".scannerwork/report-task.txt"
-                                    )
+                                    node(""){
+                                        unstash "sonarqube artifacts"
+                                        archiveArtifacts(
+                                            allowEmptyArchive: true,
+                                            artifacts: ".scannerwork/report-task.txt"
+                                        )
+                                        recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                                    }
 //                                     stash includes: "reports/sonar-report.json", name: 'SONAR_REPORT'
 //                                     archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
 //                                     recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
