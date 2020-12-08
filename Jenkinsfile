@@ -567,14 +567,15 @@ pipeline {
                             }
                         }
                         stage("Run Sonarqube Analysis"){
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                                    label 'linux && docker'
-                                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                    args '--mount source=sonar-cache-speedwagon,target=/home/user/.sonar/cache'
-                                }
-                            }
+                            agent none
+//                             agent {
+//                                 dockerfile {
+//                                     filename 'ci/docker/python/linux/jenkins/Dockerfile'
+//                                     label 'linux && docker'
+//                                     additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+//                                     args '--mount source=sonar-cache-speedwagon,target=/home/user/.sonar/cache'
+//                                 }
+//                             }
                             options{
                                 lock("speedwagon-sonarscanner")
                             }
@@ -584,38 +585,43 @@ pipeline {
                                 beforeOptions true
                             }
                             steps{
-                                unstash "COVERAGE_REPORT_DATA"
-                                unstash "PYTEST_UNIT_TEST_RESULTS"
-                                unstash "PYLINT_REPORT"
-                                unstash "FLAKE8_REPORT"
-                                script{
-                                    def sonarqube = load("ci/jenkins/scripts/sonarqube.groovy")
-                                    if (env.CHANGE_ID){
-                                        sonarqube.submitToSonarcloud(
-                                            sonarqube:[
-                                                installationName: "sonarcloud",
-                                                credentialsId: 'sonarcloud-speedwagon',
-                                            ],
-                                            pullRequest: [
-                                                source: env.CHANGE_ID,
-                                                destination: env.BRANCH_NAME,
-                                            ],
-                                            package: [
-                                                version: props.Version,
-                                                name: props.Name
-                                            ],
-                                        )
-                                    } else {
-                                        sonarqube.submitToSonarcloud(
-                                            sonarqube:[
-                                                installationName: "sonarcloud",
-                                                credentialsId: 'sonarcloud-speedwagon',
-                                            ],
-                                            package: [
-                                                version: props.Version,
-                                                name: props.Name
-                                                ]
-                                            )
+                                node('linux && docker'){
+                                    unstash "COVERAGE_REPORT_DATA"
+                                    unstash "PYTEST_UNIT_TEST_RESULTS"
+                                    unstash "PYLINT_REPORT"
+                                    unstash "FLAKE8_REPORT"
+                                    script{
+                                        def sonarqube = load("ci/jenkins/scripts/sonarqube.groovy")
+                                        def dockerImageName = "${currentBuild.fullProjectName}:sonarqube".replaceAll("-", "").replaceAll('/', "").replaceAll(' ', "").toLowerCase()
+                                        docker.build(dockerImageName, '-f ci/docker/python/linux/jenkins/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL').inside('--mount source=sonar-cache-speedwagon,target=/home/user/.sonar/cache'){
+                                            if (env.CHANGE_ID){
+                                                sonarqube.submitToSonarcloud(
+                                                    sonarqube:[
+                                                        installationName: "sonarcloud",
+                                                        credentialsId: 'sonarcloud-speedwagon',
+                                                    ],
+                                                    pullRequest: [
+                                                        source: env.CHANGE_ID,
+                                                        destination: env.BRANCH_NAME,
+                                                    ],
+                                                    package: [
+                                                        version: props.Version,
+                                                        name: props.Name
+                                                    ],
+                                                )
+                                            } else {
+                                                sonarqube.submitToSonarcloud(
+                                                    sonarqube:[
+                                                        installationName: "sonarcloud",
+                                                        credentialsId: 'sonarcloud-speedwagon',
+                                                    ],
+                                                    package: [
+                                                        version: props.Version,
+                                                        name: props.Name
+                                                        ]
+                                                    )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -626,7 +632,7 @@ pipeline {
                                         artifacts: ".scannerwork/report-task.txt"
                                     )
 //                                     stash includes: "reports/sonar-report.json", name: 'SONAR_REPORT'
-                                    archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
+//                                     archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/sonar-report.json'
 //                                     recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                 }
                             }
