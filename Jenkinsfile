@@ -276,7 +276,6 @@ def startup(){
         devpi = load("ci/jenkins/scripts/devpi.groovy")
         chocolatey = load("ci/jenkins/scripts/chocolatey.groovy")
 
-
 //         configurations = load("ci/jenkins/scripts/configs.groovy").getConfigurations()
     }
     node('linux && docker') {
@@ -545,7 +544,7 @@ pipeline {
                                     }
                                     post{
                                         always{
-                                            sh "coverage combine && coverage xml -o reports/coverage.xml && coverage html -d reports/coverage"
+                                            sh 'coverage combine && coverage xml -o reports/coverage.xml && coverage html -d reports/coverage'
                                             stash includes: "reports/coverage.xml", name: "COVERAGE_REPORT_DATA"
                                             publishCoverage(
                                                 adapters: [
@@ -561,8 +560,7 @@ pipeline {
                                 cleanup{
                                     cleanWs(patterns: [
                                             [pattern: 'logs/*', type: 'INCLUDE'],
-                                            [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
-                                            [pattern: 'reports/coverage', type: 'INCLUDE'],
+                                            [pattern: 'reports/', type: 'INCLUDE'],
                                             [pattern: '.coverage', type: 'INCLUDE']
                                         ])
                                 }
@@ -605,8 +603,8 @@ pipeline {
                                             package: [
                                                 version: props.Version,
                                                 name: props.Name
-                                                ],
-                                            )
+                                            ],
+                                        )
                                     } else {
                                         sonarqube.submitToSonarcloud(
                                             sonarqube:[
@@ -1055,14 +1053,6 @@ pipeline {
                                     clientDir: "./devpi"
                                 )
                         }
-//                         sh(
-//                             label: "Connecting to DevPi Server",
-//                             script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
-//                                        devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-//                                        devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ./devpi
-//                                        devpi upload --from-dir dist --clientdir ./devpi
-//                                        """
-//                         )
                     }
                 }
                 stage("Test DevPi packages") {
@@ -1102,9 +1092,6 @@ pipeline {
                                                     toxEnv: CONFIGURATIONS[PYTHON_VERSION].tox_env
                                                 )
                                         }
-//                                         unstash "DIST-INFO"
-//                                         testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "tar.gz", CONFIGURATIONS[PYTHON_VERSION].tox_env,  env.DEVPI_USR, env.DEVPI_PSW)
-
                                     }
                                 }
                             }
