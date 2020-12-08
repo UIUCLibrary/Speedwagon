@@ -51,6 +51,7 @@ def submitToSonarcloud(args = [:]){
                     buildString: buildString,
                 )
             }
+            sh "printenv"
             timeout(60){
                 def sonarqube_result = waitForQualityGate(abortPipeline: false)
                 if (sonarqube_result.status != 'OK') {
