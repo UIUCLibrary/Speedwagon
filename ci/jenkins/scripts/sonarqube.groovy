@@ -33,6 +33,7 @@ def get_sonarqube_unresolved_issues(report_task_file){
 def submitToSonarcloud(args = [:]){
 //     def nodeLabel = args.label
     def reportStashes = args['reportStashes']
+    def artifactStash = args['artifactStash']
     def dockerImageName = args['dockerImageName'] ? args['dockerImageName']: "${currentBuild.fullProjectName}:sonarqube".replaceAll("-", "").replaceAll('/', "").replaceAll(' ', "").toLowerCase()
     def dockerfileAgent = args.agent.dockerfile
     def isPullRequest = args['pullRequest'] ? true: false
@@ -72,7 +73,9 @@ def submitToSonarcloud(args = [:]){
                         }
                         def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
                         writeJSON( file: 'reports/sonar-report.json', json: outstandingIssues)
-                        stash(includes: "reports/sonar-report.json", name: artifactStash)
+                        if(artifactStash != null){
+                            stash(includes: "reports/sonar-report.json", name: artifactStash)
+                        }
                     }
                 } catch(e){
                     sh "printenv"
