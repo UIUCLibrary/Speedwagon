@@ -11,44 +11,6 @@ def loadConfigs(){
 }
 //
 def CONFIGURATIONS = loadConfigs()
-//     "3.7": [
-//         test_docker_image: "python:3.7",
-//         tox_env: "py37",
-//         dockerfiles:[
-//             windows: "ci/docker/python/windows/Dockerfile",
-//             linux: "ci/docker/python/linux/jenkins/Dockerfile"
-//         ],
-//         pkgRegex: [
-//             wheel: "*.whl",
-//             sdist: "*.tar.gz"
-//         ]
-//     ],
-//     "3.8": [
-//         test_docker_image: "python:3.8",
-//         tox_env: "py38",
-//         dockerfiles:[
-//             windows: "ci/docker/python/windows/Dockerfile",
-//             linux: "ci/docker/python/linux/jenkins/Dockerfile"
-//         ],
-//         pkgRegex: [
-//             wheel: "*.whl",
-//             sdist: "*.tar.gz"
-//         ]
-//     ],
-//     "3.9": [
-//         test_docker_image: "python:3.9",
-//         tox_env: "py39",
-//         dockerfiles:[
-//             windows: "ci/docker/python/windows/Dockerfile",
-//             linux: "ci/docker/python/linux/jenkins/Dockerfile"
-//         ],
-//         pkgRegex: [
-//             wheel: "*.whl",
-//             sdist: "*.tar.gz"
-//         ]
-//     ]
-// ]
-//
 
 def get_build_args(){
     script{
@@ -88,43 +50,6 @@ def sanitize_chocolatey_version(version){
             return dashed_version.replaceFirst(alpha_pattern, "alpha")
         }
         return dashed_version
-    }
-}
-def gitAddVersionTag(metadataFile){
-    script{
-        def props = readProperties( interpolate: true, file: metadataFile)
-        def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
-        withCredentials([usernamePassword(credentialsId: gitCreds, passwordVariable: 'password', usernameVariable: 'username')]) {
-            sh(label: "Tagging ${commitTag}",
-               script: """git config --local credential.helper "!f() { echo username=\\$username; echo password=\\$password; }; f"
-                          git tag -a ${commitTag} -m 'Tagged by Jenkins'
-                          git push origin --tags
-                          """
-            )
-        }
-    }
-}
-
-def run_tox(){
-    sh "mkdir -p logs"
-    script{
-        withEnv(
-            [
-                'PIP_INDEX_URL="https://devpi.library.illinois.edu/production/release"',
-                'PIP_TRUSTED_HOST="devpi.library.illinois.edu"',
-                'TOXENV="py"'
-            ]
-        ) {
-            try{
-                // Don't use result-json=${WORKSPACE}\\logs\\tox_report.json because
-                // Tox has a bug that fails when trying to write the json report
-                // when --parallel is run at the same time
-                sh "tox -p=auto -o -vv --workdir .tox -e py"
-//                 bat "tox -p=auto -o -vv --workdir ${WORKSPACE}\\.tox"
-            } catch (exc) {
-                sh "tox -vv --workdir .tox --recreate -e py"
-            }
-        }
     }
 }
 
@@ -212,21 +137,6 @@ def get_package_name(stashName, metadataFile){
     }
 }
 
-def build_sphinx_stage(){
-    sh "mkdir -p logs"
-    sh(label: "Run build_ui",
-        script: "python setup.py build_ui"
-        )
-
-    sh(
-        label: "Building HTML docs on ${env.NODE_NAME}",
-        script: "python -m sphinx docs/source build/docs/html -d build/docs/.doctrees --no-color -w logs/build_sphinx.log"
-        )
-    sh(
-        label: "Building LaTex docs on ${env.NODE_NAME}",
-        script: "python -m sphinx docs/source build/docs/latex -b latex -d build/docs/.doctrees --no-color -w logs/build_sphinx_latex.log"
-        )
-}
 def check_jira_issue(issue, outputFile){
     script{
         def issue_response = jiraGetIssue idOrKey: issue, site: 'bugs.library.illinois.edu'
@@ -240,8 +150,8 @@ def check_jira_issue(issue, outputFile){
         }
     }
 }
-def check_jira_project(project, outputFile){
 
+def check_jira_project(project, outputFile){
     script {
 
         def jira_project = jiraGetProject idOrKey: project, site: 'bugs.library.illinois.edu'
@@ -255,36 +165,13 @@ def check_jira_project(project, outputFile){
         }
     }
 }
+
 def check_jira(project, issue){
     check_jira_project(project, 'logs/jira_project_data.json')
     check_jira_issue(issue, "logs/jira_issue_data.json")
 
 }
 
-
-def capture_ctest_results(PATH){
-    script {
-
-        def glob_expression = "${PATH}/*.xml"
-
-        archiveArtifacts artifacts: "${glob_expression}"
-        xunit testTimeMargin: '3000',
-            thresholdMode: 1,
-            thresholds: [
-                failed(),
-                skipped()
-            ],
-            tools: [
-                CTest(
-                    deleteOutputFiles: true,
-                    failIfNotNew: true,
-                    pattern: "${glob_expression}",
-                    skipNoTestFiles: false,
-                    stopProcessingIfError: true
-                    )
-                ]
-    }
-}
 
 def get_sonarqube_unresolved_issues(report_task_file){
     script{
@@ -296,18 +183,6 @@ def get_sonarqube_unresolved_issues(report_task_file){
     }
 }
 
-def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUsername, devpiPassword){
-    script {
-                try {
-                    bat "${devpiExecutable} login ${devpiUsername} --password ${devpiPassword}"
-                    bat "${devpiExecutable} use ${devpiIndex}"
-                    bat "${devpiExecutable} remove -y ${pkgName}==${pkgVersion}"
-                } catch (Exception ex) {
-                    echo "Failed to remove ${pkgName}==${pkgVersion} from ${devpiIndex}"
-            }
-
-    }
-}
 def get_build_number(){
     script{
         def versionPrefix = ""
@@ -413,108 +288,6 @@ def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
     }
 }
 
-def postLogFileOnPullRequest(title, filename){
-    script{
-        if (env.CHANGE_ID){
-            def log_file = readFile filename
-            if(log_file.length() == 0){
-                return
-            }
-
-            pullRequest.comment("""${title}
-${log_file}
-"""
-            )
-        }
-    }
-}
-
-
-def testPythonPackages(pkgRegex, testEnvs){
-    script{
-        def taskData = []
-        node("windows"){
-            unstash 'PYTHON_PACKAGES'
-            def pythonPkgs = findFiles glob: pkgRegex
-            pythonPkgs.each{ fileName ->
-                def packageStashName = "${fileName.name}"
-                stash includes: "${fileName}", name: "${packageStashName}"
-                testEnvs.each{ testEnv->
-                    testEnv['images'].each{ dockerImage ->
-                        taskData.add(
-                            [
-                                file: fileName,
-                                dockerImage: dockerImage,
-                                label: testEnv['label'],
-                                stashName: "${packageStashName}"
-                            ]
-                        )
-                    }
-                }
-            }
-        }
-        def taskRunners = [:]
-        taskData.each{
-            taskRunners["Testing ${it['file']} with ${it['dockerImage']}"]={
-                node("docker && windows"){
-                    def testImage = docker.image(it['dockerImage']).inside("-v pipcache:C:/Users/ContainerAdministrator/AppData/Local/pip/Cache"){
-                        try{
-                            checkout scm
-                            unstash "${it['stashName']}"
-                            powershell(
-                                label: "Installing Certs required to download python dependencies",
-                                script: "certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst"
-                                )
-                            bat(
-                                label: "Installing Tox",
-                                script: """python -m pip install pip --upgrade
-                                           pip install tox
-                                           """,
-                                )
-                            withEnv([
-                                'PIP_EXTRA_INDEX_URL=https://devpi.library.illinois.edu/production/release',
-                                'PIP_TRUSTED_HOST=devpi.library.illinois.edu'
-                                ]) {
-                                bat(
-                                    label:"Running tox tests with ${it['file']}",
-                                    script:"tox -c tox.ini --installpkg=${it['file']} -e py -vv"
-                                )
-                            }
-                            archiveArtifacts(artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true)
-                        }finally {
-                            cleanWs deleteDirs: true, notFailBuild: true
-                        }
-
-
-                    }
-                }
-
-            }
-        }
-        parallel taskRunners
-    }
-}
-
-//
-// def test_msi_install(){
-//
-//     bat "if not exist logs mkdir logs"
-//     script{
-//
-//         def docker_image_name = "test-image:${env.BRANCH_NAME}_${currentBuild.number}"
-//         try {
-//             def testImage = docker.build(docker_image_name, "-f ./ci/docker/test_installation/Dockerfile .")
-//             testImage.inside{
-//                 // Copy log files from c:\\logs in the docker container to workspace\\logs
-//                 bat "cd ${WORKSPACE}\\logs && copy c:\\logs\\*.log"
-//                 bat 'dir "%PROGRAMFILES%\\Speedwagon"'
-//             }
-//         } finally{
-//             bat "docker image rm -f ${docker_image_name}"
-//         }
-//     }
-// }
-
 def test_pkg(glob, timeout_time){
 
     def pkgFiles = findFiles( glob: glob)
@@ -540,57 +313,6 @@ def test_pkg(glob, timeout_time){
         }
     }
 }
-//
-// def build_standalone(){
-//     stage("Building Standalone"){
-//         bat "where cmake"
-//         unstash "SPEEDWAGON_DOC_PDF"
-//         bat """if not exist "cmake_build" mkdir cmake_build
-//     if not exist "logs" mkdir logs
-//     if not exist "logs\\ctest" mkdir logs\\ctest
-//     if not exist "temp" mkdir temp
-//     """
-//     //C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64
-//     //cd ${WORKSPACE}\\source && cmake -B ${WORKSPACE}\\cmake_build -G Ninja -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheel_cache -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DPYTHON_EXECUTABLE=\"${powershell(script: '(Get-Command python).path', returnStdout: true).trim()}\"  -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf
-//     //C:\\BuildTools\\Common7\\Tools\\VsDevCmd.bat -no_logo -arch=amd64 -host_arch=amd64 && cd ${WORKSPACE}\\cmake_build && cmake --build .
-//         script{
-//             def PYTHON_EXECUTABLE = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
-//             cmakeBuild(
-//                 buildDir: 'cmake_build',
-//                 cmakeArgs: """-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels
-//         -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv
-// //         -DPYTHON_EXECUTABLE=\"${PYTHON_EXECUTABLE}\"
-//         -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf""",
-//                 generator: 'Ninja',
-//                 installation: 'InSearchPath',
-//                 steps: [
-//                     [withCmake: true]
-//                 ]
-//             )
-//         }
-//     }
-//     stage("Testing standalone"){
-//
-//         ctest(
-//             arguments: "-T test -C Release -j ${NUMBER_OF_PROCESSORS}",
-//             installation: 'InSearchPath',
-//             workingDir: 'cmake_build'
-//             )
-//     }
-//     stage("Packaging standalone"){
-//         script{
-//             def packaging_msi = false
-//             if(params.PACKAGE_WINDOWS_STANDALONE_MSI){
-//                 packaging_msi = true
-//             }
-//             def cpack_generators = generate_cpack_arguments(packaging_msi, params.PACKAGE_WINDOWS_STANDALONE_NSIS, params.PACKAGE_WINDOWS_STANDALONE_ZIP)
-//             cpack(
-//                 arguments: "-C Release -G ${cpack_generators} --config cmake_build/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
-//                 installation: 'InSearchPath'
-//             )
-//         }
-//     }
-// }
 
 def runSonarScanner(propsFile){
     def props = readProperties(interpolate: true, file: propsFile)
@@ -633,32 +355,12 @@ def testDevpiPackages(devpiUrl, metadataFile, selector, toxEnv, DEVPI_USR, DEVPI
     }
 }
 
-def testPythonPackagesWithTox(glob){
-    script{
-        findFiles(glob: glob).each{
-            timeout(15){
-                if(isUnix()){
-                    sh(
-                        script: "tox --installpkg=${it.path} -e py --recreate -v",
-                        label: "Testing ${it.name}"
-                    )
-                } else{
-                    bat(
-                        script: "tox --installpkg=${it.path} -e py --recreate",
-                        label: "Testing ${it.name}"
-                    )
-                }
-            }
-        }
-    }
-}
 def startup(){
     node(){
         checkout scm
-        tox = load("ci/jenkins/scripts/tox.groovy")
         mac = load("ci/jenkins/scripts/mac.groovy")
         devpi = load("ci/jenkins/scripts/devpi.groovy")
-        standalone = load("ci/jenkins/scripts/standalone.groovy")
+
 
 //         configurations = load("ci/jenkins/scripts/configs.groovy").getConfigurations()
     }
@@ -685,43 +387,6 @@ def startup(){
     }
 }
 
-
-def test_package_on_mac(glob){
-    cleanWs(
-        notFailBuild: true,
-        deleteDirs: true,
-        disableDeferredWipeout: true,
-        patterns: [
-                [pattern: '.git/**', type: 'EXCLUDE'],
-                [pattern: 'tests/**', type: 'EXCLUDE'],
-                [pattern: 'features/', type: 'EXCLUDE'],
-                [pattern: 'tox.ini', type: 'EXCLUDE'],
-                [pattern: 'dist/', type: 'EXCLUDE'],
-                [pattern: 'pyproject.toml', type: 'EXCLUDE'],
-                [pattern: 'setup.cfg', type: 'EXCLUDE'],
-                [pattern: glob, type: 'EXCLUDE'],
-            ]
-    )
-    script{
-        def pkgs = findFiles(glob: glob)
-        if(pkgs.size() == 0){
-            error "No packages found for ${glob}"
-        }
-        pkgs.each{
-            sh(
-                label: "Testing ${it}",
-                script: """python3 -m venv venv
-                           venv/bin/python -m pip install pip --upgrade
-                           venv/bin/python -m pip install wheel
-                           venv/bin/python -m pip install --upgrade setuptools
-                           venv/bin/python -m pip install tox
-                           venv/bin/tox --installpkg=${it.path} -e py -vv --recreate
-                           """
-            )
-        }
-        deleteDir()
-    }
-}
 def create_wheel_stash(nodeLabels, pythonVersion){
     node(nodeLabels) {
         ws{
@@ -737,6 +402,7 @@ def create_wheel_stash(nodeLabels, pythonVersion){
         }
     }
 }
+
 def create_wheels(){
 
     parallel(
@@ -827,16 +493,12 @@ pipeline {
             }
             post{
                 always{
-//                     recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
+                    recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
                     stash includes: "dist/docs/*.pdf", name: 'SPEEDWAGON_DOC_PDF'
                 }
                 success{
-                    unstash "DIST-INFO"
-                    script{
-                        def DOC_ZIP_FILENAME = "${props.Name}-${props.Version}.doc.zip"
-                        zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
-                        stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
-                    }
+                    zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
+                    stash includes: "dist/*.doc.zip,build/docs/html/**", name: 'DOCS_ARCHIVE'
                     archiveArtifacts artifacts: 'dist/docs/*.pdf'
                 }
                 cleanup{
@@ -1048,6 +710,7 @@ pipeline {
                     }
                     steps {
                         script{
+                            def tox = load("ci/jenkins/scripts/tox.groovy")
                             def windowsJobs = [:]
                             def linuxJobs = [:]
                             stage("Scanning Tox Environments"){
@@ -1193,7 +856,7 @@ pipeline {
                                                 values(
                                                     "3.7",
                                                     "3.8",
-//                                                     "3.9",
+                                                    "3.9",
                                                 )
                                             }
                                             axis {
@@ -1349,9 +1012,9 @@ pipeline {
                                           }
                                     }
                                     steps {
+                                        unstash "SPEEDWAGON_DOC_PDF"
                                         script{
-                                            unstash "SPEEDWAGON_DOC_PDF"
-                                            standalone.build_standalone(
+                                            load("ci/jenkins/scripts/standalone.groovy").build_standalone(
                                                 packageFormat: [
                                                     msi: params.PACKAGE_WINDOWS_STANDALONE_MSI,
                                                     nsis: params.PACKAGE_WINDOWS_STANDALONE_NSIS,
@@ -1397,9 +1060,10 @@ pipeline {
                                         timeout(15){
                                             unstash 'STANDALONE_INSTALLERS'
                                             script{
-                                                def msi_file = findFiles(glob: "dist/*.msi")[0].path
+                                                def msi_file = findFiles(glob: 'dist/*.msi')[0].path
                                                 powershell(label:"Installing msi file",
-                                                           script: """New-Item -ItemType Directory -Force -Path logs; Write-Host \"Installing ${msi_file}\"
+                                                           script: """New-Item -ItemType Directory -Force -Path logs
+                                                                      Write-Host \"Installing ${msi_file}\"
                                                                       msiexec /i ${msi_file} /qn /norestart /L*v! logs\\msiexec.log
                                                                       """
                                                           )
@@ -1470,7 +1134,7 @@ pipeline {
                                 name 'PLATFORM'
                                 values(
                                     'windows',
-                                    "linux"
+//                                     "linux"
                                     )
                             }
                             axis {
