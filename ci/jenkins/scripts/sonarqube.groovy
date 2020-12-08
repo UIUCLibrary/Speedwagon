@@ -77,10 +77,6 @@ def submitToSonarcloud(args = [:]){
                             stash(includes: "reports/sonar-report.json", name: artifactStash)
                         }
                     }
-                } catch(e){
-                    sh "printenv"
-                    sh "ls -la"
-                    sh "ls -laR .scannerwork/"
                 } finally {
                     cleanWs(
                         deleteDirs: true,
