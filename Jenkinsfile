@@ -856,9 +856,9 @@ pipeline {
                                             findFiles(glob: "dist/*.whl").each{
                                                 def sanitized_packageversion=chocolatey.sanitize_chocolatey_version(props.Version)
                                                 [
-                                                    "PYTHON_DEPS_3.9"
-                                                    "PYTHON_DEPS_3.8"
-                                                    "PYTHON_DEPS_3.7"
+                                                    "PYTHON_DEPS_3.9",
+                                                    "PYTHON_DEPS_3.8",
+                                                    "PYTHON_DEPS_3.7",
                                                 ].each{
                                                     unstash "${it}"
                                                 }
