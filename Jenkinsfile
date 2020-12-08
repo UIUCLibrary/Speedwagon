@@ -710,7 +710,11 @@ pipeline {
                     }
                     steps {
                         script{
-                            def tox = load("ci/jenkins/scripts/tox.groovy")
+                            def tox
+                            node(){
+                                checkout scm
+                                tox = load("ci/jenkins/scripts/tox.groovy")
+                            }
                             def windowsJobs = [:]
                             def linuxJobs = [:]
                             stage("Scanning Tox Environments"){
