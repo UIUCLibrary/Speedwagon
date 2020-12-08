@@ -31,6 +31,7 @@ def get_sonarqube_unresolved_issues(report_task_file){
 
 
 def submitToSonarcloud(args = [:]){
+    echo "args = ${args}"
     def package = args['package']
     def isPullRequest = args['pullRequest'] ? true: false
     def buildString = args['buildString'] ? args['buildString']: env.BUILD_TAG
