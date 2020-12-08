@@ -71,7 +71,7 @@ def build_standalone(args=[:]){
         script{
             def cpack_generators = generate_cpack_arguments(packaging_msi, packaging_nsis, packaging_zip)
             cpack(
-                arguments: "-C Release -G ${cpack_generators} --config ${${buildDir}}/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
+                arguments: "-C Release -G ${cpack_generators} --config ${buildDir}/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
                 installation: 'InSearchPath'
             )
         }
