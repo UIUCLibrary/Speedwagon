@@ -754,7 +754,6 @@ pipeline {
                                                     stage("Test wheel"){
                                                         steps{
                                                             script{
-
                                                                 mac.test_mac_package(
                                                                     label: "mac && 10.14 && python${PYTHON_VERSION}",
                                                                     pythonPath: "python${PYTHON_VERSION}",
@@ -1078,11 +1077,11 @@ pipeline {
                             }
                         }
                         agent {
-                          dockerfile {
-                          additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL"
-                            filename "ci/docker/python/${PLATFORM}/jenkins/Dockerfile"
-                            label "${PLATFORM} && docker"
-                          }
+                            dockerfile {
+                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL"
+                                filename "ci/docker/python/${PLATFORM}/jenkins/Dockerfile"
+                                label "${PLATFORM} && docker"
+                            }
                         }
                         stages{
                             stage("Testing DevPi sdist Package"){
