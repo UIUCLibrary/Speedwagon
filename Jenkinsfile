@@ -243,31 +243,31 @@ def test_pkg(glob, timeout_time){
 //     }
 // }
 
-def testDevpiPackages(devpiUrl, metadataFile, selector, toxEnv, DEVPI_USR, DEVPI_PSW){
-    script{
-        def props = readProperties(interpolate: true, file: metadataFile)
-        if(isUnix()){
-            sh(label: "Running tests on packages stored on DevPi ",
-               script: """devpi --version --clientdir certs
-                          devpi use ${devpiUrl} --clientdir certs
-                          devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs
-                          devpi use ${env.BRANCH_NAME}_staging --clientdir certs
-                          devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} -e ${toxEnv} --clientdir certs -v
-                          """
-               )
-
-        } else{
-            bat(label: "Running tests on packages stored on DevPi ",
-                script: """devpi --version
-                           devpi use ${devpiUrl} --clientdir certs\\ --clientdir certs
-                           devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs\\
-                           devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
-                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} -e ${toxEnv} --clientdir certs\\  -v
-                           """
-                )
-        }
-    }
-}
+// def testDevpiPackages(devpiUrl, metadataFile, selector, toxEnv, DEVPI_USR, DEVPI_PSW){
+//     script{
+//         def props = readProperties(interpolate: true, file: metadataFile)
+//         if(isUnix()){
+//             sh(label: "Running tests on packages stored on DevPi ",
+//                script: """devpi --version --clientdir certs
+//                           devpi use ${devpiUrl} --clientdir certs
+//                           devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs
+//                           devpi use ${env.BRANCH_NAME}_staging --clientdir certs
+//                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} -e ${toxEnv} --clientdir certs -v
+//                           """
+//                )
+//
+//         } else{
+//             bat(label: "Running tests on packages stored on DevPi ",
+//                 script: """devpi --version
+//                            devpi use ${devpiUrl} --clientdir certs\\ --clientdir certs
+//                            devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs\\
+//                            devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
+//                            devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} -e ${toxEnv} --clientdir certs\\  -v
+//                            """
+//                 )
+//         }
+//     }
+// }
 
 def startup(){
     node(){
