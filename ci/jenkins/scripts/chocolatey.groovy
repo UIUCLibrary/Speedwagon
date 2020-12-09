@@ -83,7 +83,7 @@ def install_chocolatey_package(args=[:]){
     def packageName = args['name']
     def version = args['version']
     def source = args['source']
-    def cmd = """
+    def cmd = """\$ErrorActionPreference=\"Stop\"
         try
         {
            \$process = start-process -NoNewWindow -PassThru -Wait -FilePath C:\\ProgramData\\chocolatey\\bin\\choco.exe -ArgumentList \"${packageName} -y -dv  --version=${version} -s \'${source}\' --no-progress\", \"-my\"
