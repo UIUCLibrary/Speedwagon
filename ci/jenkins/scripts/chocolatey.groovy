@@ -83,9 +83,11 @@ def install_chocolatey_package(args=[:]){
     def packageName = args['name']
     def version = args['version']
     def source = args['source']
-    def status = powershell(
+    def cmd = "start-process -NoNewWindow -PassThru -FilePath C:\\ProgramData\\chocolatey\\bin\\choco.exe -ArgumentList \'${packageName} -y -dv  --version=${version} -s \'${source}]\' --no-progress\', \"-my\" -Wait"
+    echo "cmd = ${cmd}"
+    def status = powershell(cmd,
         label: "Installing Chocolatey Package",
-        script: "start-process -NoNewWindow -PassThru -FilePath C:\\ProgramData\\chocolatey\\bin\\choco.exe -ArgumentList \'${packageName} -y -dv  --version=${version} -s \'${source}]\' --no-progress\', \"-my\" -Wait",
+        script:
         returnStatus: true
     )
     if (status != 0) {
