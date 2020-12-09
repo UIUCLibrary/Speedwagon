@@ -94,14 +94,13 @@ def install_chocolatey_package(args=[:]){
         }
         """
     echo "cmd = ${cmd}"
-    def status = powershell(
+    powershell(
         label: "Installing Chocolatey Package",
         script: "${cmd}",
-        returnStatus: true
     )
-    if (status != 0) {
-        error "Failed to install package with chocolatey. Return code ${status}"
-    }
+//     if (status != 0) {
+//         error "Failed to install package with chocolatey. Return code ${status}"
+//     }
 }
 
 return this
