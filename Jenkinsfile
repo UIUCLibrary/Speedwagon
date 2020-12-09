@@ -200,16 +200,12 @@ def test_mac_packages(label, pythonPath, wheelStash, sdistStash){
 
     def sdistGlob = 'dist/*.tar.gz,dist/*.zip'
     stage("Test sdist"){
-        steps{
-            script{
-                mac.test_mac_package(
-                    label: label,
-                    pythonPath: pythonPath,
-                    stash: sdistStash,
-                    glob: sdistGlob
-                )
-            }
-        }
+        mac.test_mac_package(
+            label: label,
+            pythonPath: pythonPath,
+            stash: sdistStash,
+            glob: sdistGlob
+        )
     }
 }
 def testDevpiPackage(index, pkgName, pkgVersion, pkgSelector, toxEnv){
@@ -921,7 +917,7 @@ pipeline {
                                                 ].each{
                                                     unstash "${it}"
                                                 }
-                                                unstash "SPEEDWAGON_DOC_PDF"
+//                                                 unstash "SPEEDWAGON_DOC_PDF"
                                                 powershell(
                                                     label: 'Creating new package for Chocolatey',
                                                     script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
