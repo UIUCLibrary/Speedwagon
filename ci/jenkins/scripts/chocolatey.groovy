@@ -86,7 +86,7 @@ def install_chocolatey_package(args=[:]){
     def cmd = """\$ErrorActionPreference=\"Stop\"
         try
         {
-           \$process = start-process -NoNewWindow -PassThru -Wait -FilePath C:\\ProgramData\\chocolatey\\bin\\choco.exe -ArgumentList \"${packageName} -y -dv  --version=${version} -s \'${source}\' --no-progress\", \"-my\"
+           \$process = start-process -NoNewWindow -PassThru -Wait -FilePath C:\\ProgramData\\chocolatey\\bin\\choco.exe -ArgumentList \"install ${packageName} -y -dv  --version=${version} -s \'${source}\' --no-progress\"
            if ( \$process.ExitCode -nq 0){
                 throw 'This is a failure message'
            }
