@@ -148,6 +148,83 @@ ${url_message_list}
         }
     }
 }
+def runTox(){
+    script{
+        def tox
+        node(){
+            checkout scm
+            tox = load("ci/jenkins/scripts/tox.groovy")
+        }
+        def windowsJobs = [:]
+        def linuxJobs = [:]
+        stage("Scanning Tox Environments"){
+            parallel(
+                "Linux":{
+                    linuxJobs = tox.getToxTestsParallel(
+                            envNamePrefix: "Tox Linux",
+                            label: "linux && docker",
+                            dockerfile: "ci/docker/python/linux/tox/Dockerfile",
+                            dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        )
+                },
+                "Windows":{
+                    windowsJobs = tox.getToxTestsParallel(
+                            envNamePrefix: "Tox Windows",
+                            label: "windows && docker",
+                            dockerfile: "ci/docker/python/windows/tox/Dockerfile",
+                            dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE"
+                     )
+                },
+                failFast: true
+            )
+        }
+        parallel(windowsJobs + linuxJobs)
+    }
+}
+
+def test_mac_packages(label, pythonPath, wheelStash, sdistStash){
+    def mac
+    node(){
+        checkout scm
+        mac = load("ci/jenkins/scripts/mac.groovy")
+    }
+    def wheelGlob = 'dist/*.whl'
+    stage("Test wheel"){
+        mac.test_mac_package(
+            label: label,
+            pythonPath: pythonPath,
+            stash: wheelStash,
+            glob: wheelGlob
+        )
+    }
+
+    def sdistGlob = 'dist/*.tar.gz,dist/*.zip'
+    stage("Test sdist"){
+        steps{
+            script{
+                mac.test_mac_package(
+                    label: label,
+                    pythonPath: pythonPath,
+                    stash: sdistStash,
+                    glob: sdistGlob
+                )
+            }
+        }
+    }
+}
+def testDevpiPackage(index, pkgName, pkgVersion, pkgSelector, toxEnv){
+    def devpiServer = "https://devpi.library.illinois.edu"
+    def credentialsId = "DS_devpi"
+    load("ci/jenkins/scripts/devpi.groovy").testDevpiPackage(
+        devpiIndex: index,
+        server: devpiServer,
+        credentialsId: credentialsId,
+        pkgName: pkgName,
+        pkgVersion: pkgVersion,
+        pkgSelector: pkgSelector,
+        toxEnv: tox_env
+    )
+}
 
 def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
     script{
@@ -272,7 +349,7 @@ def test_pkg(glob, timeout_time){
 def startup(){
     node(){
         checkout scm
-        mac = load("ci/jenkins/scripts/mac.groovy")
+//         mac = load("ci/jenkins/scripts/mac.groovy")
         devpi = load("ci/jenkins/scripts/devpi.groovy")
         chocolatey = load("ci/jenkins/scripts/chocolatey.groovy")
 
@@ -285,10 +362,12 @@ def startup(){
                 try{
                     docker.image('python:3.8').inside {
                         stage("Getting Distribution Info"){
-                            sh(
-                               label: "Running setup.py with dist_info",
-                               script: 'PIP_NO_CACHE_DIR=off python setup.py dist_info'
-                            )
+                            withEnv(['PIP_NO_CACHE_DIR=off']) {
+                                sh(
+                                   label: "Running setup.py with dist_info",
+                                   script: 'python setup.py dist_info'
+                                )
+                            }
                             stash includes: "speedwagon.dist-info/**", name: 'DIST-INFO'
                             archiveArtifacts artifacts: "speedwagon.dist-info/**"
                         }
@@ -360,7 +439,7 @@ pipeline {
         booleanParam(name: "DEPLOY_HATHI_TOOL_BETA", defaultValue: false, description: "Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
-        string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
+//         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
     stages {
 
@@ -645,37 +724,38 @@ pipeline {
                         equals expected: true, actual: params.TEST_RUN_TOX
                     }
                     steps {
-                        script{
-                            def tox
-                            node(){
-                                checkout scm
-                                tox = load("ci/jenkins/scripts/tox.groovy")
-                            }
-                            def windowsJobs = [:]
-                            def linuxJobs = [:]
-                            stage("Scanning Tox Environments"){
-                                parallel(
-                                    "Linux":{
-                                        linuxJobs = tox.getToxTestsParallel(
-                                                envNamePrefix: "Tox Linux",
-                                                label: "linux && docker",
-                                                dockerfile: "ci/docker/python/linux/tox/Dockerfile",
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                            )
-                                    },
-                                    "Windows":{
-                                        windowsJobs = tox.getToxTestsParallel(
-                                                envNamePrefix: "Tox Windows",
-                                                label: "windows && docker",
-                                                dockerfile: "ci/docker/python/windows/tox/Dockerfile",
-                                                dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE"
-                                         )
-                                    },
-                                    failFast: true
-                                )
-                            }
-                            parallel(windowsJobs + linuxJobs)
-                        }
+                        runTox()
+//                         script{
+//                             def tox
+//                             node(){
+//                                 checkout scm
+//                                 tox = load("ci/jenkins/scripts/tox.groovy")
+//                             }
+//                             def windowsJobs = [:]
+//                             def linuxJobs = [:]
+//                             stage("Scanning Tox Environments"){
+//                                 parallel(
+//                                     "Linux":{
+//                                         linuxJobs = tox.getToxTestsParallel(
+//                                                 envNamePrefix: "Tox Linux",
+//                                                 label: "linux && docker",
+//                                                 dockerfile: "ci/docker/python/linux/tox/Dockerfile",
+//                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+//                                             )
+//                                     },
+//                                     "Windows":{
+//                                         windowsJobs = tox.getToxTestsParallel(
+//                                                 envNamePrefix: "Tox Windows",
+//                                                 label: "windows && docker",
+//                                                 dockerfile: "ci/docker/python/windows/tox/Dockerfile",
+//                                                 dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE"
+//                                          )
+//                                     },
+//                                     failFast: true
+//                                 )
+//                             }
+//                             parallel(windowsJobs + linuxJobs)
+//                         }
                     }
                 }
             }
@@ -746,31 +826,13 @@ pipeline {
                                         }
                                         stages{
                                             stage("Test Packages"){
-                                                stages{
-                                                    stage("Test wheel"){
-                                                        steps{
-                                                            script{
-                                                                mac.test_mac_package(
-                                                                    label: "mac && 10.14 && python${PYTHON_VERSION}",
-                                                                    pythonPath: "python${PYTHON_VERSION}",
-                                                                    stash: "PYTHON_WHL_PACKAGE",
-                                                                    glob: "dist/*.whl"
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-                                                    stage("Test sdist"){
-                                                        steps{
-                                                            script{
-                                                                mac.test_mac_package(
-                                                                    label: "mac && 10.14 && python${PYTHON_VERSION}",
-                                                                    pythonPath: "python${PYTHON_VERSION}",
-                                                                    stash: "PYTHON_SDIST_PACKAGE",
-                                                                    glob: "dist/*.tar.gz,dist/*.zip"
-                                                                )
-                                                            }
-                                                        }
-                                                    }
+                                                steps{
+                                                    test_mac_packages(
+                                                        "mac && 10.14 && python${PYTHON_VERSION}",
+                                                        "python${PYTHON_VERSION}",
+                                                        'PYTHON_WHL_PACKAGE',
+                                                        'PYTHON_SDIST_PACKAGE',
+                                                        )
                                                 }
                                             }
                                         }
@@ -789,9 +851,9 @@ pipeline {
                                             axis {
                                                 name "PYTHON_VERSION"
                                                 values(
-                                                    "3.7",
-                                                    "3.8",
-                                                    "3.9",
+                                                    '3.7',
+                                                    '3.8',
+                                                    '3.9',
                                                 )
                                             }
                                             axis {
@@ -861,7 +923,7 @@ pipeline {
                                                 }
                                                 unstash "SPEEDWAGON_DOC_PDF"
                                                 powershell(
-                                                    label: "Creating new package for Chocolatey",
+                                                    label: 'Creating new package for Chocolatey',
                                                     script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
                                                                choco new speedwagon packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
                                                                New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
@@ -1067,7 +1129,7 @@ pipeline {
                                 name 'PLATFORM'
                                 values(
                                     'windows',
-//                                     "linux"
+                                    'linux'
                                     )
                             }
                             axis {
@@ -1090,36 +1152,14 @@ pipeline {
                             stage("Testing DevPi sdist Package"){
                                 steps{
                                     timeout(10){
-                                        script{
-                                            devpi.testDevpiPackage(
-                                                    devpiIndex: getDevPiStagingIndex(),
-                                                    server: "https://devpi.library.illinois.edu",
-                                                    credentialsId: "DS_devpi",
-                                                    pkgName: props.Name,
-                                                    pkgVersion: props.Version,
-                                                    pkgSelector: "tar.gz",
-                                                    toxEnv: CONFIGURATIONS[PYTHON_VERSION].tox_env
-                                                )
-                                        }
+                                        testDevpiPackage(getDevPiStagingIndex(), props.Name, props.Version, "tar.gz", CONFIGURATIONS[PYTHON_VERSION].tox_env)
                                     }
                                 }
                             }
                             stage("Testing DevPi Package wheel"){
                                 steps{
                                     timeout(10){
-                                        script{
-                                            devpi.testDevpiPackage(
-                                                devpiIndex: getDevPiStagingIndex(),
-                                                server: "https://devpi.library.illinois.edu",
-                                                credentialsId: "DS_devpi",
-                                                pkgName: props.Name,
-                                                pkgVersion: props.Version,
-                                                pkgSelector: "whl",
-                                                toxEnv: CONFIGURATIONS[PYTHON_VERSION].tox_env
-                                            )
-                                        }
-//                                         unstash "DIST-INFO"
-//                                         testDevpiPackages("https://devpi.library.illinois.edu", "speedwagon.dist-info/METADATA", "whl", CONFIGURATIONS[PYTHON_VERSION].tox_env, env.DEVPI_USR, env.DEVPI_PSW)
+                                        testDevpiPackage(getDevPiStagingIndex(), props.Name, props.Version, "whl", CONFIGURATIONS[PYTHON_VERSION].tox_env)
                                     }
                                 }
                             }
@@ -1369,15 +1409,14 @@ pipeline {
                     options {
                         skipDefaultCheckout(true)
                     }
-                    environment{
-                        PKG_VERSION = get_package_version("DIST-INFO", "speedwagon.dist-info/METADATA")
-                        PKG_NAME = get_package_name("DIST-INFO", "speedwagon.dist-info/METADATA")
-                    }
+//                     environment{
+//                         PKG_NAME = props.Name
+//                     }
                     agent any
                     steps {
                         unstash "STANDALONE_INSTALLERS"
                         dir("dist"){
-                            deploy_sscm("*.msi", "${PKG_VERSION}", "${params.JIRA_ISSUE_VALUE}")
+                            deploy_sscm("*.msi", "${props.Version}", "${params.JIRA_ISSUE_VALUE}")
                         }
                     }
                     post {
