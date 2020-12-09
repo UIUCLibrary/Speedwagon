@@ -87,7 +87,7 @@ def install_chocolatey_package(args=[:]){
     echo "cmd = ${cmd}"
     def status = powershell(cmd,
         label: "Installing Chocolatey Package",
-        script:
+        script: cmd,
         returnStatus: true
     )
     if (status != 0) {
