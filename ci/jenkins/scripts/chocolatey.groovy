@@ -83,28 +83,23 @@ def install_chocolatey_package(args=[:]){
     def packageName = args['name']
     def version = args['version']
     def source = args['source']
-    def cmd = """\$ErrorActionPreference=\"Stop\"
-        try
-        {
-           \$process = start-process -NoNewWindow -PassThru -Wait -FilePath C:\\ProgramData\\chocolatey\\bin\\choco.exe -ArgumentList \"install ${packageName} -y -dv  --version=${version} -s \'${source}\' --no-progress\"
-           if ( \$process.ExitCode -ne 0){
-                throw 'This is a failure message'
-           }
-        }
-        catch
-        {
-            Write-Error "Chocolatey Failed to install package: \$Error"
-            exit 1
-        }
-        """
-    echo "cmd = ${cmd}"
     powershell(
         label: "Installing Chocolatey Package",
-        script: "${cmd}",
+        script: """\$ErrorActionPreference=\"Stop\"
+                    try
+                    {
+                       \$process = start-process -NoNewWindow -PassThru -Wait -FilePath C:\\ProgramData\\chocolatey\\bin\\choco.exe -ArgumentList \"install ${packageName} -y -dv  --version=${version} -s \'${source}\' --no-progress\"
+                       if ( \$process.ExitCode -ne 0){
+                            throw 'This is a failure message'
+                       }
+                    }
+                    catch
+                    {
+                        Write-Error "Chocolatey Failed to install package: \$Error"
+                        exit 1
+                    }
+                    """,
     )
-//     if (status != 0) {
-//         error "Failed to install package with chocolatey. Return code ${status}"
-//     }
 }
 
 return this
