@@ -87,7 +87,7 @@ def install_chocolatey_package(args=[:]){
         try
         {
            \$process = start-process -NoNewWindow -PassThru -Wait -FilePath C:\\ProgramData\\chocolatey\\bin\\choco.exe -ArgumentList \"install ${packageName} -y -dv  --version=${version} -s \'${source}\' --no-progress\"
-           if ( \$process.ExitCode -nq 0){
+           if ( \$process.ExitCode -ne 0){
                 throw 'This is a failure message'
            }
         }
