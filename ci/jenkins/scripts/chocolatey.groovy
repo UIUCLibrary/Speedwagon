@@ -83,13 +83,14 @@ def install_chocolatey_package(args=[:]){
     def packageName = args['name']
     def version = args['version']
     def source = args['source']
-    powershell(
+    def status = powershell(
         label: "Installing Chocolatey Package",
-        script:"""\$ErrorActionPreference = 'Stop'; # stop on all errors
-                  \$process = start-process -NoNewWindow -PassThru -FilePath C:\\ProgramData\\chocolatey\\bin\\choco.exe -ArgumentList \'${packageName} -y -dv  --version=${version} -s \'${source}]\' --no-progress\', "-my" -Wait ;
-                  if ( \$process.ExitCode -nq 0) { throw "Installing packages with Chocolatey - Failed with exit code (\$process.ExitCode)" }
-                  """
+        script: "start-process -NoNewWindow -PassThru -FilePath C:\\ProgramData\\chocolatey\\bin\\choco.exe -ArgumentList \'${packageName} -y -dv  --version=${version} -s \'${source}]\' --no-progress\', \"-my\" -Wait",
+        returnStatus: true
     )
+    if (status != 0) {
+        error "Failed to install package with chocolatey. Return code ${status}"
+    }
 }
 
 return this
