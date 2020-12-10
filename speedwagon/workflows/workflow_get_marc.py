@@ -8,7 +8,6 @@ import requests
 from speedwagon import tasks, reports
 from speedwagon.job import AbsWorkflow
 
-from uiucprescon import pygetmarc
 from . import shared_custom_widgets as options
 
 
@@ -113,13 +112,16 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 class AbsMarcFileStrategy(abc.ABC):
     @abc.abstractmethod
     def get_record(self, ident) -> str:
-        pass
+        """Retrieve a record type"""
 
 
 class GetMarcBibId(AbsMarcFileStrategy):
     def get_record(self, ident) -> str:
-        # todo: get a marc record from the new server using bibid
-        pass
+        r = requests.get(
+            f"https://getmarc.library.illinois.edu/api/record?bib_id={ident}"
+        )
+        r.raise_for_status()
+        return r.text
 
 
 class GetMarcMMSID(AbsMarcFileStrategy):

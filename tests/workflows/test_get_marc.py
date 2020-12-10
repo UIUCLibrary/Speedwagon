@@ -58,16 +58,25 @@ def test_discover_metadata(unconfigured_workflow, monkeypatch):
     assert jobs[0]['identifier']['value'] == "99101026212205899"
 
 
-def test_task_creates_file(tmp_path, monkeypatch):
+identifiers = [
+    ("MMS ID", "99954806053105899"),
+    ("MMS ID", "99101026212205899"),
+    ("Bibid", "100")
+]
+
+
+@pytest.mark.parametrize("identifier_type,identifier", identifiers)
+def test_task_creates_file(tmp_path, monkeypatch,identifier_type, identifier):
     expected_file = tmp_path / "MARC.XML"
 
     task = MarcGenerator2Task(
-        identifier="99101026212205899",
-        identifier_type="MMS ID",
+        identifier=identifier,
+        identifier_type=identifier_type,
         output_name=expected_file
     )
+
     def mock_get(*args, **kwargs):
-        result = Mock(text="/fakepath/99101026212205899")
+        result = Mock(text=f"/fakepath/{identifier}")
         result.raise_for_status = MagicMock(return_value=None)
         return result
     monkeypatch.setattr(requests, 'get', mock_get)
