@@ -229,7 +229,7 @@ def testDevpiPackage(index, pkgName, pkgVersion, pkgSelector, toxEnv){
         pkgName: pkgName,
         pkgVersion: pkgVersion,
         pkgSelector: pkgSelector,
-        toxEnv: tox_env
+        toxEnv: toxEnv
     )
 }
 
