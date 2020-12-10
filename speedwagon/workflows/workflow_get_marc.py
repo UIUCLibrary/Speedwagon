@@ -130,22 +130,22 @@ class GetMarcMMSID(AbsMarcFileStrategy):
         r.raise_for_status()
         return r.text
 
-
-class OldStyleMarc(AbsMarcFileStrategy):
-
-    def get_record(self, ident) -> str:
-        marc = pygetmarc.get_marc(int(ident))
-
-        field_adder = pygetmarc.modifiers.Add955()
-        field_adder.bib_id = ident
-        if "v" in ident:
-            field_adder.contains_v = True
-
-        enriched_marc = field_adder.enrich(src=marc)
-
-        reflow_modifier = pygetmarc.modifiers.Reflow()
-        return reflow_modifier.enrich(enriched_marc)
-
+#
+# class OldStyleMarc(AbsMarcFileStrategy):
+#
+#     def get_record(self, ident) -> str:
+#         marc = pygetmarc.get_marc(int(ident))
+#
+#         field_adder = pygetmarc.modifiers.Add955()
+#         field_adder.bib_id = ident
+#         if "v" in ident:
+#             field_adder.contains_v = True
+#
+#         enriched_marc = field_adder.enrich(src=marc)
+#
+#         reflow_modifier = pygetmarc.modifiers.Reflow()
+#         return reflow_modifier.enrich(enriched_marc)
+#
 
 def strip_volume(full_bib_id: str) -> int:
     # Only pull the base bib id
@@ -183,50 +183,50 @@ class MarcGenerator2Task(tasks.Subtask):
         })
         return True
 
-
-class MarcGeneratorTask(tasks.Subtask):
-
-    def __init__(self, bib_id, folder) -> None:
-        super().__init__()
-        self._bib_id = bib_id
-        self._folder = folder
-
-    def work(self) -> bool:
-        out_file_name = "MARC.XML"
-
-        dst = os.path.normpath(os.path.join(self._folder, out_file_name))
-
-        self.log(f"Retrieving {out_file_name} for {self._bib_id}")
-        try:
-            marc_retriever = OldStyleMarc()
-
-            # short_bibid = strip_volume(self._bib_id)
-            # marc = pygetmarc.get_marc(int(short_bibid))
-            #
-            # field_adder = pygetmarc.modifiers.Add955()
-            # field_adder.bib_id = self._bib_id
-            # if "v" in self._bib_id:
-            #     field_adder.contains_v = True
-            #
-            # enriched_marc = field_adder.enrich(src=marc)
-            #
-            # reflow_modifier = pygetmarc.modifiers.Reflow()
-            # cleaned_up_marc = reflow_modifier.enrich(enriched_marc)
-            cleaned_up_marc = marc_retriever.get_record(self._bib_id)
-            with open(dst, "w", encoding="utf-8-sig") as f:
-                f.write(f"{cleaned_up_marc}\n")
-            self.log(f"Generated {dst}")
-            success = True
-        except ValueError:
-            self.log(f"Error! Could not retrieve "
-                     f"{out_file_name} for {self._bib_id}")
-
-            success = False
-
-        result = {
-            "bib_id": self._bib_id,
-            "Input": success
-        }
-        self.set_results(result)
-
-        return True
+#
+# class MarcGeneratorTask(tasks.Subtask):
+#
+#     def __init__(self, bib_id, folder) -> None:
+#         super().__init__()
+#         self._bib_id = bib_id
+#         self._folder = folder
+#
+#     def work(self) -> bool:
+#         out_file_name = "MARC.XML"
+#
+#         dst = os.path.normpath(os.path.join(self._folder, out_file_name))
+#
+#         self.log(f"Retrieving {out_file_name} for {self._bib_id}")
+#         try:
+#             marc_retriever = OldStyleMarc()
+#
+#             # short_bibid = strip_volume(self._bib_id)
+#             # marc = pygetmarc.get_marc(int(short_bibid))
+#             #
+#             # field_adder = pygetmarc.modifiers.Add955()
+#             # field_adder.bib_id = self._bib_id
+#             # if "v" in self._bib_id:
+#             #     field_adder.contains_v = True
+#             #
+#             # enriched_marc = field_adder.enrich(src=marc)
+#             #
+#             # reflow_modifier = pygetmarc.modifiers.Reflow()
+#             # cleaned_up_marc = reflow_modifier.enrich(enriched_marc)
+#             cleaned_up_marc = marc_retriever.get_record(self._bib_id)
+#             with open(dst, "w", encoding="utf-8-sig") as f:
+#                 f.write(f"{cleaned_up_marc}\n")
+#             self.log(f"Generated {dst}")
+#             success = True
+#         except ValueError:
+#             self.log(f"Error! Could not retrieve "
+#                      f"{out_file_name} for {self._bib_id}")
+#
+#             success = False
+#
+#         result = {
+#             "bib_id": self._bib_id,
+#             "Input": success
+#         }
+#         self.set_results(result)
+#
+#         return True
