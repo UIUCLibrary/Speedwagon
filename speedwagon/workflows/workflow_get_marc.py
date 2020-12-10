@@ -52,7 +52,7 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
                              os.scandir(user_args["Input"])):
 
             jobs.append({
-                "identifier":{
+                "identifier": {
                     "value": folder.name,
                     "type": user_args['Identifier type'],
                 },
@@ -124,7 +124,9 @@ class GetMarcBibId(AbsMarcFileStrategy):
 
 class GetMarcMMSID(AbsMarcFileStrategy):
     def get_record(self, ident) -> str:
-        r = requests.get(f"https://getmarc.library.illinois.edu/api/record?mms_id={ident}")
+        r = requests.get(
+            f"https://getmarc.library.illinois.edu/api/record?mms_id={ident}"
+        )
         r.raise_for_status()
         return r.text
 
@@ -168,14 +170,17 @@ class MarcGenerator2Task(tasks.Subtask):
         self._identifier_type = identifier_type
         self._output_name = output_name
 
-
     def work(self) -> bool:
         strat = SUPPORTED_IDENTIFIERS[self._identifier_type]
         r = strat.get_record(self._identifier)
 
         with open(self._output_name, "w") as wf:
             wf.write(r)
-        self.set_results({"Input":"d", "bib_id": "d", "output": self._output_name})
+        self.set_results({
+            "Input": "d",
+            "bib_id": "d",
+            "output": self._output_name
+        })
         return True
 
 
