@@ -224,3 +224,4 @@ class ListSelection(UserOption2):
     def add_selection(self, text):
         self._selections.append(text)
         self.data = self._selections[0]
+        return self
