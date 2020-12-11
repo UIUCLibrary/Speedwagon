@@ -1060,14 +1060,12 @@ pipeline {
                                         equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
                                         beforeAgent true
                                     }
-                                    options{
-                                        skipDefaultCheckout(true)
-                                    }
                                     steps{
                                         timeout(15){
                                             unstash 'STANDALONE_INSTALLERS'
                                             script{
-                                                load("ci/jenkins/scripts/standalone.groovy").testInstall('dist/*.msi')
+                                                cleanWs(disableDeferredWipeout: true, patterns: [[pattern: 'ci/jenkins/scripts/standalone.groovy', type: 'EXCLUDE']])
+                                                load('ci/jenkins/scripts/standalone.groovy').testInstall('dist/*.msi')
                                             }
                                         }
                                     }
