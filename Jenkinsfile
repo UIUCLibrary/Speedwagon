@@ -1062,9 +1062,9 @@ pipeline {
                                     }
                                     steps{
                                         timeout(15){
-                                            unstash 'STANDALONE_INSTALLERS'
                                             script{
                                                 cleanWs(disableDeferredWipeout: true, patterns: [[pattern: 'ci/jenkins/scripts/standalone.groovy', type: 'EXCLUDE']])
+                                                unstash 'STANDALONE_INSTALLERS'
                                                 load('ci/jenkins/scripts/standalone.groovy').testInstall('dist/*.msi')
                                             }
                                         }
