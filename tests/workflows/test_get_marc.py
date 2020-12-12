@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, Mock
 import requests
 
 from speedwagon.workflows import workflow_get_marc
+from speedwagon import tasks
 import pytest
 
 from speedwagon.workflows.workflow_get_marc import MarcGenerator2Task
@@ -87,3 +88,15 @@ def test_task_creates_file(tmp_path, monkeypatch,identifier_type, identifier):
     assert os.path.exists(task.results["output"]) is True
 
 
+def test_generate_report_success(unconfigured_workflow):
+    workflow, user_options = unconfigured_workflow
+    report = workflow.generate_report(
+        results=[
+            tasks.Result(None, data={
+                "Input": True,
+                "bib_id": "097"
+            })
+        ]
+    )
+
+    assert "Success" in report
