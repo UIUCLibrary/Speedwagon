@@ -162,10 +162,11 @@ class GetMarcMMSID(AbsMarcFileStrategy):
 #
 #         enriched_marc = field_adder.enrich(src=marc)
 #
-        import uiucprescon.pygetmarc.modifiers
-        reflow_modifier = pygetmarc.modifiers.Reflow()
+        # import uiucprescon.pygetmarc.modifiers
+        # reflow_modifier = pygetmarc.modifiers.Reflow()
 #         return reflow_modifier.enrich(enriched_marc)
 #
+
 
 def strip_volume(full_bib_id: str) -> int:
     # Only pull the base bib id
