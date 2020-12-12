@@ -100,3 +100,17 @@ def test_generate_report_success(unconfigured_workflow):
     )
 
     assert "Success" in report
+
+
+def test_generate_report_failure(unconfigured_workflow):
+    workflow, user_options = unconfigured_workflow
+    report = workflow.generate_report(
+        results=[
+            tasks.Result(None, data={
+                "Input": False,
+                "bib_id": "097"
+            })
+        ]
+    )
+
+    assert "Warning" in report
