@@ -2,6 +2,7 @@ import abc
 import os
 import re
 from typing import List, Any, Optional
+from xml.dom import minidom
 
 import requests
 
@@ -30,6 +31,7 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
         id_type_option = options.ListSelection("Identifier type")
         for id_type in SUPPORTED_IDENTIFIERS.keys():
             id_type_option.add_selection(id_type)
+        workflow_options.append(id_type_option)
         return workflow_options
 
     @classmethod
@@ -46,7 +48,8 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
         jobs = []
-
+        server_url = self.global_settings.get("getmarc_server_url")
+        assert server_url is not None
         for folder in filter(self.filter_bib_id_folders,
                              os.scandir(user_args["Input"])):
 
@@ -55,16 +58,25 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
                     "value": folder.name,
                     "type": user_args['Identifier type'],
                 },
+                "api_server": server_url,
                 "path": folder.path
             })
         return jobs
 
     @staticmethod
     def validate_user_options(**user_args):
+        if user_args["Input"] is None or user_args["Input"].strip() == "":
+            raise ValueError("Input is a required field")
+
         if not os.path.exists(user_args["Input"]) \
                 or not os.path.isdir(user_args["Input"]):
 
-            raise ValueError("Invalid value in input ")
+            raise ValueError("Invalid value in input")
+
+        if "Identifier type" not in user_args:
+            raise ValueError("Missing Identifier type")
+
+        # self.global_settings.get("getmarc_server_url")
 
     def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
         identifier = job_args['identifier']["value"]
@@ -74,7 +86,8 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
         new_task = MarcGenerator2Task(
             identifier=identifier,
             identifier_type=identifier_type,
-            output_name=os.path.join(folder, "MARC.XML")
+            output_name=os.path.join(folder, "MARC.XML"),
+            server_url=job_args['api_server']
         )
 
         task_builder.add_subtask(new_task)
@@ -110,6 +123,10 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
 
 class AbsMarcFileStrategy(abc.ABC):
+
+    def __init__(self, server_url) -> None:
+        self.url = server_url
+
     @abc.abstractmethod
     def get_record(self, ident) -> str:
         """Retrieve a record type"""
@@ -118,7 +135,7 @@ class AbsMarcFileStrategy(abc.ABC):
 class GetMarcBibId(AbsMarcFileStrategy):
     def get_record(self, ident) -> str:
         r = requests.get(
-            f"https://getmarc.library.illinois.edu/api/record?bib_id={ident}"
+            f"{self.url}/api/record?bib_id={ident}"
         )
         r.raise_for_status()
         return r.text
@@ -127,7 +144,7 @@ class GetMarcBibId(AbsMarcFileStrategy):
 class GetMarcMMSID(AbsMarcFileStrategy):
     def get_record(self, ident) -> str:
         r = requests.get(
-            f"https://getmarc.library.illinois.edu/api/record?mms_id={ident}"
+            f"{self.url}/api/record?mms_id={ident}"
         )
         r.raise_for_status()
         return r.text
@@ -145,7 +162,8 @@ class GetMarcMMSID(AbsMarcFileStrategy):
 #
 #         enriched_marc = field_adder.enrich(src=marc)
 #
-#         reflow_modifier = pygetmarc.modifiers.Reflow()
+        import uiucprescon.pygetmarc.modifiers
+        reflow_modifier = pygetmarc.modifiers.Reflow()
 #         return reflow_modifier.enrich(enriched_marc)
 #
 
@@ -159,25 +177,34 @@ def strip_volume(full_bib_id: str) -> int:
 
 
 SUPPORTED_IDENTIFIERS = {
-    "MMS ID": GetMarcMMSID(),
-    "Bibid": GetMarcBibId()
+    "MMS ID": GetMarcMMSID,
+    "Bibid": GetMarcBibId
 }
 
 
 class MarcGenerator2Task(tasks.Subtask):
 
-    def __init__(self, identifier, identifier_type, output_name):
+    def __init__(self, identifier, identifier_type, output_name, server_url):
         super().__init__()
         self._identifier = identifier
         self._identifier_type = identifier_type
         self._output_name = output_name
+        self._server_url = server_url
+
+    @staticmethod
+    def reflow_xml(data):
+        xml = minidom.parseString(data)
+        return xml.toprettyxml()
 
     def work(self) -> bool:
-        strat = SUPPORTED_IDENTIFIERS[self._identifier_type]
-        r = strat.get_record(self._identifier)
+        strategy = \
+            SUPPORTED_IDENTIFIERS[self._identifier_type](self._server_url)
+
+        pretty_xml = self.reflow_xml(strategy.get_record(self._identifier))
 
         with open(self._output_name, "w") as wf:
-            wf.write(r)
+            wf.write(pretty_xml)
+
         self.set_results({
             "Input": "d",
             "bib_id": "d",

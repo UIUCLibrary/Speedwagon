@@ -5,7 +5,6 @@ import requests
 
 from speedwagon.workflows import workflow_get_marc
 import pytest
-import logging
 
 from speedwagon.workflows.workflow_get_marc import MarcGenerator2Task
 
@@ -49,8 +48,9 @@ def test_discover_metadata(unconfigured_workflow, monkeypatch):
 
         return [first, second]
 
-    monkeypatch.setattr(os, 'scandir', get_data)
 
+    monkeypatch.setattr(os, 'scandir', get_data)
+    workflow.global_settings["getmarc_server_url"] = "http://fake.com"
     user_options["Input"] = "/fakepath"
     jobs = workflow.discover_task_metadata([], None, **user_options)
     assert len(jobs) == 2
@@ -72,7 +72,9 @@ def test_task_creates_file(tmp_path, monkeypatch,identifier_type, identifier):
     task = MarcGenerator2Task(
         identifier=identifier,
         identifier_type=identifier_type,
-        output_name=expected_file
+        output_name=expected_file,
+        server_url="fake.com"
+
     )
 
     def mock_get(*args, **kwargs):
@@ -80,6 +82,7 @@ def test_task_creates_file(tmp_path, monkeypatch,identifier_type, identifier):
         result.raise_for_status = MagicMock(return_value=None)
         return result
     monkeypatch.setattr(requests, 'get', mock_get)
+    task.reflow_xml = Mock(return_value="")
     task.work()
     assert os.path.exists(task.results["output"]) is True
 
