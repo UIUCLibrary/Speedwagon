@@ -4,8 +4,8 @@ import os
 import re
 from typing import List, Any, Optional, Union, Sequence, Dict
 from xml.dom import minidom
-
 import requests
+from requests import RequestException
 
 from speedwagon.exceptions import MissingConfiguration
 from speedwagon import tasks, reports
@@ -110,7 +110,7 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
         identifier_type = job_args['identifier']["type"]
 
         folder = job_args["path"]
-        new_task = MarcGenerator2Task(
+        new_task = MarcGeneratorTask(
             identifier=identifier,
             identifier_type=identifier_type,
             output_name=os.path.join(folder, "MARC.XML"),
@@ -127,7 +127,7 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
         failed = []
 
         for result in all_results:
-            if not result["Input"] is True:
+            if not result["success"] is True:
                 failed.append(result)
 
         if failed:
@@ -135,8 +135,9 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
             status = f"Warning! [{len(failed)}] packages experienced errors " \
                      f"retrieving MARC.XML files:"
 
-            failed_list = "\n".join(
-                [f"  * {i['bib_id']}" for i in failed])
+            failed_list = "\n".join([
+                f"  * {i['identifier']}. Reason: {i['output']}" for i in failed
+            ])
 
             message = f"{status}" \
                       f"\n" \
@@ -176,24 +177,6 @@ class GetMarcMMSID(AbsMarcFileStrategy):
         record.raise_for_status()
         return record.text
 
-#
-# class OldStyleMarc(AbsMarcFileStrategy):
-#
-#     def get_record(self, ident) -> str:
-#         marc = pygetmarc.get_marc(int(ident))
-#
-#         field_adder = pygetmarc.modifiers.Add955()
-#         field_adder.bib_id = ident
-#         if "v" in ident:
-#             field_adder.contains_v = True
-#
-#         enriched_marc = field_adder.enrich(src=marc)
-#
-        # import uiucprescon.pygetmarc.modifiers
-        # reflow_modifier = pygetmarc.modifiers.Reflow()
-#         return reflow_modifier.enrich(enriched_marc)
-#
-
 
 def strip_volume(full_bib_id: str) -> int:
     # Only pull the base bib id
@@ -210,7 +193,7 @@ SUPPORTED_IDENTIFIERS = {
 }
 
 
-class MarcGenerator2Task(tasks.Subtask):
+class MarcGeneratorTask(tasks.Subtask):
 
     def __init__(self,
                  identifier: str,
@@ -231,63 +214,42 @@ class MarcGenerator2Task(tasks.Subtask):
     def work(self) -> bool:
         strategy = \
             SUPPORTED_IDENTIFIERS[self._identifier_type](self._server_url)
+        try:
+            self.log(f"Accessing MARC record for {self._identifier}")
+            pretty_xml = self.reflow_xml(strategy.get_record(self._identifier))
+            self.write_file(data=pretty_xml)
 
-        pretty_xml = self.reflow_xml(strategy.get_record(self._identifier))
+            self.log(f"Wrote file {self._output_name}")
+            self.set_results({
+                "success": True,
+                "identifier": self._identifier,
+                "output": self._output_name
+            })
+            return True
 
+        except RequestException as exception:
+            self.set_results({
+                "success": False,
+                "identifier": self._identifier,
+                "output": exception.response.reason
+            })
+            return False
+
+    def write_file(self, data: str) -> None:
         with open(self._output_name, "w") as write_file:
-            write_file.write(pretty_xml)
+            write_file.write(data)
 
-        self.set_results({
-            "Input": "d",
-            "bib_id": "d",
-            "output": self._output_name
-        })
-        return True
 
+# short_bibid = strip_volume(self._bib_id)
+# marc = pygetmarc.get_marc(int(short_bibid))
 #
-# class MarcGeneratorTask(tasks.Subtask):
+# field_adder = pygetmarc.modifiers.Add955()
+# field_adder.bib_id = self._bib_id
+# if "v" in self._bib_id:
+#     field_adder.contains_v = True
 #
-#     def __init__(self, bib_id, folder) -> None:
-#         super().__init__()
-#         self._bib_id = bib_id
-#         self._folder = folder
+# enriched_marc = field_adder.enrich(src=marc)
 #
-#     def work(self) -> bool:
-#         out_file_name = "MARC.XML"
+# reflow_modifier = pygetmarc.modifiers.Reflow()
+# cleaned_up_marc = reflow_modifier.enrich(enriched_marc)
 #
-#         dst = os.path.normpath(os.path.join(self._folder, out_file_name))
-#
-#         self.log(f"Retrieving {out_file_name} for {self._bib_id}")
-#         try:
-#             marc_retriever = OldStyleMarc()
-#
-#             # short_bibid = strip_volume(self._bib_id)
-#             # marc = pygetmarc.get_marc(int(short_bibid))
-#             #
-#             # field_adder = pygetmarc.modifiers.Add955()
-#             # field_adder.bib_id = self._bib_id
-#             # if "v" in self._bib_id:
-#             #     field_adder.contains_v = True
-#             #
-#             # enriched_marc = field_adder.enrich(src=marc)
-#             #
-#             # reflow_modifier = pygetmarc.modifiers.Reflow()
-#             # cleaned_up_marc = reflow_modifier.enrich(enriched_marc)
-#             cleaned_up_marc = marc_retriever.get_record(self._bib_id)
-#             with open(dst, "w", encoding="utf-8-sig") as f:
-#                 f.write(f"{cleaned_up_marc}\n")
-#             self.log(f"Generated {dst}")
-#             success = True
-#         except ValueError:
-#             self.log(f"Error! Could not retrieve "
-#                      f"{out_file_name} for {self._bib_id}")
-#
-#             success = False
-#
-#         result = {
-#             "bib_id": self._bib_id,
-#             "Input": success
-#         }
-#         self.set_results(result)
-#
-#         return True

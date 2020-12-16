@@ -7,7 +7,7 @@ from speedwagon.workflows import workflow_get_marc
 from speedwagon import tasks
 import pytest
 import speedwagon.exceptions
-from speedwagon.workflows.workflow_get_marc import MarcGenerator2Task
+from speedwagon.workflows.workflow_get_marc import MarcGeneratorTask
 
 
 @pytest.fixture
@@ -58,7 +58,6 @@ def test_discover_metadata(unconfigured_workflow, monkeypatch):
 
         return [first, second]
 
-
     monkeypatch.setattr(os, 'scandir', get_data)
     workflow.global_settings["getmarc_server_url"] = "http://fake.com"
     user_options["Input"] = "/fakepath"
@@ -76,10 +75,10 @@ identifiers = [
 
 
 @pytest.mark.parametrize("identifier_type,identifier", identifiers)
-def test_task_creates_file(tmp_path, monkeypatch,identifier_type, identifier):
-    expected_file = tmp_path / "MARC.XML"
+def test_task_creates_file(tmp_path, monkeypatch, identifier_type, identifier):
+    expected_file = str(tmp_path / "MARC.XML")
 
-    task = MarcGenerator2Task(
+    task = MarcGeneratorTask(
         identifier=identifier,
         identifier_type=identifier_type,
         output_name=expected_file,
@@ -92,6 +91,12 @@ def test_task_creates_file(tmp_path, monkeypatch,identifier_type, identifier):
         result.raise_for_status = MagicMock(return_value=None)
         return result
     monkeypatch.setattr(requests, 'get', mock_get)
+
+    def mock_log(message):
+        """Empty log"""
+
+    monkeypatch.setattr(task, 'log', mock_log)
+
     task.reflow_xml = Mock(return_value="")
     task.work()
     assert os.path.exists(task.results["output"]) is True
@@ -106,13 +111,14 @@ def test_missing_server_url_fails(unconfigured_workflow):
     with pytest.raises(speedwagon.exceptions.MissingConfiguration):
         workflow.discover_task_metadata([], None, **user_options)
 
+
 def test_generate_report_success(unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
     report = workflow.generate_report(
         results=[
             tasks.Result(None, data={
-                "Input": True,
-                "bib_id": "097"
+                "success": True,
+                "identifier": "097"
             })
         ]
     )
@@ -125,10 +131,70 @@ def test_generate_report_failure(unconfigured_workflow):
     report = workflow.generate_report(
         results=[
             tasks.Result(None, data={
-                "Input": False,
-                "bib_id": "097"
+                "success": False,
+                "identifier": "097",
+                "output": "Something bad happened"
             })
         ]
     )
 
     assert "Warning" in report
+
+
+@pytest.mark.parametrize("identifier_type,identifier", identifiers)
+def test_task_logging__mentions_identifer(monkeypatch,
+                                          identifier_type, identifier):
+
+    task = MarcGeneratorTask(
+        identifier=identifier,
+        identifier_type=identifier_type,
+        output_name="sample_record/MARC.xml",
+        server_url="fake.com"
+
+    )
+
+    def mock_get(*args, **kwargs):
+        result = Mock(text=f"/fakepath/{identifier}")
+        result.raise_for_status = MagicMock(return_value=None)
+        return result
+
+    monkeypatch.setattr(requests, 'get', mock_get)
+
+    logs = []
+
+    def mock_log(message):
+        logs.append(message)
+    monkeypatch.setattr(task, 'log', mock_log)
+
+    def mock_write_file(data):
+        """Stub for writing files"""
+    monkeypatch.setattr(task, 'write_file', mock_write_file)
+
+    task.reflow_xml = Mock(return_value="")
+    task.work()
+
+    for log in logs:
+        if identifier in log:
+            break
+    else:
+        assert False, "Expected identifier \"{}\" mentioned in log, " \
+                      "found [{}]".format(identifier, "] [".join(logs))
+
+
+@pytest.mark.parametrize("identifier_type,identifier", identifiers)
+def test_create_new_task(unconfigured_workflow, identifier_type, identifier):
+    workflow, user_options = unconfigured_workflow
+    job_args = {
+        'identifier': {
+            'value': identifier,
+            'type': identifier_type
+        },
+        'api_server': "https://www.fake.com",
+        'path': "/fake/path/to/item"
+    }
+    mock_task_builder = Mock()
+    workflow.create_new_task(
+        task_builder=mock_task_builder,
+        **job_args
+    )
+    mock_task_builder.add_subtask.assert_called()
