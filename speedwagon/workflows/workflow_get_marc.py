@@ -1,18 +1,21 @@
+# pylint: disable=too-few-public-methods
 import abc
 import os
 import re
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Union, Sequence, Dict
 from xml.dom import minidom
 
 import requests
 
 from speedwagon import tasks, reports
 from speedwagon.job import AbsWorkflow
-
 from . import shared_custom_widgets as options
+
+UserOptions = Union[options.UserOptionCustomDataType, options.ListSelection]
 
 
 class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
+
     name = "Generate MARC.XML Files"
     description = "For input, this tool takes a path to a directory of " \
                   "files, each of which is a digitized volume, and is named " \
@@ -29,7 +32,7 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
             options.UserOptionCustomDataType("Input", options.FolderData)
         ]
         id_type_option = options.ListSelection("Identifier type")
-        for id_type in SUPPORTED_IDENTIFIERS.keys():
+        for id_type in SUPPORTED_IDENTIFIERS:
             id_type_option.add_selection(id_type)
         workflow_options.append(id_type_option)
         return workflow_options
@@ -45,8 +48,10 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
         return True
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
+    def discover_task_metadata(self,
+                               initial_results: Sequence[Any],
+                               additional_data, **user_args
+                               ) -> List[Dict[Any, Any]]:
         jobs = []
         server_url = self.global_settings.get("getmarc_server_url")
         assert server_url is not None
@@ -64,12 +69,13 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
         return jobs
 
     @staticmethod
-    def validate_user_options(**user_args):
-        if user_args["Input"] is None or user_args["Input"].strip() == "":
+    def validate_user_options(**user_args: Dict[str, str]) -> None:
+        input_value = user_args.get("Input")
+        if input_value is None or str(input_value).strip() == "":
             raise ValueError("Input is a required field")
 
-        if not os.path.exists(user_args["Input"]) \
-                or not os.path.isdir(user_args["Input"]):
+        if not os.path.exists(str(input_value)) \
+                or not os.path.isdir(str(input_value)):
 
             raise ValueError("Invalid value in input")
 
@@ -78,7 +84,10 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
         # self.global_settings.get("getmarc_server_url")
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(self,
+                        task_builder: tasks.TaskBuilder,
+                        **job_args) -> None:
+
         identifier = job_args['identifier']["value"]
         identifier_type = job_args['identifier']["type"]
 
@@ -124,30 +133,30 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
 class AbsMarcFileStrategy(abc.ABC):
 
-    def __init__(self, server_url) -> None:
+    def __init__(self, server_url: str) -> None:
         self.url = server_url
 
     @abc.abstractmethod
-    def get_record(self, ident) -> str:
+    def get_record(self, ident: str) -> str:
         """Retrieve a record type"""
 
 
 class GetMarcBibId(AbsMarcFileStrategy):
-    def get_record(self, ident) -> str:
-        r = requests.get(
+    def get_record(self, ident: str) -> str:
+        record = requests.get(
             f"{self.url}/api/record?bib_id={ident}"
         )
-        r.raise_for_status()
-        return r.text
+        record.raise_for_status()
+        return record.text
 
 
 class GetMarcMMSID(AbsMarcFileStrategy):
-    def get_record(self, ident) -> str:
-        r = requests.get(
+    def get_record(self, ident: str) -> str:
+        record = requests.get(
             f"{self.url}/api/record?mms_id={ident}"
         )
-        r.raise_for_status()
-        return r.text
+        record.raise_for_status()
+        return record.text
 
 #
 # class OldStyleMarc(AbsMarcFileStrategy):
@@ -162,10 +171,11 @@ class GetMarcMMSID(AbsMarcFileStrategy):
 #
 #         enriched_marc = field_adder.enrich(src=marc)
 #
-        import uiucprescon.pygetmarc.modifiers
-        reflow_modifier = pygetmarc.modifiers.Reflow()
+        # import uiucprescon.pygetmarc.modifiers
+        # reflow_modifier = pygetmarc.modifiers.Reflow()
 #         return reflow_modifier.enrich(enriched_marc)
 #
+
 
 def strip_volume(full_bib_id: str) -> int:
     # Only pull the base bib id
@@ -184,7 +194,11 @@ SUPPORTED_IDENTIFIERS = {
 
 class MarcGenerator2Task(tasks.Subtask):
 
-    def __init__(self, identifier, identifier_type, output_name, server_url):
+    def __init__(self,
+                 identifier: str,
+                 identifier_type: str,
+                 output_name: str,
+                 server_url: str) -> None:
         super().__init__()
         self._identifier = identifier
         self._identifier_type = identifier_type
@@ -192,7 +206,7 @@ class MarcGenerator2Task(tasks.Subtask):
         self._server_url = server_url
 
     @staticmethod
-    def reflow_xml(data):
+    def reflow_xml(data: str) -> str:
         xml = minidom.parseString(data)
         return xml.toprettyxml()
 
@@ -202,8 +216,8 @@ class MarcGenerator2Task(tasks.Subtask):
 
         pretty_xml = self.reflow_xml(strategy.get_record(self._identifier))
 
-        with open(self._output_name, "w") as wf:
-            wf.write(pretty_xml)
+        with open(self._output_name, "w") as write_file:
+            write_file.write(pretty_xml)
 
         self.set_results({
             "Input": "d",
