@@ -32,6 +32,10 @@ from speedwagon.dialog.settings import TabEditor
 from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.tabs import extract_tab_information
 import pathlib
+try:
+    from importlib import metadata
+except ImportError:
+    import importlib_metadata as metadata  # type: ignore
 
 
 class FileFormatError(Exception):
@@ -85,9 +89,11 @@ class CliArgsSetter(AbsSetting):
     @staticmethod
     def get_arg_parser():
         parser = argparse.ArgumentParser()
-
         parser.add_argument(
-            '--version', action='version', version=speedwagon.__version__)
+            '--version',
+            action='version',
+            version=metadata.version(__package__)
+        )
 
         parser.add_argument(
             "--starting-tab",
@@ -252,7 +258,7 @@ class StartupDefault(AbsStarter):
             self._logger.addHandler(windows.console_log_handler)
 
             app_title = speedwagon.__name__.title()
-            app_version = speedwagon.__version__
+            app_version = metadata.version(__package__)
             self._logger.info(f"{app_title} {app_version}")
 
             self.app.processEvents()
@@ -320,8 +326,7 @@ class StartupDefault(AbsStarter):
     def set_app_display_metadata(self):
         with pkg_resources.resource_stream(__name__, "favicon.ico") as icon:
             self.app.setWindowIcon(QtGui.QIcon(icon.name))
-
-        self.app.setApplicationVersion(f"{speedwagon.__version__}")
+        self.app.setApplicationVersion( metadata.version(__package__))
         self.app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
         self.app.processEvents()
 
