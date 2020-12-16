@@ -330,7 +330,7 @@ class StartupDefault(AbsStarter):
     def set_app_display_metadata(self):
         with pkg_resources.resource_stream(__name__, "favicon.ico") as icon:
             self.app.setWindowIcon(QtGui.QIcon(icon.name))
-        self.app.setApplicationVersion( metadata.version(__package__))
+        self.app.setApplicationVersion(metadata.version(__package__))
         self.app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
         self.app.processEvents()
 
