@@ -42,11 +42,11 @@ Changes:
             * Zip Packages
 
     .. versionchanged:: 0.1.5
-        * Generate MARC.XML Files uses getmarc_server_url instead of \
-            http://quest.library.illinois.edu/GetMARC.
+       Generate MARC.XML Files uses getmarc_server_url instead of \
+            quest.library.illinois.edu/GetMARC.
 
     .. versionadded:: 0.1.5
-        * Generate MARC.XML Files supports MMSID and bibid id type
+       Generate MARC.XML Files supports MMSID and bibid id type
 
 """
 from .workflow_completeness import CompletenessWorkflow
