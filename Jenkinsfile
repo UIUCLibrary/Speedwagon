@@ -479,7 +479,7 @@ pipeline {
                     label: "Building HTML docs on ${env.NODE_NAME}",
                     script: '''mkdir -p logs
                                python setup.py build_ui
-                               python -m sphinx docs/source build/docs/html -d build/docs/.doctrees --no-color -w logs/build_sphinx.log
+                               python -m sphinx docs/source build/docs/html -d build/docs/.doctrees --no-color -w logs/build_sphinx.log -vv
                                '''
                     )
                     sh(label: "Building PDF docs on ${env.NODE_NAME}",
