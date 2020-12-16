@@ -7,7 +7,7 @@ from xml.dom import minidom
 
 import requests
 
-import speedwagon.exceptions
+from speedwagon.exceptions import MissingConfiguration
 from speedwagon import tasks, reports
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
@@ -72,7 +72,7 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
         jobs = []
         server_url = self.global_settings.get("getmarc_server_url")
         if server_url is None:
-            raise speedwagon.exceptions.MissingConfiguration("getmarc_server_url")
+            raise MissingConfiguration("getmarc_server_url")
 
         for folder in filter(self.filter_bib_id_folders,
                              os.scandir(user_args["Input"])):
