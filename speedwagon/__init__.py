@@ -19,7 +19,6 @@ def get_project_distribution() -> pkg_resources.Distribution:
     return pkg_resources.get_distribution(f"{__name__}")
 
 
-
 __all__ = [
     "Workflow",
     "Subtask",
