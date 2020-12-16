@@ -7,6 +7,7 @@ from xml.dom import minidom
 
 import requests
 
+import speedwagon.exceptions
 from speedwagon import tasks, reports
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
@@ -25,10 +26,26 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
                   "UIUC Library’s GetMARC service " \
                   "(http://quest.library.illinois.edu/GetMARC/) to " \
                   "retrieve these MARC.XML files from the Library’s catalog."
+    required_settings_keys = [
+        "getmarc_server_url"
+    ]
 
-    def user_options(self):
+    def __init__(
+            self,
+            global_settings: Optional[Dict[str, str]] = None
+    ) -> None:
 
-        workflow_options = [
+        super().__init__()
+
+        if global_settings is not None:
+            self.global_settings = global_settings
+        for k in GenerateMarcXMLFilesWorkflow.required_settings_keys:
+            value = self.global_settings.get(k)
+            assert value
+
+    def user_options(self) -> List[UserOptions]:
+
+        workflow_options: List[UserOptions] = [
             options.UserOptionCustomDataType("Input", options.FolderData)
         ]
         id_type_option = options.ListSelection("Identifier type")
@@ -54,10 +71,11 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
                                ) -> List[Dict[Any, Any]]:
         jobs = []
         server_url = self.global_settings.get("getmarc_server_url")
-        assert server_url is not None
+        if server_url is None:
+            raise speedwagon.exceptions.MissingConfiguration("getmarc_server_url")
+
         for folder in filter(self.filter_bib_id_folders,
                              os.scandir(user_args["Input"])):
-
             jobs.append({
                 "identifier": {
                     "value": folder.name,

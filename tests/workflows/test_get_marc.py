@@ -6,14 +6,19 @@ import requests
 from speedwagon.workflows import workflow_get_marc
 from speedwagon import tasks
 import pytest
-
+import speedwagon.exceptions
 from speedwagon.workflows.workflow_get_marc import MarcGenerator2Task
 
 
 @pytest.fixture
 def unconfigured_workflow():
-    workflow = workflow_get_marc.GenerateMarcXMLFilesWorkflow()
+    workflow = workflow_get_marc.GenerateMarcXMLFilesWorkflow(
+        global_settings={
+            "getmarc_server_url": "http://fake.com"
+        }
+    )
     user_options = {i.label_text: i.data for i in workflow.user_options()}
+
     return workflow, user_options
 
 
@@ -30,7 +35,11 @@ def test_input_dir_is_valid(tmp_path, unconfigured_workflow):
 def test_invalid_input_dir_raises(unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
     with pytest.raises(ValueError):
-        workflow.validate_user_options(Input="Invalid path")
+        workflow.validate_user_options(
+            user_options={
+                "Input": "Invalid path"
+            }
+        )
 
 
 def test_discover_metadata(unconfigured_workflow, monkeypatch):
@@ -87,6 +96,15 @@ def test_task_creates_file(tmp_path, monkeypatch,identifier_type, identifier):
     task.work()
     assert os.path.exists(task.results["output"]) is True
 
+
+def test_missing_server_url_fails(unconfigured_workflow):
+    workflow, user_options = unconfigured_workflow
+
+    if "getmarc_server_url" in workflow.global_settings:
+        del workflow.global_settings["getmarc_server_url"]
+
+    with pytest.raises(speedwagon.exceptions.MissingConfiguration):
+        workflow.discover_task_metadata([], None, **user_options)
 
 def test_generate_report_success(unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
