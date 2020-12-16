@@ -36,9 +36,9 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
                   "files, each of which is a digitized volume, and is named " \
                   "for that volume’s bibid. The program then retrieves " \
                   "MARC.XML files for these bibId's and writes them into " \
-                  "the folder for each corresponding bibid or mmsid. It uses " \
-                  "the GetMARC service to retrieve these MARC.XML files from " \
-                  "the Library."
+                  "the folder for each corresponding bibid or mmsid. It " \
+                  "uses the GetMARC service to retrieve these MARC.XML " \
+                  "files from the Library."
     required_settings_keys = [
         "getmarc_server_url"
     ]
