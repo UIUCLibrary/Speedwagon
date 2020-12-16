@@ -1,5 +1,4 @@
-"""Subpackage:  The Workflows subpackage contains all the bundled workflows in
-Speedwagon
+r"""Subpackage:  Contains the bundled workflows in Speedwagon.
 
 During startup, this package is scanned for python modules that start with
 "workflow\\_" in the filename. These files are then scanned to see if they
@@ -7,7 +6,6 @@ contain for any classes which implements speedwagon.job.AbsWorkflow base
 class. As these classes are located, they made available to Speedwagon.
 
 Example:
-
     The CompletenessWorkflow() class in the file,
     speedwagon/workflows/workflow_completeness.py will be made available as
     "Verify HathiTrust Package Completeness". However, the class in the same
@@ -43,8 +41,14 @@ Changes:
             * Verify Checksum Batch [Single]
             * Zip Packages
 
-"""
+    .. versionchanged:: 0.1.5
+        * Generate MARC.XML Files uses getmarc_server_url instead of \
+            http://quest.library.illinois.edu/GetMARC.
 
+    .. versionadded:: 0.1.5
+        * Generate MARC.XML Files supports MMSID and bibid id type
+
+"""
 from .workflow_completeness import CompletenessWorkflow
 
 __all__ = [
