@@ -1,3 +1,5 @@
+"""Generating MARC XML files by retrieving from a server."""
+
 # pylint: disable=too-few-public-methods
 import abc
 import os
@@ -16,16 +18,27 @@ UserOptions = Union[options.UserOptionCustomDataType, options.ListSelection]
 
 
 class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
+    """Generate Marc XML files.
+
+    .. versionchanged:: 0.1.5
+        No longer use http://quest.library.illinois.edu/GetMARC. Instead uses a
+        getmarc api server that is configured with getmarc_server_url global
+        setting.
+
+        Identifier type is selected by the user
+
+    .. versionadded:: 0.1.5
+        Supports MMSID id type
+    """
 
     name = "Generate MARC.XML Files"
     description = "For input, this tool takes a path to a directory of " \
                   "files, each of which is a digitized volume, and is named " \
                   "for that volume’s bibid. The program then retrieves " \
                   "MARC.XML files for these bibId's and writes them into " \
-                  "the folder for each corresponding bibid. It uses the " \
-                  "UIUC Library’s GetMARC service " \
-                  "(http://quest.library.illinois.edu/GetMARC/) to " \
-                  "retrieve these MARC.XML files from the Library’s catalog."
+                  "the folder for each corresponding bibid or mmsid. It uses " \
+                  "the GetMARC service to retrieve these MARC.XML files from " \
+                  "the Library."
     required_settings_keys = [
         "getmarc_server_url"
     ]
@@ -34,7 +47,12 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
             self,
             global_settings: Optional[Dict[str, str]] = None
     ) -> None:
+        """Generate Marc XML files.
 
+        Args:
+            global_settings:
+                Settings that could affect the way the workflow runs.
+        """
         super().__init__()
 
         if global_settings is not None:
@@ -44,7 +62,7 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
             assert value
 
     def user_options(self) -> List[UserOptions]:
-
+        """Get the settings presented to the user."""
         workflow_options: List[UserOptions] = [
             options.UserOptionCustomDataType("Input", options.FolderData)
         ]
@@ -69,6 +87,17 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
                                initial_results: Sequence[Any],
                                additional_data, **user_args
                                ) -> List[Dict[Any, Any]]:
+        """Create a list of metadata that the jobs will need in order to work.
+
+        Args:
+            initial_results:
+            additional_data:
+            **user_args:
+
+        Returns:
+            list of dictionaries of job metadata
+
+        """
         jobs = []
         server_url = self.global_settings.get("getmarc_server_url")
         if server_url is None:
@@ -88,6 +117,12 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
     @staticmethod
     def validate_user_options(**user_args: Dict[str, str]) -> None:
+        """Make sure that the options the user provided is valid.
+
+        Args:
+            **user_args:
+
+        """
         input_value = user_args.get("Input")
         if input_value is None or str(input_value).strip() == "":
             raise ValueError("Input is a required field")
@@ -105,7 +140,13 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
     def create_new_task(self,
                         task_builder: tasks.TaskBuilder,
                         **job_args) -> None:
+        """Create the task to be run.
 
+        Args:
+            task_builder:
+            **job_args:
+
+        """
         identifier = job_args['identifier']["value"]
         identifier_type = job_args['identifier']["type"]
 
@@ -123,6 +164,16 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
     @reports.add_report_borders
     def generate_report(cls, results: List[tasks.Result],
                         **user_args) -> Optional[str]:
+        """Generate a simple home-readable report from the job results.
+
+        Args:
+            results:
+            **user_args:
+
+        Returns:
+            str: optional report as a string
+
+        """
         all_results = [i.data for i in results]
         failed = []
 
@@ -151,17 +202,43 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
 
 class AbsMarcFileStrategy(abc.ABC):
+    """Base class for retrieving MARC records from a server."""
 
     def __init__(self, server_url: str) -> None:
+        """Use as the base class for retrieving MARC records from a server.
+
+        Args:
+            server_url: url to server
+
+        """
         self.url = server_url
 
     @abc.abstractmethod
     def get_record(self, ident: str) -> str:
-        """Retrieve a record type"""
+        """Retrieve a record type.
+
+        Args:
+            ident: Identifier uses for the record
+
+        Returns:
+            str: Record requested as a string
+
+        """
 
 
 class GetMarcBibId(AbsMarcFileStrategy):
+    """Retrieve an record based on bibid."""
+
     def get_record(self, ident: str) -> str:
+        """Retrieve an record based on bibid.
+
+        Args:
+            ident: bibid
+
+        Returns:
+            str: Record requested as a string
+
+        """
         record = requests.get(
             f"{self.url}/api/record?bib_id={ident}"
         )
@@ -170,7 +247,18 @@ class GetMarcBibId(AbsMarcFileStrategy):
 
 
 class GetMarcMMSID(AbsMarcFileStrategy):
+    """Retrieve an record based on MMSID."""
+
     def get_record(self, ident: str) -> str:
+        """Retrieve an record based on MMSID.
+
+        Args:
+            ident: MMSID
+
+        Returns:
+            str: Record requested as a string
+
+        """
         record = requests.get(
             f"{self.url}/api/record?mms_id={ident}"
         )
@@ -194,12 +282,21 @@ SUPPORTED_IDENTIFIERS = {
 
 
 class MarcGeneratorTask(tasks.Subtask):
+    """Task for generating the MARC xml file."""
 
     def __init__(self,
                  identifier: str,
                  identifier_type: str,
                  output_name: str,
                  server_url: str) -> None:
+        """Task for retrieving the data from the server and saving as a file.
+
+        Args:
+            identifier: id of the record
+            identifier_type: type of identifier used
+            output_name: file name to save the data to
+            server_url: getmarc server url
+        """
         super().__init__()
         self._identifier = identifier
         self._identifier_type = identifier_type
@@ -208,10 +305,27 @@ class MarcGeneratorTask(tasks.Subtask):
 
     @staticmethod
     def reflow_xml(data: str) -> str:
+        """Redraw the xml data to make it more human readable.
+
+        This includes adding newline characters
+
+        Args:
+            data: xml data as a string
+
+        Returns:
+            str: Reformatted xml data.
+
+        """
         xml = minidom.parseString(data)
         return xml.toprettyxml()
 
     def work(self) -> bool:
+        """Run the task.
+
+        Returns:
+            bool: True on success, False otherwise.
+
+        """
         strategy = \
             SUPPORTED_IDENTIFIERS[self._identifier_type](self._server_url)
         try:
@@ -236,6 +350,12 @@ class MarcGeneratorTask(tasks.Subtask):
             return False
 
     def write_file(self, data: str) -> None:
+        """Write the data to a file.
+
+        Args:
+            data: Raw string data to save
+
+        """
         with open(self._output_name, "w") as write_file:
             write_file.write(data)
 
