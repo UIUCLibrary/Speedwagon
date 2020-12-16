@@ -89,10 +89,14 @@ class CliArgsSetter(AbsSetting):
     @staticmethod
     def get_arg_parser():
         parser = argparse.ArgumentParser()
+        try:
+            current_version = metadata.version(__package__)
+        except metadata.PackageNotFoundError:
+            current_version = "dev"
         parser.add_argument(
             '--version',
             action='version',
-            version=metadata.version(__package__)
+            version=current_version
         )
 
         parser.add_argument(
