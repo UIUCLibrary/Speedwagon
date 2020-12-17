@@ -8,3 +8,4 @@ python3.9-distutils
 libxml2-dev
 libxslt-dev
 libgl1-mesa-dev
+xvfb

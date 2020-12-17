@@ -42,7 +42,8 @@ RUN apt-get install -y libgl1-mesa-glx \
                        locales \
                        locales-all \
                        latexmk \
-                       texlive-formats-extra
+                       texlive-formats-extra \
+                       xvfb
 ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 COPY --from=wheel_builder /wheels /wheels/
