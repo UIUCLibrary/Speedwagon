@@ -476,13 +476,13 @@ pipeline {
             }
             steps {
                 sh(
-                    label: "Building HTML docs on ${env.NODE_NAME}",
+                    label: 'Building HTML docs',
                     script: '''mkdir -p logs
                                python setup.py build_ui
                                python -m sphinx docs/source build/docs/html -d build/docs/.doctrees --no-color -w logs/build_sphinx.log
                                '''
                     )
-                    sh(label: "Building PDF docs on ${env.NODE_NAME}",
+                    sh(label: 'Building PDF docs',
                        script: '''python -m sphinx docs/source build/docs/latex -b latex -d build/docs/.doctrees --no-color -w logs/build_sphinx_latex.log
                                   make -C build/docs/latex
                                   mkdir -p dist/docs
