@@ -1,8 +1,8 @@
 import abc
 import os
 
-from PyQt5 import QtWidgets, QtCore
 from typing import Type
+from PyQt5 import QtWidgets, QtCore
 
 
 class AbsCustomData2(metaclass=abc.ABCMeta):
