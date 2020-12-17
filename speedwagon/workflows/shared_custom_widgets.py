@@ -43,15 +43,10 @@ class CustomItemWidget(QtWidgets.QWidget):
 
 
 class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
-    # class AbsBrowseableWidget(metaclass=WidgetMeta):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
         self.text_line = QtWidgets.QLineEdit(self)
-        # size_p = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
-        #                                QtWidgets.QSizePolicy.MinimumExpanding)
-        # self.text_line.setSizePolicy(size_p)
-
         self.action = \
             self.text_line.addAction(
                 self.get_browse_icon(),
