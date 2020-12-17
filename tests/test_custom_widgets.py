@@ -19,10 +19,11 @@ def test_folder_browse_widget_click(qtbot, monkeypatch):
 
 def test_folder_browse_checksumfile(qtbot, monkeypatch):
     widget = shared_custom_widgets.ChecksumFile()
+
     monkeypatch.setattr(
         QtWidgets.QFileDialog,
         "getOpenFileName",
-        lambda *args, **kwargs: "/sample/path/sample.md5", 'Checksum files (*.md5)'
+        lambda *args, **kwargs: ("/sample/path/sample.md5", 'Checksum files (*.md5)')
     )
     qtbot.addWidget(widget)
     assert len( widget.text_line.actions()) == 1
