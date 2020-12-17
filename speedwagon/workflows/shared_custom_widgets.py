@@ -28,7 +28,6 @@ class CustomItemWidget(QtWidgets.QWidget):
         super().__init__(parent, *args, **kwargs)
         self._data = ""
         self.inner_layout = QtWidgets.QHBoxLayout(parent)
-        # self.inner_layout.setSpacing(3)
         self.inner_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.inner_layout)
         self.setAutoFillBackground(True)
@@ -66,7 +65,7 @@ class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
 
     @abc.abstractmethod
     def get_browse_icon(self):
-        pass
+        """Get the icon for the right type of browsing."""
 
     @abc.abstractmethod
     def browse_clicked(self):
