@@ -10,3 +10,4 @@ libxslt-dev
 libgl1-mesa-dev
 xvfb
 libxkbcommon-x11-0
+x11-utils
