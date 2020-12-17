@@ -575,11 +575,11 @@ pipeline {
                                                     script: 'coverage run --parallel-mode --source=speedwagon -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt'
                                                     )
                                             }
-//                                             post{
-//                                                 always {
-//                                                     recordIssues(tools: [sphinxBuild(id: 'doctest', name: 'Doctest', pattern: 'logs/doctest.txt')])
-//                                                 }
-//                                             }
+                                            post{
+                                                always {
+                                                    recordIssues(tools: [sphinxBuild(id: 'doctest', name: 'Doctest', pattern: 'logs/doctest.txt')])
+                                                }
+                                            }
                                         }
                                         stage("Run MyPy Static Analysis") {
                                             steps{
@@ -593,7 +593,7 @@ pipeline {
                                             }
                                             post {
                                                 always {
-//                                                     recordIssues(tools: [myPy(pattern: "logs/mypy.log")])
+                                                    recordIssues(tools: [myPy(pattern: "logs/mypy.log")])
                                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                                                 }
                                                 cleanup{
@@ -609,7 +609,7 @@ pipeline {
                                             post{
                                                 always{
                                                     stash includes: "reports/pylint_issues.txt,reports/pylint.txt", name: 'PYLINT_REPORT'
-//                                                     recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
+                                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
                                                 }
                                             }
                                         }
@@ -622,7 +622,7 @@ pipeline {
                                             post {
                                                 always {
                                                       stash includes: 'logs/flake8.log', name: "FLAKE8_REPORT"
-//                                                       recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
+                                                      recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
                                                 }
                                             }
                                         }
