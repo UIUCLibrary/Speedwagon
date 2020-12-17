@@ -44,7 +44,7 @@ def test_mac_package(args = [:]){
             files.each{
                 sh(
                     label: "Testing ${it}",
-                    script: "venv/bin/tox --installpkg=${it.path} -e py -vvv --recreate"
+                    script: "venv/bin/tox --installpkg=${it.path} -e py -vv --recreate"
                 )
             }
         } finally {
