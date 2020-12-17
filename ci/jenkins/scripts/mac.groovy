@@ -41,7 +41,7 @@ def test_mac_package(args = [:]){
             if( files.size() == 0){
                 error "No files located in ${glob}"
             }
-            withEnv(['QT_QPA_PLATFORM="offscreen"']) {
+            withEnv(['QT_QPA_PLATFORM=offscreen']) {
                 files.each{
                     sh(
                         label: "Testing ${it}",
