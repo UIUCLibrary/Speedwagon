@@ -1,7 +1,6 @@
 aiohttp>=3.6.2
 async-timeout==3.0.1
 attrs>=19.3.0
-chardet==3.0.4
 docopt==0.6.2
 HathiChecksumUpdater>=0.1.2b2
 HathiValidate>=0.3.6b1
@@ -24,10 +23,15 @@ ruamel.yaml==0.16.10
 ruamel.yaml.clib==0.2.0
 tzlocal==2.1
 uiucprescon-getmarc==0.1.2
-uiucprescon-getmarc2>=0.1.0b4
 uiucprescon.packager[kdu]>=0.2.11b5
 uiucprescon.images>=0.0.4b1
 uiucprescon.imagevalidate>=0.1.5b8
 uiucprescon.ocr>=0.1.1b9
 yarl>=1.4.2
 zipp==3.1.0
+
+docutils~=0.16
+setuptools~=49.2.1
+requests~=2.25.0
+pytest~=6.1.2
+behave~=1.2.6

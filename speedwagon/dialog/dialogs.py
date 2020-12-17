@@ -70,14 +70,14 @@ def about_dialog_box(parent):
             email.message_from_string(
                 distribution.get_metadata(distribution.PKG_INFO)))
         summary = metadata['Summary']
-        message = f"{speedwagon.__name__.title()}: {speedwagon.__version__}" \
+        message = f"{speedwagon.__name__.title()}: {distribution.version}" \
                   f"\n" \
                   f"\n" \
                   f"{summary}"
 
     except pkg_resources.DistributionNotFound:
         message = \
-            f"{speedwagon.__name__.title()}: {speedwagon.__version__}"
+            f"{speedwagon.__name__.title()}:"
 
     QtWidgets.QMessageBox.about(parent, "About", message)
 

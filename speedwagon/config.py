@@ -142,6 +142,7 @@ def generate_default(config_file):
     config.add_section("GLOBAL")
     config['GLOBAL'] = {
         "tessdata": tessdata,
+        "getmarc_server_url": "",
         "starting-tab": "Tools",
         "debug": False
     }
