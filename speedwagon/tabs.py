@@ -402,7 +402,9 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
                 browser_widget.setParent(parent)
 
                 return browser_widget
-        return super().createEditor(parent, option, index)
+        editor = super().createEditor(parent, option, index)
+        editor.setAutoFillBackground(True)
+        return editor
 
     # noinspection PyUnresolvedReferences
     def update_custom_item(self):
