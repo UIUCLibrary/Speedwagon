@@ -9,3 +9,4 @@ libxml2-dev
 libxslt-dev
 libgl1-mesa-dev
 xvfb
+libxkbcommon-x11-0
