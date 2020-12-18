@@ -65,7 +65,8 @@ class NixConfig(AbsConfig):
         data_dir = self._get_app_dir()
         return data_dir
 
-    def _get_app_dir(self) -> str:
+    @staticmethod
+    def _get_app_dir() -> str:
         return os.path.join(str(Path.home()), ".config", "Speedwagon")
 
 
