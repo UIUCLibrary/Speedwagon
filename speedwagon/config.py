@@ -8,7 +8,7 @@ from pathlib import Path
 import io
 import abc
 import collections.abc
-from typing import Optional, Dict, Type
+from typing import Optional, Dict, Type, Set
 import platform
 from speedwagon.models import SettingsModel
 
@@ -207,3 +207,32 @@ def serialize_settings_model(model: SettingsModel) -> str:
     with io.StringIO() as string_writer:
         config_data.write(string_writer)
         return string_writer.getvalue()
+
+
+def find_missing_global_entries(config_file, expected_keys) -> Optional[Set[str]]:
+    config_data = configparser.ConfigParser()
+    config_data.read(config_file)
+    global_settings = config_data['GLOBAL']
+    missing = set()
+    for k in expected_keys:
+        if k not in global_settings:
+            missing.add(k)
+
+    return missing if len(missing) > 0 else None
+
+
+def ensure_keys(config_file, keys) -> Optional[Set[str]]:
+    config_data = configparser.ConfigParser()
+    config_data.read(config_file)
+    global_settings = config_data['GLOBAL']
+    added = set()
+
+    for k in keys:
+        if k not in global_settings:
+            config_data['GLOBAL'][k] = ""
+            added.add(k)
+
+    with open(config_file, "w") as file_pointer:
+        config_data.write(file_pointer)
+
+    return added if len(added) > 0 else None

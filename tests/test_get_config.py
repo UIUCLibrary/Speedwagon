@@ -192,3 +192,53 @@ debug: False
     assert isinstance(model, SettingsModel)
 
     assert model is not None
+
+
+def test_find_missing_configs(tmpdir):
+    config_file = str(os.path.join(tmpdir, "config.ini"))
+    speedwagon.config.generate_default(config_file)
+    keys_that_dont_exist = {"spam", "bacon", "eggs"}
+
+    missing_keys = speedwagon.config.find_missing_global_entries(
+        config_file=config_file,
+        expected_keys=keys_that_dont_exist
+    )
+    assert missing_keys == keys_that_dont_exist
+
+
+def test_find_no_missing_configs(tmpdir):
+    config_file = str(os.path.join(tmpdir, "config.ini"))
+    speedwagon.config.generate_default(config_file)
+    keys_that_exist = {"spam", "bacon", "eggs"}
+    with open(config_file, "a+") as wf:
+        for k in keys_that_exist:
+            wf.write(f"{k}=\n")
+
+    missing_keys = speedwagon.config.find_missing_global_entries(
+        config_file=config_file,
+        expected_keys=keys_that_exist
+    )
+    assert missing_keys is None
+
+
+def test_add_empty_keys_if_missing(tmpdir):
+    config_file = str(os.path.join(tmpdir, "config.ini"))
+    speedwagon.config.generate_default(config_file)
+    keys_that_dont_exist = {"spam", "bacon"}
+    keys_that_exist = {"eggs"}
+    with open(config_file, "a+") as wf:
+        for k in keys_that_exist:
+            wf.write(f"{k}=somedata\n")
+
+    added_keys = speedwagon.config.ensure_keys(
+        config_file=config_file,
+        keys=keys_that_exist.union(keys_that_dont_exist)
+    )
+
+    assert added_keys == keys_that_dont_exist
+
+    missing_keys = speedwagon.config.find_missing_global_entries(
+        config_file=config_file,
+        expected_keys=keys_that_exist.union(keys_that_dont_exist)
+    )
+    assert missing_keys is None
