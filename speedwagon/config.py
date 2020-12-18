@@ -8,7 +8,7 @@ from pathlib import Path
 import io
 import abc
 import collections.abc
-from typing import Optional, Dict
+from typing import Optional, Dict, Type
 import platform
 from speedwagon.models import SettingsModel
 
@@ -155,7 +155,7 @@ def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
         AbsConfig:
     """Load a configuration of config.AbsConfig
     If no argument is included, it will try to guess the best one."""
-    configurations = {
+    configurations: Dict[str, Type[AbsConfig]] = {
         "Windows": WindowsConfig,
         "Darwin": NixConfig,
         "Linux": NixConfig,
