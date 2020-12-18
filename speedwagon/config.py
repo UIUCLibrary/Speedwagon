@@ -147,8 +147,8 @@ def generate_default(config_file):
         "starting-tab": "Tools",
         "debug": False
     }
-    with open(config_file, "w") as f:
-        config.write(f)
+    with open(config_file, "w") as file:
+        config.write(file)
 
 
 def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
@@ -175,8 +175,8 @@ def build_setting_model(config_file) -> SettingsModel:
     config.read(config_file)
     global_settings = config["GLOBAL"]
     my_model = SettingsModel()
-    for k, v in global_settings.items():
-        my_model.add_setting(k, v)
+    for key, value in global_settings.items():
+        my_model.add_setting(key, value)
     return my_model
 
 
