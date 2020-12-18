@@ -209,7 +209,10 @@ def serialize_settings_model(model: SettingsModel) -> str:
         return string_writer.getvalue()
 
 
-def find_missing_global_entries(config_file, expected_keys) -> Optional[Set[str]]:
+def find_missing_global_entries(
+        config_file,
+        expected_keys) -> Optional[Set[str]]:
+
     config_data = configparser.ConfigParser()
     config_data.read(config_file)
     global_settings = config_data['GLOBAL']
