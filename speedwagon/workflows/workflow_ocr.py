@@ -10,6 +10,8 @@ from speedwagon import tasks
 
 from uiucprescon import ocr
 
+from ..exceptions import MissingConfiguration
+
 
 def locate_tessdata() -> Optional[str]:
     path = os.path.join(os.path.dirname(__file__), "tessdata")
@@ -39,6 +41,9 @@ class OCRWorkflow(speedwagon.Workflow):
     def __init__(self) -> None:
         super().__init__()
         self.tessdata_path = self.global_settings.get("tessdata")
+        if self.tessdata_path is None:
+            raise MissingConfiguration("tessdata")
+
         if not os.path.exists(self.tessdata_path):
             os.mkdir(self.tessdata_path)
 
