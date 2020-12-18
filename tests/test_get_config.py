@@ -107,7 +107,7 @@ def test_serialize_settings_model():
 
 
 def test_nix_get_app_data_directory(monkeypatch):
-    speedwagon_config = config.NixConfig()
+    speedwagon_config = speedwagon.config.NixConfig()
     user_path = os.path.join("/Users", "someuser")
     monkeypatch.setattr(
         pathlib.Path,
@@ -119,7 +119,7 @@ def test_nix_get_app_data_directory(monkeypatch):
 
 
 def test_nix_get_user_data_directory(monkeypatch):
-    speedwagon_config = config.NixConfig()
+    speedwagon_config = speedwagon.config.NixConfig()
     user_path = os.path.join("/Users", "someuser")
     monkeypatch.setattr(
         pathlib.Path,
@@ -130,7 +130,7 @@ def test_nix_get_user_data_directory(monkeypatch):
 
 
 def test_windows_get_app_data_directory(monkeypatch):
-    speedwagon_config = config.WindowsConfig()
+    speedwagon_config = speedwagon.config.WindowsConfig()
     user_path = os.path.join('C:', 'Users', 'someuser')
     monkeypatch.setattr(
         pathlib.Path,
@@ -147,7 +147,7 @@ def test_windows_get_app_data_directory(monkeypatch):
 
 
 def test_windows_get_app_data_directory_no_LocalAppData(monkeypatch):
-    speedwagon_config = config.WindowsConfig()
+    speedwagon_config = speedwagon.config.WindowsConfig()
     monkeypatch.setattr(
         os,
         "getenv",
@@ -158,7 +158,7 @@ def test_windows_get_app_data_directory_no_LocalAppData(monkeypatch):
 
 
 def test_windows_get_user_data_directory(monkeypatch):
-    speedwagon_config = config.WindowsConfig()
+    speedwagon_config = speedwagon.config.WindowsConfig()
     app_data_local = os.path.join('C:', 'Users', 'someuser', 'AppData', 'Local')
     monkeypatch.setattr(
         pathlib.Path,
@@ -166,3 +166,9 @@ def test_windows_get_user_data_directory(monkeypatch):
         lambda *args, **kwargs: pathlib.Path(app_data_local)
     )
     assert speedwagon_config.get_user_data_directory() == os.path.join(app_data_local, "Speedwagon", "data")
+
+
+def test_generate_default_creates_file(tmpdir):
+     config_file = os.path.join(str(tmpdir),   "config.ini")
+     config.generate_default(str(config_file))
+     assert os.path.exists(config_file)
