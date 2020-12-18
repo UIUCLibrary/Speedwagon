@@ -4,13 +4,12 @@ import sys
 
 from typing import List, Any, Optional, Iterator
 import contextlib
-import speedwagon
-from . import shared_custom_widgets
-from speedwagon import tasks
-
 from uiucprescon import ocr
+import speedwagon
 
-from ..exceptions import MissingConfiguration
+from speedwagon.workflows import shared_custom_widgets
+from speedwagon import tasks
+from speedwagon.exceptions import MissingConfiguration
 
 
 def locate_tessdata() -> Optional[str]:
