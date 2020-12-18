@@ -165,8 +165,7 @@ def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
         if system_config is None:
             raise ValueError(f"Platform {platform.system()} not supported")
         return system_config()
-    else:
-        return configuration
+    return configuration
 
 
 def build_setting_model(config_file) -> SettingsModel:
