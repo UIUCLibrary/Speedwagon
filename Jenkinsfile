@@ -35,10 +35,10 @@ def get_build_args(){
 }
 def get_package_version(stashName, metadataFile){
     ws {
-        unstash "${stashName}"
+        unstash stashName
         script{
-            def props = readProperties interpolate: true, file: "${metadataFile}"
-            cleanWs(patterns: [[pattern: "${metadataFile}", type: 'INCLUDE']])
+            def props = readProperties interpolate: true, file: metadataFile
+            cleanWs(patterns: [[pattern: metadataFile, type: 'INCLUDE']])
             //deleteDir()
             return props.Version
         }
@@ -62,10 +62,10 @@ def run_pylint(){
 
 def get_package_name(stashName, metadataFile){
     ws {
-        unstash "${stashName}"
+        unstash stashName
         script{
-            def props = readProperties interpolate: true, file: "${metadataFile}"
-            cleanWs(patterns: [[pattern: "${metadataFile}", type: 'INCLUDE']])
+            def props = readProperties interpolate: true, file: metadataFile
+            cleanWs(patterns: [[pattern: metadataFile, type: 'INCLUDE']])
             return props.Name
         }
     }
@@ -155,7 +155,7 @@ def deploy_artifacts_to_url(regex, urlDestination, jiraIssueKey){
 ${url_message_list}
 """
             echo "${jira_message}"
-            jiraComment body: "${jira_message}", issueKey: "${jiraIssueKey}"
+            jiraComment body: jira_message, issueKey: jiraIssueKey
         }
     }
 }
@@ -235,7 +235,7 @@ def testDevpiPackage(index, pkgName, pkgVersion, pkgSelector, toxEnv){
 
 def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
     script{
-        def msi_files = findFiles glob: "${file_glob}"
+        def msi_files = findFiles glob: file_glob
         def deployment_request = requestDeploy yaml: "${WORKSPACE}/deployment.yml", file_name: msi_files[0]
 
         cifsPublisher(
@@ -259,7 +259,7 @@ def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
                 ]]
             )
 
-        jiraComment body: "Version ${pkgVersion} sent to staging for user testing.", issueKey: "${jiraIssueKey}"
+        jiraComment body: "Version ${pkgVersion} sent to staging for user testing.", issueKey: jiraIssueKey
         input('Deploy to production?')
         writeFile file: 'logs/deployment_request.txt', text: deployment_request
         echo deployment_request
@@ -998,7 +998,7 @@ pipeline {
                                             filename 'ci/docker/windows_standalone/Dockerfile'
                                             label 'Windows&&Docker'
                                             args '-u ContainerAdministrator'
-                                            additionalBuildArgs "${get_build_args()}"
+                                            additionalBuildArgs get_build_args()
                                           }
                                     }
                                     steps {
