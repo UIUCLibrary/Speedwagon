@@ -43,11 +43,10 @@ RUN apt-get install -y libgl1-mesa-glx \
                        locales-all \
                        latexmk \
                        texlive-formats-extra \
-                       xvfb \
-                       libxkbcommon-x11-0
-
+                       xvfb
 ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
+ENV QT_QPA_PLATFORM="offscreen"
 COPY --from=wheel_builder /wheels /wheels/
 COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt /tmp/
 
@@ -71,5 +70,5 @@ RUN curl --create-dirs -sSLo $HOME/.sonar/sonar-scanner.zip \
     chown user:user /home/user/.sonar/cache
 ENV PATH=$SONAR_SCANNER_HOME/bin:$PATH
 ENV SONAR_SCANNER_OPTS="-server"
-USER root
-RUN pip install pytest-qt
+
+
