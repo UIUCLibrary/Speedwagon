@@ -1,5 +1,6 @@
 import configparser
 import os
+import pathlib
 import shutil
 
 import speedwagon.config
@@ -105,4 +106,21 @@ def test_serialize_settings_model():
         assert new_config["GLOBAL"][k] == v
 
 
+def test_nix_get_app_data_directory(monkeypatch):
+    speedwagon_config = config.NixConfig()
+    monkeypatch.setattr(
+        pathlib.Path,
+        "home",
+        lambda *args, **kwargs: pathlib.PosixPath('/Users/someuser')
+    )
+    assert speedwagon_config.get_app_data_directory() == "/Users/someuser/.config/Speedwagon"
 
+
+def test_nix_get_user_data_directory(monkeypatch):
+    speedwagon_config = config.NixConfig()
+    monkeypatch.setattr(
+        pathlib.Path,
+        "home",
+        lambda *args, **kwargs: pathlib.PosixPath('/Users/someuser')
+    )
+    assert speedwagon_config.get_user_data_directory() == "/Users/someuser/.config/Speedwagon/data"
