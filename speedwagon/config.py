@@ -98,6 +98,7 @@ class ConfigManager(contextlib.AbstractContextManager):
 
     def __init__(self, config_file):
         self._config_file = config_file
+        self.cfg_parser = None
 
     def __enter__(self):
         self.cfg_parser = configparser.ConfigParser()
