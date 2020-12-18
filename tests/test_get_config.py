@@ -4,13 +4,12 @@ import pathlib
 import shutil
 
 import speedwagon.config
-from speedwagon import config
 import pytest
 
 from speedwagon.models import SettingsModel
 
 
-class MockConfig(config.AbsConfig):
+class MockConfig(speedwagon.config.AbsConfig):
         def __init__(self):
 
             super().__init__()
@@ -72,7 +71,7 @@ def test_read_settings(tmpdir):
         cfg_parser["GLOBAL"] = global_settings
         cfg_parser.write(f)
 
-    with config.ConfigManager(config_file) as cfg:
+    with speedwagon.config.ConfigManager(config_file) as cfg:
         assert cfg.global_settings['tessdata'] == "~/mytesseractdata"
 
     shutil.rmtree(tmpdir)
@@ -91,12 +90,12 @@ def test_serialize_settings_model():
     cfg_parser = configparser.ConfigParser()
     original_settings = cfg_parser["GLOBAL"] = original_settings
 
-    my_model = config.SettingsModel()
+    my_model = speedwagon.config.SettingsModel()
     for k, v in original_settings.items():
         my_model.add_setting(k, v)
 
     # Serialize the model to ini file format
-    data = config.serialize_settings_model(my_model)
+    data = speedwagon.config.serialize_settings_model(my_model)
     assert data is not None
 
     # Check that the new data is the same as original
@@ -156,7 +155,7 @@ def test_windows_get_app_data_directory_no_LocalAppData(monkeypatch):
         lambda *args, **kwargs: None
     )
     with pytest.raises(FileNotFoundError):
-        assert speedwagon_config.get_app_data_directory() == os.path.join(local_app_data_path, "Speedwagon")
+        speedwagon_config.get_app_data_directory()
 
 
 def test_windows_get_user_data_directory(monkeypatch):
@@ -172,7 +171,7 @@ def test_windows_get_user_data_directory(monkeypatch):
 
 def test_generate_default_creates_file(tmpdir):
      config_file = os.path.join(str(tmpdir),   "config.ini")
-     config.generate_default(str(config_file))
+     speedwagon.config.generate_default(str(config_file))
      assert os.path.exists(config_file)
 
 
@@ -191,3 +190,4 @@ def test_build_setting_model(tmpdir):
     model = speedwagon.config.build_setting_model(dummy)
     assert isinstance(model, SettingsModel)
 
+    assert model is not None
