@@ -118,9 +118,9 @@ class ConfigManager(contextlib.AbstractContextManager):
                     global_settings[setting] = \
                         global_section.getboolean(setting)
 
-            for k, v in global_section.items():
-                if k not in ConfigManager.BOOLEAN_SETTINGS:
-                    global_settings[k] = v
+            for key, value in global_section.items():
+                if key not in ConfigManager.BOOLEAN_SETTINGS:
+                    global_settings[key] = value
 
         except KeyError:
             print("Unable to load global settings.", file=sys.stderr)
@@ -198,6 +198,6 @@ def serialize_settings_model(model: SettingsModel) -> str:
         global_data[key] = value
     config_data["GLOBAL"] = global_data
 
-    with io.StringIO() as f:
-        config_data.write(f)
-        return f.getvalue()
+    with io.StringIO() as string_writer:
+        config_data.write(string_writer)
+        return string_writer.getvalue()
