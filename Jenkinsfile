@@ -975,21 +975,6 @@ pipeline {
                                         bat 'speedwagon --help'
 
                                     }
-        //                             post{
-        //                                 success{
-        //                                     archiveArtifacts artifacts: "packages/*.nupkg", fingerprint: true
-        //                                 }
-        //                                 cleanup{
-        //                                     cleanWs(
-        //                                         notFailBuild: true,
-        //                                         deleteDirs: true,
-        //                                         patterns: [
-        //                                             [pattern: 'packages/', type: 'INCLUDE'],
-        //                                             [pattern: 'speedwagon.dist-info.dist-info/', type: 'INCLUDE'],
-        //                                         ]
-        //                                     )
-        //                                 }
-        //                             }
                                 }
                             }
                         }
@@ -1004,8 +989,6 @@ pipeline {
                             }
                             environment {
                                 build_number = get_build_number()
-//                                 PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
-//                                 PIP_TRUSTED_HOST="devpi.library.illinois.edu"
                             }
 
                             stages{
@@ -1053,7 +1036,7 @@ pipeline {
                                       docker {
                                         args '-u ContainerAdministrator'
                                         image 'mcr.microsoft.com/windows/servercore:ltsc2019'
-                                        label 'Windows&&Docker'
+                                        label 'Windows && Docker'
                                       }
                                     }
                                     when{
@@ -1100,10 +1083,6 @@ pipeline {
                 beforeOptions true
             }
             agent none
-//             environment{
-//                 devpiStagingIndex = getDevPiStagingIndex()
-// //                 DEVPI = credentials("DS_devpi")
-//             }
             options{
                 lock('speedwagon-devpi')
             }
@@ -1207,12 +1186,6 @@ pipeline {
                                 indexDestination: 'production/release',
                                 credentialsId: 'DS_devpi'
                             )
-//                             sh(label: "Pushing to production index",
-//                                script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
-//                                           devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-//                                           devpi push --index DS_Jenkins/${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} production/release --clientdir ./devpi
-//                                        """
-//                             )
                         }
                     }
                 }
@@ -1230,13 +1203,6 @@ pipeline {
                                         indexDestination: "DS_Jenkins/${env.BRANCH_NAME}",
                                         credentialsId: 'DS_devpi'
                                     )
-//                                 sh(label: "Connecting to DevPi Server",
-//                                    script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
-//                                               devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-//                                               devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi
-//                                               devpi push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME} --clientdir ./devpi
-//                                               """
-//                                 )
                             }
                        }
                     }
@@ -1253,14 +1219,6 @@ pipeline {
                                     credentialsId: 'DS_devpi',
 
                                 )
-//                                 sh(
-//                                     label: "Connecting to DevPi Server",
-//                                     script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
-//                                                devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-//                                                devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi
-//                                                devpi remove -y ${props.Name}==${props.Version} --clientdir ./devpi
-//                                                """
-//                                 )
                             }
                        }
                     }
