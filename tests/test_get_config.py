@@ -7,6 +7,8 @@ import speedwagon.config
 from speedwagon import config
 import pytest
 
+from speedwagon.models import SettingsModel
+
 
 class MockConfig(config.AbsConfig):
         def __init__(self):
@@ -179,4 +181,13 @@ def test_build_setting_model_missing_file(tmpdir):
     with pytest.raises(FileNotFoundError):
         speedwagon.config.build_setting_model(dummy)
 
+
+def test_build_setting_model(tmpdir):
+    dummy = str(os.path.join(tmpdir, "config.ini"))
+    empty_config_data = """[GLOBAL]
+        """
+    with open(dummy, "w") as wf:
+        wf.write(empty_config_data)
+    model = speedwagon.config.build_setting_model(dummy)
+    assert isinstance(model, SettingsModel)
 
