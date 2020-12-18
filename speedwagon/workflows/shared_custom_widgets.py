@@ -58,9 +58,10 @@ class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
         self.text_line.textEdited.connect(self._change_data)
         self.inner_layout.addWidget(self.text_line)
 
-    @abc.abstractmethod
     def get_browse_icon(self):
         """Get the icon for the right type of browsing."""
+        return QtWidgets.QApplication.style().standardIcon(
+            QtWidgets.QStyle.SP_DirOpenIcon)
 
     @abc.abstractmethod
     def browse_clicked(self):

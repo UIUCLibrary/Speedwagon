@@ -4,11 +4,12 @@ import sys
 
 from typing import List, Any, Optional, Iterator
 import contextlib
-import speedwagon
-from . import shared_custom_widgets
-from speedwagon import tasks
-
 from uiucprescon import ocr
+import speedwagon
+
+from speedwagon.workflows import shared_custom_widgets
+from speedwagon import tasks
+from speedwagon.exceptions import MissingConfiguration
 
 
 def locate_tessdata() -> Optional[str]:
@@ -39,6 +40,9 @@ class OCRWorkflow(speedwagon.Workflow):
     def __init__(self) -> None:
         super().__init__()
         self.tessdata_path = self.global_settings.get("tessdata")
+        if self.tessdata_path is None:
+            raise MissingConfiguration("tessdata")
+
         if not os.path.exists(self.tessdata_path):
             os.mkdir(self.tessdata_path)
 

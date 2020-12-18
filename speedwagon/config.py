@@ -8,7 +8,7 @@ from pathlib import Path
 import io
 import abc
 import collections.abc
-from typing import Optional, Dict
+from typing import Optional, Dict, Type
 import platform
 from speedwagon.models import SettingsModel
 
@@ -44,7 +44,7 @@ class AbsConfig(collections.abc.Mapping):
 
         return x in self._data
 
-    def __getitem__(self, k):
+    def __getitem__(self, k) -> str:
 
         if k == "user_data_directory":
             return self.get_user_data_directory()
@@ -65,7 +65,8 @@ class NixConfig(AbsConfig):
         data_dir = self._get_app_dir()
         return data_dir
 
-    def _get_app_dir(self) -> str:
+    @staticmethod
+    def _get_app_dir() -> str:
         return os.path.join(str(Path.home()), ".config", "Speedwagon")
 
 
@@ -87,8 +88,7 @@ class WindowsConfig(AbsConfig):
         data_path = os.getenv("LocalAppData")
         if data_path:
             return os.path.join(data_path, "Speedwagon")
-        else:
-            raise FileNotFoundError("Unable to located data_directory")
+        raise FileNotFoundError("Unable to located data_directory")
 
 
 class ConfigManager(contextlib.AbstractContextManager):
@@ -98,6 +98,7 @@ class ConfigManager(contextlib.AbstractContextManager):
 
     def __init__(self, config_file):
         self._config_file = config_file
+        self.cfg_parser = None
 
     def __enter__(self):
         self.cfg_parser = configparser.ConfigParser()
@@ -118,16 +119,16 @@ class ConfigManager(contextlib.AbstractContextManager):
                     global_settings[setting] = \
                         global_section.getboolean(setting)
 
-            for k, v in global_section.items():
-                if k not in ConfigManager.BOOLEAN_SETTINGS:
-                    global_settings[k] = v
+            for key, value in global_section.items():
+                if key not in ConfigManager.BOOLEAN_SETTINGS:
+                    global_settings[key] = value
 
         except KeyError:
             print("Unable to load global settings.", file=sys.stderr)
         return global_settings
 
 
-def generate_default(config_file):
+def generate_default(config_file) -> None:
     """Generate config file with default settings"""
 
     base_directory = os.path.dirname(config_file)
@@ -136,6 +137,9 @@ def generate_default(config_file):
 
     platform_settings = get_platform_settings()
     data_dir = platform_settings.get("user_data_directory")
+    if data_dir is None:
+        raise FileNotFoundError("Unable to locate user data directory")
+
     tessdata = os.path.join(data_dir, "tessdata")
 
     config = configparser.ConfigParser(allow_no_value=True)
@@ -144,17 +148,17 @@ def generate_default(config_file):
         "tessdata": tessdata,
         "getmarc_server_url": "",
         "starting-tab": "Tools",
-        "debug": False
+        "debug": "False"
     }
-    with open(config_file, "w") as f:
-        config.write(f)
+    with open(config_file, "w") as file:
+        config.write(file)
 
 
 def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
         AbsConfig:
     """Load a configuration of config.AbsConfig
     If no argument is included, it will try to guess the best one."""
-    configurations = {
+    configurations: Dict[str, Type[AbsConfig]] = {
         "Windows": WindowsConfig,
         "Darwin": NixConfig,
         "Linux": NixConfig,
@@ -164,19 +168,20 @@ def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
         if system_config is None:
             raise ValueError(f"Platform {platform.system()} not supported")
         return system_config()
-    else:
-        return configuration
+    return configuration
 
 
 def build_setting_model(config_file) -> SettingsModel:
     """Read a configuration file and generate a SettingsModel"""
+    if not os.path.exists(config_file):
+        raise FileNotFoundError(f"No existing Configuration in ${config_file}")
 
     config = configparser.ConfigParser()
     config.read(config_file)
     global_settings = config["GLOBAL"]
     my_model = SettingsModel()
-    for k, v in global_settings.items():
-        my_model.add_setting(k, v)
+    for key, value in global_settings.items():
+        my_model.add_setting(key, value)
     return my_model
 
 
@@ -199,6 +204,6 @@ def serialize_settings_model(model: SettingsModel) -> str:
         global_data[key] = value
     config_data["GLOBAL"] = global_data
 
-    with io.StringIO() as f:
-        config_data.write(f)
-        return f.getvalue()
+    with io.StringIO() as string_writer:
+        config_data.write(string_writer)
+        return string_writer.getvalue()
