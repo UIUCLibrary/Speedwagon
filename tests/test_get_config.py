@@ -108,19 +108,61 @@ def test_serialize_settings_model():
 
 def test_nix_get_app_data_directory(monkeypatch):
     speedwagon_config = config.NixConfig()
+    user_path = os.path.join("/Users", "someuser")
     monkeypatch.setattr(
         pathlib.Path,
         "home",
-        lambda *args, **kwargs: pathlib.PosixPath('/Users/someuser')
+        lambda *args, **kwargs: pathlib.Path(user_path)
     )
-    assert speedwagon_config.get_app_data_directory() == "/Users/someuser/.config/Speedwagon"
+    assert speedwagon_config.get_app_data_directory() == os.path.join(
+        user_path, ".config", "Speedwagon")
 
 
 def test_nix_get_user_data_directory(monkeypatch):
     speedwagon_config = config.NixConfig()
+    user_path = os.path.join("/Users", "someuser")
     monkeypatch.setattr(
         pathlib.Path,
         "home",
-        lambda *args, **kwargs: pathlib.PosixPath('/Users/someuser')
+        lambda *args, **kwargs: pathlib.Path(user_path)
     )
-    assert speedwagon_config.get_user_data_directory() == "/Users/someuser/.config/Speedwagon/data"
+    assert speedwagon_config.get_user_data_directory() == os.path.join(user_path, ".config", "Speedwagon", "data")
+
+
+def test_windows_get_app_data_directory(monkeypatch):
+    speedwagon_config = config.WindowsConfig()
+    user_path = os.path.join('C:', 'Users', 'someuser')
+    monkeypatch.setattr(
+        pathlib.Path,
+        "home",
+        lambda *args, **kwargs: pathlib.Path(user_path)
+    )
+    local_app_data_path = os.path.join('C:', 'Users', 'someuser', "AppData", 'Local')
+    monkeypatch.setattr(
+        os,
+        "getenv",
+        lambda *args, **kwargs: local_app_data_path
+    )
+    assert speedwagon_config.get_app_data_directory() == os.path.join(local_app_data_path, "Speedwagon")
+
+
+def test_windows_get_app_data_directory_no_LocalAppData(monkeypatch):
+    speedwagon_config = config.WindowsConfig()
+    monkeypatch.setattr(
+        os,
+        "getenv",
+        lambda *args, **kwargs: None
+    )
+    with pytest.raises(FileNotFoundError):
+        assert speedwagon_config.get_app_data_directory() == os.path.join(local_app_data_path, "Speedwagon")
+
+
+def test_windows_get_user_data_directory(monkeypatch):
+    speedwagon_config = config.WindowsConfig()
+    app_data_local = os.path.join('C:', 'Users', 'someuser', 'AppData', 'Local')
+    monkeypatch.setattr(
+        pathlib.Path,
+        "home",
+        lambda *args, **kwargs: pathlib.Path(app_data_local)
+    )
+    assert speedwagon_config.get_user_data_directory() == os.path.join(app_data_local, "Speedwagon", "data")
