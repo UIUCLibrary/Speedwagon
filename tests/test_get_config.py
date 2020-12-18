@@ -170,7 +170,7 @@ def test_windows_get_user_data_directory(monkeypatch):
 
 
 def test_generate_default_creates_file(tmpdir):
-    config_file = os.path.join(str(tmpdir),   "config.ini")
+    config_file = os.path.join(str(tmpdir), "config.ini")
     speedwagon.config.generate_default(str(config_file))
     assert os.path.exists(config_file)
 
