@@ -88,8 +88,7 @@ class WindowsConfig(AbsConfig):
         data_path = os.getenv("LocalAppData")
         if data_path:
             return os.path.join(data_path, "Speedwagon")
-        else:
-            raise FileNotFoundError("Unable to located data_directory")
+        raise FileNotFoundError("Unable to located data_directory")
 
 
 class ConfigManager(contextlib.AbstractContextManager):
