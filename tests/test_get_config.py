@@ -172,3 +172,11 @@ def test_generate_default_creates_file(tmpdir):
      config_file = os.path.join(str(tmpdir),   "config.ini")
      config.generate_default(str(config_file))
      assert os.path.exists(config_file)
+
+
+def test_build_setting_model_missing_file(tmpdir):
+    dummy = str(os.path.join(tmpdir, "config.ini"))
+    with pytest.raises(FileNotFoundError):
+        speedwagon.config.build_setting_model(dummy)
+
+

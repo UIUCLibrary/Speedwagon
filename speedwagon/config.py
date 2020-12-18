@@ -173,6 +173,8 @@ def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
 
 def build_setting_model(config_file) -> SettingsModel:
     """Read a configuration file and generate a SettingsModel"""
+    if not os.path.exists(config_file):
+        raise FileNotFoundError(f"No existing Configuration in ${config_file}")
 
     config = configparser.ConfigParser()
     config.read(config_file)
