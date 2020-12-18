@@ -275,7 +275,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     def add_tab(self, workflow_name, workflows):
 
         workflows_tab = tabs.WorkflowsTab(
-            parent=None,
+            parent=self,
             workflows=workflows,
             work_manager=self._work_manager,
             log_manager=self.log_manager

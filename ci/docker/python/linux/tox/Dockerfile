@@ -75,8 +75,8 @@ RUN $PYTHON -m pip install pip --upgrade pip && \
 
 # ==============================================================================
 FROM wheel_builder_base
+ENV QT_QPA_PLATFORM="offscreen"
 RUN pip3 install tox
-
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 COPY --from=WHEEL_BUILDER_PY36 /wheels/* /wheels/

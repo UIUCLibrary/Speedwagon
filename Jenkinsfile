@@ -35,10 +35,10 @@ def get_build_args(){
 }
 def get_package_version(stashName, metadataFile){
     ws {
-        unstash "${stashName}"
+        unstash stashName
         script{
-            def props = readProperties interpolate: true, file: "${metadataFile}"
-            cleanWs(patterns: [[pattern: "${metadataFile}", type: 'INCLUDE']])
+            def props = readProperties interpolate: true, file: metadataFile
+            cleanWs(patterns: [[pattern: metadataFile, type: 'INCLUDE']])
             //deleteDir()
             return props.Version
         }
@@ -62,10 +62,10 @@ def run_pylint(){
 
 def get_package_name(stashName, metadataFile){
     ws {
-        unstash "${stashName}"
+        unstash stashName
         script{
-            def props = readProperties interpolate: true, file: "${metadataFile}"
-            cleanWs(patterns: [[pattern: "${metadataFile}", type: 'INCLUDE']])
+            def props = readProperties interpolate: true, file: metadataFile
+            cleanWs(patterns: [[pattern: metadataFile, type: 'INCLUDE']])
             return props.Name
         }
     }
@@ -155,7 +155,7 @@ def deploy_artifacts_to_url(regex, urlDestination, jiraIssueKey){
 ${url_message_list}
 """
             echo "${jira_message}"
-            jiraComment body: "${jira_message}", issueKey: "${jiraIssueKey}"
+            jiraComment body: jira_message, issueKey: jiraIssueKey
         }
     }
 }
@@ -235,7 +235,7 @@ def testDevpiPackage(index, pkgName, pkgVersion, pkgSelector, toxEnv){
 
 def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
     script{
-        def msi_files = findFiles glob: "${file_glob}"
+        def msi_files = findFiles glob: file_glob
         def deployment_request = requestDeploy yaml: "${WORKSPACE}/deployment.yml", file_name: msi_files[0]
 
         cifsPublisher(
@@ -259,7 +259,7 @@ def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
                 ]]
             )
 
-        jiraComment body: "Version ${pkgVersion} sent to staging for user testing.", issueKey: "${jiraIssueKey}"
+        jiraComment body: "Version ${pkgVersion} sent to staging for user testing.", issueKey: jiraIssueKey
         input('Deploy to production?')
         writeFile file: 'logs/deployment_request.txt', text: deployment_request
         echo deployment_request
@@ -436,6 +436,7 @@ pipeline {
         booleanParam(name: 'TEST_RUN_TOX', defaultValue: false, description: 'Run Tox Tests')
         booleanParam(name: 'BUILD_PACKAGES', defaultValue: false, description: 'Build Packages')
         booleanParam(name: 'BUILD_CHOCOLATEY_PACKAGE', defaultValue: false, description: 'Build package for chocolatey package manager')
+        booleanParam(name: "TEST_PACKAGES_ON_MAC", defaultValue: false, description: "Test Python packages on Mac")
         booleanParam(name: 'TEST_PACKAGES', defaultValue: true, description: 'Test Python packages by installing them and running tests on the installed package')
         booleanParam(name: 'PACKAGE_WINDOWS_STANDALONE_MSI', defaultValue: false, description: 'Create a standalone wix based .msi installer')
         booleanParam(name: 'PACKAGE_WINDOWS_STANDALONE_NSIS', defaultValue: false, description: 'Create a standalone NULLSOFT NSIS based .exe installer')
@@ -817,7 +818,7 @@ pipeline {
                             stages{
                                 stage('Mac Versions'){
                                     when{
-                                        equals expected: true, actual: params.TEST_PACKAGES
+                                        equals expected: true, actual: params.TEST_PACKAGES_ON_MAC
                                         beforeAgent true
                                     }
                                     matrix{
@@ -975,21 +976,6 @@ pipeline {
                                         bat 'speedwagon --help'
 
                                     }
-        //                             post{
-        //                                 success{
-        //                                     archiveArtifacts artifacts: "packages/*.nupkg", fingerprint: true
-        //                                 }
-        //                                 cleanup{
-        //                                     cleanWs(
-        //                                         notFailBuild: true,
-        //                                         deleteDirs: true,
-        //                                         patterns: [
-        //                                             [pattern: 'packages/', type: 'INCLUDE'],
-        //                                             [pattern: 'speedwagon.dist-info.dist-info/', type: 'INCLUDE'],
-        //                                         ]
-        //                                     )
-        //                                 }
-        //                             }
                                 }
                             }
                         }
@@ -1004,8 +990,6 @@ pipeline {
                             }
                             environment {
                                 build_number = get_build_number()
-//                                 PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
-//                                 PIP_TRUSTED_HOST="devpi.library.illinois.edu"
                             }
 
                             stages{
@@ -1015,7 +999,7 @@ pipeline {
                                             filename 'ci/docker/windows_standalone/Dockerfile'
                                             label 'Windows&&Docker'
                                             args '-u ContainerAdministrator'
-                                            additionalBuildArgs "${get_build_args()}"
+                                            additionalBuildArgs get_build_args()
                                           }
                                     }
                                     steps {
@@ -1053,7 +1037,7 @@ pipeline {
                                       docker {
                                         args '-u ContainerAdministrator'
                                         image 'mcr.microsoft.com/windows/servercore:ltsc2019'
-                                        label 'Windows&&Docker'
+                                        label 'Windows && Docker'
                                       }
                                     }
                                     when{
@@ -1100,10 +1084,6 @@ pipeline {
                 beforeOptions true
             }
             agent none
-//             environment{
-//                 devpiStagingIndex = getDevPiStagingIndex()
-// //                 DEVPI = credentials("DS_devpi")
-//             }
             options{
                 lock('speedwagon-devpi')
             }
@@ -1207,12 +1187,6 @@ pipeline {
                                 indexDestination: 'production/release',
                                 credentialsId: 'DS_devpi'
                             )
-//                             sh(label: "Pushing to production index",
-//                                script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
-//                                           devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-//                                           devpi push --index DS_Jenkins/${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} production/release --clientdir ./devpi
-//                                        """
-//                             )
                         }
                     }
                 }
@@ -1230,13 +1204,6 @@ pipeline {
                                         indexDestination: "DS_Jenkins/${env.BRANCH_NAME}",
                                         credentialsId: 'DS_devpi'
                                     )
-//                                 sh(label: "Connecting to DevPi Server",
-//                                    script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
-//                                               devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-//                                               devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi
-//                                               devpi push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME} --clientdir ./devpi
-//                                               """
-//                                 )
                             }
                        }
                     }
@@ -1253,14 +1220,6 @@ pipeline {
                                     credentialsId: 'DS_devpi',
 
                                 )
-//                                 sh(
-//                                     label: "Connecting to DevPi Server",
-//                                     script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
-//                                                devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-//                                                devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ./devpi
-//                                                devpi remove -y ${props.Name}==${props.Version} --clientdir ./devpi
-//                                                """
-//                                 )
                             }
                        }
                     }
@@ -1333,7 +1292,7 @@ pipeline {
                                         makeEmptyDirs: false,
                                         noDefaultExcludes: false,
                                         patternSeparator: '[, ]+',
-                                        remoteDirectory: "${params.DEPLOY_DOCS_URL_SUBFOLDER}",
+                                        remoteDirectory: params.DEPLOY_DOCS_URL_SUBFOLDER,
                                         remoteDirectorySDF: false,
                                         removePrefix: '',
                                         sourceFiles: '**')],
@@ -1347,7 +1306,7 @@ pipeline {
                     }
                     post{
                         success{
-                            jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                            jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: params.JIRA_ISSUE_VALUE
                         }
                         cleanup{
                             cleanWs(
@@ -1423,12 +1382,12 @@ pipeline {
                     steps {
                         unstash 'STANDALONE_INSTALLERS'
                         dir('dist'){
-                            deploy_sscm('*.msi', "${props.Version}", "${params.JIRA_ISSUE_VALUE}")
+                            deploy_sscm('*.msi', props.Version, params.JIRA_ISSUE_VALUE)
                         }
                     }
                     post {
                         success {
-                            jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                            jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: params.JIRA_ISSUE_VALUE
                             archiveArtifacts artifacts: 'logs/deployment_request.txt'
                         }
                     }
