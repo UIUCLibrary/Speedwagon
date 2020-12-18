@@ -186,8 +186,7 @@ def build_setting_model(config_file) -> SettingsModel:
 
 
 def serialize_settings_model(model: SettingsModel) -> str:
-    """Convert a SettingsModel into a data format that can be written to a
-    file.
+    """Convert a SettingsModel into a data format that can be written to a file.
 
     Note:
         This only generates and returns a string. You are still responsible to
@@ -212,7 +211,19 @@ def serialize_settings_model(model: SettingsModel) -> str:
 def find_missing_global_entries(
         config_file,
         expected_keys) -> Optional[Set[str]]:
+    """Locate any missing entries from a config file.
 
+    Notes:
+        This only checks in the GLOBAL section
+
+    Args:
+        config_file: file path to the config ini file
+        expected_keys: list of keys (as strings) to check
+
+    Returns:
+        Set of keys that are missing, else None is returned.
+
+    """
     config_data = configparser.ConfigParser()
     config_data.read(config_file)
     global_settings = config_data['GLOBAL']
@@ -225,6 +236,19 @@ def find_missing_global_entries(
 
 
 def ensure_keys(config_file, keys) -> Optional[Set[str]]:
+    """Make sure that the config file contains the following keys.
+
+    If this file is missing the keys, empty keys are added. Existing keys are
+    ignored and left untouched.
+
+    Args:
+        config_file: file path to the config ini file
+        keys: keys to make sure that exists
+
+    Returns:
+        Set of keys that were added, else None is returned.
+
+    """
     config_data = configparser.ConfigParser()
     config_data.read(config_file)
     global_settings = config_data['GLOBAL']
