@@ -222,8 +222,18 @@ def available_workflows() -> dict:
     return finder.locate()
 
 
-def all_required_workflow_keys() -> Set[str]:
-    workflows = available_workflows()
+def all_required_workflow_keys(workflows=None) -> Set[str]:
+    """Get all the keys required by the workflows.
+
+    Args:
+        workflows: Optional value. If not explicitly set, it will pull for all
+            workflows
+
+    Returns:
+        Set of Keys that workflows are expecting
+
+    """
+    workflows = workflows or available_workflows()
     keys: Set[str] = set()
     for workflow in workflows.values():
         keys = keys.union(set(workflow.required_settings_keys))
