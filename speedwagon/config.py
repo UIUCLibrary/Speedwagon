@@ -128,7 +128,7 @@ class ConfigManager(contextlib.AbstractContextManager):
         return global_settings
 
 
-def generate_default(config_file):
+def generate_default(config_file) -> None:
     """Generate config file with default settings"""
 
     base_directory = os.path.dirname(config_file)
@@ -137,6 +137,9 @@ def generate_default(config_file):
 
     platform_settings = get_platform_settings()
     data_dir = platform_settings.get("user_data_directory")
+    if data_dir is None:
+        raise FileNotFoundError("Unable to locate user data directory")
+
     tessdata = os.path.join(data_dir, "tessdata")
 
     config = configparser.ConfigParser(allow_no_value=True)
@@ -145,7 +148,7 @@ def generate_default(config_file):
         "tessdata": tessdata,
         "getmarc_server_url": "",
         "starting-tab": "Tools",
-        "debug": False
+        "debug": "False"
     }
     with open(config_file, "w") as file:
         config.write(file)
