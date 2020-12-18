@@ -1292,7 +1292,7 @@ pipeline {
                                         makeEmptyDirs: false,
                                         noDefaultExcludes: false,
                                         patternSeparator: '[, ]+',
-                                        remoteDirectory: "${params.DEPLOY_DOCS_URL_SUBFOLDER}",
+                                        remoteDirectory: params.DEPLOY_DOCS_URL_SUBFOLDER,
                                         remoteDirectorySDF: false,
                                         removePrefix: '',
                                         sourceFiles: '**')],
@@ -1306,7 +1306,7 @@ pipeline {
                     }
                     post{
                         success{
-                            jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                            jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: params.JIRA_ISSUE_VALUE
                         }
                         cleanup{
                             cleanWs(
@@ -1382,12 +1382,12 @@ pipeline {
                     steps {
                         unstash 'STANDALONE_INSTALLERS'
                         dir('dist'){
-                            deploy_sscm('*.msi', "${props.Version}", "${params.JIRA_ISSUE_VALUE}")
+                            deploy_sscm('*.msi', props.Version, params.JIRA_ISSUE_VALUE)
                         }
                     }
                     post {
                         success {
-                            jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: "${params.JIRA_ISSUE_VALUE}"
+                            jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: params.JIRA_ISSUE_VALUE
                             archiveArtifacts artifacts: 'logs/deployment_request.txt'
                         }
                     }
