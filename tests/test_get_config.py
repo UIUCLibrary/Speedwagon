@@ -184,6 +184,7 @@ def test_build_setting_model_missing_file(tmpdir):
 def test_build_setting_model(tmpdir):
     dummy = str(os.path.join(tmpdir, "config.ini"))
     empty_config_data = """[GLOBAL]
+debug: False
         """
     with open(dummy, "w") as wf:
         wf.write(empty_config_data)
