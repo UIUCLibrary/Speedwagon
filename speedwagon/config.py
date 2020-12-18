@@ -44,7 +44,7 @@ class AbsConfig(collections.abc.Mapping):
 
         return x in self._data
 
-    def __getitem__(self, k):
+    def __getitem__(self, k) -> str:
 
         if k == "user_data_directory":
             return self.get_user_data_directory()
