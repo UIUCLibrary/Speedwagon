@@ -109,7 +109,7 @@ def test_serialize_settings_model():
 
 def test_nix_get_app_data_directory(monkeypatch):
     speedwagon_config = speedwagon.config.NixConfig()
-    user_path = os.path.join("/Users", "someuser")
+    user_path = os.path.join(os.sep, "Users", "someuser")
     monkeypatch.setattr(
         pathlib.Path,
         "home",
@@ -121,7 +121,7 @@ def test_nix_get_app_data_directory(monkeypatch):
 
 def test_nix_get_user_data_directory(monkeypatch):
     speedwagon_config = speedwagon.config.NixConfig()
-    user_path = os.path.join("/Users", "someuser")
+    user_path = os.path.join(os.sep, "Users", "someuser")
     monkeypatch.setattr(
         pathlib.Path,
         "home",
