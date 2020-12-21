@@ -174,7 +174,23 @@ def test_windows_get_user_data_directory(monkeypatch):
     assert speedwagon_config.get_user_data_directory() == os.path.join(app_data_local, "Speedwagon", "data")
 
 
-def test_generate_default_creates_file(tmpdir):
+def test_generate_default_creates_file(tmpdir, monkeypatch):
+
+    # =========================================================================
+    # Patch for unix systems. Otherwise if the uid is missing this will fail,
+    #   such as in a CI
+    #
+    def mocked_get_user_data_directory(*args, **kwargs):
+        data_dir = tmpdir / "data"
+        data_dir.ensure()
+        return str(data_dir)
+
+    monkeypatch.setattr(
+        speedwagon.config.NixConfig,
+        "get_user_data_directory",
+        mocked_get_user_data_directory
+    )
+    # =========================================================================
     config_file = os.path.join(str(tmpdir), "config.ini")
     speedwagon.config.generate_default(str(config_file))
     assert os.path.exists(config_file)
