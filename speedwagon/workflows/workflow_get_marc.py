@@ -59,7 +59,8 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
             self.global_settings = global_settings
         for k in GenerateMarcXMLFilesWorkflow.required_settings_keys:
             value = self.global_settings.get(k)
-            assert value
+            if value is None:
+                MissingConfiguration("Missing value for {}".format(k))
 
     def user_options(self) -> List[UserOptions]:
         """Get the settings presented to the user."""
@@ -134,8 +135,6 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
         if "Identifier type" not in user_args:
             raise ValueError("Missing Identifier type")
-
-        # self.global_settings.get("getmarc_server_url")
 
     def create_new_task(self,
                         task_builder: tasks.TaskBuilder,

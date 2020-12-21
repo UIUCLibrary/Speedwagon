@@ -37,11 +37,14 @@ class OCRWorkflow(speedwagon.Workflow):
         "TIFF": ".tif"
     }
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.global_settings = kwargs.get('global_settings', {})
         self.tessdata_path = self.global_settings.get("tessdata")
         if self.tessdata_path is None:
-            raise MissingConfiguration("tessdata")
+            raise MissingConfiguration(
+                "Required setting not configured: tessdata"
+            )
 
         if not os.path.exists(self.tessdata_path):
             os.mkdir(self.tessdata_path)
@@ -77,6 +80,9 @@ class OCRWorkflow(speedwagon.Workflow):
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
+
+        if not os.path.exists(self.tessdata_path):
+            raise MissingConfiguration("tessdata_path")
 
         new_tasks = []
 

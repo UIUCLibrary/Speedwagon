@@ -23,7 +23,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
     global_settings: Dict[str, str] = dict()
     required_settings_keys: Set[str] = set()
 
-    def __init__(self) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__()
         self.options = []  # type: ignore
 
