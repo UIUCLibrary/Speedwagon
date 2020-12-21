@@ -15,6 +15,7 @@ import speedwagon.dialog.dialogs
 import speedwagon.models
 from . import runner_strategies
 from . import models
+from .exceptions import MissingConfiguration
 from .workflows import shared_custom_widgets as options
 from .job import AbsWorkflow, NullWorkflow
 
@@ -238,7 +239,17 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             QtCore.Qt.UserRole)
 
         if self.is_ready_to_start():
-            self.start(selected_workflow)
+            try:
+                self.start(selected_workflow)
+            except MissingConfiguration as error_message:
+                config_error_dialog = QtWidgets.QMessageBox(self.parent)
+                config_error_dialog.setWindowTitle("Settings Error")
+                config_error_dialog.setDetailedText(f"{error_message}")
+                config_error_dialog.setText(
+                    "Speedwagon has a problem with current configuration "
+                    "settings"
+                )
+                config_error_dialog.exec_()
 
     @abc.abstractmethod
     def is_ready_to_start(self) -> bool:
@@ -366,23 +377,26 @@ class WorkflowsTab(ItemSelectionTab):
 
     def start(self, item):
 
-        new_workflow = item()
+        new_workflow = item(dict(self.work_manager.user_settings))
 
         # Add global settings to workflow
         assert isinstance(new_workflow, AbsWorkflow)
 
-        new_workflow.global_settings.update(
-            dict(self.work_manager.user_settings))
+        # new_workflow.global_settings.update(
+        #     dict(self.work_manager.user_settings))
 
         user_options = (self.options_model.get())
 
         self.run(new_workflow, user_options)
 
     def get_item_options_model(self, workflow):
-        new_workflow = workflow()
+        new_workflow = workflow(
+            global_settings=dict(self.work_manager.user_settings)
+        )
+        # new_workflow = workflow()
 
-        new_workflow.global_settings.update(
-            dict(self.work_manager.user_settings))
+        # new_workflow.global_settings.update(
+        #     dict(self.work_manager.user_settings))
 
         model = models.ToolOptionsModel3(new_workflow.user_options())
         return model
