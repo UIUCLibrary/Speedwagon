@@ -138,7 +138,10 @@ def generate_default(config_file) -> None:
     platform_settings = get_platform_settings()
     data_dir = platform_settings.get("user_data_directory")
     if data_dir is None:
-        raise FileNotFoundError("Unable to locate user data directory")
+        raise FileNotFoundError(
+            "Unable to locate user data directory using {}".format(
+                platform_settings.__class__)
+        )
 
     tessdata = os.path.join(data_dir, "tessdata")
 
