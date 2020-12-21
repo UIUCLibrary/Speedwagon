@@ -34,9 +34,6 @@ class AbsConfig(collections.abc.Mapping):
     def __iter__(self):
         return iter(self._data)
 
-    def __str__(self) -> str:
-        return f"{self.__class__.__name__}(app_data_directory='{self.get_app_data_directory()}', user_data_directory='{self.get_user_data_directory()}')"
-
     def __contains__(self, x: object) -> bool:
 
         if x == "app_data_directory":
@@ -143,7 +140,7 @@ def generate_default(config_file) -> None:
     if data_dir is None:
         raise ValueError(
             "Unable to locate user data directory using {}. {})".format(
-                platform_settings.__class__.__name__, platform_settings )
+                platform_settings.__class__.__name__, platform_settings)
         )
 
     tessdata = os.path.join(data_dir, "tessdata")
