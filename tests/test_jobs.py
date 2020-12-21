@@ -11,7 +11,9 @@ def test_all_required_workflow_keys(monkeypatch):
             "eggs": Mock(required_settings_keys=set()),
         }
 
-    monkeypatch.setattr(speedwagon.job, "available_workflows", mocked_workflows)
+    monkeypatch.setattr(
+        speedwagon.job, "available_workflows", mocked_workflows
+    )
 
     assert speedwagon.job.all_required_workflow_keys() == {
         "spam_setting", "bacon_setting"

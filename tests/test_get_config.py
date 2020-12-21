@@ -202,7 +202,8 @@ def test_generate_default_creates_file(default_config_file):
 
 
 @pytest.mark.parametrize("expected_key", all_required_workflow_keys())
-def test_generate_default_contains_workflow_keys(default_config_file, expected_key):
+def test_generate_default_contains_workflow_keys(default_config_file,
+                                                 expected_key):
     config_data = configparser.ConfigParser()
     config_data.read(default_config_file)
     global_settings = config_data['GLOBAL']
