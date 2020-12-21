@@ -142,7 +142,7 @@ def test_generate_report_failure(unconfigured_workflow):
 
 
 @pytest.mark.parametrize("identifier_type,identifier", identifiers)
-def test_task_logging__mentions_identifer(monkeypatch,
+def test_task_logging_mentions_identifer(monkeypatch,
                                           identifier_type, identifier):
 
     task = MarcGeneratorTask(
@@ -198,3 +198,10 @@ def test_create_new_task(unconfigured_workflow, identifier_type, identifier):
         **job_args
     )
     mock_task_builder.add_subtask.assert_called()
+
+
+def test_missing_server_url_init_raises():
+    with pytest.raises(speedwagon.exceptions.MissingConfiguration):
+        workflow_get_marc.GenerateMarcXMLFilesWorkflow(
+            global_settings={}
+        )
