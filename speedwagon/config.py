@@ -10,6 +10,8 @@ import abc
 import collections.abc
 from typing import Optional, Dict, Type, Set
 import platform
+
+from speedwagon.job import all_required_workflow_keys
 from speedwagon.models import SettingsModel
 
 
@@ -146,12 +148,13 @@ def generate_default(config_file) -> None:
     config.add_section("GLOBAL")
     config['GLOBAL'] = {
         "tessdata": tessdata,
-        "getmarc_server_url": "",
         "starting-tab": "Tools",
         "debug": "False"
     }
+
     with open(config_file, "w") as file:
         config.write(file)
+    ensure_keys(config_file, all_required_workflow_keys())
 
 
 def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \

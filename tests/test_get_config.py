@@ -8,6 +8,7 @@ import speedwagon.config
 import pytest
 
 from speedwagon.models import SettingsModel
+from speedwagon.job import all_required_workflow_keys
 
 
 class MockConfig(speedwagon.config.AbsConfig):
@@ -174,8 +175,8 @@ def test_windows_get_user_data_directory(monkeypatch):
     assert speedwagon_config.get_user_data_directory() == os.path.join(app_data_local, "Speedwagon", "data")
 
 
-def test_generate_default_creates_file(tmpdir, monkeypatch):
-
+@pytest.fixture()
+def default_config_file(tmpdir, monkeypatch):
     # =========================================================================
     # Patch for unix systems. Otherwise if the uid is missing this will fail,
     #   such as in a CI
@@ -193,7 +194,25 @@ def test_generate_default_creates_file(tmpdir, monkeypatch):
     # =========================================================================
     config_file = os.path.join(str(tmpdir), "config.ini")
     speedwagon.config.generate_default(str(config_file))
-    assert os.path.exists(config_file)
+    return config_file
+
+
+def test_generate_default_creates_file(default_config_file):
+    assert os.path.exists(default_config_file)
+
+
+@pytest.mark.parametrize("expected_key", all_required_workflow_keys())
+def test_generate_default_contains_workflow_keys(default_config_file, expected_key):
+    config_data = configparser.ConfigParser()
+    config_data.read(default_config_file)
+    global_settings = config_data['GLOBAL']
+    assert expected_key in global_settings
+
+
+def test_generate_default_contains_global(default_config_file):
+    config_data = configparser.ConfigParser()
+    config_data.read(default_config_file)
+    assert "GLOBAL" in config_data
 
 
 def test_build_setting_model_missing_file(tmpdir):
