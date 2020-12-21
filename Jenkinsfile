@@ -852,7 +852,7 @@ pipeline {
                                             dockerfile {
                                                 filename "ci/docker/python/${PLATFORM}/jenkins/Dockerfile"
                                                 label "${PLATFORM} && docker"
-                                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL --build-arg USER_ID=\$(id -u) --build-arg GROUP_ID=\$(id -g)"
                                             }
                                         }
                                         axes{
