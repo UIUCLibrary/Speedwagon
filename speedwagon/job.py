@@ -6,7 +6,7 @@ import inspect
 import logging
 import os
 import sys
-from typing import Type, Optional, Iterable, Dict, List, Any, Tuple
+from typing import Type, Optional, Iterable, Dict, List, Any, Tuple, Set
 
 from . import tasks
 from PyQt5 import QtWidgets  # type: ignore
@@ -21,8 +21,9 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
     description: Optional[str] = None
     name: Optional[str] = None
     global_settings: Dict[str, str] = dict()
+    required_settings_keys: Set[str] = set()
 
-    def __init__(self) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__()
         self.options = []  # type: ignore
 
@@ -219,3 +220,21 @@ def available_workflows() -> dict:
     root = os.path.join(os.path.dirname(__file__), "workflows")
     finder = WorkflowFinder(root)
     return finder.locate()
+
+
+def all_required_workflow_keys(workflows=None) -> Set[str]:
+    """Get all the keys required by the workflows.
+
+    Args:
+        workflows: Optional value. If not explicitly set, it will pull for all
+            workflows
+
+    Returns:
+        Set of Keys that workflows are expecting
+
+    """
+    workflows = workflows or available_workflows()
+    keys: Set[str] = set()
+    for workflow in workflows.values():
+        keys = keys.union(set(workflow.required_settings_keys))
+    return keys

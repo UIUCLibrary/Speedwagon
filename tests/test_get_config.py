@@ -8,6 +8,7 @@ import speedwagon.config
 import pytest
 
 from speedwagon.models import SettingsModel
+from speedwagon.job import all_required_workflow_keys
 
 
 class MockConfig(speedwagon.config.AbsConfig):
@@ -112,7 +113,7 @@ def test_serialize_settings_model():
                     reason="Test for unix file systems only")
 def test_nix_get_app_data_directory(monkeypatch):
     speedwagon_config = speedwagon.config.NixConfig()
-    user_path = os.path.join("/Users", "someuser")
+    user_path = os.path.join(os.sep, "Users", "someuser")
     monkeypatch.setattr(
         pathlib.Path,
         "home",
@@ -126,7 +127,7 @@ def test_nix_get_app_data_directory(monkeypatch):
                     reason="Test for unix file systems only")
 def test_nix_get_user_data_directory(monkeypatch):
     speedwagon_config = speedwagon.config.NixConfig()
-    user_path = os.path.join("/Users", "someuser")
+    user_path = os.path.join(os.sep, "Users", "someuser")
     monkeypatch.setattr(
         pathlib.Path,
         "home",
@@ -174,8 +175,8 @@ def test_windows_get_user_data_directory(monkeypatch):
     assert speedwagon_config.get_user_data_directory() == os.path.join(app_data_local, "Speedwagon", "data")
 
 
-def test_generate_default_creates_file(tmpdir, monkeypatch):
-
+@pytest.fixture()
+def default_config_file(tmpdir, monkeypatch):
     # =========================================================================
     # Patch for unix systems. Otherwise if the uid is missing this will fail,
     #   such as in a CI
@@ -193,7 +194,26 @@ def test_generate_default_creates_file(tmpdir, monkeypatch):
     # =========================================================================
     config_file = os.path.join(str(tmpdir), "config.ini")
     speedwagon.config.generate_default(str(config_file))
-    assert os.path.exists(config_file)
+    return config_file
+
+
+def test_generate_default_creates_file(default_config_file):
+    assert os.path.exists(default_config_file)
+
+
+@pytest.mark.parametrize("expected_key", all_required_workflow_keys())
+def test_generate_default_contains_workflow_keys(default_config_file,
+                                                 expected_key):
+    config_data = configparser.ConfigParser()
+    config_data.read(default_config_file)
+    global_settings = config_data['GLOBAL']
+    assert expected_key in global_settings
+
+
+def test_generate_default_contains_global(default_config_file):
+    config_data = configparser.ConfigParser()
+    config_data.read(default_config_file)
+    assert "GLOBAL" in config_data
 
 
 def test_build_setting_model_missing_file(tmpdir):
@@ -213,3 +233,53 @@ debug: False
     assert isinstance(model, SettingsModel)
 
     assert model is not None
+
+
+def test_find_missing_configs(tmpdir):
+    config_file = str(os.path.join(tmpdir, "config.ini"))
+    speedwagon.config.generate_default(config_file)
+    keys_that_dont_exist = {"spam", "bacon", "eggs"}
+
+    missing_keys = speedwagon.config.find_missing_global_entries(
+        config_file=config_file,
+        expected_keys=keys_that_dont_exist
+    )
+    assert missing_keys == keys_that_dont_exist
+
+
+def test_find_no_missing_configs(tmpdir):
+    config_file = str(os.path.join(tmpdir, "config.ini"))
+    speedwagon.config.generate_default(config_file)
+    keys_that_exist = {"spam", "bacon", "eggs"}
+    with open(config_file, "a+") as wf:
+        for k in keys_that_exist:
+            wf.write(f"{k}=\n")
+
+    missing_keys = speedwagon.config.find_missing_global_entries(
+        config_file=config_file,
+        expected_keys=keys_that_exist
+    )
+    assert missing_keys is None
+
+
+def test_add_empty_keys_if_missing(tmpdir):
+    config_file = str(os.path.join(tmpdir, "config.ini"))
+    speedwagon.config.generate_default(config_file)
+    keys_that_dont_exist = {"spam", "bacon"}
+    keys_that_exist = {"eggs"}
+    with open(config_file, "a+") as wf:
+        for k in keys_that_exist:
+            wf.write(f"{k}=somedata\n")
+
+    added_keys = speedwagon.config.ensure_keys(
+        config_file=config_file,
+        keys=keys_that_exist.union(keys_that_dont_exist)
+    )
+
+    assert added_keys == keys_that_dont_exist
+
+    missing_keys = speedwagon.config.find_missing_global_entries(
+        config_file=config_file,
+        expected_keys=keys_that_exist.union(keys_that_dont_exist)
+    )
+    assert missing_keys is None

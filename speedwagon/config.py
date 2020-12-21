@@ -8,8 +8,10 @@ from pathlib import Path
 import io
 import abc
 import collections.abc
-from typing import Optional, Dict, Type
+from typing import Optional, Dict, Type, Set
 import platform
+
+from speedwagon.job import all_required_workflow_keys
 from speedwagon.models import SettingsModel
 
 
@@ -146,12 +148,13 @@ def generate_default(config_file) -> None:
     config.add_section("GLOBAL")
     config['GLOBAL'] = {
         "tessdata": tessdata,
-        "getmarc_server_url": "",
         "starting-tab": "Tools",
         "debug": "False"
     }
+
     with open(config_file, "w") as file:
         config.write(file)
+    ensure_keys(config_file, all_required_workflow_keys())
 
 
 def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
@@ -186,8 +189,7 @@ def build_setting_model(config_file) -> SettingsModel:
 
 
 def serialize_settings_model(model: SettingsModel) -> str:
-    """Convert a SettingsModel into a data format that can be written to a
-    file.
+    """Convert a SettingsModel into a data format that can be written to a file.
 
     Note:
         This only generates and returns a string. You are still responsible to
@@ -207,3 +209,60 @@ def serialize_settings_model(model: SettingsModel) -> str:
     with io.StringIO() as string_writer:
         config_data.write(string_writer)
         return string_writer.getvalue()
+
+
+def find_missing_global_entries(
+        config_file,
+        expected_keys) -> Optional[Set[str]]:
+    """Locate any missing entries from a config file.
+
+    Notes:
+        This only checks in the GLOBAL section
+
+    Args:
+        config_file: file path to the config ini file
+        expected_keys: list of keys (as strings) to check
+
+    Returns:
+        Set of keys that are missing, else None is returned.
+
+    """
+    config_data = configparser.ConfigParser()
+    config_data.read(config_file)
+    global_settings = config_data['GLOBAL']
+    missing = set()
+    for k in expected_keys:
+        if k not in global_settings:
+            missing.add(k)
+
+    return missing if len(missing) > 0 else None
+
+
+def ensure_keys(config_file, keys) -> Optional[Set[str]]:
+    """Make sure that the config file contains the following keys.
+
+    If this file is missing the keys, empty keys are added. Existing keys are
+    ignored and left untouched.
+
+    Args:
+        config_file: file path to the config ini file
+        keys: keys to make sure that exists
+
+    Returns:
+        Set of keys that were added, else None is returned.
+
+    """
+    config_data = configparser.ConfigParser()
+    config_data.read(config_file)
+    global_settings = config_data['GLOBAL']
+    added = set()
+
+    for k in keys:
+        if k not in global_settings:
+            config_data['GLOBAL'][k] = ""
+            added.add(k)
+
+    with open(config_file, "w") as file_pointer:
+        config_data.write(file_pointer)
+
+    return added if len(added) > 0 else None
