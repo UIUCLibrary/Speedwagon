@@ -1,6 +1,7 @@
 import configparser
 import os
 import pathlib
+import platform
 import shutil
 
 import speedwagon.config
@@ -107,9 +108,10 @@ def test_serialize_settings_model():
         assert new_config["GLOBAL"][k] == v
 
 
+@pytest.mark.skipif(platform.system() == "Windows", reason="Test for unix file systems only")
 def test_nix_get_app_data_directory(monkeypatch):
     speedwagon_config = speedwagon.config.NixConfig()
-    user_path = os.path.join(os.sep, "Users", "someuser")
+    user_path = os.path.join("/Users", "someuser")
     monkeypatch.setattr(
         pathlib.Path,
         "home",
@@ -119,9 +121,10 @@ def test_nix_get_app_data_directory(monkeypatch):
         user_path, ".config", "Speedwagon")
 
 
+@pytest.mark.skipif(platform.system() == "Windows", reason="Test for unix file systems only")
 def test_nix_get_user_data_directory(monkeypatch):
     speedwagon_config = speedwagon.config.NixConfig()
-    user_path = os.path.join(os.sep, "Users", "someuser")
+    user_path = os.path.join("/Users", "someuser")
     monkeypatch.setattr(
         pathlib.Path,
         "home",
