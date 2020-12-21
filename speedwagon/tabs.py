@@ -393,11 +393,6 @@ class WorkflowsTab(ItemSelectionTab):
         new_workflow = workflow(
             global_settings=dict(self.work_manager.user_settings)
         )
-        # new_workflow = workflow()
-
-        # new_workflow.global_settings.update(
-        #     dict(self.work_manager.user_settings))
-
         model = models.ToolOptionsModel3(new_workflow.user_options())
         return model
 
