@@ -4,7 +4,7 @@
 import abc
 import os
 import re
-from typing import List, Any, Optional, Union, Sequence, Dict
+from typing import List, Any, Optional, Union, Sequence, Dict, Set
 from xml.dom import minidom
 import requests
 from requests import RequestException
@@ -39,9 +39,7 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
                   "the folder for each corresponding bibid or mmsid. It " \
                   "uses the GetMARC service to retrieve these MARC.XML " \
                   "files from the Library."
-    required_settings_keys = [
-        "getmarc_server_url"
-    ]
+    required_settings_keys: Set[str] = {"getmarc_server_url"}
 
     def __init__(
             self,
