@@ -525,8 +525,8 @@ class TaskBuilder:
 
     @staticmethod
     def load(data):
-        cls, attributes = pickle.loads(data)
-        obj = TaskBuilder._deserialize_task(cls, attributes)
+        task_cls, attributes = pickle.loads(data)
+        obj = TaskBuilder._deserialize_task(task_cls, attributes)
         return obj
 
     @staticmethod
@@ -535,8 +535,8 @@ class TaskBuilder:
         return res
 
     @staticmethod
-    def _deserialize_task(cls, attributes):
-        obj = cls.__new__(cls)
+    def _deserialize_task(task_cls, attributes):
+        obj = task_cls.__new__(task_cls)
         obj.__dict__.update(attributes)
         return obj
 
