@@ -22,9 +22,7 @@ class ItemListModel(QtCore.QAbstractTableModel):
 
     def __init__(self, data: Dict["str", Type[AbsWorkflow]]) -> None:
         super().__init__()
-        self.jobs: List[Type[AbsWorkflow]] = []
-        for k, v in data.items():
-            self.jobs.append(v)
+        self.jobs: List[Type[AbsWorkflow]] = list(data.values())
 
     def flags(self, index):
         return super().flags(index)
