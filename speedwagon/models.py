@@ -7,10 +7,10 @@ from abc import abstractmethod
 from collections import namedtuple
 import enum
 
-from .workflows import shared_custom_widgets
+from PyQt5 import QtCore  # type: ignore
 from speedwagon import tabs, Workflow
 from .job import AbsWorkflow
-from PyQt5 import QtCore  # type: ignore
+from .workflows import shared_custom_widgets
 
 
 class JobModelData(enum.Enum):
@@ -27,7 +27,6 @@ class ItemListModel(QtCore.QAbstractTableModel):
             self.jobs.append(v)
 
     def flags(self, index):
-        # if index.isValid():
         return super().flags(index)
 
     def setData(self, QModelIndex, Any, role=None):
