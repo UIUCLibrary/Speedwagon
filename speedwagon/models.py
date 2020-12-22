@@ -24,12 +24,6 @@ class ItemListModel(QtCore.QAbstractTableModel):
         super().__init__()
         self.jobs: List[Type[AbsWorkflow]] = list(data.values())
 
-    def flags(self, index):
-        return super().flags(index)
-
-    def setData(self, QModelIndex, Any, role=None):
-        return super().setData(QModelIndex, Any, role)
-
     def columnCount(self, parent=QtCore.QModelIndex(), *args, **kwargs):
         return 2
 
