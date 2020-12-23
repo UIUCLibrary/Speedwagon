@@ -30,7 +30,7 @@ if __name__ == "__main__":
             "pyyaml",
             "hathichecksumupdater",
             "uiucprescon.imagevalidate>=0.1.5b8",
-            "uiucprescon.ocr>=0.1.1b9",
+            "uiucprescon.ocr>=0.1.1",
             "uiucprescon.packager[kdu]>=0.2.11b2",
             "uiucprescon.images",
             "pykdu-compress>=0.1.3b1",
@@ -38,7 +38,7 @@ if __name__ == "__main__":
             'importlib_resources;python_version<"3.7"',
             'lxml',
             "requests",
-            "py3exiv2bind>=0.1.5b15",
+            "py3exiv2bind>=0.1.5",
         ],
         packages=[
             "speedwagon",
