@@ -29,7 +29,6 @@ if __name__ == "__main__":
             "pyhathiprep>=0.1.5b3",
             "pyyaml",
             "hathichecksumupdater",
-            "uiucprescon-getmarc>=0.1.1",
             "uiucprescon.imagevalidate>=0.1.5b8",
             "uiucprescon.ocr>=0.1.1b9",
             "uiucprescon.packager[kdu]>=0.2.11b2",
