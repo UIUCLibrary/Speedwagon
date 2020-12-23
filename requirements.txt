@@ -10,7 +10,7 @@ importlib-metadata>=1.6.1
 importlib-resources>=1.5.0
 lxml>=4.5.1
 pluggy==0.13.1
-py3exiv2bind>=0.1.5b15
+py3exiv2bind>=0.1.5b
 pyhathiprep>=0.1.5b3
 pyqt-distutils>=0.7.3
 PyQt5>=5.15.0
@@ -24,8 +24,8 @@ tzlocal==2.1
 uiucprescon-getmarc==0.1.2
 uiucprescon.packager[kdu]>=0.2.11b5
 uiucprescon.images>=0.0.4b1
-uiucprescon.imagevalidate>=0.1.5b8
-uiucprescon.ocr>=0.1.1b9
+uiucprescon.imagevalidate>=0.1.5
+uiucprescon.ocr>=0.1.1
 yarl>=1.4.2
 zipp==3.1.0
 setuptools~=49.2.1
