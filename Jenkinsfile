@@ -417,6 +417,35 @@ def create_wheels(){
         }
     )
 }
+def buildSphinx(){
+    def sphinx  = load('ci/jenkins/scripts/sphinx.groovy')
+    sh(script: '''mkdir -p logs
+                  python setup.py build_ui
+                  '''
+      )
+
+    sphinx.buildSphinxDocumentation(
+        sourceDir: 'docs/source',
+        outputDir: 'build/docs/html',
+        doctreeDir: 'build/docs/.doctrees',
+        builder: 'html',
+        writeWarningsToFile: 'logs/build_sphinx_latex.log'
+        )
+    sphinx.buildSphinxDocumentation(
+        sourceDir: 'docs/source',
+        outputDir: 'build/docs/latex',
+        doctreeDir: 'build/docs/.doctrees',
+        builder: 'latex'
+        )
+
+    sh(label: 'Building PDF docs',
+       script: '''make -C build/docs/latex
+                  mkdir -p dist/docs
+                  mv build/docs/latex/*.pdf dist/docs/
+                  '''
+    )
+}
+
 startup()
 def get_props(){
     stage('Reading Package Metadata'){
@@ -476,20 +505,7 @@ pipeline {
                   }
             }
             steps {
-                sh(
-                    label: 'Building HTML docs',
-                    script: '''mkdir -p logs
-                               python setup.py build_ui
-                               python -m sphinx docs/source build/docs/html -d build/docs/.doctrees --no-color -w logs/build_sphinx.log
-                               '''
-                    )
-                    sh(label: 'Building PDF docs',
-                       script: '''python -m sphinx docs/source build/docs/latex -b latex -d build/docs/.doctrees --no-color -w logs/build_sphinx_latex.log
-                                  make -C build/docs/latex
-                                  mkdir -p dist/docs
-                                  mv build/docs/latex/*.pdf dist/docs/
-                                  '''
-                    )
+                buildSphinx()
             }
             post{
                 always{
