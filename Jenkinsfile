@@ -233,6 +233,54 @@ def testDevpiPackage(index, pkgName, pkgVersion, pkgSelector, toxEnv){
     )
 }
 
+def createNewChocolateyPackage(args=[:]){
+
+    def chocoPackageName = args.name
+    def packageSummery = args.summary
+    def sanitizedPackageVersion
+    def packageMaintainer = args.maintainer
+    def applicationWheel = args.files.applicationWheel
+    def dependenciesDir = args.files.dependenciesDir
+    def docsDir = args.files.docsDir
+
+    node(){
+        checkout scm
+        chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
+        sanitizedPackageVersion = chocolatey.sanitize_chocolatey_version(args.version)
+    }
+    bat(
+        label: 'Creating new Chocolatey package workspace',
+        script: """
+               choco new ${chocoPackageName} packageversion=${sanitizedPackageVersion} PythonSummary="${packageSummery}" InstallerFile=${applicationWheel} MaintainerName="${packageMaintainer}" -t pythonscript --outputdirectory packages
+               """
+        )
+
+
+//
+    powershell(
+        label: 'Adding data to Chocolatey package workspace',
+        script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
+               New-Item -ItemType File -Path ".\\packages\\speedwagon\\${applicationWheel}" -Force | Out-Null
+               Move-Item -Path "${applicationWheel}"  -Destination "./packages/speedwagon/${applicationWheel}"  -Force | Out-Null
+               Copy-Item -Path "${dependenciesDir}"  -Destination ".\\packages\\speedwagon\\deps\\" -Force -Recurse
+               Copy-Item -Path "${docsDir}"  -Destination ".\\packages\\speedwagon\\docs\\" -Force -Recurse
+               """
+        )
+//     powershell(
+//         label: 'Adding data to Chocolatey package workspace',
+//         script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
+//                New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
+//                Move-Item -Path "${it.path}"  -Destination "./packages/speedwagon/${it.path}"  -Force | Out-Null
+//                Copy-Item -Path ".\\deps"  -Destination ".\\packages\\speedwagon\\deps\\" -Force -Recurse
+//                Copy-Item -Path ".\\dist\\docs"  -Destination ".\\packages\\speedwagon\\docs\\" -Force -Recurse
+//                """
+//         )
+    bat(
+        label: 'Packaging Chocolatey package',
+        script: "choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages"
+    )
+}
+
 def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
     script{
         def msi_files = findFiles glob: file_glob
@@ -936,27 +984,38 @@ pipeline {
                                         unstash 'PYTHON_PACKAGES'
                                         script {
                                             findFiles(glob: 'dist/*.whl').each{
-                                                def sanitized_packageversion=chocolatey.sanitize_chocolatey_version(props.Version)
+//                                                 def sanitized_packageversion=chocolatey.sanitize_chocolatey_version(props.Version)
                                                 [
                                                     'PYTHON_DEPS_3.9',
                                                     'PYTHON_DEPS_3.8',
                                                     'PYTHON_DEPS_3.7',
                                                     'SPEEDWAGON_DOC_PDF'
-                                                ].each{
-                                                    unstash "${it}"
+                                                ].each{ stashName ->
+                                                    unstash stashName
                                                 }
-//                                                 unstash "SPEEDWAGON_DOC_PDF"
-                                                powershell(
-                                                    label: 'Creating new package for Chocolatey',
-                                                    script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
-                                                               choco new speedwagon packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
-                                                               New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
-                                                               Move-Item -Path "${it.path}"  -Destination "./packages/speedwagon/${it.path}"  -Force | Out-Null
-                                                               Copy-Item -Path ".\\deps"  -Destination ".\\packages\\speedwagon\\deps\\" -Force -Recurse
-                                                               Copy-Item -Path ".\\dist\\docs"  -Destination ".\\packages\\speedwagon\\docs\\" -Force -Recurse
-                                                               choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages
-                                                               """
-                                                )
+                                                createNewChocolateyPackage(
+                                                    name: 'speedwagon',
+                                                    version: props.Version,
+                                                    summary: props.Summary,
+                                                    maintainer: props.Maintainer,
+                                                    files:[
+                                                            applicationWheel: it.path,
+                                                            dependenciesDir: '.\\deps',
+                                                            docsDir: '.\\dist\\docs'
+                                                        ]
+                                                    )
+//                                                 chocolatey.make_chocolatey_distribution()
+//                                                 powershell(
+//                                                     label: 'Creating new package for Chocolatey',
+//                                                     script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
+//                                                                choco new speedwagon packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
+//                                               createNewChocolateyPackage                 New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
+//                                                                Move-Item -Path "${it.path}"  -Destination "./packages/speedwagon/${it.path}"  -Force | Out-Null
+//                                                                Copy-Item -Path ".\\deps"  -Destination ".\\packages\\speedwagon\\deps\\" -Force -Recurse
+//                                                                Copy-Item -Path ".\\dist\\docs"  -Destination ".\\packages\\speedwagon\\docs\\" -Force -Recurse
+//                                                                choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages
+//                                                                """
+//                                                 )
                                             }
                                         }
                                     }
