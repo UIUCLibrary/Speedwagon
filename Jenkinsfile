@@ -45,6 +45,11 @@ def get_package_version(stashName, metadataFile){
     }
 }
 
+def DOCKER_PLATFORM_BUILD_ARGS = [
+    linux: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)',
+    windows: ''
+]
+
 def run_pylint(){
     catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
         sh(
@@ -71,40 +76,40 @@ def get_package_name(stashName, metadataFile){
     }
 }
 
-def check_jira_issue(issue, outputFile){
-    script{
-        def issue_response = jiraGetIssue idOrKey: issue, site: 'bugs.library.illinois.edu'
-        try{
-            def input_data = readJSON text: toJson(issue_response.data)
-            writeJSON file: outputFile, json: input_data
-            archiveArtifacts allowEmptyArchive: true, artifacts: outputFile
-        }
-        catch (Exception ex) {
-            echo "Unable to create ${outputFile}. Reason: ${ex}"
-        }
-    }
-}
-
-def check_jira_project(project, outputFile){
-    script {
-
-        def jira_project = jiraGetProject idOrKey: project, site: 'bugs.library.illinois.edu'
-        try{
-            def input_data = readJSON text: toJson(jira_project.data)
-            writeJSON file: outputFile, json: input_data
-            archiveArtifacts allowEmptyArchive: true, artifacts: outputFile
-        }
-        catch (Exception ex) {
-            echo "Unable to create ${outputFile}. Reason: ${ex}"
-        }
-    }
-}
-
-def check_jira(project, issue){
-    check_jira_project(project, 'logs/jira_project_data.json')
-    check_jira_issue(issue, 'logs/jira_issue_data.json')
-
-}
+// def check_jira_issue(issue, outputFile){
+//     script{
+//         def issue_response = jiraGetIssue idOrKey: issue, site: 'bugs.library.illinois.edu'
+//         try{
+//             def input_data = readJSON text: toJson(issue_response.data)
+//             writeJSON file: outputFile, json: input_data
+//             archiveArtifacts allowEmptyArchive: true, artifacts: outputFile
+//         }
+//         catch (Exception ex) {
+//             echo "Unable to create ${outputFile}. Reason: ${ex}"
+//         }
+//     }
+// }
+//
+// def check_jira_project(project, outputFile){
+//     script {
+//
+//         def jira_project = jiraGetProject idOrKey: project, site: 'bugs.library.illinois.edu'
+//         try{
+//             def input_data = readJSON text: toJson(jira_project.data)
+//             writeJSON file: outputFile, json: input_data
+//             archiveArtifacts allowEmptyArchive: true, artifacts: outputFile
+//         }
+//         catch (Exception ex) {
+//             echo "Unable to create ${outputFile}. Reason: ${ex}"
+//         }
+//     }
+// }
+//
+// def check_jira(project, issue){
+//     check_jira_project(project, 'logs/jira_project_data.json')
+//     check_jira_issue(issue, 'logs/jira_issue_data.json')
+//
+// }
 
 
 
@@ -852,7 +857,7 @@ pipeline {
                                             dockerfile {
                                                 filename "ci/docker/python/${PLATFORM}/jenkins/Dockerfile"
                                                 label "${PLATFORM} && docker"
-                                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}"
                                             }
                                         }
                                         axes{
