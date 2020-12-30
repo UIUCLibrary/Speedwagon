@@ -370,55 +370,10 @@ def test_pkg(glob, timeout_time){
     }
 }
 
-// def runSonarScanner(propsFile){
-//     def props = readProperties(interpolate: true, file: propsFile)
-//     if (env.CHANGE_ID){
-//         sh(
-//             label: "Running Sonar Scanner",
-//             script:"sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
-//             )
-//     } else {
-//         sh(
-//             label: "Running Sonar Scanner",
-//             script: "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.branch.name=${env.BRANCH_NAME}"
-//             )
-//     }
-// }
-
-// def testDevpiPackages(devpiUrl, metadataFile, selector, toxEnv, DEVPI_USR, DEVPI_PSW){
-//     script{
-//         def props = readProperties(interpolate: true, file: metadataFile)
-//         if(isUnix()){
-//             sh(label: "Running tests on packages stored on DevPi ",
-//                script: """devpi --version --clientdir certs
-//                           devpi use ${devpiUrl} --clientdir certs
-//                           devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs
-//                           devpi use ${env.BRANCH_NAME}_staging --clientdir certs
-//                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} -e ${toxEnv} --clientdir certs -v
-//                           """
-//                )
-//
-//         } else{
-//             bat(label: "Running tests on packages stored on DevPi ",
-//                 script: """devpi --version
-//                            devpi use ${devpiUrl} --clientdir certs\\ --clientdir certs
-//                            devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs\\
-//                            devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
-//                            devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} -e ${toxEnv} --clientdir certs\\  -v
-//                            """
-//                 )
-//         }
-//     }
-// }
-
 def startup(){
     node(){
         checkout scm
-//         mac = load("ci/jenkins/scripts/mac.groovy")
         devpi = load('ci/jenkins/scripts/devpi.groovy')
-        chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
-
-//         configurations = load("ci/jenkins/scripts/configs.groovy").getConfigurations()
     }
     node('linux && docker') {
         timeout(2){
@@ -807,37 +762,6 @@ pipeline {
                     }
                     steps {
                         runTox()
-//                         script{
-//                             def tox
-//                             node(){
-//                                 checkout scm
-//                                 tox = load("ci/jenkins/scripts/tox.groovy")
-//                             }
-//                             def windowsJobs = [:]
-//                             def linuxJobs = [:]
-//                             stage("Scanning Tox Environments"){
-//                                 parallel(
-//                                     "Linux":{
-//                                         linuxJobs = tox.getToxTestsParallel(
-//                                                 envNamePrefix: "Tox Linux",
-//                                                 label: "linux && docker",
-//                                                 dockerfile: "ci/docker/python/linux/tox/Dockerfile",
-//                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-//                                             )
-//                                     },
-//                                     "Windows":{
-//                                         windowsJobs = tox.getToxTestsParallel(
-//                                                 envNamePrefix: "Tox Windows",
-//                                                 label: "windows && docker",
-//                                                 dockerfile: "ci/docker/python/windows/tox/Dockerfile",
-//                                                 dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE"
-//                                          )
-//                                     },
-//                                     failFast: true
-//                                 )
-//                             }
-//                             parallel(windowsJobs + linuxJobs)
-//                         }
                     }
                 }
             }
@@ -994,7 +918,6 @@ pipeline {
                                         unstash 'PYTHON_PACKAGES'
                                         script {
                                             findFiles(glob: 'dist/*.whl').each{
-//                                                 def sanitized_packageversion=chocolatey.sanitize_chocolatey_version(props.Version)
                                                 [
                                                     'PYTHON_DEPS_3.9',
                                                     'PYTHON_DEPS_3.8',
@@ -1436,9 +1359,6 @@ pipeline {
                     options {
                         skipDefaultCheckout(true)
                     }
-//                     environment{
-//                         PKG_NAME = props.Name
-//                     }
                     agent any
                     steps {
                         unstash 'STANDALONE_INSTALLERS'
