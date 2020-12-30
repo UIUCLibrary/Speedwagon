@@ -934,7 +934,6 @@ pipeline {
                                                 ].each{
                                                     unstash "${it}"
                                                 }
-//                                                 unstash "SPEEDWAGON_DOC_PDF"
                                                 powershell(
                                                     label: 'Creating new package for Chocolatey',
                                                     script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
@@ -1046,9 +1045,6 @@ pipeline {
                                     when{
                                         equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
                                         beforeAgent true
-                                    }
-                                    options{
-                                        skipDefaultCheckout(true)
                                     }
                                     steps{
                                         timeout(15){
