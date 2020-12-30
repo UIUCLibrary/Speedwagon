@@ -250,8 +250,7 @@ def createNewChocolateyPackage(args=[:]){
 
     node(){
         checkout scm
-        chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
-        sanitizedPackageVersion = chocolatey.sanitize_chocolatey_version(args.version)
+        sanitizedPackageVersion = load('ci/jenkins/scripts/chocolatey.groovy').sanitize_chocolatey_version(args.version)
     }
     bat(
         label: 'Creating new Chocolatey package workspace',
@@ -265,21 +264,12 @@ def createNewChocolateyPackage(args=[:]){
     powershell(
         label: 'Adding data to Chocolatey package workspace',
         script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
-               New-Item -ItemType File -Path ".\\packages\\speedwagon\\${applicationWheel}" -Force | Out-Null
-               Move-Item -Path "${applicationWheel}"  -Destination "./packages/speedwagon/${applicationWheel}"  -Force | Out-Null
-               Copy-Item -Path "${dependenciesDir}"  -Destination ".\\packages\\speedwagon\\deps\\" -Force -Recurse
-               Copy-Item -Path "${docsDir}"  -Destination ".\\packages\\speedwagon\\docs\\" -Force -Recurse
+               New-Item -ItemType File -Path ".\\packages\\${chocoPackageName}\\${applicationWheel}" -Force | Out-Null
+               Move-Item -Path "${applicationWheel}"  -Destination "./packages/${chocoPackageName}/${applicationWheel}"  -Force | Out-Null
+               Copy-Item -Path "${dependenciesDir}"  -Destination ".\\packages\\${chocoPackageName}\\deps\\" -Force -Recurse
+               Copy-Item -Path "${docsDir}"  -Destination ".\\packages\\${chocoPackageName}\\docs\\" -Force -Recurse
                """
         )
-//     powershell(
-//         label: 'Adding data to Chocolatey package workspace',
-//         script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
-//                New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
-//                Move-Item -Path "${it.path}"  -Destination "./packages/speedwagon/${it.path}"  -Force | Out-Null
-//                Copy-Item -Path ".\\deps"  -Destination ".\\packages\\speedwagon\\deps\\" -Force -Recurse
-//                Copy-Item -Path ".\\dist\\docs"  -Destination ".\\packages\\speedwagon\\docs\\" -Force -Recurse
-//                """
-//         )
     bat(
         label: 'Packaging Chocolatey package',
         script: "choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages"
@@ -337,6 +327,21 @@ def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
                 ]]
         )
     }
+}
+def testSpeedwagonChocolateyPkg(){
+    script{
+        def chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
+        chocolatey.install_chocolatey_package(
+            name: 'speedwagon',
+            version: chocolatey.sanitize_chocolatey_version(props.Version),
+            source: './packages/;CHOCOLATEY_SOURCE;chocolatey'
+        )
+    }
+    powershell(
+            label: "Checking for Start Menu shortcut",
+            script: 'Get-ChildItem "$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs" -Recurse -Include *.lnk'
+        )
+    bat 'speedwagon --help'
 }
 
 def test_pkg(glob, timeout_time){
@@ -1009,18 +1014,6 @@ pipeline {
                                                             docsDir: '.\\dist\\docs'
                                                         ]
                                                     )
-//                                                 chocolatey.make_chocolatey_distribution()
-//                                                 powershell(
-//                                                     label: 'Creating new package for Chocolatey',
-//                                                     script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
-//                                                                choco new speedwagon packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
-//                                               createNewChocolateyPackage                 New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
-//                                                                Move-Item -Path "${it.path}"  -Destination "./packages/speedwagon/${it.path}"  -Force | Out-Null
-//                                                                Copy-Item -Path ".\\deps"  -Destination ".\\packages\\speedwagon\\deps\\" -Force -Recurse
-//                                                                Copy-Item -Path ".\\dist\\docs"  -Destination ".\\packages\\speedwagon\\docs\\" -Force -Recurse
-//                                                                choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages
-//                                                                """
-//                                                 )
                                             }
                                         }
                                     }
@@ -1045,16 +1038,7 @@ pipeline {
                                     }
                                     steps{
                                         unstash 'CHOCOLATEY_PACKAGE'
-                                        script{
-                                            chocolatey.install_chocolatey_package(
-                                                name: 'speedwagon',
-                                                version: chocolatey.sanitize_chocolatey_version(props.Version),
-                                                source: './packages/;CHOCOLATEY_SOURCE;chocolatey'
-                                            )
-                                        }
-                                        powershell "Get-ChildItem \"\$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\" -Recurse -Include *.lnk"
-                                        bat 'speedwagon --help'
-
+                                        testSpeedwagonChocolateyPkg()
                                     }
                                 }
                             }
