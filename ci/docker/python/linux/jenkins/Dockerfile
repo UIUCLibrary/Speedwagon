@@ -34,11 +34,10 @@ RUN if id $USER_ID ; then \
     mkdir -p /.cache/pip && chown -R user /.cache/pip
 
 
-RUN apt-get update && apt-get install -y tzdata \
-    && ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime \
-    && dpkg-reconfigure --frontend noninteractive tzdata
-
-RUN apt-get install -y libgl1-mesa-glx \
+RUN apt-get update && apt-get install -y tzdata && \
+    ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime && \
+    dpkg-reconfigure --frontend noninteractive tzdata && \
+    apt-get install -y libgl1-mesa-glx \
                        locales \
                        locales-all \
                        latexmk \
@@ -50,7 +49,7 @@ ENV QT_QPA_PLATFORM="offscreen"
 COPY --from=wheel_builder /wheels /wheels/
 COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt /tmp/
 
-RUN  python -m pip install --upgrade pip && \
+RUN python -m pip install --upgrade pip && \
     pip install --no-index --find-links=/wheels \
         -r /tmp/requirements.txt \
         -r /tmp/requirements-dev.txt \
