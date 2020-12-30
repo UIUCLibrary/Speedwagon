@@ -1124,9 +1124,6 @@ pipeline {
                                         equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
                                         beforeAgent true
                                     }
-                                    options{
-                                        skipDefaultCheckout(true)
-                                    }
                                     steps{
                                         timeout(15){
                                             unstash 'STANDALONE_INSTALLERS'
