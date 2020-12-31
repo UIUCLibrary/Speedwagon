@@ -934,7 +934,6 @@ pipeline {
                                                 ].each{
                                                     unstash "${it}"
                                                 }
-//                                                 unstash "SPEEDWAGON_DOC_PDF"
                                                 powershell(
                                                     label: 'Creating new package for Chocolatey',
                                                     script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
@@ -993,10 +992,6 @@ pipeline {
                                 }
                                 beforeAgent true
                             }
-                            environment {
-                                build_number = get_build_number()
-                            }
-
                             stages{
                                 stage('CMake Build'){
                                     agent {
@@ -1010,13 +1005,15 @@ pipeline {
                                     steps {
                                         unstash 'SPEEDWAGON_DOC_PDF'
                                         script{
-                                            load('ci/jenkins/scripts/standalone.groovy').build_standalone(
-                                                packageFormat: [
-                                                    msi: params.PACKAGE_WINDOWS_STANDALONE_MSI,
-                                                    nsis: params.PACKAGE_WINDOWS_STANDALONE_NSIS,
-                                                    zipFile: params.PACKAGE_WINDOWS_STANDALONE_ZIP,
-                                                ]
-                                            )
+                                            withEnv(["build_number=${get_build_number()}"]) {
+                                                load('ci/jenkins/scripts/standalone.groovy').build_standalone(
+                                                    packageFormat: [
+                                                        msi: params.PACKAGE_WINDOWS_STANDALONE_MSI,
+                                                        nsis: params.PACKAGE_WINDOWS_STANDALONE_NSIS,
+                                                        zipFile: params.PACKAGE_WINDOWS_STANDALONE_ZIP,
+                                                    ]
+                                                )
+                                            }
                                         }
                                     }
                                     post {
@@ -1048,9 +1045,6 @@ pipeline {
                                     when{
                                         equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
                                         beforeAgent true
-                                    }
-                                    options{
-                                        skipDefaultCheckout(true)
                                     }
                                     steps{
                                         timeout(15){
