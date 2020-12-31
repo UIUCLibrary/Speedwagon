@@ -975,10 +975,6 @@ pipeline {
                                 }
                                 beforeAgent true
                             }
-                            environment {
-                                build_number = get_build_number()
-                            }
-
                             stages{
                                 stage('CMake Build'){
                                     agent {
@@ -992,13 +988,15 @@ pipeline {
                                     steps {
                                         unstash 'SPEEDWAGON_DOC_PDF'
                                         script{
-                                            load('ci/jenkins/scripts/standalone.groovy').build_standalone(
-                                                packageFormat: [
-                                                    msi: params.PACKAGE_WINDOWS_STANDALONE_MSI,
-                                                    nsis: params.PACKAGE_WINDOWS_STANDALONE_NSIS,
-                                                    zipFile: params.PACKAGE_WINDOWS_STANDALONE_ZIP,
-                                                ]
-                                            )
+                                            withEnv(["build_number=${get_build_number()}"]) {
+                                                load('ci/jenkins/scripts/standalone.groovy').build_standalone(
+                                                    packageFormat: [
+                                                        msi: params.PACKAGE_WINDOWS_STANDALONE_MSI,
+                                                        nsis: params.PACKAGE_WINDOWS_STANDALONE_NSIS,
+                                                        zipFile: params.PACKAGE_WINDOWS_STANDALONE_ZIP,
+                                                    ]
+                                                )
+                                            }
                                         }
                                     }
                                     post {
