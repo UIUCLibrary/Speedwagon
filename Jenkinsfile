@@ -40,11 +40,6 @@ def DOCKER_PLATFORM_BUILD_ARGS = [
     windows: ''
 ]
 
-def DOCKER_PLATFORM_BUILD_ARGS = [
-    linux: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)',
-    windows: ''
-]
-
 def run_pylint(){
     catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
         sh(
