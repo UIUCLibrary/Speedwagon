@@ -328,12 +328,12 @@ def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
         )
     }
 }
-def testSpeedwagonChocolateyPkg(){
+def testSpeedwagonChocolateyPkg(version){
     script{
         def chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
         chocolatey.install_chocolatey_package(
             name: 'speedwagon',
-            version: chocolatey.sanitize_chocolatey_version(props.Version),
+            version: chocolatey.sanitize_chocolatey_version(version),
             source: './packages/;CHOCOLATEY_SOURCE;chocolatey'
         )
     }
@@ -961,7 +961,7 @@ pipeline {
                                     }
                                     steps{
                                         unstash 'CHOCOLATEY_PACKAGE'
-                                        testSpeedwagonChocolateyPkg()
+                                        testSpeedwagonChocolateyPkg(props.Version)
                                     }
                                 }
                             }
