@@ -1,6 +1,6 @@
 #!groovy
 // @Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
-import org.ds.*
+// import org.ds.*
 import static groovy.json.JsonOutput.* // For pretty printing json data
 def loadConfigs(){
     node(){
@@ -33,17 +33,7 @@ def get_build_args(){
         }
     }
 }
-def get_package_version(stashName, metadataFile){
-    ws {
-        unstash stashName
-        script{
-            def props = readProperties interpolate: true, file: metadataFile
-            cleanWs(patterns: [[pattern: metadataFile, type: 'INCLUDE']])
-            //deleteDir()
-            return props.Version
-        }
-    }
-}
+
 
 def DOCKER_PLATFORM_BUILD_ARGS = [
     linux: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)',
@@ -75,43 +65,6 @@ def get_package_name(stashName, metadataFile){
         }
     }
 }
-
-// def check_jira_issue(issue, outputFile){
-//     script{
-//         def issue_response = jiraGetIssue idOrKey: issue, site: 'bugs.library.illinois.edu'
-//         try{
-//             def input_data = readJSON text: toJson(issue_response.data)
-//             writeJSON file: outputFile, json: input_data
-//             archiveArtifacts allowEmptyArchive: true, artifacts: outputFile
-//         }
-//         catch (Exception ex) {
-//             echo "Unable to create ${outputFile}. Reason: ${ex}"
-//         }
-//     }
-// }
-//
-// def check_jira_project(project, outputFile){
-//     script {
-//
-//         def jira_project = jiraGetProject idOrKey: project, site: 'bugs.library.illinois.edu'
-//         try{
-//             def input_data = readJSON text: toJson(jira_project.data)
-//             writeJSON file: outputFile, json: input_data
-//             archiveArtifacts allowEmptyArchive: true, artifacts: outputFile
-//         }
-//         catch (Exception ex) {
-//             echo "Unable to create ${outputFile}. Reason: ${ex}"
-//         }
-//     }
-// }
-//
-// def check_jira(project, issue){
-//     check_jira_project(project, 'logs/jira_project_data.json')
-//     check_jira_issue(issue, 'logs/jira_issue_data.json')
-//
-// }
-
-
 
 def get_build_number(){
     script{
