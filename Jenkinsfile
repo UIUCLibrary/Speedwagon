@@ -1041,7 +1041,10 @@ pipeline {
                                         cleanup{
                                             cleanWs(
                                                 deleteDirs: true,
-                                                notFailBuild: true
+                                                notFailBuild: true,
+                                                patterns: [
+                                                    [pattern: 'dist/', type: 'INCLUDE']
+                                                ]
                                             )
                                         }
                                     }
