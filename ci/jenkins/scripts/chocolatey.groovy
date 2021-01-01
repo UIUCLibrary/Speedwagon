@@ -18,8 +18,6 @@ def sanitize_chocolatey_version(version){
     }
 }
 
-
-
 def make_chocolatey_distribution(install_file, packageversion, dest){
     script{
         def maintainername = "Henry Borchers"

@@ -1,6 +1,6 @@
 #!groovy
 // @Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
-import org.ds.*
+// import org.ds.*
 import static groovy.json.JsonOutput.* // For pretty printing json data
 def loadConfigs(){
     node(){
@@ -33,17 +33,7 @@ def get_build_args(){
         }
     }
 }
-def get_package_version(stashName, metadataFile){
-    ws {
-        unstash stashName
-        script{
-            def props = readProperties interpolate: true, file: metadataFile
-            cleanWs(patterns: [[pattern: metadataFile, type: 'INCLUDE']])
-            //deleteDir()
-            return props.Version
-        }
-    }
-}
+
 
 def DOCKER_PLATFORM_BUILD_ARGS = [
     linux: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)',
@@ -75,43 +65,6 @@ def get_package_name(stashName, metadataFile){
         }
     }
 }
-
-// def check_jira_issue(issue, outputFile){
-//     script{
-//         def issue_response = jiraGetIssue idOrKey: issue, site: 'bugs.library.illinois.edu'
-//         try{
-//             def input_data = readJSON text: toJson(issue_response.data)
-//             writeJSON file: outputFile, json: input_data
-//             archiveArtifacts allowEmptyArchive: true, artifacts: outputFile
-//         }
-//         catch (Exception ex) {
-//             echo "Unable to create ${outputFile}. Reason: ${ex}"
-//         }
-//     }
-// }
-//
-// def check_jira_project(project, outputFile){
-//     script {
-//
-//         def jira_project = jiraGetProject idOrKey: project, site: 'bugs.library.illinois.edu'
-//         try{
-//             def input_data = readJSON text: toJson(jira_project.data)
-//             writeJSON file: outputFile, json: input_data
-//             archiveArtifacts allowEmptyArchive: true, artifacts: outputFile
-//         }
-//         catch (Exception ex) {
-//             echo "Unable to create ${outputFile}. Reason: ${ex}"
-//         }
-//     }
-// }
-//
-// def check_jira(project, issue){
-//     check_jira_project(project, 'logs/jira_project_data.json')
-//     check_jira_issue(issue, 'logs/jira_issue_data.json')
-//
-// }
-
-
 
 def get_build_number(){
     script{
@@ -238,6 +191,44 @@ def testDevpiPackage(index, pkgName, pkgVersion, pkgSelector, toxEnv){
     )
 }
 
+def createNewChocolateyPackage(args=[:]){
+
+    def chocoPackageName = args.name
+    def packageSummery = args.summary
+    def sanitizedPackageVersion
+    def packageMaintainer = args.maintainer
+    def applicationWheel = args.files.applicationWheel
+    def dependenciesDir = args.files.dependenciesDir
+    def docsDir = args.files.docsDir
+
+    node(){
+        checkout scm
+        sanitizedPackageVersion = load('ci/jenkins/scripts/chocolatey.groovy').sanitize_chocolatey_version(args.version)
+    }
+    bat(
+        label: 'Creating new Chocolatey package workspace',
+        script: """
+               choco new ${chocoPackageName} packageversion=${sanitizedPackageVersion} PythonSummary="${packageSummery}" InstallerFile=${applicationWheel} MaintainerName="${packageMaintainer}" -t pythonscript --outputdirectory packages
+               """
+        )
+
+
+//
+    powershell(
+        label: 'Adding data to Chocolatey package workspace',
+        script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
+               New-Item -ItemType File -Path ".\\packages\\${chocoPackageName}\\${applicationWheel}" -Force | Out-Null
+               Move-Item -Path "${applicationWheel}"  -Destination "./packages/${chocoPackageName}/${applicationWheel}"  -Force | Out-Null
+               Copy-Item -Path "${dependenciesDir}"  -Destination ".\\packages\\${chocoPackageName}\\deps\\" -Force -Recurse
+               Copy-Item -Path "${docsDir}"  -Destination ".\\packages\\${chocoPackageName}\\docs\\" -Force -Recurse
+               """
+        )
+    bat(
+        label: 'Packaging Chocolatey package',
+        script: "choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages"
+    )
+}
+
 def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
     script{
         def msi_files = findFiles glob: file_glob
@@ -290,6 +281,21 @@ def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
         )
     }
 }
+def testSpeedwagonChocolateyPkg(version){
+    script{
+        def chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
+        chocolatey.install_chocolatey_package(
+            name: 'speedwagon',
+            version: chocolatey.sanitize_chocolatey_version(version),
+            source: './packages/;CHOCOLATEY_SOURCE;chocolatey'
+        )
+    }
+    powershell(
+            label: "Checking for Start Menu shortcut",
+            script: 'Get-ChildItem "$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs" -Recurse -Include *.lnk'
+        )
+    bat 'speedwagon --help'
+}
 
 def test_pkg(glob, timeout_time){
 
@@ -317,55 +323,10 @@ def test_pkg(glob, timeout_time){
     }
 }
 
-// def runSonarScanner(propsFile){
-//     def props = readProperties(interpolate: true, file: propsFile)
-//     if (env.CHANGE_ID){
-//         sh(
-//             label: "Running Sonar Scanner",
-//             script:"sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
-//             )
-//     } else {
-//         sh(
-//             label: "Running Sonar Scanner",
-//             script: "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.branch.name=${env.BRANCH_NAME}"
-//             )
-//     }
-// }
-
-// def testDevpiPackages(devpiUrl, metadataFile, selector, toxEnv, DEVPI_USR, DEVPI_PSW){
-//     script{
-//         def props = readProperties(interpolate: true, file: metadataFile)
-//         if(isUnix()){
-//             sh(label: "Running tests on packages stored on DevPi ",
-//                script: """devpi --version --clientdir certs
-//                           devpi use ${devpiUrl} --clientdir certs
-//                           devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs
-//                           devpi use ${env.BRANCH_NAME}_staging --clientdir certs
-//                           devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} -e ${toxEnv} --clientdir certs -v
-//                           """
-//                )
-//
-//         } else{
-//             bat(label: "Running tests on packages stored on DevPi ",
-//                 script: """devpi --version
-//                            devpi use ${devpiUrl} --clientdir certs\\ --clientdir certs
-//                            devpi login ${DEVPI_USR} --password ${DEVPI_PSW} --clientdir certs\\
-//                            devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\
-//                            devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${selector} -e ${toxEnv} --clientdir certs\\  -v
-//                            """
-//                 )
-//         }
-//     }
-// }
-
 def startup(){
     node(){
         checkout scm
-//         mac = load("ci/jenkins/scripts/mac.groovy")
         devpi = load('ci/jenkins/scripts/devpi.groovy')
-        chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
-
-//         configurations = load("ci/jenkins/scripts/configs.groovy").getConfigurations()
     }
     node('linux && docker') {
         timeout(2){
@@ -422,6 +383,35 @@ def create_wheels(){
         }
     )
 }
+def buildSphinx(){
+    def sphinx  = load('ci/jenkins/scripts/sphinx.groovy')
+    sh(script: '''mkdir -p logs
+                  python setup.py build_ui
+                  '''
+      )
+
+    sphinx.buildSphinxDocumentation(
+        sourceDir: 'docs/source',
+        outputDir: 'build/docs/html',
+        doctreeDir: 'build/docs/.doctrees',
+        builder: 'html',
+        writeWarningsToFile: 'logs/build_sphinx_latex.log'
+        )
+    sphinx.buildSphinxDocumentation(
+        sourceDir: 'docs/source',
+        outputDir: 'build/docs/latex',
+        doctreeDir: 'build/docs/.doctrees',
+        builder: 'latex'
+        )
+
+    sh(label: 'Building PDF docs',
+       script: '''make -C build/docs/latex
+                  mkdir -p dist/docs
+                  mv build/docs/latex/*.pdf dist/docs/
+                  '''
+    )
+}
+
 startup()
 def get_props(){
     stage('Reading Package Metadata'){
@@ -481,20 +471,7 @@ pipeline {
                   }
             }
             steps {
-                sh(
-                    label: 'Building HTML docs',
-                    script: '''mkdir -p logs
-                               python setup.py build_ui
-                               python -m sphinx docs/source build/docs/html -d build/docs/.doctrees --no-color -w logs/build_sphinx.log
-                               '''
-                    )
-                    sh(label: 'Building PDF docs',
-                       script: '''python -m sphinx docs/source build/docs/latex -b latex -d build/docs/.doctrees --no-color -w logs/build_sphinx_latex.log
-                                  make -C build/docs/latex
-                                  mkdir -p dist/docs
-                                  mv build/docs/latex/*.pdf dist/docs/
-                                  '''
-                    )
+                buildSphinx()
             }
             post{
                 always{
@@ -738,37 +715,6 @@ pipeline {
                     }
                     steps {
                         runTox()
-//                         script{
-//                             def tox
-//                             node(){
-//                                 checkout scm
-//                                 tox = load("ci/jenkins/scripts/tox.groovy")
-//                             }
-//                             def windowsJobs = [:]
-//                             def linuxJobs = [:]
-//                             stage("Scanning Tox Environments"){
-//                                 parallel(
-//                                     "Linux":{
-//                                         linuxJobs = tox.getToxTestsParallel(
-//                                                 envNamePrefix: "Tox Linux",
-//                                                 label: "linux && docker",
-//                                                 dockerfile: "ci/docker/python/linux/tox/Dockerfile",
-//                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-//                                             )
-//                                     },
-//                                     "Windows":{
-//                                         windowsJobs = tox.getToxTestsParallel(
-//                                                 envNamePrefix: "Tox Windows",
-//                                                 label: "windows && docker",
-//                                                 dockerfile: "ci/docker/python/windows/tox/Dockerfile",
-//                                                 dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE"
-//                                          )
-//                                     },
-//                                     failFast: true
-//                                 )
-//                             }
-//                             parallel(windowsJobs + linuxJobs)
-//                         }
                     }
                 }
             }
@@ -925,26 +871,25 @@ pipeline {
                                         unstash 'PYTHON_PACKAGES'
                                         script {
                                             findFiles(glob: 'dist/*.whl').each{
-                                                def sanitized_packageversion=chocolatey.sanitize_chocolatey_version(props.Version)
                                                 [
                                                     'PYTHON_DEPS_3.9',
                                                     'PYTHON_DEPS_3.8',
                                                     'PYTHON_DEPS_3.7',
                                                     'SPEEDWAGON_DOC_PDF'
-                                                ].each{
-                                                    unstash "${it}"
+                                                ].each{ stashName ->
+                                                    unstash stashName
                                                 }
-                                                powershell(
-                                                    label: 'Creating new package for Chocolatey',
-                                                    script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
-                                                               choco new speedwagon packageversion=${sanitized_packageversion} PythonSummary="${props.Summary}" InstallerFile=${it.path} MaintainerName="${props.Maintainer}" -t pythonscript --outputdirectory packages
-                                                               New-Item -ItemType File -Path ".\\packages\\speedwagon\\${it.path}" -Force | Out-Null
-                                                               Move-Item -Path "${it.path}"  -Destination "./packages/speedwagon/${it.path}"  -Force | Out-Null
-                                                               Copy-Item -Path ".\\deps"  -Destination ".\\packages\\speedwagon\\deps\\" -Force -Recurse
-                                                               Copy-Item -Path ".\\dist\\docs"  -Destination ".\\packages\\speedwagon\\docs\\" -Force -Recurse
-                                                               choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages
-                                                               """
-                                                )
+                                                createNewChocolateyPackage(
+                                                    name: 'speedwagon',
+                                                    version: props.Version,
+                                                    summary: props.Summary,
+                                                    maintainer: props.Maintainer,
+                                                    files:[
+                                                            applicationWheel: it.path,
+                                                            dependenciesDir: '.\\deps',
+                                                            docsDir: '.\\dist\\docs'
+                                                        ]
+                                                    )
                                             }
                                         }
                                     }
@@ -969,16 +914,7 @@ pipeline {
                                     }
                                     steps{
                                         unstash 'CHOCOLATEY_PACKAGE'
-                                        script{
-                                            chocolatey.install_chocolatey_package(
-                                                name: 'speedwagon',
-                                                version: chocolatey.sanitize_chocolatey_version(props.Version),
-                                                source: './packages/;CHOCOLATEY_SOURCE;chocolatey'
-                                            )
-                                        }
-                                        powershell "Get-ChildItem \"\$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\" -Recurse -Include *.lnk"
-                                        bat 'speedwagon --help'
-
+                                        testSpeedwagonChocolateyPkg(props.Version)
                                     }
                                 }
                             }
@@ -1058,7 +994,10 @@ pipeline {
                                         cleanup{
                                             cleanWs(
                                                 deleteDirs: true,
-                                                notFailBuild: true
+                                                notFailBuild: true,
+                                                patterns: [
+                                                    [pattern: 'dist/', type: 'INCLUDE']
+                                                ]
                                             )
                                         }
                                     }
@@ -1374,9 +1313,6 @@ pipeline {
                     options {
                         skipDefaultCheckout(true)
                     }
-//                     environment{
-//                         PKG_NAME = props.Name
-//                     }
                     agent any
                     steps {
                         unstash 'STANDALONE_INSTALLERS'
