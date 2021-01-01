@@ -1074,17 +1074,17 @@ pipeline {
                             }
                         }
                         stages{
-                            stage('Testing DevPi sdist Package'){
-                                steps{
-                                    timeout(10){
-                                        testDevpiPackage(getDevPiStagingIndex(), props.Name, props.Version, "tar.gz", CONFIGURATIONS[PYTHON_VERSION].tox_env)
-                                    }
-                                }
-                            }
                             stage('Testing DevPi Package wheel'){
                                 steps{
                                     timeout(10){
                                         testDevpiPackage(getDevPiStagingIndex(), props.Name, props.Version, "whl", CONFIGURATIONS[PYTHON_VERSION].tox_env)
+                                    }
+                                }
+                            }
+                            stage('Testing DevPi sdist Package'){
+                                steps{
+                                    timeout(10){
+                                        testDevpiPackage(getDevPiStagingIndex(), props.Name, props.Version, "tar.gz", CONFIGURATIONS[PYTHON_VERSION].tox_env)
                                     }
                                 }
                             }
