@@ -21,6 +21,9 @@ add_custom_command(OUTPUT .jenkinsci
                 --iidfile ${PROJECT_BINARY_DIR}/.jenkinsci
                 .
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS
+            ci/jenkins/jenkinsfile-runner/plugins.txt
+            ci/jenkins/jenkinsfile-runner/Dockerfile
         )
 
 add_custom_target(jenkinsci
