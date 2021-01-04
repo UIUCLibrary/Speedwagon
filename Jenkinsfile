@@ -395,7 +395,7 @@ def buildSphinx(){
         outputDir: 'build/docs/html',
         doctreeDir: 'build/docs/.doctrees',
         builder: 'html',
-        writeWarningsToFile: 'logs/build_sphinx_latex.log'
+        writeWarningsToFile: 'logs/build_sphinx_html.log'
         )
     sphinx.buildSphinxDocumentation(
         sourceDir: 'docs/source',
