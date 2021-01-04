@@ -9,7 +9,6 @@ def loadConfigs(){
         return load('ci/jenkins/scripts/configs.groovy').getConfigurations()
     }
 }
-//
 
 def getDevPiStagingIndex(){
 
@@ -1068,7 +1067,7 @@ pipeline {
                         }
                         agent {
                             dockerfile {
-                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL"
+                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}"
                                 filename "ci/docker/python/${PLATFORM}/jenkins/Dockerfile"
                                 label "${PLATFORM} && docker"
                             }
