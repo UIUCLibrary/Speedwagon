@@ -2,7 +2,7 @@
 # with distribution.
 
 HathiValidate==0.3.6b1
-HathiZip==0.1.6b1
+HathiZip==0.1.9
 py3exiv2bind==0.1.5
 pyhathiprep==0.1.5b3
 pykdu-compress==0.1.3
