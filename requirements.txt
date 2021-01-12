@@ -1,7 +1,7 @@
 aiohttp>=3.6.2
 async-timeout==3.0.1
 attrs>=19.3.0
-HathiValidate>=0.3.6b1
+HathiValidate>=0.3.6b5
 HathiZip>=0.1.9
 idna==2.9
 idna-ssl==1.1.0
@@ -9,8 +9,8 @@ importlib-metadata>=1.6.1
 importlib-resources>=1.5.0
 lxml>=4.5.1
 pluggy==0.13.1
-py3exiv2bind>=0.1.5b
-pyhathiprep>=0.1.5b3
+py3exiv2bind>=0.1.5
+pyhathiprep>=0.1.5b4
 pyqt-distutils>=0.7.3
 PyQt5>=5.15.0
 PyQt5-sip>=12.8.0

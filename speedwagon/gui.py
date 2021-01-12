@@ -2,7 +2,6 @@
 
 Mainly for connecting GUI elements, such as buttons, to functions and methods
 that do the work"""
-import email
 import logging
 import os
 import sys
@@ -11,7 +10,11 @@ import traceback
 import webbrowser
 from typing import List
 import io
-import pkg_resources
+try:
+    from importlib import metadata
+except ImportError:
+    import importlib_metadata as metadata  # type: ignore
+
 from PyQt5 import QtWidgets, QtCore, QtGui  # type: ignore
 import speedwagon.dialog
 import speedwagon.dialog.dialogs
@@ -292,14 +295,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
     def show_help(self):
         try:
-            distribution = speedwagon.get_project_distribution()
+            pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
+            webbrowser.open_new(pkg_metadata['Home-page'])
 
-            metadata = dict(email.message_from_string(
-                distribution.get_metadata(distribution.PKG_INFO)))
-
-            webbrowser.open_new(metadata['Home-page'])
-
-        except pkg_resources.DistributionNotFound as e:
+        except metadata.PackageNotFoundError as e:
 
             self.log_manager.warning(
                 "No help link available. Reason: {}".format(e))

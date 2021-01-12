@@ -19,7 +19,6 @@ import os
 import sys
 from typing import Dict, Union, Iterator, Tuple, List
 
-import pkg_resources
 import yaml
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 
@@ -34,8 +33,10 @@ from speedwagon.tabs import extract_tab_information
 import pathlib
 try:
     from importlib import metadata
+    import importlib.resources as resources  # type: ignore
 except ImportError:
     import importlib_metadata as metadata  # type: ignore
+    import importlib_resources as resources  # type: ignore
 
 
 class FileFormatError(Exception):
@@ -224,8 +225,7 @@ class StartupDefault(AbsStarter):
 
     def run(self):
         # Display a splash screen until the app is loaded
-        with pkg_resources.resource_stream(__name__, "logo.png") as logo:
-
+        with resources.open_binary(speedwagon.__name__, "logo.png") as logo:
             splash = QtWidgets.QSplashScreen(
                 QtGui.QPixmap(logo.name).scaled(400, 400))
 
@@ -262,7 +262,11 @@ class StartupDefault(AbsStarter):
             self._logger.addHandler(windows.console_log_handler)
 
             app_title = speedwagon.__name__.title()
-            app_version = metadata.version(__package__)
+            try:
+                app_version = metadata.version(__package__)
+            except metadata.PackageNotFoundError:
+                app_version = ""
+
             self._logger.info(f"{app_title} {app_version}")
 
             self.app.processEvents()
@@ -328,9 +332,12 @@ class StartupDefault(AbsStarter):
             self.platform_settings._data.update(f.global_settings)
 
     def set_app_display_metadata(self):
-        with pkg_resources.resource_stream(__name__, "favicon.ico") as icon:
+        with resources.open_binary(speedwagon.__name__, "favicon.ico") as icon:
             self.app.setWindowIcon(QtGui.QIcon(icon.name))
-        self.app.setApplicationVersion(metadata.version(__package__))
+        try:
+            self.app.setApplicationVersion(metadata.version(__package__))
+        except metadata.PackageNotFoundError:
+            pass
         self.app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
         self.app.processEvents()
 
