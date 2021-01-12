@@ -197,7 +197,7 @@ class AbsStarter(metaclass=abc.ABCMeta):
 
 
 class StartupDefault(AbsStarter):
-    def __init__(self):
+    def __init__(self, app=None):
         self._logger = logging.getLogger(__name__)
         self._logger.setLevel(logging.DEBUG)
 
@@ -217,7 +217,7 @@ class StartupDefault(AbsStarter):
         self._debug = False
 
         self.app_data_dir = self.platform_settings.get("app_data_directory")
-        self.app = QtWidgets.QApplication(sys.argv)
+        self.app = app or QtWidgets.QApplication(sys.argv)
 
     def initialize(self):
         self.ensure_settings_files()

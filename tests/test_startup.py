@@ -1,5 +1,5 @@
 import argparse
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock
 
 from speedwagon import startup
 
@@ -14,3 +14,13 @@ def test_version_exits_after_being_called(monkeypatch):
         parser.parse_args(["--version"])
 
     version_exit_mock.assert_called()
+
+
+def test_run_loads_window(qtbot, monkeypatch):
+    app = Mock()
+    app.exec_ = MagicMock()
+    standard_startup = startup.StartupDefault(app=app)
+    standard_startup.startup_settings['debug'] = True
+
+    standard_startup.run()
+    assert app.exec_.called is True
