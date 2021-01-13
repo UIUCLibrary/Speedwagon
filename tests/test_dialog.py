@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 from PyQt5 import QtWidgets
 try:
     from importlib import metadata
@@ -32,3 +34,31 @@ def test_about_dialog_box_no_metadata(qtbot, monkeypatch):
     with monkeypatch.context() as mp:
         mp.setattr(QtWidgets.QMessageBox, "about", mock_about)
         dialogs.about_dialog_box(None)
+
+
+def test_get_install_packages(monkeypatch):
+
+    def mock_distributions(*args, **kwargs):
+        fake_distributions = [
+            {
+                "Name": 'Spam',
+                "Version": '1.0',
+            },
+            {
+                "Name": 'Bacon',
+                "Version": '1.1',
+            },
+            {
+                "Name": 'Eggs',
+                "Version": '0.1',
+            }
+        ]
+        return [Mock(metadata=d) for d in fake_distributions]
+
+    with monkeypatch.context() as ctx:
+        ctx.setattr(metadata, "distributions", mock_distributions)
+        assert dialogs.SystemInfoDialog.get_installed_packages() == [
+            'Bacon 1.1',
+            'Eggs 0.1',
+            'Spam 1.0',
+        ]
