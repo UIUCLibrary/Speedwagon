@@ -1,8 +1,10 @@
-import email
 from typing import Collection
 
-import pkg_resources
 from PyQt5 import QtWidgets  # type: ignore
+try:
+    from importlib import metadata
+except ImportError:
+    import importlib_metadata as metadata  # type: ignore
 
 import speedwagon
 
@@ -65,19 +67,17 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
 
 def about_dialog_box(parent):
     try:
-        distribution = speedwagon.get_project_distribution()
-        metadata = dict(
-            email.message_from_string(
-                distribution.get_metadata(distribution.PKG_INFO)))
-        summary = metadata['Summary']
-        message = f"{speedwagon.__name__.title()}: {distribution.version}" \
+        pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
+        summary = pkg_metadata['Summary']
+        version = pkg_metadata['Version']
+        message = f"{speedwagon.__name__.title()}: {version}" \
                   f"\n" \
                   f"\n" \
                   f"{summary}"
 
-    except pkg_resources.DistributionNotFound:
+    except metadata.PackageNotFoundError:
         message = \
-            f"{speedwagon.__name__.title()}:"
+            f"{speedwagon.__name__.title()}"
 
     QtWidgets.QMessageBox.about(parent, "About", message)
 
@@ -110,8 +110,11 @@ class SystemInfoDialog(QtWidgets.QDialog):
 
     @staticmethod
     def get_installed_packages() -> Collection:
-
-        installed_python_packages = \
-            (str(pkg) for pkg in pkg_resources.working_set)
-
-        return sorted(installed_python_packages, key=lambda x: str(x).lower())
+        pkgs = sorted(
+            metadata.distributions(),
+            key=lambda x: x.metadata['Name'].upper()
+        )
+        installed_python_packages = [
+            f"{x.metadata['Name']} {x.metadata['Version']}" for x in pkgs
+        ]
+        return installed_python_packages
