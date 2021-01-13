@@ -3,8 +3,10 @@ from unittest.mock import Mock
 from PyQt5 import QtWidgets
 try:
     from importlib import metadata
+    from importlib.metadata import PackageNotFoundError
 except ImportError:
     import importlib_metadata as metadata  # type: ignore
+    from importlib_metadata import PackageNotFoundError
 
 from speedwagon.dialog import dialogs
 
@@ -31,8 +33,12 @@ def test_about_dialog_box_no_metadata(qtbot, monkeypatch):
     def mock_about(parent, title, message):
         assert 'Speedwagon' == message
 
+    def mock_metadata(*args, **kwargs):
+        raise PackageNotFoundError()
+
     with monkeypatch.context() as mp:
         mp.setattr(QtWidgets.QMessageBox, "about", mock_about)
+        mp.setattr(metadata, "metadata", mock_metadata)
         dialogs.about_dialog_box(None)
 
 
