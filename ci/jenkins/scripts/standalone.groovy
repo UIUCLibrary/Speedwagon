@@ -60,11 +60,11 @@ def build_standalone(args=[:]){
         }
     }
     stage("Testing standalone"){
-    dir(buildDir){
-        withEnv(['CTEST_OUTPUT_ON_FAILURE=1']) {
-            bat "ctest -T test -C Release -j ${NUMBER_OF_PROCESSORS}"
+        dir(buildDir){
+            withEnv(['CTEST_OUTPUT_ON_FAILURE=1']) {
+                bat "ctest -T test -C Release -j ${NUMBER_OF_PROCESSORS}"
+            }
         }
-    }
 //         ctest(
 //             arguments: "-T test -C Release -j ${NUMBER_OF_PROCESSORS}",
 //             installation: 'InSearchPath',
