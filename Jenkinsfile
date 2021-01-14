@@ -1215,7 +1215,7 @@ pipeline {
                         message 'Update project documentation?'
                     }
                     steps{
-                        unstash 'SPEEDWAGON_DOC_HTML'
+                        unstash 'DOCS_ARCHIVE'
                         dir('build/docs/html/'){
                             sshPublisher(
                                 publishers: [
@@ -1281,7 +1281,7 @@ pipeline {
                     steps {
                         unstash 'STANDALONE_INSTALLERS'
                         unstash 'SPEEDWAGON_DOC_PDF'
-                        unstash 'SPEEDWAGON_DOC_HTML'
+                        unstash 'DOCS_ARCHIVE'
                         script{
                             deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
                         }
