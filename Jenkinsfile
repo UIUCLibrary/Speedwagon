@@ -1203,6 +1203,7 @@ pipeline {
                     steps{
                         unstash 'CHOCOLATEY_PACKAGE'
                         script{
+                            def chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
                             chocolatey.deploy_to_chocolatey(CHOCOLATEY_SERVER)
                         }
 
