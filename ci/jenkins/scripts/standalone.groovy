@@ -86,8 +86,7 @@ def build_standalone(args=[:]){
                 findFiles(glob: "dist/_CPack_Packages/**/*.log").each{ logFile ->
                     echo(readFile(logFile.path))
                 }
-                archiveArtifacts artifacts: "${buildDir}/**/*.wxs"
-
+                archiveArtifacts( allowEmptyArchive: true, artifacts: "${buildDir}/**/*.wxs")
                 throw e
             }
         }
