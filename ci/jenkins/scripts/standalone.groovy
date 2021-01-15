@@ -79,8 +79,15 @@ def build_standalone(args=[:]){
     }
     stage("Packaging standalone"){
         script{
-            def cpack_generators = generate_cpack_arguments(packaging_msi, packaging_nsis, packaging_zip)
-            bat "cpack -C Release -G ${cpack_generators} --config ${buildDir}\\CPackConfig.cmake -B ${WORKSPACE}/dist -V"
+            try{
+                def cpack_generators = generate_cpack_arguments(packaging_msi, packaging_nsis, packaging_zip)
+                bat "cpack -C Release -G ${cpack_generators} --config ${buildDir}\\CPackConfig.cmake -B ${WORKSPACE}/dist -V"
+            } catch(e){
+                findFiles(glob: "dist/_CPack_Packages/**/*.log").each{ logFile ->
+                    archiveArtifacts artifacts: logFile.path
+                }
+                throw e
+            }
         }
     }
 }
