@@ -84,7 +84,7 @@ def build_standalone(args=[:]){
                 bat "cpack -C Release -G ${cpack_generators} --config ${buildDir}\\CPackConfig.cmake -B ${WORKSPACE}/dist -V"
             } catch(e){
                 findFiles(glob: "dist/_CPack_Packages/**/*.log").each{ logFile ->
-                    archiveArtifacts artifacts: logFile.path
+                    echo(readFile(logFile.path))
                 }
                 throw e
             }
