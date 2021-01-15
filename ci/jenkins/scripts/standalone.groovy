@@ -45,17 +45,28 @@ def build_standalone(args=[:]){
                        """
            )
         script{
-            cmakeBuild(
-                buildDir: buildDir,
-                cmakeArgs: """-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels
-                              -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv
-                              -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf
-                              """,
-                generator: 'Ninja',
-                installation: 'InSearchPath',
-                steps: [
-                    [withCmake: true]
-                ]
+            def cmakeArgs = "-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf -Wdev"
+             if(args['package']){
+                cmakeArgs = cmakeArgs + " -DSpeedwagon_VERSION:STRING=${args.package['version']}"
+                def package_version  = args.package['version'].split("\\.")
+                if(package_version.size() >= 1){
+                    cmakeArgs = cmakeArgs + " -DCMAKE_PROJECT_VERSION_MAJOR=${package_version[0]}"
+                    cmakeArgs = cmakeArgs + " -DCPACK_PACKAGE_VERSION_MAJOR=${package_version[0]}"
+                }
+                if(package_version.size() >= 2){
+                    cmakeArgs = cmakeArgs + " -DCMAKE_PROJECT_VERSION_MINOR=${package_version[1]}"
+                    cmakeArgs = cmakeArgs + " -DCPACK_PACKAGE_VERSION_MINOR=${package_version[1]}"
+                }
+                if(package_version.size() >= 3){
+                    cmakeArgs = cmakeArgs + " -DCMAKE_PROJECT_VERSION_PATCH=${package_version[2]}"
+                    cmakeArgs = cmakeArgs + " -DCPACK_PACKAGE_VERSION_PATCH=${package_version[2]}"
+                }
+            }
+            bat(label: "Configuring CMake",
+                script: "cmake -S ${WORKSPACE} -B ${buildDir} -G Ninja ${cmakeArgs}"
+            )
+            bat(label: "Building with CMake",
+                script: "cmake --build ${buildDir}"
             )
         }
     }
@@ -65,19 +76,11 @@ def build_standalone(args=[:]){
                 bat "ctest -T test -C Release -j ${NUMBER_OF_PROCESSORS}"
             }
         }
-//         ctest(
-//             arguments: "-T test -C Release -j ${NUMBER_OF_PROCESSORS}",
-//             installation: 'InSearchPath',
-//             workingDir: buildDir
-//             )
     }
     stage("Packaging standalone"){
         script{
             def cpack_generators = generate_cpack_arguments(packaging_msi, packaging_nsis, packaging_zip)
-            cpack(
-                arguments: "-C Release -G ${cpack_generators} --config ${buildDir}/CPackConfig.cmake -B ${WORKSPACE}/dist -V",
-                installation: 'InSearchPath'
-            )
+            bat "cpack -C Release -G ${cpack_generators} --config ${buildDir}\\CPackConfig.cmake -B ${WORKSPACE}/dist -V"
         }
     }
 }
