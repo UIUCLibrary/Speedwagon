@@ -946,6 +946,9 @@ pipeline {
                                                         msi: params.PACKAGE_WINDOWS_STANDALONE_MSI,
                                                         nsis: params.PACKAGE_WINDOWS_STANDALONE_NSIS,
                                                         zipFile: params.PACKAGE_WINDOWS_STANDALONE_ZIP,
+                                                    ],
+                                                    package: [
+                                                        version: props.Version
                                                     ]
                                                 )
                                             }
