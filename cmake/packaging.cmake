@@ -13,7 +13,7 @@ set(CPACK_WIX_EXTRA_SOURCES ${PROJECT_BINARY_DIR}/configs/install/wix_start_menu
 
 if(SPEEDWAGON_DOC_PDF)
     list(APPEND CPACK_WIX_EXTRA_SOURCES ${CMAKE_CURRENT_LIST_DIR}/docs.wxs)
-    set(CPACK_WIX_PDF_COMPONENTREF "<ComponentRef Id=\"DocumentationShortcut\"/>")
+    set(CPACK_WIX_PDF_COMPONENTREF "<ComponentRef Id=\\\"DocumentationShortcut\\\"/>")
  endif()
 
 configure_file(templates/shortcuts.wxs.in configs/install/shortcuts.wxs @ONLY)
