@@ -2,6 +2,15 @@
 // @Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
 // import org.ds.*
 import static groovy.json.JsonOutput.* // For pretty printing json data
+
+SUPPORTED_MAC_VERSIONS = ['3.8', '3.9']
+SUPPORTED_LINUX_VERSIONS = ['3.6', '3.7', '3.8', '3.9']
+SUPPORTED_WINDOWS_VERSIONS = ['3.6', '3.7', '3.8', '3.9']
+DOCKER_PLATFORM_BUILD_ARGS = [
+    linux: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)',
+    windows: ''
+]
+
 def loadConfigs(){
     node(){
         echo 'loading configurations'
@@ -32,12 +41,6 @@ def get_build_args(){
         }
     }
 }
-
-
-def DOCKER_PLATFORM_BUILD_ARGS = [
-    linux: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)',
-    windows: ''
-]
 
 def run_pylint(){
     catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
@@ -797,44 +800,79 @@ pipeline {
                                     }
                                 }
                                 stage('Windows and Linux'){
-                                    matrix{
-                                        agent {
-                                            dockerfile {
-                                                filename "ci/docker/python/${PLATFORM}/jenkins/Dockerfile"
-                                                label "${PLATFORM} && docker"
-                                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}"
+                                    steps{
+                                        script{
+                                            def packages
+                                            node(){
+                                                checkout scm
+                                                packages = load 'ci/jenkins/scripts/packaging.groovy'
                                             }
-                                        }
-                                        axes{
-                                            axis {
-                                                name 'PYTHON_VERSION'
-                                                values(
-                                                    '3.7',
-                                                    '3.8',
-                                                    '3.9',
-                                                )
-                                            }
-                                            axis {
-                                                name 'PLATFORM'
-                                                values(
-                                                    'linux',
-                                                    'windows'
-                                                )
-                                            }
-                                        }
-                                        stages{
-                                            stage('Testing sdist Package'){
-                                                steps{
-                                                    unstash 'PYTHON_PACKAGES'
-                                                    test_pkg('dist/*.zip,dist/*.tar.gz', 20)
+                                            def windowsTests = [:]
+                                            SUPPORTED_WINDOWS_VERSIONS.each{ pythonVersion ->
+                                                windowsTests["Windows - Python ${pythonVersion}: sdist"] = {
+                                                    windowsTests["Windows - Python ${pythonVersion}: sdist"] = {
+                                                        packages.testPkg(
+                                                            agent: [
+                                                                dockerfile: [
+                                                                    label: 'windows && docker',
+                                                                    filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
+                                                                ]
+                                                            ],
+                                                            glob: 'dist/*.tar.gz,dist/*.zip',
+                                                            stash: 'PYTHON_PACKAGES',
+                                                            pythonVersion: pythonVersion
+                                                        )
+                                                    }
+                                                    windowsTests["Windows - Python ${pythonVersion}: wheel"] = {
+                                                        packages.testPkg(
+                                                            agent: [
+                                                                dockerfile: [
+                                                                    label: 'windows && docker',
+                                                                    filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
+                                                                ]
+                                                            ],
+                                                            glob: 'dist/*.whl',
+                                                            stash: 'PYTHON_PACKAGES',
+                                                            pythonVersion: pythonVersion
+                                                        )
+                                                    }
                                                 }
                                             }
-                                            stage('Testing bdist_wheel Package'){
-                                                steps{
-                                                    unstash 'PYTHON_PACKAGES'
-                                                    test_pkg("dist/${CONFIGURATIONS[PYTHON_VERSION].pkgRegex['wheel']}", 20)
+                                            def linuxTests = [:]
+                                            SUPPORTED_LINUX_VERSIONS.each{ pythonVersion ->
+                                                linuxTests["Linux - Python ${pythonVersion}: sdist"] = {
+                                                    packages.testPkg(
+                                                        agent: [
+                                                            dockerfile: [
+                                                                label: 'linux && docker',
+                                                                filename: 'ci/docker/python/linux/tox/Dockerfile',
+                                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                            ]
+                                                        ],
+                                                        glob: 'dist/*.tar.gz',
+                                                        stash: 'PYTHON_PACKAGES',
+                                                        pythonVersion: pythonVersion
+                                                    )
+                                                }
+                                                linuxTests["Linux - Python ${pythonVersion}: wheel"] = {
+                                                    packages.testPkg(
+                                                        agent: [
+                                                            dockerfile: [
+                                                                label: 'linux && docker',
+                                                                filename: 'ci/docker/python/linux/tox/Dockerfile',
+                                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                            ]
+                                                        ],
+                                                        glob: 'dist/*.whl',
+                                                        stash: 'PYTHON_PACKAGES',
+                                                        pythonVersion: pythonVersion
+                                                    )
                                                 }
                                             }
+                                            def tests = linuxTests + windowsTests
+                                            parallel(tests)
                                         }
                                     }
                                 }
