@@ -781,34 +781,32 @@ pipeline {
                                     def windowsTests = [:]
                                     SUPPORTED_WINDOWS_VERSIONS.each{ pythonVersion ->
                                         windowsTests["Windows - Python ${pythonVersion}: sdist"] = {
-                                            windowsTests["Windows - Python ${pythonVersion}: sdist"] = {
-                                                packages.testPkg(
-                                                    agent: [
-                                                        dockerfile: [
-                                                            label: 'windows && docker',
-                                                            filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
-                                                        ]
-                                                    ],
-                                                    glob: 'dist/*.tar.gz,dist/*.zip',
-                                                    stash: 'PYTHON_PACKAGES',
-                                                    pythonVersion: pythonVersion
-                                                )
-                                            }
-                                            windowsTests["Windows - Python ${pythonVersion}: wheel"] = {
-                                                packages.testPkg(
-                                                    agent: [
-                                                        dockerfile: [
-                                                            label: 'windows && docker',
-                                                            filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
-                                                        ]
-                                                    ],
-                                                    glob: 'dist/*.whl',
-                                                    stash: 'PYTHON_PACKAGES',
-                                                    pythonVersion: pythonVersion
-                                                )
-                                            }
+                                            packages.testPkg(
+                                                agent: [
+                                                    dockerfile: [
+                                                        label: 'windows && docker',
+                                                        filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                                    ]
+                                                ],
+                                                glob: 'dist/*.tar.gz,dist/*.zip',
+                                                stash: 'PYTHON_PACKAGES',
+                                                pythonVersion: pythonVersion
+                                            )
+                                        }
+                                        windowsTests["Windows - Python ${pythonVersion}: wheel"] = {
+                                            packages.testPkg(
+                                                agent: [
+                                                    dockerfile: [
+                                                        label: 'windows && docker',
+                                                        filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                                    ]
+                                                ],
+                                                glob: 'dist/*.whl',
+                                                stash: 'PYTHON_PACKAGES',
+                                                pythonVersion: pythonVersion
+                                            )
                                         }
                                     }
                                     def linuxTests = [:]
