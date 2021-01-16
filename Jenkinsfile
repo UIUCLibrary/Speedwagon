@@ -787,7 +787,7 @@ pipeline {
                                                         dockerfile: [
                                                             label: 'windows && docker',
                                                             filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                            additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
+                                                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
                                                         ]
                                                     ],
                                                     glob: 'dist/*.tar.gz,dist/*.zip',
@@ -801,7 +801,7 @@ pipeline {
                                                         dockerfile: [
                                                             label: 'windows && docker',
                                                             filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                            additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
+                                                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
                                                         ]
                                                     ],
                                                     glob: 'dist/*.whl',
@@ -819,7 +819,7 @@ pipeline {
                                                     dockerfile: [
                                                         label: 'linux && docker',
                                                         filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                                                     ]
                                                 ],
                                                 glob: 'dist/*.tar.gz',
@@ -833,7 +833,7 @@ pipeline {
                                                     dockerfile: [
                                                         label: 'linux && docker',
                                                         filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                                                     ]
                                                 ],
                                                 glob: 'dist/*.whl',
@@ -843,6 +843,7 @@ pipeline {
                                         }
                                     }
                                     def tests = linuxTests + windowsTests
+                                    def macTests = [:]
                                     SUPPORTED_MAC_VERSIONS.each{ pythonVersion ->
                                         macTests["Mac - Python ${pythonVersion}: sdist"] = {
                                             packages.testPkg(
