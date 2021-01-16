@@ -854,7 +854,7 @@ pipeline {
                                                     toxExec: 'venv/bin/tox',
                                                     testSetup: {
                                                         checkout scm
-                                                        unstash 'dist'
+                                                        unstash 'PYTHON_PACKAGES'
                                                         sh(
                                                             label:'Install Tox',
                                                             script: '''python3 -m venv venv
@@ -875,7 +875,7 @@ pipeline {
                                                     label: "mac && python${pythonVersion}",
                                                 ],
                                                 glob: 'dist/*.whl',
-                                                stash: 'dist',
+                                                stash: 'PYTHON_PACKAGES',
                                                 pythonVersion: pythonVersion,
                                                 toxExec: 'venv/bin/tox',
                                                 testSetup: {
