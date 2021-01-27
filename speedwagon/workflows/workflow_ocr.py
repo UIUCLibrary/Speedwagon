@@ -23,7 +23,7 @@ def path_contains_traineddata(path) -> bool:
     for file in os.scandir(path):
         if not file.is_file():
             continue
-        file_name, ext = os.path.splitext(file.name)
+        _, ext = os.path.splitext(file.name)
         if ext == ".traineddata":
             return True
     return False
@@ -40,7 +40,8 @@ class OCRWorkflow(speedwagon.Workflow):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.global_settings = kwargs.get('global_settings', {})
-        self.tessdata_path = self.global_settings.get("tessdata")
+        self.tessdata_path = self._get_tessdata_dir(args, self.global_settings)
+
         if self.tessdata_path is None:
             raise MissingConfiguration(
                 "Required setting not configured: tessdata"
@@ -74,16 +75,26 @@ class OCRWorkflow(speedwagon.Workflow):
             "https://github.com/tesseract-ocr/tesseract/wiki/Data-Files\n"
         self.set_description(description)
 
+    @staticmethod
+    def _get_tessdata_dir(args, global_settings) -> Optional[str]:
+        tessdata_path = global_settings.get("tessdata")
+        if tessdata_path is None:
+            try:
+                tessdata_path = args[0].get('tessdata')
+            except IndexError:
+                pass
+        return tessdata_path
+
     @classmethod
-    def set_description(cls, text):
+    def set_description(cls, text: str):
         cls.description = text
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
 
-        if not os.path.exists(self.tessdata_path):
+        if self.tessdata_path is not None and \
+                not os.path.exists(self.tessdata_path):
             raise MissingConfiguration("tessdata_path")
-
         new_tasks = []
 
         for result in initial_results:
@@ -91,9 +102,9 @@ class OCRWorkflow(speedwagon.Workflow):
                 image_path = os.path.dirname(image_file)
                 base_name = os.path.splitext(os.path.basename(image_file))[0]
                 ocr_file_name = "{}.txt".format(base_name)
-                for k, v in ocr.LANGUAGE_CODES.items():
-                    if v == user_args["Language"]:
-                        language_code = k
+                for key, value in ocr.LANGUAGE_CODES.items():
+                    if value == user_args["Language"]:
+                        language_code = key
                         break
                 else:
                     raise ValueError("Unable to look up language code "
@@ -285,37 +296,26 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
         self._source = source_image
         self._output_text_file = out_text_file
         self._lang = lang
-
+        self._tesseract_path = tesseract_path
         GenerateOCRFileTask.set_tess_path(tesseract_path or locate_tessdata())
         assert self.engine is not None
 
     @classmethod
-    def set_tess_path(cls, path=locate_tessdata()):
+    def set_tess_path(cls, path=None):
+        if path is None:
+            path = locate_tessdata()
         assert path is not None
         assert os.path.exists(path)
         cls.engine = ocr.Engine(path)
         assert cls.engine is not None
 
     def work(self) -> bool:
-        # Get the ocr text reader for the proper language
-        reader = self.engine.get_reader(self._lang)
-        self.log("Reading {}".format(os.path.normcase(self._source)))
-
-        f = io.StringIO()
-
-        with contextlib.redirect_stderr(f):
-            # Capture the warning messages
-            resulting_text = reader.read(self._source)
-
-        stderr_messages = f.getvalue()
-        if stderr_messages:
-            # Log any error messages
-            self.log(stderr_messages.strip())
+        resulting_text = self.read_image(self._source, self._lang)
 
         # Generate a text file from the text data extracted from the image
         self.log("Writing to {}".format(self._output_text_file))
-        with open(self._output_text_file, "w", encoding="utf8") as wf:
-            wf.write(resulting_text)
+        with open(self._output_text_file, "w", encoding="utf8") as write_file:
+            write_file.write(resulting_text)
 
         result = {
             "text": resulting_text,
@@ -323,3 +323,24 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
         }
         self.set_results(result)
         return True
+
+    def read_image(self, file, lang):
+
+        if self.engine.data_set_path is None:
+            self.engine.data_set_path = self._tesseract_path
+
+        # Get the ocr text reader for the proper language
+        reader = self.engine.get_reader(lang)
+        self.log("Reading {}".format(os.path.normcase(file)))
+
+        file_handle = io.StringIO()
+
+        with contextlib.redirect_stderr(file_handle):
+            # Capture the warning messages
+            resulting_text = reader.read(file)
+
+        stderr_messages = file_handle.getvalue()
+        if stderr_messages:
+            # Log any error messages
+            self.log(stderr_messages.strip())
+        return resulting_text
