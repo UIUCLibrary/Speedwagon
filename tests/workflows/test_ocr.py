@@ -38,10 +38,16 @@ def test_discover_task_metadata(monkeypatch, tmpdir):
         'Path':  image_dir.strpath
     }
     initial_results = [
-        Result(source=workflow_ocr.FindImagesTask, data=[(image_dir / "dummy.jp2").strpath])
+        Result(
+            source=workflow_ocr.FindImagesTask,
+            data=[(image_dir / "dummy.jp2").strpath]
+        )
     ]
 
-    new_tasks = workflow.discover_task_metadata(initial_results, None, **user_options)
+    new_tasks = workflow.discover_task_metadata(
+        initial_results, None, **user_options
+    )
+
     assert len(new_tasks) == 1
     new_task = new_tasks[0]
     assert new_task == {
