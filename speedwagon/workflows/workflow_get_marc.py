@@ -4,17 +4,21 @@
 import abc
 import os
 import re
-from typing import List, Any, Optional, Union, Sequence, Dict, Set
+from typing import List, Any, Optional, Union, Sequence, Dict, Set, Tuple
 from xml.dom import minidom
 import requests
 from requests import RequestException
+import xml.etree.ElementTree as ET
 
-from speedwagon.exceptions import MissingConfiguration
+
+from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from speedwagon import tasks, reports
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
 
 UserOptions = Union[options.UserOptionCustomDataType, options.ListSelection]
+MMSID_PATTERN = re.compile(r"^(?P<identifier>99[0-9]*(122)?05899)(_(?P<volume>[0-1]*))?")
+BIBID_PATTERN = re.compile(r"^(?P<identifier>[0-9]*)")
 
 
 class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
@@ -69,6 +73,9 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
         for id_type in SUPPORTED_IDENTIFIERS:
             id_type_option.add_selection(id_type)
         workflow_options.append(id_type_option)
+        field_955_option = options.UserOptionPythonDataType2("Add 955 field", bool)
+        field_955_option.data = True
+        workflow_options.append(field_955_option)
         return workflow_options
 
     @classmethod
@@ -105,9 +112,12 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
         for folder in filter(self.filter_bib_id_folders,
                              os.scandir(user_args["Input"])):
             jobs.append({
-                "identifier": {
+                "directory": {
                     "value": folder.name,
                     "type": user_args['Identifier type'],
+                },
+                "enhancements": {
+                    "955": user_args.get("Add 955 field", False)
                 },
                 "api_server": server_url,
                 "path": folder.path
@@ -144,18 +154,31 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
             **job_args:
 
         """
-        identifier = job_args['identifier']["value"]
-        identifier_type = job_args['identifier']["type"]
+        identifier_type = job_args['directory']["type"]
+        subdirectory = job_args['directory']["value"]
+        identifier, volume = self._get_identifier_volume(job_args)
 
         folder = job_args["path"]
-        new_task = MarcGeneratorTask(
-            identifier=identifier,
-            identifier_type=identifier_type,
-            output_name=os.path.join(folder, "MARC.XML"),
-            server_url=job_args['api_server']
+        marc_file = os.path.join(folder, "MARC.XML")
+        task_builder.add_subtask(
+            MarcGeneratorTask(
+                identifier=identifier,
+                identifier_type=identifier_type,
+                output_name=marc_file,
+                server_url=job_args['api_server']
+            )
         )
 
-        task_builder.add_subtask(new_task)
+        enhancements = job_args.get('enhancements')
+        if enhancements is not None:
+            add_955 = enhancements.get('955')
+            if add_955:
+                task_builder.add_subtask(
+                    MarcEnhancement955Task(
+                        added_value=subdirectory,
+                        xml_file=marc_file
+                    )
+                )
 
     @classmethod
     @reports.add_report_borders
@@ -196,6 +219,28 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
                       f"retrieved and written to their named folders"
 
         return message
+
+    @staticmethod
+    def _get_identifier_volume(job_args) -> Tuple[str, Union[str, None]]:
+        directory = job_args['directory']
+        subdirectory = directory['value']
+        regex_patterns: Dict[str, re.Pattern] = {
+            "MMS ID": MMSID_PATTERN,
+            "Bibid": BIBID_PATTERN
+        }
+        regex_pattern = regex_patterns.get(directory['type'])
+        if regex_pattern is None:
+            raise SpeedwagonException(
+                f"No identifier pattern for {directory['type']}"
+            )
+        match = regex_pattern.match(subdirectory)
+        if match is None:
+            raise SpeedwagonException(
+                f"Directory does not match expected format for "
+                f"{directory['type']}: {subdirectory}"
+            )
+        results = match.groupdict()
+        return results['identifier'], results.get('volume')
 
 
 class AbsMarcFileStrategy(abc.ABC):
@@ -300,6 +345,14 @@ class MarcGeneratorTask(tasks.Subtask):
         self._output_name = output_name
         self._server_url = server_url
 
+    @property
+    def identifier_type(self):
+        return self._identifier_type
+
+    @property
+    def identifier(self):
+        return self._identifier
+
     @staticmethod
     def reflow_xml(data: str) -> str:
         """Redraw the xml data to make it more human readable.
@@ -327,7 +380,8 @@ class MarcGeneratorTask(tasks.Subtask):
             SUPPORTED_IDENTIFIERS[self._identifier_type](self._server_url)
         try:
             self.log(f"Accessing MARC record for {self._identifier}")
-            pretty_xml = self.reflow_xml(strategy.get_record(self._identifier))
+            record = strategy.get_record(self._identifier)
+            pretty_xml = self.reflow_xml(record)
             self.write_file(data=pretty_xml)
 
             self.log(f"Wrote file {self._output_name}")
@@ -355,6 +409,51 @@ class MarcGeneratorTask(tasks.Subtask):
         """
         with open(self._output_name, "w") as write_file:
             write_file.write(data)
+
+
+class MarcEnhancement955Task(tasks.Subtask):
+
+    def __init__(self, added_value, xml_file) -> None:
+        super().__init__()
+        self.added_value = added_value
+        self._xml_file = xml_file
+
+    def work(self) -> bool:
+        tree = ET.parse(self._xml_file)
+        ns = {"marc": "http://www.loc.gov/MARC21/slim"}
+        fields = []
+        root = tree.getroot()
+        new_datafield = ET.Element(
+            '{http://www.loc.gov/MARC21/slim}datafield',
+            attrib={
+                'tag': "955",
+                'ind1': ' ',
+                'ind2': ' '
+            }
+        )
+        new_subfield = ET.Element(
+            '{http://www.loc.gov/MARC21/slim}subfield',
+            attrib={"code": "b"},
+        )
+
+        new_subfield.text = self.added_value
+        new_datafield.append(new_subfield)
+        fields.append(new_datafield)
+
+        for datafield in tree.findall(".//marc:datafield", ns):
+            fields.append(datafield)
+            root.remove(datafield)
+
+        for field in sorted(fields, key=lambda x: int(x.attrib['tag'])):
+            root.append(field)
+        ET.register_namespace('', 'http://www.loc.gov/MARC21/slim')
+        flat_xml_string = "\n".join([l.strip() for l in
+                   ET.tostring(root, encoding="unicode").split("\n")]).replace("\n", "")
+        xmlstr = minidom.parseString(flat_xml_string).toprettyxml()
+        # TODO: Fix the writespace
+        with open(self._xml_file, "w") as wf:
+            wf.write(xmlstr)
+        return True
 
 
 # short_bibid = strip_volume(self._bib_id)
