@@ -235,6 +235,7 @@ def test_create_new_task(unconfigured_workflow, identifier_type, subdirectory, i
     assert mock_task_builder.add_subtask.call_count == 1
     call_args = mock_task_builder.add_subtask.call_args[0]
     task_generated = call_args[0]
+    assert isinstance(task_generated, MarcGeneratorTask)
     assert task_generated.identifier_type == identifier_type and task_generated.identifier == identifier
 
 
