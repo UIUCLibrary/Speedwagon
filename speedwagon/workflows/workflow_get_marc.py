@@ -6,9 +6,9 @@ import os
 import re
 from typing import List, Any, Optional, Union, Sequence, Dict, Set, Tuple
 from xml.dom import minidom
+import xml.etree.ElementTree as ET
 import requests
 from requests import RequestException
-import xml.etree.ElementTree as ET
 
 
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
@@ -17,7 +17,9 @@ from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
 
 UserOptions = Union[options.UserOptionCustomDataType, options.ListSelection]
-MMSID_PATTERN = re.compile(r"^(?P<identifier>99[0-9]*(122)?05899)(_(?P<volume>[0-1]*))?")
+MMSID_PATTERN = \
+    re.compile(r"^(?P<identifier>99[0-9]*(122)?05899)(_(?P<volume>[0-1]*))?")
+
 BIBID_PATTERN = re.compile(r"^(?P<identifier>[0-9]*)")
 
 
@@ -73,7 +75,10 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
         for id_type in SUPPORTED_IDENTIFIERS:
             id_type_option.add_selection(id_type)
         workflow_options.append(id_type_option)
-        field_955_option = options.UserOptionPythonDataType2("Add 955 field", bool)
+
+        field_955_option = \
+            options.UserOptionPythonDataType2("Add 955 field", bool)
+
         field_955_option.data = True
         workflow_options.append(field_955_option)
         return workflow_options
@@ -156,7 +161,7 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
         """
         identifier_type = job_args['directory']["type"]
         subdirectory = job_args['directory']["value"]
-        identifier, volume = self._get_identifier_volume(job_args)
+        identifier, _ = self._get_identifier_volume(job_args)
 
         folder = job_args["path"]
         marc_file = os.path.join(folder, "MARC.XML")
@@ -420,7 +425,7 @@ class MarcEnhancement955Task(tasks.Subtask):
 
     def work(self) -> bool:
         tree = ET.parse(self._xml_file)
-        ns = {"marc": "http://www.loc.gov/MARC21/slim"}
+        namespaces = {"marc": "http://www.loc.gov/MARC21/slim"}
         fields = []
         root = tree.getroot()
         new_datafield = ET.Element(
@@ -440,19 +445,21 @@ class MarcEnhancement955Task(tasks.Subtask):
         new_datafield.append(new_subfield)
         fields.append(new_datafield)
 
-        for datafield in tree.findall(".//marc:datafield", ns):
+        for datafield in tree.findall(".//marc:datafield", namespaces):
             fields.append(datafield)
             root.remove(datafield)
 
         for field in sorted(fields, key=lambda x: int(x.attrib['tag'])):
             root.append(field)
         ET.register_namespace('', 'http://www.loc.gov/MARC21/slim')
-        flat_xml_string = "\n".join([l.strip() for l in
-                   ET.tostring(root, encoding="unicode").split("\n")]).replace("\n", "")
+        flat_xml_string = \
+            "\n".join([line.strip() for line in ET.tostring(
+                root, encoding="unicode")
+                      .split("\n")]).replace("\n", "")
+
         xmlstr = minidom.parseString(flat_xml_string).toprettyxml()
-        # TODO: Fix the writespace
-        with open(self._xml_file, "w") as wf:
-            wf.write(xmlstr)
+        with open(self._xml_file, "w") as write_file:
+            write_file.write(xmlstr)
         return True
 
 
