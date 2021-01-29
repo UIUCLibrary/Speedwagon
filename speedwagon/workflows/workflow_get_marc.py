@@ -35,6 +35,7 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
     .. versionadded:: 0.1.5
         Supports MMSID id type
+        Supports adding 955 field
     """
 
     name = "Generate MARC.XML Files"
