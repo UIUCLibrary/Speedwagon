@@ -270,7 +270,7 @@ def test_955_added_to_tasks(unconfigured_workflow, identifier_type, subdirectory
     )
     mock_task_builder.add_subtask.assert_called()
     assert mock_task_builder.add_subtask.call_count == 2
-    tasks_generated = mock_task_builder.add_subtask.call_args_list
+    tasks_generated = mock_task_builder.add_subtask.mock_calls
     retrieval_task = tasks_generated[0].args[0]
 
     assert isinstance(retrieval_task, MarcGeneratorTask), "tasks_generated = {}".format(retrieval_task)
