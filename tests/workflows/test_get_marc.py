@@ -272,9 +272,11 @@ def test_955_added_to_tasks(unconfigured_workflow, identifier_type, subdirectory
     assert mock_task_builder.add_subtask.call_count == 2
     tasks_generated = mock_task_builder.add_subtask.call_args_list
     retrieval_task = tasks_generated[0].args[0]
+    assert isinstance(retrieval_task, MarcGeneratorTask)
     assert retrieval_task.identifier_type == identifier_type and retrieval_task.identifier == expected_identifier
     enhancement_task = tasks_generated[1].args[0]
     assert enhancement_task.added_value == subdirectory
+
 
 SAMPLE_RECORD = """<record xmlns="http://www.loc.gov/MARC21/slim" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd">
   <leader>02608cam a2200505   4500</leader>
