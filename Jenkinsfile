@@ -843,9 +843,11 @@ pipeline {
                                     }
                                     def tests = linuxTests + windowsTests
                                     def macTests = [:]
+
                                     SUPPORTED_MAC_VERSIONS.each{ pythonVersion ->
                                         macTests["Mac - Python ${pythonVersion}: sdist"] = {
-                                            packages.testPkg(
+                                            withEnv(['QT_QPA_PLATFORM=offscreen']) {
+                                                packages.testPkg(
                                                     agent: [
                                                         label: "mac && python${pythonVersion}",
                                                     ],
@@ -867,34 +869,36 @@ pipeline {
                                                     testTeardown: {
                                                         sh 'rm -r venv/'
                                                     }
-
                                                 )
+                                            }
                                         }
                                         macTests["Mac - Python ${pythonVersion}: wheel"] = {
-                                            packages.testPkg(
-                                                agent: [
-                                                    label: "mac && python${pythonVersion}",
-                                                ],
-                                                glob: 'dist/*.whl',
-                                                stash: 'PYTHON_PACKAGES',
-                                                pythonVersion: pythonVersion,
-                                                toxExec: 'venv/bin/tox',
-                                                testSetup: {
-                                                    checkout scm
-                                                    unstash 'PYTHON_PACKAGES'
-                                                    sh(
-                                                        label:'Install Tox',
-                                                        script: '''python3 -m venv venv
-                                                                   venv/bin/pip install pip --upgrade
-                                                                   venv/bin/pip install tox
-                                                                   '''
-                                                    )
-                                                },
-                                                testTeardown: {
-                                                    sh 'rm -r venv/'
-                                                }
+                                            withEnv(['QT_QPA_PLATFORM=offscreen']) {
+                                                packages.testPkg(
+                                                    agent: [
+                                                        label: "mac && python${pythonVersion}",
+                                                    ],
+                                                    glob: 'dist/*.whl',
+                                                    stash: 'PYTHON_PACKAGES',
+                                                    pythonVersion: pythonVersion,
+                                                    toxExec: 'venv/bin/tox',
+                                                    testSetup: {
+                                                        checkout scm
+                                                        unstash 'PYTHON_PACKAGES'
+                                                        sh(
+                                                            label:'Install Tox',
+                                                            script: '''python3 -m venv venv
+                                                                       venv/bin/pip install pip --upgrade
+                                                                       venv/bin/pip install tox
+                                                                       '''
+                                                        )
+                                                    },
+                                                    testTeardown: {
+                                                        sh 'rm -r venv/'
+                                                    }
 
-                                            )
+                                                )
+                                            }
                                         }
                                     }
                                     if(params.TEST_PACKAGES_ON_MAC == true){

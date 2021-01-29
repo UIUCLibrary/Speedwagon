@@ -199,12 +199,14 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         export_logs_button.triggered.connect(self.save_log)
         file_menu.addAction(export_logs_button)
+        file_menu.setObjectName("fileMenu")
 
         file_menu.addSeparator()
         # File --> Exit
         # Create Exit button
         exit_button = QtWidgets.QAction(" &Exit", self)
-        exit_button.triggered.connect(self.close)
+        exit_button.setObjectName("exitAction")
+        exit_button.triggered.connect(QtWidgets.QApplication.exit)
 
         file_menu.addAction(exit_button)
 
