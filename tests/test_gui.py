@@ -3,12 +3,10 @@ import typing
 from unittest.mock import Mock
 import webbrowser
 
-from PyQt5 import QtCore
-
 import speedwagon.startup
 import speedwagon.gui
-from PyQt5.QtWidgets import QApplication, QAction, QMainWindow, QWidget, QPushButton
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QAction
+
 
 def test_show_help_open_web(qtbot, monkeypatch):
     mock_work_manager = Mock()
