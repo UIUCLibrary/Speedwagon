@@ -85,7 +85,7 @@ def test_boolean_delegate_is_combobox(qtbot):
     workflow_tab.item_selector_view.setCurrentIndex(basic_index)
 
     table = workflow_tab.workspace.findChild(QtWidgets.QTableView)
-    widget.show()
+    # widget.show()
     index = table.model().index(0, 0)
     table.edit(index)
     assert isinstance(table.indexWidget(index), QtWidgets.QComboBox)
@@ -116,7 +116,6 @@ def test_folder_delegate_is_browsable(qtbot):
     workflow_tab.item_selector_view.setCurrentIndex(basic_index)
 
     table = workflow_tab.workspace.findChild(QtWidgets.QTableView)
-    widget.show()
     index = table.model().index(0, 0)
     table.edit(index)
 
