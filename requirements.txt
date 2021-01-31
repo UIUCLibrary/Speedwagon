@@ -10,7 +10,7 @@ importlib-resources>=1.5.0
 lxml>=4.5.1
 pluggy==0.13.1
 py3exiv2bind>=0.1.5
-pyhathiprep>=0.1.5b4
+pyhathiprep>=0.1.5
 pyqt-distutils>=0.7.3
 PyQt5>=5.15.0
 PyQt5-sip>=12.8.0
