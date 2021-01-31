@@ -26,7 +26,7 @@ if __name__ == "__main__":
             "PyQt5",
             "HathiZip>=0.1.9",
             "HathiValidate>=0.3.6b5",
-            "pyhathiprep>=0.1.5b4",
+            "pyhathiprep>=0.1.5",
             "pyyaml",
             "uiucprescon.imagevalidate>=0.1.5",
             "uiucprescon.ocr>=0.1.1",
