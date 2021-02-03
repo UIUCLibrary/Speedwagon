@@ -1,4 +1,6 @@
 import logging
+import abc
+import os
 
 from uiucprescon import packager
 from typing import List, Any
@@ -14,7 +16,7 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
     name = "Convert CaptureOne TIFF to Digital Library Compound Object"
     description = 'Input is a path to a folder of TIFF files all named with ' \
                   'a bibid as a prefacing identifier, a final delimiting ' \
-                  'underscore or dash, and a sequence consisting of padded ' \
+                  'underscore, and a sequence consisting of padded ' \
                   'zeroes and a number' \
                   '\n' \
                   '\n' \
@@ -34,7 +36,7 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
         dest = user_args["Output"]
 
         package_factory = packager.PackageFactory(
-            packager.packages.CaptureOnePackage())
+            packager.packages.CaptureOnePackage(delimiter="-"))
 
         for package in package_factory.locate_packages(source_input):
             jobs.append({
@@ -59,6 +61,24 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
 
         )
         task_builder.add_subtask(packaging_task)
+
+    @staticmethod
+    def validate_user_options(**user_args):
+        option_validators = OptionValidator()
+        option_validators.register_validator('Output', DirectoryValidation(key="Output"))
+        option_validators.register_validator('Input', DirectoryValidation(key="Input"))
+        validators = [
+            option_validators.get("Output"),
+            option_validators.get("Input")
+
+        ]
+        invalid_messages = []
+        for v in validators:
+            if not v.is_valid(**user_args):
+                invalid_messages.append(v.explanation(**user_args))
+
+        if len(invalid_messages) > 0:
+            raise ValueError("\n".join(invalid_messages))
 
 
 class PackageConverter(tasks.Subtask):
@@ -94,3 +114,64 @@ class PackageConverter(tasks.Subtask):
             package_factory.transform(
                 self.existing_package, dest=self.new_package_root)
         return True
+
+
+class AbsOptionValidator(abc.ABC):
+    @abc.abstractmethod
+    def is_valid(self, **user_data) -> bool:
+        """Evaluate if the kwargs are valid"""
+
+    @abc.abstractmethod
+    def explanation(self, **user_data) -> str:
+        """Get reason for is_valid.
+
+        Args:
+            **user_data:
+
+        Returns:
+            returns a message explaining why something isn't valid, otherwise
+                produce the message "ok"
+        """
+
+
+class DirectoryValidation(AbsOptionValidator):
+
+    def __init__(self, key) -> None:
+        self._key = key
+
+    @staticmethod
+    def destination_exists(path) -> bool:
+        if not os.path.exists(path):
+            return False
+
+    def is_valid(self, **user_data) -> bool:
+        output = user_data.get(self._key)
+        if not output:
+            return False
+        if self.destination_exists(output) is False:
+            return False
+        return True
+
+    def explanation(self, **user_data) -> str:
+        if self.destination_exists(user_data[self._key]) is False:
+            return f"Directory {user_data[self._key]} does not exist"
+        return "ok"
+
+
+class OptionValidatorFactory:
+    def __init__(self):
+        self._validators = {}
+
+    def register_validator(self, key, validator):
+        self._validators[key] = validator
+
+    def create(self, key, **kwargs):
+        builder = self._validators.get(key)
+        if not builder:
+            raise ValueError(key)
+        return builder
+
+
+class OptionValidator(OptionValidatorFactory):
+    def get(self, service_id, **kwargs):
+        return self.create(service_id, **kwargs)

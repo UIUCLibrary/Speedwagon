@@ -18,7 +18,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
            "HathiTrust"
     description = "Input is a path to a folder of TIFF files all named with " \
                   "a bibid as a prefacing identifier, a final delimiting " \
-                  "underscore or dash, and a sequence consisting of " \
+                  "underscore, and a sequence consisting of " \
                   "padded zeroes and a number." \
                   "\n" \
                   "Output Hathi is a directory to put the new packages for " \
