@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
@@ -108,3 +108,64 @@ def test_input_and_out_invalid_produces_errors_with_both(monkeypatch):
         assert \
             "Directory ./invalid_folder/ does not exist" in str(e.value) and \
             "Directory ./Other_folder/ does not exist" in str(e.value)
+
+
+def test_discover_task_metadata(monkeypatch):
+    additional_data = {}
+    initial_results = []
+    user_args = {
+        "Input": "./some_real_source_folder",
+        "Output": "./some_real_folder/",
+    }
+    workflow = ht_wf.CaptureOneToDlCompoundWorkflow()
+
+    def mock_exists(path):
+        if path == user_args["Input"]:
+            return True
+        else:
+            return False
+
+    def mock_scandir(path):
+        for i_number in range(20):
+            file_mock = Mock()
+            file_mock.name = f"99423682912205899-{str(i_number).zfill(8)}.tif"
+            yield file_mock
+
+    with monkeypatch.context() as mp:
+        mp.setattr(os.path, "exists", mock_exists)
+        mp.setattr(os, "scandir", mock_scandir)
+        new_task_metadata = workflow.discover_task_metadata(
+            initial_results=initial_results,
+            additional_data=additional_data,
+            **user_args
+        )
+
+    assert len(new_task_metadata) == 1
+    md = new_task_metadata[0]
+    assert \
+        md['output'] == user_args['Output'] and \
+        md['source_path'] == user_args['Input']
+
+
+def test_package_converter(tmpdir):
+    output_ht = tmpdir / "ht"
+    output_ht.ensure_dir()
+
+    mock_source_package = MagicMock()
+    options = {
+        "source_path": "./some_real_source_folder",
+        "packaging_id": "99423682912205899",
+        "existing_package": mock_source_package,
+        "new_package_root": "./some_real_folder/",
+    }
+
+    new_task = ht_wf.PackageConverter(**options)
+    new_task.log = MagicMock()
+    new_task.package_factory = MagicMock()
+    new_task.package_factory.transform = MagicMock()
+    new_task.work()
+    new_task.package_factory.transform.assert_called_with(
+        mock_source_package,
+        dest=options['new_package_root']
+    )
+

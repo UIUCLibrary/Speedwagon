@@ -114,6 +114,7 @@ class PackageConverter(tasks.Subtask):
         self.existing_package = existing_package
         self.new_package_root = new_package_root
         self.source_path = source_path
+        self.package_factory = None
 
     def work(self) -> bool:
         my_logger = logging.getLogger(packager.__name__)
@@ -123,9 +124,12 @@ class PackageConverter(tasks.Subtask):
                 f"Converting {self.packaging_id} from {self.source_path} "
                 f"to a Hathi Trust Tiff package at {self.new_package_root}")
 
-            package_factory = packager.PackageFactory(
-                packager.packages.DigitalLibraryCompound())
+            package_factory = self.package_factory or packager.PackageFactory(
+                packager.packages.DigitalLibraryCompound()
+            )
 
             package_factory.transform(
-                self.existing_package, dest=self.new_package_root)
+                self.existing_package, dest=self.new_package_root
+            )
+
         return True
