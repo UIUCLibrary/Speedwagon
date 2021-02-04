@@ -1,7 +1,8 @@
 import logging
 
 from uiucprescon import packager
-from typing import List, Any
+from uiucprescon.packager.packages.collection import Package
+from typing import List, Any, Dict, Union
 from contextlib import contextmanager
 from speedwagon import tasks, validators
 from speedwagon.job import AbsWorkflow
@@ -27,9 +28,12 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
             options.UserOptionCustomDataType("Output", options.FolderData)
                 ]
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
-        jobs = []
+    def discover_task_metadata(self,
+                               initial_results: List[Any],
+                               additional_data, **user_args
+                               ) -> List[Dict[str, Any]]:
+
+        jobs: List[Dict[str, Union[str, Package]]] = []
         source_input = user_args["Input"]
         dest = user_args["Output"]
 
@@ -45,8 +49,11 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
             )
         return jobs
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
-        existing_package = job_args['package']
+    def create_new_task(self,
+                        task_builder: tasks.TaskBuilder,
+                        **job_args) -> None:
+
+        existing_package: Package = job_args['package']
         new_package_root = job_args["output"]
         source_path = job_args["source_path"]
         package_id = existing_package.metadata[Metadata.ID]
@@ -61,7 +68,7 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
         task_builder.add_subtask(packaging_task)
 
     @staticmethod
-    def validate_user_options(**user_args):
+    def validate_user_options(**user_args) -> None:
         option_validators = validators.OptionValidator()
         option_validators.register_validator(
             'Output', validators.DirectoryValidation(key="Output")
@@ -102,7 +109,7 @@ class PackageConverter(tasks.Subtask):
         self.new_package_root = new_package_root
         self.source_path = source_path
 
-    def work(self):
+    def work(self) -> bool:
         my_logger = logging.getLogger(packager.__name__)
         my_logger.setLevel(logging.INFO)
         with self.log_config(my_logger):
