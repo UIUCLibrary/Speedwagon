@@ -2,9 +2,9 @@ import logging
 
 from uiucprescon import packager
 from uiucprescon.packager.packages.collection import Package
-from typing import List, Any, Dict, Union, Callable, ContextManager, Iterator, Iterable
+from typing import List, Any, Dict, Union, Iterator
 
-from contextlib import contextmanager, AbstractContextManager
+from contextlib import contextmanager
 from speedwagon import tasks, validators
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options

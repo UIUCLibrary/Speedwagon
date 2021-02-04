@@ -1,15 +1,15 @@
 import abc
 import os
-from typing import Dict, Mapping, Any, Optional
+from typing import Dict, Any
 
 
 class AbsOptionValidator(abc.ABC):
     @abc.abstractmethod
-    def is_valid(self, **user_data: Mapping[str, Any]) -> bool:
+    def is_valid(self, **user_data: Any) -> bool:
         """Evaluate if the kwargs are valid"""
 
     @abc.abstractmethod
-    def explanation(self, **user_data: Mapping[str, Any]) -> str:
+    def explanation(self, **user_data: Any) -> str:
         """Get reason for is_valid.
 
         Args:
@@ -30,7 +30,7 @@ class DirectoryValidation(AbsOptionValidator):
     def destination_exists(path: str) -> bool:
         return os.path.exists(path)
 
-    def is_valid(self, **user_data: Mapping[str, Any]) -> bool:
+    def is_valid(self, **user_data: Any) -> bool:
         if self._key not in user_data:
             return False
         output = user_data[self._key]
@@ -40,7 +40,7 @@ class DirectoryValidation(AbsOptionValidator):
             return False
         return True
 
-    def explanation(self, **user_data: Mapping[str, Any]) -> str:
+    def explanation(self, **user_data: Any) -> str:
         destination = user_data[self._key]
         if not isinstance(destination, str):
             raise TypeError(f"{self._key} not a string")
