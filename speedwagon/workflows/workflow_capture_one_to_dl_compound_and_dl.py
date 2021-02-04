@@ -1,10 +1,11 @@
 import logging
 
-from typing import List, Any, Dict, Callable
+from typing import List, Any, Dict, Callable, Union, Iterator
 from contextlib import contextmanager
 from uiucprescon import packager
 from uiucprescon.packager.packages.abs_package_builder import AbsPackageBuilder
 from uiucprescon.packager.packages.collection_builder import Metadata
+from uiucprescon.packager.packages.collection import AbsPackageComponent
 from speedwagon import tasks, validators
 from speedwagon.job import AbsWorkflow
 from speedwagon.workflows import shared_custom_widgets as options
@@ -23,7 +24,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
                   "HathiTrust."
     active = True
 
-    def user_options(self):
+    def user_options(self) -> List[options.UserOptionCustomDataType]:
         return [
             options.UserOptionCustomDataType("Input", options.FolderData),
             options.UserOptionCustomDataType(
@@ -32,9 +33,15 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
                 "Output HathiTrust", options.FolderData),
                 ]
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
-        jobs = []
+    def discover_task_metadata(
+            self,
+            initial_results: List[Any],
+            additional_data: Dict[str, str],
+            **user_args: str
+    ) -> List[Dict[str, Union[str, AbsPackageComponent]]]:
+
+        jobs: List[Dict[str, Union[str, AbsPackageComponent]]] = []
+
         source_input = user_args["Input"]
         dest_dl = user_args["Output Digital Library"]
         dest_ht = user_args["Output HathiTrust"]
@@ -42,17 +49,17 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
         package_factory = packager.PackageFactory(
             packager.packages.CaptureOnePackage(delimiter="-"))
         for package in package_factory.locate_packages(source_input):
-            jobs.append({
+            new_job: Dict[str, Union[str, AbsPackageComponent]] = {
                 "package": package,
                 "output_dl": dest_dl,
                 "output_ht": dest_ht,
                 "source_path": source_input
             }
-            )
+            jobs.append(new_job)
         return jobs
 
     @staticmethod
-    def validate_user_options(**user_args) -> None:
+    def validate_user_options(**user_args: str) -> None:
         option_validators = validators.OptionValidator()
 
         option_validators.register_validator(
@@ -84,12 +91,13 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
 
     def create_new_task(self,
                         task_builder: tasks.TaskBuilder,
-                        **job_args) -> None:
-        existing_package = job_args['package']
-        new_dl_package_root = job_args["output_dl"]
-        new_ht_package_root = job_args["output_ht"]
-        source_path = job_args["source_path"]
-        package_id = existing_package.metadata[Metadata.ID]
+                        **job_args: Union[str, AbsPackageComponent]
+                        ) -> None:
+        existing_package: AbsPackageComponent = job_args['package']
+        new_dl_package_root: str = job_args["output_dl"]
+        new_ht_package_root: str = job_args["output_ht"]
+        source_path: str = job_args["source_path"]
+        package_id: str = existing_package.metadata[Metadata.ID]
         dl_packaging_task = PackageConverter(
             source_path=source_path,
             existing_package=existing_package,
@@ -118,7 +126,7 @@ class PackageConverter(tasks.Subtask):
     }
 
     @contextmanager
-    def log_config(self, logger):
+    def log_config(self, logger: logging.Logger) -> Iterator[None]:
         gui_logger = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)
@@ -129,7 +137,7 @@ class PackageConverter(tasks.Subtask):
     def __init__(self,
                  source_path: str,
                  packaging_id: str,
-                 existing_package,
+                 existing_package: AbsPackageComponent,
                  new_package_root: str,
                  package_format: str) -> None:
 
