@@ -2,8 +2,9 @@ import logging
 
 from uiucprescon import packager
 from uiucprescon.packager.packages.collection import Package
-from typing import List, Any, Dict, Union
-from contextlib import contextmanager
+from typing import List, Any, Dict, Union, Callable, ContextManager, Iterator, Iterable
+
+from contextlib import contextmanager, AbstractContextManager
 from speedwagon import tasks, validators
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
@@ -22,7 +23,7 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
                   'Output is a directory to put the new packages'
     active = True
 
-    def user_options(self):
+    def user_options(self) -> List[options.UserOptionCustomDataType]:
         return [
             options.UserOptionCustomDataType("Input", options.FolderData),
             options.UserOptionCustomDataType("Output", options.FolderData)
@@ -30,7 +31,8 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
 
     def discover_task_metadata(self,
                                initial_results: List[Any],
-                               additional_data, **user_args
+                               additional_data: Dict[str, Any],
+                               **user_args: str
                                ) -> List[Dict[str, Any]]:
 
         jobs: List[Dict[str, Union[str, Package]]] = []
@@ -41,22 +43,23 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
             packager.packages.CaptureOnePackage(delimiter="-"))
 
         for package in package_factory.locate_packages(source_input):
-            jobs.append({
+            new_job: Dict[str, Union[str, Package]] = {
                 "package": package,
                 "output": dest,
                 "source_path": source_input
             }
-            )
+            jobs.append(new_job)
         return jobs
 
     def create_new_task(self,
                         task_builder: tasks.TaskBuilder,
-                        **job_args) -> None:
+                        **job_args: Union[str, Package]
+                        ) -> None:
 
         existing_package: Package = job_args['package']
-        new_package_root = job_args["output"]
-        source_path = job_args["source_path"]
-        package_id = existing_package.metadata[Metadata.ID]
+        new_package_root: str = job_args["output"]
+        source_path: str = job_args["source_path"]
+        package_id: str = existing_package.metadata[Metadata.ID]
 
         packaging_task = PackageConverter(
             source_path=source_path,
@@ -68,7 +71,7 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
         task_builder.add_subtask(packaging_task)
 
     @staticmethod
-    def validate_user_options(**user_args) -> None:
+    def validate_user_options(**user_args: str) -> None:
         option_validators = validators.OptionValidator()
         option_validators.register_validator(
             'Output', validators.DirectoryValidation(key="Output")
@@ -92,16 +95,19 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
 
 class PackageConverter(tasks.Subtask):
     @contextmanager
-    def log_config(self, logger):
-        gui_logger = GuiLogHandler(self.log)
+    def log_config(self, logger: logging.Logger) -> Iterator[None]:
+        gui_logger: logging.Handler = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)
             yield
         finally:
             logger.removeHandler(gui_logger)
 
-    def __init__(self, source_path, packaging_id,
-                 existing_package, new_package_root) -> None:
+    def __init__(self,
+                 source_path: str,
+                 packaging_id: str,
+                 existing_package: Package,
+                 new_package_root: str) -> None:
 
         super().__init__()
         self.packaging_id = packaging_id
