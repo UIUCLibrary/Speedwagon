@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock, Mock
-
+from speedwagon import tasks
 import pytest
 
 import speedwagon.validators
@@ -145,6 +145,25 @@ def test_discover_task_metadata(monkeypatch):
     assert \
         md['output'] == user_args['Output'] and \
         md['source_path'] == user_args['Input']
+
+
+def test_create_new_task_dl(monkeypatch):
+    task_builder = tasks.TaskBuilder(
+        tasks.MultiStageTaskBuilder("."),
+        "."
+    )
+    mock_package = MagicMock()
+    mock_package.metadata = MagicMock()
+    job_args = {
+        'package': mock_package,
+        "output": "./some_real_dl_folder/",
+        "source_path": "./some_real_source_folder/",
+    }
+    workflow = ht_wf.CaptureOneToDlCompoundWorkflow()
+    workflow.create_new_task(task_builder, **job_args)
+    task_built = task_builder.build_task()
+    assert len(task_built.subtasks) == 1
+    assert task_built.subtasks[0].source_path == job_args['source_path']
 
 
 def test_package_converter(tmpdir):
