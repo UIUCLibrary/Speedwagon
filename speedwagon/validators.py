@@ -48,7 +48,10 @@ class OptionValidatorFactory:
     def __init__(self) -> None:
         self._validators: Dict[str, AbsOptionValidator] = {}
 
-    def register_validator(self, key: str, validator: AbsOptionValidator) -> None:
+    def register_validator(self,
+                           key: str,
+                           validator: AbsOptionValidator) -> None:
+
         self._validators[key] = validator
 
     def create(self, key: str) -> AbsOptionValidator:
@@ -59,5 +62,5 @@ class OptionValidatorFactory:
 
 
 class OptionValidator(OptionValidatorFactory):
-    def get(self, key: str)-> AbsOptionValidator:
+    def get(self, key: str) -> AbsOptionValidator:
         return self.create(key)
