@@ -1,16 +1,13 @@
 import logging
-import os
-import sys
-import traceback
 
-from uiucprescon import packager
 from typing import List, Any
 from contextlib import contextmanager
-from speedwagon import tasks
-from speedwagon.job import AbsWorkflow
-from . import shared_custom_widgets as options
-from speedwagon.worker import GuiLogHandler
+from uiucprescon import packager
 from uiucprescon.packager.packages.collection_builder import Metadata
+from speedwagon import tasks, validators
+from speedwagon.job import AbsWorkflow
+from speedwagon.workflows import shared_custom_widgets as options
+from speedwagon.worker import GuiLogHandler
 
 
 class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
@@ -42,41 +39,47 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
         dest_ht = user_args["Output HathiTrust"]
 
         package_factory = packager.PackageFactory(
-            packager.packages.CaptureOnePackage())
-        try:
-            for package in package_factory.locate_packages(source_input):
-                jobs.append({
-                    "package": package,
-                    "output_dl": dest_dl,
-                    "output_ht": dest_ht,
-                    "source_path": source_input
-                }
-                )
-        except Exception as e:
-            traceback.print_exc(file=sys.stderr)
-            print(e)
+            packager.packages.CaptureOnePackage(delimiter="-"))
+        for package in package_factory.locate_packages(source_input):
+            jobs.append({
+                "package": package,
+                "output_dl": dest_dl,
+                "output_ht": dest_ht,
+                "source_path": source_input
+            }
+            )
         return jobs
 
     @staticmethod
     def validate_user_options(**user_args):
-        directory_keys = [
-            "Input",
-            "Output Digital Library",
-            "Output HathiTrust"
+        option_validators = validators.OptionValidator()
 
-          ]
+        option_validators.register_validator(
+            'Output Digital Library',
+            validators.DirectoryValidation(key="Output Digital Library")
+        )
 
-        for directory_key in directory_keys:
-            directory_value = user_args[directory_key]
-            if directory_value is None:
-                raise ValueError("Output {} is required".format(directory_key))
+        option_validators.register_validator(
+            'Output HathiTrust',
+            validators.DirectoryValidation(key="Output HathiTrust")
+        )
 
-            if not os.path.exists(directory_value):
-                raise ValueError("Invalid value in {}".format(directory_key))
+        option_validators.register_validator(
+            'Input',
+            validators.DirectoryValidation(key="Input")
+        )
+        invalid_messages = []
+        for validation in [
+            option_validators.get("Output Digital Library"),
+            option_validators.get("Output HathiTrust"),
+            option_validators.get("Input")
 
-            if not os.path.isdir(directory_value):
-                raise ValueError("Invalid value in {}: "
-                                 "Not a directory".format(directory_key))
+        ]:
+            if not validation.is_valid(**user_args):
+                invalid_messages.append(validation.explanation(**user_args))
+
+        if len(invalid_messages) > 0:
+            raise ValueError("\n".join(invalid_messages))
 
     def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
         existing_package = job_args['package']
@@ -125,6 +128,7 @@ class PackageConverter(tasks.Subtask):
                  package_format) -> None:
 
         super().__init__()
+        self.package_factory = packager.PackageFactory
         self.packaging_id = packaging_id
         self.existing_package = existing_package
         self.new_package_root = new_package_root
@@ -141,8 +145,10 @@ class PackageConverter(tasks.Subtask):
                 f"Converting {self.packaging_id} from {self.source_path} "
                 f"to a {self.package_format} package at "
                 f"{self.new_package_root}")
-            package_factory = packager.PackageFactory(
-                PackageConverter.package_formats[self.package_format])
+
+            package_factory = self.package_factory(
+                PackageConverter.package_formats[self.package_format]
+            )
 
             package_factory.transform(
                 self.existing_package, dest=self.new_package_root)
