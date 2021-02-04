@@ -1,8 +1,9 @@
 import logging
 
-from typing import List, Any
+from typing import List, Any, Dict, Callable
 from contextlib import contextmanager
 from uiucprescon import packager
+from uiucprescon.packager.packages.abs_package_builder import AbsPackageBuilder
 from uiucprescon.packager.packages.collection_builder import Metadata
 from speedwagon import tasks, validators
 from speedwagon.job import AbsWorkflow
@@ -51,7 +52,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
         return jobs
 
     @staticmethod
-    def validate_user_options(**user_args):
+    def validate_user_options(**user_args) -> None:
         option_validators = validators.OptionValidator()
 
         option_validators.register_validator(
@@ -81,7 +82,9 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
         if len(invalid_messages) > 0:
             raise ValueError("\n".join(invalid_messages))
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(self,
+                        task_builder: tasks.TaskBuilder,
+                        **job_args) -> None:
         existing_package = job_args['package']
         new_dl_package_root = job_args["output_dl"]
         new_ht_package_root = job_args["output_ht"]
@@ -109,7 +112,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
 
 class PackageConverter(tasks.Subtask):
     name = "Package Conversion"
-    package_formats = {
+    package_formats: Dict[str, AbsPackageBuilder] = {
         "Digital Library Compound": packager.packages.DigitalLibraryCompound(),
         "HathiTrust jp2": packager.packages.HathiJp2()
     }
@@ -123,12 +126,18 @@ class PackageConverter(tasks.Subtask):
         finally:
             logger.removeHandler(gui_logger)
 
-    def __init__(self, source_path, packaging_id,
-                 existing_package, new_package_root,
-                 package_format) -> None:
+    def __init__(self,
+                 source_path: str,
+                 packaging_id: str,
+                 existing_package,
+                 new_package_root: str,
+                 package_format: str) -> None:
 
         super().__init__()
-        self.package_factory = packager.PackageFactory
+        self.package_factory: \
+            Callable[[AbsPackageBuilder], packager.PackageFactory] \
+            = packager.PackageFactory
+
         self.packaging_id = packaging_id
         self.existing_package = existing_package
         self.new_package_root = new_package_root
@@ -137,7 +146,7 @@ class PackageConverter(tasks.Subtask):
         self.package_format = package_format
         self.source_path = source_path
 
-    def work(self):
+    def work(self) -> bool:
         my_logger = logging.getLogger(packager.__name__)
         my_logger.setLevel(logging.INFO)
         with self.log_config(my_logger):
