@@ -1,11 +1,9 @@
 import logging
-import abc
-import os
 
 from uiucprescon import packager
 from typing import List, Any
 from contextlib import contextmanager
-from speedwagon import tasks
+from speedwagon import tasks, validators
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
 from speedwagon.worker import GuiLogHandler
@@ -64,16 +62,20 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
 
     @staticmethod
     def validate_user_options(**user_args):
-        option_validators = OptionValidator()
-        option_validators.register_validator('Output', DirectoryValidation(key="Output"))
-        option_validators.register_validator('Input', DirectoryValidation(key="Input"))
-        validators = [
+        option_validators = validators.OptionValidator()
+        option_validators.register_validator(
+            'Output', validators.DirectoryValidation(key="Output")
+        )
+
+        option_validators.register_validator(
+            'Input', validators.DirectoryValidation(key="Input")
+        )
+        invalid_messages = []
+        for v in [
             option_validators.get("Output"),
             option_validators.get("Input")
 
-        ]
-        invalid_messages = []
-        for v in validators:
+        ]:
             if not v.is_valid(**user_args):
                 invalid_messages.append(v.explanation(**user_args))
 
@@ -114,64 +116,3 @@ class PackageConverter(tasks.Subtask):
             package_factory.transform(
                 self.existing_package, dest=self.new_package_root)
         return True
-
-
-class AbsOptionValidator(abc.ABC):
-    @abc.abstractmethod
-    def is_valid(self, **user_data) -> bool:
-        """Evaluate if the kwargs are valid"""
-
-    @abc.abstractmethod
-    def explanation(self, **user_data) -> str:
-        """Get reason for is_valid.
-
-        Args:
-            **user_data:
-
-        Returns:
-            returns a message explaining why something isn't valid, otherwise
-                produce the message "ok"
-        """
-
-
-class DirectoryValidation(AbsOptionValidator):
-
-    def __init__(self, key) -> None:
-        self._key = key
-
-    @staticmethod
-    def destination_exists(path) -> bool:
-        if not os.path.exists(path):
-            return False
-
-    def is_valid(self, **user_data) -> bool:
-        output = user_data.get(self._key)
-        if not output:
-            return False
-        if self.destination_exists(output) is False:
-            return False
-        return True
-
-    def explanation(self, **user_data) -> str:
-        if self.destination_exists(user_data[self._key]) is False:
-            return f"Directory {user_data[self._key]} does not exist"
-        return "ok"
-
-
-class OptionValidatorFactory:
-    def __init__(self):
-        self._validators = {}
-
-    def register_validator(self, key, validator):
-        self._validators[key] = validator
-
-    def create(self, key, **kwargs):
-        builder = self._validators.get(key)
-        if not builder:
-            raise ValueError(key)
-        return builder
-
-
-class OptionValidator(OptionValidatorFactory):
-    def get(self, service_id, **kwargs):
-        return self.create(service_id, **kwargs)

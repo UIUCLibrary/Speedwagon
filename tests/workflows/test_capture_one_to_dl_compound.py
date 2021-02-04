@@ -2,6 +2,8 @@ import logging
 from unittest.mock import MagicMock
 
 import pytest
+
+import speedwagon.validators
 from speedwagon.workflows import workflow_capture_one_to_dl_compound as ht_wf
 import os.path
 
@@ -11,10 +13,10 @@ def test_option_validate_output_false(monkeypatch):
         "Input": "dummy",
         "Output": "spam"
     }
-    option_validators = ht_wf.OptionValidator()
+    option_validators = speedwagon.validators.OptionValidator()
     option_validators.register_validator(
         'Output',
-        ht_wf.DirectoryValidation(key="Output")
+        speedwagon.validators.DirectoryValidation(key="Output")
     )
     input_validator = option_validators.get('Output')
     monkeypatch.setattr(os.path, "exists", lambda p: False)
@@ -26,9 +28,9 @@ def test_option_validate_output(monkeypatch):
         "Input": "dummy",
         "Output": "spam"
     }
-    option_validators = ht_wf.OptionValidator()
+    option_validators = speedwagon.validators.OptionValidator()
     option_validators.register_validator(
-        'Output', ht_wf.DirectoryValidation(key="Output")
+        'Output', speedwagon.validators.DirectoryValidation(key="Output")
     )
     input_validator = option_validators.get('Output')
 
@@ -37,10 +39,10 @@ def test_option_validate_output(monkeypatch):
 
 
 def test_valid_option_explanation_is_ok(monkeypatch):
-    option_validators = ht_wf.OptionValidator()
+    option_validators = speedwagon.validators.OptionValidator()
 
     my_validator = \
-        ht_wf.DirectoryValidation(key="Output")
+        speedwagon.validators.DirectoryValidation(key="Output")
 
     my_validator.is_valid = MagicMock(return_value=True)
 
@@ -83,3 +85,19 @@ def test_input_and_out_invalid_produces_errors_with_both(tmpdir):
         "Directory ./invalid_folder/ does not exist" in str(e.value) and \
         "Directory ./Other_folder/ does not exist" in str(e.value)
 
+# =======
+
+# def test_compound_run(tool_job_manager_spy, monkeypatch, caplog, tmpdir):
+#     class MockWorkflow(ht_wf.CaptureOneToDlCompoundWorkflow):
+#         pass
+#
+#     options = {
+#         "Input": "/Users/hborcher/PycharmProjects/UIUCLibrary/Speedwagon/sample_data/package test data/package/DS_2021_01_25_dg",
+#         "Output": "/Users/hborcher/PycharmProjects/UIUCLibrary/Speedwagon/sample_data/out",
+#     }
+#     my_logger = logging.getLogger(__file__)
+#     tool_job_manager_spy.run(None,
+#                              MockWorkflow(),
+#                              options=options,
+#                              logger=my_logger)
+#
