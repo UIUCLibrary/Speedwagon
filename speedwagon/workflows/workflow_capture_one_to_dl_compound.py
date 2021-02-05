@@ -22,7 +22,7 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
     name = "Convert CaptureOne TIFF to Digital Library Compound Object"
     description = 'Input is a path to a folder of TIFF files all named with ' \
                   'a bibid as a prefacing identifier, a final delimiting ' \
-                  'underscore, and a sequence consisting of padded ' \
+                  'dash, and a sequence consisting of padded ' \
                   'zeroes and a number' \
                   '\n' \
                   '\n' \
