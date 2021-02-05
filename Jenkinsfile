@@ -426,7 +426,7 @@ def get_props(){
         }
     }
 }
-def props = get_props()
+props = get_props()
 pipeline {
     agent none
     parameters {
