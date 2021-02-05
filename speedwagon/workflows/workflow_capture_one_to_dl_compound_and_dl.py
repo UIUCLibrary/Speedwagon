@@ -1,8 +1,8 @@
 """Workflow for converting Capture One tiff file into two formats."""
-
+from __future__ import annotations
 import logging
 
-from typing import List, Any, Dict, Callable, Union, Iterator
+from typing import List, Any, Dict, Callable, Iterator
 from contextlib import contextmanager
 from uiucprescon import packager
 from uiucprescon.packager.packages.abs_package_builder import AbsPackageBuilder
@@ -48,7 +48,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
             initial_results: List[Any],
             additional_data: Dict[str, str],
             **user_args: str
-    ) -> List[Dict[str, Union[str, AbsPackageComponent]]]:
+    ) -> List[Dict[str, str | AbsPackageComponent]]:
         """Loot at user settings and discover any data needed to build a task.
 
         Args:
@@ -60,7 +60,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
             Returns a list of data to create a job with
 
         """
-        jobs: List[Dict[str, Union[str, AbsPackageComponent]]] = []
+        jobs: List[Dict[str, str | AbsPackageComponent]] = []
 
         source_input = user_args["Input"]
         dest_dl = user_args["Output Digital Library"]
@@ -69,7 +69,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
         package_factory = packager.PackageFactory(
             packager.packages.CaptureOnePackage(delimiter="-"))
         for package in package_factory.locate_packages(source_input):
-            new_job: Dict[str, Union[str, AbsPackageComponent]] = {
+            new_job: Dict[str, str | AbsPackageComponent] = {
                 "package": package,
                 "output_dl": dest_dl,
                 "output_ht": dest_ht,
@@ -119,7 +119,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
 
     def create_new_task(self,
                         task_builder: tasks.TaskBuilder,
-                        **job_args: Union[str, AbsPackageComponent]
+                        **job_args: str | AbsPackageComponent
                         ) -> None:
         """Generate a new task.
 
