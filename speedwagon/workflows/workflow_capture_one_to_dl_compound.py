@@ -1,3 +1,4 @@
+"""Workflow for converting Capture One tiff file into DL compound format."""
 import logging
 
 from uiucprescon import packager
@@ -13,6 +14,8 @@ from uiucprescon.packager.packages.collection_builder import Metadata
 
 
 class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
+    """Settings for convert capture one tiff files to DL compound."""
+
     name = "Convert CaptureOne TIFF to Digital Library Compound Object"
     description = 'Input is a path to a folder of TIFF files all named with ' \
                   'a bibid as a prefacing identifier, a final delimiting ' \
@@ -24,6 +27,11 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
     active = True
 
     def user_options(self) -> List[options.UserOptionCustomDataType]:
+        """Get the options types need to configuring the workflow.
+
+        Returns:
+            Returns a list of user option types
+        """
         return [
             options.UserOptionCustomDataType("Input", options.FolderData),
             options.UserOptionCustomDataType("Output", options.FolderData)
@@ -34,7 +42,17 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
                                additional_data: Dict[str, Any],
                                **user_args: str
                                ) -> List[Dict[str, Any]]:
+        """Loot at user settings and discover any data needed to build a task.
 
+        Args:
+            initial_results:
+            additional_data:
+            **user_args:
+
+        Returns:
+            Returns a list of data to create a job with
+
+        """
         jobs: List[Dict[str, Union[str, Package]]] = []
         source_input = user_args["Input"]
         dest = user_args["Output"]
@@ -55,7 +73,13 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
                         task_builder: tasks.TaskBuilder,
                         **job_args: Union[str, Package]
                         ) -> None:
+        """Generate a new task.
 
+        Args:
+            task_builder:
+            **job_args:
+
+        """
         existing_package: Package = job_args['package']
         new_package_root: str = job_args["output"]
         source_path: str = job_args["source_path"]
@@ -72,6 +96,14 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
 
     @staticmethod
     def validate_user_options(**user_args: str) -> None:
+        """Validate the user's arguments.
+
+        Raises a value error is something is not valid.
+
+        Args:
+            **user_args:
+
+        """
         option_validators = validators.OptionValidator()
         option_validators.register_validator(
             'Output', validators.DirectoryValidation(key="Output")
@@ -94,8 +126,16 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
 
 
 class PackageConverter(tasks.Subtask):
+    """Convert packages formats."""
+
     @contextmanager
     def log_config(self, logger: logging.Logger) -> Iterator[None]:
+        """Configure logs so they get forwarded to the speedwagon console.
+
+        Args:
+            logger:
+
+        """
         gui_logger: logging.Handler = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)
@@ -108,7 +148,14 @@ class PackageConverter(tasks.Subtask):
                  packaging_id: str,
                  existing_package: Package,
                  new_package_root: str) -> None:
+        """Create a new PackageConverter object.
 
+        Args:
+            source_path:
+            packaging_id:
+            existing_package:
+            new_package_root:
+        """
         super().__init__()
         self.packaging_id = packaging_id
         self.existing_package = existing_package
@@ -117,6 +164,12 @@ class PackageConverter(tasks.Subtask):
         self.package_factory = None
 
     def work(self) -> bool:
+        """Convert source package to the new type.
+
+        Returns:
+            True on success, False on failure
+
+        """
         my_logger = logging.getLogger(packager.__name__)
         my_logger.setLevel(logging.INFO)
         with self.log_config(my_logger):

@@ -1,3 +1,5 @@
+"""Workflow for converting Capture One tiff file into two formats."""
+
 import logging
 
 from typing import List, Any, Dict, Callable, Union, Iterator
@@ -13,6 +15,8 @@ from speedwagon.worker import GuiLogHandler
 
 
 class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
+    """Settings for convert capture one tiff files."""
+
     name = "Convert CaptureOne TIFF to Digital Library Compound Object and " \
            "HathiTrust"
     description = "Input is a path to a folder of TIFF files all named with " \
@@ -25,6 +29,12 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
     active = True
 
     def user_options(self) -> List[options.UserOptionCustomDataType]:
+        """Get the options types need to configuring the workflow.
+
+        Returns:
+            Returns a list of user option types
+
+        """
         return [
             options.UserOptionCustomDataType("Input", options.FolderData),
             options.UserOptionCustomDataType(
@@ -39,7 +49,17 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
             additional_data: Dict[str, str],
             **user_args: str
     ) -> List[Dict[str, Union[str, AbsPackageComponent]]]:
+        """Loot at user settings and discover any data needed to build a task.
 
+        Args:
+            initial_results:
+            additional_data:
+            **user_args:
+
+        Returns:
+            Returns a list of data to create a job with
+
+        """
         jobs: List[Dict[str, Union[str, AbsPackageComponent]]] = []
 
         source_input = user_args["Input"]
@@ -60,6 +80,14 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
 
     @staticmethod
     def validate_user_options(**user_args: str) -> None:
+        """Validate the user's arguments.
+
+        Raises a value error is something is not valid.
+
+        Args:
+            **user_args:
+
+        """
         option_validators = validators.OptionValidator()
 
         option_validators.register_validator(
@@ -93,6 +121,13 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
                         task_builder: tasks.TaskBuilder,
                         **job_args: Union[str, AbsPackageComponent]
                         ) -> None:
+        """Generate a new task.
+
+        Args:
+            task_builder:
+            **job_args:
+
+        """
         existing_package: AbsPackageComponent = job_args['package']
         new_dl_package_root: str = job_args["output_dl"]
         new_ht_package_root: str = job_args["output_ht"]
@@ -119,6 +154,8 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
 
 
 class PackageConverter(tasks.Subtask):
+    """Convert packages formats."""
+
     name = "Package Conversion"
     package_formats: Dict[str, AbsPackageBuilder] = {
         "Digital Library Compound": packager.packages.DigitalLibraryCompound(),
@@ -127,6 +164,12 @@ class PackageConverter(tasks.Subtask):
 
     @contextmanager
     def log_config(self, logger: logging.Logger) -> Iterator[None]:
+        """Configure logs so they get forwarded to the speedwagon console.
+
+        Args:
+            logger:
+
+        """
         gui_logger = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)
@@ -140,7 +183,15 @@ class PackageConverter(tasks.Subtask):
                  existing_package: AbsPackageComponent,
                  new_package_root: str,
                  package_format: str) -> None:
+        """Create PackageConverter object.
 
+        Args:
+            source_path:
+            packaging_id:
+            existing_package:
+            new_package_root:
+            package_format:
+        """
         super().__init__()
         self.package_factory: \
             Callable[[AbsPackageBuilder], packager.PackageFactory] \
@@ -155,6 +206,12 @@ class PackageConverter(tasks.Subtask):
         self.source_path = source_path
 
     def work(self) -> bool:
+        """Convert source package to the new type.
+
+        Returns:
+            True on success, False on failure
+
+        """
         my_logger = logging.getLogger(packager.__name__)
         my_logger.setLevel(logging.INFO)
         with self.log_config(my_logger):
