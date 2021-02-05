@@ -166,4 +166,3 @@ def test_package_converter(tmpdir):
         mock_source_package,
         dest=options['new_package_root']
     )
-
