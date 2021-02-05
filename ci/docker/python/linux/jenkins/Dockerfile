@@ -6,13 +6,12 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_TRUSTED_HOST
 ARG PIP_INDEX_URL
 
+ADD requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt ci/docker/python/shared/requirements-extra.txt /tmp/
 RUN python -m pip install --upgrade pip &&  \
     pip install setuptools && \
     pip install wheel && \
-    pip install conan cmake
-
-ADD requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt ci/docker/python/shared/requirements-extra.txt /tmp/
-RUN pip wheel --wheel-dir=/wheels --no-cache-dir \
+    pip install conan cmake && \
+    pip wheel --wheel-dir=/wheels --no-cache-dir \
         -r /tmp/requirements.txt \
         -r /tmp/requirements-dev.txt \
         -r /tmp/requirements-ci.txt && \

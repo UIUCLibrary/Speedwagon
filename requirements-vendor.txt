@@ -10,4 +10,4 @@ uiucprescon-getmarc==0.1.2
 uiucprescon.images==0.0.4b1
 uiucprescon.imagevalidate==0.1.5
 uiucprescon.ocr==0.1.1
-uiucprescon.packager==0.2.11b5
+uiucprescon.packager==0.2.11b6
