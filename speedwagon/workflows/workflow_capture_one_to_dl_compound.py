@@ -1,16 +1,18 @@
 """Workflow for converting Capture One tiff file into DL compound format."""
 import logging
 
-from uiucprescon import packager
-from uiucprescon.packager.packages.collection import Package
 from typing import List, Any, Dict, Union, Iterator
 
 from contextlib import contextmanager
+
+from uiucprescon import packager
+from uiucprescon.packager.packages.collection import Package
+from uiucprescon.packager.packages.collection_builder import Metadata
+
 from speedwagon import tasks, validators
 from speedwagon.job import AbsWorkflow
-from . import shared_custom_widgets as options
 from speedwagon.worker import GuiLogHandler
-from uiucprescon.packager.packages.collection_builder import Metadata
+from . import shared_custom_widgets as options
 
 
 class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
