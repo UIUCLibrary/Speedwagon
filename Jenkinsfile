@@ -1142,6 +1142,9 @@ pipeline {
                                 label "${PLATFORM} && docker"
                             }
                         }
+                        options{
+                            retry(3)
+                        }
                         stages{
                             stage('Testing DevPi Package wheel'){
                                 steps{
