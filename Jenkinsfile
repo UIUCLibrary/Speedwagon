@@ -29,7 +29,7 @@ def getDevPiStagingIndex(){
 }
 
 
-def CONFIGURATIONS = loadConfigs()
+CONFIGURATIONS = loadConfigs()
 
 def get_build_args(){
     script{
