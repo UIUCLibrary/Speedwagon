@@ -8,7 +8,6 @@ from typing import List, Any, Optional, Union, Sequence, Dict, Set, Tuple
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 import requests
-from requests import HTTPError, ConnectionError
 
 
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
@@ -401,13 +400,15 @@ class MarcGeneratorTask(tasks.Subtask):
             })
             return True
 
-        except (ConnectionError, HTTPError) as exception:
+        except (requests.ConnectionError, requests.HTTPError) as exception:
             self.set_results({
                 "success": False,
                 "identifier": self._identifier,
                 "output": str(exception)
             })
-            raise SpeedwagonException("Trouble connecting to server getmarc")
+            raise SpeedwagonException(
+                "Trouble connecting to server getmarc"
+            ) from exception
 
     def write_file(self, data: str) -> None:
         """Write the data to a file.
