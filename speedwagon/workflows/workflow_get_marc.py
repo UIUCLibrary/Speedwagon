@@ -381,6 +381,9 @@ class MarcGeneratorTask(tasks.Subtask):
         Returns:
             bool: True on success, False otherwise.
 
+        Notes:
+            Connection errors to the getmarc server will throw a
+                SpeedwagonException.
         """
         strategy = \
             SUPPORTED_IDENTIFIERS[self._identifier_type](self._server_url)

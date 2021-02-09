@@ -112,3 +112,4 @@ Release History
 Dev
 +++
 
+* getmarc stops and present an error message if connectivity problems with server
