@@ -466,6 +466,7 @@ SAMPLE_RECORD = """<record xmlns="http://www.loc.gov/MARC21/slim" xmlns:xsi="htt
 </record>
 """
 
+
 @pytest.mark.parametrize("identifier_type, subdirectory, identifier, volume", identifier_dirs)
 def test_995_enhancement_task_adds_955(tmpdir, identifier_type, subdirectory, identifier, volume):
     dummy_xml = tmpdir / "MARC.xml"
@@ -485,6 +486,7 @@ def test_995_enhancement_task_adds_955(tmpdir, identifier_type, subdirectory, id
     assert len(subfields) == 1, "Missing subfield"
     assert subfields[0].text == subdirectory
 
+
 @pytest.mark.parametrize("identifier_type, subdirectory, identifier, volume", identifier_dirs)
 def test_995_enhancement_task_formats_without_namespace_tags(tmpdir, identifier_type, subdirectory, identifier, volume):
     dummy_xml = tmpdir / "MARC.xml"
@@ -499,3 +501,21 @@ def test_995_enhancement_task_formats_without_namespace_tags(tmpdir, identifier_
     with open(dummy_xml) as f:
         file = f.read()
     assert not file.startswith("<ns0:"), f"File starts with <ns:0: \"{file[0:10]}...\""
+
+
+def test_fail_on_server_connection(monkeypatch):
+    task = MarcGeneratorTask(
+        identifier="99101026212205899",
+        identifier_type="MMS ID",
+        output_name="dummy.xml",
+        server_url="http://fake.com",
+    )
+    task.parent_task_log_q = []
+
+    def mock_request(*args, **kwargs):
+        raise requests.exceptions.ConnectionError()
+
+    monkeypatch.setattr(requests.sessions.Session, "request", mock_request)
+    with pytest.raises(speedwagon.exceptions.SpeedwagonException):
+        task.work()
+
