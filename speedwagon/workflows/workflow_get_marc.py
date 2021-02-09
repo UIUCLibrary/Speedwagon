@@ -8,7 +8,7 @@ from typing import List, Any, Optional, Union, Sequence, Dict, Set, Tuple
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 import requests
-from requests import RequestException
+from requests import HTTPError, ConnectionError
 
 
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
@@ -398,13 +398,13 @@ class MarcGeneratorTask(tasks.Subtask):
             })
             return True
 
-        except RequestException as exception:
+        except (ConnectionError, HTTPError) as exception:
             self.set_results({
                 "success": False,
                 "identifier": self._identifier,
-                "output": exception.response.reason
+                "output": str(exception)
             })
-            return False
+            raise SpeedwagonException("Trouble connecting to server getmarc")
 
     def write_file(self, data: str) -> None:
         """Write the data to a file.
@@ -463,17 +463,3 @@ class MarcEnhancement955Task(tasks.Subtask):
             write_file.write(xmlstr)
         return True
 
-
-# short_bibid = strip_volume(self._bib_id)
-# marc = pygetmarc.get_marc(int(short_bibid))
-#
-# field_adder = pygetmarc.modifiers.Add955()
-# field_adder.bib_id = self._bib_id
-# if "v" in self._bib_id:
-#     field_adder.contains_v = True
-#
-# enriched_marc = field_adder.enrich(src=marc)
-#
-# reflow_modifier = pygetmarc.modifiers.Reflow()
-# cleaned_up_marc = reflow_modifier.enrich(enriched_marc)
-#
