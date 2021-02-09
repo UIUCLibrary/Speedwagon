@@ -462,4 +462,3 @@ class MarcEnhancement955Task(tasks.Subtask):
         with open(self._xml_file, "w") as write_file:
             write_file.write(xmlstr)
         return True
-
