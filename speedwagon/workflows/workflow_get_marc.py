@@ -315,8 +315,17 @@ class AbsMarcFileStrategy(abc.ABC):
 
 
 class DependentTruthyValueValidation(validators.AbsOptionValidator):
+    """Validate depending optional values are checked in right order."""
 
     def __init__(self, key: str, required_true_keys: List[str]) -> None:
+        """Create a new validation object.
+
+        Args:
+            key: Optional value, that requires the other conditions to be true.
+            required_true_keys:
+                Keys that also have to be true for the key argument to be also
+                    true and valid.
+        """
         super().__init__()
         self.key = key
         self.required_true_keys = required_true_keys
@@ -336,6 +345,7 @@ class DependentTruthyValueValidation(validators.AbsOptionValidator):
         return True
 
     def is_valid(self, **user_data: Any) -> bool:
+        """Check if the user data is valid."""
         for required_key in ['Add 955 field', 'Add 035 field']:
             if self._has_required_key(user_data, required_key):
                 return False
@@ -346,6 +356,15 @@ class DependentTruthyValueValidation(validators.AbsOptionValidator):
         return True
 
     def explanation(self, **user_data: Any) -> str:
+        """Get reason for is_valid.
+
+        Args:
+            **user_data:
+
+        Returns:
+            returns a message explaining why something isn't valid, otherwise
+                produce the message "ok"
+        """
         if self._requirement_is_also_true(
                 user_data['Add 035 field'],
                 [
@@ -357,8 +376,14 @@ class DependentTruthyValueValidation(validators.AbsOptionValidator):
 
 
 class RequiredValueValidation(validators.AbsOptionValidator):
+    """Make sure the value is ignored."""
 
     def __init__(self, key) -> None:
+        """Check if the key is not empty.
+
+        Args:
+            key: Key to check is being used
+        """
         super().__init__()
         self.key = key
 
@@ -375,6 +400,7 @@ class RequiredValueValidation(validators.AbsOptionValidator):
         return str(user_data[key]).strip() != ""
 
     def is_valid(self, **user_data: Any) -> bool:
+        """Check if the user data is valid."""
         return all(
             [
                 self._has_key(user_data, self.key),
@@ -384,6 +410,15 @@ class RequiredValueValidation(validators.AbsOptionValidator):
         )
 
     def explanation(self, **user_data: Any) -> str:
+        """Get reason for is_valid.
+
+        Args:
+            **user_data:
+
+        Returns:
+            returns a message explaining why something isn't valid, otherwise
+                produce the message "ok"
+        """
         if self._has_key(user_data, self.key) is False:
             return f"Missing key {self.key}"
 
@@ -475,10 +510,15 @@ class MarcGeneratorTask(tasks.Subtask):
 
     @property
     def identifier_type(self):
+        """Type of identifier.
+
+            Such as MMS ID or BIBID
+        """
         return self._identifier_type
 
     @property
     def identifier(self):
+        """Record id."""
         return self._identifier
 
     @staticmethod
@@ -545,12 +585,21 @@ class MarcGeneratorTask(tasks.Subtask):
 
 
 class EnhancementTask(tasks.Subtask):
+    """Base class for enhancing xml file."""
+
     def __init__(self, xml_file) -> None:
+        """Create a new Enchancement object for processing the xml file.
+
+        Args:
+            xml_file: Path to an XML file to process.
+
+        """
         super().__init__()
         self.xml_file = xml_file
 
     @staticmethod
     def to_prety_string(root: ET.Element) -> str:
+        """Convert lxml Element into a pretty formatted string."""
         ET.register_namespace('', 'http://www.loc.gov/MARC21/slim')
         flat_xml_string = \
             "\n".join([line.strip() for line in ET.tostring(
@@ -564,7 +613,7 @@ class EnhancementTask(tasks.Subtask):
             tree: ET.ElementTree,
             *new_datafields: ET.Element
     ) -> ET.Element:
-
+        """Redraw the tree so that everything is in order."""
         root = tree.getroot()
         namespaces = {"marc": "http://www.loc.gov/MARC21/slim"}
         fields = list(new_datafields)
@@ -577,6 +626,8 @@ class EnhancementTask(tasks.Subtask):
 
 
 class MarcEnhancement035Task(EnhancementTask):
+    """Enhancement for Marc xml by adding a 035 field."""
+
     namespaces = {"marc": "http://www.loc.gov/MARC21/slim"}
 
     @classmethod
@@ -584,7 +635,15 @@ class MarcEnhancement035Task(EnhancementTask):
             cls,
             tree: ET.ElementTree
     ) -> Iterator[ET.Element]:
+        """Locate any 959 fields containing the text UIUdb.
 
+        Args:
+            tree:
+
+        Yields:
+            Yields subelements if found.
+
+        """
         for datafield in tree.findall(".//marc:datafield/[@tag='959']",
                                       cls.namespaces):
             for subfield in datafield:
@@ -593,6 +652,15 @@ class MarcEnhancement035Task(EnhancementTask):
 
     @classmethod
     def has_959_field_with_uiudb(cls, tree: ET.ElementTree) -> bool:
+        """Check if tree contains an 955 element with UIUdb.
+
+        Args:
+            tree:
+
+        Returns:
+            Returns True is found one, False if none have been found.
+
+        """
         try:
             next(cls.find_959_field_with_uiudb(tree))
         except StopIteration:
@@ -601,7 +669,15 @@ class MarcEnhancement035Task(EnhancementTask):
 
     @staticmethod
     def new_035_field(data: ET.Element):
+        """Create a new 035 Element based on the data element.
 
+        Args:
+            data: subfield of a 959 element
+
+        Returns:
+            Returns a New 035 Element.
+
+        """
         new_datafield = ET.Element(
             '{http://www.loc.gov/MARC21/slim}datafield',
             attrib={
@@ -620,7 +696,6 @@ class MarcEnhancement035Task(EnhancementTask):
 
     def work(self) -> bool:
         """Add 035 field to the file.
-
 
         if there is a 959 field, check if there is a subfield that contains
             "UIUdb".
@@ -649,11 +724,25 @@ class MarcEnhancement035Task(EnhancementTask):
 
 
 class MarcEnhancement955Task(EnhancementTask):
-    def __init__(self, added_value, xml_file) -> None:
+    """Enhancement for Marc xml by adding a 955 field."""
+
+    def __init__(self, added_value: str, xml_file: str) -> None:
+        """Create a new EnhancementTask object.
+
+        Args:
+            added_value: The value added to the 955 field
+            xml_file: File applied to.
+        """
         super().__init__(xml_file)
         self.added_value = added_value
 
     def work(self) -> bool:
+        """Perform the enhancement.
+
+        Returns:
+            Returns True on success, False on failure
+
+        """
         tree = ET.parse(self.xml_file)
         root = self.enhance_tree_with_955(tree)
         with open(self.xml_file, "w") as write_file:
@@ -661,6 +750,16 @@ class MarcEnhancement955Task(EnhancementTask):
         return True
 
     def enhance_tree_with_955(self, tree: ET.ElementTree) -> ET.Element:
+        """Enhance the current tree by adding a new 955 field,.
+
+        Args:
+            tree:
+                XML tree
+
+        Returns:
+            Returns a new Element with the 955 field added.
+
+        """
         new_datafield = self.create_new_955_element(self.added_value)
 
         root = self.redraw_tree(tree, new_datafield)
@@ -668,6 +767,16 @@ class MarcEnhancement955Task(EnhancementTask):
 
     @staticmethod
     def create_new_955_element(added_value: str) -> ET.Element:
+        """Create aa new 955 element.
+
+        Args:
+            added_value:
+                Text to be added to the 955 subfield
+
+        Returns:
+            Returns a new 955 Elements
+
+        """
         new_datafield = ET.Element(
             '{http://www.loc.gov/MARC21/slim}datafield',
             attrib={
