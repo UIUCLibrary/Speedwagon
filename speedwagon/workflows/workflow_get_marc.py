@@ -228,7 +228,6 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
     @classmethod
     @reports.add_report_borders
-
     def generate_report(cls, results: List[tasks.Result],
                         **user_args) -> Optional[str]:
         """Generate a simple home-readable report from the job results.
