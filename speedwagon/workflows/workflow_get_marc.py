@@ -558,7 +558,12 @@ class EnhancementTask(tasks.Subtask):
         xmlstr = minidom.parseString(flat_xml_string).toprettyxml()
         return xmlstr
 
-    def redraw_tree(self, tree: ET.ElementTree, *new_datafields: ET.Element) -> ET.Element:
+    def redraw_tree(
+            self,
+            tree: ET.ElementTree,
+            *new_datafields: ET.Element
+    ) -> ET.Element:
+
         root = tree.getroot()
         namespaces = {"marc": "http://www.loc.gov/MARC21/slim"}
         fields = list(new_datafields)
@@ -574,7 +579,11 @@ class MarcEnhancement035Task(EnhancementTask):
     namespaces = {"marc": "http://www.loc.gov/MARC21/slim"}
 
     @classmethod
-    def find_959_field_with_uiudb(cls, tree: ET.ElementTree) -> Iterator[ET.Element]:
+    def find_959_field_with_uiudb(
+            cls,
+            tree: ET.ElementTree
+    ) -> Iterator[ET.Element]:
+
         for datafield in tree.findall(".//marc:datafield/[@tag='959']",
                                       cls.namespaces):
             for subfield in datafield:
@@ -601,7 +610,9 @@ class MarcEnhancement035Task(EnhancementTask):
         )
         new_subfield = deepcopy(data)
 
-        new_subfield.text = new_subfield.text.replace("(UIUdb)","(UIU)Voyager")
+        new_subfield.text = \
+            new_subfield.text.replace("(UIUdb)", "(UIU)Voyager")
+
         new_datafield.append(new_subfield)
         return new_datafield
 
@@ -612,8 +623,8 @@ class MarcEnhancement035Task(EnhancementTask):
         if there is a 959 field, check if there is a subfield that contains
             "UIUdb".
         if not, ignore and move on.
-        If there is, add a new 035 field with the same value as that 959 field but
-         replace  (UIUdb) with "(UIU)Voyager"
+        If there is, add a new 035 field with the same value as that 959 field
+            but replace  (UIUdb) with "(UIU)Voyager"
 
         Returns:
             Returns True on success else returns False
@@ -654,7 +665,6 @@ class MarcEnhancement955Task(EnhancementTask):
         root = self.redraw_tree(tree, new_datafield)
         return root
 
-
     @staticmethod
     def create_new_955_element(added_value: str) -> ET.Element:
         new_datafield = ET.Element(
@@ -672,4 +682,3 @@ class MarcEnhancement955Task(EnhancementTask):
         new_subfield.text = added_value
         new_datafield.append(new_subfield)
         return new_datafield
-
