@@ -4,14 +4,16 @@
 import abc
 import os
 import re
-from typing import List, Any, Optional, Union, Sequence, Dict, Set, Tuple
+from copy import deepcopy
+from typing import List, Any, Optional, Union, Sequence, Dict, Set, Tuple, \
+    Iterator
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 import requests
 
 
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
-from speedwagon import tasks, reports
+from speedwagon import tasks, reports, validators
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
 
@@ -76,11 +78,17 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
             id_type_option.add_selection(id_type)
         workflow_options.append(id_type_option)
 
-        field_955_option = \
-            options.UserOptionPythonDataType2("Add 955 field", bool)
+        # These options will all default to True
+        enhancement_field_options = [
+            'Add 955 field',
+            'Add 035 field',
+        ]
+        for enhancement_field in enhancement_field_options:
+            field_option = \
+                options.UserOptionPythonDataType2(enhancement_field, bool)
+            field_option.data = True
+            workflow_options.append(field_option)
 
-        field_955_option.data = True
-        workflow_options.append(field_955_option)
         return workflow_options
 
     @classmethod
@@ -137,21 +145,47 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
             **user_args:
 
         """
-        input_value = user_args.get("Input")
-        if input_value is None or str(input_value).strip() == "":
-            raise ValueError("Input is a required field")
+        option_validators = validators.OptionValidator()
+        option_validators.register_validator(
+            key='Input',
+            validator=validators.DirectoryValidation(key="Input")
+        )
+        option_validators.register_validator(
+            key="Input Required",
+            validator=RequiredValueValidation(key="Input")
+        )
+        option_validators.register_validator(
+            key="Identifier type Required",
+            validator=RequiredValueValidation(key="Identifier type")
+        )
+        option_validators.register_validator(
+            key="Match 035 and 955",
+            validator=DependentTruthyValueValidation(
+                key='Add 035 field',
+                required_true_keys=[
+                    'Add 955 field'
+                ]
+            )
+        )
 
-        if not os.path.exists(str(input_value)) \
-                or not os.path.isdir(str(input_value)):
+        invalid_messages = []
+        for validation in [
+            option_validators.get("Input"),
+            option_validators.get("Input Required"),
+            option_validators.get("Identifier type Required"),
+            option_validators.get('Match 035 and 955')
+        ]:
+            if not validation.is_valid(**user_args):
+                invalid_messages.append(validation.explanation(**user_args))
 
-            raise ValueError("Invalid value in input")
+        if len(invalid_messages) > 0:
+            raise ValueError("\n".join(invalid_messages))
 
-        if "Identifier type" not in user_args:
-            raise ValueError("Missing Identifier type")
-
-    def create_new_task(self,
-                        task_builder: tasks.TaskBuilder,
-                        **job_args) -> None:
+    def create_new_task(
+            self,
+            task_builder: tasks.TaskBuilder,
+            **job_args
+    ) -> None:
         """Create the task to be run.
 
         Args:
@@ -181,6 +215,13 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
                 task_builder.add_subtask(
                     MarcEnhancement955Task(
                         added_value=subdirectory,
+                        xml_file=marc_file
+                    )
+                )
+            add_035 = enhancements.get('035')
+            if add_035:
+                task_builder.add_subtask(
+                    MarcEnhancement035Task(
                         xml_file=marc_file
                     )
                 )
@@ -271,6 +312,88 @@ class AbsMarcFileStrategy(abc.ABC):
             str: Record requested as a string
 
         """
+
+
+class DependentTruthyValueValidation(validators.AbsOptionValidator):
+
+    def __init__(self, key: str, required_true_keys: List[str]) -> None:
+        super().__init__()
+        self.key = key
+        self.required_true_keys = required_true_keys
+
+    @staticmethod
+    def _has_required_key(user_data, key) -> bool:
+        return key not in user_data
+
+    @staticmethod
+    def _requirement_is_also_true(key: bool, dependents: List[bool]) -> bool:
+        # If the first part is false, there is no reason to check the rest
+        if key is False:
+            return True
+
+        if not all(dependents):
+            return False
+        return True
+
+    def is_valid(self, **user_data: Any) -> bool:
+        for required_key in ['Add 955 field', 'Add 035 field']:
+            if self._has_required_key(user_data, required_key):
+                return False
+        if self._requirement_is_also_true(user_data['Add 035 field'], [
+            user_data['Add 955 field']
+        ]) is False:
+            return False
+        return True
+
+    def explanation(self, **user_data: Any) -> str:
+        if self._requirement_is_also_true(
+                user_data['Add 035 field'],
+                [
+                    user_data['Add 955 field']
+                ]
+        ) is False:
+            return "Add 035 field requires Add 955 field"
+        return "ok"
+
+
+class RequiredValueValidation(validators.AbsOptionValidator):
+
+    def __init__(self, key) -> None:
+        super().__init__()
+        self.key = key
+
+    @staticmethod
+    def _has_key(user_data, key) -> bool:
+        return key in user_data.keys()
+
+    @staticmethod
+    def _is_not_none(user_data, key) -> bool:
+        return user_data[key] is not None
+
+    @staticmethod
+    def _not_empty_str(user_data, key) -> bool:
+        return str(user_data[key]).strip() != ""
+
+    def is_valid(self, **user_data: Any) -> bool:
+        return all(
+            [
+                self._has_key(user_data, self.key),
+                self._is_not_none(user_data, self.key),
+                self._not_empty_str(user_data, self.key),
+            ]
+        )
+
+    def explanation(self, **user_data: Any) -> str:
+        if self._has_key(user_data, self.key) is False:
+            return f"Missing key {self.key}"
+
+        if any([
+            self._is_not_none(user_data, self.key) is False,
+            self._not_empty_str(user_data, self.key) is False
+        ]):
+            return f"Missing {self.key}"
+
+        return "ok"
 
 
 class GetMarcBibId(AbsMarcFileStrategy):
@@ -421,18 +544,119 @@ class MarcGeneratorTask(tasks.Subtask):
             write_file.write(data)
 
 
-class MarcEnhancement955Task(tasks.Subtask):
-
-    def __init__(self, added_value, xml_file) -> None:
+class EnhancementTask(tasks.Subtask):
+    def __init__(self, xml_file) -> None:
         super().__init__()
-        self.added_value = added_value
-        self._xml_file = xml_file
+        self.xml_file = xml_file
+
+    def to_prety_string(self, root: ET.Element) -> str:
+        ET.register_namespace('', 'http://www.loc.gov/MARC21/slim')
+        flat_xml_string = \
+            "\n".join([line.strip() for line in ET.tostring(
+                root, encoding="unicode")
+                      .split("\n")]).replace("\n", "")
+        xmlstr = minidom.parseString(flat_xml_string).toprettyxml()
+        return xmlstr
+
+    def redraw_tree(self, tree: ET.ElementTree, *new_datafields: ET.Element) -> ET.Element:
+        root = tree.getroot()
+        namespaces = {"marc": "http://www.loc.gov/MARC21/slim"}
+        fields = list(new_datafields)
+        for datafield in tree.findall(".//marc:datafield", namespaces):
+            fields.append(datafield)
+            root.remove(datafield)
+        for field in sorted(fields, key=lambda x: int(x.attrib['tag'])):
+            root.append(field)
+        return root
+
+
+class MarcEnhancement035Task(EnhancementTask):
+    namespaces = {"marc": "http://www.loc.gov/MARC21/slim"}
+
+    @classmethod
+    def find_959_field_with_uiudb(cls, tree: ET.ElementTree) -> Iterator[ET.Element]:
+        for datafield in tree.findall(".//marc:datafield/[@tag='959']",
+                                      cls.namespaces):
+            for subfield in datafield:
+                if "UIUdb" in subfield.text:
+                    yield subfield
+
+    @classmethod
+    def has_959_field_with_uiudb(cls, tree: ET.ElementTree) -> bool:
+        try:
+            next(cls.find_959_field_with_uiudb(tree))
+        except StopIteration:
+            return False
+        return True
+
+    def new_035_field(self, data: ET.Element):
+
+        new_datafield = ET.Element(
+            '{http://www.loc.gov/MARC21/slim}datafield',
+            attrib={
+                'tag': "035",
+                'ind1': ' ',
+                'ind2': ' '
+            }
+        )
+        new_subfield = deepcopy(data)
+
+        new_subfield.text = new_subfield.text.replace("(UIUdb)","(UIU)Voyager")
+        new_datafield.append(new_subfield)
+        return new_datafield
 
     def work(self) -> bool:
-        tree = ET.parse(self._xml_file)
-        namespaces = {"marc": "http://www.loc.gov/MARC21/slim"}
-        fields = []
-        root = tree.getroot()
+        """Add 035 field to the file.
+
+
+        if there is a 959 field, check if there is a subfield that contains
+            "UIUdb".
+        if not, ignore and move on.
+        If there is, add a new 035 field with the same value as that 959 field but
+         replace  (UIUdb) with "(UIU)Voyager"
+
+        Returns:
+            Returns True on success else returns False
+
+        """
+        tree = ET.parse(self.xml_file)
+        uiudb_subfields = list(self.find_959_field_with_uiudb(tree))
+        if len(uiudb_subfields) > 1:
+            message = f"Not sure what to do. {self.xml_file} has " \
+                      f"{len(uiudb_subfields)} 959 fields with subfields " \
+                      "containing with UIUdb. Expected only one."
+            raise SpeedwagonException(message)
+
+        if len(uiudb_subfields) == 0:
+            return True
+        root = self.redraw_tree(tree, self.new_035_field(uiudb_subfields[0]))
+        s = self.to_prety_string(root)
+        with open(self.xml_file, "w") as write_file:
+            write_file.write(s)
+        return True
+
+
+class MarcEnhancement955Task(EnhancementTask):
+    def __init__(self, added_value, xml_file) -> None:
+        super().__init__(xml_file)
+        self.added_value = added_value
+
+    def work(self) -> bool:
+        tree = ET.parse(self.xml_file)
+        root = self.enhance_tree_with_955(tree)
+        with open(self.xml_file, "w") as write_file:
+            write_file.write(self.to_prety_string(root))
+        return True
+
+    def enhance_tree_with_955(self, tree: ET.ElementTree) -> ET.Element:
+        new_datafield = self.create_new_955_element(self.added_value)
+
+        root = self.redraw_tree(tree, new_datafield)
+        return root
+
+
+    @staticmethod
+    def create_new_955_element(added_value: str) -> ET.Element:
         new_datafield = ET.Element(
             '{http://www.loc.gov/MARC21/slim}datafield',
             attrib={
@@ -445,24 +669,7 @@ class MarcEnhancement955Task(tasks.Subtask):
             '{http://www.loc.gov/MARC21/slim}subfield',
             attrib={"code": "b"},
         )
-
-        new_subfield.text = self.added_value
+        new_subfield.text = added_value
         new_datafield.append(new_subfield)
-        fields.append(new_datafield)
+        return new_datafield
 
-        for datafield in tree.findall(".//marc:datafield", namespaces):
-            fields.append(datafield)
-            root.remove(datafield)
-
-        for field in sorted(fields, key=lambda x: int(x.attrib['tag'])):
-            root.append(field)
-        ET.register_namespace('', 'http://www.loc.gov/MARC21/slim')
-        flat_xml_string = \
-            "\n".join([line.strip() for line in ET.tostring(
-                root, encoding="unicode")
-                      .split("\n")]).replace("\n", "")
-
-        xmlstr = minidom.parseString(flat_xml_string).toprettyxml()
-        with open(self._xml_file, "w") as write_file:
-            write_file.write(xmlstr)
-        return True
