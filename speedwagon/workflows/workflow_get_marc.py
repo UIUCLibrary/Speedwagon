@@ -1,5 +1,5 @@
 """Generating MARC XML files by retrieving from a server."""
-
+# pylint: disable=unsubscriptable-object
 # pylint: disable=too-few-public-methods
 import abc
 import os
@@ -228,6 +228,7 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
     @classmethod
     @reports.add_report_borders
+
     def generate_report(cls, results: List[tasks.Result],
                         **user_args) -> Optional[str]:
         """Generate a simple home-readable report from the job results.
@@ -549,7 +550,8 @@ class EnhancementTask(tasks.Subtask):
         super().__init__()
         self.xml_file = xml_file
 
-    def to_prety_string(self, root: ET.Element) -> str:
+    @staticmethod
+    def to_prety_string(root: ET.Element) -> str:
         ET.register_namespace('', 'http://www.loc.gov/MARC21/slim')
         flat_xml_string = \
             "\n".join([line.strip() for line in ET.tostring(
@@ -587,7 +589,7 @@ class MarcEnhancement035Task(EnhancementTask):
         for datafield in tree.findall(".//marc:datafield/[@tag='959']",
                                       cls.namespaces):
             for subfield in datafield:
-                if "UIUdb" in subfield.text:
+                if subfield.text is not None and "UIUdb" in subfield.text:
                     yield subfield
 
     @classmethod
@@ -598,7 +600,8 @@ class MarcEnhancement035Task(EnhancementTask):
             return False
         return True
 
-    def new_035_field(self, data: ET.Element):
+    @staticmethod
+    def new_035_field(data: ET.Element):
 
         new_datafield = ET.Element(
             '{http://www.loc.gov/MARC21/slim}datafield',
@@ -609,9 +612,9 @@ class MarcEnhancement035Task(EnhancementTask):
             }
         )
         new_subfield = deepcopy(data)
-
-        new_subfield.text = \
-            new_subfield.text.replace("(UIUdb)", "(UIU)Voyager")
+        if new_subfield.text is not None:
+            new_subfield.text = \
+                new_subfield.text.replace("(UIUdb)", "(UIU)Voyager")
 
         new_datafield.append(new_subfield)
         return new_datafield
@@ -641,9 +644,8 @@ class MarcEnhancement035Task(EnhancementTask):
         if len(uiudb_subfields) == 0:
             return True
         root = self.redraw_tree(tree, self.new_035_field(uiudb_subfields[0]))
-        s = self.to_prety_string(root)
         with open(self.xml_file, "w") as write_file:
-            write_file.write(s)
+            write_file.write(self.to_prety_string(root))
         return True
 
 
