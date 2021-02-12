@@ -46,7 +46,7 @@ class DirectoryValidation(AbsOptionValidator):
             raise TypeError(f"{self._key} not a string")
 
         if self.destination_exists(destination) is False:
-            return f"Directory {destination} does not exist"
+            return f'Directory "{destination}" does not exist'
         return "ok"
 
 

@@ -106,8 +106,8 @@ def test_input_and_out_invalid_produces_errors_with_both(monkeypatch):
             workflow = ht_wf.CaptureOneToDlCompoundWorkflow()
             workflow.validate_user_options(**options)
         assert \
-            "Directory ./invalid_folder/ does not exist" in str(e.value) and \
-            "Directory ./Other_folder/ does not exist" in str(e.value)
+            'Directory "./invalid_folder/" does not exist' in str(e.value) and \
+            'Directory "./Other_folder/" does not exist' in str(e.value)
 
 
 def test_discover_task_metadata(monkeypatch):
