@@ -6,7 +6,7 @@ import os
 import re
 from copy import deepcopy
 from typing import List, Any, Optional, Union, Sequence, Dict, Set, Tuple, \
-    Iterator
+    Iterator, Collection
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 import requests
@@ -92,7 +92,7 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
         return workflow_options
 
     @classmethod
-    def filter_bib_id_folders(cls, item: os.DirEntry):
+    def filter_bib_id_folders(cls, item: os.DirEntry) -> bool:
 
         if not item.is_dir():
             return False
@@ -102,10 +102,12 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
         return True
 
-    def discover_task_metadata(self,
-                               initial_results: Sequence[Any],
-                               additional_data, **user_args
-                               ) -> List[Dict[Any, Any]]:
+    def discover_task_metadata(
+            self,
+            initial_results: Sequence[Any],
+            additional_data,
+            **user_args: Union[str, bool]
+    ) -> List[Dict[str, Union[str, Collection[str]]]]:
         """Create a list of metadata that the jobs will need in order to work.
 
         Args:
@@ -185,7 +187,7 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
     def create_new_task(
             self,
             task_builder: tasks.TaskBuilder,
-            **job_args
+            **job_args: Union[str, Dict[str, str]]
     ) -> None:
         """Create the task to be run.
 
@@ -194,8 +196,11 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
             **job_args:
 
         """
-        identifier_type = job_args['directory']["type"]
-        subdirectory = job_args['directory']["value"]
+        if 'directory' not in job_args.keys():
+            raise KeyError("Missing directory")
+        directory = job_args['directory']
+        identifier_type = directory["type"]
+        subdirectory = directory["value"]
         identifier, _ = self._get_identifier_volume(job_args)
 
         folder = job_args["path"]
@@ -209,23 +214,22 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
             )
         )
 
-        enhancements = job_args.get('enhancements')
-        if enhancements is not None:
-            add_955 = enhancements.get('955')
-            if add_955:
-                task_builder.add_subtask(
-                    MarcEnhancement955Task(
-                        added_value=subdirectory,
-                        xml_file=marc_file
-                    )
+        enhancements = job_args.get('enhancements', dict())
+        add_955 = enhancements.get('955')
+        if add_955:
+            task_builder.add_subtask(
+                MarcEnhancement955Task(
+                    added_value=subdirectory,
+                    xml_file=marc_file
                 )
-            add_035 = enhancements.get('035')
-            if add_035:
-                task_builder.add_subtask(
-                    MarcEnhancement035Task(
-                        xml_file=marc_file
-                    )
+            )
+        add_035 = enhancements.get('035')
+        if add_035:
+            task_builder.add_subtask(
+                MarcEnhancement035Task(
+                    xml_file=marc_file
                 )
+            )
 
     @classmethod
     @reports.add_report_borders
@@ -332,7 +336,9 @@ class DependentTruthyValueValidation(validators.AbsOptionValidator):
         self.required_true_keys = required_true_keys
 
     @staticmethod
-    def _has_required_key(user_data, key) -> bool:
+    def _has_required_key(user_data: Dict[str, Union[str, bool]],
+                          key: str) -> bool:
+
         return key not in user_data
 
     @staticmethod
@@ -345,18 +351,20 @@ class DependentTruthyValueValidation(validators.AbsOptionValidator):
             return False
         return True
 
-    def is_valid(self, **user_data: Any) -> bool:
+    def is_valid(self, **user_data: Union[str, bool]) -> bool:
         """Check if the user data is valid."""
         for required_key in ['Add 955 field', 'Add 035 field']:
             if self._has_required_key(user_data, required_key):
                 return False
-        if self._requirement_is_also_true(user_data['Add 035 field'], [
-            user_data['Add 955 field']
-        ]) is False:
+
+        if self._requirement_is_also_true(
+                bool(user_data['Add 035 field']), [
+                    bool(user_data['Add 955 field'])
+                ]) is False:
             return False
         return True
 
-    def explanation(self, **user_data: Any) -> str:
+    def explanation(self, **user_data: Union[str, bool]) -> str:
         """Get reason for is_valid.
 
         Args:
@@ -367,9 +375,9 @@ class DependentTruthyValueValidation(validators.AbsOptionValidator):
                 produce the message "ok"
         """
         if self._requirement_is_also_true(
-                user_data['Add 035 field'],
+                bool(user_data['Add 035 field']),
                 [
-                    user_data['Add 955 field']
+                    bool(user_data['Add 955 field'])
                 ]
         ) is False:
             return "Add 035 field requires Add 955 field"
@@ -379,7 +387,7 @@ class DependentTruthyValueValidation(validators.AbsOptionValidator):
 class RequiredValueValidation(validators.AbsOptionValidator):
     """Make sure the value is ignored."""
 
-    def __init__(self, key) -> None:
+    def __init__(self, key: str) -> None:
         """Check if the key is not empty.
 
         Args:
@@ -389,18 +397,19 @@ class RequiredValueValidation(validators.AbsOptionValidator):
         self.key = key
 
     @staticmethod
-    def _has_key(user_data, key) -> bool:
+    def _has_key(user_data: Dict[str, Union[str, bool]], key: str) -> bool:
         return key in user_data.keys()
 
     @staticmethod
-    def _is_not_none(user_data, key) -> bool:
+    def _is_not_none(user_data: Dict[str, Union[str, bool]], key: str) -> bool:
         return user_data[key] is not None
 
     @staticmethod
-    def _not_empty_str(user_data, key) -> bool:
+    def _not_empty_str(user_data: Dict[str, Union[str, bool]],
+                       key: str) -> bool:
         return str(user_data[key]).strip() != ""
 
-    def is_valid(self, **user_data: Any) -> bool:
+    def is_valid(self, **user_data: Union[str, bool]) -> bool:
         """Check if the user data is valid."""
         return all(
             [
@@ -410,7 +419,7 @@ class RequiredValueValidation(validators.AbsOptionValidator):
             ]
         )
 
-    def explanation(self, **user_data: Any) -> str:
+    def explanation(self, **user_data: Union[str, bool]) -> str:
         """Get reason for is_valid.
 
         Args:
@@ -510,7 +519,7 @@ class MarcGeneratorTask(tasks.Subtask):
         self._server_url = server_url
 
     @property
-    def identifier_type(self):
+    def identifier_type(self) -> str:
         """Type of identifier.
 
             Such as MMS ID or BIBID
@@ -518,7 +527,7 @@ class MarcGeneratorTask(tasks.Subtask):
         return self._identifier_type
 
     @property
-    def identifier(self):
+    def identifier(self) -> str:
         """Record id."""
         return self._identifier
 
@@ -535,8 +544,7 @@ class MarcGeneratorTask(tasks.Subtask):
             str: Reformatted xml data.
 
         """
-        xml = minidom.parseString(data)
-        return xml.toprettyxml()
+        return str(minidom.parseString(data))
 
     def work(self) -> bool:
         """Run the task.
@@ -588,7 +596,7 @@ class MarcGeneratorTask(tasks.Subtask):
 class EnhancementTask(tasks.Subtask):
     """Base class for enhancing xml file."""
 
-    def __init__(self, xml_file) -> None:
+    def __init__(self, xml_file: str) -> None:
         """Create a new Enchancement object for processing the xml file.
 
         Args:
@@ -606,8 +614,7 @@ class EnhancementTask(tasks.Subtask):
             "\n".join([line.strip() for line in ET.tostring(
                 root, encoding="unicode")
                       .split("\n")]).replace("\n", "")
-        xmlstr = minidom.parseString(flat_xml_string).toprettyxml()
-        return xmlstr
+        return str(minidom.parseString(flat_xml_string).toprettyxml())
 
     def redraw_tree(
             self,
@@ -669,7 +676,7 @@ class MarcEnhancement035Task(EnhancementTask):
         return True
 
     @staticmethod
-    def new_035_field(data: ET.Element):
+    def new_035_field(data: ET.Element) -> ET.Element:
         """Create a new 035 Element based on the data element.
 
         Args:
