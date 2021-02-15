@@ -17,7 +17,12 @@ from speedwagon import tasks, reports, validators
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
 
-UserOptions = Union[options.UserOptionCustomDataType, options.ListSelection]
+UserOptions = Union[
+    options.UserOptionCustomDataType,
+    options.ListSelection,
+    options.UserOptionPythonDataType2
+]
+
 MMSID_PATTERN = \
     re.compile(r"^(?P<identifier>99[0-9]*(122)?05899)(_(?P<volume>[0-1]*))?")
 
@@ -187,7 +192,7 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
     def create_new_task(
             self,
             task_builder: tasks.TaskBuilder,
-            **job_args: Union[str, Dict[str, str]]
+            **job_args: Union[str, Dict[str, Union[str, bool]]]
     ) -> None:
         """Create the task to be run.
 
@@ -198,24 +203,28 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
         """
         if 'directory' not in job_args.keys():
             raise KeyError("Missing directory")
-        directory = job_args['directory']
-        identifier_type = directory["type"]
-        subdirectory = directory["value"]
+        directory = job_args.get('directory', dict())
+        if not isinstance(directory, dict):
+            raise TypeError()
+        identifier_type = str(directory["type"])
+        subdirectory = str(directory["value"])
         identifier, _ = self._get_identifier_volume(job_args)
 
-        folder = job_args["path"]
+        folder = str(job_args["path"])
         marc_file = os.path.join(folder, "MARC.XML")
         task_builder.add_subtask(
             MarcGeneratorTask(
                 identifier=identifier,
                 identifier_type=identifier_type,
                 output_name=marc_file,
-                server_url=job_args['api_server']
+                server_url=str(job_args['api_server'])
             )
         )
-
         enhancements = job_args.get('enhancements', dict())
-        add_955 = enhancements.get('955')
+        if not isinstance(enhancements, dict):
+            raise TypeError()
+
+        add_955 = enhancements.get('955', False)
         if add_955:
             task_builder.add_subtask(
                 MarcEnhancement955Task(
