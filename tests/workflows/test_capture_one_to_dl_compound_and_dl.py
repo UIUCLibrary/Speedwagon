@@ -30,7 +30,7 @@ def test_output_must_exist(monkeypatch):
             workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
             workflow.validate_user_options(**options)
 
-    assert "Directory ./invalid_folder/ does not exist" in str(e.value)
+    assert 'Directory "./invalid_folder/" does not exist' in str(e.value)
 
 
 def test_input_must_exist(monkeypatch):
@@ -51,7 +51,7 @@ def test_input_must_exist(monkeypatch):
         with pytest.raises(ValueError) as e:
             workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
             workflow.validate_user_options(**options)
-        assert "Directory ./invalid_folder/ does not exist" in str(e.value)
+        assert 'Directory "./invalid_folder/" does not exist' in str(e.value)
 
 
 def test_input_and_out_invalid_produces_errors_with_both(monkeypatch):
@@ -73,8 +73,8 @@ def test_input_and_out_invalid_produces_errors_with_both(monkeypatch):
             workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
             workflow.validate_user_options(**options)
         assert \
-            "Directory ./invalid_folder/ does not exist" in str(e.value) and \
-            "Directory ./other_invalid_folder/ does not exist" in str(e.value)
+            'Directory "./invalid_folder/" does not exist' in str(e.value) and \
+            'Directory "./other_invalid_folder/" does not exist' in str(e.value)
 
 
 def test_discover_task_metadata(monkeypatch):
