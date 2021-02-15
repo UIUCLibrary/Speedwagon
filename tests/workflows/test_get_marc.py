@@ -490,7 +490,7 @@ def test_995_enhancement_task_adds_955(identifier_type, subdirectory, identifier
         )
 
         assert task.work() is True
-        tree = ET.fromstring(m().write.call_args.args[0])
+        tree = ET.fromstring(m().write.call_args[0][0])
 
     ns = {"marc": "http://www.loc.gov/MARC21/slim"}
     fields = tree.findall(".//marc:datafield/[@tag='955']", ns)
@@ -643,16 +643,16 @@ def test_035_enhancement_task_adds_035(monkeypatch, identifier_type, subdirector
             xml_file="dummy"
         ).work()
 
-        xml_data_with_955 = mock_955().write.call_args.args[0]
+        xml_data_with_955 = mock_955().write.call_args[0][0]
     with patch('builtins.open', mock_open(read_data=xml_data_with_955)) as mock_035:
         task = workflow_get_marc.MarcEnhancement035Task(
             xml_file="dummy"
         )
         assert task.work() is True
-        with_035_data = mock_035().write.call_args.args[0]
+        with_035_data = mock_035().write.call_args[0][0]
         tree = ET.fromstring(with_035_data)
 
-    ns = {"marc":"http://www.loc.gov/MARC21/slim"}
+    ns = {"marc": "http://www.loc.gov/MARC21/slim"}
 
     def sub_only(x) -> bool:
         return any("(UIU)Voyager" in t.text for t in x)
