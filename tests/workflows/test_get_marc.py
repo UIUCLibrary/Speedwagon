@@ -11,6 +11,7 @@ import speedwagon.exceptions
 from speedwagon.workflows.workflow_get_marc import MarcGeneratorTask
 import xml.etree.ElementTree as ET
 
+
 @pytest.fixture
 def unconfigured_workflow():
     workflow = workflow_get_marc.GenerateMarcXMLFilesWorkflow(
@@ -90,8 +91,10 @@ subdirectories = [
     ("Bibid", "100")
 ]
 
+
 @pytest.mark.parametrize("identifier_type,subdirectory", subdirectories)
-def test_task_creates_file(tmp_path, monkeypatch, identifier_type, subdirectory):
+def test_task_creates_file(tmp_path, monkeypatch, identifier_type,
+                           subdirectory):
     expected_file = str(tmp_path / "MARC.XML")
 
     task = MarcGeneratorTask(
@@ -126,19 +129,27 @@ identifier_dirs = [
 ]
 
 
-@pytest.mark.parametrize("identifier_type, directory, identifier, volume", identifier_dirs)
+@pytest.mark.parametrize("identifier_type, directory, identifier, volume",
+                         identifier_dirs)
 def test_split_id_volumes(identifier_type, directory, identifier, volume):
     if identifier_type == "MMS ID":
         groups = workflow_get_marc.MMSID_PATTERN.match(directory).groupdict()
-        assert groups.get('volume') == volume and groups['identifier'] == identifier, f"Got {groups}"
+
+        assert groups.get('volume') == volume and \
+               groups['identifier'] == identifier, f"Got {groups}"
 
     if identifier_type == "Bibid":
         groups = workflow_get_marc.BIBID_PATTERN.match(directory).groupdict()
-        assert groups.get('volume') == volume and groups['identifier'] == identifier
+
+        assert groups.get('volume') == volume and \
+               groups['identifier'] == identifier
 
 
-@pytest.mark.parametrize("identifier_type, subdirectory, expected_identifier, expected_volume", identifier_dirs)
-def test_identifier_splits(identifier_type, subdirectory, expected_identifier, expected_volume):
+@pytest.mark.parametrize(
+    "identifier_type, subdirectory, expected_identifier, expected_volume",
+    identifier_dirs)
+def test_identifier_splits(identifier_type, subdirectory, expected_identifier,
+                           expected_volume):
     job_args = {
         'directory': {
             'value': subdirectory,
@@ -148,7 +159,10 @@ def test_identifier_splits(identifier_type, subdirectory, expected_identifier, e
         'path': "/fake/path/to/item"
     }
 
-    actual_id, actual_volume = workflow_get_marc.GenerateMarcXMLFilesWorkflow._get_identifier_volume(job_args=job_args)
+    actual_id, actual_volume = \
+        workflow_get_marc.GenerateMarcXMLFilesWorkflow._get_identifier_volume(
+            job_args=job_args)
+
     assert expected_identifier == actual_id
     assert expected_volume == actual_volume
 
@@ -193,7 +207,8 @@ def test_generate_report_failure(unconfigured_workflow):
 
 
 @pytest.mark.parametrize("identifier_type,subdirectory", subdirectories)
-def test_task_logging_mentions_identifer(monkeypatch, identifier_type, subdirectory):
+def test_task_logging_mentions_identifer(monkeypatch, identifier_type,
+                                         subdirectory):
 
     task = MarcGeneratorTask(
         identifier=subdirectory,
@@ -231,8 +246,10 @@ def test_task_logging_mentions_identifer(monkeypatch, identifier_type, subdirect
                       "found [{}]".format(subdirectory, "] [".join(logs))
 
 
-@pytest.mark.parametrize("identifier_type, subdirectory, identifier, volume", identifier_dirs)
-def test_create_new_task(unconfigured_workflow, identifier_type, subdirectory, identifier, volume):
+@pytest.mark.parametrize("identifier_type, subdirectory, identifier, volume",
+                         identifier_dirs)
+def test_create_new_task(unconfigured_workflow, identifier_type,
+                         subdirectory, identifier, volume):
     workflow, user_options = unconfigured_workflow
     job_args = {
         'directory': {
@@ -252,7 +269,9 @@ def test_create_new_task(unconfigured_workflow, identifier_type, subdirectory, i
     call_args = mock_task_builder.add_subtask.call_args[0]
     task_generated = call_args[0]
     assert isinstance(task_generated, MarcGeneratorTask)
-    assert task_generated.identifier_type == identifier_type and task_generated.identifier == identifier
+
+    assert task_generated.identifier_type == identifier_type and \
+           task_generated.identifier == identifier
 
 
 def test_missing_server_url_init_raises():
@@ -267,15 +286,19 @@ def test_955_field_defaults_to_true(unconfigured_workflow):
     assert user_options['Add 955 field'] is True
 
 
-@pytest.mark.parametrize("identifier_type, subdirectory, expected_identifier, volume", identifier_dirs)
-def test_955_added_to_tasks(unconfigured_workflow, identifier_type, subdirectory, expected_identifier, volume):
+@pytest.mark.parametrize(
+    "identifier_type, subdirectory, expected_identifier, volume",
+    identifier_dirs)
+def test_955_added_to_tasks(unconfigured_workflow, identifier_type,
+                            subdirectory, expected_identifier, volume):
+
     workflow, user_options = unconfigured_workflow
     job_args = {
         'directory': {
             'value': subdirectory,
             'type': identifier_type,
         },
-        "enhancements":{"955": True},
+        "enhancements": {"955": True},
         'api_server': "https://www.fake.com",
         'path': "/fake/path/to/item"
     }
@@ -289,8 +312,14 @@ def test_955_added_to_tasks(unconfigured_workflow, identifier_type, subdirectory
     tasks_generated = mock_task_builder.add_subtask.call_args_list
     retrieval_task = tasks_generated[0][0][0]
 
-    assert isinstance(retrieval_task, MarcGeneratorTask), "tasks_generated = {}".format(retrieval_task)
-    assert retrieval_task.identifier_type == identifier_type and retrieval_task.identifier == expected_identifier
+    assert \
+        isinstance(
+            retrieval_task, MarcGeneratorTask), f"tasks_generated = " \
+                                                f"{retrieval_task}"
+
+    assert retrieval_task.identifier_type == identifier_type and \
+           retrieval_task.identifier == expected_identifier
+
     enhancement_task = tasks_generated[1][0][0]
     assert enhancement_task.added_value == subdirectory
 
@@ -480,8 +509,10 @@ SAMPLE_RECORD = """<record xmlns="http://www.loc.gov/MARC21/slim" xmlns:xsi="htt
 """
 
 
-@pytest.mark.parametrize("identifier_type, subdirectory, identifier, volume", identifier_dirs)
-def test_995_enhancement_task_adds_955(identifier_type, subdirectory, identifier, volume):
+@pytest.mark.parametrize("identifier_type, subdirectory, identifier, volume",
+                         identifier_dirs)
+def test_995_enhancement_task_adds_955(identifier_type, subdirectory,
+                                       identifier, volume):
 
     with patch('builtins.open', mock_open(read_data=SAMPLE_RECORD)) as m:
         task = workflow_get_marc.MarcEnhancement955Task(
@@ -499,8 +530,11 @@ def test_995_enhancement_task_adds_955(identifier_type, subdirectory, identifier
     assert len(subfields) == 1, "Missing subfield"
     assert subfields[0].text == subdirectory
 
-@pytest.mark.parametrize("identifier_type, subdirectory, identifier, volume", identifier_dirs)
-def test_995_enhancement_task_formats_without_namespace_tags(tmpdir, identifier_type, subdirectory, identifier, volume):
+
+@pytest.mark.parametrize("identifier_type, subdirectory, identifier, volume",
+                         identifier_dirs)
+def test_995_enhancement_task_formats_without_namespace_tags(
+        tmpdir, identifier_type, subdirectory, identifier, volume):
     # dummy_xml = tmpdir / "MARC.xml"
     # with open(dummy_xml, "w") as wf:
     #     wf.write(SAMPLE_RECORD)
@@ -512,7 +546,8 @@ def test_995_enhancement_task_formats_without_namespace_tags(tmpdir, identifier_
 
         assert task.work() is True
         file_text = m().write.call_args.args[0]
-        file_text.startswith("<ns0:"), f"File starts with <ns:0: \"{file_text[0:10]}...\""
+        file_text.startswith(
+            "<ns0:"), f"File starts with <ns:0: \"{file_text[0:10]}...\""
 
 
 def test_fail_on_server_connection(monkeypatch):
@@ -573,7 +608,6 @@ def test_missing_Identifier_type_invalid(monkeypatch, unconfigured_workflow):
         assert "Missing Identifier type" in str(exception_info.value)
 
 
-
 def test_955_false_and_035_True_is_invalid(monkeypatch, unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
     user_options['Input'] = "/valid"
@@ -628,23 +662,31 @@ def test_955_and035(f955, f035, expected_valid,
         else:
             workflow.validate_user_options(**user_options)
 
+
 def test_035_task_has_959():
 
     root = ET.parse(StringIO(SAMPLE_RECORD))
     assert workflow_get_marc.MarcEnhancement035Task.has_959_field_with_uiudb(root) is True
-    print("")
 
 
-@pytest.mark.parametrize("identifier_type, subdirectory, identifier, volume", identifier_dirs)
-def test_035_enhancement_task_adds_035(monkeypatch, identifier_type, subdirectory, identifier, volume):
-    with patch('builtins.open', mock_open(read_data=SAMPLE_RECORD)) as mock_955:
+@pytest.mark.parametrize("identifier_type, subdirectory, identifier, volume",
+                         identifier_dirs)
+def test_035_enhancement_task_adds_035(monkeypatch, identifier_type,
+                                       subdirectory, identifier, volume):
+
+    with patch('builtins.open',
+               mock_open(read_data=SAMPLE_RECORD)) as mock_955:
+
         workflow_get_marc.MarcEnhancement955Task(
             added_value=subdirectory,
             xml_file="dummy"
         ).work()
 
         xml_data_with_955 = mock_955().write.call_args[0][0]
-    with patch('builtins.open', mock_open(read_data=xml_data_with_955)) as mock_035:
+
+    with patch('builtins.open',
+               mock_open(read_data=xml_data_with_955)) as mock_035:
+
         task = workflow_get_marc.MarcEnhancement035Task(
             xml_file="dummy"
         )
@@ -657,7 +699,10 @@ def test_035_enhancement_task_adds_035(monkeypatch, identifier_type, subdirector
     def sub_only(x) -> bool:
         return any("(UIU)Voyager" in t.text for t in x)
 
-    fields = list(filter(sub_only, tree.findall(".//marc:datafield/[@tag='035']", ns)))
+    fields = list(
+        filter(sub_only, tree.findall(".//marc:datafield/[@tag='035']", ns))
+    )
+
     assert len(fields) == 1, "No 035 datafields found"
     assert fields[0][0].text == '(UIU)Voyager170427'
 
@@ -668,7 +713,9 @@ enhancement_tasks = [
     (True, True, 3)
 ]
 
-@pytest.mark.parametrize("e955, e035, expected_number_tasks_created", enhancement_tasks)
+
+@pytest.mark.parametrize("e955, e035, expected_number_tasks_created",
+                         enhancement_tasks)
 def test_create_task_enhancements(
         unconfigured_workflow,
         e955: bool,
@@ -697,7 +744,9 @@ def test_create_task_enhancements(
         **job_args
     )
     mock_task_builder.add_subtask.assert_called()
-    assert mock_task_builder.add_subtask.call_count == expected_number_tasks_created
+    assert mock_task_builder.add_subtask.call_count == \
+           expected_number_tasks_created
+
 
 sample_user_args = [
     (
@@ -708,9 +757,10 @@ sample_user_args = [
                 {
                     'type': 'MMS ID', 'value': '12345'
                 },
-            'enhancements': {
-                '955': True
-            }
+            'enhancements':
+                {
+                    '955': True
+                }
         }
      ),
     (
@@ -721,17 +771,20 @@ sample_user_args = [
                 {
                     'type': 'MMS ID', 'value': '12345'
                 },
-            'enhancements': {
-                '955': True,
-                '035': True
-            }
+            'enhancements':
+                {
+                    '955': True,
+                    '035': True
+                }
         }
      )
 ]
 
 
-@pytest.mark.parametrize("arg_subdir, add_955, add_035, expected", sample_user_args)
-def test_discover_task_metadata(monkeypatch, unconfigured_workflow, arg_subdir, add_955, add_035, expected):
+@pytest.mark.parametrize("arg_subdir, add_955, add_035, expected",
+                         sample_user_args)
+def test_discover_task_metadata(monkeypatch, unconfigured_workflow, arg_subdir,
+                                add_955, add_035, expected):
     workflow, user_options = unconfigured_workflow
     user_args = {
         "Input": "./fake/",
@@ -760,11 +813,10 @@ def test_discover_task_metadata(monkeypatch, unconfigured_workflow, arg_subdir, 
         k for k, v in expected.items() if not isinstance(v, dict)
     ]
     enhancement_keys = [
-        k for k, v in expected['enhancements'].items() if not isinstance(v, dict)
+        k for k, v in expected['enhancements'].items() if not isinstance(v,
+                                                                         dict)
     ]
     assert \
         all([actual[x] == expected[x] for x in top_level_keys]) and \
         all([actual['enhancements'][x] == expected['enhancements'][x] for x in enhancement_keys]), \
         f"Expected {expected}, Got {actual}"
-
-
