@@ -220,7 +220,9 @@ class AbsSubject(metaclass=abc.ABCMeta):
 
 
 class GuiLogHandler(logging.Handler):
-    def __init__(self, callback, level=logging.NOTSET):
+    def __init__(self,
+                 callback: typing.Callable[[str], None],
+                 level=logging.NOTSET):
         super().__init__(level)
         self.callback = callback
 

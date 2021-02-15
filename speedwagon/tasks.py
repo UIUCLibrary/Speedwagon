@@ -135,7 +135,7 @@ class Subtask(AbsSubtask):
     def set_results(self, results):
         self._result = Result(self.__class__, results)
 
-    def log(self, message):
+    def log(self, message: str):
         self._parent_task_log_q.append(message)
 
     def exec(self) -> None:
