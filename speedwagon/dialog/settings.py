@@ -37,7 +37,7 @@ class SettingsDialog(QtWidgets.QDialog):
         self.setFixedHeight(480)
         self.setFixedWidth(600)
 
-    def add_tab(self, tab, tab_name):
+    def add_tab(self, tab, tab_name: str) -> None:
         self.tabsWidget.addTab(tab, tab_name)
 
     def open_settings_dir(self):
@@ -75,7 +75,7 @@ class GlobalSettingsTab(QtWidgets.QWidget):
 
         self.layout.addWidget(self.settings_table)
 
-    def read_config_data(self):
+    def read_config_data(self) -> None:
         if self.config_file is None:
             raise FileNotFoundError("No Configuration file set")
         if not os.path.exists(self.config_file):
@@ -84,10 +84,10 @@ class GlobalSettingsTab(QtWidgets.QWidget):
         self.settings_table.setModel(build_setting_model(self.config_file))
         self.settings_table.model().dataChanged.connect(self.on_modified)
 
-    def on_modified(self):
+    def on_modified(self) -> None:
         self._modified = True
 
-    def on_okay(self):
+    def on_okay(self) -> None:
         if self._modified:
             print("Saving changes")
             data = config.serialize_settings_model(self.settings_table.model())
@@ -113,7 +113,7 @@ class TabsConfigurationTab(QtWidgets.QWidget):
 
         self.layout.addWidget(self.editor)
 
-    def on_okay(self):
+    def on_okay(self) -> None:
         if self.editor.modified is True:
             print(f"Saving changes to {self.settings_location}")
             tabs.write_tabs_yaml(
@@ -127,7 +127,7 @@ class TabsConfigurationTab(QtWidgets.QWidget):
             msg_box.setText("Please restart changes to take effect")
             msg_box.exec()
 
-    def load(self):
+    def load(self) -> None:
         print(f"loading {self.settings_location}")
         self.editor.tabs_file = self.settings_location
         workflows = job.available_workflows()
@@ -136,7 +136,7 @@ class TabsConfigurationTab(QtWidgets.QWidget):
 
 class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.setupUi(self)
         self._tabs_file = None
@@ -161,7 +161,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         self.modified = False
         self.splitter.setChildrenCollapsible(False)
 
-    def on_modified(self):
+    def on_modified(self) -> None:
         self.modified = True
 
     @property
@@ -217,14 +217,14 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         model: None = self.selectedTabComboBox.model()
         model -= data
 
-    def _add_items_to_tab(self):
+    def _add_items_to_tab(self) -> None:
         model = self.tabWorkflowsListView.model()
         for i in self.allWorkflowsListView.selectedIndexes():
             new_workflow = i.data(role=QtCore.Qt.UserRole)
             model.add_workflow(new_workflow)
         model.sort()
 
-    def _remove_items(self):
+    def _remove_items(self) -> None:
         model = self.tabWorkflowsListView.model()
         items_to_remove = [
             i.data(role=QtCore.Qt.UserRole)
