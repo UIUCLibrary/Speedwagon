@@ -13,7 +13,7 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
     """Dialog box to use for Error Messages causes while trying to run a job
     in Speedwagon"""
 
-    def __init__(self, *__args):
+    def __init__(self, *__args) -> None:
         super().__init__(*__args)
         self.setIcon(QtWidgets.QMessageBox.Critical)
         self.setStandardButtons(QtWidgets.QMessageBox.Abort)
@@ -50,7 +50,7 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
     def closeEvent(self, QCloseEvent):
         super().closeEvent(QCloseEvent)
 
-    def __init__(self, *args):
+    def __init__(self, *args) -> None:
         super().__init__(*args)
         self.setModal(True)
         self.setMinimumHeight(100)
@@ -59,7 +59,7 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
         self._label.setWordWrap(True)
         self.setLabel(self._label)
 
-    def resizeEvent(self, QResizeEvent):
+    def resizeEvent(self, QResizeEvent) -> None:
         super().resizeEvent(QResizeEvent)
         self._label.setMaximumWidth(self.width())
         self.setMinimumHeight(self._label.sizeHint().height() + 75)
