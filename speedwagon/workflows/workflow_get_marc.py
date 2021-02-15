@@ -130,7 +130,8 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
                     "type": user_args['Identifier type'],
                 },
                 "enhancements": {
-                    "955": user_args.get("Add 955 field", False)
+                    "955": user_args.get("Add 955 field", False),
+                    "035": user_args.get("Add 035 field", False)
                 },
                 "api_server": server_url,
                 "path": folder.path
@@ -709,11 +710,6 @@ class MarcEnhancement035Task(EnhancementTask):
         """
         tree = ET.parse(self.xml_file)
         uiudb_subfields = list(self.find_959_field_with_uiudb(tree))
-        if len(uiudb_subfields) > 1:
-            message = f"Not sure what to do. {self.xml_file} has " \
-                      f"{len(uiudb_subfields)} 959 fields with subfields " \
-                      "containing with UIUdb. Expected only one."
-            raise SpeedwagonException(message)
 
         if len(uiudb_subfields) == 0:
             return True

@@ -698,3 +698,73 @@ def test_create_task_enhancements(
     )
     mock_task_builder.add_subtask.assert_called()
     assert mock_task_builder.add_subtask.call_count == expected_number_tasks_created
+
+sample_user_args = [
+    (
+        "12345", True, False,
+        {
+            'path': './fake/12345',
+            "directory":
+                {
+                    'type': 'MMS ID', 'value': '12345'
+                },
+            'enhancements': {
+                '955': True
+            }
+        }
+     ),
+    (
+        "12345", True, True,
+        {
+            'path': './fake/12345',
+            "directory":
+                {
+                    'type': 'MMS ID', 'value': '12345'
+                },
+            'enhancements': {
+                '955': True,
+                '035': True
+            }
+        }
+     )
+]
+
+
+@pytest.mark.parametrize("arg_subdir, add_955, add_035, expected", sample_user_args)
+def test_discover_task_metadata(monkeypatch, unconfigured_workflow, arg_subdir, add_955, add_035, expected):
+    workflow, user_options = unconfigured_workflow
+    user_args = {
+        "Input": "./fake/",
+        "Add 955 field": add_955,
+        "Add 035 field": add_035,
+        "Identifier type": 'MMS ID'
+    }
+
+    def mock_scan_dir(root_path):
+        mock_dir = Mock()
+        mock_dir.name = arg_subdir
+        mock_dir.path = os.path.join(root_path, arg_subdir)
+        return [
+            mock_dir
+        ]
+    with monkeypatch.context() as mp:
+        mp.setattr(os, "scandir", mock_scan_dir)
+        t_md = workflow.discover_task_metadata(
+            initial_results=[],
+            additional_data=None,
+            **user_args
+        )
+    assert len(t_md) == 1
+    actual = t_md[0]
+    top_level_keys = [
+        k for k, v in expected.items() if not isinstance(v, dict)
+    ]
+    enhancement_keys = [
+        k for k, v in expected['enhancements'].items() if not isinstance(v, dict)
+    ]
+    assert \
+        all([actual[x] == expected[x] for x in top_level_keys]) and \
+        all([actual['enhancements'][x] == expected['enhancements'][x] for x in enhancement_keys]), \
+        f"Expected {expected}, Got {actual}"
+
+
