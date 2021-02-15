@@ -43,7 +43,7 @@ class FileFormatError(Exception):
     pass
 
 
-def parse_args():
+def parse_args() -> argparse.ArgumentParser:
     return CliArgsSetter.get_arg_parser()
 
 
@@ -219,7 +219,7 @@ class StartupDefault(AbsStarter):
         self.app_data_dir = self.platform_settings.get("app_data_directory")
         self.app = app or QtWidgets.QApplication(sys.argv)
 
-    def initialize(self):
+    def initialize(self) -> None:
         self.ensure_settings_files()
         self.resolve_settings()
 
@@ -327,7 +327,7 @@ class StartupDefault(AbsStarter):
             self._logger.removeHandler(splash_message_handler)
             return self.app.exec_()
 
-    def read_settings_file(self, settings_file):
+    def read_settings_file(self, settings_file: str) -> None:
         with speedwagon.config.ConfigManager(settings_file) as f:
             self.platform_settings._data.update(f.global_settings)
 
@@ -341,7 +341,7 @@ class StartupDefault(AbsStarter):
         self.app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
         self.app.processEvents()
 
-    def resolve_settings(self):
+    def resolve_settings(self) -> None:
         resolution_order: List[AbsSetting] = [
             DefaultsSetter(),
             ConfigFileSetter(self.config_file),
@@ -379,7 +379,7 @@ class StartupDefault(AbsStarter):
 
             self._debug = False
 
-    def ensure_settings_files(self):
+    def ensure_settings_files(self) -> None:
         if not os.path.exists(self.config_file):
             speedwagon.config.generate_default(self.config_file)
 
@@ -440,11 +440,11 @@ class TabsEditorApp(QtWidgets.QDialog):
         self.dialogButtonBox.rejected.connect(self.on_cancel)
         self.rejected.connect(self.on_cancel)
 
-    def load_all_workflows(self):
+    def load_all_workflows(self) -> None:
         workflows = job.available_workflows()
         self.editor.set_all_workflows(workflows)
 
-    def on_okay(self):
+    def on_okay(self) -> None:
         if self.editor.modified is True:
             print("Saving changes")
             tabs = extract_tab_information(
@@ -454,10 +454,10 @@ class TabsEditorApp(QtWidgets.QDialog):
 
         self.close()
 
-    def on_cancel(self):
+    def on_cancel(self) -> None:
         self.close()
 
-    def load_tab_file(self, filename):
+    def load_tab_file(self, filename: str) -> None:
         self.editor.tabs_file = filename
 
     @property
@@ -469,7 +469,7 @@ class TabsEditorApp(QtWidgets.QDialog):
         self.editor.tabs_file = value
 
 
-def standalone_tab_editor():
+def standalone_tab_editor() -> None:
     print("Loading settings")
     settings = speedwagon.config.get_platform_settings()
 
