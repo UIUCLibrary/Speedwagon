@@ -9,7 +9,7 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
 
-def main():
+def main() -> None:
     if len(sys.argv) > 1 and sys.argv[1] == "--pytest":
         import pytest  # type: ignore
         sys.exit(pytest.main(sys.argv[2:]))

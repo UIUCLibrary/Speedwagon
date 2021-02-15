@@ -8,7 +8,7 @@ from pathlib import Path
 import io
 import abc
 import collections.abc
-from typing import Optional, Dict, Type, Set
+from typing import Optional, Dict, Type, Set, Iterator, Iterable
 import platform
 
 from speedwagon.job import all_required_workflow_keys
@@ -33,7 +33,7 @@ class AbsConfig(collections.abc.Mapping):
     def __len__(self) -> int:
         return len(self._data)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self._data)
 
     def __contains__(self, x: object) -> bool:
@@ -46,7 +46,7 @@ class AbsConfig(collections.abc.Mapping):
 
         return x in self._data
 
-    def __getitem__(self, k) -> str:
+    def __getitem__(self, k: str) -> str:
 
         if k == "user_data_directory":
             return self.get_user_data_directory()
@@ -130,7 +130,7 @@ class ConfigManager(contextlib.AbstractContextManager):
         return global_settings
 
 
-def generate_default(config_file) -> None:
+def generate_default(config_file: str) -> None:
     """Generate config file with default settings"""
 
     base_directory = os.path.dirname(config_file)
@@ -174,7 +174,7 @@ def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
     return configuration
 
 
-def build_setting_model(config_file) -> SettingsModel:
+def build_setting_model(config_file: str) -> SettingsModel:
     """Read a configuration file and generate a SettingsModel"""
     if not os.path.exists(config_file):
         raise FileNotFoundError(f"No existing Configuration in ${config_file}")
@@ -212,7 +212,7 @@ def serialize_settings_model(model: SettingsModel) -> str:
 
 
 def find_missing_global_entries(
-        config_file,
+        config_file: str,
         expected_keys) -> Optional[Set[str]]:
     """Locate any missing entries from a config file.
 
@@ -238,7 +238,7 @@ def find_missing_global_entries(
     return missing if len(missing) > 0 else None
 
 
-def ensure_keys(config_file, keys) -> Optional[Set[str]]:
+def ensure_keys(config_file: str, keys: Iterable[str]) -> Optional[Set[str]]:
     """Make sure that the config file contains the following keys.
 
     If this file is missing the keys, empty keys are added. Existing keys are
