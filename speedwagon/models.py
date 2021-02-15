@@ -24,10 +24,10 @@ class ItemListModel(QtCore.QAbstractTableModel):
         super().__init__()
         self.jobs: List[Type[AbsWorkflow]] = list(data.values())
 
-    def columnCount(self, parent=QtCore.QModelIndex(), *args, **kwargs):
+    def columnCount(self, parent=QtCore.QModelIndex(), *args, **kwargs) -> int:
         return 2
 
-    def rowCount(self, parent=None, *args, **kwargs):
+    def rowCount(self, parent=None, *args, **kwargs) -> int:
         return len(self.jobs)
 
     @staticmethod
@@ -71,7 +71,7 @@ class WorkflowListModel(ItemListModel):
 
 
 class WorkflowListModel2(QtCore.QAbstractListModel):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.workflows: List[Workflow] = []
 
@@ -83,7 +83,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         self.remove_workflow(other)
         return self
 
-    def rowCount(self, parent=None, *args, **kwargs):
+    def rowCount(self, parent=None, *args, **kwargs) -> int:
         return len(self.workflows)
 
     def data(self, index: QtCore.QModelIndex, role: QtCore.Qt = None):
@@ -116,7 +116,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
             self.endInsertRows()
 
     def setData(self, index: QtCore.QModelIndex,
-                workflow: Any, role: QtCore.Qt = None):
+                workflow: Any, role: QtCore.Qt = None) -> bool:
 
         if not index.isValid():
             return False
@@ -133,7 +133,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         self.dataChanged.emit(index, index, [role])
         return True
 
-    def remove_workflow(self, workflow):
+    def remove_workflow(self, workflow) -> None:
         if workflow in self.workflows:
             index = QtCore.QModelIndex()
             self.beginRemoveRows(index, 0, self.rowCount())
@@ -147,10 +147,10 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
         super().__init__(parent)
         self._data = []
 
-    def rowCount(self, parent=None, *args, **kwargs):
+    def rowCount(self, parent=None, *args, **kwargs) -> int:
         return len(self._data)
 
-    def columnCount(self, parent=None, *args, **kwargs):
+    def columnCount(self, parent=None, *args, **kwargs) -> int:
         if len(self._data) > 0:
             return 1
         else:
@@ -190,7 +190,12 @@ class ToolOptionsPairsModel(ToolOptionsModel):
                 return self._data[index.row()].data
         return QtCore.QVariant()
 
-    def setData(self, index, data, role=None):
+    def setData(
+            self,
+            index,
+            data,
+            role=None
+    ) -> bool:
         if not index.isValid():
             return False
         existing_data = self._data[index.row()]
@@ -270,7 +275,7 @@ class ToolOptionsModel3(ToolOptionsModel):
             return str(title)
         return QtCore.QVariant()
 
-    def setData(self, index, data, role=None):
+    def setData(self, index, data, role=None) -> bool:
         if not index.isValid():
             return False
         self._data[index.row()].data = data
@@ -323,7 +328,13 @@ class SettingsModel(QtCore.QAbstractTableModel):
 
         return super().flags(index)
 
-    def setData(self, index: QtCore.QModelIndex, data, role: QtCore.Qt = None):
+    def setData(
+            self,
+            index: QtCore.QModelIndex,
+            data,
+            role: QtCore.Qt = None
+    ) -> bool:
+
         if not index.isValid():
             return False
         row = index.row()
@@ -343,7 +354,7 @@ class TabsModel(QtCore.QAbstractListModel):
         super().__init__(parent)
         self.tabs: List[tabs.TabData] = []
 
-    def __contains__(self, value):
+    def __contains__(self, value) -> bool:
         # Looks for the tab based on the tab_name string
         for tab in self.tabs:
             if tab.tab_name == value:
@@ -375,7 +386,7 @@ class TabsModel(QtCore.QAbstractListModel):
 
         return workflow.get(role, QtCore.QVariant())
 
-    def rowCount(self, parent=None, *args, **kwargs):
+    def rowCount(self, parent=None, *args, **kwargs) -> int:
         return len(self.tabs)
 
     def add_tab(self, tab: "tabs.TabData") -> None:
@@ -394,7 +405,13 @@ class TabsModel(QtCore.QAbstractListModel):
             self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
             self.endRemoveRows()
 
-    def setData(self, index: QtCore.QModelIndex, tab, role: QtCore.Qt = None):
+    def setData(
+            self,
+            index: QtCore.QModelIndex,
+            tab,
+            role: QtCore.Qt = None
+    ) -> bool:
+
         if not index.isValid():
             return False
 
