@@ -8,8 +8,8 @@ import os
 import sys
 from typing import Type, Optional, Iterable, Dict, List, Any, Tuple, Set
 
-from . import tasks
 from PyQt5 import QtWidgets  # type: ignore
+from . import tasks
 
 
 class JobCancelled(Exception):
@@ -57,7 +57,11 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
             need a user's interaction.
         """
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args) -> None:
+    def create_new_task(
+            self,
+            task_builder: tasks.TaskBuilder,
+            **job_args
+    ) -> None:
         """Add a new task to be accomplished when the workflow is started.
 
 

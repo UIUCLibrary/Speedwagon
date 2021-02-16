@@ -2,6 +2,7 @@ import abc
 import collections
 import itertools
 import os
+import enum
 from typing import DefaultDict, Iterable, Optional, Dict, List, Any, Union
 
 import hathi_validate.process
@@ -10,8 +11,6 @@ from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
 from speedwagon.reports import add_report_borders
 from . import shared_custom_widgets
-
-import enum
 
 
 class UserArgs(enum.Enum):

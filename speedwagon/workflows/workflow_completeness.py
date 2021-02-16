@@ -8,17 +8,17 @@ import itertools
 from contextlib import contextmanager
 
 import hathi_validate
-
-import speedwagon
-from speedwagon.tasks import Subtask
-from . import shared_custom_widgets as options
-from speedwagon.job import AbsWorkflow
 from hathi_validate import manifest as validate_manifest
 from hathi_validate import report as hathi_reporter
 from hathi_validate import result as hathi_result
-from speedwagon.worker import GuiLogHandler
 from hathi_validate import process as validate_process
 from hathi_validate import validator
+
+import speedwagon
+from speedwagon.tasks import Subtask
+from speedwagon.worker import GuiLogHandler
+from speedwagon.job import AbsWorkflow
+from . import shared_custom_widgets as options
 
 
 class CompletenessWorkflow(AbsWorkflow):
