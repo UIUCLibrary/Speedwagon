@@ -188,11 +188,11 @@ def get_custom_tabs(all_workflows: dict, yaml_file) -> \
 
 class AbsStarter(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def run(self):
+    def run(self) -> None:
         pass
 
     @abc.abstractmethod
-    def initialize(self):
+    def initialize(self) -> None:
         pass
 
 
