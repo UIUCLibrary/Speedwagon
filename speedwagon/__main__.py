@@ -11,7 +11,7 @@ logger.addHandler(logging.StreamHandler())
 
 def main() -> None:
     if len(sys.argv) > 1 and sys.argv[1] == "--pytest":
-        import pytest  # type: ignore
+        import pytest  # type: ignore  # noqa
         sys.exit(pytest.main(sys.argv[2:]))
 
     speedwagon.startup.main()
