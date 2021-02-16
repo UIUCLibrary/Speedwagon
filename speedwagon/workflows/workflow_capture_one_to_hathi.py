@@ -2,12 +2,13 @@ import logging
 from typing import List, Any
 from contextlib import contextmanager
 from uiucprescon import packager
+from uiucprescon.packager.packages.collection_builder import Metadata
+
 from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
-from . import shared_custom_widgets as options
 from speedwagon.worker import GuiLogHandler
+from . import shared_custom_widgets as options
 
-from uiucprescon.packager.packages.collection_builder import Metadata
 
 
 class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
