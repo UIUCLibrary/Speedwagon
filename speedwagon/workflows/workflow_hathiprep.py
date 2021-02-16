@@ -5,17 +5,18 @@ import typing
 
 from PyQt5 import QtWidgets  # type: ignore
 
-import speedwagon.tasks
-import speedwagon
-from . import shared_custom_widgets
-
+from pyhathiprep import package_creater
 import uiucprescon.packager.packages
 from uiucprescon.packager import PackageFactory
 from uiucprescon.packager.packages import collection
 
-from pyhathiprep import package_creater
-
+import speedwagon.tasks
+import speedwagon
 from speedwagon.workflows.title_page_selection import PackageBrowser
+from . import shared_custom_widgets
+
+
+
 
 
 class HathiPrepWorkflow(speedwagon.Workflow):
