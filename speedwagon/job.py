@@ -57,7 +57,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
             need a user's interaction.
         """
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args) -> None:
         """Add a new task to be accomplished when the workflow is started.
 
 
@@ -160,10 +160,10 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
     def base_class(self) -> Type[AbsWorkflow]:
         pass
 
-    def load(self, module_file) -> \
+    def load(self, module_file: str) -> \
             Iterable[Tuple[str, Any]]:
 
-        def class_member_filter(item):
+        def class_member_filter(item) -> bool:
             return inspect.isclass(item) and not inspect.isabstract(item)
 
         try:
