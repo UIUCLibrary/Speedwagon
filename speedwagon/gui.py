@@ -45,7 +45,7 @@ Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 class ToolConsole(QtWidgets.QWidget):
     """asdfasdf"""
 
-    def __init__(self, parent):
+    def __init__(self, parent) -> None:
         super().__init__(parent)
         layout = QtWidgets.QVBoxLayout(self)
 
@@ -80,7 +80,7 @@ class ToolConsole(QtWidgets.QWidget):
         self._console.setUpdatesEnabled(True)
         self._console.setFont(monospaced_font)
 
-    def add_message(self, message):
+    def add_message(self, message: str) -> None:
         self._console.append(message)
 
 
@@ -89,7 +89,7 @@ class ConsoleLogger(logging.Handler):
         super().__init__(level)
         self.console = console
 
-    def emit(self, record):
+    def emit(self, record) -> None:
         try:
             msg = self.format(record)
             self.console.add_message(msg)
@@ -100,7 +100,7 @@ class ConsoleLogger(logging.Handler):
 
 class ItemTabsWidget(QtWidgets.QWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
         layout = QtWidgets.QVBoxLayout(self)
 
@@ -121,7 +121,7 @@ class ItemTabsWidget(QtWidgets.QWidget):
         self.setLayout(layout)
         self.layout().addWidget(self.tabs)
 
-    def add_tab(self, tab, name):
+    def add_tab(self, tab: QtWidgets.QWidget, name: str) -> None:
         self.tabs.addTab(tab, name)
 
 
@@ -254,7 +254,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # ##################
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
-    def debug_mode(self, debug: bool):
+    def debug_mode(self, debug: bool) -> None:
         self._debug = debug
         if debug:
             self._set_logging_level(logging.DEBUG)
@@ -263,11 +263,11 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         else:
             self._set_logging_level(logging.INFO)
 
-    def _set_logging_level(self, level):
+    def _set_logging_level(self, level: int) -> None:
         self.console_log_handler.setLevel(level)
         self.log_data_handler.setLevel(level)
 
-    def set_current_tab(self, tab_name: str):
+    def set_current_tab(self, tab_name: str) -> None:
 
         size = self.tabWidget.tabs.count()
         for t in range(size):
@@ -291,7 +291,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.tabWidget.add_tab(workflows_tab.tab, workflow_name)
         self.tabWidget.setVisible(True)
 
-    def closeEvent(self, *args, **kwargs):
+    def closeEvent(self, *args, **kwargs) -> None:
         self.log_manager.removeHandler(self.console_log_handler)
         super().closeEvent(*args, **kwargs)
 
@@ -305,7 +305,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             self.log_manager.warning(
                 "No help link available. Reason: {}".format(e))
 
-    def show_about_window(self):
+    def show_about_window(self) -> None:
         speedwagon.dialog.dialogs.about_dialog_box(parent=self)
 
     def show_system_info(self) -> None:
@@ -343,7 +343,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         config_dialog.exec()
 
-    def start_workflow(self):
+    def start_workflow(self) -> None:
         num_selected = self._workflow_selector_view.selectedIndexes()
         if len(num_selected) != 1:
             print(
@@ -352,7 +352,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             )
             return
 
-    def save_log(self):
+    def save_log(self) -> None:
         data = self._log_data.getvalue()
 
         epoch_in_minutes = int(time.time() / 60)
@@ -376,7 +376,7 @@ class SplashScreenLogHandler(logging.Handler):
         super().__init__(level)
         self.widget = widget
 
-    def emit(self, record):
+    def emit(self, record) -> None:
         self.widget.showMessage(
             f"{record.msg}",
             QtCore.Qt.AlignCenter,
