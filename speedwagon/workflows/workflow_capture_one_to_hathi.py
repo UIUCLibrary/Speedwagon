@@ -1,3 +1,5 @@
+__all__ = ['CaptureOneToHathiTiffPackageWorkflow']
+
 import logging
 from typing import List, Any
 from contextlib import contextmanager
