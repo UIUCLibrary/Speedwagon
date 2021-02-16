@@ -10,7 +10,6 @@ from speedwagon.worker import GuiLogHandler
 from . import shared_custom_widgets as options
 
 
-
 class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
     name = "Convert CaptureOne TIFF to Hathi TIFF package"
     description = "This workflow chains together a number of tools to take " \
