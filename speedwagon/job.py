@@ -8,8 +8,8 @@ import os
 import sys
 from typing import Type, Optional, Iterable, Dict, List, Any, Tuple, Set
 
-from . import tasks
 from PyQt5 import QtWidgets  # type: ignore
+from . import tasks
 
 
 class JobCancelled(Exception):
