@@ -230,7 +230,7 @@ class GuiLogHandler(logging.Handler):
         self.callback = callback
 
     def emit(self, record) -> None:
-        self.callback(record.msg)
+        self.callback(logging.Formatter().format(record))
 
 
 class WorkRunnerExternal3(contextlib.AbstractContextManager):
