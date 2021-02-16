@@ -16,9 +16,6 @@ from speedwagon.workflows.title_page_selection import PackageBrowser
 from . import shared_custom_widgets
 
 
-
-
-
 class HathiPrepWorkflow(speedwagon.Workflow):
     name = "Hathi Prep"
     description = "Enables user to select, from a dropdown list of image " \

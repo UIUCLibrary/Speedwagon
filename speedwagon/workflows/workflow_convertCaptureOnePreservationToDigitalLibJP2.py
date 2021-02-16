@@ -12,7 +12,6 @@ from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
 
 
-
 class AbsProcessStrategy(metaclass=abc.ABCMeta):
 
     def __init__(self) -> None:

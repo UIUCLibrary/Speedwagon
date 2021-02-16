@@ -13,7 +13,6 @@ from speedwagon.reports import add_report_borders
 from . import shared_custom_widgets
 
 
-
 class UserArgs(enum.Enum):
     INPUT = "Input"
 
