@@ -25,7 +25,7 @@ class AbsSubtask(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def log(self, message) -> None:
+    def log(self, message: str) -> None:
         """Log a message to the console on the main window"""
 
     @property
@@ -86,13 +86,13 @@ class Subtask(AbsSubtask):
         self._parent_task_log_q: Optional[Deque[str]] = None
 
     @property
-    def subtask_working_dir(self):
+    def subtask_working_dir(self) -> str:
         if not os.path.exists(self._working_dir):
             os.makedirs(self._working_dir)
         return self._working_dir
 
     @subtask_working_dir.setter
-    def subtask_working_dir(self, value):
+    def subtask_working_dir(self, value: str) -> None:
         self._working_dir = value
 
     @property
@@ -132,10 +132,10 @@ class Subtask(AbsSubtask):
     def results(self):
         return self._result.data
 
-    def set_results(self, results):
+    def set_results(self, results) -> None:
         self._result = Result(self.__class__, results)
 
-    def log(self, message: str):
+    def log(self, message: str) -> None:
         self._parent_task_log_q.append(message)
 
     def exec(self) -> None:
@@ -165,7 +165,7 @@ class PreTask(AbsSubtask):
         return self._parent_task_log_q
 
     @parent_task_log_q.setter
-    def parent_task_log_q(self, value):
+    def parent_task_log_q(self, value) -> None:
         self._parent_task_log_q = value
 
     def exec(self) -> None:
@@ -415,10 +415,10 @@ class BaseTaskBuilder(AbsTaskBuilder):
     def task(self) -> MultiStageTask:
         return super().task
 
-    def set_pretask(self, subtask: AbsSubtask):
+    def set_pretask(self, subtask: AbsSubtask) -> None:
         self._pretask = subtask
 
-    def set_posttask(self, subtask: AbsSubtask):
+    def set_posttask(self, subtask: AbsSubtask) -> None:
         self._posttask = subtask
 
 
@@ -437,7 +437,7 @@ class TaskBuilder:
         task = self._builder.build_task()
         return task
 
-    def add_subtask(self, subtask: Subtask):
+    def add_subtask(self, subtask: Subtask) -> None:
         self._subtask_counter += 1
 
         if subtask.name is not None:
@@ -460,7 +460,11 @@ class TaskBuilder:
         self._builder.add_subtask(subtask)
 
     @staticmethod
-    def _build_working_path2(task_working_path, task_type, subtask_id):
+    def _build_working_path2(
+            task_working_path: str,
+            task_type: str,
+            subtask_id: str
+    ) -> str:
 
         working_dir = os.path.join(task_working_path,
                                    task_type,
@@ -468,11 +472,11 @@ class TaskBuilder:
         return working_dir
 
     @staticmethod
-    def _build_task_working_path(temp_path, task_id):
+    def _build_task_working_path(temp_path: str, task_id: str) -> str:
         working_dir = os.path.join(temp_path, task_id)
         return working_dir
 
-    def set_pretask(self, subtask: Subtask):
+    def set_pretask(self, subtask: Subtask) -> None:
 
         self._subtask_counter += 1
 
@@ -495,7 +499,7 @@ class TaskBuilder:
         subtask.task_working_dir = task_working_dir
         self._builder.set_pretask(subtask)
 
-    def set_posttask(self, subtask):
+    def set_posttask(self, subtask: Subtask) -> None:
         self._subtask_counter += 1
 
         if subtask.name is not None:
@@ -556,7 +560,7 @@ class QueueAdapter:
 
 class MultiStageTaskBuilder(BaseTaskBuilder):
 
-    def __init__(self, working_dir) -> None:
+    def __init__(self, working_dir: str) -> None:
         super().__init__()
         self._working_dir = working_dir
 
