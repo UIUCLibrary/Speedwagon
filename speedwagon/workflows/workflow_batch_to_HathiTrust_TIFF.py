@@ -1,17 +1,17 @@
 import itertools
 import os
 import typing
+import shutil
 
 from PyQt5 import QtWidgets  # type: ignore
 from uiucprescon.packager.packages.collection import Metadata
+from uiucprescon import packager, pygetmarc
 
 import speedwagon
 from speedwagon import tasks
 from speedwagon.workflows import shared_custom_widgets
-from uiucprescon import packager, pygetmarc
 from . title_page_selection import PackageBrowser
 from pyhathiprep import package_creater
-import shutil
 
 
 class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
