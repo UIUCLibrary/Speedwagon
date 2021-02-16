@@ -9,7 +9,12 @@ from .checksum_shared import ResultsValues
 
 class MakeChecksumTask(tasks.Subtask):
 
-    def __init__(self, source_path, filename, checksum_report) -> None:
+    def __init__(
+            self,
+            source_path: str,
+            filename: str,
+            checksum_report: str
+    ) -> None:
         super().__init__()
         self._source_path = source_path
         self._filename = filename
@@ -36,7 +41,11 @@ class MakeChecksumTask(tasks.Subtask):
 
 class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
 
-    def __init__(self, output_filename, checksum_calculations) -> None:
+    def __init__(
+            self,
+            output_filename: str,
+            checksum_calculations
+    ) -> None:
         super().__init__()
         self._output_filename = output_filename
         self._checksum_calculations = checksum_calculations
