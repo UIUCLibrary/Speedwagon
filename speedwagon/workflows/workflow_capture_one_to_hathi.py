@@ -47,7 +47,12 @@ class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
             options.UserOptionCustomDataType("Output", options.FolderData)
             ]
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(
+            self,
+            task_builder: tasks.TaskBuilder,
+            **job_args
+    ) -> None:
+
         existing_package = job_args['package']
         new_package_root = job_args["output"]
         source_path = job_args["source_path"]
@@ -73,8 +78,13 @@ class PackageConverter(tasks.Subtask):
         finally:
             logger.removeHandler(gui_logger)
 
-    def __init__(self, source_path, packaging_id,
-                 existing_package, new_package_root) -> None:
+    def __init__(
+            self,
+            source_path: str,
+            packaging_id: str,
+            existing_package,
+            new_package_root
+    ) -> None:
 
         super().__init__()
         self.packaging_id = packaging_id
@@ -82,7 +92,7 @@ class PackageConverter(tasks.Subtask):
         self.new_package_root = new_package_root
         self.source_path = source_path
 
-    def work(self):
+    def work(self) -> bool:
         my_logger = logging.getLogger(packager.__name__)
         my_logger.setLevel(logging.INFO)
         with self.log_config(my_logger):

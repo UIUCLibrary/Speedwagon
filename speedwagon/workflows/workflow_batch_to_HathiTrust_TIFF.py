@@ -64,7 +64,11 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         root = user_args['Source']
         task_builder.add_subtask(FindPackageTask(root=root))
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(
+            self,
+            task_builder: tasks.TaskBuilder,
+            **job_args
+    ) -> None:
 
         package = job_args['package']
         destination_root = job_args['destination']

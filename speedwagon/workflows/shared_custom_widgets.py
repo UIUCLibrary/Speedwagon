@@ -37,7 +37,7 @@ class CustomItemWidget(QtWidgets.QWidget):
         return self._data
 
     @data.setter
-    def data(self, value):
+    def data(self, value) -> None:
         self._data = value
         self.editingFinished.emit()
 
@@ -72,7 +72,7 @@ class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
         return super().data
 
     @data.setter
-    def data(self, value):
+    def data(self, value: str) -> None:
         self._data = value
         self.text_line.setText(value)
 
@@ -98,7 +98,7 @@ class ChecksumFile(AbsBrowseableWidget):
         return QtWidgets.QApplication.style().standardIcon(
             QtWidgets.QStyle.SP_FileIcon)
 
-    def browse_clicked(self):
+    def browse_clicked(self) -> None:
         selection = QtWidgets.QFileDialog.getOpenFileName(
             filter="Checksum files (*.md5)")
 
@@ -110,7 +110,7 @@ class ChecksumFile(AbsBrowseableWidget):
 class ChecksumData(AbsCustomData3):
 
     @classmethod
-    def is_valid(cls, value) -> bool:
+    def is_valid(cls, value: str) -> bool:
         if not os.path.exists(value):
             return False
         if os.path.basename(value) == "checksum":
@@ -129,7 +129,7 @@ class FolderBrowseWidget(AbsBrowseableWidget):
         return QtWidgets.QApplication.style().standardIcon(
             QtWidgets.QStyle.SP_DirOpenIcon)
 
-    def browse_clicked(self):
+    def browse_clicked(self) -> None:
         selection = QtWidgets.QFileDialog.getExistingDirectory()
         if selection:
             self.data = selection
@@ -139,7 +139,7 @@ class FolderBrowseWidget(AbsBrowseableWidget):
 class FolderData(AbsCustomData3, metaclass=abc.ABCMeta):
 
     @classmethod
-    def is_valid(cls, value) -> bool:
+    def is_valid(cls, value: str) -> bool:
         if not os.path.isdir(value):
             return False
         return True
@@ -150,7 +150,7 @@ class FolderData(AbsCustomData3, metaclass=abc.ABCMeta):
 
 
 class UserOption3(metaclass=abc.ABCMeta):
-    def __init__(self, label_text):
+    def __init__(self, label_text: str):
         self.label_text = label_text
         self.data = None
 
@@ -165,7 +165,7 @@ class UserOption3(metaclass=abc.ABCMeta):
 class UserOptionCustomDataType(UserOption3):
     def __init__(
             self,
-            label_text,
+            label_text: str,
             data_type: Type[AbsCustomData3]
     ) -> None:
 
@@ -194,7 +194,7 @@ class UserOption2(metaclass=abc.ABCMeta):
 
 
 class UserOptionPythonDataType2(UserOption2):
-    def __init__(self, label_text, data_type=str) -> None:
+    def __init__(self, label_text: str, data_type=str) -> None:
         super().__init__(label_text)
         self.data_type = data_type
         self.data = None
@@ -205,7 +205,7 @@ class UserOptionPythonDataType2(UserOption2):
 
 class ListSelectionWidget(CustomItemWidget, metaclass=WidgetMeta):
 
-    def __init__(self, selections, *args, **kwargs):
+    def __init__(self, selections, *args, **kwargs) -> None:
         super().__init__()
         self._combobox = QtWidgets.QComboBox()
         self._selections = selections
@@ -217,7 +217,7 @@ class ListSelectionWidget(CustomItemWidget, metaclass=WidgetMeta):
         self.inner_layout.addWidget(self._combobox,
                                     alignment=QtCore.Qt.AlignBaseline)
 
-    def _update(self):
+    def _update(self) -> None:
         self.data = self._combobox.currentText()
 
 
@@ -233,7 +233,7 @@ class ListSelection(UserOption2):
     def edit_widget(self) -> QtWidgets.QWidget:
         return ListSelectionWidget(self._selections)
 
-    def add_selection(self, text):
+    def add_selection(self, text: str) -> "ListSelection":
         self._selections.append(text)
         self.data = self._selections[0]
         return self

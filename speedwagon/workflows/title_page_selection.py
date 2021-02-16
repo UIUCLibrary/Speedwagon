@@ -21,8 +21,11 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
 
         return selection
 
-    def setEditorData(self, editor: QtWidgets.QComboBox,
-                      index: QtCore.QModelIndex):
+    def setEditorData(
+            self,
+            editor: QtWidgets.QComboBox,
+            index: QtCore.QModelIndex
+    ) -> None:
 
         object_record = index.data(role=Qt.UserRole)
 
@@ -43,9 +46,12 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
             if title_page == file:
                 editor.setCurrentIndex(i)
 
-    def setModelData(self, widget: QtWidgets.QComboBox,
-                     model: QtCore.QAbstractItemModel,
-                     index: QtCore.QModelIndex):
+    def setModelData(
+            self,
+            widget: QtWidgets.QComboBox,
+            model: QtCore.QAbstractItemModel,
+            index: QtCore.QModelIndex
+    ) -> None:
         record: collection.PackageObject = model.data(index, role=Qt.UserRole)
         record.component_metadata[
             collection.Metadata.TITLE_PAGE] = widget.currentText()
@@ -73,10 +79,10 @@ class PackagesModel(QtCore.QAbstractTableModel):
         super().__init__(parent)
         self._packages = packages
 
-    def columnCount(self, parent=None, *args, **kwargs):
+    def columnCount(self, parent=None, *args, **kwargs) -> int:
         return len(self.fields)
 
-    def rowCount(self, parent=None, *args, **kwargs):
+    def rowCount(self, parent=None, *args, **kwargs) -> int:
         return len(self._packages)
 
     def headerData(self, index, orientation, role=QtCore.Qt.DisplayRole):

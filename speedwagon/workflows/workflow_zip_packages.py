@@ -60,7 +60,11 @@ class ZipPackagesWorkflow(AbsWorkflow):
                                              options.FolderData),
         ]
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(
+            self,
+            task_builder: tasks.TaskBuilder,
+            **job_args
+    ) -> None:
         new_task = ZipTask(**job_args)
         task_builder.add_subtask(new_task)
 
@@ -78,12 +82,19 @@ class ZipPackagesWorkflow(AbsWorkflow):
 
 
 class ZipTask(tasks.Subtask):
-    def __init__(self, source_path, destination_path, *args, **kwargs) -> None:
+    def __init__(
+            self,
+            source_path: str,
+            destination_path: str,
+            *args,
+            **kwargs
+    ) -> None:
+
         super().__init__()
         self._source_path = source_path
         self._destination_path = destination_path
 
-    def work(self):
+    def work(self) -> bool:
         my_logger = logging.getLogger(hathizip.__name__)
         my_logger.setLevel(logging.INFO)
         with self.log_config(my_logger):
