@@ -42,14 +42,14 @@ class TabWidgets(enum.Enum):
 
 class Tab:
     @abc.abstractmethod
-    def compose_tab_layout(self):
+    def compose_tab_layout(self) -> None:
         """Draw the layout of the tab"""
 
     @abc.abstractmethod
     def create_actions(self):
         """Generate action widgets"""
 
-    def __init__(self, parent, work_manager):
+    def __init__(self, parent, work_manager) -> None:
         self.parent = parent
         self.work_manager = work_manager
         self.tab, self.tab_layout = self.create_tab()
@@ -158,7 +158,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         self.compose_tab_layout()
         self.init_selection()
 
-    def init_selection(self):
+    def init_selection(self) -> None:
         # Set the first item
         index = self.item_selection_model.index(0, 0)
         self.item_selector_view.setCurrentIndex(index)
@@ -233,7 +233,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         }
         return actions, tool_actions_layout
 
-    def _start(self):
+    def _start(self) -> None:
         selected_workflow = self.item_selection_model.data(
             self.item_selector_view.selectedIndexes()[0],
             QtCore.Qt.UserRole)
@@ -255,7 +255,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     def is_ready_to_start(self) -> bool:
         pass
 
-    def _update_tool_selected(self, current, previous):
+    def _update_tool_selected(self, current, previous) -> None:
         try:
             if current.isValid():
                 self.item_selected(current)
@@ -269,7 +269,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
                 traceback.print_tb(e.__traceback__)
                 self.item_selector_view.setCurrentIndex(previous)
 
-    def item_selected(self, index: QtCore.QModelIndex):
+    def item_selected(self, index: QtCore.QModelIndex) -> None:
 
         item = self.item_selection_model.data(index, QtCore.Qt.UserRole)
         item_settings = self.workspace_widgets[TabWidgets.SETTINGS]
@@ -312,7 +312,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             self.log_manager.warning(message)
             raise
 
-    def compose_tab_layout(self):
+    def compose_tab_layout(self) -> None:
         self.tab_layout.setAlignment(QtCore.Qt.AlignTop)
         self.tab_layout.addWidget(self.item_selector_view)
         self.tab_layout.addWidget(self.workspace)
@@ -448,7 +448,7 @@ class TabData(NamedTuple):
     workflows_model: "models.WorkflowListModel2"
 
 
-def read_tabs_yaml(yaml_file) -> Iterator[TabData]:
+def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
     tabs_file_size = os.path.getsize(yaml_file)
     if tabs_file_size > 0:
         try:
@@ -481,7 +481,7 @@ def read_tabs_yaml(yaml_file) -> Iterator[TabData]:
             raise
 
 
-def write_tabs_yaml(yaml_file, tabs: List[TabData]):
+def write_tabs_yaml(yaml_file: str, tabs: List[TabData]) -> None:
     tabs_data = dict()
     for tab in tabs:
         tab_model = tab.workflows_model
