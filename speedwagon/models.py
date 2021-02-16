@@ -153,8 +153,7 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
     def columnCount(self, parent=None, *args, **kwargs) -> int:
         if len(self._data) > 0:
             return 1
-        else:
-            return 0
+        return 0
 
     @abstractmethod
     def get(self):
@@ -170,8 +169,7 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
             return QtCore.Qt.ItemIsEnabled \
                    | QtCore.Qt.ItemIsSelectable \
                    | QtCore.Qt.ItemIsEditable
-        else:
-            print(column, file=sys.stderr)
+        print(column, file=sys.stderr)
 
 
 class ToolOptionsPairsModel(ToolOptionsModel):
@@ -250,8 +248,7 @@ class ToolOptionsModel3(ToolOptionsModel):
                 data = self._data[index.row()].data
                 if data is not None:
                     return str(data)
-                else:
-                    return ""
+                return ""
             if role == QtCore.Qt.EditRole:
                 return self._data[index.row()].data
             if role == QtCore.Qt.UserRole:
