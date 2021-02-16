@@ -29,7 +29,7 @@ class NoWorkError(RuntimeError):
 class AbsJobWorker(metaclass=QtMeta):
     name: typing.Optional[str] = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.result = None
         self.successful = None
 
@@ -66,7 +66,7 @@ class AbsJobWorker(metaclass=QtMeta):
 class ProcessJobWorker(AbsJobWorker):
     _mq = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     def process(self, *args, **kwargs):
@@ -137,13 +137,13 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
         self._tasks = []
 
     @classmethod
-    def initialize_worker(cls, max_workers=1):
+    def initialize_worker(cls, max_workers: int = 1) -> None:
 
         cls.executor = concurrent.futures.ProcessPoolExecutor(
             max_workers=max_workers
         )  # TODO: Fix this
 
-    def cancel(self):
+    def cancel(self) -> None:
         self.executor.shutdown()
 
     @classmethod
@@ -157,7 +157,7 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
         new_job = JobPair(job, args=job_args)
         self._jobs_queue.put(new_job)
 
-    def run_all_jobs(self):
+    def run_all_jobs(self) -> None:
 
         while self._jobs_queue.qsize() != 0:
             job_, args, message_queue = self._jobs_queue.get()
@@ -168,7 +168,7 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
         self.on_completion(results=self._results)
 
     @abc.abstractmethod
-    def complete_task(self, fut: concurrent.futures.Future):
+    def complete_task(self, fut: concurrent.futures.Future) -> None:
         pass
 
     @abc.abstractmethod
@@ -184,7 +184,7 @@ class ProgressMessageBoxLogHandler(logging.Handler):
         super().__init__(level)
         self.dialog_box = dialog_box
 
-    def emit(self, record):
+    def emit(self, record) -> None:
         try:
             self.dialog_box.setLabelText(record.msg)
         except RuntimeError as e:
@@ -194,7 +194,7 @@ class ProgressMessageBoxLogHandler(logging.Handler):
 
 class AbsObserver(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def emit(self, value):
+    def emit(self, value) -> None:
         pass
 
 
@@ -202,12 +202,12 @@ class AbsSubject(metaclass=abc.ABCMeta):
     lock = multiprocessing.Lock()
     _observers = set()  # type: typing.Set[AbsObserver]
 
-    def subscribe(self, observer: AbsObserver):
+    def subscribe(self, observer: AbsObserver) -> None:
         if not isinstance(observer, AbsObserver):
             raise TypeError("Observer not derived from AbsObserver")
         self._observers |= {observer}
 
-    def unsubscribe(self, observer: AbsObserver):
+    def unsubscribe(self, observer: AbsObserver) -> None:
         self._observers -= {observer}
 
     def notify(self, value=None):
@@ -220,13 +220,16 @@ class AbsSubject(metaclass=abc.ABCMeta):
 
 
 class GuiLogHandler(logging.Handler):
-    def __init__(self,
-                 callback: typing.Callable[[str], None],
-                 level=logging.NOTSET):
+    def __init__(
+            self,
+            callback: typing.Callable[[str], None],
+            level: int = logging.NOTSET
+    ) -> None:
+
         super().__init__(level)
         self.callback = callback
 
-    def emit(self, record):
+    def emit(self, record) -> None:
         self.callback(record.msg)
 
 
@@ -260,25 +263,25 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
 
 class AbsJobManager(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def add_job(self, new_job, settings):
+    def add_job(self, new_job, settings) -> None:
         pass
 
     @abc.abstractmethod
-    def start(self):
+    def start(self) -> None:
         pass
 
     @abc.abstractmethod
-    def flush_message_buffer(self):
+    def flush_message_buffer(self) -> None:
         pass
 
     @abc.abstractmethod
-    def abort(self):
+    def abort(self) -> None:
         pass
 
 
 class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
-    def __init__(self, max_workers=1) -> None:
+    def __init__(self, max_workers: int = 1) -> None:
         self.settings_path = None
         self.manager = multiprocessing.Manager()
         self._max_workers = max_workers
@@ -308,7 +311,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
     def add_job(self, new_job: ProcessJobWorker, settings: dict) -> None:
         self._pending_jobs.put(JobPair(new_job, settings))
 
-    def start(self):
+    def start(self) -> None:
         self.active = True
         while not self._pending_jobs.empty():
             job_, settings = self._pending_jobs.get()
@@ -395,12 +398,12 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
                 raise
             self.flush_message_buffer()
 
-    def flush_message_buffer(self):
+    def flush_message_buffer(self) -> None:
         while not self._message_queue.empty():
             self.logger.info(self._message_queue.get())
             self._message_queue.task_done()
 
-    def _cleanup(self):
+    def _cleanup(self) -> None:
         if self._pending_jobs.unfinished_tasks > 0:
             self.logger.warning("Pending jobs has unfinished tasks")
         self._pending_jobs.join()
