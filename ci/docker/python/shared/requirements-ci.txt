@@ -5,6 +5,7 @@ pep517
 pykdu_compress >= 0.1.3
 pylint
 sphinx
+pydocstyle
 pytest-xvfb
 sphinx-argparse
 sphinxcontrib-applehelp
