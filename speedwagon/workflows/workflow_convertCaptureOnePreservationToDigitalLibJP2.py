@@ -5,11 +5,12 @@ import sys
 import typing
 from typing import List, Any, Optional
 
-from speedwagon import tasks, reports
-from . import shared_custom_widgets as options
-from speedwagon.job import AbsWorkflow
-
 import pykdu_compress
+
+from speedwagon import tasks, reports
+from speedwagon.job import AbsWorkflow
+from . import shared_custom_widgets as options
+
 
 
 class AbsProcessStrategy(metaclass=abc.ABCMeta):
