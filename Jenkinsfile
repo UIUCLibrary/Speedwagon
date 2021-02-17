@@ -620,7 +620,7 @@ pipeline {
                                                     sh(
                                                         label: "Run pydocstyle",
                                                         script: '''mkdir -p reports
-                                                                   pydocstyle uiucprescon/packager > reports/pydocstyle-report.txt
+                                                                   pydocstyle speedwagon > reports/pydocstyle-report.txt
                                                                    '''
                                                     )
                                                 }
