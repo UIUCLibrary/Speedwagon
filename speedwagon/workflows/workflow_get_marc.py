@@ -146,7 +146,7 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
         return jobs
 
     @staticmethod
-    def validate_user_options(**user_args: Dict[str, str]) -> None:
+    def validate_user_options(**user_args: Dict[str, str]) -> bool:
         """Make sure that the options the user provided is valid.
 
         Args:
@@ -188,6 +188,7 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
         if len(invalid_messages) > 0:
             raise ValueError("\n".join(invalid_messages))
+        return True
 
     def create_new_task(
             self,

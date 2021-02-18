@@ -103,7 +103,20 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
         """
 
     @staticmethod
-    def validate_user_options(**user_args):
+    def validate_user_options(**user_args) -> bool:
+        """Make sure that the options the user provided is valid.
+
+        Notes:
+            This raises a ValueError on Failure.
+            This should be rewritten to be better.
+
+        Args:
+            **user_args:
+
+        Returns:
+            Returns True on valid else returns False.
+
+        """
         return True
 
 

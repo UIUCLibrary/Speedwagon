@@ -98,7 +98,7 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
         task_builder.add_subtask(packaging_task)
 
     @staticmethod
-    def validate_user_options(**user_args: str) -> None:
+    def validate_user_options(**user_args: str) -> bool:
         """Validate the user's arguments.
 
         Raises a value error is something is not valid.
@@ -126,6 +126,7 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
 
         if len(invalid_messages) > 0:
             raise ValueError("\n".join(invalid_messages))
+        return True
 
 
 class PackageConverter(tasks.Subtask):
