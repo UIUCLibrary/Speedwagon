@@ -358,35 +358,32 @@ def startup(){
     }
 }
 
-def create_wheel_stash(nodeLabels, pythonVersion){
-    node(nodeLabels) {
-        ws{
-            checkout scm
-            try{
-                docker.build("speedwagon:wheelbuilder${pythonVersion}","-f ci/docker/python/windows/jenkins/Dockerfile --build-arg PYTHON_VERSION=${pythonVersion} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL .").inside{
-                    bat 'pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release'
-                    stash includes: "deps/*.whl", name: "PYTHON_DEPS_${pythonVersion}"
+
+def create_wheels(){
+    def wheelCreatorTasks = [:]
+    ['3.7', '3.8', '3.9'].each{ pythonVersion ->
+        wheelCreatorTasks["Packaging wheels for ${pythonVersion}"] = {
+            node('windows && docker') {
+                ws{
+                    checkout scm
+                    try{
+                        docker.build("speedwagon:wheelbuilder","-f ci/docker/python/windows/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE .").inside{
+                            bat(label: "Getting dependencies to vendor", script:"py -${pythonVersion} -m pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release")
+                            stash includes: "deps/*.whl", name: "PYTHON_DEPS_${pythonVersion}"
+                        }
+                    } finally{
+                        cleanWs(
+                            deleteDirs: true,
+                            patterns: [
+                                [pattern: 'deps/', type: 'INCLUDE']
+                                ]
+                        )
+                    }
                 }
-            } finally{
-                deleteDir()
             }
         }
     }
-}
-
-def create_wheels(){
-
-    parallel(
-        'Packaging wheels for 3.7': {
-            create_wheel_stash('windows && docker', '3.7')
-        },
-        'Packaging wheels for 3.8': {
-            create_wheel_stash('windows && docker', '3.8')
-        },
-        'Packaging wheels for 3.9': {
-            create_wheel_stash('windows && docker', '3.9')
-        }
-    )
+    parallel(wheelCreatorTasks)
 }
 def buildSphinx(){
     def sphinx  = load('ci/jenkins/scripts/sphinx.groovy')
@@ -980,6 +977,14 @@ pipeline {
                                         always{
                                             archiveArtifacts artifacts: 'packages/**/*.nuspec,packages/*.nupkg'
                                             stash includes: 'packages/*.nupkg', name: 'CHOCOLATEY_PACKAGE'
+                                        }
+                                        cleanup{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                patterns: [
+                                                    [pattern: 'packages/', type: 'INCLUDE']
+                                                    ]
+                                                )
                                         }
                                     }
                                 }
