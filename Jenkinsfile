@@ -363,8 +363,8 @@ def create_wheel_stash(nodeLabels, pythonVersion){
         ws{
             checkout scm
             try{
-                docker.build("speedwagon:wheelbuilder${pythonVersion}","-f ci/docker/python/windows/jenkins/Dockerfile --build-arg PYTHON_VERSION=${pythonVersion} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL .").inside{
-                    bat 'pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release'
+                docker.build("speedwagon:wheelbuilder","-f ci/docker/python/windows/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE .").inside{
+                    bat(label: "Getting dependencies to vendor", script:"py -${pythonVersion} -m pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release")
                     stash includes: "deps/*.whl", name: "PYTHON_DEPS_${pythonVersion}"
                 }
             } finally{
