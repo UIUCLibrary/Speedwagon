@@ -555,7 +555,7 @@ class MarcGeneratorTask(tasks.Subtask):
             str: Reformatted xml data.
 
         """
-        return str(minidom.parseString(data))
+        return minidom.parseString(data).toprettyxml()
 
     def work(self) -> bool:
         """Run the task.

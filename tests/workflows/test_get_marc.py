@@ -838,3 +838,21 @@ def test_failing_to_parse_provides_input(monkeypatch):
         task.work()
 
     assert "dummyfile.xml" in str(ex.value)
+
+
+def test_reflox(monkeypatch):
+    task = MarcGeneratorTask("12345", "MMS ID", "sample.xml", "fake.com")
+    MarcGeneratorTask.log = Mock()
+    task.write_file = Mock()
+
+    def mock_get(*args, **kwargs):
+        sample_requests = Mock()
+        sample_requests.raise_for_status = Mock()
+        sample_requests.text = SAMPLE_RECORD
+        return sample_requests
+
+    monkeypatch.setattr(requests, "get", mock_get)
+    task.work()
+    data = task.write_file.call_args[1]['data']
+    ET.fromstring(data)
+
