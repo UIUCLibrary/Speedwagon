@@ -1,6 +1,5 @@
 """Generating MARC XML files by retrieving from a server."""
-# pylint: disable=unsubscriptable-object
-# pylint: disable=too-few-public-methods
+# pylint: disable=unsubscriptable-object, too-few-public-methods
 import abc
 import functools
 import os
