@@ -826,14 +826,15 @@ def test_discover_task_metadata(monkeypatch, unconfigured_workflow, arg_subdir,
 def test_failing_to_parse_provides_input(monkeypatch):
 
     def mock_parse(filename):
-        raise ET.ParseError("not well-formed (invalid token): line 1, column 33")
+        raise ET.ParseError(
+            "not well-formed (invalid token): line 1, column 33"
+        )
 
     task = workflow_get_marc.MarcEnhancement955Task(
         added_value="xxx", xml_file="dummyfile.xml"
     )
-    monkeypatch.setattr(ET, "parse",mock_parse)
+    monkeypatch.setattr(ET, "parse", mock_parse)
     with pytest.raises(speedwagon.exceptions.SpeedwagonException) as ex:
         task.work()
 
     assert "dummyfile.xml" in str(ex.value)
-
