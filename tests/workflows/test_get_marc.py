@@ -855,4 +855,3 @@ def test_reflox(monkeypatch):
     task.work()
     data = task.write_file.call_args[1]['data']
     ET.fromstring(data)
-
