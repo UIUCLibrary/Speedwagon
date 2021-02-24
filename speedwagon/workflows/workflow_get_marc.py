@@ -2,6 +2,7 @@
 # pylint: disable=unsubscriptable-object
 # pylint: disable=too-few-public-methods
 import abc
+import functools
 import os
 import re
 from copy import deepcopy
@@ -643,6 +644,19 @@ class EnhancementTask(tasks.Subtask):
         return root
 
 
+def provide_info(func):
+    @functools.wraps(func)
+    def wrapped(task: EnhancementTask):
+        try:
+            return func(task)
+        except Exception as error:
+            raise SpeedwagonException(
+                f"Problem enhancing {task.xml_file}"
+            ) from error
+
+    return wrapped
+
+
 class MarcEnhancement035Task(EnhancementTask):
     """Enhancement for Marc xml by adding a 035 field."""
 
@@ -712,6 +726,7 @@ class MarcEnhancement035Task(EnhancementTask):
         new_datafield.append(new_subfield)
         return new_datafield
 
+    @provide_info
     def work(self) -> bool:
         """Add 035 field to the file.
 
@@ -749,6 +764,7 @@ class MarcEnhancement955Task(EnhancementTask):
         super().__init__(xml_file)
         self.added_value = added_value
 
+    @provide_info
     def work(self) -> bool:
         """Perform the enhancement.
 
@@ -760,6 +776,7 @@ class MarcEnhancement955Task(EnhancementTask):
         root = self.enhance_tree_with_955(tree)
         with open(self.xml_file, "w") as write_file:
             write_file.write(self.to_prety_string(root))
+
         return True
 
     def enhance_tree_with_955(self, tree: ET.ElementTree) -> ET.Element:
