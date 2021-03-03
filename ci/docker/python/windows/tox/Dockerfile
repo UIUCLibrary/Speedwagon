@@ -74,7 +74,8 @@ RUN py -m pip install --upgrade pip wheel && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-vendor.txt && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt
-
+RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
+RUN py -m pip list
 # ==============================================================================
 FROM BASE_BUILDER as WHEEL_BUILDER_PY37
 SHELL ["cmd", "/S", "/C" ]
@@ -87,6 +88,7 @@ RUN py -m pip install --upgrade pip wheel && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-vendor.txt && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt
+RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
 RUN py -m pip list
 
 # ==============================================================================
@@ -101,6 +103,7 @@ RUN py -m pip install --upgrade pip wheel && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-vendor.txt && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt
+RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
 RUN py -m pip list
 
 # ==============================================================================
@@ -116,6 +119,7 @@ RUN py -m pip install --upgrade pip wheel && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-vendor.txt && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt
+RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
 RUN py -m pip list
 # ==============================================================================
 
@@ -159,6 +163,6 @@ COPY --from=WHEEL_BUILDER_PY39 c:/wheels/ c:/wheels/
 
 ENV PIP_FIND_LINKS=c:\wheels
 
-RUN python -m pip install pip --upgrade ; pip install tox
+RUN python -m pip install pip --upgrade ; pip install --no-index --find-linkts=c:\wheels tox devpi_client
 WORKDIR C:/src
 CMD tox --workdir ${Env:TEMP}\tox\ -vv  --recreate -p=auto
