@@ -8,7 +8,7 @@ SUPPORTED_LINUX_VERSIONS = ['3.7', '3.8', '3.9']
 SUPPORTED_WINDOWS_VERSIONS = ['3.7', '3.8', '3.9']
 DOCKER_PLATFORM_BUILD_ARGS = [
     linux: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)',
-    windows: ''
+    windows: '--build-arg CHOCOLATEY_SOURCE'
 ]
 
 def loadConfigs(){
