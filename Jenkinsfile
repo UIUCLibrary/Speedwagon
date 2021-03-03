@@ -8,7 +8,7 @@ SUPPORTED_LINUX_VERSIONS = ['3.7', '3.8', '3.9']
 SUPPORTED_WINDOWS_VERSIONS = ['3.7', '3.8', '3.9']
 DOCKER_PLATFORM_BUILD_ARGS = [
     linux: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)',
-    windows: ''
+    windows: '--build-arg CHOCOLATEY_SOURCE'
 ]
 
 def loadConfigs(){
@@ -1159,8 +1159,9 @@ pipeline {
                         }
                         agent {
                             dockerfile {
-                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}"
-                                filename "ci/docker/python/${PLATFORM}/jenkins/Dockerfile"
+                                additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}"
+                                filename "ci/docker/python/${PLATFORM}/tox/Dockerfile"
+//                                 filename "ci/docker/python/${PLATFORM}/jenkins/Dockerfile"
                                 label "${PLATFORM} && docker"
                             }
                         }
