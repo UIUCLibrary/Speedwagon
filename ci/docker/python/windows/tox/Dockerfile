@@ -163,6 +163,6 @@ COPY --from=WHEEL_BUILDER_PY39 c:/wheels/ c:/wheels/
 
 ENV PIP_FIND_LINKS=c:\wheels
 
-RUN python -m pip install pip --upgrade ; pip install --no-index --find-linkts=c:\wheels tox devpi_client
+RUN python -m pip install pip --upgrade ; pip install --no-index --find-links=c:\wheels tox devpi_client
 WORKDIR C:/src
 CMD tox --workdir ${Env:TEMP}\tox\ -vv  --recreate -p=auto
