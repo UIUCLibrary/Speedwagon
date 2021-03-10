@@ -23,7 +23,7 @@ if __name__ == "__main__":
     setup(
         test_suite="tests",
         install_requires=[
-            "PyQt5",
+            "PyQt5>=5.15.4",
             "HathiZip>=0.1.9",
             "HathiValidate>=0.3.6b6",
             "pyhathiprep>=0.1.5",
