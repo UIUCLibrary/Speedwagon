@@ -24,7 +24,7 @@ uiucprescon-getmarc==0.1.2
 uiucprescon.packager[kdu]>=0.2.11b8
 uiucprescon.images>=0.0.4b1
 uiucprescon.imagevalidate>=0.1.5
-uiucprescon.ocr>=0.1.1
+uiucprescon.ocr>=0.1.2b1
 yarl>=1.4.2
 zipp==3.1.0
 setuptools~=49.2.1
