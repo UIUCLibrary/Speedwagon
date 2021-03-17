@@ -9,7 +9,7 @@ import speedwagon
 
 from speedwagon.workflows import shared_custom_widgets
 from speedwagon import tasks
-from speedwagon.exceptions import MissingConfiguration
+from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 
 
 def locate_tessdata() -> Optional[str]:
@@ -337,7 +337,11 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
 
         with contextlib.redirect_stderr(file_handle):
             # Capture the warning messages
-            resulting_text = reader.read(file)
+            try:
+                resulting_text = reader.read(file)
+            except ocr.tesseractwrap.TesseractGlueException as error:
+                raise SpeedwagonException(f"Unable to read {file}") from error
+
 
         stderr_messages = file_handle.getvalue()
         if stderr_messages:
