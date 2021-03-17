@@ -342,7 +342,6 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
             except ocr.tesseractwrap.TesseractGlueException as error:
                 raise SpeedwagonException(f"Unable to read {file}") from error
 
-
         stderr_messages = file_handle.getvalue()
         if stderr_messages:
             # Log any error messages
