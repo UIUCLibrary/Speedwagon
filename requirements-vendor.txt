@@ -6,6 +6,7 @@ HathiZip==0.1.9
 py3exiv2bind==0.1.5
 pyhathiprep==0.1.5
 pykdu-compress==0.1.3
+uiucprescon-getmarc==0.1.2
 uiucprescon.images==0.0.4b1
 uiucprescon.imagevalidate==0.1.5
 uiucprescon.ocr==0.1.2b2

@@ -32,6 +32,7 @@ if __name__ == "__main__":
             "uiucprescon.ocr>=0.1.2b2",
             "uiucprescon.packager[kdu]>=0.2.11b8",
             "uiucprescon.images",
+            'uiucprescon-getmarc',  # TODO: get rid of this requirement
             "pykdu-compress>=0.1.3",
             'importlib_resources;python_version<"3.9"',
             'importlib-metadata;python_version<"3.8"',
