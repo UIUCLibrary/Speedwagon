@@ -1,3 +1,12 @@
 [build-system]
 requires = ["setuptools>=40.8.0", "wheel", "PyQt5", "pyqt-distutils"]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--verbose -m \"not notFromSetupPy\""
+norecursedirs = "thirdparty"
+junit_family="xunit2"
+markers=[
+    "adapter"
+]
