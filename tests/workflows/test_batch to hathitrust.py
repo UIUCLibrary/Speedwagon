@@ -5,6 +5,7 @@ import pytest
 
 from speedwagon import tasks
 from speedwagon.workflows import workflow_batch_to_HathiTrust_TIFF as wf
+from speedwagon.workflows import workflow_get_marc
 import os
 import speedwagon.workflows.title_page_selection
 from uiucprescon.packager.common import Metadata as PackageMetadata
@@ -136,8 +137,20 @@ def test_get_additional_info(qtbot, monkeypatch):
     assert extra_data['title_pages']['99423682912205899'] == "99423682912205899_0001.tif"
     assert isinstance(extra_data, dict)
 
+@pytest.fixture
+def unconfigured_workflow():
+    workflow = wf.CaptureOneBatchToHathiComplete(
+        global_settings={
+            "getmarc_server_url": "http://fake.com"
+        }
+    )
+    user_options = {i.label_text: i.data for i in workflow.user_options()}
 
-def test_discover_task_metadata(monkeypatch):
+    return workflow, user_options
+
+
+def test_discover_task_metadata(monkeypatch, unconfigured_workflow):
+    workflow, user_options = unconfigured_workflow
     additional_data = {
         'title_pages': {
             '99423682912205899': "99423682912205899_0001.tif"
@@ -159,7 +172,6 @@ def test_discover_task_metadata(monkeypatch):
         "Source": "./some_real_source_folder",
         "Destination": "./some_real_folder/",
     }
-    workflow = wf.CaptureOneBatchToHathiComplete()
 
     with monkeypatch.context() as mp:
         new_task_metadata = workflow.discover_task_metadata(
@@ -170,19 +182,18 @@ def test_discover_task_metadata(monkeypatch):
 
     assert \
         len(new_task_metadata) == 1 and \
-        new_task_metadata[0]['title_page'] == "99423682912205899_0001.tif"
+        new_task_metadata[0]['title_page'] == "99423682912205899_0001.tif" and \
+        new_task_metadata[0]['server_url'] == "http://fake.com"
 
-def test_create_new_task():
-    workflow = wf.CaptureOneBatchToHathiComplete()
-    # mock_builder = tasks.TaskBuilder(
-    #     tasks.MultiStageTaskBuilder("."),
-    #     "."
-    # )
+
+def test_create_new_task(unconfigured_workflow):
+    workflow, user_options = unconfigured_workflow
     mock_builder = Mock()
     job_args = {
-        'package': Mock(metadata={PackageMetadata.ID: "99423682912205899_0001"}),
+        'package': Mock(metadata={PackageMetadata.ID: "99423682912205899"}),
         'destination': "/some/destination",
-        'title_page': "99423682912205899_0001.tif"
+        'title_page': "99423682912205899_0001.tif",
+        'server_url': "http://fake.com"
     }
     workflow.create_new_task(
         mock_builder,
@@ -198,7 +209,7 @@ def test_create_new_task():
         ) and \
         isinstance(
             mock_builder.add_subtask.mock_calls[1][2]['subtask'],
-            wf.GenerateMarcTask
+            workflow_get_marc.MarcGeneratorTask
         ) and \
         isinstance(
             mock_builder.add_subtask.mock_calls[2][2]['subtask'],
@@ -209,4 +220,24 @@ def test_create_new_task():
             wf.GenerateChecksumTask
         )
 
+
+def test_create_new_task_marc(unconfigured_workflow):
+    workflow, user_options = unconfigured_workflow
+    mock_builder = Mock()
+    job_args = {
+        'package': Mock(metadata={PackageMetadata.ID: "99423682912205899"}),
+        'destination': "/some/destination",
+        'title_page': "99423682912205899_0001.tif",
+        "server_url": "http://fake.com"
+    }
+    workflow.create_new_task(
+        mock_builder,
+        **job_args
+    )
+
+    marc_task = mock_builder.add_subtask.mock_calls[1][2]['subtask']
+    assert isinstance(marc_task, workflow_get_marc.MarcGeneratorTask) and \
+           marc_task._identifier == '99423682912205899' and \
+           marc_task._output_name == "/some/destination/99423682912205899/MARC.xml" and \
+           marc_task._server_url == "http://fake.com"
 

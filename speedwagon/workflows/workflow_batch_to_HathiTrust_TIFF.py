@@ -2,14 +2,14 @@ import itertools
 import os
 import typing
 import shutil
-
+from typing import Dict, Optional
 from PyQt5 import QtWidgets  # type: ignore
 from uiucprescon.packager.packages.collection import Metadata
 from uiucprescon import packager, pygetmarc
 
 import speedwagon
 from speedwagon import tasks
-from speedwagon.workflows import shared_custom_widgets
+from speedwagon.workflows import shared_custom_widgets, workflow_get_marc
 from . title_page_selection import PackageBrowser
 from pyhathiprep import package_creater
 
@@ -25,9 +25,29 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                   "files. It takes as its output a folder location where " \
                   "new files will be written."
 
+    def __init__(
+            self,
+            global_settings: Optional[Dict[str, str]] = None
+    ) -> None:
+        """Generate Marc XML files.
+
+        Args:
+            global_settings:
+                Settings that could affect the way the workflow runs.
+        """
+        super().__init__()
+
+        if global_settings is not None:
+            self.global_settings = global_settings
+        # for k in GenerateMarcXMLFilesWorkflow.required_settings_keys:
+        #     value = self.global_settings.get(k)
+        #     if value is None:
+        #         raise MissingConfiguration("Missing value for {}".format(k))
+
     def discover_task_metadata(self, initial_results: typing.List[typing.Any],
                                additional_data,
                                **user_args) -> typing.List[dict]:
+        server_url = self.global_settings.get("getmarc_server_url")
         tasks_metadata = []
         if len(initial_results) == 1:
             packages = initial_results.pop()
@@ -44,7 +64,8 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                 tasks_metadata.append(
                     {"package": package,
                      "destination": user_args['Destination'],
-                     "title_page": title_page
+                     "title_page": title_page,
+                     'server_url': server_url
                      }
                 )
         return tasks_metadata
@@ -86,8 +107,16 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
 
         # Generate marc file from the Bib id
         task_builder.add_subtask(
-            subtask=GenerateMarcTask(
-                bib_id=bib_id, destination=new_package_location)
+            subtask=workflow_get_marc.MarcGeneratorTask(
+                identifier=bib_id,
+                identifier_type="Bibid",
+                output_name=os.path.join(
+                    new_package_location,
+                    "MARC.xml"
+                ),
+                server_url=str(job_args['server_url'])
+
+            )
         )
 
         # Generate a meta.yml file
