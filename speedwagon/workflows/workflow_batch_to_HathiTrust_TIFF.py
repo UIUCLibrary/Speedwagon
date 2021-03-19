@@ -5,7 +5,7 @@ import shutil
 from typing import Dict, Optional
 from PyQt5 import QtWidgets  # type: ignore
 from uiucprescon.packager.packages.collection import Metadata
-from uiucprescon import packager, pygetmarc
+from uiucprescon import packager
 
 from pyhathiprep import package_creater
 import speedwagon
@@ -232,41 +232,6 @@ class FindPackageTask(tasks.Subtask):
         self.set_results(packages)
 
         return True
-
-
-class GenerateMarcTask(tasks.Subtask):
-
-    def __init__(self, bib_id, destination) -> None:
-        super().__init__()
-
-        self._bib_id = bib_id
-        self._destination = destination
-
-    def work(self) -> bool:
-        self.log(f"Retrieving marc record for {self._bib_id}")
-        marc_file = os.path.join(self._destination, "marc.xml")
-        result: typing.Dict[str, typing.Optional[typing.Union[str, bool]]] = {}
-
-        try:
-            marc = pygetmarc.get_marc(int(self._bib_id))
-
-            with open(marc_file, "w", encoding="utf-8-sig") as f:
-                f.write(f"{marc}\n")
-            self.log(f"Generated marc.xml in {self._destination}")
-            success = True
-            result["location"] = marc_file
-        except ValueError:
-
-            self.log(
-                f"Error! Could not retrieve marc record for {self._bib_id}"
-            )
-            success = False
-            result['location'] = None
-
-        result["success"] = success
-
-        self.set_results(result)
-        return success
 
 
 class MakeYamlTask(tasks.Subtask):
