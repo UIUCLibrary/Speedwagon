@@ -7,11 +7,11 @@ from PyQt5 import QtWidgets  # type: ignore
 from uiucprescon.packager.packages.collection import Metadata
 from uiucprescon import packager, pygetmarc
 
+from pyhathiprep import package_creater
 import speedwagon
 from speedwagon import tasks
 from speedwagon.workflows import shared_custom_widgets, workflow_get_marc
 from . title_page_selection import PackageBrowser
-from pyhathiprep import package_creater
 
 
 class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
