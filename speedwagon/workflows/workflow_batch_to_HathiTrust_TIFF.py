@@ -29,7 +29,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
             self,
             global_settings: Optional[Dict[str, str]] = None
     ) -> None:
-        """Generate Marc XML files.
+        """CaptureOne Batch to HathiTrust TIFF Complete Package.
 
         Args:
             global_settings:
@@ -39,10 +39,6 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
 
         if global_settings is not None:
             self.global_settings = global_settings
-        # for k in GenerateMarcXMLFilesWorkflow.required_settings_keys:
-        #     value = self.global_settings.get(k)
-        #     if value is None:
-        #         raise MissingConfiguration("Missing value for {}".format(k))
 
     def discover_task_metadata(self, initial_results: typing.List[typing.Any],
                                additional_data,
@@ -162,7 +158,9 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
             results_grouped[k] = [i.data for i in v]
 
         package_transformed = results_grouped[TransformPackageTask]
-        marc_files_generated = results_grouped[GenerateMarcTask]
+        marc_files_generated = \
+            results_grouped[workflow_get_marc.MarcGeneratorTask]
+
         yaml_results = results_grouped[MakeYamlTask]
         checksum_files_generated = results_grouped[GenerateChecksumTask]
 
