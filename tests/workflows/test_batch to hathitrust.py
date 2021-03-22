@@ -2,6 +2,7 @@ import sys
 from unittest.mock import Mock, MagicMock
 
 import pytest
+import shutil
 
 from speedwagon import tasks
 from speedwagon.workflows import workflow_batch_to_HathiTrust_TIFF as wf
@@ -261,3 +262,23 @@ def test_generate_report(unconfigured_workflow):
     assert message.startswith("Results") and \
            "1 objects transformed" in message and \
            "1 marc.xml files generated" in message
+
+
+def test_generate_checksum_calls_prep_checksum_task(monkeypatch):
+    mmsid = "99423682912205899"
+    dummy_file = '99423682912205899_0001.tif'
+    working_dir = "./sample_path"
+    task = wf.GenerateChecksumTask(mmsid, dummy_file)
+    task.log = Mock()
+    task.subtask_working_dir = working_dir
+
+    move_mock = Mock()
+    mock_create_checksum_report = Mock()
+    from pyhathiprep import package_creater
+    with monkeypatch.context() as mp:
+        mp.setattr(package_creater.InplacePackage, "create_checksum_report", mock_create_checksum_report)
+        mp.setattr(os.path, "exists", lambda _: True)
+        mp.setattr(shutil, "move", move_mock)
+        task.work()
+    assert mock_create_checksum_report.call_args[0][0] == working_dir
+
