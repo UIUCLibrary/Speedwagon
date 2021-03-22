@@ -238,7 +238,10 @@ def test_create_new_task_marc(unconfigured_workflow):
     marc_task = mock_builder.add_subtask.mock_calls[1][2]['subtask']
     assert isinstance(marc_task, workflow_get_marc.MarcGeneratorTask) and \
            marc_task._identifier == '99423682912205899' and \
-           marc_task._output_name == os.path.join("some", "destination", "99423682912205899", "MARC.xml") and \
+           marc_task._output_name == os.path.join("some",
+                                                  "destination",
+                                                  "99423682912205899",
+                                                  "MARC.xml") and \
            marc_task._server_url == "http://fake.com"
 
            # marc_task._output_name == os.path.join("/some/destination/99423682912205899/MARC.xml") and \
