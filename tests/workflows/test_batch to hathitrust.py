@@ -86,8 +86,10 @@ def test_package_browser(qtbot):
     mock_package.metadata.__getitem__ = mock_get_item
     mock_package.__len__ = lambda x: 1
 
-    widget = speedwagon.workflows.title_page_selection.PackageBrowser([mock_package],
-                                                             None)
+    widget = \
+        speedwagon.workflows.title_page_selection.PackageBrowser(
+            [mock_package], None)
+
     with qtbot.waitSignal(widget.finished) as blocker:
         widget.ok_button.click()
     data = widget.data()
@@ -117,7 +119,11 @@ def test_get_additional_info(qtbot, monkeypatch):
     )
 
     def patched_package_browser(packages, parent):
-        patched_browser = speedwagon.workflows.title_page_selection.PackageBrowser(packages, parent)
+        patched_browser = \
+            speedwagon.workflows.title_page_selection.PackageBrowser(
+                packages, parent
+            )
+
         patched_browser.exec = Mock()
         patched_browser.result = Mock(return_value=patched_browser.Accepted)
         data = MagicMock()
@@ -138,7 +144,9 @@ def test_get_additional_info(qtbot, monkeypatch):
             pretask_results=[pretask_result]
         )
 
-    assert extra_data['title_pages']['99423682912205899'] == "99423682912205899_0001.tif"
+    assert extra_data['title_pages']['99423682912205899'] == \
+           "99423682912205899_0001.tif"
+
     assert isinstance(extra_data, dict)
 
 @pytest.fixture
@@ -176,16 +184,16 @@ def test_discover_task_metadata(monkeypatch, unconfigured_workflow):
     user_options["Destination"] =  "./some_real_folder/",
 
     with monkeypatch.context() as mp:
-        new_task_metadata = workflow.discover_task_metadata(
+        new_task_md = workflow.discover_task_metadata(
             initial_results=initial_results,
             additional_data=additional_data,
             **user_options
         )
     assert \
-        len(new_task_metadata) == 1 and \
-        new_task_metadata[0]['title_page'] == "99423682912205899_0001.tif" and \
-        new_task_metadata[0]['server_url'] == "http://fake.com" and \
-        new_task_metadata[0]['identifier_type'] == user_options['Identifier type']
+        len(new_task_md) == 1 and \
+        new_task_md[0]['title_page'] == "99423682912205899_0001.tif" and \
+        new_task_md[0]['server_url'] == "http://fake.com" and \
+        new_task_md[0]['identifier_type'] == user_options['Identifier type']
 
 
 def test_create_new_task(unconfigured_workflow):
@@ -248,8 +256,6 @@ def test_create_new_task_marc(unconfigured_workflow):
                                                   "MARC.xml") and \
            marc_task._server_url == "http://fake.com"
 
-           # marc_task._output_name == os.path.join("/some/destination/99423682912205899/MARC.xml") and \
-
 
 def test_generate_report(unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
@@ -279,7 +285,13 @@ def test_generate_checksum_calls_prep_checksum_task(monkeypatch):
     mock_create_checksum_report = Mock()
     from pyhathiprep import package_creater
     with monkeypatch.context() as mp:
-        mp.setattr(package_creater.InplacePackage, "create_checksum_report", mock_create_checksum_report)
+
+        mp.setattr(
+            package_creater.InplacePackage,
+            "create_checksum_report",
+            mock_create_checksum_report
+
+        )
         mp.setattr(os.path, "exists", lambda _: True)
         mp.setattr(shutil, "move", move_mock)
         task.work()
