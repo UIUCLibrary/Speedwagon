@@ -13,7 +13,8 @@ from uiucprescon.packager.common import Metadata as PackageMetadata
 
 @pytest.mark.parametrize("index,label", [
     (0, "Source"),
-    (1, "Destination")
+    (1, "Destination"),
+    (2, "Identifier type")
 ])
 def test_hathi_limited_to_dl_compound_has_options(index, label):
     workflow = wf.CaptureOneBatchToHathiComplete()
@@ -27,6 +28,7 @@ def test_initial_task_creates_task():
     user_args = {
         "Source": "./some_real_source_folder",
         "Destination": "./some_real_folder/",
+        "Identifier type": "Bibid"
     }
 
     mock_builder = Mock()
@@ -44,6 +46,7 @@ def test_initial_task(monkeypatch):
     user_args = {
         "Source": "./some_real_source_folder",
         "Destination": "./some_real_folder/",
+        "Identifier type": "MMS ID"
     }
 
     mock_builder = Mock()
@@ -169,22 +172,20 @@ def test_discover_task_metadata(monkeypatch, unconfigured_workflow):
             ]
         )
     ]
-    user_args = {
-        "Source": "./some_real_source_folder",
-        "Destination": "./some_real_folder/",
-    }
+    user_options["Source"] = "./some_real_source_folder"
+    user_options["Destination"] =  "./some_real_folder/",
 
     with monkeypatch.context() as mp:
         new_task_metadata = workflow.discover_task_metadata(
             initial_results=initial_results,
             additional_data=additional_data,
-            **user_args
+            **user_options
         )
-
     assert \
         len(new_task_metadata) == 1 and \
         new_task_metadata[0]['title_page'] == "99423682912205899_0001.tif" and \
-        new_task_metadata[0]['server_url'] == "http://fake.com"
+        new_task_metadata[0]['server_url'] == "http://fake.com" and \
+        new_task_metadata[0]['identifier_type'] == user_options['Identifier type']
 
 
 def test_create_new_task(unconfigured_workflow):
@@ -194,7 +195,8 @@ def test_create_new_task(unconfigured_workflow):
         'package': Mock(metadata={PackageMetadata.ID: "99423682912205899"}),
         'destination': "/some/destination",
         'title_page': "99423682912205899_0001.tif",
-        'server_url': "http://fake.com"
+        'server_url': "http://fake.com",
+        "identifier_type": "MMS ID"
     }
     workflow.create_new_task(
         mock_builder,
@@ -229,7 +231,8 @@ def test_create_new_task_marc(unconfigured_workflow):
         'package': Mock(metadata={PackageMetadata.ID: "99423682912205899"}),
         'destination': os.path.join("some", "destination"),
         'title_page': "99423682912205899_0001.tif",
-        "server_url": "http://fake.com"
+        "server_url": "http://fake.com",
+        "identifier_type": "MMS ID"
     }
     workflow.create_new_task(
         mock_builder,

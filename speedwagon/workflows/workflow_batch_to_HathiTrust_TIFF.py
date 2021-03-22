@@ -1,6 +1,7 @@
 import itertools
 import os
 import typing
+from typing import List
 import shutil
 from typing import Dict, Optional
 from PyQt5 import QtWidgets  # type: ignore
@@ -12,9 +13,15 @@ import speedwagon
 from speedwagon import tasks
 from speedwagon.workflows import shared_custom_widgets, workflow_get_marc
 from . title_page_selection import PackageBrowser
+from .workflow_get_marc import UserOptions
 
 
 class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
+    """CaptureOne Batch to HathiTrust TIFF Complete Package.
+
+    .. versionadded:: 0.1.5
+        Supports MMSID and bibid id types
+    """
     name = "CaptureOne Batch to HathiTrust TIFF Complete Package"
     description = "This workflow chains together a number of tools to take " \
                   "a batch of CaptureOne files and structure them as " \
@@ -25,10 +32,9 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                   "files. It takes as its output a folder location where " \
                   "new files will be written."
 
-    def __init__(
-            self,
-            global_settings: Optional[Dict[str, str]] = None
-    ) -> None:
+    def __init__(self,
+                 global_settings: Optional[Dict[str, str]] = None
+                 ) -> None:
         """CaptureOne Batch to HathiTrust TIFF Complete Package.
 
         Args:
@@ -49,31 +55,43 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
             packages = initial_results.pop()
             for package in packages.data:
 
-                bib_id = package.metadata[Metadata.ID]
+                package_id = package.metadata[Metadata.ID]
 
                 try:
-                    title_page = additional_data["title_pages"][bib_id]
+                    title_page = additional_data["title_pages"][package_id]
                 except KeyError:
-                    print("Unable to locate title page for {}".format(bib_id))
+                    print(f"Unable to locate title page for {package_id}")
                     title_page = None
 
                 tasks_metadata.append(
-                    {"package": package,
-                     "destination": user_args['Destination'],
-                     "title_page": title_page,
-                     'server_url': server_url
+                    {
+                        "package": package,
+                        "destination": user_args['Destination'],
+                        "title_page": title_page,
+                        'server_url': server_url,
+                        'identifier_type': user_args['Identifier type']
                      }
                 )
         return tasks_metadata
 
     def user_options(self):
-        source = shared_custom_widgets.UserOptionCustomDataType(
-            "Source", shared_custom_widgets.FolderData)
-
-        destination = shared_custom_widgets.UserOptionCustomDataType(
-            "Destination", shared_custom_widgets.FolderData)
-
-        return [source, destination]
+        suppoted_identifer_types = [
+            "Bibid",
+            "MMS ID"
+        ]
+        workflow_options: List[UserOptions] = [
+            shared_custom_widgets.UserOptionCustomDataType(
+                "Source", shared_custom_widgets.FolderData
+            ),
+            shared_custom_widgets.UserOptionCustomDataType(
+                "Destination", shared_custom_widgets.FolderData
+            )
+        ]
+        id_type_option = shared_custom_widgets.ListSelection("Identifier type")
+        for id_type in suppoted_identifer_types:
+            id_type_option.add_selection(id_type)
+        workflow_options.append(id_type_option)
+        return workflow_options
 
     def initial_task(self, task_builder: tasks.TaskBuilder,
                      **user_args) -> None:
@@ -92,20 +110,20 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         title_page = job_args['title_page']
 
         # Package metadata
-        bib_id = package.metadata[Metadata.ID]
+        package_id = package.metadata[Metadata.ID]
 
-        new_package_location = os.path.join(destination_root, bib_id)
+        new_package_location = os.path.join(destination_root, package_id)
 
         # Add the tasks
         # Transform the package into a HathiTiff package
         task_builder.add_subtask(
             subtask=TransformPackageTask(package, destination_root))
-
-        # Generate marc file from the Bib id
+        # Generate marc file from the Package id
+        identifier_type = job_args['identifier_type']
         task_builder.add_subtask(
             subtask=workflow_get_marc.MarcGeneratorTask(
-                identifier=bib_id,
-                identifier_type="Bibid",
+                identifier=package_id,
+                identifier_type=identifier_type,
                 output_name=os.path.join(
                     new_package_location,
                     "MARC.xml"
@@ -117,11 +135,11 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
 
         # Generate a meta.yml file
         task_builder.add_subtask(
-            subtask=MakeYamlTask(bib_id, new_package_location, title_page))
+            subtask=MakeYamlTask(package_id, new_package_location, title_page))
 
         # Generate checksum data
         task_builder.add_subtask(
-            subtask=GenerateChecksumTask(bib_id, new_package_location))
+            subtask=GenerateChecksumTask(package_id, new_package_location))
 
     def get_additional_info(self, parent: QtWidgets.QWidget, options: dict,
                             pretask_results: list) -> dict:
@@ -151,11 +169,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                         **user_args) -> typing.Optional[str]:
 
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
-        _result_grouped = itertools.groupby(results_sorted, lambda x: x.source)
-        results_grouped = dict()
-
-        for k, v in _result_grouped:
-            results_grouped[k] = [i.data for i in v]
+        results_grouped = cls.group_results(results_sorted)
 
         package_transformed = results_grouped[TransformPackageTask]
         marc_files_generated = \
@@ -185,6 +199,14 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                   f"* {checksum_message}"
         return message
 
+    @classmethod
+    def group_results(cls, results_sorted):
+        _result_grouped = itertools.groupby(results_sorted, lambda x: x.source)
+        results_grouped = dict()
+        for key, value in _result_grouped:
+            results_grouped[key] = [i.data for i in value]
+        return results_grouped
+
 
 class TransformPackageTask(tasks.Subtask):
 
@@ -193,7 +215,6 @@ class TransformPackageTask(tasks.Subtask):
         super().__init__()
         self._package = package
         self._destination = destination
-
         self._bib_id = \
             self._package.metadata[Metadata.ID]
 
@@ -208,7 +229,7 @@ class TransformPackageTask(tasks.Subtask):
         self.set_results(
             {
                 "bib_id": self._bib_id,
-                "location: ": os.path.join(self._destination, self._bib_id)
+                "location": os.path.join(self._destination, self._bib_id)
              }
         )
         return True
@@ -227,7 +248,7 @@ class FindPackageTask(tasks.Subtask):
             packager.packages.CaptureOnePackage()
         )
 
-        packages = [job for job in package_factory.locate_packages(self._root)]
+        packages = list(package_factory.locate_packages(self._root))
 
         self.set_results(packages)
 
@@ -235,7 +256,7 @@ class FindPackageTask(tasks.Subtask):
 
 
 class MakeYamlTask(tasks.Subtask):
-    def __init__(self, bib_id, source, title_page) -> None:
+    def __init__(self, identifer, source, title_page) -> None:
         super().__init__()
 
         self._source = source
@@ -244,11 +265,11 @@ class MakeYamlTask(tasks.Subtask):
         except KeyError:
             print("Unable to split {} with a _ delimiter".format(title_page))
             self._title_page = title_page
-        self._bib_id = bib_id
+        self.identifier = identifer
 
     def work(self):
         meta_filename = "meta.yml"
-        self.log("Generating meta.yml for {}".format(self._bib_id))
+        self.log("Generating meta.yml for {}".format(self.identifier))
         package_builder = package_creater.InplacePackage(self._source)
         package_builder.make_yaml(build_path=self.subtask_working_dir,
                                   title_page=self._title_page)
@@ -266,7 +287,7 @@ class MakeYamlTask(tasks.Subtask):
             {
                 "source": self._source,
                 "meta.yml": dest,
-                "package_id": self._bib_id
+                "package_id": self.identifier
             }
         )
 
