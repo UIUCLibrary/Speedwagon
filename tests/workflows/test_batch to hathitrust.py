@@ -11,6 +11,7 @@ import os
 import speedwagon.workflows.title_page_selection
 from uiucprescon.packager.common import Metadata as PackageMetadata
 
+
 @pytest.mark.parametrize("index,label", [
     (0, "Source"),
     (1, "Destination"),
@@ -107,6 +108,7 @@ def test_get_additional_info(qtbot, monkeypatch):
             "TITLE_PAGE": "99423682912205899_0001.tif",
             "PATH": "/some/random/path/"
             }
+
     def mock_get_item(obj, key):
         return mock_data.get(key.name, str(key))
 
@@ -149,6 +151,7 @@ def test_get_additional_info(qtbot, monkeypatch):
 
     assert isinstance(extra_data, dict)
 
+
 @pytest.fixture
 def unconfigured_workflow():
     workflow = wf.CaptureOneBatchToHathiComplete(
@@ -181,7 +184,7 @@ def test_discover_task_metadata(monkeypatch, unconfigured_workflow):
         )
     ]
     user_options["Source"] = "./some_real_source_folder"
-    user_options["Destination"] =  "./some_real_folder/",
+    user_options["Destination"] = "./some_real_folder/",
 
     with monkeypatch.context() as mp:
         new_task_md = workflow.discover_task_metadata(
