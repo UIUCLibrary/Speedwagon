@@ -141,7 +141,8 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
             subtask=GenerateChecksumTask(package_id, new_package_location))
 
     def get_additional_info(self,
-                            parent: QtWidgets.QWidget, options: Mapping[Any, Any],
+                            parent: QtWidgets.QWidget,
+                            options: Mapping[Any, Any],
                             pretask_results: List[tasks.Result]
                             ) -> Dict[str, Any]:
         extra_data: Dict[str, Dict[str, str]] = {}
@@ -169,9 +170,10 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
     def generate_report(cls, results: List[tasks.Result],
                         **user_args: str) -> Optional[str]:
 
-        results_grouped: Mapping[Type[tasks.AbsSubtask], Sized] = cls.group_results(
-            sorted(results, key=lambda x: x.source.__name__)
-        )
+        results_grouped: Mapping[Type[tasks.AbsSubtask], Sized] = \
+            cls.group_results(
+                sorted(results, key=lambda x: x.source.__name__)
+            )
 
         package_transformed = results_grouped[TransformPackageTask]
         marc_files_generated = \
