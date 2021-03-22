@@ -310,3 +310,20 @@ def test_yaml_task(monkeypatch):
         task.work()
 
     assert mock_make_yaml.called is True
+
+
+def test_transform_package_task(monkeypatch):
+    destination = "./sample_path"
+    mock_package = MagicMock()
+    task = wf.TransformPackageTask(
+        package=mock_package,
+        destination=destination
+    )
+
+    task.log = Mock()
+    mock_transform = Mock(metadata={PackageMetadata.ID: "99423682912205899"})
+    with monkeypatch.context() as mp:
+        mp.setattr(wf.packager.PackageFactory, "transform",
+                   mock_transform)
+        assert task.work() is True and \
+               mock_transform.called is True
