@@ -2,7 +2,7 @@
 from __future__ import annotations
 import logging
 
-from typing import Any, Dict, Iterator
+from typing import Any, Dict, Iterator, List, Union
 
 from contextlib import contextmanager
 
@@ -29,7 +29,7 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
                   'Output is a directory to put the new packages'
     active = True
 
-    def user_options(self) -> list[options.UserOptionCustomDataType]:
+    def user_options(self) -> List[options.UserOptionCustomDataType]:
         """Get the options types need to configuring the workflow.
 
         Returns:
@@ -41,10 +41,10 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
                 ]
 
     def discover_task_metadata(self,
-                               initial_results: list[Any],
+                               initial_results: List[Any],
                                additional_data: Dict[str, Any],
                                **user_args: str
-                               ) -> list[Dict[str, Any]]:
+                               ) -> List[Dict[str, Any]]:
         """Loot at user settings and discover any data needed to build a task.
 
         Args:
@@ -56,7 +56,7 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
             Returns a list of data to create a job with
 
         """
-        jobs: list[Dict[str, str | Package]] = []
+        jobs: List[Dict[str, Union[str, Package]]] = []
         source_input = user_args["Input"]
         dest = user_args["Output"]
 
@@ -64,7 +64,7 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
             packager.packages.CaptureOnePackage(delimiter="-"))
 
         for package in package_factory.locate_packages(source_input):
-            new_job: Dict[str, str | Package] = {
+            new_job: Dict[str, Union[str, Package]] = {
                 "package": package,
                 "output": dest,
                 "source_path": source_input
@@ -72,10 +72,11 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
             jobs.append(new_job)
         return jobs
 
-    def create_new_task(self,
-                        task_builder: tasks.TaskBuilder,
-                        **job_args: str | Package
-                        ) -> None:
+    def create_new_task(
+            self,
+            task_builder: tasks.TaskBuilder,
+            **job_args: Union[str, Package]
+    ) -> None:
         """Generate a new task.
 
         Args:
