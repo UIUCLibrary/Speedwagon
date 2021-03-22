@@ -1,8 +1,8 @@
 import itertools
 import os
-import typing
 import shutil
-from typing import Dict, Optional, List, Any
+from typing import Dict, Optional, List, Any, Type, Mapping
+from collections.abc import Sized
 from PyQt5 import QtWidgets  # type: ignore
 from uiucprescon.packager.packages.collection import Metadata
 from uiucprescon import packager
@@ -45,11 +45,11 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         if global_settings is not None:
             self.global_settings = global_settings
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data,
-                               **user_args) -> List[dict]:
+    def discover_task_metadata(self, initial_results: List[tasks.Result],
+                               additional_data: Dict[str, Any],
+                               **user_args: str) -> List[Dict[str, str]]:
         server_url = self.global_settings.get("getmarc_server_url")
-        tasks_metadata = []
+        tasks_metadata: List[Dict[str, Any]] = []
         if len(initial_results) == 1:
             packages = initial_results.pop()
             for package in packages.data:
@@ -73,7 +73,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                 )
         return tasks_metadata
 
-    def user_options(self) -> List[Any]:
+    def user_options(self) -> List[UserOptions]:
         suppoted_identifer_types: List[str] = [
             "Bibid",
             "MMS ID"
@@ -93,7 +93,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         return workflow_options
 
     def initial_task(self, task_builder: tasks.TaskBuilder,
-                     **user_args) -> None:
+                     **user_args: str) -> None:
         super().initial_task(task_builder, **user_args)
         root = user_args['Source']
         task_builder.add_subtask(FindPackageTask(root=root))
@@ -105,11 +105,11 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
     ) -> None:
 
         package = job_args['package']
-        destination_root = job_args['destination']
-        title_page = job_args['title_page']
+        destination_root: str = job_args['destination']
+        title_page: str = job_args['title_page']
 
         # Package metadata
-        package_id = package.metadata[Metadata.ID]
+        package_id: str = package.metadata[Metadata.ID]
 
         new_package_location = os.path.join(destination_root, package_id)
 
@@ -140,11 +140,13 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         task_builder.add_subtask(
             subtask=GenerateChecksumTask(package_id, new_package_location))
 
-    def get_additional_info(self, parent: QtWidgets.QWidget, options: dict,
-                            pretask_results: list) -> dict:
-        extra_data = {}
+    def get_additional_info(self,
+                            parent: QtWidgets.QWidget, options: Mapping[Any, Any],
+                            pretask_results: List[tasks.Result]
+                            ) -> Dict[str, Any]:
+        extra_data: Dict[str, Dict[str, str]] = {}
         if len(pretask_results) == 1:
-            title_pages = dict()
+            title_pages: Dict[str, str] = dict()
             results = pretask_results.pop()
             packages = results.data
             browser = PackageBrowser(packages, parent)
@@ -165,10 +167,11 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
 
     @classmethod
     def generate_report(cls, results: List[tasks.Result],
-                        **user_args) -> Optional[str]:
+                        **user_args: str) -> Optional[str]:
 
-        results_sorted = sorted(results, key=lambda x: x.source.__name__)
-        results_grouped = cls.group_results(results_sorted)
+        results_grouped: Mapping[Type[tasks.AbsSubtask], Sized] = cls.group_results(
+            sorted(results, key=lambda x: x.source.__name__)
+        )
 
         package_transformed = results_grouped[TransformPackageTask]
         marc_files_generated = \
@@ -199,7 +202,9 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         return message
 
     @classmethod
-    def group_results(cls, results_sorted):
+    def group_results(cls,
+                      results_sorted: List[tasks.Result]
+                      ) -> Dict[Type[tasks.AbsSubtask], List[Any]]:
         _result_grouped = itertools.groupby(results_sorted, lambda x: x.source)
         results_grouped = dict()
         for key, value in _result_grouped:
@@ -210,7 +215,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
 class TransformPackageTask(tasks.Subtask):
 
     def __init__(self, package: packager.packages.collection.PackageObject,
-                 destination) -> None:
+                 destination: str) -> None:
         super().__init__()
         self._package = package
         self._destination = destination
