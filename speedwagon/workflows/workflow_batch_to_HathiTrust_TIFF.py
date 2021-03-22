@@ -236,7 +236,7 @@ class TransformPackageTask(tasks.Subtask):
 
 class FindPackageTask(tasks.Subtask):
 
-    def __init__(self, root) -> None:
+    def __init__(self, root: str) -> None:
         super().__init__()
         self._root = root
 
@@ -255,7 +255,7 @@ class FindPackageTask(tasks.Subtask):
 
 
 class MakeYamlTask(tasks.Subtask):
-    def __init__(self, identifer, source, title_page) -> None:
+    def __init__(self, identifier: str, source: str, title_page: str) -> None:
         super().__init__()
 
         self._source = source
@@ -264,9 +264,9 @@ class MakeYamlTask(tasks.Subtask):
         except KeyError:
             print("Unable to split {} with a _ delimiter".format(title_page))
             self._title_page = title_page
-        self.identifier = identifer
+        self.identifier = identifier
 
-    def work(self):
+    def work(self) -> bool:
         meta_filename = "meta.yml"
         self.log("Generating meta.yml for {}".format(self.identifier))
         package_builder = package_creater.InplacePackage(self._source)
@@ -295,10 +295,10 @@ class MakeYamlTask(tasks.Subtask):
 
 class GenerateChecksumTask(speedwagon.tasks.Subtask):
 
-    def __init__(self, bib_id, source) -> None:
+    def __init__(self, identifier: str, source: str) -> None:
         super().__init__()
         self._source = source
-        self._bib_id = bib_id
+        self._bib_id = identifier
 
     def work(self) -> bool:
         checksum_filename = "checksum.md5"
