@@ -282,3 +282,31 @@ def test_generate_checksum_calls_prep_checksum_task(monkeypatch):
         task.work()
     assert mock_create_checksum_report.call_args[0][0] == working_dir
 
+
+def test_yaml_task(monkeypatch):
+    mmsid = "99423682912205899"
+    title_page = '99423682912205899_0001.tif'
+    source_directory = "./sample_path"
+    working_dir = "./sample_working_path"
+
+    task = wf.MakeYamlTask(mmsid,
+                           source=source_directory,
+                           title_page=title_page)
+    task.log = Mock()
+    task.subtask_working_dir = working_dir
+    from pyhathiprep import package_creater
+    mock_make_yaml = Mock()
+    with monkeypatch.context() as mp:
+        mp.setattr(
+            os.path,
+            "exists",
+            lambda path:
+                path in [working_dir, source_directory] or
+                path.endswith(".yml")
+        )
+        mp.setattr(package_creater.InplacePackage, "make_yaml",
+                   mock_make_yaml)
+        mp.setattr(shutil, "move", Mock())
+        task.work()
+
+    assert mock_make_yaml.called is True
