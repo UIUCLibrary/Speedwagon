@@ -221,7 +221,7 @@ class TransformPackageTask(tasks.Subtask):
         super().__init__()
         self._package = package
         self._destination = destination
-        self._bib_id = \
+        self._bib_id: str = \
             self._package.metadata[Metadata.ID]
 
     def work(self) -> bool:
