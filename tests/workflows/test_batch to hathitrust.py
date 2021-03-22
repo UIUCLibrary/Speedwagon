@@ -246,25 +246,17 @@ def test_create_new_task_marc(unconfigured_workflow):
 
            # marc_task._output_name == os.path.join("/some/destination/99423682912205899/MARC.xml") and \
 
+
 def test_generate_report(unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
-    mock_builder = Mock()
-    job_args = {
-        # 'package': Mock(metadata={PackageMetadata.ID: "99423682912205899"}),
-        # 'destination': "/some/destination",
-        # 'title_page': "99423682912205899_0001.tif",
-        # 'server_url': "http://fake.com"
-    }
+    job_args = {}
     results = [
         tasks.Result(wf.TransformPackageTask, data=[]),
         tasks.Result(workflow_get_marc.MarcGeneratorTask, data=[]),
         tasks.Result(wf.MakeYamlTask, data=[]),
         tasks.Result(wf.GenerateChecksumTask, data=[]),
     ]
-    message = workflow.generate_report(
-        results,
-        **job_args
-    )
+    message = workflow.generate_report(results, **job_args)
     assert isinstance(message, str)
     assert message.startswith("Results") and \
            "1 objects transformed" in message and \
