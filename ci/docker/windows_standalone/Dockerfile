@@ -86,10 +86,14 @@ ARG PYTHON_INSTALLER_URL=https://www.python.org/ftp/python/3.7.5/python-3.7.5-am
 RUN $ErrorActionPreference = 'Stop'; `
     Invoke-WebRequest $Env:PYTHON_INSTALLER_URL -OutFile c:\python-installer.exe ; `
     Start-Process python-installer.exe -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' -Wait ; `
-    Remove-Item c:\python-installer.exe -Force
-
-# install certs so additional pip packages can download without any trouble
-#RUN certutil -config - -ping; certutil -generateSSTFromWU roots.sst ; certutil -addstore -f root roots.sst ; del roots.sst
+    Remove-Item c:\python-installer.exe -Force ; `
+    $process = start-process -NoNewWindow -PassThru -FilePath 'c:\Program Files\Python37\python.exe' -ArgumentList "--version" -Wait ;`
+    if ( $process.ExitCode -eq 0) `
+    { `
+        Write-Host "Installed Python`
+    } else { `
+        throw "Testing Python Failed with exit code ($process.ExitCode)" ;  `
+    }
 
 ENV PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
 ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"
