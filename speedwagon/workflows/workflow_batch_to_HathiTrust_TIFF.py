@@ -1,9 +1,7 @@
 import itertools
 import os
-import typing
-from typing import List
 import shutil
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Any
 from PyQt5 import QtWidgets  # type: ignore
 from uiucprescon.packager.packages.collection import Metadata
 from uiucprescon import packager
@@ -46,9 +44,9 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         if global_settings is not None:
             self.global_settings = global_settings
 
-    def discover_task_metadata(self, initial_results: typing.List[typing.Any],
+    def discover_task_metadata(self, initial_results: List[Any],
                                additional_data,
-                               **user_args) -> typing.List[dict]:
+                               **user_args) -> List[dict]:
         server_url = self.global_settings.get("getmarc_server_url")
         tasks_metadata = []
         if len(initial_results) == 1:
@@ -165,8 +163,8 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         return extra_data
 
     @classmethod
-    def generate_report(cls, results: typing.List[tasks.Result],
-                        **user_args) -> typing.Optional[str]:
+    def generate_report(cls, results: List[tasks.Result],
+                        **user_args) -> Optional[str]:
 
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
         results_grouped = cls.group_results(results_sorted)
