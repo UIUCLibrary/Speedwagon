@@ -1,5 +1,6 @@
 import itertools
 import os
+import typing
 import shutil
 from typing import Dict, Optional, List, Any
 from PyQt5 import QtWidgets  # type: ignore
@@ -72,8 +73,8 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                 )
         return tasks_metadata
 
-    def user_options(self):
-        suppoted_identifer_types = [
+    def user_options(self) -> List[Any]:
+        suppoted_identifer_types: List[str] = [
             "Bibid",
             "MMS ID"
         ]
