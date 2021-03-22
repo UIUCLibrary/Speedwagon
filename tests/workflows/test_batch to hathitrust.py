@@ -343,5 +343,5 @@ def test_transform_package_task(monkeypatch):
     with monkeypatch.context() as mp:
         mp.setattr(wf.packager.PackageFactory, "transform",
                    mock_transform)
-        assert task.work() is True and \
-               mock_transform.called is True
+        assert task.work() is True
+        assert mock_transform.called is True
