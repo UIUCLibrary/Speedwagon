@@ -104,3 +104,25 @@ def test_generate_report_creates_a_report(unconfigured_workflow):
     message = workflow.generate_report(results, **job_args)
     assert "Results" in message and \
            "123.jp2" in message
+
+
+def test_package_naming_convention_task(monkeypatch):
+
+    task = \
+        workflow_make_jp2.ConvertFileTask(
+            source_file="somefile.tif",
+            destination_file="somefile.jp2",
+            image_factory_name="HathiTrust JPEG 2000"
+        )
+    task.log = Mock()
+    mock_convert = Mock()
+
+    with monkeypatch.context() as mp:
+        from uiucprescon import images
+        mp.setattr(images, "convert_image", mock_convert)
+        mp.setattr(os.path, "exists", lambda x: x == "somefile.jp2")
+        assert task.work() is True
+    assert mock_convert.called is True
+    assert mock_convert.call_args_list[0][0][0] == "somefile.tif" and \
+           mock_convert.call_args_list[0][0][1] == "somefile.jp2" and \
+           mock_convert.call_args_list[0][0][2] == "HathiTrust JPEG 2000"
