@@ -139,6 +139,7 @@ def test_hathi_missing_checksum_task_calls_validator(
                       validator.ValidateComponents)
     assert all([a == b for a, b in zip(errors_found, task.results)])
 
+
 from hathi_validate import process, validator
 validation_tasks = [
     (workflow_completeness.HathiCheckMissingPackageFilesTask,
@@ -218,7 +219,7 @@ def test_validate_marc_task_calls_validator(monkeypatch):
 
 def test_validate_yml_task_calls_validator(monkeypatch):
     package_path = os.path.join("sample_path", "package1")
-    expected_yaml_file = os.path.join(package_path, "meta.yml")
+    yaml_file = os.path.join(package_path, "meta.yml")
     from hathi_validate import process, validator
 
     task = workflow_completeness.ValidateYMLTask(package_path=package_path)
@@ -227,12 +228,12 @@ def test_validate_yml_task_calls_validator(monkeypatch):
 
     with monkeypatch.context() as mp:
         mp.setattr(process, "run_validation", mock_run_validation)
-        mp.setattr(os.path, "exists", lambda x: x == expected_yaml_file)
+        mp.setattr(os.path, "exists", lambda x: x == yaml_file)
         assert task.work() is True
 
     assert mock_run_validation.called is True and \
            mock_run_validation.call_args[0][0].path == package_path and \
-           mock_run_validation.call_args[0][0].yaml_file == expected_yaml_file and \
+           mock_run_validation.call_args[0][0].yaml_file == yaml_file and \
            isinstance(
                mock_run_validation.call_args[0][0],
                validator.ValidateMetaYML
@@ -261,7 +262,7 @@ def test_validate_ocr_utf8_task_calls_validator(monkeypatch):
         mp.setattr(os, "scandir", mock_scandir)
         assert task.work() is True
 
-    assert mock_run_validation.called is True  and \
+    assert mock_run_validation.called is True and \
            mock_run_validation.call_args[0][0].file_path.endswith(".xml") and \
            isinstance(
                mock_run_validation.call_args[0][0],
@@ -308,4 +309,4 @@ def test_package_naming_convention_task(monkeypatch):
     with monkeypatch.context() as mp:
         mp.setattr(os.path, "isdir", lambda x: x == package_path)
         assert task.work() is True
-    assert len(task.results) == 1 
+    assert len(task.results) == 1
