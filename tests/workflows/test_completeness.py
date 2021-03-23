@@ -109,6 +109,8 @@ checksum_results = [
     ([], FileNotFoundError),
     ([], PermissionError),
 ]
+
+
 @pytest.mark.parametrize("errors_found,throw_exception", checksum_results)
 def test_hathi_missing_checksum_task_calls_validator(
         monkeypatch, errors_found, throw_exception):
@@ -166,3 +168,44 @@ def test_validator_task_calls_validator(monkeypatch, validator_task,
     assert mock_run_validation.called is True and \
            mock_run_validation.call_args[0][0].path == package_path and \
            isinstance(mock_run_validation.call_args[0][0], validator_process)
+
+
+def test_hathi_checksum_task_calls_validator(monkeypatch):
+    package_path = "./sample_path/package1"
+    from hathi_validate import process, validator
+
+    task = workflow_completeness.ValidateChecksumsTask(package_path=package_path)
+    task.log = Mock()
+    mock_run_validation = MagicMock(return_value=[])
+    mock_extracts_checksums = MagicMock(return_value=[])
+
+    with monkeypatch.context() as mp:
+        mp.setattr(process, "run_validation", mock_run_validation)
+        mp.setattr(process, "extracts_checksums", mock_extracts_checksums)
+        assert task.work() is True
+
+    assert mock_run_validation.called is True and \
+           mock_run_validation.call_args[0][0].path == package_path and \
+           isinstance(mock_run_validation.call_args[0][0], validator.ValidateChecksumReport)
+
+
+def test_validate_marc_task_calls_validator(monkeypatch):
+    package_path = os.path.join("sample_path", "package1")
+    expected_marc_file = os.path.join(package_path, "marc.xml")
+    from hathi_validate import process, validator
+
+    task = workflow_completeness.ValidateMarcTask(package_path=package_path)
+    task.log = Mock()
+    mock_run_validation = MagicMock(return_value=[])
+
+    with monkeypatch.context() as mp:
+        mp.setattr(process, "run_validation", mock_run_validation)
+        mp.setattr(os.path, "exists", lambda x: x == expected_marc_file)
+        assert task.work() is True
+
+    assert mock_run_validation.called is True and \
+           mock_run_validation.call_args[0][0].marc_file == expected_marc_file and \
+           isinstance(
+               mock_run_validation.call_args[0][0],
+               validator.ValidateMarc
+           )
