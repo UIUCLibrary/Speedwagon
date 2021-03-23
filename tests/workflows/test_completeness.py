@@ -296,3 +296,16 @@ def test_manifest_generations_task(monkeypatch):
         # mp.setattr(os.path, "exists", lambda x: x == package_path)
         assert task.work() is True
     assert ".tif: 2 file(s)" in task.results
+
+
+def test_package_naming_convention_task(monkeypatch):
+    package_path = os.path.join("sample_path", "package1")
+
+    task = \
+        workflow_completeness.PackageNamingConventionTask(
+            package_path=package_path)
+    task.log = Mock()
+    with monkeypatch.context() as mp:
+        mp.setattr(os.path, "isdir", lambda x: x == package_path)
+        assert task.work() is True
+    assert len(task.results) == 1 
