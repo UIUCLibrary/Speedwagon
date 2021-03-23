@@ -38,6 +38,7 @@ def test_initial_task_creates_task():
         mock_builder.add_subtask.called is True and \
         mock_builder.add_subtask.call_args[1]['subtask'].batch_root == user_args['Source']
 
+
 @pytest.fixture
 def unconfigured_workflow():
     workflow = workflow = workflow_completeness.CompletenessWorkflow()
@@ -53,6 +54,7 @@ def test_discover_task_metadata_one_per_package(
     initial_results = []
     additional_data = {}
     number_of_fake_packages = 10
+
     def mock_scandir(path):
         for i_number in range(number_of_fake_packages):
             package_mock = Mock()
