@@ -103,7 +103,7 @@ def test_generate_report_creates_a_report(unconfigured_workflow):
     assert "Report" in message
 
 
-def test_yaml_task_calls_validator(monkeypatch):
+def test_missing_package_task_calls_validator(monkeypatch):
     package_path = "./sample_path/package1"
 
     task = workflow_completeness.HathiCheckMissingPackageFilesTask(
