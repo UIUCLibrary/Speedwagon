@@ -120,4 +120,36 @@ def test_missing_package_task_calls_validator(monkeypatch):
            isinstance(mock_run_validation.call_args[0][0],
                       validator.ValidateMissingFiles)
 
+checksum_results = [
+    ([], None),
+    (MagicMock(), None),
+    ([], FileNotFoundError),
+    ([], PermissionError),
+]
+@pytest.mark.parametrize("errors_found,throw_exception", checksum_results)
+def test_hathi_missing_checksum_task_calls_validator(
+        monkeypatch, errors_found, throw_exception):
 
+    package_path = "./sample_path/package1"
+    check_ocr = False
+    task = workflow_completeness.HathiCheckMissingComponentsTask(
+        check_ocr=check_ocr,
+        package_path=package_path
+    )
+
+    task.log = Mock()
+    mock_run_validation = MagicMock(return_value=errors_found)
+    if throw_exception is not None:
+        def exception_runner(*args, **kwargs):
+            raise throw_exception
+        mock_run_validation.side_effect = exception_runner
+    from hathi_validate import process, validator
+    with monkeypatch.context() as mp:
+        mp.setattr(process, "run_validation", mock_run_validation)
+        assert task.work() is (throw_exception is None)
+
+    assert mock_run_validation.called is True and \
+           mock_run_validation.call_args[0][0].path == package_path and \
+           isinstance(mock_run_validation.call_args[0][0],
+                      validator.ValidateComponents)
+    assert all([a == b for a, b in zip(errors_found, task.results)])
