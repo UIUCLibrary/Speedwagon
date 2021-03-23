@@ -215,6 +215,7 @@ def test_validate_marc_task_calls_validator(monkeypatch):
                validator.ValidateMarc
            )
 
+
 def test_validate_yml_task_calls_validator(monkeypatch):
     package_path = os.path.join("sample_path", "package1")
     expected_yaml_file = os.path.join(package_path, "meta.yml")
@@ -235,4 +236,34 @@ def test_validate_yml_task_calls_validator(monkeypatch):
            isinstance(
                mock_run_validation.call_args[0][0],
                validator.ValidateMetaYML
+           )
+
+
+def test_validate_ocr_utf8_task_calls_validator(monkeypatch):
+    package_path = os.path.join("sample_path", "package1")
+    from hathi_validate import process, validator
+
+    task = \
+        workflow_completeness.ValidateOCFilesUTF8Task(
+            package_path=package_path)
+
+    task.log = Mock()
+    mock_run_validation = MagicMock(return_value=[])
+
+    def mock_scandir(path):
+        for i_number in range(20):
+            file_mock = Mock()
+            file_mock.name = f"99423682912205899-{str(i_number).zfill(8)}.xml"
+            yield file_mock
+
+    with monkeypatch.context() as mp:
+        mp.setattr(process, "run_validation", mock_run_validation)
+        mp.setattr(os, "scandir", mock_scandir)
+        assert task.work() is True
+
+    assert mock_run_validation.called is True  and \
+           mock_run_validation.call_args[0][0].file_path.endswith(".xml") and \
+           isinstance(
+               mock_run_validation.call_args[0][0],
+               validator.ValidateUTF8Files
            )
