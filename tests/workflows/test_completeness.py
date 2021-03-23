@@ -174,7 +174,9 @@ def test_hathi_checksum_task_calls_validator(monkeypatch):
     package_path = "./sample_path/package1"
     from hathi_validate import process, validator
 
-    task = workflow_completeness.ValidateChecksumsTask(package_path=package_path)
+    task = workflow_completeness.ValidateChecksumsTask(
+        package_path=package_path)
+
     task.log = Mock()
     mock_run_validation = MagicMock(return_value=[])
     mock_extracts_checksums = MagicMock(return_value=[])
@@ -186,7 +188,10 @@ def test_hathi_checksum_task_calls_validator(monkeypatch):
 
     assert mock_run_validation.called is True and \
            mock_run_validation.call_args[0][0].path == package_path and \
-           isinstance(mock_run_validation.call_args[0][0], validator.ValidateChecksumReport)
+           isinstance(
+               mock_run_validation.call_args[0][0],
+               validator.ValidateChecksumReport
+           )
 
 
 def test_validate_marc_task_calls_validator(monkeypatch):
