@@ -267,3 +267,32 @@ def test_validate_ocr_utf8_task_calls_validator(monkeypatch):
                mock_run_validation.call_args[0][0],
                validator.ValidateUTF8Files
            )
+
+
+def test_manifest_generations_task(monkeypatch):
+    package_path = os.path.join("sample_path", "package1")
+
+    task = \
+        workflow_completeness.HathiManifestGenerationTask(
+            batch_root=package_path)
+    task.log = Mock()
+    number_of_fake_packages = 2
+
+    def mock_scandir(path):
+        for i_number in range(number_of_fake_packages):
+            package_mock = Mock()
+            package_mock.name = f"99423682{str(i_number).zfill(2)}2205899"
+            package_mock.is_dir = Mock(return_value=True)
+            yield package_mock
+
+    def mock_walk(root):
+        return [
+            ("12345", [], ("12345_1.tif", "12345_2.tif"))
+        ]
+
+    with monkeypatch.context() as mp:
+        mp.setattr(os, "scandir", mock_scandir)
+        mp.setattr(os, "walk", mock_walk)
+        # mp.setattr(os.path, "exists", lambda x: x == package_path)
+        assert task.work() is True
+    assert ".tif: 2 file(s)" in task.results
