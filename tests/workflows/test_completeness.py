@@ -103,23 +103,6 @@ def test_generate_report_creates_a_report(unconfigured_workflow):
     assert "Report" in message
 
 
-def test_missing_package_task_calls_validator(monkeypatch):
-    package_path = "./sample_path/package1"
-
-    task = workflow_completeness.HathiCheckMissingPackageFilesTask(
-        package_path=package_path)
-    task.log = Mock()
-    mock_run_validation = MagicMock()
-    from hathi_validate import process, validator
-    with monkeypatch.context() as mp:
-        mp.setattr(process, "run_validation", mock_run_validation)
-        assert task.work() is True
-
-    assert mock_run_validation.called is True and \
-           mock_run_validation.call_args[0][0].path == package_path and \
-           isinstance(mock_run_validation.call_args[0][0],
-                      validator.ValidateMissingFiles)
-
 checksum_results = [
     ([], None),
     (MagicMock(), None),
@@ -154,20 +137,32 @@ def test_hathi_missing_checksum_task_calls_validator(
                       validator.ValidateComponents)
     assert all([a == b for a, b in zip(errors_found, task.results)])
 
+from hathi_validate import process, validator
+validation_tasks = [
+    (workflow_completeness.HathiCheckMissingPackageFilesTask,
+     validator.ValidateMissingFiles),
+    (workflow_completeness.ValidateExtraSubdirectoriesTask,
+     validator.ValidateExtraSubdirectories),
+    (workflow_completeness.ValidateOCRFilesTask,
+     validator.ValidateOCRFiles),
+]
 
-def test_extra_subdirectories_task_calls_validator(monkeypatch):
+
+@pytest.mark.parametrize("validator_task, validator_process",
+                         validation_tasks)
+def test_validator_task_calls_validator(monkeypatch, validator_task,
+                                        validator_process):
+
     package_path = "./sample_path/package1"
 
-    task = workflow_completeness.ValidateExtraSubdirectoriesTask(
-        package_path=package_path)
+    task = validator_task(package_path=package_path)
     task.log = Mock()
     mock_run_validation = MagicMock(return_value=[])
-    from hathi_validate import process, validator
+
     with monkeypatch.context() as mp:
         mp.setattr(process, "run_validation", mock_run_validation)
         assert task.work() is True
 
     assert mock_run_validation.called is True and \
            mock_run_validation.call_args[0][0].path == package_path and \
-           isinstance(mock_run_validation.call_args[0][0],
-                      validator.ValidateExtraSubdirectories)
+           isinstance(mock_run_validation.call_args[0][0], validator_process)
