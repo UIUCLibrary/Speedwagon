@@ -153,3 +153,21 @@ def test_hathi_missing_checksum_task_calls_validator(
            isinstance(mock_run_validation.call_args[0][0],
                       validator.ValidateComponents)
     assert all([a == b for a, b in zip(errors_found, task.results)])
+
+
+def test_extra_subdirectories_task_calls_validator(monkeypatch):
+    package_path = "./sample_path/package1"
+
+    task = workflow_completeness.ValidateExtraSubdirectoriesTask(
+        package_path=package_path)
+    task.log = Mock()
+    mock_run_validation = MagicMock(return_value=[])
+    from hathi_validate import process, validator
+    with monkeypatch.context() as mp:
+        mp.setattr(process, "run_validation", mock_run_validation)
+        assert task.work() is True
+
+    assert mock_run_validation.called is True and \
+           mock_run_validation.call_args[0][0].path == package_path and \
+           isinstance(mock_run_validation.call_args[0][0],
+                      validator.ValidateExtraSubdirectories)
