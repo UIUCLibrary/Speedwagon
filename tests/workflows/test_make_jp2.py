@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from speedwagon import tasks
 from speedwagon.workflows import workflow_make_jp2
 
 
@@ -91,3 +92,15 @@ def test_create_new_task_generates_subtask(unconfigured_workflow, profile):
            )
 
 
+def test_generate_report_creates_a_report(unconfigured_workflow):
+    workflow, user_options = unconfigured_workflow
+    job_args = {}
+    results = [
+        tasks.Result(
+            source=workflow_make_jp2.ConvertFileTask,
+            data={'file_created': "123.jp2"}
+        )
+    ]
+    message = workflow.generate_report(results, **job_args)
+    assert "Results" in message and \
+           "123.jp2" in message
