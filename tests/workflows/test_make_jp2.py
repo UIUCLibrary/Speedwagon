@@ -61,3 +61,33 @@ def test_discover_task_metadata(monkeypatch, unconfigured_workflow,
     ) and all(
         x['new_file_name'].endswith(".jp2") for x in new_task_md
     )
+
+
+@pytest.mark.parametrize("profile",
+                         workflow_make_jp2.ProfileFactory.profiles.values())
+def test_create_new_task_generates_subtask(unconfigured_workflow, profile):
+    workflow, user_options = unconfigured_workflow
+    mock_builder = Mock()
+    job_args = {
+        'source_root': "/some/source/package",
+        'source_file': "123.tif",
+        'destination_root': "/some/destination",
+        "new_file_name": "123.jp2",
+        "relative_location": ".",
+        "image_factory": profile.image_factory,
+    }
+    workflow.create_new_task(
+        mock_builder,
+        **job_args
+    )
+    assert mock_builder.add_subtask.called is True
+    assert mock_builder.add_subtask.call_count == 2
+    assert isinstance(
+        mock_builder.add_subtask.call_args_list[0][0][0],
+        workflow_make_jp2.EnsurePathTask
+    ) and isinstance(
+               mock_builder.add_subtask.call_args_list[1][0][0],
+               workflow_make_jp2.ConvertFileTask
+           )
+
+
