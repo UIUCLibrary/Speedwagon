@@ -1,10 +1,12 @@
 import os
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Iterable, Union
 
 from . import shared_custom_widgets
 from speedwagon import job, tasks
 from uiucprescon import images
 import abc
+
+from .shared_custom_widgets import UserOption2, UserOption3
 
 
 def _filter_tif_only(item: os.DirEntry) -> bool:
@@ -21,7 +23,7 @@ def _filter_tif_only(item: os.DirEntry) -> bool:
 
 class AbsProfile(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def locate_source_files(self, root):
+    def locate_source_files(self, root: str) -> Iterable[str]:
         pass
 
     @property
@@ -33,7 +35,7 @@ class AbsProfile(metaclass=abc.ABCMeta):
 class DigitalLibraryProfile(AbsProfile):
     image_factory = "Digital Library JPEG 2000"
 
-    def locate_source_files(self, root):
+    def locate_source_files(self, root: str) -> Iterable[str]:
         for root_access in self._find_root_access(root):
             for access_folder in filter(lambda x: os.path.isdir(x),
                                         os.scandir(root_access)):
@@ -43,7 +45,7 @@ class DigitalLibraryProfile(AbsProfile):
                     yield source_file.path
 
     @staticmethod
-    def _find_root_access(path):
+    def _find_root_access(path: str) -> Iterable[str]:
         for root, dirs, files in os.walk(path):
             for _dir in dirs:
                 if _dir == "access":
@@ -53,7 +55,7 @@ class DigitalLibraryProfile(AbsProfile):
 class HathiTrustProfile(AbsProfile):
     image_factory = "HathiTrust JPEG 2000"
 
-    def locate_source_files(self, root):
+    def locate_source_files(self, root: str) -> Iterable[str]:
 
         for root_access in self._find_root_access(root):
             for access_folder in filter(lambda x: os.path.isdir(x),
@@ -63,7 +65,7 @@ class HathiTrustProfile(AbsProfile):
                                           os.scandir(access_folder.path)):
                     yield source_file.path
 
-    def _find_root_access(self, path):
+    def _find_root_access(self, path: str) -> Iterable[str]:
         for root, dirs, files in os.walk(path):
             for _dir in dirs:
                 if _dir == "access":
@@ -77,7 +79,7 @@ class ProfileFactory:
     }
 
     @classmethod
-    def create(cls, name):
+    def create(cls, name: str) -> AbsProfile:
         new_profile = cls.profiles[name]
         return new_profile()
 
@@ -90,8 +92,8 @@ class MakeJp2Workflow(job.AbsWorkflow):
 
     active = True
 
-    def user_options(self):
-        options = []
+    def user_options(self) -> List[Union[UserOption2, UserOption3]]:
+        options: List[Union[UserOption2, UserOption3]] = []
         input_option = shared_custom_widgets.UserOptionCustomDataType(
             "Input", shared_custom_widgets.FolderData)
 
@@ -107,13 +109,15 @@ class MakeJp2Workflow(job.AbsWorkflow):
         options.append(profile_type)
         return options
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
+    def discover_task_metadata(self,
+                               initial_results: List[Any],
+                               additional_data,
+                               **user_args: str) -> List[dict]:
 
         jobs = []
-        source_root = user_args["Input"]
-        destination_root = user_args["Output"]
-        profile_name = user_args["Profile"]
+        source_root: str = user_args["Input"]
+        destination_root: str = user_args["Output"]
+        profile_name: str = user_args["Profile"]
         profile_factory = ProfileFactory()
         profile = profile_factory.create(profile_name)
         for source_file in profile.locate_source_files(source_root):
@@ -139,7 +143,7 @@ class MakeJp2Workflow(job.AbsWorkflow):
         return jobs
 
     @staticmethod
-    def validate_user_options(**user_args):
+    def validate_user_options(**user_args: str) -> bool:
         input_path = user_args["Input"]
         destination_path = user_args["Output"]
 
@@ -160,8 +164,12 @@ class MakeJp2Workflow(job.AbsWorkflow):
         if not os.path.isdir(destination_path):
             raise ValueError(
                 "Output is not a valid directory")
+        return True
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(self,
+                        task_builder: tasks.TaskBuilder,
+                        **job_args: str) -> None:
+
         source_root = job_args['source_root']
         source_file = job_args["source_file"]
         relative_location = job_args["relative_location"]
@@ -188,11 +196,13 @@ class MakeJp2Workflow(job.AbsWorkflow):
         task_builder.add_subtask(convert_task)
 
     @classmethod
-    def generate_report(cls, results: List[tasks.Result], **user_args) -> \
-            Optional[str]:
+    def generate_report(cls,
+                        results: List[tasks.Result],
+                        **user_args: str
+                        ) -> Optional[str]:
 
         report_title = "Results:"
-        files_generated = []
+        files_generated: List[str] = []
         for res in results:
             files_generated.append(res.data["file_created"])
             print(res)
@@ -206,7 +216,7 @@ class MakeJp2Workflow(job.AbsWorkflow):
 
 class EnsurePathTask(tasks.Subtask):
 
-    def __init__(self, path) -> None:
+    def __init__(self, path: str) -> None:
         super().__init__()
         self._path = path
 
@@ -219,8 +229,8 @@ class EnsurePathTask(tasks.Subtask):
 
 class ConvertFileTask(tasks.Subtask):
 
-    def __init__(self, source_file, destination_file,
-                 image_factory_name) -> None:
+    def __init__(self, source_file: str, destination_file: str,
+                 image_factory_name: str) -> None:
 
         super().__init__()
         self._source_file = source_file
