@@ -90,14 +90,19 @@ def test_generate_report_creates_a_report(unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
     job_args = {}
     results = [
-        tasks.Result(workflow_completeness.HathiCheckMissingPackageFilesTask, data=[]),
-        tasks.Result(workflow_completeness.HathiManifestGenerationTask, data="Manifest"),
-        tasks.Result(workflow_completeness.HathiCheckMissingComponentsTask, data=[]),
+        tasks.Result(workflow_completeness.HathiCheckMissingPackageFilesTask,
+                     data=[]),
+        tasks.Result(workflow_completeness.HathiManifestGenerationTask,
+                     data="Manifest"),
+        tasks.Result(workflow_completeness.HathiCheckMissingComponentsTask,
+                     data=[]),
         tasks.Result(workflow_completeness.ValidateChecksumsTask, data=[]),
         tasks.Result(workflow_completeness.ValidateMarcTask, data=[]),
         tasks.Result(workflow_completeness.ValidateYMLTask, data=[]),
-        tasks.Result(workflow_completeness.ValidateExtraSubdirectoriesTask, data=[]),
-        tasks.Result(workflow_completeness.PackageNamingConventionTask, data=[]),
+        tasks.Result(workflow_completeness.ValidateExtraSubdirectoriesTask,
+                     data=[]),
+        tasks.Result(workflow_completeness.PackageNamingConventionTask,
+                     data=[]),
     ]
     message = workflow.generate_report(results, **job_args)
     assert "Report" in message
@@ -197,7 +202,7 @@ def test_hathi_checksum_task_calls_validator(monkeypatch):
 
 def test_validate_marc_task_calls_validator(monkeypatch):
     package_path = os.path.join("sample_path", "package1")
-    expected_marc_file = os.path.join(package_path, "marc.xml")
+    marc_file = os.path.join(package_path, "marc.xml")
     from hathi_validate import process, validator
 
     task = workflow_completeness.ValidateMarcTask(package_path=package_path)
@@ -206,11 +211,11 @@ def test_validate_marc_task_calls_validator(monkeypatch):
 
     with monkeypatch.context() as mp:
         mp.setattr(process, "run_validation", mock_run_validation)
-        mp.setattr(os.path, "exists", lambda x: x == expected_marc_file)
+        mp.setattr(os.path, "exists", lambda x: x == marc_file)
         assert task.work() is True
 
     assert mock_run_validation.called is True and \
-           mock_run_validation.call_args[0][0].marc_file == expected_marc_file and \
+           mock_run_validation.call_args[0][0].marc_file == marc_file and \
            isinstance(
                mock_run_validation.call_args[0][0],
                validator.ValidateMarc
