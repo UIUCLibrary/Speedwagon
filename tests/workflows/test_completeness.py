@@ -1,5 +1,5 @@
 import os
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock
 
 import pytest
 
@@ -101,3 +101,23 @@ def test_generate_report_creates_a_report(unconfigured_workflow):
     ]
     message = workflow.generate_report(results, **job_args)
     assert "Report" in message
+
+
+def test_yaml_task_calls_validator(monkeypatch):
+    package_path = "./sample_path/package1"
+
+    task = workflow_completeness.HathiCheckMissingPackageFilesTask(
+        package_path=package_path)
+    task.log = Mock()
+    mock_run_validation = MagicMock()
+    from hathi_validate import process, validator
+    with monkeypatch.context() as mp:
+        mp.setattr(process, "run_validation", mock_run_validation)
+        assert task.work() is True
+
+    assert mock_run_validation.called is True and \
+           mock_run_validation.call_args[0][0].path == package_path and \
+           isinstance(mock_run_validation.call_args[0][0],
+                      validator.ValidateMissingFiles)
+
+
