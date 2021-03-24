@@ -1,7 +1,5 @@
 import os
-import shutil
-from unittest.mock import Mock, MagicMock
-import pathlib
+from unittest.mock import Mock
 import pytest
 
 from speedwagon import tasks
@@ -147,7 +145,7 @@ def test_create_jp2(monkeypatch, profile_name):
 
     def mock_walk(root):
         return [
-            ("12345", ['access'], files_in_package)
+            ("12345", ['access'], tuple(files_in_package))
         ]
 
     def mock_scandir(path):
@@ -166,10 +164,10 @@ def test_create_jp2(monkeypatch, profile_name):
             **user_args
         )
     assert len(tasks_md) > 0
-    working_dir = MagicMock()
+    working_dir = 'some_working_path'
     task_builder = tasks.TaskBuilder(
-        tasks.MultiStageTaskBuilder(working_dir.strpath),
-        working_dir=working_dir.strpath
+        tasks.MultiStageTaskBuilder(working_dir),
+        working_dir=working_dir
     )
     for task_metadata in tasks_md:
         workflow.create_new_task(task_builder, **task_metadata)
