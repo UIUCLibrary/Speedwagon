@@ -37,7 +37,9 @@ class DigitalLibraryProfile(AbsProfile):
 
     def locate_source_files(self, root: str) -> Iterable[str]:
         for root_access in self._find_root_access(root):
-            for source_file in filter(_filter_tif_only, os.scandir(root_access)):
+            for source_file in filter(_filter_tif_only,
+                                      os.scandir(root_access)):
+
                 yield source_file.path
 
     @staticmethod
@@ -54,7 +56,9 @@ class HathiTrustProfile(AbsProfile):
     def locate_source_files(self, root: str) -> Iterable[str]:
 
         for root_access in self._find_root_access(root):
-            for source_file in filter(_filter_tif_only, os.scandir(root_access)):
+            for source_file in filter(
+                    _filter_tif_only,
+                    os.scandir(root_access)):
                 yield source_file.path
 
     def _find_root_access(self, path: str) -> Iterable[str]:
@@ -83,7 +87,7 @@ class MakeJp2Workflow(job.AbsWorkflow):
                   "files with Kakadu. \n" \
                   "\n" \
                   "For example, the following directory would have " \
-                  "\"c:\package_dirs\" for Input:\n" \
+                  "\"c:\\package_dirs\" for Input:\n" \
                   "\n" \
                   "c:\\package_dirs\n"\
                   " └── 99423682912205899/\n"\
