@@ -1,3 +1,5 @@
+"""Workflow for making jp2 files."""
+
 import os
 import abc
 from typing import List, Any, Optional, Iterable, Union
@@ -85,6 +87,8 @@ class ProfileFactory:
 
 
 class MakeJp2Workflow(job.AbsWorkflow):
+    """Workflow for creating Jpeg 2000 files from TIFF."""
+
     name = "Make JP2"
     description = "Makes Jpeg 2000 files from TIFF. Tool converts tiff " \
                   "files in access folder in each directory to an JP2000 " \
@@ -104,7 +108,6 @@ class MakeJp2Workflow(job.AbsWorkflow):
 
     def user_options(self) -> List[Union[widgets.UserOption2,
                                          widgets.UserOption3]]:
-
         options: List[Union[widgets.UserOption2, widgets.UserOption3]] = []
         input_option = widgets.UserOptionCustomDataType(
             "Input", widgets.FolderData)
@@ -125,7 +128,18 @@ class MakeJp2Workflow(job.AbsWorkflow):
                                initial_results: List[Any],
                                additional_data,
                                **user_args: str) -> List[dict]:
+        """Generate data needed to create a task.
 
+        Args:
+            initial_results:
+            additional_data:
+            **user_args:
+
+        Returns:
+            Returns a list of job dictionaries containing input and output of
+                individual files along with their conversion profile.
+
+        """
         jobs = []
         source_root: str = user_args["Input"]
         destination_root: str = user_args["Output"]
@@ -156,6 +170,15 @@ class MakeJp2Workflow(job.AbsWorkflow):
 
     @staticmethod
     def validate_user_options(**user_args: str) -> bool:
+        """Make sure that the options the user provided is valid.
+
+        Args:
+            **user_args:
+
+        Returns:
+            Returns true on valid.
+
+        """
         input_path = user_args["Input"]
         destination_path = user_args["Output"]
 
@@ -181,7 +204,17 @@ class MakeJp2Workflow(job.AbsWorkflow):
     def create_new_task(self,
                         task_builder: tasks.TaskBuilder,
                         **job_args: str) -> None:
+        """Add a new task to be accomplished when the workflow is started.
 
+        This creates 2 subtasks.
+           * Subtask for creating a destination folder
+           * Subtask generating a jp2
+
+        Args:
+            task_builder:
+            **job_args:
+
+        """
         source_root = job_args['source_root']
         source_file = job_args["source_file"]
         relative_location = job_args["relative_location"]
@@ -212,7 +245,16 @@ class MakeJp2Workflow(job.AbsWorkflow):
                         results: List[tasks.Result],
                         **user_args: str
                         ) -> Optional[str]:
+        """Generate a text report for the results of the workflow.
 
+        Args:
+            results:
+            **user_args:
+
+        Returns:
+            Returns a text report about the number o files created as a string.
+
+        """
         report_title = "Results:"
         files_generated: List[str] = []
         for res in results:
