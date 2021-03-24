@@ -128,7 +128,6 @@ def test_package_naming_convention_task(monkeypatch):
            mock_convert.call_args_list[0][0][1] == "somefile.jp2" and \
            mock_convert.call_args_list[0][0][2] == "HathiTrust JPEG 2000"
 
-# ======
 
 @pytest.mark.parametrize("profile_name", ["HathiTrust", "Digital Library"])
 def test_create_jp2(monkeypatch, profile_name):
@@ -145,6 +144,7 @@ def test_create_jp2(monkeypatch, profile_name):
         "12345_1.tif",
         "12345_2.tif"
     ]
+
     def mock_walk(root):
         return [
             ("12345", ['access'], files_in_package)
