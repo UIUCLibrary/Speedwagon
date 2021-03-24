@@ -1,19 +1,19 @@
 import os
+import abc
 from typing import List, Any, Optional, Iterable, Union
 
-from . import shared_custom_widgets
-from speedwagon import job, tasks
 from uiucprescon import images
-import abc
+from speedwagon import job, tasks
+from . import shared_custom_widgets as widgets
 
-from .shared_custom_widgets import UserOption2, UserOption3
+__all__ = ['MakeJp2Workflow']
 
 
 def _filter_tif_only(item: os.DirEntry) -> bool:
     if not item.is_file():
         return False
 
-    basename, ext = os.path.splitext(item.name)
+    _, ext = os.path.splitext(item.name)
 
     if ext.lower() != ".tif":
         return False
@@ -44,7 +44,7 @@ class DigitalLibraryProfile(AbsProfile):
 
     @staticmethod
     def _find_root_access(path: str) -> Iterable[str]:
-        for root, dirs, files in os.walk(path):
+        for root, dirs, _ in os.walk(path):
             for _dir in dirs:
                 if _dir == "access":
                     yield os.path.join(root, _dir)
@@ -62,7 +62,7 @@ class HathiTrustProfile(AbsProfile):
                 yield source_file.path
 
     def _find_root_access(self, path: str) -> Iterable[str]:
-        for root, dirs, files in os.walk(path):
+        for root, dirs, _ in os.walk(path):
             for _dir in dirs:
                 if _dir == "access":
                     yield os.path.join(root, _dir)
@@ -78,6 +78,10 @@ class ProfileFactory:
     def create(cls, name: str) -> AbsProfile:
         new_profile = cls.profiles[name]
         return new_profile()
+
+    @classmethod
+    def profile_names(cls) -> Iterable[str]:
+        return cls.profiles.keys()
 
 
 class MakeJp2Workflow(job.AbsWorkflow):
@@ -98,19 +102,21 @@ class MakeJp2Workflow(job.AbsWorkflow):
 
     active = True
 
-    def user_options(self) -> List[Union[UserOption2, UserOption3]]:
-        options: List[Union[UserOption2, UserOption3]] = []
-        input_option = shared_custom_widgets.UserOptionCustomDataType(
-            "Input", shared_custom_widgets.FolderData)
+    def user_options(self) -> List[Union[widgets.UserOption2,
+                                         widgets.UserOption3]]:
+
+        options: List[Union[widgets.UserOption2, widgets.UserOption3]] = []
+        input_option = widgets.UserOptionCustomDataType(
+            "Input", widgets.FolderData)
 
         options.append(input_option)
 
-        output_option = shared_custom_widgets.UserOptionCustomDataType(
-            "Output", shared_custom_widgets.FolderData)
+        output_option = widgets.UserOptionCustomDataType(
+            "Output", widgets.FolderData)
 
         options.append(output_option)
-        profile_type = shared_custom_widgets.ListSelection("Profile")
-        for profile_name in ProfileFactory.profiles.keys():
+        profile_type = widgets.ListSelection("Profile")
+        for profile_name in ProfileFactory.profile_names():
             profile_type.add_selection(profile_name)
         options.append(profile_type)
         return options
@@ -134,7 +140,7 @@ class MakeJp2Workflow(job.AbsWorkflow):
             rel_path = os.path.dirname(
                 os.path.relpath(source_file, source_root))
 
-            job = {
+            created_job = {
                 "source_root": os.path.normpath(source_root),
                 "source_file": os.path.basename(source_file),
                 "relative_location": os.path.normpath(rel_path),
@@ -144,7 +150,7 @@ class MakeJp2Workflow(job.AbsWorkflow):
 
 
             }
-            jobs.append(job)
+            jobs.append(created_job)
 
         return jobs
 
