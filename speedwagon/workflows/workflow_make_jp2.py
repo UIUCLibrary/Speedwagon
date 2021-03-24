@@ -108,6 +108,7 @@ class MakeJp2Workflow(job.AbsWorkflow):
 
     def user_options(self) -> List[Union[widgets.UserOption2,
                                          widgets.UserOption3]]:
+        """Workflow parameters presented to the user."""
         options: List[Union[widgets.UserOption2, widgets.UserOption3]] = []
         input_option = widgets.UserOptionCustomDataType(
             "Input", widgets.FolderData)
