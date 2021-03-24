@@ -37,12 +37,8 @@ class DigitalLibraryProfile(AbsProfile):
 
     def locate_source_files(self, root: str) -> Iterable[str]:
         for root_access in self._find_root_access(root):
-            for access_folder in filter(lambda x: os.path.isdir(x),
-                                        os.scandir(root_access)):
-
-                for source_file in filter(_filter_tif_only,
-                                          os.scandir(access_folder.path)):
-                    yield source_file.path
+            for source_file in filter(_filter_tif_only, os.scandir(root_access)):
+                yield source_file.path
 
     @staticmethod
     def _find_root_access(path: str) -> Iterable[str]:
@@ -58,12 +54,8 @@ class HathiTrustProfile(AbsProfile):
     def locate_source_files(self, root: str) -> Iterable[str]:
 
         for root_access in self._find_root_access(root):
-            for access_folder in filter(lambda x: os.path.isdir(x),
-                                        os.scandir(root_access)):
-
-                for source_file in filter(_filter_tif_only,
-                                          os.scandir(access_folder.path)):
-                    yield source_file.path
+            for source_file in filter(_filter_tif_only, os.scandir(root_access)):
+                yield source_file.path
 
     def _find_root_access(self, path: str) -> Iterable[str]:
         for root, dirs, files in os.walk(path):
@@ -88,7 +80,17 @@ class MakeJp2Workflow(job.AbsWorkflow):
     name = "Make JP2"
     description = "Makes Jpeg 2000 files from TIFF. Tool converts tiff " \
                   "files in access folder in each directory to an JP2000 " \
-                  "files with Kakadu."
+                  "files with Kakadu. \n" \
+                  "\n" \
+                  "For example, the following directory would have " \
+                  "\"c:\package_dirs\" for Input:\n" \
+                  "\n" \
+                  "c:\\package_dirs\n"\
+                  " └── 99423682912205899/\n"\
+                  "    └── access/\n" \
+                  "        ├── 99423682912205899-00000001.tif\n" \
+                  "        ├── 99423682912205899-00000002.tif\n" \
+                  "            and etc...\n"
 
     active = True
 

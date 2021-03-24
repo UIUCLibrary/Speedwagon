@@ -1,6 +1,7 @@
 import os
-from unittest.mock import Mock
-
+import shutil
+from unittest.mock import Mock, MagicMock
+import pathlib
 import pytest
 
 from speedwagon import tasks
@@ -126,3 +127,69 @@ def test_package_naming_convention_task(monkeypatch):
     assert mock_convert.call_args_list[0][0][0] == "somefile.tif" and \
            mock_convert.call_args_list[0][0][1] == "somefile.jp2" and \
            mock_convert.call_args_list[0][0][2] == "HathiTrust JPEG 2000"
+
+# ======
+
+@pytest.mark.parametrize("profile_name", ["HathiTrust", "Digital Library"])
+def test_create_jp2(monkeypatch, profile_name):
+    import pykdu_compress
+    workflow = workflow_make_jp2.MakeJp2Workflow()
+    initial_results = []
+    additional_data = {}
+    user_args = {
+        'Input': "some_source_path",
+        "Output": "somepath",
+        "Profile": profile_name
+    }
+    files_in_package = [
+        "12345_1.tif",
+        "12345_2.tif"
+    ]
+    def mock_walk(root):
+        return [
+            ("12345", ['access'], files_in_package)
+        ]
+
+    def mock_scandir(path):
+        for file_name in files_in_package:
+            file_mock = Mock()
+            file_mock.name = file_name
+            file_mock.path = os.path.join(path, file_name)
+            yield file_mock
+
+    with monkeypatch.context() as mp:
+        mp.setattr(os, "walk", mock_walk)
+        mp.setattr(os, "scandir", mock_scandir)
+        tasks_md = workflow.discover_task_metadata(
+            initial_results=initial_results,
+            additional_data=additional_data,
+            **user_args
+        )
+    assert len(tasks_md) > 0
+    working_dir = MagicMock()
+    task_builder = tasks.TaskBuilder(
+        tasks.MultiStageTaskBuilder(working_dir.strpath),
+        working_dir=working_dir.strpath
+    )
+    for task_metadata in tasks_md:
+        workflow.create_new_task(task_builder, **task_metadata)
+    new_tasks = task_builder.build_task()
+
+    created_files = []
+
+    def mock_kdu_compress_cli2(infile: str, outfile: str,
+                               in_args=None, out_args=None) -> int:
+        created_files.append(outfile)
+        return 0
+
+    with monkeypatch.context() as mp:
+        mp.setattr(pykdu_compress, "kdu_compress_cli2", mock_kdu_compress_cli2)
+        for n in new_tasks.subtasks:
+            n.work()
+
+    assert len(created_files) == len(files_in_package)
+    assert all(
+        source_file.replace(".tif", ".jp2") in
+        [os.path.basename(created_file) for created_file in created_files]
+        for source_file in files_in_package
+    )
