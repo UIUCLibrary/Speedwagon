@@ -1,3 +1,4 @@
+"""Hathi Prep Workflow."""
 import itertools
 import os
 import shutil
@@ -20,6 +21,8 @@ from .shared_custom_widgets import UserOption2, UserOption3
 
 
 class HathiPrepWorkflow(speedwagon.Workflow):
+    """Workflow for Hathi prep."""
+
     name = "Hathi Prep"
     description = "Enables user to select, from a dropdown list of image " \
                   "file names, the title page to be displayed on the " \
@@ -32,6 +35,11 @@ class HathiPrepWorkflow(speedwagon.Workflow):
 
 
     def user_options(self) -> List[Union[UserOption2, UserOption3]]:
+        """Get the user arguments for the workflow.
+
+        Returns:
+            Returns information about the package type and the source directory
+        """
         options: List[Union[UserOption2, UserOption3]] = []
         package_type = shared_custom_widgets.ListSelection("Image File Type")
         package_type.add_selection("JPEG 2000")
@@ -47,14 +55,32 @@ class HathiPrepWorkflow(speedwagon.Workflow):
                      task_builder: speedwagon.tasks.TaskBuilder,
                      **user_args: str
                      ) -> None:
+        """Look for any packages located in the input argument directory.
 
+        Args:
+            task_builder:
+            **user_args:
+
+        """
         root = user_args['input']
         task_builder.add_subtask(FindPackagesTask(root))
 
-    def discover_task_metadata(self, initial_results: List[Any],
+    def discover_task_metadata(self,
+                               initial_results: List[Any],
                                additional_data: Dict[str, Any],
                                **user_args) -> List[Dict[str, str]]:
+        """Get enough information about the packages to create a new job.
 
+        Args:
+            initial_results:
+            additional_data:
+            **user_args:
+
+        Returns:
+            Returns a dictionary containing the title page, package id, and
+                the source path.
+
+        """
         jobs: List[Dict[str, str]] = []
         packages: Sequence[collection.Package] = additional_data["packages"]
         for package in packages:
@@ -71,7 +97,13 @@ class HathiPrepWorkflow(speedwagon.Workflow):
                         task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args: str
                         ) -> None:
+        """Add yaml and checksum tasks.
 
+        Args:
+            task_builder:
+            **job_args:
+
+        """
         title_page = job_args['title_page']
         source = job_args['source_path']
         package_id = job_args['package_id']
@@ -87,7 +119,17 @@ class HathiPrepWorkflow(speedwagon.Workflow):
                             options: Mapping[str, str],
                             pretask_results: list
                             ) -> Dict[str, List[collection.Package]]:
+        """Request information from user about the title page.
 
+        Args:
+            parent:
+            options:
+            pretask_results:
+
+        Returns:
+            Returns the title page information
+
+        """
         image_type = options['Image File Type']
 
         root_dir = options['input']
@@ -116,6 +158,16 @@ class HathiPrepWorkflow(speedwagon.Workflow):
     @classmethod
     def generate_report(cls, results: List[speedwagon.tasks.Result],
                         **user_args) -> Optional[str]:
+        """Generate a report about prepping work.
+
+        Args:
+            results:
+            **user_args:
+
+        Returns:
+            Returns a string explaining the prepped objects.
+
+        """
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
         _result_grouped = itertools.groupby(results_sorted, lambda x: x.source)
         results_grouped = {k: [i.data for i in v] for k, v in _result_grouped}
