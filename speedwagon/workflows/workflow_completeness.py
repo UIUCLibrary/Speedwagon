@@ -276,9 +276,7 @@ class HathiCheckMissingComponentsTask(CompletenessSubTask):
                 report_builder = hathi_result.SummaryDirector(
                    source=self.package_path
                 )
-                report_builder.add_error(
-                    "Permission issues. \"{}\"".format(error)
-                )
+                report_builder.add_error(f'Permission issues. \"{error}\"')
                 self.set_results(report_builder.construct())
                 return False
 
