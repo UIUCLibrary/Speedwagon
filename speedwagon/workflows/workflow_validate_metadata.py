@@ -11,6 +11,8 @@ from speedwagon.job import AbsWorkflow
 import speedwagon.tasks
 import enum
 
+__all__ = ['ValidateMetadataWorkflow']
+
 
 class UserArgs(enum.Enum):
     INPUT = "Input"
