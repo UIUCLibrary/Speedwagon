@@ -3,12 +3,11 @@ import os
 from contextlib import contextmanager
 from typing import List, Any, Optional
 
-from speedwagon.job import Workflow
-from . import shared_custom_widgets as options
 from uiucprescon import packager
-
+from speedwagon.job import Workflow
 from speedwagon import tasks, reports
 from speedwagon.worker import GuiLogHandler
+from . import shared_custom_widgets as options
 
 __all__ = ['HathiLimitedToDLWorkflow']
 
