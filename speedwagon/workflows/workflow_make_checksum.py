@@ -79,13 +79,13 @@ class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
     def generate_report(cls, results: List[tasks.Result],
                         **user_args) -> Optional[str]:
 
-        report_lines = []
-
-        for checksum_report, items_written in \
-                cls.sort_results([i.data for i in results]).items():
-
-            report_lines.append(f"Checksum values for {len(items_written)} "
-                                f"files written to {checksum_report}")
+        report_lines = [
+            f"Checksum values for {len(items_written)} "
+            f"files written to {checksum_report}"
+            for checksum_report, items_written in cls.sort_results(
+                [i.data for i in results]
+            ).items()
+        ]
 
         return "\n".join(report_lines)
 
