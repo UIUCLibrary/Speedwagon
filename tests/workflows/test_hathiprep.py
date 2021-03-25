@@ -58,3 +58,17 @@ def test_discover_task_metadata_one_per_package(
     )
     assert len(new_task_md) == number_of_fake_packages
 
+
+def test_create_new_task_generates_subtask(unconfigured_workflow):
+    workflow, user_options = unconfigured_workflow
+    mock_builder = Mock()
+    job_args = {
+        'package_id': "12345",
+        'source_path': "/some/destination",
+        'title_page': '12345-1234.tiff',
+    }
+    workflow.create_new_task(
+        mock_builder,
+        **job_args
+    )
+    assert mock_builder.add_subtask.called is True
