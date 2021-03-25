@@ -14,6 +14,8 @@ from speedwagon.workflows import shared_custom_widgets, workflow_get_marc
 from . title_page_selection import PackageBrowser
 from .workflow_get_marc import UserOptions
 
+__all__ = ['CaptureOneBatchToHathiComplete']
+
 
 class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
     """CaptureOne Batch to HathiTrust TIFF Complete Package.
