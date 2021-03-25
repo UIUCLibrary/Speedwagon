@@ -272,11 +272,13 @@ class HathiCheckMissingComponentsTask(CompletenessSubTask):
                 )
                 self.set_results(report_builder.construct())
                 return False
-            except PermissionError as error:
+            except PermissionError as error_message:
                 report_builder = hathi_result.SummaryDirector(
                    source=self.package_path
                 )
-                report_builder.add_error(f'Permission issues. \"{error}\"')
+                report_builder.add_error(
+                    f'Permission issues. "{error_message}"'
+                )
                 self.set_results(report_builder.construct())
                 return False
 
