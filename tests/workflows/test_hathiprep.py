@@ -1,6 +1,8 @@
 from unittest.mock import Mock, MagicMock
 
 import pytest
+
+from speedwagon import tasks
 from speedwagon.workflows import workflow_hathiprep
 
 
@@ -72,3 +74,20 @@ def test_create_new_task_generates_subtask(unconfigured_workflow):
         **job_args
     )
     assert mock_builder.add_subtask.called is True
+
+
+def test_generate_report_creates_a_report(unconfigured_workflow):
+    workflow, user_options = unconfigured_workflow
+    job_args = {}
+    results = [
+        tasks.Result(
+            workflow_hathiprep.GenerateChecksumTask,
+            data={"package_id": "123"}
+        ),
+        tasks.Result(
+            workflow_hathiprep.MakeYamlTask,
+            data={"package_id": "123"}
+        ),
+    ]
+    message = workflow.generate_report(results, **job_args)
+    assert "Report" in message
