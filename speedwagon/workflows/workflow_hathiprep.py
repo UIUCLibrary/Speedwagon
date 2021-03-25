@@ -15,6 +15,8 @@ import speedwagon
 from speedwagon.workflows.title_page_selection import PackageBrowser
 from . import shared_custom_widgets
 
+__all__ = ['HathiPrepWorkflow']
+
 
 class HathiPrepWorkflow(speedwagon.Workflow):
     name = "Hathi Prep"
