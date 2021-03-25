@@ -14,6 +14,12 @@ from . import checksum_tasks, shared_custom_widgets
 from . import shared_custom_widgets as options
 
 
+__all__ = [
+    'MakeChecksumBatchSingleWorkflow',
+    'MakeChecksumBatchMultipleWorkflow'
+]
+
+
 class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
     name = "Make Checksum Batch [Single]"
     description = "The checksum is a signature of a file.  If any data is " \
