@@ -8,7 +8,6 @@ from pyhathiprep import package_creater
 import uiucprescon.packager.packages
 from uiucprescon.packager import PackageFactory
 from uiucprescon.packager.packages import collection
-from uiucprescon.packager.packages.collection import AbsPackageComponent
 
 import speedwagon.tasks
 import speedwagon
@@ -134,13 +133,13 @@ class HathiPrepWorkflow(speedwagon.Workflow):
         objects_prepped_list = "\n  ".join(objects)
 
         return f"HathiPrep Report:" \
-                         f"\n" \
-                         f"\nPrepped the following objects:" \
-                         f"\n  {objects_prepped_list}" \
-                         f"\n" \
-                         f"\nTotal files generated: " \
-                         f"\n  {num_checksum_files} checksum.md5 files" \
-                         f"\n  {num_yaml_files} meta.yml files"
+               f"\n" \
+               f"\nPrepped the following objects:" \
+               f"\n  {objects_prepped_list}" \
+               f"\n" \
+               f"\nTotal files generated: " \
+               f"\n  {num_checksum_files} checksum.md5 files" \
+               f"\n  {num_yaml_files} meta.yml files"
 
 
 class FindPackagesTask(speedwagon.tasks.Subtask):
