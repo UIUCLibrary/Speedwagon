@@ -3,7 +3,7 @@ import os
 import re
 import sys
 import typing
-
+from typing import Mapping, Any
 import itertools
 from contextlib import contextmanager
 
@@ -22,6 +22,8 @@ from . import shared_custom_widgets as options
 
 __all__ = ['CompletenessWorkflow']
 
+from .shared_custom_widgets import UserOption2, UserOption3
+
 
 class CompletenessWorkflow(AbsWorkflow):
     name = "Verify HathiTrust Package Completeness"
@@ -37,7 +39,9 @@ class CompletenessWorkflow(AbsWorkflow):
                   "valid. (This workflow provides console feedback, but " \
                   "doesn’t write new files as output)."
 
-    def user_options(self):
+    def user_options(
+            self) -> typing.List[typing.Union[UserOption2, UserOption3]]:
+
         check_page_data_option = options.UserOptionPythonDataType2(
             "Check for page_data in meta.yml", bool)
         check_page_data_option.data = False
@@ -55,11 +59,11 @@ class CompletenessWorkflow(AbsWorkflow):
         ]
 
     def discover_task_metadata(self, initial_results: typing.List[typing.Any],
-                               additional_data,
+                               additional_data: Mapping[str, Any],
                                **user_args) -> typing.List[dict]:
         jobs = []
 
-        def directory_only_filter(item: os.DirEntry):
+        def directory_only_filter(item: os.DirEntry) -> bool:
             if not item.is_dir():
                 return False
 
@@ -88,7 +92,7 @@ class CompletenessWorkflow(AbsWorkflow):
         return jobs
 
     def create_new_task(self, task_builder: "speedwagon.tasks.TaskBuilder",
-                        **job_args):
+                        **job_args) -> None:
         package_path = os.path.normcase(job_args['package_path'])
         request_ocr_validation = job_args['check_ocr_data']
         request_ocr_utf8_validation = job_args['_check_ocr_utf8']
@@ -218,7 +222,7 @@ class CompletenessSubTask(Subtask):
 
 class HathiCheckMissingPackageFilesTask(CompletenessSubTask):
 
-    def __init__(self, package_path):
+    def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
 
@@ -240,7 +244,7 @@ class HathiCheckMissingPackageFilesTask(CompletenessSubTask):
 
 class HathiCheckMissingComponentsTask(CompletenessSubTask):
 
-    def __init__(self, check_ocr, package_path):
+    def __init__(self, check_ocr: bool, package_path: str) -> None:
         super().__init__()
         self.check_ocr = check_ocr
         self.package_path = package_path
@@ -298,7 +302,7 @@ class HathiCheckMissingComponentsTask(CompletenessSubTask):
 
 
 class ValidateExtraSubdirectoriesTask(CompletenessSubTask):
-    def __init__(self, package_path):
+    def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
 
@@ -338,7 +342,7 @@ class ValidateExtraSubdirectoriesTask(CompletenessSubTask):
 
 
 class ValidateChecksumsTask(CompletenessSubTask):
-    def __init__(self, package_path):
+    def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
 
@@ -401,7 +405,7 @@ class ValidateChecksumsTask(CompletenessSubTask):
 
 
 class ValidateMarcTask(CompletenessSubTask):
-    def __init__(self, package_path):
+    def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
 
@@ -458,7 +462,7 @@ class ValidateMarcTask(CompletenessSubTask):
 
 
 class ValidateOCRFilesTask(CompletenessSubTask):
-    def __init__(self, package_path):
+    def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
 
@@ -501,7 +505,7 @@ class ValidateOCRFilesTask(CompletenessSubTask):
 
 
 class ValidateYMLTask(CompletenessSubTask):
-    def __init__(self, package_path):
+    def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
 
@@ -552,12 +556,12 @@ class ValidateYMLTask(CompletenessSubTask):
 
 
 class ValidateOCFilesUTF8Task(CompletenessSubTask):
-    def __init__(self, package_path):
+    def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
 
     def work(self) -> bool:
-        def filter_ocr_only(entry: os.DirEntry):
+        def filter_ocr_only(entry: os.DirEntry) -> bool:
             if not entry.is_file():
                 return False
 
@@ -596,7 +600,7 @@ class ValidateOCFilesUTF8Task(CompletenessSubTask):
 
 
 class HathiManifestGenerationTask(CompletenessSubTask):
-    def __init__(self, batch_root):
+    def __init__(self, batch_root: str) -> None:
         super().__init__()
         self.batch_root = batch_root
 
@@ -637,7 +641,7 @@ class PackageNamingConventionTask(CompletenessSubTask):
     FILE_NAMING_CONVENTION_REGEX = \
         "^[0-9]*([m|v|i][0-9]{2,})?(_[1-9])?([m|v|i][0-9])?$"
 
-    def __init__(self, package_path):
+    def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
 
