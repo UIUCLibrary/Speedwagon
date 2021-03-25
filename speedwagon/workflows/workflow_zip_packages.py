@@ -4,12 +4,12 @@ import os
 from contextlib import contextmanager
 from typing import List, Any, Optional
 
+import hathizip.process
+import hathizip
 from speedwagon import tasks, reports
 from speedwagon.job import AbsWorkflow
 from speedwagon.worker import GuiLogHandler
 from . import shared_custom_widgets as options
-import hathizip.process
-import hathizip
 
 __all__ = ['ZipPackagesWorkflow']
 
