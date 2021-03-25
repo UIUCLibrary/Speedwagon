@@ -40,7 +40,7 @@ class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
         report_to_save_to = os.path.normpath(os.path.join(package_root,
                                                           "checksum.md5"))
 
-        for root, dirs, files in os.walk(package_root):
+        for root, _, files in os.walk(package_root):
             for file_ in files:
                 full_path = os.path.join(root, file_)
                 relpath = os.path.relpath(full_path, package_root)
@@ -101,12 +101,12 @@ class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
         sorted_results = sorted(results,
                                 key=lambda it: it[ResultsValues.CHECKSUM_FILE])
 
-        for k, v in itertools.groupby(
+        for key, value in itertools.groupby(
                 sorted_results,
                 key=lambda it: it[ResultsValues.CHECKSUM_FILE]):
 
-            for result_data in v:
-                new_results[k].append(result_data)
+            for result_data in value:
+                new_results[key].append(result_data)
         return dict(new_results)
 
     def user_options(self):
@@ -142,7 +142,7 @@ class MakeChecksumBatchMultipleWorkflow(AbsWorkflow):
             report_to_save_to = os.path.normpath(
                 os.path.join(package_root, "checksum.md5"))
 
-            for root, dirs, files in os.walk(package_root):
+            for root, _, files in os.walk(package_root):
                 for file_ in files:
                     full_path = os.path.join(root, file_)
                     relpath = os.path.relpath(full_path, package_root)
@@ -182,12 +182,12 @@ class MakeChecksumBatchMultipleWorkflow(AbsWorkflow):
         sorted_results = sorted(results,
                                 key=lambda it: it[ResultsValues.CHECKSUM_FILE])
 
-        for k, v in itertools.groupby(
+        for key, value in itertools.groupby(
                 sorted_results,
                 key=lambda it: it[ResultsValues.CHECKSUM_FILE]):
 
-            for result_data in v:
-                new_results[k].append(result_data)
+            for result_data in value:
+                new_results[key].append(result_data)
         return dict(new_results)
 
     def completion_task(self, task_builder: tasks.TaskBuilder, results,
