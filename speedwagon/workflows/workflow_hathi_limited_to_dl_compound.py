@@ -24,16 +24,11 @@ class HathiLimitedToDLWorkflow(Workflow):
         hathi_limited_view_packager = packager.PackageFactory(
             packager.packages.HathiLimitedView())
 
-        new_tasks = []
-
-        for package in hathi_limited_view_packager.locate_packages(
-                user_args['Input']):
-            new_tasks.append({
-                "package": package,
-                "destination": user_args['Output']
-            })
-
-        return new_tasks
+        return [{
+            "package": package,
+            "destination": user_args['Output']
+        } for package in hathi_limited_view_packager.locate_packages(
+            user_args['Input'])]
 
     def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
         task_builder.add_subtask(
