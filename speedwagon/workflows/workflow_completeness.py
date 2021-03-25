@@ -211,7 +211,7 @@ class CompletenessWorkflow(AbsWorkflow):
 
 class CompletenessSubTask(Subtask):
     @contextmanager
-    def log_config(self, logger):
+    def log_config(self, logger: logging.Logger):
         gui_logger = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)
