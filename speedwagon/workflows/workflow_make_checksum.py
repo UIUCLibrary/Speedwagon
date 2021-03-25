@@ -20,7 +20,29 @@ __all__ = [
 ]
 
 
-class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
+class AbcMakeChecksumWorkflow(AbsWorkflow):
+    @classmethod
+    def sort_results(cls,
+                     results: typing.List[typing.Mapping[ResultsValues, str]]
+                     ) -> typing.Dict[str,
+                                      typing.List[typing.Dict[ResultsValues,
+                                                              str]]]:
+
+        new_results: DefaultDict[str, list] = collections.defaultdict(list)
+
+        sorted_results = sorted(results,
+                                key=lambda it: it[ResultsValues.CHECKSUM_FILE])
+
+        for key, value in itertools.groupby(
+                sorted_results,
+                key=lambda it: it[ResultsValues.CHECKSUM_FILE]):
+
+            for result_data in value:
+                new_results[key].append(result_data)
+        return dict(new_results)
+
+
+class MakeChecksumBatchSingleWorkflow(AbcMakeChecksumWorkflow):
     name = "Make Checksum Batch [Single]"
     description = "The checksum is a signature of a file.  If any data is " \
                   "changed, the checksum will provide a different " \
@@ -89,26 +111,6 @@ class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
 
         return "\n".join(report_lines)
 
-    @classmethod
-    def sort_results(cls,
-                     results: typing.List[typing.Mapping[ResultsValues, str]]
-                     ) -> typing.Dict[str,
-                                      typing.List[typing.Dict[ResultsValues,
-                                                              str]]]:
-
-        new_results: DefaultDict[str, list] = collections.defaultdict(list)
-
-        sorted_results = sorted(results,
-                                key=lambda it: it[ResultsValues.CHECKSUM_FILE])
-
-        for key, value in itertools.groupby(
-                sorted_results,
-                key=lambda it: it[ResultsValues.CHECKSUM_FILE]):
-
-            for result_data in value:
-                new_results[key].append(result_data)
-        return dict(new_results)
-
     def user_options(self):
         return [
             options.UserOptionCustomDataType("Input",
@@ -116,7 +118,7 @@ class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
         ]
 
 
-class MakeChecksumBatchMultipleWorkflow(AbsWorkflow):
+class MakeChecksumBatchMultipleWorkflow(AbcMakeChecksumWorkflow):
     name = "Make Checksum Batch [Multiple]"
     description = "The checksum is a signature of a file.  If any data " \
                   "is changed, the checksum will provide a different " \
@@ -169,26 +171,6 @@ class MakeChecksumBatchMultipleWorkflow(AbsWorkflow):
             source_path, filename, report_name)
 
         task_builder.add_subtask(new_task)
-
-    @classmethod
-    def sort_results(cls,
-                     results: typing.List[typing.Mapping[ResultsValues, str]]
-                     ) -> typing.Dict[str,
-                                      typing.List[typing.Dict[ResultsValues,
-                                                              str]]]:
-
-        new_results: DefaultDict[str, list] = collections.defaultdict(list)
-
-        sorted_results = sorted(results,
-                                key=lambda it: it[ResultsValues.CHECKSUM_FILE])
-
-        for key, value in itertools.groupby(
-                sorted_results,
-                key=lambda it: it[ResultsValues.CHECKSUM_FILE]):
-
-            for result_data in value:
-                new_results[key].append(result_data)
-        return dict(new_results)
 
     def completion_task(self, task_builder: tasks.TaskBuilder, results,
                         **user_args) -> None:
