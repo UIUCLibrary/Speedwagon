@@ -110,3 +110,29 @@ def test_find_packages_task(monkeypatch):
         mp.setattr(os, "scandir", mock_scandir)
         assert task.work() is True
     assert len(task.results) == 20
+
+
+def test_make_yaml_task_calls_make_yaml(monkeypatch):
+    root_path = "some/sample/root"
+
+    task = workflow_hathiprep.MakeYamlTask(
+        package_id="1234",
+        source=root_path,
+        title_page="1234-0001.tif"
+    )
+
+    task.log = Mock()
+    mock_package_builder = MagicMock()
+
+    def mock_inplace_package(*args, **kwargs):
+        return mock_package_builder
+
+    from pyhathiprep import package_creater
+    import shutil
+    with monkeypatch.context() as mp:
+        mp.setattr(package_creater, "InplacePackage", mock_inplace_package)
+        mp.setattr(os, "makedirs", lambda x: None)
+        mp.setattr(os.path, "exists", lambda x: True)
+        mp.setattr(shutil, "move", lambda source, dest: True)
+        assert task.work() is True
+    assert mock_package_builder.make_yaml.called is True
