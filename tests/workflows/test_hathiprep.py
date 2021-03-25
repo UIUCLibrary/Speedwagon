@@ -35,6 +35,43 @@ def test_initial_task_creates_task():
         mock_builder.add_subtask.call_args_list[0][0][0]._root == user_args['input']
 
 
+def test_get_additional_info_opens_dialog_box(monkeypatch):
+    workflow = workflow_hathiprep.HathiPrepWorkflow()
+    user_args = {
+        "input": "./some_real_source_folder",
+        "Image File Type": "JPEG 2000",
+    }
+
+    def mock_scandir(path):
+        for i_number in range(20):
+            file_mock = Mock()
+            file_mock.is_dir = Mock(return_value=True)
+            file_mock.name = f"99423682912205899-{str(i_number).zfill(8)}"
+            yield file_mock
+
+    from speedwagon.workflows.title_page_selection import PackageBrowser
+    package_browser = Mock()
+    package_browser.result = Mock(return_value=PackageBrowser.Accepted)
+    package_browser.Accepted = PackageBrowser.Accepted
+    def mock_package_browser(packages, parent):
+        return package_browser
+    with monkeypatch.context() as mp:
+        mp.setattr(os, "scandir", mock_scandir)
+        mp.setattr(
+            workflow_hathiprep,
+            "PackageBrowser",
+            mock_package_browser
+        )
+
+        extra_info = workflow.get_additional_info(
+            None,
+            options=user_args,
+            initial_results=[]
+        )
+    assert package_browser.exec.called is True and \
+           "packages" in extra_info
+
+
 @pytest.fixture
 def unconfigured_workflow():
     workflow = workflow = workflow_hathiprep.HathiPrepWorkflow()
