@@ -3,12 +3,13 @@ import os
 from contextlib import contextmanager
 from typing import List, Any, Optional
 
-from speedwagon.job import Workflow
-from . import shared_custom_widgets as options
 from uiucprescon import packager
-
+from speedwagon.job import Workflow
 from speedwagon import tasks, reports
 from speedwagon.worker import GuiLogHandler
+from . import shared_custom_widgets as options
+
+__all__ = ['HathiLimitedToDLWorkflow']
 
 
 class HathiLimitedToDLWorkflow(Workflow):
@@ -23,16 +24,11 @@ class HathiLimitedToDLWorkflow(Workflow):
         hathi_limited_view_packager = packager.PackageFactory(
             packager.packages.HathiLimitedView())
 
-        new_tasks = []
-
-        for p in hathi_limited_view_packager.locate_packages(
-                user_args['Input']):
-            new_tasks.append({
-                "package": p,
-                "destination": user_args['Output']
-            })
-
-        return new_tasks
+        return [{
+            "package": package,
+            "destination": user_args['Output']
+        } for package in hathi_limited_view_packager.locate_packages(
+            user_args['Input'])]
 
     def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
         task_builder.add_subtask(

@@ -17,6 +17,9 @@ from speedwagon import tasks, reports, validators
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
 
+
+__all__ = ['GenerateMarcXMLFilesWorkflow']
+
 UserOptions = Union[
     options.UserOptionCustomDataType,
     options.ListSelection,

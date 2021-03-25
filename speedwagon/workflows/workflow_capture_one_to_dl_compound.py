@@ -15,6 +15,8 @@ from speedwagon.job import AbsWorkflow
 from speedwagon.worker import GuiLogHandler
 from . import shared_custom_widgets as options
 
+__all__ = ['CaptureOneToDlCompoundWorkflow']
+
 
 class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
     """Settings for convert capture one tiff files to DL compound."""

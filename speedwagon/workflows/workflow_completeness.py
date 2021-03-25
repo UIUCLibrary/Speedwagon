@@ -20,6 +20,8 @@ from speedwagon.worker import GuiLogHandler
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
 
+__all__ = ['CompletenessWorkflow']
+
 
 class CompletenessWorkflow(AbsWorkflow):
     name = "Verify HathiTrust Package Completeness"
@@ -121,9 +123,9 @@ class CompletenessWorkflow(AbsWorkflow):
 
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
         _result_grouped = itertools.groupby(results_sorted, lambda x: x.source)
-        results_grouped = dict()
-        for k, g in _result_grouped:
-            results_grouped[k] = [i.data for i in g]
+        results_grouped = {
+            key: [i.data for i in group] for key, group in _result_grouped
+        }
 
         manifest_report = results_grouped[HathiManifestGenerationTask][0]
 
@@ -270,11 +272,13 @@ class HathiCheckMissingComponentsTask(CompletenessSubTask):
                 )
                 self.set_results(report_builder.construct())
                 return False
-            except PermissionError as e:
+            except PermissionError as error_message:
                 report_builder = hathi_result.SummaryDirector(
                    source=self.package_path
                 )
-                report_builder.add_error("Permission issues. \"{}\"".format(e))
+                report_builder.add_error(
+                    f'Permission issues. "{error_message}"'
+                )
                 self.set_results(report_builder.construct())
                 return False
 
@@ -433,20 +437,22 @@ class ValidateMarcTask(CompletenessSubTask):
                         for error in marc_errors:
                             self.log(error.message)
                             errors.append(error)
-            except FileNotFoundError as e:
+            except FileNotFoundError as error:
                 result_builder.add_error(
-                    "Unable to Validate Marc. Reason: {}".format(e)
+                    "Unable to Validate Marc. Reason: {}".format(error)
                 )
-            except PermissionError as e:
+            except PermissionError as error:
                 report_builder = hathi_result.SummaryDirector(
                    source=self.package_path
                 )
-                report_builder.add_error("Permission issues. \"{}\"".format(e))
+                report_builder.add_error(
+                    "Permission issues. \"{}\"".format(error)
+                )
                 self.set_results(report_builder.construct())
                 return False
 
-            for error in result_builder.construct():
-                errors.append(error)
+            for error_found in result_builder.construct():
+                errors.append(error_found)
             self.set_results(errors)
         return True
 
@@ -611,7 +617,7 @@ class HathiManifestGenerationTask(CompletenessSubTask):
                     package_path.path
                 )
 
-                for root, dirs, files in os.walk(package_path.path):
+                for root, _, files in os.walk(package_path.path):
                     for file_ in files:
                         relative = os.path.relpath(root,
                                                    os.path.abspath(batch_root))

@@ -14,7 +14,35 @@ from . import checksum_tasks, shared_custom_widgets
 from . import shared_custom_widgets as options
 
 
-class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
+__all__ = [
+    'MakeChecksumBatchSingleWorkflow',
+    'MakeChecksumBatchMultipleWorkflow'
+]
+
+
+class AbcMakeChecksumWorkflow(AbsWorkflow):
+    @classmethod
+    def sort_results(cls,
+                     results: typing.List[typing.Mapping[ResultsValues, str]]
+                     ) -> typing.Dict[str,
+                                      typing.List[typing.Dict[ResultsValues,
+                                                              str]]]:
+
+        new_results: DefaultDict[str, list] = collections.defaultdict(list)
+
+        sorted_results = sorted(results,
+                                key=lambda it: it[ResultsValues.CHECKSUM_FILE])
+
+        for key, value in itertools.groupby(
+                sorted_results,
+                key=lambda it: it[ResultsValues.CHECKSUM_FILE]):
+
+            for result_data in value:
+                new_results[key].append(result_data)
+        return dict(new_results)
+
+
+class MakeChecksumBatchSingleWorkflow(AbcMakeChecksumWorkflow):
     name = "Make Checksum Batch [Single]"
     description = "The checksum is a signature of a file.  If any data is " \
                   "changed, the checksum will provide a different " \
@@ -34,7 +62,7 @@ class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
         report_to_save_to = os.path.normpath(os.path.join(package_root,
                                                           "checksum.md5"))
 
-        for root, dirs, files in os.walk(package_root):
+        for root, _, files in os.walk(package_root):
             for file_ in files:
                 full_path = os.path.join(root, file_)
                 relpath = os.path.relpath(full_path, package_root)
@@ -73,35 +101,15 @@ class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
     def generate_report(cls, results: List[tasks.Result],
                         **user_args) -> Optional[str]:
 
-        report_lines = []
-
-        for checksum_report, items_written in \
-                cls.sort_results([i.data for i in results]).items():
-
-            report_lines.append(f"Checksum values for {len(items_written)} "
-                                f"files written to {checksum_report}")
+        report_lines = [
+            f"Checksum values for {len(items_written)} "
+            f"files written to {checksum_report}"
+            for checksum_report, items_written in cls.sort_results(
+                [i.data for i in results]
+            ).items()
+        ]
 
         return "\n".join(report_lines)
-
-    @classmethod
-    def sort_results(cls,
-                     results: typing.List[typing.Mapping[ResultsValues, str]]
-                     ) -> typing.Dict[str,
-                                      typing.List[typing.Dict[ResultsValues,
-                                                              str]]]:
-
-        new_results: DefaultDict[str, list] = collections.defaultdict(list)
-
-        sorted_results = sorted(results,
-                                key=lambda it: it[ResultsValues.CHECKSUM_FILE])
-
-        for k, v in itertools.groupby(
-                sorted_results,
-                key=lambda it: it[ResultsValues.CHECKSUM_FILE]):
-
-            for result_data in v:
-                new_results[k].append(result_data)
-        return dict(new_results)
 
     def user_options(self):
         return [
@@ -110,7 +118,7 @@ class MakeChecksumBatchSingleWorkflow(AbsWorkflow):
         ]
 
 
-class MakeChecksumBatchMultipleWorkflow(AbsWorkflow):
+class MakeChecksumBatchMultipleWorkflow(AbcMakeChecksumWorkflow):
     name = "Make Checksum Batch [Multiple]"
     description = "The checksum is a signature of a file.  If any data " \
                   "is changed, the checksum will provide a different " \
@@ -136,7 +144,7 @@ class MakeChecksumBatchMultipleWorkflow(AbsWorkflow):
             report_to_save_to = os.path.normpath(
                 os.path.join(package_root, "checksum.md5"))
 
-            for root, dirs, files in os.walk(package_root):
+            for root, _, files in os.walk(package_root):
                 for file_ in files:
                     full_path = os.path.join(root, file_)
                     relpath = os.path.relpath(full_path, package_root)
@@ -163,26 +171,6 @@ class MakeChecksumBatchMultipleWorkflow(AbsWorkflow):
             source_path, filename, report_name)
 
         task_builder.add_subtask(new_task)
-
-    @classmethod
-    def sort_results(cls,
-                     results: typing.List[typing.Mapping[ResultsValues, str]]
-                     ) -> typing.Dict[str,
-                                      typing.List[typing.Dict[ResultsValues,
-                                                              str]]]:
-
-        new_results: DefaultDict[str, list] = collections.defaultdict(list)
-
-        sorted_results = sorted(results,
-                                key=lambda it: it[ResultsValues.CHECKSUM_FILE])
-
-        for k, v in itertools.groupby(
-                sorted_results,
-                key=lambda it: it[ResultsValues.CHECKSUM_FILE]):
-
-            for result_data in v:
-                new_results[k].append(result_data)
-        return dict(new_results)
 
     def completion_task(self, task_builder: tasks.TaskBuilder, results,
                         **user_args) -> None:

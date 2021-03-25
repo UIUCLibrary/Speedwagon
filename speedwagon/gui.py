@@ -93,9 +93,9 @@ class ConsoleLogger(logging.Handler):
         try:
             msg = self.format(record)
             self.console.add_message(msg)
-        except RuntimeError as e:
-            print("Error: {}".format(e), file=sys.stderr)
-            traceback.print_tb(e.__traceback__)
+        except RuntimeError as error:
+            print("Error: {}".format(error), file=sys.stderr)
+            traceback.print_tb(error.__traceback__)
 
 
 class ItemTabsWidget(QtWidgets.QWidget):
