@@ -11,6 +11,8 @@ from speedwagon.job import AbsWorkflow
 import pykdu_compress
 from py3exiv2bind.core import set_dpi
 
+__all__ = ['ConvertTiffToHathiJp2Workflow']
+
 
 class TaskType(enum.Enum):
     COPY = "copy"
