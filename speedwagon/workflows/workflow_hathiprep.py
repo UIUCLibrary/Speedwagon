@@ -100,9 +100,10 @@ class HathiPrepWorkflow(speedwagon.Workflow):
         else:
             raise ValueError("Unknown type {}".format(image_type))
 
-        packages = [package for package in
-                    package_factory.locate_packages(root_dir)]
-        browser = PackageBrowser(packages, parent)
+        browser = PackageBrowser(
+            list(package_factory.locate_packages(root_dir)),
+            parent
+        )
         browser.exec()
         result = browser.result()
         if result != browser.Accepted:
