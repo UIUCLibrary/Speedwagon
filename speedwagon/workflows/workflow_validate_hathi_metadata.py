@@ -8,6 +8,8 @@ from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
 
+__all__ = ['ValidateImageMetadataWorkflow']
+
 
 class ImageFile(options.AbsBrowseableWidget):
     def browse_clicked(self):
