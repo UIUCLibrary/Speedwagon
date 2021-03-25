@@ -11,6 +11,8 @@ from speedwagon import tasks, reports
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
 
+__all__ = ['ConvertTiffPreservationToDLJp2Workflow']
+
 
 class AbsProcessStrategy(metaclass=abc.ABCMeta):
 

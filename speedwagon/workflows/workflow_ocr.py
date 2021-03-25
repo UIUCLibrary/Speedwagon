@@ -11,6 +11,8 @@ from speedwagon.workflows import shared_custom_widgets
 from speedwagon import tasks
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 
+__all__ = ['OCRWorkflow']
+
 
 def locate_tessdata() -> Optional[str]:
     path = os.path.join(os.path.dirname(__file__), "tessdata")

@@ -10,6 +10,8 @@ from uiucprescon import packager
 from speedwagon import tasks, reports
 from speedwagon.worker import GuiLogHandler
 
+__all__ = ['HathiLimitedToDLWorkflow']
+
 
 class HathiLimitedToDLWorkflow(Workflow):
     name = "Convert HathiTrust limited view to Digital library"

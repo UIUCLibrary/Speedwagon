@@ -14,6 +14,9 @@ from speedwagon.workflows import shared_custom_widgets as options
 from speedwagon.worker import GuiLogHandler
 
 
+__all__ = ['CaptureOneToDlCompoundAndDLWorkflow']
+
+
 class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
     """Settings for convert capture one tiff files."""
 

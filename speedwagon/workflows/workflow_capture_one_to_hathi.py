@@ -1,5 +1,3 @@
-__all__ = ['CaptureOneToHathiTiffPackageWorkflow']
-
 import logging
 from typing import List, Any
 from contextlib import contextmanager
@@ -10,6 +8,8 @@ from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
 from speedwagon.worker import GuiLogHandler
 from . import shared_custom_widgets as options
+
+__all__ = ['CaptureOneToHathiTiffPackageWorkflow']
 
 
 class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):

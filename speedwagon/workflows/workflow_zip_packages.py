@@ -11,6 +11,8 @@ from . import shared_custom_widgets as options
 import hathizip.process
 import hathizip
 
+__all__ = ['ZipPackagesWorkflow']
+
 
 class ZipPackagesWorkflow(AbsWorkflow):
     name = "Zip Packages"
