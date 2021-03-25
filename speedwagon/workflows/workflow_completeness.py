@@ -123,9 +123,9 @@ class CompletenessWorkflow(AbsWorkflow):
 
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
         _result_grouped = itertools.groupby(results_sorted, lambda x: x.source)
-        results_grouped = dict()
-        for key, group in _result_grouped:
-            results_grouped[key] = [i.data for i in group]
+        results_grouped = {
+            key: [i.data for i in group] for key, group in _result_grouped
+        }
 
         manifest_report = results_grouped[HathiManifestGenerationTask][0]
 
