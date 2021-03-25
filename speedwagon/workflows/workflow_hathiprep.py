@@ -85,7 +85,7 @@ class HathiPrepWorkflow(speedwagon.Workflow):
     def get_additional_info(self,
                             parent: QtWidgets.QWidget,
                             options: Mapping[str, str],
-                            initial_results: list
+                            pretask_results: list
                             ) -> Dict[str, List[collection.Package]]:
 
         image_type = options['Image File Type']
