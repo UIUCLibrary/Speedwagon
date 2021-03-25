@@ -127,26 +127,23 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
             list of dictionaries of job metadata
 
         """
-        jobs = []
         server_url = self.global_settings.get("getmarc_server_url")
         if server_url is None:
             raise MissingConfiguration("getmarc_server_url")
 
-        for folder in filter(self.filter_bib_id_folders,
-                             os.scandir(user_args["Input"])):
-            jobs.append({
-                "directory": {
-                    "value": folder.name,
-                    "type": user_args['Identifier type'],
-                },
-                "enhancements": {
-                    "955": user_args.get("Add 955 field", False),
-                    "035": user_args.get("Add 035 field", False)
-                },
-                "api_server": server_url,
-                "path": folder.path
-            })
-        return jobs
+        return [{
+            "directory": {
+                "value": folder.name,
+                "type": user_args['Identifier type'],
+            },
+            "enhancements": {
+                "955": user_args.get("Add 955 field", False),
+                "035": user_args.get("Add 035 field", False)
+            },
+            "api_server": server_url,
+            "path": folder.path
+        } for folder in filter(self.filter_bib_id_folders,
+                               os.scandir(user_args["Input"]))]
 
     @staticmethod
     def validate_user_options(**user_args: Dict[str, str]) -> bool:
