@@ -617,7 +617,7 @@ class HathiManifestGenerationTask(CompletenessSubTask):
                     package_path.path
                 )
 
-                for root, dirs, files in os.walk(package_path.path):
+                for root, _, files in os.walk(package_path.path):
                     for file_ in files:
                         relative = os.path.relpath(root,
                                                    os.path.abspath(batch_root))
