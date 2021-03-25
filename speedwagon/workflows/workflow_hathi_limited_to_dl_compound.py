@@ -26,10 +26,10 @@ class HathiLimitedToDLWorkflow(Workflow):
 
         new_tasks = []
 
-        for p in hathi_limited_view_packager.locate_packages(
+        for package in hathi_limited_view_packager.locate_packages(
                 user_args['Input']):
             new_tasks.append({
-                "package": p,
+                "package": package,
                 "destination": user_args['Output']
             })
 
