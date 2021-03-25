@@ -20,6 +20,8 @@ from speedwagon.worker import GuiLogHandler
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
 
+__all__ = ['CompletenessWorkflow']
+
 
 class CompletenessWorkflow(AbsWorkflow):
     name = "Verify HathiTrust Package Completeness"
