@@ -161,3 +161,24 @@ def test_generate_checksum_task_task_calls_create_checksum_report(monkeypatch):
         mp.setattr(shutil, "move", lambda source, dest: True)
         assert task.work() is True
     assert mock_package_builder.create_checksum_report.called is True
+
+
+def test_prep_task_task_calls_generate_package(monkeypatch):
+    root_path = "some/sample/root"
+
+    task = workflow_hathiprep.PrepTask(
+        source=root_path,
+        title_page="1234-0001.tif"
+    )
+
+    task.log = Mock()
+    mock_package_builder = MagicMock()
+
+    def mock_inplace_package(*args, **kwargs):
+        return mock_package_builder
+
+    from pyhathiprep import package_creater
+    with monkeypatch.context() as mp:
+        mp.setattr(package_creater, "InplacePackage", mock_inplace_package)
+        assert task.work() is True
+    assert mock_package_builder.generate_package.called is True
