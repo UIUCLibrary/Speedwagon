@@ -96,45 +96,38 @@ class HathiPrepWorkflow(speedwagon.Workflow):
         if result != browser.Accepted:
             raise speedwagon.JobCancelled()
 
-        extra = {
+        return {
             'packages': browser.data()
         }
-
-        return extra
 
     @classmethod
     def generate_report(cls, results: typing.List[speedwagon.tasks.Result],
                         **user_args) -> typing.Optional[str]:
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
         _result_grouped = itertools.groupby(results_sorted, lambda x: x.source)
-        results_grouped = dict()
-
-        for k, v in _result_grouped:
-            results_grouped[k] = [i.data for i in v]
-
-        objects = set()
+        results_grouped = {k: [i.data for i in v] for k, v in _result_grouped}
 
         num_checksum_files = len(results_grouped[GenerateChecksumTask])
         num_yaml_files = len(results_grouped[MakeYamlTask])
 
-        for result in results_grouped[GenerateChecksumTask]:
-            objects.add(result['package_id'])
+        objects = {
+            result['package_id']
+            for result in results_grouped[GenerateChecksumTask]
+        }
 
         for result in results_grouped[MakeYamlTask]:
             objects.add(result['package_id'])
 
         objects_prepped_list = "\n  ".join(objects)
 
-        process_report = f"HathiPrep Report:" \
+        return f"HathiPrep Report:" \
                          f"\n" \
                          f"\nPrepped the following objects:" \
                          f"\n  {objects_prepped_list}" \
                          f"\n" \
                          f"\nTotal files generated: " \
                          f"\n  {num_checksum_files} checksum.md5 files" \
-                         f"\n  {num_yaml_files} meta.yml files" \
-
-        return process_report
+                         f"\n  {num_yaml_files} meta.yml files"
 
 
 class FindPackagesTask(speedwagon.tasks.Subtask):
