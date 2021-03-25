@@ -451,8 +451,8 @@ class ValidateMarcTask(CompletenessSubTask):
                 self.set_results(report_builder.construct())
                 return False
 
-            for error in result_builder.construct():
-                errors.append(error)
+            for error_found in result_builder.construct():
+                errors.append(error_found)
             self.set_results(errors)
         return True
 
