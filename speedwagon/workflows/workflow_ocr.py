@@ -215,7 +215,7 @@ class OCRWorkflow(speedwagon.Workflow):
             return True
 
         for f in filter(filter_only_trainingdata, os.scandir(path)):
-            yield(os.path.splitext(f.name)[0])
+            yield os.path.splitext(f.name)[0]
 
     @staticmethod
     def validate_user_options(**user_args):
