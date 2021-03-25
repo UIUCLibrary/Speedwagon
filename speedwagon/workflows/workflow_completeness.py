@@ -124,8 +124,8 @@ class CompletenessWorkflow(AbsWorkflow):
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
         _result_grouped = itertools.groupby(results_sorted, lambda x: x.source)
         results_grouped = dict()
-        for k, g in _result_grouped:
-            results_grouped[k] = [i.data for i in g]
+        for key, group in _result_grouped:
+            results_grouped[key] = [i.data for i in group]
 
         manifest_report = results_grouped[HathiManifestGenerationTask][0]
 
@@ -272,11 +272,13 @@ class HathiCheckMissingComponentsTask(CompletenessSubTask):
                 )
                 self.set_results(report_builder.construct())
                 return False
-            except PermissionError as e:
+            except PermissionError as error:
                 report_builder = hathi_result.SummaryDirector(
                    source=self.package_path
                 )
-                report_builder.add_error("Permission issues. \"{}\"".format(e))
+                report_builder.add_error(
+                    "Permission issues. \"{}\"".format(error)
+                )
                 self.set_results(report_builder.construct())
                 return False
 
@@ -435,15 +437,17 @@ class ValidateMarcTask(CompletenessSubTask):
                         for error in marc_errors:
                             self.log(error.message)
                             errors.append(error)
-            except FileNotFoundError as e:
+            except FileNotFoundError as error:
                 result_builder.add_error(
-                    "Unable to Validate Marc. Reason: {}".format(e)
+                    "Unable to Validate Marc. Reason: {}".format(error)
                 )
-            except PermissionError as e:
+            except PermissionError as error:
                 report_builder = hathi_result.SummaryDirector(
                    source=self.package_path
                 )
-                report_builder.add_error("Permission issues. \"{}\"".format(e))
+                report_builder.add_error(
+                    "Permission issues. \"{}\"".format(error)
+                )
                 self.set_results(report_builder.construct())
                 return False
 
