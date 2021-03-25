@@ -1,8 +1,8 @@
+"""Hathi Prep Workflow."""
 import itertools
 import os
 import shutil
-import typing
-
+from typing import Mapping, List, Any, Sequence, Dict, Union, Optional
 from PyQt5 import QtWidgets  # type: ignore
 
 from pyhathiprep import package_creater
@@ -17,8 +17,12 @@ from . import shared_custom_widgets
 
 __all__ = ['HathiPrepWorkflow']
 
+from .shared_custom_widgets import UserOption2, UserOption3
+
 
 class HathiPrepWorkflow(speedwagon.Workflow):
+    """Workflow for Hathi prep."""
+
     name = "Hathi Prep"
     description = "Enables user to select, from a dropdown list of image " \
                   "file names, the title page to be displayed on the " \
@@ -30,8 +34,13 @@ class HathiPrepWorkflow(speedwagon.Workflow):
                   "viewer." \
 
 
-    def user_options(self):
-        options = []
+    def user_options(self) -> List[Union[UserOption2, UserOption3]]:
+        """Get the user arguments for the workflow.
+
+        Returns:
+            Returns information about the package type and the source directory
+        """
+        options: List[Union[UserOption2, UserOption3]] = []
         package_type = shared_custom_widgets.ListSelection("Image File Type")
         package_type.add_selection("JPEG 2000")
         package_type.add_selection("TIFF")
@@ -42,18 +51,40 @@ class HathiPrepWorkflow(speedwagon.Workflow):
         options.append(package_type)
         return options
 
-    def initial_task(self, task_builder: speedwagon.tasks.TaskBuilder,
-                     **user_args) -> None:
+    def initial_task(self,
+                     task_builder: speedwagon.tasks.TaskBuilder,
+                     **user_args: str
+                     ) -> None:
+        """Look for any packages located in the input argument directory.
 
+        Args:
+            task_builder:
+            **user_args:
+
+        """
         root = user_args['input']
         task_builder.add_subtask(FindPackagesTask(root))
 
-    def discover_task_metadata(self, initial_results: typing.List[typing.Any],
-                               additional_data,
-                               **user_args) -> typing.List[dict]:
-        jobs = []
-        for package in additional_data["packages"]:
-            job = {
+    def discover_task_metadata(self,
+                               initial_results: List[Any],
+                               additional_data: Dict[str, Any],
+                               **user_args) -> List[Dict[str, str]]:
+        """Get enough information about the packages to create a new job.
+
+        Args:
+            initial_results:
+            additional_data:
+            **user_args:
+
+        Returns:
+            Returns a dictionary containing the title page, package id, and
+                the source path.
+
+        """
+        jobs: List[Dict[str, str]] = []
+        packages: Sequence[collection.Package] = additional_data["packages"]
+        for package in packages:
+            job: Dict[str, str] = {
                 "package_id": package.metadata[collection.Metadata.ID],
                 "title_page": package.metadata[collection.Metadata.TITLE_PAGE],
                 "source_path": package.metadata[collection.Metadata.PATH]
@@ -62,8 +93,17 @@ class HathiPrepWorkflow(speedwagon.Workflow):
 
         return jobs
 
-    def create_new_task(self, task_builder: "speedwagon.tasks.TaskBuilder",
-                        **job_args):
+    def create_new_task(self,
+                        task_builder: "speedwagon.tasks.TaskBuilder",
+                        **job_args: str
+                        ) -> None:
+        """Add yaml and checksum tasks.
+
+        Args:
+            task_builder:
+            **job_args:
+
+        """
         title_page = job_args['title_page']
         source = job_args['source_path']
         package_id = job_args['package_id']
@@ -74,8 +114,22 @@ class HathiPrepWorkflow(speedwagon.Workflow):
         task_builder.add_subtask(
             subtask=GenerateChecksumTask(package_id, source))
 
-    def get_additional_info(self, parent: QtWidgets.QWidget, options: dict,
-                            initial_results: list) -> dict:
+    def get_additional_info(self,
+                            parent: QtWidgets.QWidget,
+                            options: Mapping[str, str],
+                            pretask_results: list
+                            ) -> Dict[str, List[collection.Package]]:
+        """Request information from user about the title page.
+
+        Args:
+            parent:
+            options:
+            pretask_results:
+
+        Returns:
+            Returns the title page information
+
+        """
         image_type = options['Image File Type']
 
         root_dir = options['input']
@@ -88,65 +142,69 @@ class HathiPrepWorkflow(speedwagon.Workflow):
         else:
             raise ValueError("Unknown type {}".format(image_type))
 
-        packages = [package for package in
-                    package_factory.locate_packages(root_dir)]
-        browser = PackageBrowser(packages, parent)
+        browser = PackageBrowser(
+            list(package_factory.locate_packages(root_dir)),
+            parent
+        )
         browser.exec()
         result = browser.result()
         if result != browser.Accepted:
             raise speedwagon.JobCancelled()
-
-        extra = {
+        # List[collection.Package]
+        return {
             'packages': browser.data()
         }
 
-        return extra
-
     @classmethod
-    def generate_report(cls, results: typing.List[speedwagon.tasks.Result],
-                        **user_args) -> typing.Optional[str]:
+    def generate_report(cls, results: List[speedwagon.tasks.Result],
+                        **user_args) -> Optional[str]:
+        """Generate a report about prepping work.
+
+        Args:
+            results:
+            **user_args:
+
+        Returns:
+            Returns a string explaining the prepped objects.
+
+        """
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
         _result_grouped = itertools.groupby(results_sorted, lambda x: x.source)
-        results_grouped = dict()
-
-        for k, v in _result_grouped:
-            results_grouped[k] = [i.data for i in v]
-
-        objects = set()
+        results_grouped = {k: [i.data for i in v] for k, v in _result_grouped}
 
         num_checksum_files = len(results_grouped[GenerateChecksumTask])
         num_yaml_files = len(results_grouped[MakeYamlTask])
 
-        for result in results_grouped[GenerateChecksumTask]:
-            objects.add(result['package_id'])
+        objects = {
+            result['package_id']
+            for result in results_grouped[GenerateChecksumTask]
+        }
 
         for result in results_grouped[MakeYamlTask]:
             objects.add(result['package_id'])
 
         objects_prepped_list = "\n  ".join(objects)
 
-        process_report = f"HathiPrep Report:" \
-                         f"\n" \
-                         f"\nPrepped the following objects:" \
-                         f"\n  {objects_prepped_list}" \
-                         f"\n" \
-                         f"\nTotal files generated: " \
-                         f"\n  {num_checksum_files} checksum.md5 files" \
-                         f"\n  {num_yaml_files} meta.yml files" \
-
-        return process_report
+        return f"HathiPrep Report:" \
+               f"\n" \
+               f"\nPrepped the following objects:" \
+               f"\n  {objects_prepped_list}" \
+               f"\n" \
+               f"\nTotal files generated: " \
+               f"\n  {num_checksum_files} checksum.md5 files" \
+               f"\n  {num_yaml_files} meta.yml files"
 
 
 class FindPackagesTask(speedwagon.tasks.Subtask):
 
-    def __init__(self, root) -> None:
+    def __init__(self, root: str) -> None:
         super().__init__()
         self._root = root
 
     def work(self) -> bool:
         self.log("Locating packages in {}".format(self._root))
 
-        def find_dirs(item: os.DirEntry):
+        def find_dirs(item: os.DirEntry) -> bool:
 
             if not item.is_dir():
                 return False
@@ -163,14 +221,14 @@ class FindPackagesTask(speedwagon.tasks.Subtask):
 
 
 class MakeYamlTask(speedwagon.tasks.Subtask):
-    def __init__(self, package_id, source, title_page) -> None:
+    def __init__(self, package_id: str, source: str, title_page: str) -> None:
         super().__init__()
 
         self._source = source
         self._title_page = title_page
         self._package_id = package_id
 
-    def work(self):
+    def work(self) -> bool:
         meta_filename = "meta.yml"
         self.log("Generating meta.yml for {}".format(self._package_id))
         package_builder = package_creater.InplacePackage(self._source)
@@ -199,7 +257,7 @@ class MakeYamlTask(speedwagon.tasks.Subtask):
 
 class GenerateChecksumTask(speedwagon.tasks.Subtask):
 
-    def __init__(self, package_id, source) -> None:
+    def __init__(self, package_id: str, source: str) -> None:
         super().__init__()
         self._source = source
         self._package_id = package_id
@@ -234,7 +292,7 @@ class GenerateChecksumTask(speedwagon.tasks.Subtask):
 
 class PrepTask(speedwagon.tasks.Subtask):
 
-    def __init__(self, source, title_page) -> None:
+    def __init__(self, source: str, title_page: str) -> None:
         super().__init__()
 
         self._source = source

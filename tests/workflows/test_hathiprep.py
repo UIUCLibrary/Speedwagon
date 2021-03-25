@@ -53,6 +53,8 @@ def test_get_additional_info_opens_dialog_box(monkeypatch):
     package_browser = Mock()
     package_browser.result = Mock(return_value=PackageBrowser.Accepted)
     package_browser.Accepted = PackageBrowser.Accepted
+
+
     def mock_package_browser(packages, parent):
         return package_browser
     with monkeypatch.context() as mp:
@@ -66,7 +68,7 @@ def test_get_additional_info_opens_dialog_box(monkeypatch):
         extra_info = workflow.get_additional_info(
             None,
             options=user_args,
-            initial_results=[]
+            pretask_results=[]
         )
     assert package_browser.exec.called is True and \
            "packages" in extra_info
