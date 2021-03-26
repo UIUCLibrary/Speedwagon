@@ -80,7 +80,10 @@ class OCRWorkflow(speedwagon.Workflow):
         self.set_description(description)
 
     @staticmethod
-    def _get_tessdata_dir(args, global_settings: Dict[str, str]) -> Optional[str]:
+    def _get_tessdata_dir(args,
+                          global_settings: Dict[str, str]
+                          ) -> Optional[str]:
+
         tessdata_path = global_settings.get("tessdata")
         if tessdata_path is None:
             try:
