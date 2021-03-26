@@ -13,6 +13,8 @@ from . import shared_custom_widgets as options
 
 __all__ = ['ConvertTiffToHathiJp2Workflow']
 
+from .shared_custom_widgets import UserOption3
+
 
 class TaskType(enum.Enum):
     COPY = "copy"
@@ -25,7 +27,7 @@ class AbsProcessStrategy(metaclass=abc.ABCMeta):
         self.status = ""
 
     @abc.abstractmethod
-    def process(self, source_file, destination_path):
+    def process(self, source_file: str, destination_path: str) -> None:
         pass
 
 
@@ -33,7 +35,7 @@ class ProcessFile:
     def __init__(self, process_strategy: AbsProcessStrategy) -> None:
         self._strategy = process_strategy
 
-    def process(self, source_file, destination_path):
+    def process(self, source_file: str, destination_path: str) -> None:
         self._strategy.process(source_file, destination_path)
 
     def status_message(self):
@@ -42,7 +44,7 @@ class ProcessFile:
 
 class ConvertFile(AbsProcessStrategy):
 
-    def process(self, source_file, destination_path):
+    def process(self, source_file: str, destination_path: str) -> None:
         basename, ext = os.path.splitext(os.path.basename(source_file))
 
         output_file_path = os.path.join(destination_path,
@@ -70,7 +72,7 @@ class ConvertFile(AbsProcessStrategy):
 
 class CopyFile(AbsProcessStrategy):
 
-    def process(self, source_file, destination_path):
+    def process(self, source_file: str, destination_path: str) -> None:
         filename = os.path.basename(source_file)
         shutil.copyfile(source_file, os.path.join(destination_path, filename))
         self.status = "Copied {} to {}".format(source_file, destination_path)
@@ -87,12 +89,12 @@ class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
                   "be replaced by HathiTrust-compliant JP2 files."
 
     def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
+                               additional_data, **user_args: str) -> List[dict]:
         jobs = []
         source_input = user_args["Input"]
         dest = user_args["Output"]
 
-        def filter_only_tif_files(filename):
+        def filter_only_tif_files(filename: str) -> bool:
             basename, ext = os.path.splitext(filename)
             if ext.lower() != ".tif":
                 return False
@@ -129,13 +131,13 @@ class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
 
         return jobs
 
-    def user_options(self):
+    def user_options(self) -> List[UserOption3]:
         return [
             options.UserOptionCustomDataType("Input", options.FolderData),
             options.UserOptionCustomDataType("Output", options.FolderData)
         ]
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args: str) -> None:
         output_root = job_args['output_root']
         relative_path_to_root = job_args['relative_path_to_root']
         source_root = job_args['source_root']
@@ -159,7 +161,7 @@ class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
 
 class ImageConvertTask(tasks.Subtask):
 
-    def __init__(self, source_file_path, output_path) -> None:
+    def __init__(self, source_file_path: str, output_path: str) -> None:
         super().__init__()
         self._source_file_path = source_file_path
         self._output_path = output_path
@@ -179,7 +181,7 @@ class ImageConvertTask(tasks.Subtask):
 
 class CopyTask(tasks.Subtask):
 
-    def __init__(self, source_file_path, output_path) -> None:
+    def __init__(self, source_file_path: str, output_path: str) -> None:
         super().__init__()
         self._source_file_path = source_file_path
         self._output_path = output_path
