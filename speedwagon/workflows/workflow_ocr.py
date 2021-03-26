@@ -2,7 +2,7 @@ import io
 import os
 import sys
 
-from typing import List, Any, Optional, Iterator
+from typing import List, Any, Optional, Iterator, Dict
 import contextlib
 from uiucprescon import ocr
 import speedwagon
@@ -13,6 +13,8 @@ from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 
 __all__ = ['OCRWorkflow']
 
+from speedwagon.workflows.shared_custom_widgets import UserOption2
+
 
 def locate_tessdata() -> Optional[str]:
     path = os.path.join(os.path.dirname(__file__), "tessdata")
@@ -21,7 +23,7 @@ def locate_tessdata() -> Optional[str]:
     return None
 
 
-def path_contains_traineddata(path) -> bool:
+def path_contains_traineddata(path: str) -> bool:
     for file in os.scandir(path):
         if not file.is_file():
             continue
@@ -78,7 +80,10 @@ class OCRWorkflow(speedwagon.Workflow):
         self.set_description(description)
 
     @staticmethod
-    def _get_tessdata_dir(args, global_settings) -> Optional[str]:
+    def _get_tessdata_dir(args,
+                          global_settings: Dict[str, str]
+                          ) -> Optional[str]:
+
         tessdata_path = global_settings.get("tessdata")
         if tessdata_path is None:
             try:
@@ -91,8 +96,10 @@ class OCRWorkflow(speedwagon.Workflow):
     def set_description(cls, text: str):
         cls.description = text
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
+    def discover_task_metadata(self,
+                               initial_results: List[tasks.Result],
+                               additional_data: Dict[str, Any],
+                               **user_args) -> List[dict]:
 
         if self.tessdata_path is not None and \
                 not os.path.exists(self.tessdata_path):
@@ -121,7 +128,10 @@ class OCRWorkflow(speedwagon.Workflow):
                 new_tasks.append(new_task)
         return new_tasks
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(self,
+                        task_builder: tasks.TaskBuilder,
+                        **job_args: str) -> None:
+
         image_file = job_args["source_file_path"]
         destination_path = job_args["destination_path"]
         ocr_file_name = job_args["output_file_name"]
@@ -135,8 +145,9 @@ class OCRWorkflow(speedwagon.Workflow):
             )
         task_builder.add_subtask(ocr_generation_task)
 
-    def initial_task(self, task_builder: tasks.TaskBuilder,
-                     **user_args) -> None:
+    def initial_task(self,
+                     task_builder: tasks.TaskBuilder,
+                     **user_args: str) -> None:
 
         root = user_args['Path']
         file_type = user_args["Image File Type"]
@@ -151,7 +162,7 @@ class OCRWorkflow(speedwagon.Workflow):
         return cls.SUPPORTED_IMAGE_TYPES[file_type]
 
     def user_options(self):
-        def valid_tessdata_path(item) -> bool:
+        def valid_tessdata_path(item: Optional[str]) -> bool:
 
             if item is None:
                 return False
@@ -161,7 +172,7 @@ class OCRWorkflow(speedwagon.Workflow):
 
             return path_contains_traineddata(item)
 
-        options = []
+        options: List[UserOption2] = []
 
         package_type = shared_custom_widgets.ListSelection("Image File Type")
 
@@ -198,7 +209,7 @@ class OCRWorkflow(speedwagon.Workflow):
         return options
 
     @staticmethod
-    def get_available_languages(path) -> Iterator[str]:
+    def get_available_languages(path: str) -> Iterator[str]:
 
         def filter_only_trainingdata(item: os.DirEntry) -> bool:
             if not item.is_file():
@@ -215,10 +226,10 @@ class OCRWorkflow(speedwagon.Workflow):
             return True
 
         for f in filter(filter_only_trainingdata, os.scandir(path)):
-            yield(os.path.splitext(f.name)[0])
+            yield os.path.splitext(f.name)[0]
 
     @staticmethod
-    def validate_user_options(**user_args):
+    def validate_user_options(**user_args: str) -> bool:
         path = user_args["Path"]
         if path is None:
             raise ValueError("No path selected")
@@ -228,6 +239,7 @@ class OCRWorkflow(speedwagon.Workflow):
         if not os.path.isdir(path):
             raise ValueError(
                 "Input not a valid directory {}.".format(path))
+        return True
 
     @classmethod
     def generate_report(cls, results: List[tasks.Result],
@@ -257,7 +269,7 @@ class OCRWorkflow(speedwagon.Workflow):
 
 class FindImagesTask(speedwagon.tasks.Subtask):
 
-    def __init__(self, root, file_extension) -> None:
+    def __init__(self, root: str, file_extension: str) -> None:
         super().__init__()
         self._root = root
         self._extension = file_extension
@@ -265,7 +277,7 @@ class FindImagesTask(speedwagon.tasks.Subtask):
     def work(self) -> bool:
         self.log("Locating {} files in {}".format(self._extension, self._root))
 
-        def find_images(file_located: str):
+        def find_images(file_located: str) -> bool:
 
             if os.path.isdir(file_located):
                 return False
@@ -291,8 +303,11 @@ class FindImagesTask(speedwagon.tasks.Subtask):
 class GenerateOCRFileTask(speedwagon.tasks.Subtask):
     engine = ocr.Engine(locate_tessdata())
 
-    def __init__(self, source_image, out_text_file, lang="eng",
-                 tesseract_path=None) -> None:
+    def __init__(self,
+                 source_image: str,
+                 out_text_file: str,
+                 lang: str = "eng",
+                 tesseract_path: str = None) -> None:
         super().__init__()
 
         self._source = source_image
@@ -303,7 +318,7 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
         assert self.engine is not None
 
     @classmethod
-    def set_tess_path(cls, path=None):
+    def set_tess_path(cls, path: str = None) -> None:
         if path is None:
             path = locate_tessdata()
         assert path is not None
@@ -326,7 +341,7 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
         self.set_results(result)
         return True
 
-    def read_image(self, file, lang):
+    def read_image(self, file: str, lang: str) -> str:
 
         if self.engine.data_set_path is None:
             self.engine.data_set_path = self._tesseract_path

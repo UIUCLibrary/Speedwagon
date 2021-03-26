@@ -1,5 +1,5 @@
 import logging
-from typing import List, Any
+from typing import List, Any, Dict
 from contextlib import contextmanager
 from uiucprescon import packager
 from uiucprescon.packager.packages.collection_builder import Metadata
@@ -10,6 +10,8 @@ from speedwagon.worker import GuiLogHandler
 from . import shared_custom_widgets as options
 
 __all__ = ['CaptureOneToHathiTiffPackageWorkflow']
+
+from .shared_custom_widgets import UserOption3
 
 
 class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
@@ -24,12 +26,14 @@ class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
                   "new files will be written."
     active = True
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
+    def discover_task_metadata(self,
+                               initial_results: List[Any],
+                               additional_data: Dict[str, Any],
+                               **user_args) -> List[dict]:
 
         jobs = []
-        source_input = user_args["Input"]
-        dest = user_args["Output"]
+        source_input: str = user_args["Input"]
+        dest: str = user_args["Output"]
 
         package_factory = packager.PackageFactory(
             packager.packages.CaptureOnePackage())
@@ -43,7 +47,7 @@ class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
             )
         return jobs
 
-    def user_options(self):
+    def user_options(self) -> List[UserOption3]:
         return [
             options.UserOptionCustomDataType("Input", options.FolderData),
             options.UserOptionCustomDataType("Output", options.FolderData)
@@ -56,9 +60,9 @@ class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
     ) -> None:
 
         existing_package = job_args['package']
-        new_package_root = job_args["output"]
-        source_path = job_args["source_path"]
-        package_id = existing_package.metadata[Metadata.ID]
+        new_package_root: str = job_args["output"]
+        source_path: str = job_args["source_path"]
+        package_id: str = existing_package.metadata[Metadata.ID]
 
         packaging_task = PackageConverter(
             source_path=source_path,
@@ -72,7 +76,7 @@ class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
 
 class PackageConverter(tasks.Subtask):
     @contextmanager
-    def log_config(self, logger):
+    def log_config(self, logger: logging.Logger):
         gui_logger = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)
@@ -85,7 +89,7 @@ class PackageConverter(tasks.Subtask):
             source_path: str,
             packaging_id: str,
             existing_package,
-            new_package_root
+            new_package_root: str
     ) -> None:
 
         super().__init__()
