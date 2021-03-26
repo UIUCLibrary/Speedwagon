@@ -19,10 +19,25 @@ def test_package_image_task_success(monkeypatch):
     assert mock_processfile.called is True
 
 
+def test_validate_user_options_valid(monkeypatch):
+    user_args = {
+        "Input": "./some/path/preservation"
+    }
+    import os.path
+    monkeypatch.setattr(os.path, "exists", lambda x: True)
+    monkeypatch.setattr(os.path, "isdir", lambda x: True)
+    validator = \
+        capture_one_workflow. \
+            ConvertTiffPreservationToDLJp2Workflow. \
+            validate_user_options
+    assert validator(**user_args) is True
+
+
 def test_package_image_task_failure(monkeypatch):
     import os
     mock_processfile = Mock()
-    mock_processfile.process = Mock(side_effect=capture_one_workflow.ProcessingException("failure"))
+    mock_processfile.process = Mock(
+        side_effect=capture_one_workflow.ProcessingException("failure"))
 
     def get_mock_processfile(*args):
         return mock_processfile
@@ -35,4 +50,3 @@ def test_package_image_task_failure(monkeypatch):
             dest_path="eggs"
         )
         assert task.work() is False
-
