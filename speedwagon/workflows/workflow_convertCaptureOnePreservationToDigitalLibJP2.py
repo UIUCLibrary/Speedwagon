@@ -3,7 +3,7 @@ import itertools
 import os
 import sys
 import typing
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 import pykdu_compress
 
@@ -13,12 +13,14 @@ from . import shared_custom_widgets as options
 
 __all__ = ['ConvertTiffPreservationToDLJp2Workflow']
 
+from .shared_custom_widgets import UserOption3
+
 
 class AbsProcessStrategy(metaclass=abc.ABCMeta):
 
     def __init__(self) -> None:
-        self.output = None
-        self.status = None
+        self.output: Optional[str] = None
+        self.status: Optional[str] = None
 
     @abc.abstractmethod
     def process(self, source_file: str, destination_path: str) -> None:
@@ -46,7 +48,7 @@ class ProcessingException(Exception):
 
 class ConvertFile(AbsProcessStrategy):
 
-    def process(self, source_file, destination_path):
+    def process(self, source_file: str, destination_path: str) -> None:
         basename, ext = os.path.splitext(os.path.basename(source_file))
 
         output_file_path = os.path.join(destination_path,
@@ -105,7 +107,7 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
 
         return jobs
 
-    def user_options(self):
+    def user_options(self) -> List[UserOption3]:
         return [
             options.UserOptionCustomDataType("Input", options.FolderData)
             ]
@@ -123,7 +125,7 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
         task_builder.add_subtask(new_task)
 
     @staticmethod
-    def validate_user_options(**user_args):
+    def validate_user_options(**user_args: str) -> bool:
         input_value = user_args["Input"]
 
         if input_value is None:
@@ -138,6 +140,7 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
         if not input_value.endswith("preservation"):
             raise ValueError("Invalid value in input: Not a preservation "
                              "directory")
+        return True
 
     @classmethod
     @reports.add_report_borders
@@ -175,7 +178,7 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
         return report
 
     @classmethod
-    def _partition_results(cls, results):
+    def _partition_results(cls, results: List[tasks.Result]):
         def successful(res) -> bool:
             if not res.data["success"]:
                 return False
@@ -192,7 +195,7 @@ class PackageImageConverterTask(tasks.Subtask):
         self._dest_path = dest_path
         self._source_file_path = source_file_path
 
-    def work(self):
+    def work(self) -> bool:
         des_path = self._dest_path
 
         basename, _ = os.path.splitext(self._source_file_path)
@@ -219,5 +222,8 @@ class PackageImageConverterTask(tasks.Subtask):
                 "success": success
             }
         )
+        status_message = process_task.status_message()
+        if status_message is not None:
+            self.log(status_message)
 
-        self.log(process_task.status_message())
+        return success
