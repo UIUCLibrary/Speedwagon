@@ -26,8 +26,10 @@ class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
                   "new files will be written."
     active = True
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data: Dict[str, Any], **user_args) -> List[dict]:
+    def discover_task_metadata(self,
+                               initial_results: List[Any],
+                               additional_data: Dict[str, Any],
+                               **user_args) -> List[dict]:
 
         jobs = []
         source_input: str = user_args["Input"]
