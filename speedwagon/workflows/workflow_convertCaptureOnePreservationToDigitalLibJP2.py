@@ -3,7 +3,7 @@ import itertools
 import os
 import sys
 import typing
-from typing import List, Any, Optional
+from typing import List, Dict, Optional
 
 import pykdu_compress
 
@@ -13,15 +13,17 @@ from . import shared_custom_widgets as options
 
 __all__ = ['ConvertTiffPreservationToDLJp2Workflow']
 
+from .shared_custom_widgets import UserOption3
+
 
 class AbsProcessStrategy(metaclass=abc.ABCMeta):
 
     def __init__(self) -> None:
-        self.output = None
-        self.status = None
+        self.output: Optional[str] = None
+        self.status: Optional[str] = None
 
     @abc.abstractmethod
-    def process(self, source_file, destination_path):
+    def process(self, source_file: str, destination_path: str) -> None:
         pass
 
 
@@ -29,7 +31,7 @@ class ProcessFile:
     def __init__(self, process_strategy: AbsProcessStrategy) -> None:
         self._strategy = process_strategy
 
-    def process(self, source_file, destination_path):
+    def process(self, source_file: str, destination_path: str) -> None:
         self._strategy.process(source_file, destination_path)
 
     def status_message(self) -> typing.Optional[str]:
@@ -46,7 +48,7 @@ class ProcessingException(Exception):
 
 class ConvertFile(AbsProcessStrategy):
 
-    def process(self, source_file, destination_path):
+    def process(self, source_file: str, destination_path: str) -> None:
         basename, ext = os.path.splitext(os.path.basename(source_file))
 
         output_file_path = os.path.join(destination_path,
@@ -71,8 +73,11 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
                   'files named the same as the TIFFs.'
     active = True
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
+    def discover_task_metadata(self,
+                               initial_results: List[tasks.Result],
+                               additional_data: Dict[str, str],
+                               **user_args: str
+                               ) -> List[Dict[str, str]]:
         jobs = []
         source_input = user_args["Input"]
 
@@ -82,7 +87,7 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
                          "access")
         )
 
-        def filter_only_tif_files(item: os.DirEntry):
+        def filter_only_tif_files(item: os.DirEntry) -> bool:
             if not item.is_file():
                 return False
 
@@ -102,12 +107,15 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
 
         return jobs
 
-    def user_options(self):
+    def user_options(self) -> List[UserOption3]:
         return [
             options.UserOptionCustomDataType("Input", options.FolderData)
             ]
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(self,
+                        task_builder: tasks.TaskBuilder,
+                        **job_args: str) -> None:
+
         source_file = job_args['source_file']
         dest_path = job_args['output_path']
         new_task = PackageImageConverterTask(
@@ -117,7 +125,7 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
         task_builder.add_subtask(new_task)
 
     @staticmethod
-    def validate_user_options(**user_args):
+    def validate_user_options(**user_args: str) -> bool:
         input_value = user_args["Input"]
 
         if input_value is None:
@@ -132,11 +140,13 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
         if not input_value.endswith("preservation"):
             raise ValueError("Invalid value in input: Not a preservation "
                              "directory")
+        return True
 
     @classmethod
     @reports.add_report_borders
-    def generate_report(cls, results: List[tasks.Result], **user_args) -> \
-            Optional[str]:
+    def generate_report(cls,
+                        results: List[tasks.Result],
+                        **user_args: str) -> str:
 
         failure = False
         dest = None
@@ -168,8 +178,8 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
         return report
 
     @classmethod
-    def _partition_results(cls, results):
-        def successful(res):
+    def _partition_results(cls, results: List[tasks.Result]):
+        def successful(res) -> bool:
             if not res.data["success"]:
                 return False
             return True
@@ -180,12 +190,12 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
 
 class PackageImageConverterTask(tasks.Subtask):
 
-    def __init__(self, source_file_path, dest_path) -> None:
+    def __init__(self, source_file_path: str, dest_path: str) -> None:
         super().__init__()
         self._dest_path = dest_path
         self._source_file_path = source_file_path
 
-    def work(self):
+    def work(self) -> bool:
         des_path = self._dest_path
 
         basename, _ = os.path.splitext(self._source_file_path)
@@ -212,5 +222,8 @@ class PackageImageConverterTask(tasks.Subtask):
                 "success": success
             }
         )
+        status_message = process_task.status_message()
+        if status_message is not None:
+            self.log(status_message)
 
-        self.log(process_task.status_message())
+        return success

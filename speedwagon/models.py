@@ -12,6 +12,8 @@ from speedwagon import tabs, Workflow
 from .job import AbsWorkflow
 from .workflows import shared_custom_widgets
 
+QtConstant = int
+
 
 class JobModelData(enum.Enum):
     NAME = 0
@@ -44,7 +46,7 @@ OptionPair = namedtuple("OptionPair", ("label", "data"))
 
 
 class WorkflowListModel(ItemListModel):
-    def data(self, index, role=None) -> \
+    def data(self, index, role: QtConstant = None) -> \
             Union[str, Type[AbsWorkflow], QtCore.QSize, QtCore.QVariant]:
 
         if index.isValid():
@@ -86,7 +88,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
     def rowCount(self, parent=None, *args, **kwargs) -> int:
         return len(self.workflows)
 
-    def data(self, index: QtCore.QModelIndex, role: QtCore.Qt = None):
+    def data(self, index: QtCore.QModelIndex, role: QtConstant = None):
         if not index.isValid():
             return QtCore.QVariant()
         row = index.row()
@@ -116,7 +118,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
             self.endInsertRows()
 
     def setData(self, index: QtCore.QModelIndex,
-                workflow: Any, role: QtCore.Qt = None) -> bool:
+                workflow: Any, role: QtConstant = None) -> bool:
 
         if not index.isValid():
             return False
@@ -230,9 +232,8 @@ class ToolOptionsModel3(ToolOptionsModel):
 
     def __init__(
             self,
-            data: List[
-                shared_custom_widgets.UserOptionPythonDataType2],
-            parent=None
+            data: List[shared_custom_widgets.UserOptionPythonDataType2],
+            parent: QtCore.QObject = None
     ) -> None:
 
         if data is None:
@@ -301,13 +302,13 @@ class SettingsModel(QtCore.QAbstractTableModel):
 
         return QtCore.QVariant()
 
-    def rowCount(self, parent=None, *args, **kwargs):
+    def rowCount(self, parent=None, *args, **kwargs) -> int:
         return len(self._data)
 
-    def add_setting(self, name, value):
+    def add_setting(self, name: str, value: str) -> None:
         self._data.append((name, value))
 
-    def columnCount(self, parent=None, *args, **kwargs):
+    def columnCount(self, parent=None, *args, **kwargs) -> int:
         return 2
 
     def headerData(self, index, Qt_Orientation, role=None):
@@ -329,7 +330,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
             self,
             index: QtCore.QModelIndex,
             data,
-            role: QtCore.Qt = None
+            role: QtConstant = None
     ) -> bool:
 
         if not index.isValid():
@@ -347,7 +348,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
 
 class TabsModel(QtCore.QAbstractListModel):
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QtCore.QObject = None) -> None:
         super().__init__(parent)
         self.tabs: List[tabs.TabData] = []
 
@@ -366,8 +367,10 @@ class TabsModel(QtCore.QAbstractListModel):
         self.remove_tab(other)
         return self
 
-    def data(self, index: QtCore.QModelIndex, role: QtCore.Qt = None) \
-            -> Union[QtCore.QVariant, str, "tabs.TabData"]:
+    def data(self,
+             index: QtCore.QModelIndex,
+             role: QtConstant = None
+             ) -> Union[QtCore.QVariant, str, "tabs.TabData"]:
 
         if not index.isValid():
             return QtCore.QVariant()
@@ -376,12 +379,13 @@ class TabsModel(QtCore.QAbstractListModel):
         if row > len(self.tabs):
             return None
 
-        workflow = {
+        workflow: Dict[int, Any] = {
             QtCore.Qt.DisplayRole: self.tabs[row].tab_name,
             QtCore.Qt.UserRole: self.tabs[row]
         }
-
-        return workflow.get(role, QtCore.QVariant())
+        if role is not None:
+            return workflow.get(role, QtCore.QVariant())
+        return QtCore.QVariant()
 
     def rowCount(self, parent=None, *args, **kwargs) -> int:
         return len(self.tabs)
@@ -406,7 +410,7 @@ class TabsModel(QtCore.QAbstractListModel):
             self,
             index: QtCore.QModelIndex,
             tab,
-            role: QtCore.Qt = None
+            role: QtConstant = None
     ) -> bool:
 
         if not index.isValid():

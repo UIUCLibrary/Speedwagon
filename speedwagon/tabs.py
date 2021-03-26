@@ -341,6 +341,7 @@ class WorkflowsTab(ItemSelectionTab):
         return True
 
     def run(self, workflow: AbsWorkflow, options) -> None:
+
         try:
             workflow.validate_user_options(**options)
 
@@ -421,10 +422,9 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
 
     def setEditorData(
             self,
-            editor: QtWidgets.QPushButton,
+            editor: QtWidgets.QWidget,
             index: QtCore.QModelIndex
     ):
-
         if index.isValid():
             i = index.data(QtCore.Qt.UserRole)
             if isinstance(editor, options.CustomItemWidget):

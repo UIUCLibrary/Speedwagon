@@ -43,7 +43,7 @@ class AbsSubtask(metaclass=abc.ABCMeta):
 
     @status.setter  # type: ignore
     @abc.abstractmethod
-    def status(self, value: TaskStatus):
+    def status(self, value: TaskStatus) -> None:
         pass
 
     @abc.abstractmethod
@@ -136,7 +136,8 @@ class Subtask(AbsSubtask):
         self._result = Result(self.__class__, results)
 
     def log(self, message: str) -> None:
-        self._parent_task_log_q.append(message)
+        if self._parent_task_log_q is not None:
+            self._parent_task_log_q.append(message)
 
     def exec(self) -> None:
         self.status = TaskStatus.WORKING

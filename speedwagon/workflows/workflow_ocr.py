@@ -93,7 +93,7 @@ class OCRWorkflow(speedwagon.Workflow):
         return tessdata_path
 
     @classmethod
-    def set_description(cls, text: str):
+    def set_description(cls, text: str) -> None:
         cls.description = text
 
     def discover_task_metadata(self,
