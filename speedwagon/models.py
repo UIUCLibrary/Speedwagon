@@ -348,7 +348,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
 
 class TabsModel(QtCore.QAbstractListModel):
 
-    def __init__(self, parent: QtCore.QObject=None) -> None:
+    def __init__(self, parent: QtCore.QObject = None) -> None:
         super().__init__(parent)
         self.tabs: List[tabs.TabData] = []
 
