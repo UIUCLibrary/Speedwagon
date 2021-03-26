@@ -2,7 +2,6 @@ import logging
 import os
 import re
 import sys
-# import typing
 from typing import Mapping, Any, Dict, List, Type, Union, Optional
 import itertools
 from contextlib import contextmanager
@@ -187,7 +186,8 @@ class CompletenessWorkflow(AbsWorkflow):
 
     @classmethod
     def _get_result(cls, results_grouped: Dict[Any, List[List[Any]]],
-                    key: Type["CompletenessSubTask"]) -> List[hathi_result.Result]:
+                    key: Type["CompletenessSubTask"]
+                    ) -> List[hathi_result.Result]:
 
         results: List[hathi_result.Result] = []
 

@@ -93,8 +93,10 @@ class OCRWorkflow(speedwagon.Workflow):
     def set_description(cls, text: str):
         cls.description = text
 
-    def discover_task_metadata(self, initial_results: List[tasks.Result],
-                               additional_data: Dict[str, Any], **user_args) -> List[dict]:
+    def discover_task_metadata(self,
+                               initial_results: List[tasks.Result],
+                               additional_data: Dict[str, Any],
+                               **user_args) -> List[dict]:
 
         if self.tessdata_path is not None and \
                 not os.path.exists(self.tessdata_path):
@@ -123,7 +125,10 @@ class OCRWorkflow(speedwagon.Workflow):
                 new_tasks.append(new_task)
         return new_tasks
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args: str) -> None:
+    def create_new_task(self,
+                        task_builder: tasks.TaskBuilder,
+                        **job_args: str) -> None:
+
         image_file = job_args["source_file_path"]
         destination_path = job_args["destination_path"]
         ocr_file_name = job_args["output_file_name"]

@@ -89,7 +89,8 @@ class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
                   "be replaced by HathiTrust-compliant JP2 files."
 
     def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args: str) -> List[dict]:
+                               additional_data,
+                               **user_args: str) -> List[dict]:
         jobs = []
         source_input = user_args["Input"]
         dest = user_args["Output"]
@@ -137,7 +138,10 @@ class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
             options.UserOptionCustomDataType("Output", options.FolderData)
         ]
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args: str) -> None:
+    def create_new_task(self,
+                        task_builder: tasks.TaskBuilder,
+                        **job_args: str) -> None:
+
         output_root = job_args['output_root']
         relative_path_to_root = job_args['relative_path_to_root']
         source_root = job_args['source_root']
