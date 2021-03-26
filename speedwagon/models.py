@@ -12,13 +12,12 @@ from speedwagon import tabs, Workflow
 from .job import AbsWorkflow
 from .workflows import shared_custom_widgets
 
+QtConstant = int
+
 
 class JobModelData(enum.Enum):
     NAME = 0
     DESCRIPTION = 1
-
-
-QtConstant = int
 
 
 class ItemListModel(QtCore.QAbstractTableModel):
@@ -380,12 +379,13 @@ class TabsModel(QtCore.QAbstractListModel):
         if row > len(self.tabs):
             return None
 
-        workflow = {
+        workflow: Dict[int, Any] = {
             QtCore.Qt.DisplayRole: self.tabs[row].tab_name,
             QtCore.Qt.UserRole: self.tabs[row]
         }
-
-        return workflow.get(role, QtCore.QVariant())
+        if role is not None:
+            return workflow.get(role, QtCore.QVariant())
+        return QtCore.QVariant()
 
     def rowCount(self, parent=None, *args, **kwargs) -> int:
         return len(self.tabs)
