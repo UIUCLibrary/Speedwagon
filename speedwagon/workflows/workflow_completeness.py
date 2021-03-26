@@ -2,8 +2,8 @@ import logging
 import os
 import re
 import sys
-import typing
-from typing import Mapping, Any
+# import typing
+from typing import Mapping, Any, Dict, List, Type, Union, Optional
 import itertools
 from contextlib import contextmanager
 
@@ -39,8 +39,7 @@ class CompletenessWorkflow(AbsWorkflow):
                   "valid. (This workflow provides console feedback, but " \
                   "doesn’t write new files as output)."
 
-    def user_options(
-            self) -> typing.List[typing.Union[UserOption2, UserOption3]]:
+    def user_options(self) -> List[Union[UserOption2, UserOption3]]:
 
         check_page_data_option = options.UserOptionPythonDataType2(
             "Check for page_data in meta.yml", bool)
@@ -58,9 +57,9 @@ class CompletenessWorkflow(AbsWorkflow):
             check_ocr_utf8_option
         ]
 
-    def discover_task_metadata(self, initial_results: typing.List[typing.Any],
+    def discover_task_metadata(self, initial_results: List[Any],
                                additional_data: Mapping[str, Any],
-                               **user_args) -> typing.List[dict]:
+                               **user_args) -> List[dict]:
         jobs = []
 
         def directory_only_filter(item: os.DirEntry) -> bool:
@@ -92,10 +91,10 @@ class CompletenessWorkflow(AbsWorkflow):
         return jobs
 
     def create_new_task(self, task_builder: "speedwagon.tasks.TaskBuilder",
-                        **job_args) -> None:
-        package_path = os.path.normcase(job_args['package_path'])
-        request_ocr_validation = job_args['check_ocr_data']
-        request_ocr_utf8_validation = job_args['_check_ocr_utf8']
+                        **job_args: Any) -> None:
+        package_path: str = os.path.normcase(job_args['package_path'])
+        request_ocr_validation: bool = job_args['check_ocr_data']
+        request_ocr_utf8_validation: bool = job_args['_check_ocr_utf8']
 
         task_builder.add_subtask(
             subtask=PackageNamingConventionTask(package_path))
@@ -122,8 +121,8 @@ class CompletenessWorkflow(AbsWorkflow):
                 subtask=ValidateOCFilesUTF8Task(package_path))
 
     @classmethod
-    def generate_report(cls, results: typing.List[speedwagon.tasks.Result],
-                        **user_args) -> typing.Optional[str]:
+    def generate_report(cls, results: List[speedwagon.tasks.Result],
+                        **user_args) -> Optional[str]:
 
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
         _result_grouped = itertools.groupby(results_sorted, lambda x: x.source)
@@ -133,7 +132,7 @@ class CompletenessWorkflow(AbsWorkflow):
 
         manifest_report = results_grouped[HathiManifestGenerationTask][0]
 
-        error_results: typing.List[hathi_result.Result] = []
+        error_results: List[hathi_result.Result] = []
 
         error_results += cls._get_result(results_grouped,
                                          HathiCheckMissingPackageFilesTask)
@@ -155,7 +154,7 @@ class CompletenessWorkflow(AbsWorkflow):
         error_report = hathi_reporter.get_report_as_str(error_results, 70)
 
         # ########################### Warnings ###########################
-        warning_results: typing.List[hathi_result.Result] = []
+        warning_results: List[hathi_result.Result] = []
 
         warning_results += cls._get_result(results_grouped,
                                            PackageNamingConventionTask)
@@ -181,16 +180,16 @@ class CompletenessWorkflow(AbsWorkflow):
         return report
 
     def initial_task(self, task_builder: speedwagon.tasks.TaskBuilder,
-                     **user_args) -> None:
+                     **user_args: str) -> None:
 
         new_task = HathiManifestGenerationTask(batch_root=user_args['Source'])
         task_builder.add_subtask(subtask=new_task)
 
     @classmethod
-    def _get_result(cls, results_grouped: typing.Dict[typing.Any, list],
-                    key) -> typing.List[hathi_result.Result]:
+    def _get_result(cls, results_grouped: Dict[Any, List[List[Any]]],
+                    key: Type["CompletenessSubTask"]) -> List[hathi_result.Result]:
 
-        results: typing.List[hathi_result.Result] = []
+        results: List[hathi_result.Result] = []
 
         try:
             for result_group in results_grouped[key]:
@@ -201,12 +200,13 @@ class CompletenessWorkflow(AbsWorkflow):
         return results
 
     @staticmethod
-    def validate_user_options(*args, **kwargs):
+    def validate_user_options(*args: str, **kwargs: str) -> bool:
         source = kwargs.get("Source")
         if not source:
             raise ValueError("Source is missing a value")
         if not os.path.exists(source) or not os.path.isdir(source):
             raise ValueError("Invalid source")
+        return True
 
 
 class CompletenessSubTask(Subtask):
@@ -227,7 +227,7 @@ class HathiCheckMissingPackageFilesTask(CompletenessSubTask):
         self.package_path = package_path
 
     def work(self) -> bool:
-        errors: typing.List[hathi_result.Result] = []
+        errors: List[hathi_result.Result] = []
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
 
@@ -250,7 +250,7 @@ class HathiCheckMissingComponentsTask(CompletenessSubTask):
         self.package_path = package_path
 
     def work(self) -> bool:
-        errors: typing.List[hathi_result.Result] = []
+        errors: List[hathi_result.Result] = []
         extensions = [".txt", ".jp2"]
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
@@ -307,7 +307,7 @@ class ValidateExtraSubdirectoriesTask(CompletenessSubTask):
         self.package_path = package_path
 
     def work(self) -> bool:
-        errors: typing.List[hathi_result.Result] = []
+        errors: List[hathi_result.Result] = []
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
 
@@ -347,7 +347,7 @@ class ValidateChecksumsTask(CompletenessSubTask):
         self.package_path = package_path
 
     def work(self) -> bool:
-        errors: typing.List[hathi_result.Result] = []
+        errors: List[hathi_result.Result] = []
 
         checksum_report = os.path.join(self.package_path, "checksum.md5")
         my_logger = logging.getLogger(hathi_validate.__name__)
@@ -412,7 +412,7 @@ class ValidateMarcTask(CompletenessSubTask):
     def work(self) -> bool:
         marc_file = os.path.join(self.package_path, "marc.xml")
         result_builder = hathi_result.SummaryDirector(source=marc_file)
-        errors: typing.List[hathi_result.Result] = []
+        errors: List[hathi_result.Result] = []
 
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
@@ -467,7 +467,7 @@ class ValidateOCRFilesTask(CompletenessSubTask):
         self.package_path = package_path
 
     def work(self) -> bool:
-        errors: typing.List[hathi_result.Result] = []
+        errors: List[hathi_result.Result] = []
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
 
@@ -511,7 +511,7 @@ class ValidateYMLTask(CompletenessSubTask):
 
     def work(self) -> bool:
         yml_file = os.path.join(self.package_path, "meta.yml")
-        errors: typing.List[hathi_result.Result] = []
+        errors: List[hathi_result.Result] = []
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
 
@@ -579,7 +579,7 @@ class ValidateOCFilesUTF8Task(CompletenessSubTask):
         my_logger.setLevel(logging.INFO)
 
         with self.log_config(my_logger):
-            errors: typing.List[hathi_result.Result] = []
+            errors: List[hathi_result.Result] = []
 
             ocr_file: os.DirEntry
             for ocr_file in filter(filter_ocr_only,
@@ -653,7 +653,7 @@ class PackageNamingConventionTask(CompletenessSubTask):
             raise FileNotFoundError("Unable to locate \"{}\".".format(
                 os.path.abspath(self.package_path)))
 
-        warnings: typing.List[hathi_result.Result] = []
+        warnings: List[hathi_result.Result] = []
         package_name = os.path.split(self.package_path)[-1]
 
         if not self._validator.match(package_name):
