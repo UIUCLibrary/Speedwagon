@@ -73,7 +73,7 @@ class ProcessJobWorker(AbsJobWorker):
     def process(self, *args, **kwargs) -> None:
         pass
 
-    def set_message_queue(self, value: queue.Queue[str]) -> None:
+    def set_message_queue(self, value) -> None:
         self._mq = value
 
     def log(self, message: str) -> None:
