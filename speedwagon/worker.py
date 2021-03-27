@@ -358,7 +358,10 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         dialog_box.accept()
 
     # TODO: refactor to use an overloaded method instead of a callback
-    def get_results(self, timeout_callback: Callable[[int, int], None] = None) -> typing.Generator[typing.Any, None, None]:
+    def get_results(self,
+                    timeout_callback: Callable[[int, int], None] = None
+                    ) -> typing.Generator[typing.Any, None, None]:
+
         total_jobs = len(self.futures)
         completed = 0
         futures = [(i, False) for i in self.futures]
