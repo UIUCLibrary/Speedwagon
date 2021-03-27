@@ -4,7 +4,7 @@ import os
 import sys
 import traceback
 import enum
-from typing import List, Optional, Tuple, Dict, Iterator, NamedTuple
+from typing import List, Optional, Tuple, Dict, Iterator, NamedTuple, cast
 from abc import ABCMeta
 
 import yaml
@@ -229,7 +229,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
         tool_actions_layout.addWidget(start_button)
         actions = {
-            "start_button": start_button
+            "start_button": cast(QtWidgets.QWidget, start_button)
         }
         return actions, tool_actions_layout
 
