@@ -2,7 +2,8 @@ import logging
 import os
 import re
 import sys
-from typing import Mapping, Any, Dict, List, Type, Union, Optional
+from typing import Mapping, Any, Dict, List, Type, Union, Optional, cast, \
+    Iterator, Tuple, ContextManager, Generator
 import itertools
 from contextlib import contextmanager
 
@@ -22,6 +23,7 @@ from . import shared_custom_widgets as options
 __all__ = ['CompletenessWorkflow']
 
 from .shared_custom_widgets import UserOption2, UserOption3
+from speedwagon import tasks
 
 
 class CompletenessWorkflow(AbsWorkflow):
@@ -56,9 +58,10 @@ class CompletenessWorkflow(AbsWorkflow):
             check_ocr_utf8_option
         ]
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data: Mapping[str, Any],
-                               **user_args) -> List[dict]:
+    def discover_task_metadata(self, initial_results: List[tasks.Result],
+                               additional_data: Mapping[str, str],
+                               **user_args: Union[str, bool]
+                               ) -> List[Dict[str, Union[str, bool]]]:
         jobs = []
 
         def directory_only_filter(item: os.DirEntry) -> bool:
@@ -121,10 +124,10 @@ class CompletenessWorkflow(AbsWorkflow):
 
     @classmethod
     def generate_report(cls, results: List[speedwagon.tasks.Result],
-                        **user_args) -> Optional[str]:
+                        **user_args: Union[str, bool]) -> Optional[str]:
 
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
-        _result_grouped = itertools.groupby(results_sorted, lambda x: x.source)
+        _result_grouped: Iterator[Tuple[Any, Iterator[speedwagon.tasks.Result]]] = itertools.groupby(results_sorted, lambda x: x.source)
         results_grouped = {
             key: [i.data for i in group] for key, group in _result_grouped
         }
@@ -185,7 +188,7 @@ class CompletenessWorkflow(AbsWorkflow):
         task_builder.add_subtask(subtask=new_task)
 
     @classmethod
-    def _get_result(cls, results_grouped: Dict[Any, List[List[Any]]],
+    def _get_result(cls, results_grouped: Dict[Type["CompletenessSubTask"], List[List[Any]]],
                     key: Type["CompletenessSubTask"]
                     ) -> List[hathi_result.Result]:
 
@@ -211,7 +214,7 @@ class CompletenessWorkflow(AbsWorkflow):
 
 class CompletenessSubTask(Subtask):
     @contextmanager
-    def log_config(self, logger: logging.Logger):
+    def log_config(self, logger: logging.Logger) -> Generator[None, None, None]:
         gui_logger = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)
