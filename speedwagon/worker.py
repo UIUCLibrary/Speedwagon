@@ -8,6 +8,7 @@ import queue
 import sys
 import traceback
 import typing
+from typing import Callable
 from collections import namedtuple
 
 from PyQt5 import QtCore, QtWidgets  # type: ignore
@@ -69,13 +70,13 @@ class ProcessJobWorker(AbsJobWorker):
     def __init__(self) -> None:
         super().__init__()
 
-    def process(self, *args, **kwargs):
+    def process(self, *args, **kwargs) -> None:
         pass
 
-    def set_message_queue(self, value):
+    def set_message_queue(self, value) -> None:
         self._mq = value
 
-    def log(self, message):
+    def log(self, message: str) -> None:
         if self._mq:
             self._mq.put(message)
 
@@ -106,16 +107,16 @@ class Worker(metaclass=abc.ABCMeta):
         """Shutdown the executor"""
 
     @abc.abstractmethod
-    def run_all_jobs(self):
+    def run_all_jobs(self) -> None:
         """Execute jobs in loaded in q"""
 
     @abc.abstractmethod
-    def add_job(self, job: typing.Type[ProcessJobWorker], **job_args):
+    def add_job(self, job: typing.Type[ProcessJobWorker], **job_args) -> None:
         """Load jobs into queue"""
 
 
 class UIWorker(Worker):
-    def __init__(self, parent):
+    def __init__(self, parent) -> None:
         """Interface for managing jobs. Designed handle loading and executing jobs.
 
         Args:
@@ -123,18 +124,18 @@ class UIWorker(Worker):
         """
         super().__init__()
         self.parent = parent
-        self._jobs_queue = queue.Queue()
+        self._jobs_queue: queue.Queue[typing.Any] = queue.Queue()
 
 
 class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
     executor = concurrent.futures.ProcessPoolExecutor(max_workers=1)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.manager = multiprocessing.Manager()
-        self._message_queue = self.manager.Queue()  # type: ignore
+        self._message_queue = self.manager.Queue()
         self._results = None
-        self._tasks = []
+        self._tasks: typing.List[concurrent.futures.Future] = []
 
     @classmethod
     def initialize_worker(cls, max_workers: int = 1) -> None:
@@ -172,7 +173,7 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
         pass
 
     @abc.abstractmethod
-    def on_completion(self, *args, **kwargs):
+    def on_completion(self, *args, **kwargs) -> None:
         pass
 
 
@@ -292,7 +293,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         self.user_settings = None
         self.configuration_file = None
 
-    def __enter__(self):
+    def __enter__(self) -> "ToolJobManager":
         self._message_queue = self.manager.Queue()
 
         self._executor = concurrent.futures.ProcessPoolExecutor(
@@ -301,7 +302,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
         self._cleanup()
         self._executor.shutdown()
 
@@ -321,9 +322,9 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
             fut.add_done_callback(fn=lambda x: self._pending_jobs.task_done())
             self.futures.append(fut)
 
-    def abort(self):
+    def abort(self) -> None:
         self.active = False
-        still_running = []
+        still_running: typing.List[concurrent.futures.Future] = []
 
         dialog_box = WorkProgressBar("Canceling", None, 0, 0)
 
@@ -357,7 +358,10 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         dialog_box.accept()
 
     # TODO: refactor to use an overloaded method instead of a callback
-    def get_results(self, timeout_callback=None):
+    def get_results(self,
+                    timeout_callback: Callable[[int, int], None] = None
+                    ) -> typing.Generator[typing.Any, None, None]:
+
         total_jobs = len(self.futures)
         completed = 0
         futures = [(i, False) for i in self.futures]
@@ -431,7 +435,7 @@ class AbsJobAdapter(metaclass=abc.ABCMeta):
         pass
 
 
-class SubtaskJobAdapter(AbsJobAdapter,  # type: ignore
+class SubtaskJobAdapter(AbsJobAdapter,
                         ProcessJobWorker):
 
     def __init__(self, adaptee: AbsSubtask) -> None:
@@ -443,15 +447,15 @@ class SubtaskJobAdapter(AbsJobAdapter,  # type: ignore
     def queue_adapter(self):
         return QueueAdapter()
 
-    def process(self, *args, **kwargs):
+    def process(self, *args, **kwargs) -> None:
         self.adaptee.exec()
         self.result = self.adaptee.task_result
 
-    def set_message_queue(self, value):
+    def set_message_queue(self, value) -> None:
         self.adaptee.parent_task_log_q.set_message_queue(value)
 
     @property
-    def settings(self) -> dict:
+    def settings(self) -> typing.Dict[str, str]:
         if self.adaptee.settings:
             return self.adaptee.settings
         else:

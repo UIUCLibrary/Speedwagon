@@ -4,21 +4,18 @@ import os
 import sys
 import traceback
 import enum
-from typing import List, Optional, Tuple, Dict, Iterator, NamedTuple
+from typing import List, Optional, Tuple, Dict, Iterator, NamedTuple, cast
 from abc import ABCMeta
 
 import yaml
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 
 import speedwagon
-import speedwagon.dialog.dialogs
-import speedwagon.models
 from . import runner_strategies
 from . import models
 from .exceptions import MissingConfiguration
 from .workflows import shared_custom_widgets as options
 from .job import AbsWorkflow, NullWorkflow
-
 
 SELECTOR_VIEW_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.MinimumExpanding,
@@ -229,7 +226,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
         tool_actions_layout.addWidget(start_button)
         actions = {
-            "start_button": start_button
+            "start_button": cast(QtWidgets.QWidget, start_button)
         }
         return actions, tool_actions_layout
 

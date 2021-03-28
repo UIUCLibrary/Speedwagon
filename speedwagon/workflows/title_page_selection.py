@@ -23,7 +23,7 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
 
     def setEditorData(
             self,
-            editor: QtWidgets.QComboBox,
+            editor: QtCore.QObject,
             index: QtCore.QModelIndex
     ) -> None:
 
@@ -48,7 +48,7 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
 
     def setModelData(
             self,
-            widget: QtWidgets.QComboBox,
+            widget: QtWidgets.QWidget,
             model: QtCore.QAbstractItemModel,
             index: QtCore.QModelIndex
     ) -> None:
