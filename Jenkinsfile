@@ -673,6 +673,9 @@ pipeline {
                                         'PYLINT_REPORT',
                                         'FLAKE8_REPORT'
                                     ]
+                                    stashes.each{
+                                        unstash "$it"
+                                    }
                                     def sonarqubeConfig = [
                                                 installationName: 'sonarcloud',
                                                 credentialsId: 'sonarcloud-speedwagon',
@@ -686,7 +689,6 @@ pipeline {
                                                     ]
                                                 ]
                                     if (env.CHANGE_ID){
-                                        echo "todo submitToSonarcloud here"
                                         sonarqube.submitToSonarcloud(
                                             agent: agent,
                                             reportStashes: stashes,
@@ -702,7 +704,6 @@ pipeline {
                                             ],
                                         )
                                     } else {
-                                        echo "todo submitToSonarcloud here"
                                         sonarqube.submitToSonarcloud(
                                             agent: agent,
                                             reportStashes: stashes,
@@ -718,11 +719,7 @@ pipeline {
                             }
                             post {
                                 always{
-                                    echo "TODO: recordIssues here"
-//                                     node(''){
-//                                         unstash 'sonarqube artifacts'
-//                                         recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
-//                                     }
+                                    recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                 }
                             }
                         }
