@@ -10,9 +10,6 @@ from abc import ABCMeta
 import yaml
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 
-import speedwagon
-import speedwagon.dialog.dialogs
-import speedwagon.models
 from . import runner_strategies
 from . import models
 from .exceptions import MissingConfiguration
