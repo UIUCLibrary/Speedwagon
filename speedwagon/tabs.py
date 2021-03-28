@@ -10,12 +10,12 @@ from abc import ABCMeta
 import yaml
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 
+import speedwagon
 from . import runner_strategies
 from . import models
 from .exceptions import MissingConfiguration
 from .workflows import shared_custom_widgets as options
 from .job import AbsWorkflow, NullWorkflow
-
 
 SELECTOR_VIEW_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.MinimumExpanding,
