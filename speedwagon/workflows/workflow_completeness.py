@@ -2,8 +2,8 @@ import logging
 import os
 import re
 import sys
-from typing import Mapping, Any, Dict, List, Type, Union, Optional, cast, \
-    Iterator, Tuple, ContextManager, Generator
+from typing import Mapping, Any, Dict, List, Type, Union, Optional, \
+    Iterator, Tuple, Generator
 import itertools
 from contextlib import contextmanager
 
@@ -127,7 +127,9 @@ class CompletenessWorkflow(AbsWorkflow):
                         **user_args: Union[str, bool]) -> Optional[str]:
 
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
-        _result_grouped: Iterator[Tuple[Any, Iterator[speedwagon.tasks.Result]]] = itertools.groupby(results_sorted, lambda x: x.source)
+        _result_grouped: Iterator[
+            Tuple[Any, Iterator[speedwagon.tasks.Result]]
+        ] = itertools.groupby(results_sorted, lambda x: x.source)
         results_grouped = {
             key: [i.data for i in group] for key, group in _result_grouped
         }
@@ -188,7 +190,9 @@ class CompletenessWorkflow(AbsWorkflow):
         task_builder.add_subtask(subtask=new_task)
 
     @classmethod
-    def _get_result(cls, results_grouped: Dict[Type["CompletenessSubTask"], List[List[Any]]],
+    def _get_result(cls,
+                    results_grouped: Dict[Type["CompletenessSubTask"],
+                                          List[List[Any]]],
                     key: Type["CompletenessSubTask"]
                     ) -> List[hathi_result.Result]:
 
@@ -214,7 +218,10 @@ class CompletenessWorkflow(AbsWorkflow):
 
 class CompletenessSubTask(Subtask):
     @contextmanager
-    def log_config(self, logger: logging.Logger) -> Generator[None, None, None]:
+    def log_config(self,
+                   logger: logging.Logger
+                   ) -> Generator[None, None, None]:
+
         gui_logger = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)
