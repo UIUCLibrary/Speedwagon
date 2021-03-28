@@ -666,11 +666,7 @@ pipeline {
                             }
                             steps{
                                 script{
-                                    def sonarqube
-                                    node(){
-                                        checkout scm
-                                        sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
-                                    }
+                                    def sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
                                     def stashes = [
                                         'COVERAGE_REPORT_DATA',
                                         'PYTEST_UNIT_TEST_RESULTS',
@@ -681,42 +677,42 @@ pipeline {
                                                 installationName: 'sonarcloud',
                                                 credentialsId: 'sonarcloud-speedwagon',
                                             ]
-//                                     def agent = [
-//                                                     dockerfile: [
-//                                                         filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-//                                                         label: 'linux && docker',
-//                                                         additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-//                                                         args: '--mount source=sonar-cache-speedwagon,target=/home/user/.sonar/cache',
-//                                                     ]
-//                                                 ]
+                                    def agent = [
+                                                    dockerfile: [
+                                                        filename: 'ci/docker/python/linux/jenkins/Dockerfile',
+                                                        label: 'linux && docker',
+                                                        additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                        args: '--mount source=sonar-cache-speedwagon,target=/home/user/.sonar/cache',
+                                                    ]
+                                                ]
                                     if (env.CHANGE_ID){
                                         echo "todo submitToSonarcloud here"
-//                                         sonarqube.submitToSonarcloud(
-//                                             agent: agent,
-//                                             reportStashes: stashes,
-//                                             artifactStash: 'sonarqube artifacts',
-//                                             sonarqube: sonarqubeConfig,
-//                                             pullRequest: [
-//                                                 source: env.CHANGE_ID,
-//                                                 destination: env.BRANCH_NAME,
-//                                             ],
-//                                             package: [
-//                                                 version: props.Version,
-//                                                 name: props.Name
-//                                             ],
-//                                         )
+                                        sonarqube.submitToSonarcloud(
+                                            agent: agent,
+                                            reportStashes: stashes,
+                                            artifactStash: 'sonarqube artifacts',
+                                            sonarqube: sonarqubeConfig,
+                                            pullRequest: [
+                                                source: env.CHANGE_ID,
+                                                destination: env.BRANCH_NAME,
+                                            ],
+                                            package: [
+                                                version: props.Version,
+                                                name: props.Name
+                                            ],
+                                        )
                                     } else {
                                         echo "todo submitToSonarcloud here"
-//                                         sonarqube.submitToSonarcloud(
-//                                             agent: agent,
-//                                             reportStashes: stashes,
-//                                             artifactStash: 'sonarqube artifacts',
-//                                             sonarqube: sonarqubeConfig,
-//                                             package: [
-//                                                 version: props.Version,
-//                                                 name: props.Name
-//                                             ]
-//                                         )
+                                        sonarqube.submitToSonarcloud(
+                                            agent: agent,
+                                            reportStashes: stashes,
+                                            artifactStash: 'sonarqube artifacts',
+                                            sonarqube: sonarqubeConfig,
+                                            package: [
+                                                version: props.Version,
+                                                name: props.Name
+                                            ]
+                                        )
                                     }
                                 }
                             }
