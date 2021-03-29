@@ -1,5 +1,6 @@
 from unittest.mock import Mock
 
+import pytest
 from PyQt5 import QtCore
 
 from speedwagon import tabs, models, job
@@ -152,3 +153,52 @@ class TestWorkflowListModel2:
             workflows_model.index(1,0),
             role=QtCore.Qt.DisplayRole
         ) == "Spam"
+
+
+class TestToolOptionsModel3:
+    def test_model_data_user_role(self):
+        data = [Mock(data="Spam")]
+        new_model = models.ToolOptionsModel3(data)
+        assert new_model.data(new_model.index(0, 0), QtCore.Qt.UserRole) == data[0]
+
+    def test_model_data_edit_role(self):
+        data = [Mock(data="Spam")]
+        new_model = models.ToolOptionsModel3(data)
+        assert new_model.data(
+            new_model.index(0, 0), QtCore.Qt.EditRole
+        ) == "Spam"
+
+    def test_model_data_display_role(self):
+        data = [Mock(data="Spam")]
+        new_model = models.ToolOptionsModel3(data)
+        assert new_model.data(
+            new_model.index(0, 0), QtCore.Qt.DisplayRole
+        ) == "Spam"
+
+    def test_model_size_hint(self):
+        data = [Mock()]
+        new_model = models.ToolOptionsModel3(data)
+        assert isinstance(
+            new_model.data(new_model.index(0, 0), QtCore.Qt.SizeHintRole),
+            QtCore.QSize
+        )
+
+    def test_get(self):
+        data = [Mock(data="Spam")]
+        new_model = models.ToolOptionsModel3(data)
+        assert "Spam" in new_model.get().values()
+
+    def test_header_data(self):
+        data = [Mock(data="Spam", label_text="Spam label")]
+        new_model = models.ToolOptionsModel3(data)
+        label = new_model.headerData(
+            0, QtCore.Qt.Vertical, role=QtCore.Qt.DisplayRole
+        )
+        assert label == "Spam label"
+
+    def test_set_data(self):
+        data = [Mock(data="Spam", label_text="Spam label")]
+        new_model = models.ToolOptionsModel3(data)
+        new_model.setData(new_model.index(0,0), "Bacon")
+        s = new_model.data(new_model.index(0,0))
+        assert s == "Bacon"
