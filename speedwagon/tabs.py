@@ -313,9 +313,9 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
             item_settings.setSizePolicy(ITEM_SETTINGS_POLICY)
         except Exception as error:
-            tb = traceback.format_exception(etype=type(error),
-                                            value=error,
-                                            tb=error.__traceback__)
+            stack_trace = traceback.format_exception(etype=type(error),
+                                                     value=error,
+                                                     tb=error.__traceback__)
 
             message = "Unable to use {}. Reason: {}".format(
                 cast(AbsWorkflow, item).name, str(error.__class__.__name__))
@@ -329,7 +329,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             warning_message_dialog.setWindowTitle("Settings Error")
             warning_message_dialog.setIcon(QtWidgets.QMessageBox.Warning)
             warning_message_dialog.setText(message)
-            warning_message_dialog.setDetailedText("".join(tb))
+            warning_message_dialog.setDetailedText("".join(stack_trace))
             layout = warning_message_dialog.layout()
 
             layout.addItem(
@@ -510,18 +510,18 @@ def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
                 new_tab = TabData(tab_name, model)
                 yield new_tab
 
-        except FileNotFoundError as e:
+        except FileNotFoundError as error:
             print("Custom tabs file not found. "
-                  "Reason: {}".format(e), file=sys.stderr)
+                  "Reason: {}".format(error), file=sys.stderr)
             raise
-        except AttributeError as e:
+        except AttributeError as error:
             print("Custom tabs file failed to load. "
-                  "Reason: {}".format(e), file=sys.stderr)
+                  "Reason: {}".format(error), file=sys.stderr)
             raise
 
-        except yaml.YAMLError as e:
+        except yaml.YAMLError as yaml_error:
             print("{} file failed to load. "
-                  "Reason: {}".format(yaml_file, e), file=sys.stderr)
+                  "Reason: {}".format(yaml_file, yaml_error), file=sys.stderr)
             raise
 
 
@@ -533,8 +533,8 @@ def write_tabs_yaml(yaml_file: str, tabs: List[TabData]) -> None:
         tabs_data[tab.tab_name] = \
             [workflow.name for workflow in tab_model.workflows]
 
-    with open(yaml_file, "w") as f:
-        yaml.dump(tabs_data, f, default_flow_style=False)
+    with open(yaml_file, "w") as file_handle:
+        yaml.dump(tabs_data, file_handle, default_flow_style=False)
 
 
 def extract_tab_information(
