@@ -5,7 +5,8 @@ import os
 import sys
 import traceback
 import enum
-from typing import List, Optional, Tuple, Dict, Iterator, NamedTuple, cast
+from typing import List, Optional, Tuple, Dict, Iterator, NamedTuple, cast, \
+    Type
 from abc import ABCMeta
 
 import yaml
@@ -48,7 +49,11 @@ class Tab:
     def create_actions(self):
         """Generate action widgets"""
 
-    def __init__(self, parent, work_manager) -> None:
+    def __init__(self,
+                 parent: QtWidgets.QWidget,
+                 work_manager: worker.ToolJobManager
+                 ) -> None:
+
         self.parent = parent
         self.work_manager = work_manager
         self.tab, self.tab_layout = self.create_tab()
@@ -57,7 +62,10 @@ class Tab:
         self.tab_layout.setSpacing(20)
 
     @staticmethod
-    def create_tools_settings_view(parent):
+    def create_tools_settings_view(
+            parent: QtWidgets.QWidget
+    ) -> QtWidgets.QTableView:
+
         tool_settings = QtWidgets.QTableView(parent=parent)
         tool_settings.setEditTriggers(
             QtWidgets.QAbstractItemView.AllEditTriggers)
@@ -74,7 +82,7 @@ class Tab:
         return tool_settings
 
     @classmethod
-    def create_workspace_layout(cls, parent) \
+    def create_workspace_layout(cls, parent: QtWidgets.QWidget) \
             -> Tuple[Dict[TabWidgets, QtWidgets.QWidget], QtWidgets.QLayout]:
 
         tool_config_layout = QtWidgets.QFormLayout()
@@ -103,7 +111,7 @@ class Tab:
         return widgets, tool_config_layout
 
     @classmethod
-    def create_workspace(cls, title, parent) -> \
+    def create_workspace(cls, title: str, parent: QtWidgets.QWidget) -> \
             Tuple[QtWidgets.QWidget, Dict[
                 TabWidgets, QtWidgets.QWidget], QtWidgets.QLayout]:
         tool_workspace = QtWidgets.QGroupBox()
@@ -199,7 +207,11 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         return selector_view
 
     @staticmethod
-    def create_form(parent, config_widgets, model):
+    def create_form(
+            parent: QtWidgets.QWidget,
+            config_widgets: Dict[TabWidgets, QtWidgets.QWidget],
+            model: "models.WorkflowListModel"
+    ) -> QtWidgets.QDataWidgetMapper:
         tool_mapper = QtWidgets.QDataWidgetMapper(parent)
         tool_mapper.setModel(model)
         tool_mapper.addMapping(config_widgets[TabWidgets.NAME], 0)
@@ -331,8 +343,12 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
 class WorkflowsTab(ItemSelectionTab):
 
-    def __init__(self, parent: QtWidgets.QWidget, workflows, work_manager=None,
-                 log_manager=None) -> None:
+    def __init__(
+            self,
+            parent: QtWidgets.QWidget,
+            workflows: Dict[str, Type[speedwagon.job.AbsWorkflow]],
+            work_manager=None,
+            log_manager=None) -> None:
 
         super().__init__("Workflow", parent,
                          models.WorkflowListModel(workflows), work_manager,
