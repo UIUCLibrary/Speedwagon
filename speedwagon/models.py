@@ -1,7 +1,7 @@
 """Data models for displaying data to user in the user interface"""
 
 import sys
-from typing import Type, Dict, List, Any, Union, Tuple, Optional
+from typing import Type, Dict, List, Any, Union, Tuple, Optional, cast
 import warnings
 from abc import abstractmethod
 from collections import namedtuple
@@ -32,7 +32,11 @@ class ItemListModel(QtCore.QAbstractTableModel):
     def columnCount(self, *args, parent=QtCore.QModelIndex(), **kwargs) -> int:
         return 2
 
-    def rowCount(self, *args, parent=None, **kwargs) -> int:
+    def rowCount(self,
+                 *args,
+                 parent: QtCore.QModelIndex = None,
+                 **kwargs) -> int:
+
         return len(self.jobs)
 
     @staticmethod
@@ -79,7 +83,7 @@ class WorkflowListModel(ItemListModel):
 
 
 class WorkflowListModel2(QtCore.QAbstractListModel):
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QtCore.QObject = None) -> None:
         super().__init__(parent)
         self.workflows: List[Workflow] = []
 
@@ -91,7 +95,10 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         self.remove_workflow(other)
         return self
 
-    def rowCount(self, parent=None, *args, **kwargs) -> int:
+    def rowCount(self,
+                 parent: QtCore.QModelIndex = None,
+                 *args, **kwargs) -> int:
+
         return len(self.workflows)
 
     def data(
@@ -116,11 +123,11 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
             return value
         return QtCore.QVariant()
 
-    def sort(self, key=None, order=None):
-        self.layoutAboutToBeChanged.emit()
+    def sort(self, key=None, order=None) -> None:
+        cast(QtCore.pyqtBoundSignal, self.layoutAboutToBeChanged).emit()
 
         self.workflows.sort(key=key or (lambda i: i.name))
-        self.layoutChanged.emit()
+        cast(QtCore.pyqtBoundSignal, self.layoutChanged).emit()
 
     def add_workflow(self, workflow: Workflow) -> None:
         for existing_workflow in self.workflows:
@@ -223,7 +230,7 @@ class ToolOptionsPairsModel(ToolOptionsModel):
             self,
             index: int,
             orientation: QtConstant,
-            role=None
+            role: QtConstant = None
     ) -> Union[str, QtCore.QVariant]:
         if orientation == QtCore.Qt.Vertical \
                 and role == QtCore.Qt.DisplayRole:
