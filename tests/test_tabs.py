@@ -144,8 +144,10 @@ class TestTabsYaml:
     ])
     def test_read_tabs_yaml_errors(self, monkeypatch,
                                    exception_type):
+        import os.path
         with patch('speedwagon.tabs.open', mock.mock_open()):
             import yaml
+            monkeypatch.setattr(os.path, "getsize", lambda x: 1)
             monkeypatch.setattr(yaml, "load", Mock(side_effect=exception_type))
             with pytest.raises(exception_type) as e:
                 list(tabs.read_tabs_yaml('tabs.yml'))
