@@ -41,7 +41,9 @@ class TestTabsModel:
         # new_tab.tab_name =
         test_model += new_tab
 
-        second_new_tab = tabs.TabData("second new tab", models.WorkflowListModel2())
+        second_new_tab = tabs.TabData("second new tab",
+                                      models.WorkflowListModel2())
+
         test_model += second_new_tab
         assert test_model.rowCount() == 2
 
@@ -53,7 +55,9 @@ class TestTabsModel:
         first_new_tab = tabs.TabData("My tab", models.WorkflowListModel2())
         test_model += first_new_tab
 
-        second_new_tab = tabs.TabData("second new tab", models.WorkflowListModel2())
+        second_new_tab = tabs.TabData("second new tab",
+                                      models.WorkflowListModel2())
+
         test_model += second_new_tab
         assert test_model.rowCount() == 2
 
@@ -159,7 +163,9 @@ class TestToolOptionsModel3:
     def test_model_data_user_role(self):
         data = [Mock(data="Spam")]
         new_model = models.ToolOptionsModel3(data)
-        assert new_model.data(new_model.index(0, 0), QtCore.Qt.UserRole) == data[0]
+
+        assert new_model.data(new_model.index(0, 0),
+                              QtCore.Qt.UserRole) == data[0]
 
     def test_model_data_edit_role(self):
         data = [Mock(data="Spam")]
@@ -220,7 +226,10 @@ class TestSettingsModel:
     ])
     def test_header_data(self, index, expected):
         model = models.SettingsModel(None)
-        value = model.headerData(index, QtCore.Qt.Horizontal, role=QtCore.Qt.DisplayRole)
+        value = model.headerData(index,
+                                 QtCore.Qt.Horizontal,
+                                 role=QtCore.Qt.DisplayRole)
+
         assert value == expected
 
     def test_set_data(self):
