@@ -57,7 +57,7 @@ def step_impl(context: runner.Context):
 
 @step('the headerData is "my_option"')
 def step_impl(context):
-    result = context.data_model.headerData(0, Qt_Orientation=QtCore.Qt.Vertical,
+    result = context.data_model.headerData(0, QtCore.Qt.Vertical,
                                            role=QtCore.Qt.DisplayRole)
     assert result == "my_option"
 
