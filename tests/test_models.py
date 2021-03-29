@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 from PyQt5 import QtCore
 
 from speedwagon import tabs, models, job
@@ -101,3 +103,25 @@ def test_workflow_list_model2_isub():
     workflows_model -= jp2_workflow
     assert workflows_model.rowCount() == 1
 
+
+class TestItemListModel:
+    def test_create(self):
+        data = {
+            "spam": Mock()
+        }
+        new_model = models.ItemListModel(data)
+        assert new_model.jobs == list(data.values())
+
+    def test_columns_are_always_two(self):
+        data = {
+            "spam": Mock()
+        }
+        new_model = models.ItemListModel(data)
+        assert new_model.columnCount() == 2
+
+    def test_columns_row_count_is_the_size_of_data(self):
+        data = {
+            "spam": Mock()
+        }
+        new_model = models.ItemListModel(data)
+        assert new_model.rowCount() == len(data)
