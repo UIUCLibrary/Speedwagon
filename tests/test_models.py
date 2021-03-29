@@ -247,3 +247,37 @@ class TestSettingsModel:
         model.add_setting("spam", "eggs")
         flags = model.flags(model.index(0, column))
         assert flags == expected
+
+
+class TestTabsModel:
+    def test_model_contains(self):
+        from speedwagon.tabs import TabData
+        model = models.TabsModel()
+        model.add_tab(TabData("dummy", Mock()))
+        assert ("dummy" in model) is True
+
+    def test_model_contains_false(self):
+        model = models.TabsModel()
+        assert ("dummy" in model) is False
+
+    def test_model_iadd_operator(self):
+        from speedwagon.tabs import TabData
+        model = models.TabsModel()
+        model += TabData("dummy", Mock())
+        assert ("dummy" in model) is True
+
+    def test_model_isub_operator(self):
+        from speedwagon.tabs import TabData
+        tab = TabData("dummy", Mock())
+        model = models.TabsModel()
+        model += tab
+        assert ("dummy" in model) is True
+        model -= tab
+        assert ("dummy" in model) is False
+
+    def test_model_data(self):
+        from speedwagon.tabs import TabData
+        tab = TabData("dummy", Mock())
+        model = models.TabsModel()
+        model.add_tab(tab)
+        assert model.data(model.index(0, 0), role=QtCore.Qt.UserRole) == tab
