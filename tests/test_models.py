@@ -1,103 +1,283 @@
+from unittest.mock import Mock
+
+import pytest
 from PyQt5 import QtCore
 
 from speedwagon import tabs, models, job
 
 
-def test_settings_model_empty():
-    test_model = models.SettingsModel()
-    assert test_model.rowCount() == 0
-    assert test_model.columnCount() == 2
-    index = test_model.index(0, 0)
-    assert index.data() is None
-    assert isinstance(test_model.data(index), QtCore.QVariant)
+class TestSettingsModel:
+    def test_settings_model_empty(self):
+        test_model = models.SettingsModel()
+        assert test_model.rowCount() == 0
+        assert test_model.columnCount() == 2
+        index = test_model.index(0, 0)
+        assert index.data() is None
+        assert isinstance(test_model.data(index), QtCore.QVariant)
+
+    def test_settings_model_added(self):
+        test_model = models.SettingsModel()
+        test_model.add_setting("mysetting", "eggs")
+        assert test_model.rowCount() == 1
+        assert test_model.columnCount() == 2
+        assert test_model.index(0, 0).data() == "mysetting"
+        assert test_model.index(0, 1).data() == "eggs"
+
+        index = test_model.index(0, 1)
+        assert isinstance(test_model.data(index), QtCore.QVariant)
 
 
-def test_settings_model_added():
-    test_model = models.SettingsModel()
-    test_model.add_setting("mysetting", "eggs")
-    assert test_model.rowCount() == 1
-    assert test_model.columnCount() == 2
-    assert test_model.index(0, 0).data() == "mysetting"
-    assert test_model.index(0, 1).data() == "eggs"
-
-    index = test_model.index(0, 1)
-    assert isinstance(test_model.data(index), QtCore.QVariant)
+class TestTabsModel:
+    def test_tabs_model_iadd_tab(self):
+        test_model = models.TabsModel()
+        new_tab = tabs.TabData("My tab", models.WorkflowListModel2())
+        test_model += new_tab
+        assert test_model.rowCount() == 1
 
 
-def test_tabs_model_iadd_tab():
-    test_model = models.TabsModel()
-    new_tab = tabs.TabData("My tab", models.WorkflowListModel2())
-    test_model += new_tab
-    assert test_model.rowCount() == 1
+    def test_tabs_model_delete_tab(self):
+        test_model = models.TabsModel()
+        new_tab = tabs.TabData("My tab", models.WorkflowListModel2())
+        # new_tab.tab_name =
+        test_model += new_tab
+
+        second_new_tab = tabs.TabData("second new tab",
+                                      models.WorkflowListModel2())
+
+        test_model += second_new_tab
+        assert test_model.rowCount() == 2
+
+        test_model -= second_new_tab
+        assert test_model.rowCount() == 1
+
+    def test_tabs_model_delete_all_tabs(self):
+        test_model = models.TabsModel()
+        first_new_tab = tabs.TabData("My tab", models.WorkflowListModel2())
+        test_model += first_new_tab
+
+        second_new_tab = tabs.TabData("second new tab",
+                                      models.WorkflowListModel2())
+
+        test_model += second_new_tab
+        assert test_model.rowCount() == 2
+
+        test_model -= second_new_tab
+        assert test_model.rowCount() == 1
+
+        test_model -= first_new_tab
+        assert test_model.rowCount() == 0
 
 
-def test_tabs_model_delete_tab():
-    test_model = models.TabsModel()
-    new_tab = tabs.TabData("My tab", models.WorkflowListModel2())
-    # new_tab.tab_name =
-    test_model += new_tab
+class TestItemListModel:
+    def test_create(self):
+        data = {
+            "spam": Mock()
+        }
+        new_model = models.ItemListModel(data)
+        assert new_model.jobs == list(data.values())
 
-    second_new_tab = tabs.TabData("second new tab", models.WorkflowListModel2())
-    test_model += second_new_tab
-    assert test_model.rowCount() == 2
+    def test_columns_are_always_two(self):
+        data = {
+            "spam": Mock()
+        }
+        new_model = models.ItemListModel(data)
+        assert new_model.columnCount() == 2
 
-    test_model -= second_new_tab
-    assert test_model.rowCount() == 1
-
-
-def test_tabs_model_delete_all_tabs():
-    test_model = models.TabsModel()
-    first_new_tab = tabs.TabData("My tab", models.WorkflowListModel2())
-    test_model += first_new_tab
-
-    second_new_tab = tabs.TabData("second new tab", models.WorkflowListModel2())
-    test_model += second_new_tab
-    assert test_model.rowCount() == 2
-
-    test_model -= second_new_tab
-    assert test_model.rowCount() == 1
-
-    test_model -= first_new_tab
-    assert test_model.rowCount() == 0
+    def test_columns_row_count_is_the_size_of_data(self):
+        data = {
+            "spam": Mock()
+        }
+        new_model = models.ItemListModel(data)
+        assert new_model.rowCount() == len(data)
 
 
-def test_workflow_list_model2_iadd():
-    workflows_model = models.WorkflowListModel2()
-    workflows = job.available_workflows()
-    workflows_model += workflows["Hathi Prep"]
-    assert workflows_model.rowCount() == 1
+class TestWorkflowListModel2:
+
+    def test_workflow_list_model2_iadd(self):
+        workflows_model = models.WorkflowListModel2()
+        workflows = job.available_workflows()
+        workflows_model += workflows["Hathi Prep"]
+        assert workflows_model.rowCount() == 1
+
+    def test_workflow_list_model2_add(self):
+        workflows_model = models.WorkflowListModel2()
+        workflows = job.available_workflows()
+        workflows_model.add_workflow(workflows["Hathi Prep"])
+        assert workflows_model.rowCount() == 1
+
+    def test_workflow_list_model2_remove(self):
+        workflows_model = models.WorkflowListModel2()
+        workflows = job.available_workflows()
+
+        workflows_model.add_workflow(workflows["Hathi Prep"])
+        jp2_workflow = workflows['Make JP2']
+        workflows_model.add_workflow(jp2_workflow)
+        assert workflows_model.rowCount() == 2
+
+        workflows_model.remove_workflow(jp2_workflow)
+        assert workflows_model.rowCount() == 1
+
+    def test_workflow_list_model2_isub(self):
+        workflows_model = models.WorkflowListModel2()
+        workflows = job.available_workflows()
+
+        workflows_model.add_workflow(workflows["Hathi Prep"])
+        jp2_workflow = workflows['Make JP2']
+        workflows_model += jp2_workflow
+        assert workflows_model.rowCount() == 2
+
+        workflows_model -= jp2_workflow
+        assert workflows_model.rowCount() == 1
+
+    def test_data(self):
+        workflows_model = models.WorkflowListModel2()
+        mock_workflow = Mock()
+        mock_workflow.name = "Spam"
+        workflows_model.add_workflow(mock_workflow)
+
+        assert workflows_model.data(
+            workflows_model.index(0, 0),
+            role=QtCore.Qt.DisplayRole
+        ) == "Spam"
+
+    def test_sort_defaults_alpha_by_name(self):
+        workflows_model = models.WorkflowListModel2()
+        mock_spam_workflow = Mock()
+        mock_spam_workflow.name = "Spam"
+        workflows_model.add_workflow(mock_spam_workflow)
+
+        mock_bacon_workflow = Mock()
+        mock_bacon_workflow.name = "Bacon"
+        workflows_model.add_workflow(mock_bacon_workflow)
+        workflows_model.sort()
+        assert workflows_model.data(
+            workflows_model.index(0,0),
+            role=QtCore.Qt.DisplayRole
+        ) == "Bacon" and workflows_model.data(
+            workflows_model.index(1,0),
+            role=QtCore.Qt.DisplayRole
+        ) == "Spam"
 
 
+class TestToolOptionsModel3:
+    def test_model_data_user_role(self):
+        data = [Mock(data="Spam")]
+        new_model = models.ToolOptionsModel3(data)
 
-def test_workflow_list_model2_add():
-    workflows_model = models.WorkflowListModel2()
-    workflows = job.available_workflows()
-    workflows_model.add_workflow(workflows["Hathi Prep"])
-    assert workflows_model.rowCount() == 1
+        assert new_model.data(new_model.index(0, 0),
+                              QtCore.Qt.UserRole) == data[0]
+
+    def test_model_data_edit_role(self):
+        data = [Mock(data="Spam")]
+        new_model = models.ToolOptionsModel3(data)
+        assert new_model.data(
+            new_model.index(0, 0), QtCore.Qt.EditRole
+        ) == "Spam"
+
+    def test_model_data_display_role(self):
+        data = [Mock(data="Spam")]
+        new_model = models.ToolOptionsModel3(data)
+        assert new_model.data(
+            new_model.index(0, 0), QtCore.Qt.DisplayRole
+        ) == "Spam"
+
+    def test_model_size_hint(self):
+        data = [Mock()]
+        new_model = models.ToolOptionsModel3(data)
+        assert isinstance(
+            new_model.data(new_model.index(0, 0), QtCore.Qt.SizeHintRole),
+            QtCore.QSize
+        )
+
+    def test_get(self):
+        data = [Mock(data="Spam")]
+        new_model = models.ToolOptionsModel3(data)
+        assert "Spam" in new_model.get().values()
+
+    def test_header_data(self):
+        data = [Mock(data="Spam", label_text="Spam label")]
+        new_model = models.ToolOptionsModel3(data)
+        label = new_model.headerData(
+            0, QtCore.Qt.Vertical, role=QtCore.Qt.DisplayRole
+        )
+        assert label == "Spam label"
+
+    def test_set_data(self):
+        data = [Mock(data="Spam", label_text="Spam label")]
+        new_model = models.ToolOptionsModel3(data)
+        new_model.setData(new_model.index(0,0), "Bacon")
+        s = new_model.data(new_model.index(0,0))
+        assert s == "Bacon"
 
 
-def test_workflow_list_model2_remove():
-    workflows_model = models.WorkflowListModel2()
-    workflows = job.available_workflows()
+class TestSettingsModel:
+    @pytest.mark.parametrize("role", [
+        QtCore.Qt.DisplayRole,
+        QtCore.Qt.EditRole,
+    ])
+    def test_data(self, role):
+        model = models.SettingsModel(None)
+        model.add_setting("spam", "eggs")
+        model.data(model.index(0,0), role=role) == "spam"
 
-    workflows_model.add_workflow(workflows["Hathi Prep"])
-    jp2_workflow = workflows['Make JP2']
-    workflows_model.add_workflow(jp2_workflow)
-    assert workflows_model.rowCount() == 2
+    @pytest.mark.parametrize("index, expected", [
+        (0, "Key"),
+        (1, "Value"),
+    ])
+    def test_header_data(self, index, expected):
+        model = models.SettingsModel(None)
+        value = model.headerData(index,
+                                 QtCore.Qt.Horizontal,
+                                 role=QtCore.Qt.DisplayRole)
 
-    workflows_model.remove_workflow(jp2_workflow)
-    assert workflows_model.rowCount() == 1
+        assert value == expected
+
+    def test_set_data(self):
+        model = models.SettingsModel(None)
+        model.add_setting("spam", "eggs")
+        model.setData(model.index(0,0), data="dumb")
+        assert model._data[0][1] == "dumb"
+
+    @pytest.mark.parametrize("column, expected", [
+        (0, QtCore.Qt.NoItemFlags),
+        (1, QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable),
+    ])
+    def test_flags(self, column, expected):
+        model = models.SettingsModel(None)
+        model.add_setting("spam", "eggs")
+        flags = model.flags(model.index(0, column))
+        assert flags == expected
 
 
-def test_workflow_list_model2_isub():
-    workflows_model = models.WorkflowListModel2()
-    workflows = job.available_workflows()
+class TestTabsModel:
+    def test_model_contains(self):
+        from speedwagon.tabs import TabData
+        model = models.TabsModel()
+        model.add_tab(TabData("dummy", Mock()))
+        assert ("dummy" in model) is True
 
-    workflows_model.add_workflow(workflows["Hathi Prep"])
-    jp2_workflow = workflows['Make JP2']
-    workflows_model += jp2_workflow
-    assert workflows_model.rowCount() == 2
+    def test_model_contains_false(self):
+        model = models.TabsModel()
+        assert ("dummy" in model) is False
 
-    workflows_model -= jp2_workflow
-    assert workflows_model.rowCount() == 1
+    def test_model_iadd_operator(self):
+        from speedwagon.tabs import TabData
+        model = models.TabsModel()
+        model += TabData("dummy", Mock())
+        assert ("dummy" in model) is True
 
+    def test_model_isub_operator(self):
+        from speedwagon.tabs import TabData
+        tab = TabData("dummy", Mock())
+        model = models.TabsModel()
+        model += tab
+        assert ("dummy" in model) is True
+        model -= tab
+        assert ("dummy" in model) is False
+
+    def test_model_data(self):
+        from speedwagon.tabs import TabData
+        tab = TabData("dummy", Mock())
+        model = models.TabsModel()
+        model.add_tab(tab)
+        assert model.data(model.index(0, 0), role=QtCore.Qt.UserRole) == tab
