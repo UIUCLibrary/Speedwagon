@@ -96,8 +96,9 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         return self
 
     def rowCount(self,
+                 *args,
                  parent: QtCore.QModelIndex = None,
-                 *args, **kwargs) -> int:
+                 **kwargs) -> int:
 
         return len(self.workflows)
 
@@ -173,10 +174,10 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
         super().__init__(parent)
         self._data = []
 
-    def rowCount(self, parent=None, *args, **kwargs) -> int:
+    def rowCount(self, *args, parent=None, **kwargs) -> int:
         return len(self._data)
 
-    def columnCount(self, parent=None, *args, **kwargs) -> int:
+    def columnCount(self, *args, parent=None, **kwargs) -> int:
         if len(self._data) > 0:
             return 1
         return 0
@@ -445,7 +446,7 @@ class TabsModel(QtCore.QAbstractListModel):
             return workflow.get(role, QtCore.QVariant())
         return QtCore.QVariant()
 
-    def rowCount(self, parent=None, *args, **kwargs) -> int:
+    def rowCount(self, *args, parent=None, **kwargs) -> int:
         return len(self.tabs)
 
     def add_tab(self, tab: "tabs.TabData") -> None:
