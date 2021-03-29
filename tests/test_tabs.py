@@ -93,3 +93,43 @@ class TestWorkflowsTab:
         monkeypatch.setattr(RunRunner, "run", mock_runner)
         selection_tab.start(workflows["Spam"])
         assert isinstance(mock_runner.call_args_list[0][0][1], MockWorkflow)
+
+    @pytest.mark.parametrize(
+        "exception_type",
+        [
+            ValueError,
+            Exception
+        ]
+    )
+    def test_start_creates_a_messagebox_on_value_error(self, qtbot, monkeypatch, exception_type):
+        log_manager = Mock()
+        work_manager = MagicMock(user_settings={})
+        workflows = OrderedDict()
+
+        class MockWorkflow(job.AbsWorkflow):
+            def discover_task_metadata(self, initial_results, additional_data, **user_args):
+                pass
+
+            def user_options(self):
+                return []
+
+        workflows["Spam"] = MockWorkflow
+
+        selection_tab = tabs.WorkflowsTab(
+            parent=None,
+            workflows=workflows,
+            log_manager=log_manager,
+            work_manager=work_manager
+        )
+        from speedwagon.runner_strategies import RunRunner
+        mock_runner = Mock(side_effect=exception_type("something went wrong"))
+        monkeypatch.setattr(RunRunner, "run", mock_runner)
+        from PyQt5.QtWidgets import QMessageBox
+        mock_message_box_exec = Mock()
+        with monkeypatch.context() as mp:
+            mp.setattr(QMessageBox, "exec", mock_message_box_exec)
+            mp.setattr(QMessageBox, "exec_", mock_message_box_exec)
+            selection_tab.start(workflows["Spam"])
+            assert isinstance(mock_runner.call_args_list[0][0][1], MockWorkflow)
+
+        assert mock_message_box_exec.called is True
