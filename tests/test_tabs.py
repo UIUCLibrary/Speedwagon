@@ -3,7 +3,7 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 
-from speedwagon import tabs, exceptions
+from speedwagon import tabs, exceptions, job
 
 
 class TestWorkflowsTab:
@@ -68,3 +68,28 @@ class TestWorkflowsTab:
         assert selection_tab.item_selector_view.currentIndex().data() == \
                workflows['Spam'].name
 
+    def test_start_calls_run_on_workflow(self, qtbot, monkeypatch):
+        log_manager = Mock()
+        work_manager = MagicMock(user_settings={})
+        workflows = OrderedDict()
+
+        class MockWorkflow(job.AbsWorkflow):
+            def discover_task_metadata(self, initial_results, additional_data, **user_args):
+                pass
+
+            def user_options(self):
+                return []
+
+        workflows["Spam"] = MockWorkflow
+
+        selection_tab = tabs.WorkflowsTab(
+            parent=None,
+            workflows=workflows,
+            log_manager=log_manager,
+            work_manager=work_manager
+        )
+        from speedwagon.runner_strategies import RunRunner
+        mock_runner = Mock()
+        monkeypatch.setattr(RunRunner, "run", mock_runner)
+        selection_tab.start(workflows["Spam"])
+        assert isinstance(mock_runner.call_args_list[0][0][1], MockWorkflow)
