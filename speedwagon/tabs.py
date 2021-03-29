@@ -191,9 +191,10 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             QtWidgets.QAbstractItemView.SelectRows
         )
 
-        cast(QtCore.pyqtBoundSignal, selector_view.selectionModel().currentChanged).connect(
-            self._update_tool_selected
-        )
+        cast(
+            QtCore.pyqtBoundSignal,
+            selector_view.selectionModel().currentChanged
+        ).connect(self._update_tool_selected)
 
         return selector_view
 
