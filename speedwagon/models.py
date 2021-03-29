@@ -26,10 +26,10 @@ class ItemListModel(QtCore.QAbstractTableModel):
         super().__init__()
         self.jobs: List[Type[AbsWorkflow]] = list(data.values())
 
-    def columnCount(self, parent=QtCore.QModelIndex(), *args, **kwargs) -> int:
+    def columnCount(self, *args, parent=QtCore.QModelIndex(), **kwargs) -> int:
         return 2
 
-    def rowCount(self, parent=None, *args, **kwargs) -> int:
+    def rowCount(self, *args, parent=None, **kwargs) -> int:
         return len(self.jobs)
 
     @staticmethod
@@ -302,13 +302,13 @@ class SettingsModel(QtCore.QAbstractTableModel):
 
         return QtCore.QVariant()
 
-    def rowCount(self, parent=None, *args, **kwargs) -> int:
+    def rowCount(self,  *args, parent=None, **kwargs) -> int:
         return len(self._data)
 
     def add_setting(self, name: str, value: str) -> None:
         self._data.append((name, value))
 
-    def columnCount(self, parent=None, *args, **kwargs) -> int:
+    def columnCount(self, *args, parent=None, **kwargs) -> int:
         return 2
 
     def headerData(self, index, Qt_Orientation, role=None):
