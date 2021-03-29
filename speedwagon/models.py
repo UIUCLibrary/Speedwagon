@@ -297,10 +297,10 @@ class ToolOptionsModel3(ToolOptionsModel):
     def headerData(
             self,
             index: int,
-            Qt_Orientation: int,
+            orientation: int,
             role=None) -> Union[QtCore.QVariant, str]:
 
-        if Qt_Orientation == QtCore.Qt.Vertical and \
+        if orientation == QtCore.Qt.Vertical and \
                 role == QtCore.Qt.DisplayRole:
 
             title = self._data[index].label_text
@@ -359,11 +359,11 @@ class SettingsModel(QtCore.QAbstractTableModel):
     def headerData(
             self,
             index: int,
-            Qt_Orientation: int,
+            orientation: int,
             role: QtConstant = None
     ) -> Union[str, QtCore.QVariant]:
 
-        if Qt_Orientation == QtCore.Qt.Horizontal and \
+        if orientation == QtCore.Qt.Horizontal and \
                 role == QtCore.Qt.DisplayRole:
             return self._headers.get(index, "")
         return QtCore.QVariant()
