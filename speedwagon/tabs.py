@@ -1,5 +1,6 @@
 """Creating and managing tabs in the UI display"""
 import abc
+import logging
 import os
 import sys
 import traceback
@@ -13,6 +14,7 @@ from PyQt5 import QtWidgets, QtCore  # type: ignore
 import speedwagon
 from . import runner_strategies
 from . import models
+from . import worker
 from .exceptions import MissingConfiguration
 from .workflows import shared_custom_widgets as options
 from .job import AbsWorkflow, NullWorkflow
@@ -123,8 +125,14 @@ class Tab:
 
 
 class ItemSelectionTab(Tab, metaclass=ABCMeta):
-    def __init__(self, name, parent: QtWidgets.QWidget, item_model,
-                 work_manager, log_manager) -> None:
+    def __init__(
+            self,
+            name: str,
+            parent: QtWidgets.QWidget,
+            item_model: "models.WorkflowListModel",
+            work_manager: worker.ToolJobManager,
+            log_manager: logging.Logger
+    ) -> None:
 
         super().__init__(parent, work_manager)
         self.log_manager = log_manager
@@ -183,7 +191,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             QtWidgets.QAbstractItemView.SelectRows
         )
 
-        selector_view.selectionModel().currentChanged.connect(
+        cast(QtCore.pyqtBoundSignal, selector_view.selectionModel().currentChanged).connect(
             self._update_tool_selected
         )
 
@@ -252,7 +260,11 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     def is_ready_to_start(self) -> bool:
         pass
 
-    def _update_tool_selected(self, current, previous) -> None:
+    def _update_tool_selected(
+            self,
+            current: QtCore.QModelIndex,
+            previous: QtCore.QModelIndex
+    ) -> None:
         try:
             if current.isValid():
                 self.item_selected(current)
@@ -281,13 +293,13 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             )
 
             item_settings.setSizePolicy(ITEM_SETTINGS_POLICY)
-        except Exception as e:
-            tb = traceback.format_exception(etype=type(e),
-                                            value=e,
-                                            tb=e.__traceback__)
+        except Exception as error:
+            tb = traceback.format_exception(etype=type(error),
+                                            value=error,
+                                            tb=error.__traceback__)
 
             message = "Unable to use {}. Reason: {}".format(
-                item.name, str(e.__class__.__name__))
+                cast(AbsWorkflow, item).name, str(error.__class__.__name__))
 
             warning_message_dialog = QtWidgets.QMessageBox(self.parent)
             spanner = QtWidgets.QSpacerItem(300,
