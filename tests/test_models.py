@@ -202,3 +202,39 @@ class TestToolOptionsModel3:
         new_model.setData(new_model.index(0,0), "Bacon")
         s = new_model.data(new_model.index(0,0))
         assert s == "Bacon"
+
+
+class TestSettingsModel:
+    @pytest.mark.parametrize("role", [
+        QtCore.Qt.DisplayRole,
+        QtCore.Qt.EditRole,
+    ])
+    def test_data(self, role):
+        model = models.SettingsModel(None)
+        model.add_setting("spam", "eggs")
+        model.data(model.index(0,0), role=role) == "spam"
+
+    @pytest.mark.parametrize("index, expected", [
+        (0, "Key"),
+        (1, "Value"),
+    ])
+    def test_header_data(self, index, expected):
+        model = models.SettingsModel(None)
+        value = model.headerData(index, QtCore.Qt.Horizontal, role=QtCore.Qt.DisplayRole)
+        assert value == expected
+
+    def test_set_data(self):
+        model = models.SettingsModel(None)
+        model.add_setting("spam", "eggs")
+        model.setData(model.index(0,0), data="dumb")
+        assert model._data[0][1] == "dumb"
+
+    @pytest.mark.parametrize("column, expected", [
+        (0, QtCore.Qt.NoItemFlags),
+        (1, QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable),
+    ])
+    def test_flags(self, column, expected):
+        model = models.SettingsModel(None)
+        model.add_setting("spam", "eggs")
+        flags = model.flags(model.index(0, column))
+        assert flags == expected
