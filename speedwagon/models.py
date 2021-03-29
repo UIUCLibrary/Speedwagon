@@ -13,7 +13,8 @@ from .job import AbsWorkflow
 from .workflows import shared_custom_widgets
 
 QtConstant = int
-
+# Qt has non-pythonic names for it's methods
+# pylint: disable=invalid-name
 
 class JobModelData(enum.Enum):
     NAME = 0
