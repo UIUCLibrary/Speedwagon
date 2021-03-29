@@ -222,10 +222,10 @@ class ToolOptionsPairsModel(ToolOptionsModel):
     def headerData(
             self,
             index: int,
-            Qt_Orientation: QtConstant,
+            orientation: QtConstant,
             role=None
     ) -> Union[str, QtCore.QVariant]:
-        if Qt_Orientation == QtCore.Qt.Vertical \
+        if orientation == QtCore.Qt.Vertical \
                 and role == QtCore.Qt.DisplayRole:
             title = self._data[index].label
             return str(title)
