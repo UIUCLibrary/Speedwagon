@@ -15,7 +15,7 @@ from .workflows import shared_custom_widgets
 QtConstant = int
 
 # Qt has non-pythonic names for it's methods
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, unused-argument
 
 
 class JobModelData(enum.Enum):
