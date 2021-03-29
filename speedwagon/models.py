@@ -193,8 +193,8 @@ class ToolOptionsPairsModel(ToolOptionsModel):
     def __init__(self, data: Dict[str, str], parent=None) -> None:
         warnings.warn("Use ToolOptionsModel2 instead", DeprecationWarning)
         super().__init__(parent)
-        for k, v in data.items():
-            self._data.append(OptionPair(k, v))
+        for key, value in data.items():
+            self._data.append(OptionPair(key, value))
 
     def data(self, index: QtCore.QModelIndex, role: QtConstant = None):
         if index.isValid():
