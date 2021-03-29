@@ -6,7 +6,7 @@ import sys
 import traceback
 import enum
 from typing import List, Optional, Tuple, Dict, Iterator, NamedTuple, cast, \
-    Type
+    Type, Any
 from abc import ABCMeta
 
 import yaml
@@ -46,7 +46,8 @@ class Tab:
         """Draw the layout of the tab"""
 
     @abc.abstractmethod
-    def create_actions(self):
+    def create_actions(self) -> Tuple[Dict[str, QtWidgets.QWidget],
+                                      QtWidgets.QLayout]:
         """Generate action widgets"""
 
     def __init__(self,
@@ -176,7 +177,12 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         index = self.item_selection_model.index(0, 0)
         self.item_selector_view.setCurrentIndex(index)
 
-    def _create_selector_view(self, parent, model: QtCore.QAbstractTableModel):
+    def _create_selector_view(
+            self,
+            parent: QtWidgets.QWidget,
+            model: QtCore.QAbstractTableModel
+    ) -> QtWidgets.QListView:
+
         selector_view = QtWidgets.QListView(parent)
         selector_view.setAlternatingRowColors(True)
         selector_view.setUniformItemSizes(True)
@@ -366,7 +372,7 @@ class WorkflowsTab(ItemSelectionTab):
             return False
         return True
 
-    def run(self, workflow: AbsWorkflow, options) -> None:
+    def run(self, workflow: AbsWorkflow, options: Dict[str, Any]) -> None:
 
         try:
             workflow.validate_user_options(**options)
@@ -426,8 +432,12 @@ class WorkflowsTab(ItemSelectionTab):
 
 class MyDelegate(QtWidgets.QStyledItemDelegate):
 
-    def createEditor(self, parent, option: QtWidgets.QStyleOptionViewItem,
-                     index: QtCore.QModelIndex):
+    def createEditor(
+            self,
+            parent: QtWidgets.QWidget,
+            option: QtWidgets.QStyleOptionViewItem,
+            index: QtCore.QModelIndex
+    ) -> QtWidgets.QWidget:
 
         if index.isValid():
             tool_settings = index.data(QtCore.Qt.UserRole)
@@ -443,30 +453,38 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
         return editor
 
     # noinspection PyUnresolvedReferences
-    def update_custom_item(self):
+    def update_custom_item(self) -> None:
         self.commitData.emit(self.sender())
 
     def setEditorData(
             self,
             editor: QtWidgets.QWidget,
             index: QtCore.QModelIndex
-    ):
+    ) -> None:
         if index.isValid():
             i = index.data(QtCore.Qt.UserRole)
             if isinstance(editor, options.CustomItemWidget):
                 editor.data = i.data
         super().setEditorData(editor, index)
 
-    def setModelData(self, widget: QtWidgets.QWidget,
-                     model: QtCore.QAbstractItemModel, index):
+    def setModelData(
+            self,
+            widget: QtWidgets.QWidget,
+            model: QtCore.QAbstractItemModel,
+            index: QtCore.QModelIndex
+    ) -> None:
 
         if isinstance(widget, options.CustomItemWidget):
             model.setData(index, widget.data)
             return
         super().setModelData(widget, model, index)
 
-    def destroyEditor(self, QWidget, QModelIndex):
-        super().destroyEditor(QWidget, QModelIndex)
+    def destroyEditor(
+            self,
+            widget: QtWidgets.QWidget,
+            index: QtCore.QModelIndex
+    ) -> None:
+        super().destroyEditor(widget, index)
 
 
 class TabData(NamedTuple):
@@ -519,7 +537,9 @@ def write_tabs_yaml(yaml_file: str, tabs: List[TabData]) -> None:
         yaml.dump(tabs_data, f, default_flow_style=False)
 
 
-def extract_tab_information(model: "speedwagon.models.TabsModel"):
+def extract_tab_information(
+        model: "speedwagon.models.TabsModel"
+) -> List[TabData]:
     tabs = []
     for tab in model.tabs:
         new_tab = TabData(tab.tab_name, tab.workflows_model)
