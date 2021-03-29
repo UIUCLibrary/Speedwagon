@@ -1,7 +1,7 @@
 """Data models for displaying data to user in the user interface"""
 
 import sys
-from typing import Type, Dict, List, Any, Union, Tuple
+from typing import Type, Dict, List, Any, Union, Tuple, Optional
 import warnings
 from abc import abstractmethod
 from collections import namedtuple
@@ -88,16 +88,25 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
     def rowCount(self, parent=None, *args, **kwargs) -> int:
         return len(self.workflows)
 
-    def data(self, index: QtCore.QModelIndex, role: QtConstant = None):
+    def data(
+            self,
+            index: QtCore.QModelIndex,
+            role: QtConstant = None
+    ) -> Union[str, Workflow, QtCore.QVariant]:
         if not index.isValid():
             return QtCore.QVariant()
         row = index.row()
 
-        workflow = {
+        if role is None:
+            return QtCore.QVariant()
+        workflow: Dict[int, Optional[Union[str, Workflow, QtCore.QVariant]]] = {
             QtCore.Qt.DisplayRole: self.workflows[row].name,
-            QtCore.Qt.UserRole: self.workflows[row]
+            QtCore.Qt.UserRole: self.workflows[row],
         }
-        return workflow.get(role, QtCore.QVariant())
+        value = workflow.get(role)
+        if value is not None:
+            return value
+        return QtCore.QVariant()
 
     def sort(self, key=None, order=None):
         self.layoutAboutToBeChanged.emit()
@@ -377,13 +386,13 @@ class TabsModel(QtCore.QAbstractListModel):
 
         row = index.row()
         if row > len(self.tabs):
-            return None
+            return QtCore.QVariant()
 
-        workflow: Dict[int, Any] = {
-            QtCore.Qt.DisplayRole: self.tabs[row].tab_name,
-            QtCore.Qt.UserRole: self.tabs[row]
-        }
         if role is not None:
+            workflow: Dict[int, Any] = {
+                QtCore.Qt.DisplayRole: self.tabs[row].tab_name,
+                QtCore.Qt.UserRole: self.tabs[row]
+            }
             return workflow.get(role, QtCore.QVariant())
         return QtCore.QVariant()
 
