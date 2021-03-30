@@ -32,9 +32,9 @@ class AbsJobWorker(metaclass=QtMeta):
 
     def __init__(self) -> None:
         self.result = None
-        self.successful = None
+        self.successful: typing.Optional[bool] = None
 
-    def execute(self, *args, **kwargs):
+    def execute(self, *args, **kwargs) -> None:
         try:
             self.process(*args, **kwargs)
             self.on_completion(*args, **kwargs)
@@ -46,11 +46,11 @@ class AbsJobWorker(metaclass=QtMeta):
             raise
 
     @abc.abstractmethod
-    def process(self, *args, **kwargs):
+    def process(self, *args, **kwargs) -> None:
         pass
 
     @abc.abstractmethod
-    def log(self, message):
+    def log(self, message: str) -> None:
         pass
 
     def on_completion(self, *args, **kwargs):
@@ -414,7 +414,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
 
 class AbsJobAdapter(metaclass=abc.ABCMeta):
-    def __init__(self, adaptee):
+    def __init__(self, adaptee) -> None:
         self._adaptee = adaptee
 
     @property
@@ -422,7 +422,7 @@ class AbsJobAdapter(metaclass=abc.ABCMeta):
         return self._adaptee
 
     @abc.abstractmethod
-    def process(self, *args, **kwargs):
+    def process(self, *args, **kwargs) -> None:
         pass
 
     @abc.abstractmethod
@@ -444,7 +444,7 @@ class SubtaskJobAdapter(AbsJobAdapter,
         self.adaptee.parent_task_log_q = QueueAdapter()
 
     @property
-    def queue_adapter(self):
+    def queue_adapter(self) -> QueueAdapter:
         return QueueAdapter()
 
     def process(self, *args, **kwargs) -> None:
