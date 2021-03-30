@@ -10,7 +10,6 @@ from speedwagon.config import build_setting_model
 from speedwagon.ui import tab_editor_ui
 
 
-
 class AbsOpenSettings(abc.ABC):
 
     def __init__(self, settings_directory: str) -> None:
@@ -74,7 +73,7 @@ class OpenSettingsDirectory:
 
 class SettingsDialog(QtWidgets.QDialog):
 
-    def __init__(self, parent: QtWidgets.QWidget = None, *args, **kwargs) -> None:
+    def __init__(self, *args, parent: QtWidgets.QWidget = None, **kwargs) -> None:
         super().__init__(parent, *args, **kwargs)
         self.settings_location: Optional[str] = None
 
@@ -96,7 +95,8 @@ class SettingsDialog(QtWidgets.QDialog):
             QtWidgets.QDialogButtonBox(
                 cast(
                     QtWidgets.QDialogButtonBox.StandardButtons,
-                    QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+                    QtWidgets.QDialogButtonBox.Cancel |
+                    QtWidgets.QDialogButtonBox.Ok
                 )
             )
 
