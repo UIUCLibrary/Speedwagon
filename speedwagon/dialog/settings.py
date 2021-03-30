@@ -45,6 +45,7 @@ class SettingsDialog(QtWidgets.QDialog):
         if self.settings_location is not None:
             print("Opening")
             if platform.system() == "Windows":
+                # pylint: disable=no-member
                 os.startfile(self.settings_location)
             elif platform.system() == "Darwin":
                 os.system("open {}".format(self.settings_location))
