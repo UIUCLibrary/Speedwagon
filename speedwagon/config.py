@@ -13,7 +13,7 @@ import platform
 
 from speedwagon.job import all_required_workflow_keys
 from speedwagon.models import SettingsModel
-
+from PyQt5.QtCore import QAbstractItemModel
 
 class AbsConfig(collections.abc.Mapping):
     """Abstract class for defining where speedwagon should locate data files"""
@@ -188,7 +188,7 @@ def build_setting_model(config_file: str) -> SettingsModel:
     return my_model
 
 
-def serialize_settings_model(model: SettingsModel) -> str:
+def serialize_settings_model(model: QAbstractItemModel) -> str:
     """Convert a SettingsModel into a data format that can be written to a file.
 
     Note:
