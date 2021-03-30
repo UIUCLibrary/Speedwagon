@@ -115,7 +115,7 @@ class CliArgsSetter(AbsSetting):
         return parser
 
     @staticmethod
-    def _parse_args():
+    def _parse_args() -> argparse.Namespace:
         parser = CliArgsSetter.get_arg_parser()
         return parser.parse_args()
 
@@ -123,7 +123,7 @@ class CliArgsSetter(AbsSetting):
 class ConfigFileSetter(AbsSetting):
     FRIENDLY_NAME = "Config file settings"
 
-    def __init__(self, config_file):
+    def __init__(self, config_file: str):
         self.config_file = config_file
 
     def update(self, settings=None) -> Dict["str", Union[str, bool]]:
@@ -141,7 +141,7 @@ def get_selection(all_workflows):
     return new_workflow_set
 
 
-def get_custom_tabs(all_workflows: dict, yaml_file) -> \
+def get_custom_tabs(all_workflows: dict, yaml_file: str) -> \
         Iterator[Tuple[str, dict]]:
 
     try:
