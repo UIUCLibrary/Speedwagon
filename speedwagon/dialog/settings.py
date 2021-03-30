@@ -73,7 +73,13 @@ class OpenSettingsDirectory:
 
 class SettingsDialog(QtWidgets.QDialog):
 
-    def __init__(self, *args, parent: QtWidgets.QWidget = None, **kwargs) -> None:
+    def __init__(
+            self,
+            *args,
+            parent: QtWidgets.QWidget = None,
+            **kwargs
+    ) -> None:
+
         super().__init__(parent, *args, **kwargs)
         self.settings_location: Optional[str] = None
 
