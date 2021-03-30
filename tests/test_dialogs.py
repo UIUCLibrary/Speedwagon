@@ -15,37 +15,35 @@ def test_settings_open_dir_if_location_is_set(qtbot, monkeypatch):
     assert mock_call.called is True
 
 
-def test_open_darwin_settings(monkeypatch):
-    settings_directory = "some/settings/path"
-    opening_strategy = settings.DarwinOpenSettings(settings_directory)
-    import os
-    system = Mock()
-    monkeypatch.setattr(os, "system", system)
-    opening_strategy.open()
-    assert system.called is True and \
-           settings_directory in system.call_args_list[0][0][0]
+class TestOpenSettings:
+    def test_open_darwin_settings(self, monkeypatch):
+        settings_directory = "some/settings/path"
+        opening_strategy = settings.DarwinOpenSettings(settings_directory)
+        import os
+        system = Mock()
+        monkeypatch.setattr(os, "system", system)
+        opening_strategy.open()
+        assert system.called is True and \
+               settings_directory in system.call_args_list[0][0][0]
 
+    def test_open_unsupported_settings(self, monkeypatch):
+        from PyQt5 import QtWidgets
+        settings_directory = "some/settings/path"
+        opening_strategy = settings.UnsupportedOpenSettings(settings_directory)
+        show = Mock()
+        monkeypatch.setattr(QtWidgets.QMessageBox, "show", show)
+        opening_strategy.open()
+        assert show.called is True
 
-def test_open_unsupported_settings(monkeypatch):
-    from PyQt5 import QtWidgets
-    settings_directory = "some/settings/path"
-    opening_strategy = settings.UnsupportedOpenSettings(settings_directory)
-    show = Mock()
-    monkeypatch.setattr(QtWidgets.QMessageBox, "show", show)
-    opening_strategy.open()
-    assert show.called is True
-
-
-def test_open_windows_settings(monkeypatch):
-    settings_directory = "some\\settings\\path"
-    opening_strategy = settings.WindowsOpenSettings(settings_directory)
-    # os.startfile
-    import os
-    startfile = Mock()
-    if platform.system() != "Windows":
-        setattr(os, "startfile", startfile)
-    else:
-        monkeypatch.setattr(os, "startfile", startfile)
-    opening_strategy.open()
-    assert startfile.called is True
+    def test_open_windows_settings(self, monkeypatch):
+        settings_directory = "some\\settings\\path"
+        opening_strategy = settings.WindowsOpenSettings(settings_directory)
+        import os
+        startfile = Mock()
+        if platform.system() != "Windows":
+            setattr(os, "startfile", startfile)
+        else:
+            monkeypatch.setattr(os, "startfile", startfile)
+        opening_strategy.open()
+        assert startfile.called is True
 
