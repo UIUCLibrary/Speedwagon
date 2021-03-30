@@ -60,7 +60,7 @@ class SettingsDialog(QtWidgets.QDialog):
 
 class GlobalSettingsTab(QtWidgets.QWidget):
 
-    def __init__(self, parent = None, *args, **kwargs):
+    def __init__(self, parent=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.config_file = None
         self._modified = False
