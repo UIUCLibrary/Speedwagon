@@ -100,7 +100,7 @@ class ConsoleLogger(logging.Handler):
 
 class ItemTabsWidget(QtWidgets.QWidget):
 
-    def __init__(self, parent:QtWidgets.QWidget=None) -> None:
+    def __init__(self, parent:QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
         layout = QtWidgets.QVBoxLayout(self)
 
@@ -127,8 +127,11 @@ class ItemTabsWidget(QtWidgets.QWidget):
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
-    def __init__(self, work_manager: worker.ToolJobManager, debug:bool = False) -> \
-            None:
+    def __init__(
+            self,
+            work_manager: worker.ToolJobManager,
+            debug: bool = False
+    ) -> None:
 
         super().__init__()
         self._debug = debug
