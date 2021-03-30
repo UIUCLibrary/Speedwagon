@@ -1,5 +1,6 @@
 import os
 import platform
+from typing import Optional, Dict
 
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 
@@ -37,7 +38,7 @@ class SettingsDialog(QtWidgets.QDialog):
         self.setFixedHeight(480)
         self.setFixedWidth(600)
 
-    def add_tab(self, tab, tab_name: str) -> None:
+    def add_tab(self, tab: QtWidgets.QWidget, tab_name: str) -> None:
         self.tabsWidget.addTab(tab, tab_name)
 
     def open_settings_dir(self):
@@ -59,7 +60,7 @@ class SettingsDialog(QtWidgets.QDialog):
 
 class GlobalSettingsTab(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, *args, **kwargs):
+    def __init__(self, parent = None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.config_file = None
         self._modified = False
@@ -139,7 +140,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.setupUi(self)
-        self._tabs_file = None
+        self._tabs_file: Optional[str] = None
 
         self._tabs_model = models.TabsModel()
 
@@ -165,11 +166,11 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         self.modified = True
 
     @property
-    def tabs_file(self):
+    def tabs_file(self) -> Optional[str]:
         return self._tabs_file
 
     @tabs_file.setter
-    def tabs_file(self, value):
+    def tabs_file(self, value: str) -> None:
 
         for tab in tabs.read_tabs_yaml(value):
 
@@ -179,7 +180,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         self._tabs_file = value
         self.modified = False
 
-    def _changed_tab(self, tab):
+    def _changed_tab(self, tab: int) -> None:
         model = self.selectedTabComboBox.model()
         index = model.index(tab)
         if index.isValid():
@@ -212,9 +213,9 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
             self.selectedTabComboBox.setCurrentIndex(new_index)
             return
 
-    def _delete_tab(self):
+    def _delete_tab(self) -> None:
         data = self.selectedTabComboBox.currentData()
-        model: None = self.selectedTabComboBox.model()
+        model = self.selectedTabComboBox.model()
         model -= data
 
     def _add_items_to_tab(self) -> None:
@@ -235,12 +236,12 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
             model.remove_workflow(item)
         model.sort()
 
-    def set_all_workflows(self, workflows):
+    def set_all_workflows(self, workflows: Dict[str, job.Workflow]) -> None:
         for k, v in workflows.items():
             self._all_workflows_model.add_workflow(v)
         self._all_workflows_model.sort()
         self.allWorkflowsListView.setModel(self._all_workflows_model)
 
     @property
-    def current_tab(self):
+    def current_tab(self) -> QtWidgets.QWidget:
         return self.selectedTabComboBox.currentData()
