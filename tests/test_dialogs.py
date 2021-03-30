@@ -1,6 +1,6 @@
 import platform
-from unittest.mock import Mock
-
+from unittest.mock import Mock, patch, mock_open
+import pytest
 from speedwagon.dialog import settings
 
 
@@ -46,4 +46,36 @@ class TestOpenSettings:
             monkeypatch.setattr(os, "startfile", startfile)
         opening_strategy.open()
         assert startfile.called is True
+
+
+class TestGlobalSettingsTab:
+    def test_on_okay_not_modified(self, qtbot, monkeypatch):
+        from PyQt5 import QtWidgets
+        mock_exec = Mock()
+        monkeypatch.setattr(QtWidgets.QMessageBox, "exec", mock_exec)
+        settings_tab = settings.GlobalSettingsTab()
+        qtbot.addWidget(settings_tab)
+        settings_tab.on_okay()
+        assert mock_exec.called is False
+
+    @pytest.mark.parametrize("config_file, expect_file_written",
+                             [
+                                 (None, False),
+                                 ("dummy.yml", True)
+                             ])
+    def test_on_okay_modified(self, qtbot, monkeypatch, config_file,
+                              expect_file_written):
+        from PyQt5 import QtWidgets
+        from speedwagon import config
+        mock_exec = Mock()
+        monkeypatch.setattr(QtWidgets.QMessageBox, "exec", mock_exec)
+        monkeypatch.setattr(config, "serialize_settings_model", Mock())
+        settings_tab = settings.GlobalSettingsTab()
+        qtbot.addWidget(settings_tab)
+        settings_tab.on_modified()
+        settings_tab.config_file = config_file
+        m = mock_open()
+        with patch('builtins.open', m):
+            settings_tab.on_okay()
+        assert m.called is expect_file_written
 

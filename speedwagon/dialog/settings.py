@@ -139,9 +139,9 @@ class SettingsDialog(QtWidgets.QDialog):
 
 class GlobalSettingsTab(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, *args, **kwargs):
+    def __init__(self, parent=None, *args, **kwargs) -> None:
         super().__init__(parent, *args, **kwargs)
-        self.config_file = None
+        self.config_file: Optional[str] = None
         self._modified = False
 
         self.layout = QtWidgets.QVBoxLayout(self)  # type: ignore
@@ -168,17 +168,24 @@ class GlobalSettingsTab(QtWidgets.QWidget):
         self._modified = True
 
     def on_okay(self) -> None:
-        if self._modified:
-            print("Saving changes")
-            data = config.serialize_settings_model(self.settings_table.model())
+        if not self._modified:
+            return
+        if self.config_file is None:
+            msg = QtWidgets.QMessageBox(parent=self)
+            msg.setIcon(QtWidgets.QMessageBox.Warning)
+            msg.setText("Unable to save settings. No configuration file set")
+            msg.exec()
+            return
 
-            with open(self.config_file, "w") as fw:
-                fw.write(data)
+        print("Saving changes")
+        data = config.serialize_settings_model(self.settings_table.model())
+        with open(self.config_file, "w") as fw:
+            fw.write(data)
 
-            msg_box = QtWidgets.QMessageBox(self)
-            msg_box.setWindowTitle("Saved changes")
-            msg_box.setText("Please restart changes to take effect")
-            msg_box.exec()
+        msg_box = QtWidgets.QMessageBox(self)
+        msg_box.setWindowTitle("Saved changes")
+        msg_box.setText("Please restart changes to take effect")
+        msg_box.exec()
 
 
 class TabsConfigurationTab(QtWidgets.QWidget):
