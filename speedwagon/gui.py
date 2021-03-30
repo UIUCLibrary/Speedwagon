@@ -100,7 +100,7 @@ class ConsoleLogger(logging.Handler):
 
 class ItemTabsWidget(QtWidgets.QWidget):
 
-    def __init__(self, parent:QtWidgets.QWidget = None) -> None:
+    def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
         layout = QtWidgets.QVBoxLayout(self)
 
