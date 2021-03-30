@@ -2,7 +2,7 @@ import abc
 import os
 
 from typing import Type
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 
 
 class AbsCustomData2(metaclass=abc.ABCMeta):
@@ -24,7 +24,7 @@ class WidgetMeta(abc.ABCMeta, type(QtCore.QObject)):  # type: ignore
 class CustomItemWidget(QtWidgets.QWidget):
     editingFinished = QtCore.pyqtSignal()
 
-    def __init__(self, parent=None, *args, **kwargs):
+    def __init__(self, parent=None, *args, **kwargs) -> None:
         super().__init__(parent, *args, **kwargs)
         self._data = ""
         self.inner_layout = QtWidgets.QHBoxLayout(parent)
@@ -33,11 +33,11 @@ class CustomItemWidget(QtWidgets.QWidget):
         self.setAutoFillBackground(True)
 
     @property
-    def data(self):
+    def data(self) -> str:
         return self._data
 
     @data.setter
-    def data(self, value) -> None:
+    def data(self, value: str) -> None:
         self._data = value
         self.editingFinished.emit()
 
@@ -58,13 +58,13 @@ class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
         self.text_line.textEdited.connect(self._change_data)
         self.inner_layout.addWidget(self.text_line)
 
-    def get_browse_icon(self):
+    def get_browse_icon(self) -> QtGui.QIcon:
         """Get the icon for the right type of browsing."""
         return QtWidgets.QApplication.style().standardIcon(
             QtWidgets.QStyle.SP_DirOpenIcon)
 
     @abc.abstractmethod
-    def browse_clicked(self):
+    def browse_clicked(self) -> None:
         pass
 
     @property
@@ -94,7 +94,7 @@ class AbsCustomData3(metaclass=abc.ABCMeta):
 
 class ChecksumFile(AbsBrowseableWidget):
 
-    def get_browse_icon(self):
+    def get_browse_icon(self) -> QtGui.QIcon:
         return QtWidgets.QApplication.style().standardIcon(
             QtWidgets.QStyle.SP_FileIcon)
 
@@ -125,7 +125,7 @@ class ChecksumData(AbsCustomData3):
 
 class FolderBrowseWidget(AbsBrowseableWidget):
 
-    def get_browse_icon(self):
+    def get_browse_icon(self) -> QtGui.QIcon:
         return QtWidgets.QApplication.style().standardIcon(
             QtWidgets.QStyle.SP_DirOpenIcon)
 
