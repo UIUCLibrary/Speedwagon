@@ -78,4 +78,3 @@ class TestGlobalSettingsTab:
         with patch('builtins.open', m):
             settings_tab.on_okay()
         assert m.called is expect_file_written
-
