@@ -1,6 +1,6 @@
 from typing import Collection
 
-from PyQt5 import QtWidgets  # type: ignore
+from PyQt5 import QtWidgets, QtGui  # type: ignore
 try:
     from importlib import metadata
 except ImportError:
@@ -19,7 +19,7 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
         self.setStandardButtons(QtWidgets.QMessageBox.Abort)
         self.setSizeGripEnabled(True)
 
-    def event(self, e):
+    def event(self, e) -> bool:
         # Allow the dialog box to be resized so that the additional information
         # can be readable
 
@@ -47,8 +47,8 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
 class WorkProgressBar(QtWidgets.QProgressDialog):
     """Use this for showing progress """
 
-    def closeEvent(self, QCloseEvent):
-        super().closeEvent(QCloseEvent)
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+        super().closeEvent(event)
 
     def __init__(self, *args) -> None:
         super().__init__(*args)
@@ -59,8 +59,8 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
         self._label.setWordWrap(True)
         self.setLabel(self._label)
 
-    def resizeEvent(self, QResizeEvent) -> None:
-        super().resizeEvent(QResizeEvent)
+    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
+        super().resizeEvent(event)
         self._label.setMaximumWidth(self.width())
         self.setMinimumHeight(self._label.sizeHint().height() + 75)
 

@@ -45,7 +45,7 @@ Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 class ToolConsole(QtWidgets.QWidget):
     """asdfasdf"""
 
-    def __init__(self, parent) -> None:
+    def __init__(self, parent: QtWidgets.QWidget) -> None:
         super().__init__(parent)
         layout = QtWidgets.QVBoxLayout(self)
 
@@ -100,7 +100,7 @@ class ConsoleLogger(logging.Handler):
 
 class ItemTabsWidget(QtWidgets.QWidget):
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
         layout = QtWidgets.QVBoxLayout(self)
 
@@ -127,8 +127,11 @@ class ItemTabsWidget(QtWidgets.QWidget):
 
 class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     # noinspection PyUnresolvedReferences
-    def __init__(self, work_manager: worker.ToolJobManager, debug=False) -> \
-            None:
+    def __init__(
+            self,
+            work_manager: worker.ToolJobManager,
+            debug: bool = False
+    ) -> None:
 
         super().__init__()
         self._debug = debug
@@ -372,7 +375,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
 
 class SplashScreenLogHandler(logging.Handler):
-    def __init__(self, widget, level=logging.NOTSET):
+    def __init__(self,
+                 widget: QtWidgets.QWidget,
+                 level: int = logging.NOTSET) -> None:
+
         super().__init__(level)
         self.widget = widget
 

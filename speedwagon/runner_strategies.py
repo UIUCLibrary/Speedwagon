@@ -3,7 +3,7 @@
 import abc
 import logging
 import tempfile
-from typing import List, Any
+from typing import List, Any, Dict
 
 from . import tasks
 from . import worker
@@ -47,8 +47,13 @@ class UsingExternalManagerForAdapter(AbsRunner):
         if current == total:
             runner.dialog.accept()
 
-    def run(self, parent, job: AbsWorkflow, options: dict,
-            logger: logging.Logger, completion_callback=None) -> None:
+    def run(self,
+            parent,
+            job: AbsWorkflow,
+            options: dict,
+            logger: logging.Logger,
+            completion_callback=None
+            ) -> None:
 
         results: List[Any] = []
 
@@ -123,9 +128,15 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 if report:
                     logger.info(report)
 
-    def _run_main_tasks(self, parent, job: AbsWorkflow, options,
-                        pretask_results, additional_data, working_dir,
-                        logger) -> list:
+    def _run_main_tasks(self,
+                        parent,
+                        job: AbsWorkflow,
+                        options,
+                        pretask_results,
+                        additional_data,
+                        working_dir: str,
+                        logger: logging.Logger
+                        ) -> list:
 
         results = []
 
@@ -185,8 +196,13 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 logger.removeHandler(runner.progress_dialog_box_handler)
             return results
 
-    def _run_post_tasks(self, parent, job, options, results, working_dir,
-                        logger) -> list:
+    def _run_post_tasks(self,
+                        parent,
+                        job: AbsWorkflow,
+                        options,
+                        results,
+                        working_dir: str,
+                        logger: logging.Logger) -> list:
         _results = []
         with self._manager.open(parent=parent,
                                 runner=worker.WorkRunnerExternal3) as runner:
@@ -226,7 +242,15 @@ class UsingExternalManagerForAdapter(AbsRunner):
             finally:
                 logger.removeHandler(runner.progress_dialog_box_handler)
 
-    def _run_pre_tasks(self, parent, job, options, working_dir, logger):
+    def _run_pre_tasks(
+            self,
+            parent,
+            job: AbsWorkflow,
+            options: Dict[str, Any],
+            working_dir: str,
+            logger: logging.Logger
+    ) -> List[Any]:
+
         results = []
 
         with self._manager.open(parent=parent,

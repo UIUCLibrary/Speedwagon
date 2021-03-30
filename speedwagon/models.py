@@ -1,7 +1,7 @@
 """Data models for displaying data to user in the user interface"""
 
 import sys
-from typing import Type, Dict, List, Any, Union, Tuple
+from typing import Type, Dict, List, Any, Union, Tuple, Optional, cast
 import warnings
 from abc import abstractmethod
 from collections import namedtuple
@@ -13,6 +13,9 @@ from .job import AbsWorkflow
 from .workflows import shared_custom_widgets
 
 QtConstant = int
+
+# Qt has non-pythonic names for it's methods
+# pylint: disable=invalid-name, unused-argument
 
 
 class JobModelData(enum.Enum):
@@ -26,10 +29,14 @@ class ItemListModel(QtCore.QAbstractTableModel):
         super().__init__()
         self.jobs: List[Type[AbsWorkflow]] = list(data.values())
 
-    def columnCount(self, parent=QtCore.QModelIndex(), *args, **kwargs) -> int:
+    def columnCount(self, *args, parent=QtCore.QModelIndex(), **kwargs) -> int:
         return 2
 
-    def rowCount(self, parent=None, *args, **kwargs) -> int:
+    def rowCount(self,
+                 *args,
+                 parent: QtCore.QModelIndex = None,
+                 **kwargs) -> int:
+
         return len(self.jobs)
 
     @staticmethod
@@ -46,12 +53,15 @@ OptionPair = namedtuple("OptionPair", ("label", "data"))
 
 
 class WorkflowListModel(ItemListModel):
-    def data(self, index, role: QtConstant = None) -> \
-            Union[str, Type[AbsWorkflow], QtCore.QSize, QtCore.QVariant]:
+    def data(
+            self,
+            index: QtCore.QModelIndex,
+            role: QtConstant = None
+    ) -> Union[str, Type[AbsWorkflow], QtCore.QSize, QtCore.QVariant]:
 
         if index.isValid():
             data = self.jobs[index.row()]
-            if role == QtCore.Qt.DisplayRole or role == QtCore.Qt.EditRole:
+            if role in [QtCore.Qt.DisplayRole, QtCore.Qt.EditRole]:
                 return self._extract_job_metadata(
                     job=data,
                     data_type=JobModelData(index.column())
@@ -73,37 +83,52 @@ class WorkflowListModel(ItemListModel):
 
 
 class WorkflowListModel2(QtCore.QAbstractListModel):
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QtCore.QObject = None) -> None:
         super().__init__(parent)
         self.workflows: List[Workflow] = []
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: "Workflow") -> "WorkflowListModel2":
         self.add_workflow(other)
         return self
 
-    def __isub__(self, other):
+    def __isub__(self, other: "Workflow") -> "WorkflowListModel2":
         self.remove_workflow(other)
         return self
 
-    def rowCount(self, parent=None, *args, **kwargs) -> int:
+    def rowCount(self,
+                 *args,
+                 parent: QtCore.QModelIndex = None,
+                 **kwargs) -> int:
+
         return len(self.workflows)
 
-    def data(self, index: QtCore.QModelIndex, role: QtConstant = None):
+    def data(
+            self,
+            index: QtCore.QModelIndex,
+            role: QtConstant = None
+    ) -> Union[str, Workflow, QtCore.QVariant]:
         if not index.isValid():
             return QtCore.QVariant()
         row = index.row()
 
-        workflow = {
+        if role is None:
+            return QtCore.QVariant()
+        workflow: Dict[int, Optional[Union[str,
+                                           Workflow,
+                                           QtCore.QVariant]]] = {
             QtCore.Qt.DisplayRole: self.workflows[row].name,
-            QtCore.Qt.UserRole: self.workflows[row]
+            QtCore.Qt.UserRole: self.workflows[row],
         }
-        return workflow.get(role, QtCore.QVariant())
+        value = workflow.get(role)
+        if value is not None:
+            return value
+        return QtCore.QVariant()
 
-    def sort(self, key=None, order=None):
-        self.layoutAboutToBeChanged.emit()
+    def sort(self, key=None, order=None) -> None:
+        cast(QtCore.pyqtBoundSignal, self.layoutAboutToBeChanged).emit()
 
         self.workflows.sort(key=key or (lambda i: i.name))
-        self.layoutChanged.emit()
+        cast(QtCore.pyqtBoundSignal, self.layoutChanged).emit()
 
     def add_workflow(self, workflow: Workflow) -> None:
         for existing_workflow in self.workflows:
@@ -118,7 +143,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
             self.endInsertRows()
 
     def setData(self, index: QtCore.QModelIndex,
-                workflow: Any, role: QtConstant = None) -> bool:
+                workflow: Workflow, role: QtConstant = None) -> bool:
 
         if not index.isValid():
             return False
@@ -135,7 +160,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         self.dataChanged.emit(index, index, [role])
         return True
 
-    def remove_workflow(self, workflow) -> None:
+    def remove_workflow(self, workflow: Workflow) -> None:
         if workflow in self.workflows:
             index = QtCore.QModelIndex()
             self.beginRemoveRows(index, 0, self.rowCount())
@@ -149,10 +174,10 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
         super().__init__(parent)
         self._data = []
 
-    def rowCount(self, parent=None, *args, **kwargs) -> int:
+    def rowCount(self, *args, parent=None, **kwargs) -> int:
         return len(self._data)
 
-    def columnCount(self, parent=None, *args, **kwargs) -> int:
+    def columnCount(self, *args, parent=None, **kwargs) -> int:
         if len(self._data) > 0:
             return 1
         return 0
@@ -161,7 +186,7 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
     def get(self):
         raise NotImplementedError
 
-    def flags(self, index):
+    def flags(self, index: QtCore.QModelIndex):
         if not index.isValid():
             return QtCore.Qt.ItemIsEnabled
 
@@ -179,10 +204,10 @@ class ToolOptionsPairsModel(ToolOptionsModel):
     def __init__(self, data: Dict[str, str], parent=None) -> None:
         warnings.warn("Use ToolOptionsModel2 instead", DeprecationWarning)
         super().__init__(parent)
-        for k, v in data.items():
-            self._data.append(OptionPair(k, v))
+        for key, value in data.items():
+            self._data.append(OptionPair(key, value))
 
-    def data(self, index, role=None):
+    def data(self, index: QtCore.QModelIndex, role: QtConstant = None):
         if index.isValid():
             if role == QtCore.Qt.DisplayRole:
                 return self._data[index.row()].data
@@ -202,8 +227,13 @@ class ToolOptionsPairsModel(ToolOptionsModel):
         self._data[index.row()] = OptionPair(existing_data.label, data)
         return True
 
-    def headerData(self, index, Qt_Orientation, role=None):
-        if Qt_Orientation == QtCore.Qt.Vertical \
+    def headerData(
+            self,
+            index: int,
+            orientation: QtConstant,
+            role: QtConstant = None
+    ) -> Union[str, QtCore.QVariant]:
+        if orientation == QtCore.Qt.Vertical \
                 and role == QtCore.Qt.DisplayRole:
             title = self._data[index].label
             return str(title)
@@ -243,7 +273,14 @@ class ToolOptionsModel3(ToolOptionsModel):
         self._data: \
             List[shared_custom_widgets.UserOptionPythonDataType2] = data
 
-    def data(self, index, role=QtCore.Qt.DisplayRole):
+    def data(
+            self,
+            index: QtCore.QModelIndex,
+            role=QtCore.Qt.DisplayRole
+    ) -> Union[QtCore.QVariant,
+               QtCore.QSize,
+               shared_custom_widgets.UserOption2,
+               str]:
         if index.isValid():
             if role == QtCore.Qt.DisplayRole:
                 data = self._data[index.row()].data
@@ -259,21 +296,32 @@ class ToolOptionsModel3(ToolOptionsModel):
 
         return QtCore.QVariant()
 
-    def get(self):
-        options = dict()
+    def get(self) -> Dict[str, Any]:
+        options: Dict[str, Any] = {}
         for data in self._data:
             options[data.label_text] = data.data
         return options
 
-    def headerData(self, index, Qt_Orientation, role=None):
-        if Qt_Orientation == QtCore.Qt.Vertical and \
+    def headerData(
+            self,
+            index: int,
+            orientation: int,
+            role=None) -> Union[QtCore.QVariant, str]:
+
+        if orientation == QtCore.Qt.Vertical and \
                 role == QtCore.Qt.DisplayRole:
 
             title = self._data[index].label_text
             return str(title)
         return QtCore.QVariant()
 
-    def setData(self, index, data, role=None) -> bool:
+    def setData(
+            self,
+            index: QtCore.QModelIndex,
+            data,
+            role: QtConstant = None
+    ) -> bool:
+
         if not index.isValid():
             return False
         self._data[index.row()].data = data
@@ -290,7 +338,12 @@ class SettingsModel(QtCore.QAbstractTableModel):
             1: "Value"
         }
 
-    def data(self, index: QtCore.QModelIndex, role=None) -> Any:
+    def data(
+            self,
+            index: QtCore.QModelIndex,
+            role: QtConstant = None
+    ) -> Union[str, QtCore.QVariant]:
+
         if not index.isValid():
             return QtCore.QVariant()
 
@@ -302,17 +355,23 @@ class SettingsModel(QtCore.QAbstractTableModel):
 
         return QtCore.QVariant()
 
-    def rowCount(self, parent=None, *args, **kwargs) -> int:
+    def rowCount(self,  *args, parent=None, **kwargs) -> int:
         return len(self._data)
 
     def add_setting(self, name: str, value: str) -> None:
         self._data.append((name, value))
 
-    def columnCount(self, parent=None, *args, **kwargs) -> int:
+    def columnCount(self, *args, parent=None, **kwargs) -> int:
         return 2
 
-    def headerData(self, index, Qt_Orientation, role=None):
-        if Qt_Orientation == QtCore.Qt.Horizontal and \
+    def headerData(
+            self,
+            index: int,
+            orientation: int,
+            role: QtConstant = None
+    ) -> Union[str, QtCore.QVariant]:
+
+        if orientation == QtCore.Qt.Horizontal and \
                 role == QtCore.Qt.DisplayRole:
             return self._headers.get(index, "")
         return QtCore.QVariant()
@@ -352,18 +411,18 @@ class TabsModel(QtCore.QAbstractListModel):
         super().__init__(parent)
         self.tabs: List[tabs.TabData] = []
 
-    def __contains__(self, value) -> bool:
+    def __contains__(self, value: "tabs.TabData") -> bool:
         # Looks for the tab based on the tab_name string
         for tab in self.tabs:
             if tab.tab_name == value:
                 return True
         return False
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: "tabs.TabData") -> "TabsModel":
         self.add_tab(other)
         return self
 
-    def __isub__(self, other):
+    def __isub__(self, other: "tabs.TabData") -> "TabsModel":
         self.remove_tab(other)
         return self
 
@@ -377,17 +436,17 @@ class TabsModel(QtCore.QAbstractListModel):
 
         row = index.row()
         if row > len(self.tabs):
-            return None
+            return QtCore.QVariant()
 
-        workflow: Dict[int, Any] = {
-            QtCore.Qt.DisplayRole: self.tabs[row].tab_name,
-            QtCore.Qt.UserRole: self.tabs[row]
-        }
         if role is not None:
+            workflow: Dict[int, Any] = {
+                QtCore.Qt.DisplayRole: self.tabs[row].tab_name,
+                QtCore.Qt.UserRole: self.tabs[row]
+            }
             return workflow.get(role, QtCore.QVariant())
         return QtCore.QVariant()
 
-    def rowCount(self, parent=None, *args, **kwargs) -> int:
+    def rowCount(self, *args, parent=None, **kwargs) -> int:
         return len(self.tabs)
 
     def add_tab(self, tab: "tabs.TabData") -> None:
@@ -409,7 +468,7 @@ class TabsModel(QtCore.QAbstractListModel):
     def setData(
             self,
             index: QtCore.QModelIndex,
-            tab,
+            tab: "tabs.TabData",
             role: QtConstant = None
     ) -> bool:
 
