@@ -11,9 +11,10 @@ import collections.abc
 from typing import Optional, Dict, Type, Set, Iterator, Iterable
 import platform
 
+from PyQt5.QtCore import QAbstractItemModel
+
 from speedwagon.job import all_required_workflow_keys
 from speedwagon.models import SettingsModel
-from PyQt5.QtCore import QAbstractItemModel
 
 class AbsConfig(collections.abc.Mapping):
     """Abstract class for defining where speedwagon should locate data files"""
