@@ -14,7 +14,7 @@ from collections import namedtuple
 from PyQt5 import QtCore, QtWidgets  # type: ignore
 
 from .dialog.dialogs import WorkProgressBar
-from .tasks import AbsSubtask, QueueAdapter
+from .tasks import AbsSubtask, QueueAdapter, Result
 
 MessageLog = namedtuple("MessageLog", ("message",))
 
@@ -53,7 +53,7 @@ class AbsJobWorker(metaclass=QtMeta):
     def log(self, message: str) -> None:
         pass
 
-    def on_completion(self, *args, **kwargs):
+    def on_completion(self, *args, **kwargs) -> None:
         pass
 
     @classmethod
@@ -180,7 +180,7 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
 class ProgressMessageBoxLogHandler(logging.Handler):
 
     def __init__(self, dialog_box: QtWidgets.QProgressDialog,
-                 level=logging.NOTSET) -> None:
+                 level: int = logging.NOTSET) -> None:
 
         super().__init__(level)
         self.dialog_box = dialog_box
@@ -235,13 +235,13 @@ class GuiLogHandler(logging.Handler):
 
 
 class WorkRunnerExternal3(contextlib.AbstractContextManager):
-    def __init__(self, parent):
-        self.results = []
+    def __init__(self, parent) -> None:
+        self.results: typing.List[Result] = []
         self._parent = parent
         self.abort_callback = None
         self.was_aborted = False
 
-    def __enter__(self):
+    def __enter__(self) -> "WorkRunnerExternal3":
         self.dialog = WorkProgressBar(self._parent)
         self.dialog.setLabelText("Initializing")
         self.dialog.setMinimumDuration(100)
@@ -252,13 +252,13 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         self.dialog.canceled.connect(self.abort)
         return self
 
-    def abort(self):
+    def abort(self) -> None:
         if self.dialog.result() == QtWidgets.QProgressDialog.Rejected:
             self.was_aborted = True
             if self.abort_callback is not None:
                 self.abort_callback()
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
         self.dialog.close()
 
 

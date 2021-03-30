@@ -29,7 +29,8 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
+                               additional_data: Dict[str, Any],
+                               **user_args) -> List[dict]:
         """Generate data or parameters needed for task to complete based on
         the user's original configuration
 

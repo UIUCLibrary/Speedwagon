@@ -461,11 +461,11 @@ class TabsEditorApp(QtWidgets.QDialog):
         self.editor.tabs_file = filename
 
     @property
-    def tabs_file(self):
+    def tabs_file(self) -> str:
         return self.editor.tabs_file
 
     @tabs_file.setter
-    def tabs_file(self, value):
+    def tabs_file(self, value: str) -> None:
         self.editor.tabs_file = value
 
 
