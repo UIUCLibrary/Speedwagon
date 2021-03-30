@@ -95,7 +95,9 @@ class SettingsDialog(QtWidgets.QDialog):
             lambda: self.open_settings_dir()
         )
 
-        cast(QtWidgets.QLayout, self.layout).addWidget(self.open_settings_path_button)
+        cast(QtWidgets.QLayout, self.layout).addWidget(
+            self.open_settings_path_button
+        )
 
         self._button_box = \
             QtWidgets.QDialogButtonBox(
@@ -336,4 +338,3 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
     @property
     def current_tab(self) -> QtWidgets.QWidget:
         return self.selectedTabComboBox.currentData()
-
