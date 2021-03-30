@@ -139,7 +139,12 @@ class SettingsDialog(QtWidgets.QDialog):
 
 class GlobalSettingsTab(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, *args, **kwargs) -> None:
+    def __init__(
+            self,
+            parent: QtWidgets.QWidget = None,
+            *args, **kwargs
+    ) -> None:
+
         super().__init__(parent, *args, **kwargs)
         self.config_file: Optional[str] = None
         self._modified = False
