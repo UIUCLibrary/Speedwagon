@@ -507,10 +507,13 @@ def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
                     empty_workflow = \
                         cast(
                             Type[Workflow],
-                            type(workflow_name, (NullWorkflow,),
-                                 {
-                                     "name": workflow_name
-                                 })
+                            type(
+                                workflow_name,
+                                (NullWorkflow,),
+                                {
+                                    "name": workflow_name
+                                }
+                            )
                         )
                     model.add_workflow(empty_workflow)
                 new_tab = TabData(tab_name, model)
