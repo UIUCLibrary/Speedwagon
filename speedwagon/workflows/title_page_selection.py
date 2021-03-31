@@ -5,9 +5,14 @@ from collections import namedtuple
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 from PyQt5.QtCore import Qt  # type: ignore
 from uiucprescon.packager.packages import collection
+from typing import NamedTuple, Any
 
-ModelField = namedtuple("ModelField",
-                        ("column_header", "data_entry", "editable"))
+class ModelField(NamedTuple):
+    column_header: str
+    data_entry: Any
+    editable: bool
+# ModelField = namedtuple("ModelField",
+#                         ("column_header", "data_entry", "editable"))
 
 
 class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
@@ -15,8 +20,12 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
 
         super().__init__(parent)
 
-    def createEditor(self, parent, QStyleOptionViewItem,
-                     index: QtCore.QModelIndex):
+    def createEditor(
+            self,
+            parent: QtWidgets.QWidget,
+            item: QtWidgets.QStyleOptionViewItem,
+            index: QtCore.QModelIndex) -> QtWidgets.QWidget:
+
         selection = QtWidgets.QComboBox(parent)
 
         return selection
@@ -75,7 +84,7 @@ class PackagesModel(QtCore.QAbstractTableModel):
 
     ]
 
-    def __init__(self, packages: list, parent=None) -> None:
+    def __init__(self, packages: typing.List[collection.AbsPackageComponent], parent=None) -> None:
         super().__init__(parent)
         self._packages = packages
 
@@ -85,9 +94,15 @@ class PackagesModel(QtCore.QAbstractTableModel):
     def rowCount(self, parent=None, *args, **kwargs) -> int:
         return len(self._packages)
 
-    def headerData(self, index, orientation, role=QtCore.Qt.DisplayRole):
-        if role == QtCore.Qt.DisplayRole \
-                and orientation == QtCore.Qt.Horizontal:
+    def headerData(
+            self,
+            index: int,
+            orientation: Qt.Orientation,
+            role: int = QtCore.Qt.DisplayRole
+    ) -> typing.Union[str, QtCore.QVariant]:
+
+        if role == QtCore.Qt.DisplayRole and \
+                orientation == QtCore.Qt.Horizontal:
             try:
                 return self.fields[index].column_header
             except IndexError:
@@ -114,15 +129,20 @@ class PackagesModel(QtCore.QAbstractTableModel):
     def results(self) -> typing.List[collection.Package]:
         return self._packages
 
-    def flags(self, index):
+    def flags(self, index: QtCore.QModelIndex) -> Qt.ItemFlags:
         column = index.column()
         if self.fields[column].editable:
-            return Qt.ItemIsEditable | Qt.ItemIsEnabled
+            return typing.cast(
+                Qt.ItemFlags,
+                Qt.ItemIsEditable | Qt.ItemIsEnabled
+            )
         return super().flags(index)
 
 
 class PackageBrowser(QtWidgets.QDialog):
-    def __init__(self, packages, parent,
+    def __init__(self,
+                 packages: typing.List[collection.AbsPackageComponent],
+                 parent: QtWidgets.QWidget,
                  flags: typing.Union[
                      Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
                  *args, **kwargs) -> None:
