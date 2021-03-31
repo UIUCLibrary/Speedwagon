@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import Iterable, Optional, List, Any
+from typing import Iterable, Optional, List, Any, Union
 import enum
 
 from uiucprescon import imagevalidate
@@ -42,7 +42,7 @@ class ValidateMetadataWorkflow(AbsWorkflow):
                   "Input is path that contains subdirectory which " \
                   "containing a series of jp2 files."
 
-    def _locate_checksum_files(self, root) -> Iterable[str]:
+    def _locate_checksum_files(self, root: str) -> Iterable[str]:
         for root, dirs, files in os.walk(root):
             for file_ in files:
                 if file_ != "checksum.md5":
@@ -69,8 +69,18 @@ class ValidateMetadataWorkflow(AbsWorkflow):
                              user_args["Profile"])
         )
 
-    def user_options(self):
-        options = []
+    def user_options(self) -> List[
+        Union[
+            shared_custom_widgets.UserOption2,
+            shared_custom_widgets.UserOption3
+        ]
+    ]:
+        options: List[
+            Union[
+                shared_custom_widgets.UserOption2,
+                shared_custom_widgets.UserOption3
+            ]
+        ] = []
 
         input_option = \
             shared_custom_widgets.UserOptionCustomDataType(
@@ -87,13 +97,14 @@ class ValidateMetadataWorkflow(AbsWorkflow):
         return options
 
     @staticmethod
-    def validate_user_options(**user_args):
+    def validate_user_options(**user_args) -> bool:
         input_data = user_args[UserArgs.INPUT.value]
         if input_data is None:
             raise ValueError("Missing value in input")
 
         if not os.path.exists(input_data) or not os.path.isdir(input_data):
             raise ValueError("Invalid user arguments")
+        return True
 
     def create_new_task(self,
                         task_builder: "speedwagon.tasks.TaskBuilder",
@@ -161,7 +172,7 @@ class ValidateMetadataWorkflow(AbsWorkflow):
 
 class LocateTiffImageTask(speedwagon.tasks.Subtask):
 
-    def __init__(self, root) -> None:
+    def __init__(self, root: str) -> None:
         warnings.warn("Use LocateImagesTask instead", DeprecationWarning)
         super().__init__()
         self._root = root
@@ -181,7 +192,8 @@ class LocateTiffImageTask(speedwagon.tasks.Subtask):
 
 
 class LocateImagesTask(speedwagon.tasks.Subtask):
-    def __init__(self, root,
+    def __init__(self,
+                 root: str,
                  profile_name: str) -> None:
         super().__init__()
         self._root = root
@@ -202,7 +214,11 @@ class LocateImagesTask(speedwagon.tasks.Subtask):
 
 
 class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
-    def __init__(self, filename, profile_name: str) -> None:
+    def __init__(
+            self,
+            filename: str,
+            profile_name: str
+    ) -> None:
 
         super().__init__()
         self._filename = filename
