@@ -37,3 +37,12 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
 
     standard_startup.run()
     assert app.exec_.called is True
+
+
+class TestTabsEditorApp:
+    def test_on_okay_closes(self, qtbot):
+        editor = startup.TabsEditorApp()
+        qtbot.addWidget(editor)
+        editor.close = Mock()
+        editor.on_okay()
+        assert editor.close.called is True
