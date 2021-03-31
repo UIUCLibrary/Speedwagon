@@ -19,11 +19,11 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
         self.setStandardButtons(QtWidgets.QMessageBox.Abort)
         self.setSizeGripEnabled(True)
 
-    def event(self, e) -> bool:
+    def event(self, event) -> bool:
         # Allow the dialog box to be resized so that the additional information
         # can be readable
 
-        result = QtWidgets.QMessageBox.event(self, e)
+        result = QtWidgets.QMessageBox.event(self, event)
 
         self.setMinimumHeight(100)
         self.setMaximumHeight(1024)

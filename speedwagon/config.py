@@ -11,6 +11,8 @@ import collections.abc
 from typing import Optional, Dict, Type, Set, Iterator, Iterable
 import platform
 
+from PyQt5.QtCore import QAbstractItemModel
+
 from speedwagon.job import all_required_workflow_keys
 from speedwagon.models import SettingsModel
 
@@ -188,7 +190,7 @@ def build_setting_model(config_file: str) -> SettingsModel:
     return my_model
 
 
-def serialize_settings_model(model: SettingsModel) -> str:
+def serialize_settings_model(model: QAbstractItemModel) -> str:
     """Convert a SettingsModel into a data format that can be written to a file.
 
     Note:

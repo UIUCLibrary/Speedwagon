@@ -1,6 +1,7 @@
+import abc
 import os
 import platform
-from typing import Optional, Dict
+from typing import Optional, Dict, cast
 
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 
@@ -8,65 +9,149 @@ from speedwagon import config, models, tabs, job
 from speedwagon.config import build_setting_model
 from speedwagon.ui import tab_editor_ui
 
+__all__ = ['GlobalSettingsTab', 'TabsConfigurationTab', 'TabEditor']
+
+
+class AbsOpenSettings(abc.ABC):
+
+    def __init__(self, settings_directory: str) -> None:
+        super().__init__()
+        self.settings_dir = settings_directory
+
+    @abc.abstractmethod
+    def system_open_directory(self, settings_directory: str) -> None:
+        """Open the directory in os's file browser.
+
+        Args:
+            settings_directory: Path to the directory
+        """
+
+    def open(self) -> None:
+        self.system_open_directory(self.settings_dir)
+
+
+class UnsupportedOpenSettings(AbsOpenSettings):
+
+    def __init__(self,
+                 settings_directory: str,
+                 parent: QtWidgets.QWidget = None
+                 ) -> None:
+        super().__init__(settings_directory)
+        self.parent = parent
+
+    def system_open_directory(self, settings_directory: str) -> None:
+        msg = QtWidgets.QMessageBox(parent=self.parent)
+        msg.setIcon(QtWidgets.QMessageBox.Warning)
+        msg.setText(
+            "Don't know how to do that on {}".format(platform.system())
+        )
+
+        msg.show()
+
+
+class DarwinOpenSettings(AbsOpenSettings):
+    def system_open_directory(self, settings_directory: str) -> None:
+        os.system(f"open {settings_directory}")
+
+
+class WindowsOpenSettings(AbsOpenSettings):
+
+    def system_open_directory(self, settings_directory: str) -> None:
+        # pylint: disable=no-member
+        os.startfile(settings_directory)  # type: ignore
+
+
+class OpenSettingsDirectory:
+
+    def __init__(self, strategy: AbsOpenSettings) -> None:
+        self.strategy = strategy
+
+    def system_open_directory(self, settings_directory: str) -> None:
+        self.strategy.system_open_directory(settings_directory)
+
+    def open(self) -> None:
+        self.strategy.open()
+
 
 class SettingsDialog(QtWidgets.QDialog):
 
-    def __init__(self, parent=None, *args, **kwargs):
+    def __init__(
+            self,
+            *args,
+            parent: QtWidgets.QWidget = None,
+            **kwargs
+    ) -> None:
+
         super().__init__(parent, *args, **kwargs)
-        self.settings_location = None
+        self.settings_location: Optional[str] = None
 
         self.setWindowTitle("Settings")
-        self.layout = QtWidgets.QVBoxLayout(self)
+        layout = QtWidgets.QVBoxLayout(self)
         self.tabsWidget = QtWidgets.QTabWidget(self)
-        self.layout.addWidget(self.tabsWidget)
+        layout.addWidget(self.tabsWidget)
 
         self.open_settings_path_button = QtWidgets.QPushButton(self)
         self.open_settings_path_button.setText("Open Config File Directory")
-        self.open_settings_path_button.clicked.connect(self.open_settings_dir)
 
-        self.layout.addWidget(self.open_settings_path_button)
+        self.open_settings_path_button.clicked.connect(
+            lambda: self.open_settings_dir()
+        )
+
+        layout.addWidget(self.open_settings_path_button)
 
         self._button_box = \
-            QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Cancel
-                                       | QtWidgets.QDialogButtonBox.Ok)
+            QtWidgets.QDialogButtonBox(
+                cast(
+                    QtWidgets.QDialogButtonBox.StandardButtons,
+                    QtWidgets.QDialogButtonBox.Cancel |
+                    QtWidgets.QDialogButtonBox.Ok
+                )
+            )
 
         self._button_box.accepted.connect(self.accept)
         self._button_box.rejected.connect(self.reject)
-        self.layout.addWidget(self._button_box)
+        layout.addWidget(self._button_box)
 
-        self.setLayout(self.layout)
+        self.setLayout(layout)
         self.setFixedHeight(480)
         self.setFixedWidth(600)
 
     def add_tab(self, tab: QtWidgets.QWidget, tab_name: str) -> None:
         self.tabsWidget.addTab(tab, tab_name)
 
-    def open_settings_dir(self):
-        if self.settings_location is not None:
-            print("Opening")
-            if platform.system() == "Windows":
-                # pylint: disable=no-member
-                os.startfile(self.settings_location)
-            elif platform.system() == "Darwin":
-                os.system("open {}".format(self.settings_location))
-            else:
-                msg = QtWidgets.QMessageBox(parent=self)
-                msg.setIcon(QtWidgets.QMessageBox.Warning)
-                msg.setText(
-                    "Don't know how to do that on {}".format(platform.system())
-                )
+    def open_settings_dir(self, strategy: AbsOpenSettings = None) -> None:
+        if self.settings_location is None:
+            return
 
-                msg.show()
+        strategies: Dict[str, AbsOpenSettings] = {
+            "Darwin": DarwinOpenSettings(self.settings_location),
+            "Windows": WindowsOpenSettings(self.settings_location)
+        }
+
+        folder_opener = OpenSettingsDirectory(
+            strategy if strategy is not None else strategies.get(
+                platform.system(),
+                UnsupportedOpenSettings(
+                    settings_directory=self.settings_location, parent=self)
+            )
+        )
+
+        folder_opener.open()
 
 
 class GlobalSettingsTab(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, *args, **kwargs):
+    def __init__(
+            self,
+            parent: QtWidgets.QWidget = None,
+            *args, **kwargs
+    ) -> None:
+
         super().__init__(parent, *args, **kwargs)
-        self.config_file = None
+        self.config_file: Optional[str] = None
         self._modified = False
 
-        self.layout = QtWidgets.QVBoxLayout(self)
+        layout = QtWidgets.QVBoxLayout(self)
 
         self.settings_table = QtWidgets.QTableView(self)
 
@@ -75,7 +160,8 @@ class GlobalSettingsTab(QtWidgets.QWidget):
 
         self.settings_table.horizontalHeader().setStretchLastSection(True)
 
-        self.layout.addWidget(self.settings_table)
+        layout.addWidget(self.settings_table)
+        self.setLayout(layout)
 
     def read_config_data(self) -> None:
         if self.config_file is None:
@@ -90,44 +176,61 @@ class GlobalSettingsTab(QtWidgets.QWidget):
         self._modified = True
 
     def on_okay(self) -> None:
-        if self._modified:
-            print("Saving changes")
-            data = config.serialize_settings_model(self.settings_table.model())
+        if not self._modified:
+            return
+        if self.config_file is None:
+            msg = QtWidgets.QMessageBox(parent=self)
+            msg.setIcon(QtWidgets.QMessageBox.Warning)
+            msg.setText("Unable to save settings. No configuration file set")
+            msg.exec()
+            return
 
-            with open(self.config_file, "w") as fw:
-                fw.write(data)
+        print("Saving changes")
+        data = config.serialize_settings_model(self.settings_table.model())
+        with open(self.config_file, "w") as fw:
+            fw.write(data)
 
-            msg_box = QtWidgets.QMessageBox(self)
-            msg_box.setWindowTitle("Saved changes")
-            msg_box.setText("Please restart changes to take effect")
-            msg_box.exec()
+        msg_box = QtWidgets.QMessageBox(self)
+        msg_box.setWindowTitle("Saved changes")
+        msg_box.setText("Please restart changes to take effect")
+        msg_box.exec()
 
 
 class TabsConfigurationTab(QtWidgets.QWidget):
-    def __init__(self, parent=None, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.settings_location = None
-        self._modified = False
+    def __init__(self,
+                 parent: QtWidgets.QWidget = None,
+                 *args,
+                 **kwargs) -> None:
 
-        self.layout = QtWidgets.QVBoxLayout(self)
+        super().__init__(parent, *args, **kwargs)
+        self.settings_location: Optional[str] = None
+        self._modified = False
+        layout = QtWidgets.QVBoxLayout(self)
         self.editor = TabEditor()
         self.editor.layout().setContentsMargins(0, 0, 0, 0)
-
-        self.layout.addWidget(self.editor)
+        layout.addWidget(self.editor)
+        self.setLayout(layout)
 
     def on_okay(self) -> None:
-        if self.editor.modified is True:
-            print(f"Saving changes to {self.settings_location}")
-            tabs.write_tabs_yaml(
-                self.settings_location,
-                tabs.extract_tab_information(
-                    self.editor.selectedTabComboBox.model())
-            )
+        if self.editor.modified is False:
+            return
+        if self.settings_location is None:
+            msg = QtWidgets.QMessageBox(parent=self)
+            msg.setIcon(QtWidgets.QMessageBox.Warning)
+            msg.setText("Unable to save settings. No settings location set")
+            msg.exec()
+            return
+        print(f"Saving changes to {self.settings_location}")
+        tabs.write_tabs_yaml(
+            self.settings_location,
+            tabs.extract_tab_information(
+                self.editor.selectedTabComboBox.model())
+        )
 
-            msg_box = QtWidgets.QMessageBox(self)
-            msg_box.setWindowTitle("Saved changes to tabs files")
-            msg_box.setText("Please restart changes to take effect")
-            msg_box.exec()
+        msg_box = QtWidgets.QMessageBox(self)
+        msg_box.setWindowTitle("Saved changes to tabs files")
+        msg_box.setText("Please restart changes to take effect")
+        msg_box.exec()
 
     def load(self) -> None:
         print(f"loading {self.settings_location}")
@@ -143,10 +246,13 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         self.setupUi(self)
         self._tabs_file: Optional[str] = None
 
-        self._tabs_model = models.TabsModel()
+        self._tabs_model: QtCore.QAbstractListModel = models.TabsModel()
 
-        self._all_workflows_model = models.WorkflowListModel2()
-        self._active_tab_worksflows_model = models.WorkflowListModel2()
+        self._all_workflows_model: models.WorkflowListModel2 = \
+            models.WorkflowListModel2()
+
+        self._active_tab_worksflows_model: models.WorkflowListModel2 = \
+            models.WorkflowListModel2()
 
         self.tabWorkflowsListView.setModel(self._active_tab_worksflows_model)
 
@@ -160,7 +266,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         self.addItemsButton.clicked.connect(self._add_items_to_tab)
         self.removeItemsButton.clicked.connect(self._remove_items)
         self._tabs_model.dataChanged.connect(self.on_modified)
-        self.modified = False
+        self.modified: bool = False
         self.splitter.setChildrenCollapsible(False)
 
     def on_modified(self) -> None:
@@ -182,7 +288,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         self.modified = False
 
     def _changed_tab(self, tab: int) -> None:
-        model = self.selectedTabComboBox.model()
+        model: QtCore.QAbstractListModel = self.selectedTabComboBox.model()
         index = model.index(tab)
         if index.isValid():
             data = model.data(index, role=QtCore.Qt.UserRole)
@@ -220,14 +326,14 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         model -= data
 
     def _add_items_to_tab(self) -> None:
-        model = self.tabWorkflowsListView.model()
+        model: models.WorkflowListModel2 = self.tabWorkflowsListView.model()
         for i in self.allWorkflowsListView.selectedIndexes():
             new_workflow = i.data(role=QtCore.Qt.UserRole)
             model.add_workflow(new_workflow)
-        model.sort()
+        model.sort(0)
 
     def _remove_items(self) -> None:
-        model = self.tabWorkflowsListView.model()
+        model: models.WorkflowListModel2 = self.tabWorkflowsListView.model()
         items_to_remove = [
             i.data(role=QtCore.Qt.UserRole)
             for i in self.tabWorkflowsListView.selectedIndexes()
@@ -240,7 +346,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
     def set_all_workflows(self, workflows: Dict[str, job.Workflow]) -> None:
         for k, v in workflows.items():
             self._all_workflows_model.add_workflow(v)
-        self._all_workflows_model.sort()
+        self._all_workflows_model.sort(0)
         self.allWorkflowsListView.setModel(self._all_workflows_model)
 
     @property

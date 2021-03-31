@@ -106,7 +106,7 @@ class Subtask(AbsSubtask):
         self._parent_task_log_q = value
 
     @property
-    def task_result(self):
+    def task_result(self) -> Optional[Result]:
         return self._result
 
     @property
