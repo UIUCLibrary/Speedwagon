@@ -13,4 +13,3 @@ def test_validate_metadata_workflow_has_options(index, label):
     user_options = workflow.user_options()
     assert len(user_options) > 0
     assert user_options[index].label_text == label
-
