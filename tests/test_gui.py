@@ -82,4 +82,3 @@ def test_show_configuration_menu(qtbot, monkeypatch):
 
     settings_action.trigger()
     assert mock_exec.called is True
-
