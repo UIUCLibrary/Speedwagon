@@ -89,7 +89,7 @@ class CliArgsSetter(AbsSetting):
         return new_settings
 
     @staticmethod
-    def get_arg_parser():
+    def get_arg_parser() -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser()
         try:
             current_version = metadata.version(__package__)
