@@ -245,10 +245,10 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         self.setupUi(self)
         self._tabs_file: Optional[str] = None
 
-        self._tabs_model = models.TabsModel()
+        self._tabs_model: QtCore.QAbstractListModel = models.TabsModel()
 
-        self._all_workflows_model = models.WorkflowListModel2()
-        self._active_tab_worksflows_model = models.WorkflowListModel2()
+        self._all_workflows_model: models.WorkflowListModel2 = models.WorkflowListModel2()
+        self._active_tab_worksflows_model: QtCore.QAbstractListModel = models.WorkflowListModel2()
 
         self.tabWorkflowsListView.setModel(self._active_tab_worksflows_model)
 
@@ -262,7 +262,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         self.addItemsButton.clicked.connect(self._add_items_to_tab)
         self.removeItemsButton.clicked.connect(self._remove_items)
         self._tabs_model.dataChanged.connect(self.on_modified)
-        self.modified = False
+        self.modified: bool = False
         self.splitter.setChildrenCollapsible(False)
 
     def on_modified(self) -> None:
@@ -284,7 +284,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         self.modified = False
 
     def _changed_tab(self, tab: int) -> None:
-        model = self.selectedTabComboBox.model()
+        model: QtCore.QAbstractListModel = self.selectedTabComboBox.model()
         index = model.index(tab)
         if index.isValid():
             data = model.data(index, role=QtCore.Qt.UserRole)
@@ -322,14 +322,14 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         model -= data
 
     def _add_items_to_tab(self) -> None:
-        model = self.tabWorkflowsListView.model()
+        model: models.WorkflowListModel2 = self.tabWorkflowsListView.model()
         for i in self.allWorkflowsListView.selectedIndexes():
             new_workflow = i.data(role=QtCore.Qt.UserRole)
             model.add_workflow(new_workflow)
-        model.sort()
+        model.sort(0)
 
     def _remove_items(self) -> None:
-        model = self.tabWorkflowsListView.model()
+        model: models.WorkflowListModel2 = self.tabWorkflowsListView.model()
         items_to_remove = [
             i.data(role=QtCore.Qt.UserRole)
             for i in self.tabWorkflowsListView.selectedIndexes()
@@ -342,7 +342,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
     def set_all_workflows(self, workflows: Dict[str, job.Workflow]) -> None:
         for k, v in workflows.items():
             self._all_workflows_model.add_workflow(v)
-        self._all_workflows_model.sort()
+        self._all_workflows_model.sort(0)
         self.allWorkflowsListView.setModel(self._all_workflows_model)
 
     @property
