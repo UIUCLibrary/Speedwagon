@@ -209,7 +209,6 @@ class TabsConfigurationTab(QtWidgets.QWidget):
         layout.addWidget(self.editor)
         self.setLayout(layout)
 
-
     def on_okay(self) -> None:
         if self.editor.modified is False:
             return
