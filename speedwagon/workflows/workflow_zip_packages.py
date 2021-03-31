@@ -28,8 +28,11 @@ class ZipPackagesWorkflow(AbsWorkflow):
 
     active = True
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
+    def discover_task_metadata(self,
+                               initial_results: List[Any],
+                               additional_data,
+                               **user_args: str) -> List[dict]:
+
         source = user_args["Source"]
         output = user_args["Output"]
 
@@ -42,7 +45,7 @@ class ZipPackagesWorkflow(AbsWorkflow):
         return job_requests
 
     @staticmethod
-    def validate_user_options(**user_args):
+    def validate_user_options(**user_args: str) -> bool:
 
         source = user_args["Source"]
         output = user_args["Output"]
@@ -53,7 +56,7 @@ class ZipPackagesWorkflow(AbsWorkflow):
 
         return True
 
-    def user_options(self):
+    def user_options(self) -> List[options.UserOption3]:
         return [
             options.UserOptionCustomDataType("Source",
                                              options.FolderData),
@@ -73,7 +76,7 @@ class ZipPackagesWorkflow(AbsWorkflow):
     @classmethod
     @reports.add_report_borders
     def generate_report(cls, results: List[tasks.Result],
-                        **user_args) -> Optional[str]:
+                        **user_args: str) -> Optional[str]:
 
         output = user_args.get("Output")
         if output:
@@ -113,7 +116,7 @@ class ZipTask(tasks.Subtask):
         return True
 
     @contextmanager
-    def log_config(self, logger):
+    def log_config(self, logger: logging.Logger):
         gui_logger = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)
