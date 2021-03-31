@@ -247,8 +247,11 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
 
         self._tabs_model: QtCore.QAbstractListModel = models.TabsModel()
 
-        self._all_workflows_model: models.WorkflowListModel2 = models.WorkflowListModel2()
-        self._active_tab_worksflows_model: QtCore.QAbstractListModel = models.WorkflowListModel2()
+        self._all_workflows_model: models.WorkflowListModel2 = \
+            models.WorkflowListModel2()
+
+        self._active_tab_worksflows_model: models.WorkflowListModel2 = \
+            models.WorkflowListModel2()
 
         self.tabWorkflowsListView.setModel(self._active_tab_worksflows_model)
 
