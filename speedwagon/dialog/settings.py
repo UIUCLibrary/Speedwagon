@@ -9,6 +9,8 @@ from speedwagon import config, models, tabs, job
 from speedwagon.config import build_setting_model
 from speedwagon.ui import tab_editor_ui
 
+__all__ = ['GlobalSettingsTab', 'TabsConfigurationTab', 'TabEditor']
+
 
 class AbsOpenSettings(abc.ABC):
 
