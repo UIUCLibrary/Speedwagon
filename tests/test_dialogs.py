@@ -78,3 +78,36 @@ class TestGlobalSettingsTab:
         with patch('builtins.open', m):
             settings_tab.on_okay()
         assert m.called is expect_file_written
+
+
+class TestTabsConfigurationTab:
+    def test_on_ok_not_modified(self, qtbot, monkeypatch):
+        config_tab = settings.TabsConfigurationTab()
+        from PyQt5 import QtWidgets
+        mock_exec = Mock()
+        monkeypatch.setattr(QtWidgets.QMessageBox, "exec", mock_exec)
+        config_tab.on_okay()
+        assert mock_exec.called is False
+
+
+    @pytest.mark.parametrize("settings_location, writes_to_file", [
+        ("setting_location", True),
+        (None, False)
+    ])
+    def test_on_okay_modified(self, qtbot, monkeypatch, settings_location, writes_to_file):
+        from PyQt5 import QtWidgets
+
+        config_tab = settings.TabsConfigurationTab()
+        config_tab.settings_location = settings_location
+        config_tab.editor.on_modified()
+        from speedwagon import tabs
+        write_tabs_yaml = Mock()
+        mock_exec = Mock(name="message box exec")
+        with monkeypatch.context() as mp:
+            mp.setattr(tabs, "write_tabs_yaml", write_tabs_yaml)
+            mp.setattr(QtWidgets.QMessageBox, "exec", mock_exec)
+            config_tab.on_okay()
+
+        assert \
+            mock_exec.called is True and \
+            write_tabs_yaml.called is writes_to_file

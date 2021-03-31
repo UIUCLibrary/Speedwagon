@@ -84,9 +84,9 @@ class SettingsDialog(QtWidgets.QDialog):
         self.settings_location: Optional[str] = None
 
         self.setWindowTitle("Settings")
-        self.layout = QtWidgets.QVBoxLayout(self)  # type: ignore
+        layout = QtWidgets.QVBoxLayout(self)
         self.tabsWidget = QtWidgets.QTabWidget(self)
-        cast(QtWidgets.QLayout, self.layout).addWidget(self.tabsWidget)
+        layout.addWidget(self.tabsWidget)
 
         self.open_settings_path_button = QtWidgets.QPushButton(self)
         self.open_settings_path_button.setText("Open Config File Directory")
@@ -95,9 +95,7 @@ class SettingsDialog(QtWidgets.QDialog):
             lambda: self.open_settings_dir()
         )
 
-        cast(QtWidgets.QLayout, self.layout).addWidget(
-            self.open_settings_path_button
-        )
+        layout.addWidget(self.open_settings_path_button)
 
         self._button_box = \
             QtWidgets.QDialogButtonBox(
@@ -110,9 +108,9 @@ class SettingsDialog(QtWidgets.QDialog):
 
         self._button_box.accepted.connect(self.accept)
         self._button_box.rejected.connect(self.reject)
-        cast(QtWidgets.QLayout, self.layout).addWidget(self._button_box)
+        layout.addWidget(self._button_box)
 
-        self.setLayout(cast(QtWidgets.QLayout, self.layout))
+        self.setLayout(layout)
         self.setFixedHeight(480)
         self.setFixedWidth(600)
 
@@ -151,7 +149,7 @@ class GlobalSettingsTab(QtWidgets.QWidget):
         self.config_file: Optional[str] = None
         self._modified = False
 
-        self.layout = QtWidgets.QVBoxLayout(self)  # type: ignore
+        layout = QtWidgets.QVBoxLayout(self)
 
         self.settings_table = QtWidgets.QTableView(self)
 
@@ -160,7 +158,8 @@ class GlobalSettingsTab(QtWidgets.QWidget):
 
         self.settings_table.horizontalHeader().setStretchLastSection(True)
 
-        cast(QtWidgets.QLayout, self.layout).addWidget(self.settings_table)
+        layout.addWidget(self.settings_table)
+        self.setLayout(layout)
 
     def read_config_data(self) -> None:
         if self.config_file is None:
@@ -196,30 +195,41 @@ class GlobalSettingsTab(QtWidgets.QWidget):
 
 
 class TabsConfigurationTab(QtWidgets.QWidget):
-    def __init__(self, parent=None, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.settings_location = None
-        self._modified = False
+    def __init__(self,
+                 parent: QtWidgets.QWidget = None,
+                 *args,
+                 **kwargs) -> None:
 
-        self.layout = QtWidgets.QVBoxLayout(self)
+        super().__init__(parent, *args, **kwargs)
+        self.settings_location: Optional[str] = None
+        self._modified = False
+        layout = QtWidgets.QVBoxLayout(self)
         self.editor = TabEditor()
         self.editor.layout().setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.editor)
+        self.setLayout(layout)
 
-        self.layout.addWidget(self.editor)
 
     def on_okay(self) -> None:
-        if self.editor.modified is True:
-            print(f"Saving changes to {self.settings_location}")
-            tabs.write_tabs_yaml(
-                self.settings_location,
-                tabs.extract_tab_information(
-                    self.editor.selectedTabComboBox.model())
-            )
+        if self.editor.modified is False:
+            return
+        if self.settings_location is None:
+            msg = QtWidgets.QMessageBox(parent=self)
+            msg.setIcon(QtWidgets.QMessageBox.Warning)
+            msg.setText("Unable to save settings. No settings location set")
+            msg.exec()
+            return
+        print(f"Saving changes to {self.settings_location}")
+        tabs.write_tabs_yaml(
+            self.settings_location,
+            tabs.extract_tab_information(
+                self.editor.selectedTabComboBox.model())
+        )
 
-            msg_box = QtWidgets.QMessageBox(self)
-            msg_box.setWindowTitle("Saved changes to tabs files")
-            msg_box.setText("Please restart changes to take effect")
-            msg_box.exec()
+        msg_box = QtWidgets.QMessageBox(self)
+        msg_box.setWindowTitle("Saved changes to tabs files")
+        msg_box.setText("Please restart changes to take effect")
+        msg_box.exec()
 
     def load(self) -> None:
         print(f"loading {self.settings_location}")
