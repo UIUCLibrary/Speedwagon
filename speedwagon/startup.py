@@ -17,7 +17,8 @@ import io
 import logging
 import os
 import sys
-from typing import Dict, Union, Iterator, Tuple, List
+from typing import Dict, Union, Iterator, Tuple, List, Any, TypedDict, cast, \
+    Optional
 
 import yaml
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
@@ -188,7 +189,7 @@ def get_custom_tabs(all_workflows: dict, yaml_file: str) -> \
 
 class AbsStarter(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def run(self) -> None:
+    def run(self) -> int:
         pass
 
     @abc.abstractmethod
@@ -197,7 +198,7 @@ class AbsStarter(metaclass=abc.ABCMeta):
 
 
 class StartupDefault(AbsStarter):
-    def __init__(self, app=None):
+    def __init__(self, app: QtWidgets.QApplication = None) -> None:
         self._logger = logging.getLogger(__name__)
         self._logger.setLevel(logging.DEBUG)
 
@@ -213,7 +214,7 @@ class StartupDefault(AbsStarter):
 
         # Make sure required directories exists
         self.user_data_dir = self.platform_settings.get("user_data_directory")
-        self.startup_settings = dict()
+        self.startup_settings: Dict[str, Union[str, bool]] = dict()
         self._debug = False
 
         self.app_data_dir = self.platform_settings.get("app_data_directory")
@@ -223,7 +224,7 @@ class StartupDefault(AbsStarter):
         self.ensure_settings_files()
         self.resolve_settings()
 
-    def run(self):
+    def run(self) -> int:
         # Display a splash screen until the app is loaded
         with resources.open_binary(speedwagon.__name__, "logo.png") as logo:
             splash = QtWidgets.QSplashScreen(
@@ -231,8 +232,11 @@ class StartupDefault(AbsStarter):
 
         splash.setEnabled(False)
         splash.setWindowFlags(
-            QtCore.Qt.WindowStaysOnTopHint |
-            QtCore.Qt.FramelessWindowHint
+            cast(
+                QtCore.Qt.WindowType,
+                QtCore.Qt.WindowStaysOnTopHint |
+                QtCore.Qt.FramelessWindowHint
+             )
         )
         splash_message_handler = SplashScreenLogHandler(splash)
 
@@ -243,7 +247,7 @@ class StartupDefault(AbsStarter):
             splash_message_handler.setLevel(logging.INFO)
 
         splash.show()
-        self.app.processEvents()
+        QtWidgets.QApplication.processEvents(QtCore.QEventLoop.AllEvents)
 
         self.set_app_display_metadata()
 
@@ -252,8 +256,10 @@ class StartupDefault(AbsStarter):
             work_manager.settings_path = \
                 self.platform_settings.get_app_data_directory()
 
-            windows = MainWindow(work_manager=work_manager,
-                                 debug=self.startup_settings['debug'])
+            windows = MainWindow(
+                work_manager=work_manager,
+                debug=cast(bool, self.startup_settings['debug'])
+            )
 
             windows.setWindowTitle("")
             self._logger.addHandler(splash_message_handler)
@@ -269,7 +275,7 @@ class StartupDefault(AbsStarter):
 
             self._logger.info(f"{app_title} {app_version}")
 
-            self.app.processEvents()
+            QtWidgets.QApplication.processEvents()
 
             # ==================================================
             # Load configurations
@@ -317,7 +323,7 @@ class StartupDefault(AbsStarter):
 
             if "starting-tab" in self.startup_settings:
                 windows.set_current_tab(
-                    tab_name=self.startup_settings['starting-tab'])
+                    tab_name=cast(str, self.startup_settings['starting-tab']))
 
             splash.finish(windows)
 
@@ -331,7 +337,7 @@ class StartupDefault(AbsStarter):
         with speedwagon.config.ConfigManager(settings_file) as f:
             self.platform_settings._data.update(f.global_settings)
 
-    def set_app_display_metadata(self):
+    def set_app_display_metadata(self) -> None:
         with resources.open_binary(speedwagon.__name__, "favicon.ico") as icon:
             self.app.setWindowIcon(QtGui.QIcon(icon.name))
         try:
@@ -339,7 +345,7 @@ class StartupDefault(AbsStarter):
         except metadata.PackageNotFoundError:
             pass
         self.app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
-        self.app.processEvents()
+        QtWidgets.QApplication.processEvents()
 
     def resolve_settings(self) -> None:
         resolution_order: List[AbsSetting] = [
@@ -366,7 +372,7 @@ class StartupDefault(AbsStarter):
                 else:
                     self._logger.warning("{} is an invalid setting".format(e))
         try:
-            self._debug = self.startup_settings['debug']
+            self._debug = cast(bool, self.startup_settings['debug'])
         except KeyError:
             self._logger.warning(
                 "Unable to find a key for debug mode. Setting false")
@@ -422,19 +428,24 @@ class StartupDefault(AbsStarter):
 class TabsEditorApp(QtWidgets.QDialog):
     """Dialog box for editing tabs.yml file"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.setWindowTitle("Speedwagon Tabs Editor")
-        self._layout = QtWidgets.QVBoxLayout()
+        layout = QtWidgets.QVBoxLayout()
         self.editor = TabEditor()
-        self._layout.addWidget(self.editor)
+        layout.addWidget(self.editor)
         self.dialogButtonBox = QtWidgets.QDialogButtonBox(self)
-        self._layout.addWidget(self.dialogButtonBox)
+        layout.addWidget(self.dialogButtonBox)
 
         self.dialogButtonBox.setStandardButtons(
-            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
+            cast(
+                QtWidgets.QDialogButtonBox.StandardButtons,
+                QtWidgets.QDialogButtonBox.Cancel |
+                QtWidgets.QDialogButtonBox.Ok
+            )
+        )
 
-        self.setLayout(self._layout)
+        self.setLayout(layout)
 
         self.dialogButtonBox.accepted.connect(self.on_okay)
         self.dialogButtonBox.rejected.connect(self.on_cancel)
@@ -446,6 +457,8 @@ class TabsEditorApp(QtWidgets.QDialog):
 
     def on_okay(self) -> None:
         if self.editor.modified is True:
+            if self.tabs_file is None:
+                return
             print("Saving changes")
             tabs = extract_tab_information(
                 self.editor.selectedTabComboBox.model())
@@ -461,7 +474,7 @@ class TabsEditorApp(QtWidgets.QDialog):
         self.editor.tabs_file = filename
 
     @property
-    def tabs_file(self) -> str:
+    def tabs_file(self) -> Optional[str]:
         return self.editor.tabs_file
 
     @tabs_file.setter
