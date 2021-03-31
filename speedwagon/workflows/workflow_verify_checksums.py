@@ -94,7 +94,12 @@ class ChecksumWorkflow(AbsWorkflow):
             task_builder.add_subtask(
                 ReadChecksumReportTask(checksum_file=checksum_report_file))
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args: str) -> None:
+    def create_new_task(
+            self,
+            task_builder: tasks.TaskBuilder,
+            **job_args: str
+    ) -> None:
+
         filename = job_args['filename']
         file_path = job_args['path']
         expected_hash = job_args['expected_hash']
@@ -313,14 +318,23 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
                 UserArgs.INPUT.value, shared_custom_widgets.ChecksumData),
         ]
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args: str) -> None:
+    def create_new_task(
+            self,
+            task_builder: tasks.TaskBuilder,
+            **job_args: str
+    ) -> None:
+
         new_task = ChecksumTask(**job_args)
         task_builder.add_subtask(new_task)
 
     @classmethod
     @add_report_borders
-    def generate_report(cls, results: List[tasks.Result], **user_args: str) -> \
-            Optional[str]:
+    def generate_report(
+            cls,
+            results: List[tasks.Result],
+            **user_args: str
+    ) -> Optional[str]:
+
         results = [res.data for res in results]
 
         line_sep = "\n" + "-" * 60

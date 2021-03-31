@@ -7,12 +7,11 @@ from PyQt5.QtCore import Qt  # type: ignore
 from uiucprescon.packager.packages import collection
 from typing import NamedTuple, Any
 
+
 class ModelField(NamedTuple):
     column_header: str
     data_entry: Any
     editable: bool
-# ModelField = namedtuple("ModelField",
-#                         ("column_header", "data_entry", "editable"))
 
 
 class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
@@ -84,7 +83,12 @@ class PackagesModel(QtCore.QAbstractTableModel):
 
     ]
 
-    def __init__(self, packages: typing.List[collection.AbsPackageComponent], parent=None) -> None:
+    def __init__(
+            self,
+            packages: typing.List[collection.AbsPackageComponent],
+            parent=None
+    ) -> None:
+
         super().__init__(parent)
         self._packages = packages
 
