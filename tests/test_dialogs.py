@@ -89,12 +89,13 @@ class TestTabsConfigurationTab:
         config_tab.on_okay()
         assert mock_exec.called is False
 
-
     @pytest.mark.parametrize("settings_location, writes_to_file", [
         ("setting_location", True),
         (None, False)
     ])
-    def test_on_okay_modified(self, qtbot, monkeypatch, settings_location, writes_to_file):
+    def test_on_okay_modified(self, qtbot, monkeypatch, settings_location,
+                              writes_to_file):
+
         from PyQt5 import QtWidgets
 
         config_tab = settings.TabsConfigurationTab()
