@@ -45,7 +45,7 @@ class ChecksumWorkflow(AbsWorkflow):
                   "values. The listed files are expected to be siblings to " \
                   "the checksum file."
 
-    def _locate_checksum_files(self, root) -> Iterable[str]:
+    def _locate_checksum_files(self, root: str) -> Iterable[str]:
         for root, dirs, files in os.walk(root):
             for file_ in files:
                 if file_ != "checksum.md5":
@@ -54,7 +54,7 @@ class ChecksumWorkflow(AbsWorkflow):
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data,
-                               **user_args) -> List[dict]:
+                               **user_args) -> List[Dict[str, str]]:
         jobs = []
         for result in initial_results:
             for file_to_check in result.data:
@@ -71,27 +71,35 @@ class ChecksumWorkflow(AbsWorkflow):
                 jobs.append(new_job)
         return jobs
 
-    def user_options(self):
-        return shared_custom_widgets.UserOptionCustomDataType(
-            UserArgs.INPUT.value, shared_custom_widgets.FolderData),
+    def user_options(self) -> List[shared_custom_widgets.UserOption3]:
+        return [
+            shared_custom_widgets.UserOptionCustomDataType(
+                UserArgs.INPUT.value, shared_custom_widgets.FolderData)
+        ]
 
     @staticmethod
-    def validate_user_options(**user_args):
+    def validate_user_options(**user_args: str) -> bool:
         input_data = user_args[UserArgs.INPUT.value]
         if input_data is None:
             raise ValueError("Missing value in input")
 
         if not os.path.exists(input_data) or not os.path.isdir(input_data):
             raise ValueError("Invalid user arguments")
+        return True
 
     def initial_task(self, task_builder: tasks.TaskBuilder,
-                     **user_args) -> None:
+                     **user_args: str) -> None:
         root = user_args['Input']
         for checksum_report_file in self._locate_checksum_files(root):
             task_builder.add_subtask(
                 ReadChecksumReportTask(checksum_file=checksum_report_file))
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(
+            self,
+            task_builder: tasks.TaskBuilder,
+            **job_args: str
+    ) -> None:
+
         filename = job_args['filename']
         file_path = job_args['path']
         expected_hash = job_args['expected_hash']
@@ -181,7 +189,7 @@ class ChecksumWorkflow(AbsWorkflow):
 
 class ReadChecksumReportTask(tasks.Subtask):
 
-    def __init__(self, checksum_file):
+    def __init__(self, checksum_file: str) -> None:
         super().__init__()
         self._checksum_file = checksum_file
 
@@ -210,9 +218,9 @@ class ReadChecksumReportTask(tasks.Subtask):
 class ValidateChecksumTask(tasks.Subtask):
 
     def __init__(self,
-                 file_name,
-                 file_path,
-                 expected_hash,
+                 file_name: str,
+                 file_path: str,
+                 expected_hash: str,
                  source_report) -> None:
         super().__init__()
         self._file_name = file_name
@@ -304,20 +312,29 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
             jobs.append(new_job)
         return jobs
 
-    def user_options(self):
+    def user_options(self) -> List[shared_custom_widgets.UserOption3]:
         return [
             shared_custom_widgets.UserOptionCustomDataType(
                 UserArgs.INPUT.value, shared_custom_widgets.ChecksumData),
         ]
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(
+            self,
+            task_builder: tasks.TaskBuilder,
+            **job_args: str
+    ) -> None:
+
         new_task = ChecksumTask(**job_args)
         task_builder.add_subtask(new_task)
 
     @classmethod
     @add_report_borders
-    def generate_report(cls, results: List[tasks.Result], **user_args) -> \
-            Optional[str]:
+    def generate_report(
+            cls,
+            results: List[tasks.Result],
+            **user_args: str
+    ) -> Optional[str]:
+
         results = [res.data for res in results]
 
         line_sep = "\n" + "-" * 60

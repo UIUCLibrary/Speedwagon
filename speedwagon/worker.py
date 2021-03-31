@@ -8,13 +8,15 @@ import queue
 import sys
 import traceback
 import typing
-from typing import Callable
+from typing import Callable, Optional
 from collections import namedtuple
 
 from PyQt5 import QtCore, QtWidgets  # type: ignore
 
 from .dialog.dialogs import WorkProgressBar
 from .tasks import AbsSubtask, QueueAdapter, Result
+if typing.TYPE_CHECKING:
+    import speedwagon.config
 
 MessageLog = namedtuple("MessageLog", ("message",))
 
@@ -148,13 +150,13 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
         self.executor.shutdown()
 
     @classmethod
-    def _exec_job(cls, job, args, message_queue):
+    def _exec_job(cls, job, args, message_queue) -> concurrent.futures.Future:
         new_job = job()
         new_job.mq = message_queue
         fut = cls.executor.submit(new_job.execute, **args)
         return fut
 
-    def add_job(self, job: ProcessJobWorker, **job_args):
+    def add_job(self, job: ProcessJobWorker, **job_args) -> None:
         new_job = JobPair(job, args=job_args)
         self._jobs_queue.put(new_job)
 
@@ -283,15 +285,15 @@ class AbsJobManager(metaclass=abc.ABCMeta):
 class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
     def __init__(self, max_workers: int = 1) -> None:
-        self.settings_path = None
+        self.settings_path: Optional[str] = None
         self.manager = multiprocessing.Manager()
         self._max_workers = max_workers
         self.active = False
         self._pending_jobs: queue.Queue[JobPair] = queue.Queue()
         self.futures: typing.List[concurrent.futures.Future] = []
         self.logger = logging.getLogger(__name__)
-        self.user_settings = None
-        self.configuration_file = None
+        self.user_settings: Optional["speedwagon.config.AbsConfig"] = None
+        self.configuration_file: Optional[str] = None
 
     def __enter__(self) -> "ToolJobManager":
         self._message_queue = self.manager.Queue()
@@ -426,7 +428,7 @@ class AbsJobAdapter(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def set_message_queue(self, value):
+    def set_message_queue(self, value) -> None:
         pass
 
     @property
