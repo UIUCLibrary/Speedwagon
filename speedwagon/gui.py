@@ -214,12 +214,14 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         file_menu.addAction(exit_button)
 
         system_menu = menu_bar.addMenu("System")
+        system_menu.setObjectName("systemMenu")
 
         # System --> Configuration
         # Create a system info menu item
 
         system_settings_menu_item = \
             QtWidgets.QAction("Settings", self)
+        system_settings_menu_item.setObjectName('settingsAction')
 
         system_settings_menu_item.triggered.connect(
             self.show_configuration)
@@ -230,6 +232,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         # System --> System Info
         # Create a system info menu item
         system_info_menu_item = QtWidgets.QAction("System Info", self)
+        system_info_menu_item.setObjectName("systemInfoAction")
         system_info_menu_item.triggered.connect(self.show_system_info)
         system_menu.addAction(system_info_menu_item)
 
@@ -317,7 +320,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
     def show_configuration(self) -> None:
 
-        config_dialog = speedwagon.dialog.settings.SettingsDialog(self)
+        config_dialog = speedwagon.dialog.settings.SettingsDialog(parent=self)
 
         if self._work_manager.settings_path is not None:
             config_dialog.settings_location = self._work_manager.settings_path
