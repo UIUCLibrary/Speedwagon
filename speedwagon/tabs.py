@@ -18,7 +18,7 @@ from . import models
 from . import worker
 from .exceptions import MissingConfiguration
 from .workflows import shared_custom_widgets as options
-from .job import AbsWorkflow, NullWorkflow
+from .job import AbsWorkflow, NullWorkflow, Workflow
 
 SELECTOR_VIEW_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.MinimumExpanding,
@@ -504,8 +504,9 @@ def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
             for tab_name in tabs_config_data:
                 model = models.WorkflowListModel2()
                 for workflow_name in tabs_config_data.get(tab_name, []):
-                    empty_workflow = NullWorkflow()
-                    empty_workflow.name = workflow_name
+                    empty_workflow = cast(Type[Workflow], type(workflow_name, (NullWorkflow,), {
+                        "name": workflow_name
+                    }))
                     model.add_workflow(empty_workflow)
                 new_tab = TabData(tab_name, model)
                 yield new_tab

@@ -85,13 +85,13 @@ class WorkflowListModel(ItemListModel):
 class WorkflowListModel2(QtCore.QAbstractListModel):
     def __init__(self, parent: QtCore.QObject = None) -> None:
         super().__init__(parent)
-        self.workflows: List[Workflow] = []
+        self.workflows: List[Type[Workflow]] = []
 
-    def __iadd__(self, other: "Workflow") -> "WorkflowListModel2":
+    def __iadd__(self, other: Type["Workflow"]) -> "WorkflowListModel2":
         self.add_workflow(other)
         return self
 
-    def __isub__(self, other: "Workflow") -> "WorkflowListModel2":
+    def __isub__(self, other: Type["Workflow"]) -> "WorkflowListModel2":
         self.remove_workflow(other)
         return self
 
@@ -106,7 +106,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
             self,
             index: QtCore.QModelIndex,
             role: QtConstant = None
-    ) -> Union[str, Workflow, QtCore.QVariant]:
+    ) -> Union[str, Type[Workflow], QtCore.QVariant]:
         if not index.isValid():
             return QtCore.QVariant()
         row = index.row()
@@ -114,7 +114,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         if role is None:
             return QtCore.QVariant()
         workflow: Dict[int, Optional[Union[str,
-                                           Workflow,
+                                           Type[Workflow],
                                            QtCore.QVariant]]] = {
             QtCore.Qt.DisplayRole: self.workflows[row].name,
             QtCore.Qt.UserRole: self.workflows[row],
@@ -130,7 +130,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         self.workflows.sort(key=key or (lambda i: i.name))
         cast(QtCore.pyqtBoundSignal, self.layoutChanged).emit()
 
-    def add_workflow(self, workflow: Workflow) -> None:
+    def add_workflow(self, workflow: Type[Workflow]) -> None:
         for existing_workflow in self.workflows:
             if workflow.name == existing_workflow.name:
                 break
@@ -143,7 +143,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
             self.endInsertRows()
 
     def setData(self, index: QtCore.QModelIndex,
-                workflow: Workflow, role: QtConstant = None) -> bool:
+                workflow: Type[Workflow], role: QtConstant = None) -> bool:
 
         if not index.isValid():
             return False
@@ -160,7 +160,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         self.dataChanged.emit(index, index, [role])
         return True
 
-    def remove_workflow(self, workflow: Workflow) -> None:
+    def remove_workflow(self, workflow: Type[Workflow]) -> None:
         if workflow in self.workflows:
             index = QtCore.QModelIndex()
             self.beginRemoveRows(index, 0, self.rowCount())

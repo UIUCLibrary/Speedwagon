@@ -1,7 +1,7 @@
 import abc
 import os
 import platform
-from typing import Optional, Dict, cast
+from typing import Optional, Dict, cast, Type
 
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 
@@ -343,7 +343,11 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
             model.remove_workflow(item)
         model.sort()
 
-    def set_all_workflows(self, workflows: Dict[str, job.Workflow]) -> None:
+    def set_all_workflows(
+            self,
+            workflows: Dict[str, Type[job.Workflow]]
+    ) -> None:
+
         for k, v in workflows.items():
             self._all_workflows_model.add_workflow(v)
         self._all_workflows_model.sort(0)
