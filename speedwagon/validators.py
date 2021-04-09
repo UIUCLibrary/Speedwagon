@@ -42,6 +42,8 @@ class DirectoryValidation(AbsOptionValidator):
 
     def explanation(self, **user_data: Any) -> str:
         destination = user_data[self._key]
+        if destination is None:
+            return f"{self._key} None"
         if not isinstance(destination, str):
             raise TypeError(f"{self._key} not a string")
 

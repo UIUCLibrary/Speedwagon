@@ -3,7 +3,8 @@ from __future__ import annotations
 import logging
 import typing
 
-from typing import List, Any, Dict, Callable, Iterator, TypedDict, Optional
+from typing import List, Any, Dict, Callable, Iterator, TypedDict, Optional, \
+    Union
 from contextlib import contextmanager
 from uiucprescon import packager
 from uiucprescon.packager.packages.abs_package_builder import AbsPackageBuilder
@@ -22,9 +23,10 @@ UserArgs = TypedDict(
     'UserArgs',
     {
         "Input": str,
+        "Package Type": str,
         "Output Digital Library": str,
         "Output HathiTrust": str
-    }
+    },
 )
 
 
@@ -35,8 +37,21 @@ class JobArguments(TypedDict):
     source_path: str
 
 
+SUPPORTED_PACKAGE_SOURCES = {
+    "Capture One": None,
+    "Archival collections/Non EAS": None,
+    "Cataloged collections/Non EAS": None
+}
+
+
 class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
-    """Settings for convert capture one tiff files."""
+    """Settings for convert capture one tiff files.
+
+    .. versionchanged:: 0.1.5
+        workflow only requires a single output to be set. Any empty output
+            parameters will result in that output format not being made.
+
+    """
 
     name = "Convert CaptureOne TIFF to Digital Library Compound Object and " \
            "HathiTrust"
@@ -49,27 +64,37 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
                   "HathiTrust."
     active = True
 
-    def user_options(self) -> List[options.UserOptionCustomDataType]:
+    def user_options(self) -> List[Union[options.UserOption2,
+                                         options.UserOption3]]:
         """Get the options types need to configuring the workflow.
 
         Returns:
             Returns a list of user option types
 
         """
-        return [
+
+        user_options: List[Union[options.UserOption2, options.UserOption3]] = [
             options.UserOptionCustomDataType("Input", options.FolderData),
+            ]
+        package_type_selection = options.ListSelection(
+            "Package Type")
+        for package_type_name in SUPPORTED_PACKAGE_SOURCES:
+            package_type_selection.add_selection(package_type_name)
+        user_options.append(package_type_selection)
+        user_options += [
             options.UserOptionCustomDataType(
                 "Output Digital Library", options.FolderData),
             options.UserOptionCustomDataType(
                 "Output HathiTrust", options.FolderData),
                 ]
+        return user_options
 
     def discover_task_metadata(
             self,
             initial_results: List[Any],
             additional_data: Dict[str, str],
             **user_args: typing.Optional[str]
-    ) -> List[Dict[str, str | AbsPackageComponent]]:
+    ) -> List[Dict[str, Union[str, AbsPackageComponent]]]:
         """Loot at user settings and discover any data needed to build a task.
 
         Args:
@@ -81,7 +106,6 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
             Returns a list of data to create a job with
 
         """
-        jobs: List[Dict[str, str | AbsPackageComponent]] = []
         user_arguments: UserArgs = typing.cast(UserArgs, user_args)
         source_input = user_arguments["Input"]
         dest_dl = user_arguments["Output Digital Library"]
@@ -89,15 +113,17 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
 
         package_factory = packager.PackageFactory(
             packager.packages.CaptureOnePackage(delimiter="-"))
+
+        jobs: List[JobArguments] = []
         for package in package_factory.locate_packages(source_input):
-            new_job: Dict[str, str | AbsPackageComponent] = {
+            new_job: JobArguments = {
                 "package": package,
                 "output_dl": dest_dl,
                 "output_ht": dest_ht,
                 "source_path": source_input
             }
             jobs.append(new_job)
-        return jobs
+        return typing.cast(List[Dict[str, typing.Union[str, Any]]], jobs)
 
     @staticmethod
     def validate_user_options(**user_args: str) -> bool:
@@ -113,23 +139,21 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
         option_validators = validators.OptionValidator()
 
         option_validators.register_validator(
-            'Output Digital Library',
-            validators.DirectoryValidation(key="Output Digital Library")
+            'At least one output',
+            OutputValidator(
+                at_least_one_of=[
+                    "Output Digital Library",
+                    "Output HathiTrust"
+                ]
+            )
         )
-
-        option_validators.register_validator(
-            'Output HathiTrust',
-            validators.DirectoryValidation(key="Output HathiTrust")
-        )
-
         option_validators.register_validator(
             'Input',
             validators.DirectoryValidation(key="Input")
         )
-        invalid_messages = []
+        invalid_messages: List[str] = []
         for validation in [
-            option_validators.get("Output Digital Library"),
-            option_validators.get("Output HathiTrust"),
+            option_validators.get('At least one output'),
             option_validators.get("Input")
 
         ]:
@@ -144,7 +168,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
 
     def create_new_task(self,
                         task_builder: tasks.TaskBuilder,
-                        **job_args: str | AbsPackageComponent
+                        **job_args: Union[str, AbsPackageComponent]
                         ) -> None:
         """Generate a new task.
 
@@ -180,6 +204,26 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
 
             )
             task_builder.add_subtask(ht_packaging_task)
+
+
+class OutputValidator(validators.AbsOptionValidator):
+
+    def __init__(self, at_least_one_of: List[str]) -> None:
+        super().__init__()
+        self.keys = at_least_one_of
+        self._validators = []
+        for k in self.keys:
+            self._validators.append(validators.DirectoryValidation(k))
+
+    def is_valid(self, **user_data: Any) -> bool:
+        return any(f.is_valid(**user_data) for f in self._validators)
+
+    def explanation(self, **user_data: Any) -> str:
+        if self.is_valid(**user_data) is False:
+            return \
+                f'One of the follow outputs must be valid: ' \
+                f'{", ".join(self.keys)}'
+        return "ok"
 
 
 class PackageConverter(tasks.Subtask):

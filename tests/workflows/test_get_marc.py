@@ -21,7 +21,7 @@ def unconfigured_workflow():
         }
     )
     user_options = {i.label_text: i.data for i in workflow.user_options()}
-
+    user_options['Identifier type'] = "Bibid"
     return workflow, user_options
 
 
