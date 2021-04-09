@@ -38,9 +38,9 @@ class JobArguments(TypedDict):
 
 
 SUPPORTED_PACKAGE_SOURCES = {
-    "Capture One": None,
-    "Archival collections/Non EAS": None,
-    "Cataloged collections/Non EAS": None
+    "Capture One": packager.packages.CaptureOnePackage(delimiter="-"),
+    "Archival collections/Non EAS": packager.packages.ArchivalNonEAS(),
+    "Cataloged collections/Non EAS": packager.packages.CatalogedNonEAS()
 }
 
 
@@ -110,9 +110,14 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
         source_input = user_arguments["Input"]
         dest_dl = user_arguments["Output Digital Library"]
         dest_ht = user_arguments["Output HathiTrust"]
-
-        package_factory = packager.PackageFactory(
-            packager.packages.CaptureOnePackage(delimiter="-"))
+        package_type = SUPPORTED_PACKAGE_SOURCES.get(
+            user_arguments['Package Type']
+        )
+        if package_type is None:
+            raise ValueError(
+                f"Unknown package type {user_arguments['Package Type']}"
+            )
+        package_factory = packager.PackageFactory(package_type)
 
         jobs: List[JobArguments] = []
         for package in package_factory.locate_packages(source_input):

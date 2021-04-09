@@ -1,7 +1,7 @@
 from unittest.mock import Mock, MagicMock, call
 
 import pytest
-
+from uiucprescon import packager
 from speedwagon import tasks, models
 from speedwagon.workflows \
     import workflow_capture_one_to_dl_compound_and_dl as ht_wf
@@ -30,18 +30,17 @@ def test_input_must_exist(monkeypatch):
         assert 'Directory "./invalid_folder/" does not exist' in str(e.value)
 
 
-def test_discover_task_metadata(monkeypatch):
+def test_discover_task_metadata(monkeypatch, user_options):
     additional_data = {}
     initial_results = []
-    user_args = {
-        "Input": "some_real_source_folder",
-        "Output Digital Library": "./some_real_dl_folder/",
-        "Output HathiTrust": "./some_real_ht_folder/",
-    }
+    user_options["Input"] = "some_real_source_folder"
+    user_options["Output Digital Library"] = "./some_real_dl_folder/"
+    user_options["Output HathiTrust"]= "./some_real_ht_folder/"
+    # }
     workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
 
     def mock_exists(path):
-        if path == user_args["Input"]:
+        if path == user_options["Input"]:
             return True
         else:
             return False
@@ -58,15 +57,15 @@ def test_discover_task_metadata(monkeypatch):
         new_task_metadata = workflow.discover_task_metadata(
             initial_results=initial_results,
             additional_data=additional_data,
-            **user_args
+            **user_options
         )
 
     assert len(new_task_metadata) == 1
     md = new_task_metadata[0]
     assert \
-        md['source_path'] == user_args['Input'] and \
-        md['output_dl'] == user_args['Output Digital Library'] and \
-        md['output_ht'] == user_args['Output HathiTrust']
+        md['source_path'] == user_options['Input'] and \
+        md['output_dl'] == user_options['Output Digital Library'] and \
+        md['output_ht'] == user_options['Output HathiTrust']
 
 
 def test_create_new_task_hathi_and_dl(monkeypatch):
@@ -122,10 +121,6 @@ def test_package_converter(tmpdir):
 
 
 class TestWorkflow:
-    @pytest.fixture()
-    def user_options(self):
-        workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
-        return models.ToolOptionsModel3(workflow.user_options()).get()
 
     @pytest.mark.parametrize("dl_outpath, ht_outpath", [
         ("some/real/output/dl", "some/real/output/ht"),
@@ -192,14 +187,13 @@ class TestWorkflow:
 
             package_factory.transform.assert_has_calls(calls, any_order=True)
 
+@pytest.fixture()
+def user_options():
+    workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
+    return models.ToolOptionsModel3(workflow.user_options()).get()
+
 
 class TestValidateUserArgs:
-
-    @pytest.fixture()
-    def user_options(self):
-        workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
-        return models.ToolOptionsModel3(workflow.user_options()).get()
-
     @pytest.mark.parametrize("key", ht_wf.UserArgs.__annotations__.keys())
     def test_user_options_matches_user_typedict(self, user_options, key):
         assert key in user_options
@@ -281,3 +275,61 @@ def test_output_validator(monkeypatch, dl_outpath, ht_outpath, is_valid):
     )
     validator = ht_wf.OutputValidator(checks)
     assert validator.is_valid(**user_options) is is_valid, validator.explanation(**user_options)
+
+@pytest.mark.parametrize(
+    "user_selected_package_type, expected_package_type", [
+        ("Capture One", packager.packages.CaptureOnePackage),
+        ("Archival collections/Non EAS", packager.packages.ArchivalNonEAS),
+        ("Cataloged collections/Non EAS", packager.packages.CatalogedNonEAS),
+    ]
+)
+def test_discover_task_metadata_gets_right_package(user_options, user_selected_package_type, expected_package_type, monkeypatch):
+    additional_data = {}
+    initial_results = []
+    user_args = {
+        "Input": "some_real_source_folder",
+        "Package Type": user_selected_package_type,
+        "Output Digital Library": "./some_real_dl_folder/",
+        "Output HathiTrust": "./some_real_ht_folder/",
+    }
+    workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
+
+    def mock_scandir(path):
+        for i_number in range(20):
+            file_mock = Mock()
+            file_mock.name = f"99423682912205899-{str(i_number).zfill(8)}.tif"
+            file_mock.path = os.path.join(path, file_mock.name)
+            yield file_mock
+
+    real_paths = [
+        user_args["Input"],
+        user_args["Output Digital Library"],
+        user_args["Output HathiTrust"],
+    ]
+
+
+    def PackageFactory(package_type):
+        assert isinstance(package_type, expected_package_type)
+        return package_type
+
+    with monkeypatch.context() as mp:
+        mp.setattr(
+            os.path,
+            "exists",
+            lambda path: path in real_paths and path is not None
+        )
+        mp.setattr(os, "scandir", mock_scandir)
+        from uiucprescon import packager
+
+        mp.setattr(packager, "PackageFactory", PackageFactory)
+        workflow.discover_task_metadata(
+            initial_results=initial_results,
+            additional_data=additional_data,
+            **user_args
+        )
+    # assert PackageFactory.called is True
+    #
+    # calls = [
+    #     call(packager.packages.CaptureOnePackage(delimiter="-"))
+    # ]
+    # PackageFactory.assert_has_calls(calls)
