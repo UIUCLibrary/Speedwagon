@@ -15,7 +15,6 @@ pyhathiprep>=0.1.5
 pyqt-distutils>=0.7.3
 PyQt5>=5.15.4
 PyQt5-sip>=12.8.0
-PyQt5-stubs==5.14.2.2
 pytz==2020.1
 PyYAML==5.4
 ruamel.yaml==0.16.10
