@@ -1,8 +1,12 @@
 """Workflow for converting Capture One tiff file into two formats."""
 from __future__ import annotations
 import logging
-
-from typing import List, Any, Dict, Callable, Iterator
+import typing
+try:
+    from typing import TypedDict
+except ImportError:
+    from typing_extensions import TypedDict
+from typing import List, Any, Dict, Callable, Iterator, Optional,  Union
 from contextlib import contextmanager
 from uiucprescon import packager
 from uiucprescon.packager.packages.abs_package_builder import AbsPackageBuilder
@@ -17,8 +21,39 @@ from speedwagon.worker import GuiLogHandler
 __all__ = ['CaptureOneToDlCompoundAndDLWorkflow']
 
 
+UserArgs = TypedDict(
+    'UserArgs',
+    {
+        "Input": str,
+        "Package Type": str,
+        "Output Digital Library": str,
+        "Output HathiTrust": str
+    },
+)
+
+
+class JobArguments(TypedDict):
+    package: AbsPackageComponent
+    output_dl: Optional[str]
+    output_ht: Optional[str]
+    source_path: str
+
+
+SUPPORTED_PACKAGE_SOURCES = {
+    "Capture One": packager.packages.CaptureOnePackage(delimiter="-"),
+    "Archival collections/Non EAS": packager.packages.ArchivalNonEAS(),
+    "Cataloged collections/Non EAS": packager.packages.CatalogedNonEAS()
+}
+
+
 class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
-    """Settings for convert capture one tiff files."""
+    """Settings for convert capture one tiff files.
+
+    .. versionchanged:: 0.1.5
+        workflow only requires a single output to be set. Any empty output
+            parameters will result in that output format not being made.
+
+    """
 
     name = "Convert CaptureOne TIFF to Digital Library Compound Object and " \
            "HathiTrust"
@@ -31,27 +66,37 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
                   "HathiTrust."
     active = True
 
-    def user_options(self) -> List[options.UserOptionCustomDataType]:
+    def user_options(self) -> List[Union[options.UserOption2,
+                                         options.UserOption3]]:
         """Get the options types need to configuring the workflow.
 
         Returns:
             Returns a list of user option types
 
         """
-        return [
+
+        user_options: List[Union[options.UserOption2, options.UserOption3]] = [
             options.UserOptionCustomDataType("Input", options.FolderData),
+            ]
+        package_type_selection = options.ListSelection(
+            "Package Type")
+        for package_type_name in SUPPORTED_PACKAGE_SOURCES:
+            package_type_selection.add_selection(package_type_name)
+        user_options.append(package_type_selection)
+        user_options += [
             options.UserOptionCustomDataType(
                 "Output Digital Library", options.FolderData),
             options.UserOptionCustomDataType(
                 "Output HathiTrust", options.FolderData),
                 ]
+        return user_options
 
     def discover_task_metadata(
             self,
             initial_results: List[Any],
             additional_data: Dict[str, str],
-            **user_args: str
-    ) -> List[Dict[str, str | AbsPackageComponent]]:
+            **user_args: typing.Optional[str]
+    ) -> List[Dict[str, Union[str, AbsPackageComponent]]]:
         """Loot at user settings and discover any data needed to build a task.
 
         Args:
@@ -63,23 +108,29 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
             Returns a list of data to create a job with
 
         """
-        jobs: List[Dict[str, str | AbsPackageComponent]] = []
+        user_arguments: UserArgs = typing.cast(UserArgs, user_args)
+        source_input = user_arguments["Input"]
+        dest_dl = user_arguments["Output Digital Library"]
+        dest_ht = user_arguments["Output HathiTrust"]
+        package_type = SUPPORTED_PACKAGE_SOURCES.get(
+            user_arguments['Package Type']
+        )
+        if package_type is None:
+            raise ValueError(
+                f"Unknown package type {user_arguments['Package Type']}"
+            )
+        package_factory = packager.PackageFactory(package_type)
 
-        source_input = user_args["Input"]
-        dest_dl = user_args["Output Digital Library"]
-        dest_ht = user_args["Output HathiTrust"]
-
-        package_factory = packager.PackageFactory(
-            packager.packages.CaptureOnePackage(delimiter="-"))
+        jobs: List[JobArguments] = []
         for package in package_factory.locate_packages(source_input):
-            new_job: Dict[str, str | AbsPackageComponent] = {
+            new_job: JobArguments = {
                 "package": package,
                 "output_dl": dest_dl,
                 "output_ht": dest_ht,
                 "source_path": source_input
             }
             jobs.append(new_job)
-        return jobs
+        return typing.cast(List[Dict[str, typing.Union[str, Any]]], jobs)
 
     @staticmethod
     def validate_user_options(**user_args: str) -> bool:
@@ -91,31 +142,32 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
             **user_args:
 
         """
+        user_arguments: UserArgs = typing.cast(UserArgs, user_args)
         option_validators = validators.OptionValidator()
 
         option_validators.register_validator(
-            'Output Digital Library',
-            validators.DirectoryValidation(key="Output Digital Library")
+            'At least one output',
+            OutputValidator(
+                at_least_one_of=[
+                    "Output Digital Library",
+                    "Output HathiTrust"
+                ]
+            )
         )
-
-        option_validators.register_validator(
-            'Output HathiTrust',
-            validators.DirectoryValidation(key="Output HathiTrust")
-        )
-
         option_validators.register_validator(
             'Input',
             validators.DirectoryValidation(key="Input")
         )
-        invalid_messages = []
+        invalid_messages: List[str] = []
         for validation in [
-            option_validators.get("Output Digital Library"),
-            option_validators.get("Output HathiTrust"),
+            option_validators.get('At least one output'),
             option_validators.get("Input")
 
         ]:
-            if not validation.is_valid(**user_args):
-                invalid_messages.append(validation.explanation(**user_args))
+            if not validation.is_valid(**user_arguments):
+                invalid_messages.append(
+                    validation.explanation(**user_arguments)
+                )
 
         if len(invalid_messages) > 0:
             raise ValueError("\n".join(invalid_messages))
@@ -123,7 +175,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
 
     def create_new_task(self,
                         task_builder: tasks.TaskBuilder,
-                        **job_args: str | AbsPackageComponent
+                        **job_args: Union[str, AbsPackageComponent]
                         ) -> None:
         """Generate a new task.
 
@@ -132,29 +184,53 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
             **job_args:
 
         """
-        existing_package: AbsPackageComponent = job_args['package']
-        new_dl_package_root: str = job_args["output_dl"]
-        new_ht_package_root: str = job_args["output_ht"]
-        source_path: str = job_args["source_path"]
+        job_arguments = typing.cast(JobArguments, job_args)
+        existing_package: AbsPackageComponent = job_arguments['package']
+
+        source_path = job_arguments["source_path"]
         package_id: str = existing_package.metadata[Metadata.ID]
-        dl_packaging_task = PackageConverter(
-            source_path=source_path,
-            existing_package=existing_package,
-            new_package_root=new_dl_package_root,
-            packaging_id=package_id,
-            package_format="Digital Library Compound",
+        new_dl_package_root = job_arguments.get("output_dl")
+        if new_dl_package_root is not None:
+            dl_packaging_task = PackageConverter(
+                source_path=source_path,
+                existing_package=existing_package,
+                new_package_root=new_dl_package_root,
+                packaging_id=package_id,
+                package_format="Digital Library Compound",
+            )
+            task_builder.add_subtask(dl_packaging_task)
 
-        )
-        task_builder.add_subtask(dl_packaging_task)
-        ht_packaging_task = PackageConverter(
-            source_path=source_path,
-            existing_package=existing_package,
-            new_package_root=new_ht_package_root,
-            packaging_id=package_id,
-            package_format="HathiTrust jp2",
+        new_ht_package_root = job_arguments.get("output_ht")
+        if new_ht_package_root is not None:
+            ht_packaging_task = PackageConverter(
+                source_path=source_path,
+                existing_package=existing_package,
+                new_package_root=new_ht_package_root,
+                packaging_id=package_id,
+                package_format="HathiTrust jp2",
 
-        )
-        task_builder.add_subtask(ht_packaging_task)
+            )
+            task_builder.add_subtask(ht_packaging_task)
+
+
+class OutputValidator(validators.AbsOptionValidator):
+
+    def __init__(self, at_least_one_of: List[str]) -> None:
+        super().__init__()
+        self.keys = at_least_one_of
+        self._validators = []
+        for k in self.keys:
+            self._validators.append(validators.DirectoryValidation(k))
+
+    def is_valid(self, **user_data: Any) -> bool:
+        return any(f.is_valid(**user_data) for f in self._validators)
+
+    def explanation(self, **user_data: Any) -> str:
+        if self.is_valid(**user_data) is False:
+            return \
+                f'One of the follow outputs must be valid: ' \
+                f'{", ".join(self.keys)}'
+        return "ok"
 
 
 class PackageConverter(tasks.Subtask):
