@@ -35,6 +35,7 @@ if __name__ == "__main__":
             "pykdu-compress>=0.1.3",
             'importlib_resources;python_version<"3.9"',
             'importlib-metadata;python_version<"3.8"',
+            'typing-extensions;python_version<"3.8"',
             'lxml',
             "requests",
             "py3exiv2bind>=0.1.5",

@@ -2,9 +2,11 @@
 from __future__ import annotations
 import logging
 import typing
-
-from typing import List, Any, Dict, Callable, Iterator, TypedDict, Optional, \
-    Union
+try:
+    from typing import TypedDict
+except ImportError:
+    from typing_extensions import TypedDict
+from typing import List, Any, Dict, Callable, Iterator, Optional,  Union
 from contextlib import contextmanager
 from uiucprescon import packager
 from uiucprescon.packager.packages.abs_package_builder import AbsPackageBuilder
