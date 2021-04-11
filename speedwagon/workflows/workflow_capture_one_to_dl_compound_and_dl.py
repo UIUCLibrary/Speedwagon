@@ -123,13 +123,14 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
 
         jobs: List[JobArguments] = []
         for package in package_factory.locate_packages(source_input):
-            new_job: JobArguments = {
-                "package": package,
-                "output_dl": dest_dl,
-                "output_ht": dest_ht,
-                "source_path": source_input
-            }
-            jobs.append(new_job)
+            jobs.append(
+                JobArguments({
+                    "package": package,
+                    "output_dl": dest_dl,
+                    "output_ht": dest_ht,
+                    "source_path": source_input
+                })
+            )
         return typing.cast(List[Dict[str, typing.Union[str, Any]]], jobs)
 
     @staticmethod
