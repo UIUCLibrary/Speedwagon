@@ -126,14 +126,14 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
         jobs: List[JobArguments] = []
         try:
             for package in package_factory.locate_packages(source_input):
-                    jobs.append(
-                        JobArguments({
-                            "package": package,
-                            "output_dl": dest_dl,
-                            "output_ht": dest_ht,
-                            "source_path": source_input
-                        })
-                    )
+                jobs.append(
+                    JobArguments({
+                        "package": package,
+                        "output_dl": dest_dl,
+                        "output_ht": dest_ht,
+                        "source_path": source_input
+                    })
+                )
         except Exception as error:
             raise speedwagon.exceptions.SpeedwagonException(
                 f"Failed to locate packages at {source_input}. Reason: {error}"
