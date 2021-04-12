@@ -2,6 +2,7 @@ from unittest.mock import Mock, MagicMock, call
 
 import pytest
 from uiucprescon import packager
+import speedwagon.exceptions
 from speedwagon import tasks, models
 from speedwagon.workflows \
     import workflow_capture_one_to_dl_compound_and_dl as ht_wf
@@ -333,3 +334,36 @@ def test_discover_task_metadata_gets_right_package(user_options, user_selected_p
     #     call(packager.packages.CaptureOnePackage(delimiter="-"))
     # ]
     # PackageFactory.assert_has_calls(calls)
+
+
+def test_discover_task_metadata_invalid_package(user_options):
+    workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
+    initial_results = []
+    additional_data = {}
+    user_options['Package Type'] = "not a real package type"
+    with pytest.raises(ValueError):
+        workflow.discover_task_metadata(
+            initial_results=initial_results,
+            additional_data=additional_data,
+            **user_options
+        )
+
+
+def test_failed_to_locate_files_throws_speedwagon_exception(
+        user_options, monkeypatch
+):
+
+    workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
+    from uiucprescon.packager import PackageFactory
+    monkeypatch.setattr(
+        PackageFactory,
+        "locate_packages",
+        Mock(side_effect=FileNotFoundError)
+    )
+
+    with pytest.raises(speedwagon.exceptions.SpeedwagonException):
+        workflow.discover_task_metadata(
+            initial_results=[],
+            additional_data={},
+            **user_options
+        )
