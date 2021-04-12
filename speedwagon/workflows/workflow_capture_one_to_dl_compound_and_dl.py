@@ -2,10 +2,12 @@
 from __future__ import annotations
 import logging
 import typing
-try:
+
+try:  # pragma: no cover
     from typing import TypedDict
-except ImportError:
+except ImportError:  # pragma: no cover
     from typing_extensions import TypedDict
+
 from typing import List, Any, Dict, Callable, Iterator, Optional,  Union
 from contextlib import contextmanager
 from uiucprescon import packager
@@ -16,7 +18,7 @@ from speedwagon import tasks, validators
 from speedwagon.job import AbsWorkflow
 from speedwagon.workflows import shared_custom_widgets as options
 from speedwagon.worker import GuiLogHandler
-
+import speedwagon.exceptions
 
 __all__ = ['CaptureOneToDlCompoundAndDLWorkflow']
 
@@ -122,14 +124,21 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
         package_factory = packager.PackageFactory(package_type)
 
         jobs: List[JobArguments] = []
-        for package in package_factory.locate_packages(source_input):
-            new_job: JobArguments = {
-                "package": package,
-                "output_dl": dest_dl,
-                "output_ht": dest_ht,
-                "source_path": source_input
-            }
-            jobs.append(new_job)
+        try:
+            for package in package_factory.locate_packages(source_input):
+                jobs.append(
+                    JobArguments({
+                        "package": package,
+                        "output_dl": dest_dl,
+                        "output_ht": dest_ht,
+                        "source_path": source_input
+                    })
+                )
+        except Exception as error:
+            raise speedwagon.exceptions.SpeedwagonException(
+                f"Failed to locate packages at {source_input}. Reason: {error}"
+            ) from error
+
         return typing.cast(List[Dict[str, typing.Union[str, Any]]], jobs)
 
     @staticmethod
