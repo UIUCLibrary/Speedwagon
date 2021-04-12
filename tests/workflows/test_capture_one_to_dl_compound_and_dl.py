@@ -2,6 +2,8 @@ from unittest.mock import Mock, MagicMock, call
 
 import pytest
 from uiucprescon import packager
+
+import speedwagon.exceptions
 from speedwagon import tasks, models
 from speedwagon.workflows \
     import workflow_capture_one_to_dl_compound_and_dl as ht_wf
@@ -274,7 +276,28 @@ def test_output_validator(monkeypatch, dl_outpath, ht_outpath, is_valid):
         lambda path: path in existing_paths and path is not None
     )
     validator = ht_wf.OutputValidator(checks)
-    assert validator.is_valid(**user_options) is is_valid, validator.explanation(**user_options)
+    assert \
+        validator.is_valid(
+            **user_options
+        ) is is_valid, validator.explanation(**user_options)
+
+
+def test_output_validator_success_is_ok(user_options, monkeypatch):
+    user_options['Input'] = "some/real/path"
+    user_options['Output Digital Library'] = "some/real/output_path_for_dl"
+    user_options['Output HathiTrust'] = "some/real/output_path_for_ht"
+
+    validator = ht_wf.OutputValidator(
+        ['Output Digital Library', "Output HathiTrust"]
+    )
+    with monkeypatch.context() as mp:
+        mp.setattr(
+            ht_wf.OutputValidator,
+            "is_valid",
+            lambda *args, **user_args: True
+        )
+        assert validator.explanation(**user_options) == "ok"
+
 
 @pytest.mark.parametrize(
     "user_selected_package_type, expected_package_type", [
@@ -307,7 +330,6 @@ def test_discover_task_metadata_gets_right_package(user_options, user_selected_p
         user_args["Output HathiTrust"],
     ]
 
-
     def PackageFactory(package_type):
         assert isinstance(package_type, expected_package_type)
         return package_type
@@ -333,3 +355,36 @@ def test_discover_task_metadata_gets_right_package(user_options, user_selected_p
     #     call(packager.packages.CaptureOnePackage(delimiter="-"))
     # ]
     # PackageFactory.assert_has_calls(calls)
+
+
+def test_discover_task_metadata_invalid_package(user_options):
+    workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
+    initial_results = []
+    additional_data = {}
+    user_options['Package Type'] = "not a real package type"
+    with pytest.raises(ValueError):
+        workflow.discover_task_metadata(
+            initial_results=initial_results,
+            additional_data=additional_data,
+            **user_options
+        )
+
+
+def test_failed_to_locate_files_throws_speedwagon_exception(
+        user_options, monkeypatch
+):
+
+    workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
+    from uiucprescon.packager import PackageFactory
+    monkeypatch.setattr(
+        PackageFactory,
+        "locate_packages",
+        Mock(side_effect=FileNotFoundError)
+    )
+
+    with pytest.raises(speedwagon.exceptions.SpeedwagonException):
+        workflow.discover_task_metadata(
+            initial_results=[],
+            additional_data={},
+            **user_options
+        )
