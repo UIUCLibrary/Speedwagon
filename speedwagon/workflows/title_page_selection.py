@@ -143,13 +143,15 @@ class PackagesModel(QtCore.QAbstractTableModel):
 
 
 class PackageBrowser(QtWidgets.QDialog):
-    def __init__(self,
-                 packages: typing.List[collection.AbsPackageComponent],
-                 parent: QtWidgets.QWidget,
-                 flags: typing.Union[
-                     Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
-                 *args, **kwargs) -> None:
-        super().__init__(parent, flags, *args, **kwargs)
+    def __init__(
+            self,
+            packages: typing.List[collection.AbsPackageComponent],
+            parent: QtWidgets.QWidget,
+            flags: typing.Union[
+                Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
+    ) -> None:
+
+        super().__init__(parent, flags)
         self._parent = parent
         self._packages = packages
         self._model = PackagesModel(packages)
