@@ -10,9 +10,9 @@ import traceback
 import webbrowser
 from typing import List
 import io
-try:
+try:  # pragma: no cover
     from importlib import metadata
-except ImportError:
+except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
 
 from PyQt5 import QtWidgets, QtCore, QtGui  # type: ignore

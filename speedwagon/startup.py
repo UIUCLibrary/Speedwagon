@@ -31,10 +31,10 @@ from speedwagon.dialog.settings import TabEditor
 from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.tabs import extract_tab_information
 import pathlib
-try:
+try:  # pragma: no cover
     from importlib import metadata
     import importlib.resources as resources  # type: ignore
-except ImportError:
+except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
     import importlib_resources as resources  # type: ignore
 

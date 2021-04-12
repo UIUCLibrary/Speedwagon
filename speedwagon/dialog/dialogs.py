@@ -1,9 +1,9 @@
 from typing import Collection
 
 from PyQt5 import QtWidgets, QtGui  # type: ignore
-try:
+try:  # pragma: no cover
     from importlib import metadata
-except ImportError:
+except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
 
 import speedwagon
