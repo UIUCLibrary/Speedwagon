@@ -76,7 +76,6 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
             Returns a list of user option types
 
         """
-
         user_options: List[Union[options.UserOption2, options.UserOption3]] = [
             options.UserOptionCustomDataType("Input", options.FolderData),
             ]
