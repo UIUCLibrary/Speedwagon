@@ -275,7 +275,28 @@ def test_output_validator(monkeypatch, dl_outpath, ht_outpath, is_valid):
         lambda path: path in existing_paths and path is not None
     )
     validator = ht_wf.OutputValidator(checks)
-    assert validator.is_valid(**user_options) is is_valid, validator.explanation(**user_options)
+    assert \
+        validator.is_valid(
+            **user_options
+        ) is is_valid, validator.explanation(**user_options)
+
+
+def test_output_validator_success_is_ok(user_options, monkeypatch):
+    user_options['Input'] = "some/real/path"
+    user_options['Output Digital Library'] = "some/real/output_path_for_dl"
+    user_options['Output HathiTrust'] = "some/real/output_path_for_ht"
+
+    validator = ht_wf.OutputValidator(
+        ['Output Digital Library', "Output HathiTrust"]
+    )
+    with monkeypatch.context() as mp:
+        mp.setattr(
+            ht_wf.OutputValidator,
+            "is_valid",
+            lambda *args, **user_args: True
+        )
+        assert validator.explanation(**user_options) == "ok"
+
 
 @pytest.mark.parametrize(
     "user_selected_package_type, expected_package_type", [
