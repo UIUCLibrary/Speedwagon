@@ -388,3 +388,15 @@ def test_failed_to_locate_files_throws_speedwagon_exception(
             additional_data={},
             **user_options
         )
+
+
+def test_package_converter_invalid_format():
+    with pytest.raises(ValueError) as e:
+        ht_wf.PackageConverter(
+            source_path="some_path",
+            packaging_id="fake",
+            existing_package=None,
+            new_package_root="new_path",
+            package_format="invalid package format"
+        )
+    assert "is not a known value" in str(e.value)
