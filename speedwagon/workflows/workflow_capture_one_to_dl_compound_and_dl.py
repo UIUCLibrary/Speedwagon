@@ -137,7 +137,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
         except Exception as error:
             raise speedwagon.exceptions.SpeedwagonException(
                 f"Failed to locate packages at {source_input}. Reason: {error}"
-            )
+            ) from error
 
         return typing.cast(List[Dict[str, typing.Union[str, Any]]], jobs)
 
