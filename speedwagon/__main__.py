@@ -16,7 +16,7 @@ def main(argv=None) -> None:
 
     if len(argv) > 1 and argv[1] == "--pytest":
         pytest = importlib.import_module("pytest")
-        sys.exit(pytest.main(argv[2:]))
+        sys.exit(pytest.main(argv[2:]))  # type: ignore
 
     speedwagon.startup.main(argv)
 
