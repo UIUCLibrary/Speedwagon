@@ -173,9 +173,13 @@ def test_get_custom_tabs_loads_workflows_from_file(monkeypatch):
 
 
 def test_standalone_tab_editor_loads(qtbot, monkeypatch):
-    from speedwagon import startup
+    from speedwagon import startup, config
     TabsEditorApp = MagicMock()
     monkeypatch.setattr(startup, "TabsEditorApp", TabsEditorApp)
     app = Mock()
+    settings = Mock()
+    get_platform_settings = Mock(return_value=settings)
+    settings.get_app_data_directory = Mock(return_value=".")
+    monkeypatch.setattr(config, "get_platform_settings", get_platform_settings)
     startup.standalone_tab_editor(app)
     assert app.exec.called is True
