@@ -166,7 +166,9 @@ def test_get_custom_tabs_loads_workflows_from_file(monkeypatch):
     load.__class__ = dict
     monkeypatch.setattr(yaml, "load", load)
     with patch('speedwagon.startup.open', mock_open()) as m:
-        tab_name, workflows = next(startup.get_custom_tabs(all_workflows, test_file))
+        tab_name, workflows = next(
+            startup.get_custom_tabs(all_workflows, test_file)
+        )
     assert "my workflow" == tab_name and "spam" in workflows
 
 
