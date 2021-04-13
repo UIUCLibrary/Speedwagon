@@ -498,8 +498,9 @@ def standalone_tab_editor() -> None:
     app.exec()
 
 
-def main() -> None:
-    if "tab-editor" in sys.argv:
+def main(argv=None) -> None:
+    argv = argv or sys.argv
+    if "tab-editor" in argv:
         standalone_tab_editor()
         return
     app = StartupDefault()

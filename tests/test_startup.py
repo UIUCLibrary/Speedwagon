@@ -1,6 +1,8 @@
 import argparse
 from unittest.mock import Mock, MagicMock
 
+import pytest
+
 from speedwagon import startup, config
 
 
@@ -46,3 +48,28 @@ class TestTabsEditorApp:
         editor.close = Mock()
         editor.on_okay()
         assert editor.close.called is True
+
+
+def test_start_as_module(monkeypatch):
+    from speedwagon.__main__ import main
+    import speedwagon.startup
+    startup_main = Mock()
+    monkeypatch.setattr(speedwagon.startup, "main", startup_main)
+    main()
+    startup_main.assert_called()
+
+def test_start_up_calls_default(monkeypatch):
+    import speedwagon.startup
+    StartupDefault_ = MagicMock()
+    monkeypatch.setattr(speedwagon.startup, "StartupDefault", StartupDefault_)
+    with pytest.raises(SystemExit):
+        speedwagon.startup.main()
+        StartupDefault_.assert_called()
+
+
+def test_start_up_tab_editor(monkeypatch):
+    import speedwagon.startup
+    standalone_tab_editor = Mock()
+    monkeypatch.setattr(speedwagon.startup, "standalone_tab_editor", standalone_tab_editor)
+    speedwagon.startup.main(argv=["tab-editor"])
+    assert standalone_tab_editor.called is True
