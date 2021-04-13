@@ -85,5 +85,3 @@ def test_load_as_module(monkeypatch):
     monkeypatch.setattr(speedwagon.startup, "main", main_mock)
     speedwagon.__main__.main()
     assert main_mock.called is True
-# def test_version_calls_exit():
-#     os.system( f"{sys.executable} -m speedwagon --version")
