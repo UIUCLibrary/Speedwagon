@@ -1,5 +1,7 @@
 import logging
 import sys
+
+import importlib
 import speedwagon
 import speedwagon.config
 import speedwagon.startup
@@ -13,7 +15,7 @@ def main(argv=None) -> None:
     argv = argv or sys.argv
 
     if len(argv) > 1 and argv[1] == "--pytest":
-        import pytest  # type: ignore  # noqa
+        pytest = importlib.import_module("pytest")
         sys.exit(pytest.main(argv[2:]))
 
     speedwagon.startup.main(argv)

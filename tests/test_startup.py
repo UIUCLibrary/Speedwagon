@@ -85,3 +85,16 @@ def test_load_as_module(monkeypatch):
     monkeypatch.setattr(speedwagon.startup, "main", main_mock)
     speedwagon.__main__.main()
     assert main_mock.called is True
+
+
+def test_load_module_self_test(monkeypatch):
+    import logging
+    monkeypatch.setattr(logging, "getLogger", Mock())
+    import importlib
+    pytest_mock = MagicMock()
+    monkeypatch.setattr(importlib, "import_module", lambda x: pytest_mock)
+    import speedwagon.__main__
+
+    with pytest.raises(SystemExit):
+        speedwagon.__main__.main(["_", "--pytest"])
+    assert pytest_mock.main.called is True
