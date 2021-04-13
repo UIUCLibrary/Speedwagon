@@ -29,6 +29,7 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
 
     monkeypatch.setattr(config.get_platform_settings().__class__, "get_app_data_directory", dummy_app_data_dir)
     standard_startup = startup.StartupDefault(app=app)
+
     standard_startup.startup_settings['debug'] = True
     tabs_file = tmpdir / "tabs.yaml"
     tabs_file.ensure()
@@ -36,7 +37,10 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
     # get_app_data_directory
 
     standard_startup.tabs_file = tabs_file
-
+    from PyQt5 import QtWidgets
+    monkeypatch.setattr(QtWidgets, "QSplashScreen", MagicMock())
+    monkeypatch.setattr(startup, "MainWindow", MagicMock())
+    standard_startup._logger = Mock()
     standard_startup.run()
     assert app.exec_.called is True
 
