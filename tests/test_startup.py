@@ -3,11 +3,9 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 
-from speedwagon import startup, config
-
 
 def test_version_exits_after_being_called(monkeypatch):
-
+    from speedwagon import startup
     parser = startup.CliArgsSetter.get_arg_parser()
     version_exit_mock = Mock()
 
@@ -19,6 +17,7 @@ def test_version_exits_after_being_called(monkeypatch):
 
 
 def test_run_loads_window(qtbot, monkeypatch, tmpdir):
+    from speedwagon import startup, config
     app = Mock()
     app.exec_ = MagicMock()
 
@@ -47,20 +46,13 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
 
 class TestTabsEditorApp:
     def test_on_okay_closes(self, qtbot):
+        from speedwagon import startup
         editor = startup.TabsEditorApp()
         qtbot.addWidget(editor)
         editor.close = Mock()
         editor.on_okay()
         assert editor.close.called is True
 
-
-def test_start_as_module(monkeypatch):
-    from speedwagon.__main__ import main
-    import speedwagon.startup
-    startup_main = Mock()
-    monkeypatch.setattr(speedwagon.startup, "main", startup_main)
-    main()
-    startup_main.assert_called()
 
 def test_start_up_calls_default(monkeypatch):
     import speedwagon.startup
