@@ -481,7 +481,7 @@ class TabsEditorApp(QtWidgets.QDialog):
         self.editor.tabs_file = value
 
 
-def standalone_tab_editor(app=None) -> None:
+def standalone_tab_editor(app: QtWidgets.QApplication = None) -> None:
     print("Loading settings")
     settings = speedwagon.config.get_platform_settings()
 
@@ -498,7 +498,7 @@ def standalone_tab_editor(app=None) -> None:
     app.exec()
 
 
-def main(argv=None) -> None:
+def main(argv: List[str] = None) -> None:
     argv = argv or sys.argv
     if "tab-editor" in argv:
         standalone_tab_editor()
