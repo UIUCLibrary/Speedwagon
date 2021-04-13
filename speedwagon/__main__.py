@@ -1,5 +1,7 @@
 import logging
 import sys
+
+import importlib
 import speedwagon
 import speedwagon.config
 import speedwagon.startup
@@ -9,12 +11,14 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
 
-def main() -> None:
-    if len(sys.argv) > 1 and sys.argv[1] == "--pytest":
-        import pytest  # type: ignore  # noqa
-        sys.exit(pytest.main(sys.argv[2:]))
+def main(argv=None) -> None:
+    argv = argv or sys.argv
 
-    speedwagon.startup.main()
+    if len(argv) > 1 and argv[1] == "--pytest":
+        pytest = importlib.import_module("pytest")
+        sys.exit(pytest.main(argv[2:]))  # type: ignore
+
+    speedwagon.startup.main(argv)
 
 
 if __name__ == '__main__':

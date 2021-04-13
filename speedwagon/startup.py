@@ -17,8 +17,7 @@ import io
 import logging
 import os
 import sys
-from typing import Dict, Union, Iterator, Tuple, List, cast, Optional
-
+from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
 import yaml
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 
@@ -141,8 +140,10 @@ def get_selection(all_workflows):
     return new_workflow_set
 
 
-def get_custom_tabs(all_workflows: dict, yaml_file: str) -> \
-        Iterator[Tuple[str, dict]]:
+def get_custom_tabs(
+        all_workflows: Dict[str, Type[speedwagon.Workflow]],
+        yaml_file: str
+) -> Iterator[Tuple[str, dict]]:
 
     try:
         with open(yaml_file) as f:
@@ -151,6 +152,7 @@ def get_custom_tabs(all_workflows: dict, yaml_file: str) -> \
             raise FileFormatError("Failed to parse file")
 
         if tabs_config_data:
+            tabs_config_data = cast(Dict[str, List[str]], tabs_config_data)
             for tab_name in tabs_config_data:
 
                 try:
@@ -481,11 +483,11 @@ class TabsEditorApp(QtWidgets.QDialog):
         self.editor.tabs_file = value
 
 
-def standalone_tab_editor() -> None:
+def standalone_tab_editor(app: QtWidgets.QApplication = None) -> None:
     print("Loading settings")
     settings = speedwagon.config.get_platform_settings()
 
-    app = QtWidgets.QApplication(sys.argv)
+    app = app or QtWidgets.QApplication(sys.argv)
     print("Loading tab editor")
     editor = TabsEditorApp()
     editor.load_all_workflows()
@@ -498,8 +500,9 @@ def standalone_tab_editor() -> None:
     app.exec()
 
 
-def main() -> None:
-    if "tab-editor" in sys.argv:
+def main(argv: List[str] = None) -> None:
+    argv = argv or sys.argv
+    if "tab-editor" in argv:
         standalone_tab_editor()
         return
     app = StartupDefault()
