@@ -70,6 +70,11 @@ def test_start_up_calls_default(monkeypatch):
 def test_start_up_tab_editor(monkeypatch):
     import speedwagon.startup
     standalone_tab_editor = Mock()
-    monkeypatch.setattr(speedwagon.startup, "standalone_tab_editor", standalone_tab_editor)
-    speedwagon.startup.main(argv=["tab-editor"])
-    assert standalone_tab_editor.called is True
+
+    with monkeypatch.context() as mp:
+        mp.setattr(speedwagon.startup,
+                   "standalone_tab_editor",
+                   standalone_tab_editor)
+
+        speedwagon.startup.main(argv=["tab-editor"])
+        assert standalone_tab_editor.called is True
