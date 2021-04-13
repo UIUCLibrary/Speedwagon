@@ -481,11 +481,11 @@ class TabsEditorApp(QtWidgets.QDialog):
         self.editor.tabs_file = value
 
 
-def standalone_tab_editor() -> None:
+def standalone_tab_editor(app=None) -> None:
     print("Loading settings")
     settings = speedwagon.config.get_platform_settings()
 
-    app = QtWidgets.QApplication(sys.argv)
+    app = app or QtWidgets.QApplication(sys.argv)
     print("Loading tab editor")
     editor = TabsEditorApp()
     editor.load_all_workflows()
