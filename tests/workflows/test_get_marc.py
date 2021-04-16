@@ -840,7 +840,7 @@ def test_failing_to_parse_provides_input(monkeypatch):
     assert "dummyfile.xml" in str(ex.value)
 
 
-def test_reflox(monkeypatch):
+def test_reflow(monkeypatch):
     task = MarcGeneratorTask("12345", "MMS ID", "sample.xml", "fake.com")
     MarcGeneratorTask.log = Mock()
     task.write_file = Mock()
@@ -855,3 +855,19 @@ def test_reflox(monkeypatch):
     task.work()
     data = task.write_file.call_args[1]['data']
     ET.fromstring(data)
+
+
+def test_catching_unicode_error(monkeypatch):
+    task = MarcGeneratorTask("12345", "MMS ID", "sample.xml", "fake.com")
+    MarcGeneratorTask.log = Mock()
+
+    def mock_get(*args, **kwargs):
+        sample_requests = Mock()
+        sample_requests.raise_for_status = Mock()
+        sample_requests.text = SAMPLE_RECORD
+        return sample_requests
+
+    monkeypatch.setattr(requests, "get", mock_get)
+    with patch('builtins.open', Mock(side_effect=UnicodeError)) as m:
+        with pytest.raises(speedwagon.exceptions.SpeedwagonException):
+            task.work()

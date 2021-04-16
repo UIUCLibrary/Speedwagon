@@ -16,7 +16,8 @@ from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from speedwagon import tasks, reports, validators
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
-
+import traceback
+import sys
 
 __all__ = ['GenerateMarcXMLFilesWorkflow']
 
@@ -581,7 +582,10 @@ class MarcGeneratorTask(tasks.Subtask):
                 "output": self._output_name
             })
             return True
-
+        except UnicodeError as error:
+            raise SpeedwagonException(
+                f"Error with {self._identifier}"
+            ) from error
         except (requests.ConnectionError, requests.HTTPError) as exception:
             self.set_results({
                 "success": False,
@@ -599,8 +603,12 @@ class MarcGeneratorTask(tasks.Subtask):
             data: Raw string data to save
 
         """
-        with open(self._output_name, "w") as write_file:
-            write_file.write(data)
+        try:
+            with open(self._output_name, "w", encoding="utf-8") as write_file:
+                write_file.write(data)
+        except UnicodeError as error:
+            traceback.print_exc(file=sys.stderr)
+            raise SpeedwagonException from error
 
 
 class EnhancementTask(tasks.Subtask):
@@ -745,7 +753,7 @@ class MarcEnhancement035Task(EnhancementTask):
         if len(uiudb_subfields) == 0:
             return True
         root = self.redraw_tree(tree, self.new_035_field(uiudb_subfields[0]))
-        with open(self.xml_file, "w") as write_file:
+        with open(self.xml_file, "w", encoding="utf-8") as write_file:
             write_file.write(self.to_prety_string(root))
         return True
 
@@ -773,7 +781,7 @@ class MarcEnhancement955Task(EnhancementTask):
         """
         tree = ET.parse(self.xml_file)
         root = self.enhance_tree_with_955(tree)
-        with open(self.xml_file, "w") as write_file:
+        with open(self.xml_file, "w", encoding="utf-8") as write_file:
             write_file.write(self.to_prety_string(root))
 
         return True
