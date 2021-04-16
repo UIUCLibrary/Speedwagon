@@ -606,9 +606,9 @@ class MarcGeneratorTask(tasks.Subtask):
         try:
             with open(self._output_name, "w", encoding="utf-8") as write_file:
                 write_file.write(data)
-        except UnicodeError:
+        except UnicodeError as error:
             traceback.print_exc(file=sys.stderr)
-            raise
+            raise SpeedwagonException from error
 
 
 class EnhancementTask(tasks.Subtask):
