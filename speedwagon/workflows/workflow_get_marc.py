@@ -583,7 +583,9 @@ class MarcGeneratorTask(tasks.Subtask):
             })
             return True
         except UnicodeError as error:
-            raise SpeedwagonException(f"Error with {self._identifier}") from error
+            raise SpeedwagonException(
+                f"Error with {self._identifier}"
+            ) from error
         except (requests.ConnectionError, requests.HTTPError) as exception:
             self.set_results({
                 "success": False,
@@ -604,9 +606,10 @@ class MarcGeneratorTask(tasks.Subtask):
         try:
             with open(self._output_name, "w", encoding="utf-8") as write_file:
                 write_file.write(data)
-        except UnicodeError as error:
+        except UnicodeError:
             traceback.print_exc(file=sys.stderr)
             raise
+
 
 class EnhancementTask(tasks.Subtask):
     """Base class for enhancing xml file."""
