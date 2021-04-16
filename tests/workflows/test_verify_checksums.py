@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from speedwagon import models
+from speedwagon import models, tasks
 from speedwagon.workflows import workflow_verify_checksums
 
 
@@ -161,3 +161,42 @@ class TestChecksumWorkflowTaskGenerators:
             expected_hash=job_args['expected_hash'],
             source_report=job_args['source_report']
         )
+
+
+class TestChecksumWorkflow:
+    @pytest.fixture
+    def workflow(self):
+        return workflow_verify_checksums.ChecksumWorkflow()
+
+    @pytest.fixture
+    def default_options(self, workflow):
+        return models.ToolOptionsModel3(
+            workflow.user_options()
+        ).get()
+
+    def test_discover_task_metadata(self, workflow, default_options):
+        initial_results = [
+            tasks.Result(
+                source=workflow_verify_checksums.ReadChecksumReportTask,
+                data=[
+                    {
+                        'expected_hash': 'something',
+                        'filename': "somefile.txt",
+                        'path': os.path.join("some", "path"),
+                        'source_report': "checksums.md5"
+                    }
+                ]
+            )
+
+        ]
+        additional_data = {}
+        user_args = default_options.copy()
+
+        job_metadata = workflow.discover_task_metadata(
+            initial_results=initial_results,
+            additional_data=additional_data,
+            **user_args
+        )
+        assert len(job_metadata) == 1
+
+
