@@ -1,3 +1,6 @@
+import os
+from unittest.mock import Mock
+
 import pytest
 
 from speedwagon import models
@@ -84,3 +87,77 @@ class TestChecksumWorkflowValidArgs:
             mp.setattr(os.path, "exists", lambda path: path == options['Input'])
             mp.setattr(os.path, "isdir", lambda path: True)
             assert workflow.validate_user_options(**options) is True
+
+
+class TestChecksumWorkflowTaskGenerators:
+    @pytest.fixture
+    def workflow(self):
+        return workflow_verify_checksums.ChecksumWorkflow()
+
+    @pytest.fixture
+    def default_options(self, workflow):
+        return models.ToolOptionsModel3(
+            workflow.user_options()
+        ).get()
+
+    def test_checksum_workflow_initial_task(
+            self,
+            workflow,
+            default_options,
+            monkeypatch
+    ):
+        user_args = default_options.copy()
+        user_args["Input"] = "dummy_path"
+
+        fake_checksum_report_file = \
+            os.path.join(user_args["Input"], "checksum.md5")
+
+        workflow._locate_checksum_files = \
+            Mock(return_value=[fake_checksum_report_file])
+
+        task_builder = Mock()
+
+        ReadChecksumReportTask = Mock()
+
+        monkeypatch.setattr(
+            workflow_verify_checksums,
+            "ReadChecksumReportTask",
+            ReadChecksumReportTask
+        )
+        workflow.initial_task(
+            task_builder=task_builder,
+            **user_args
+        )
+        assert task_builder.add_subtask.called is True
+
+        ReadChecksumReportTask.assert_called_with(
+            checksum_file=fake_checksum_report_file
+        )
+
+    def test_create_new_task(self, workflow, monkeypatch):
+        task_builder = Mock()
+        job_args = {
+            'filename': "some_real_file.txt",
+            'path': os.path.join("some", "real", "path"),
+            'expected_hash': "something",
+            'source_report': "something",
+        }
+        ValidateChecksumTask = Mock()
+
+        monkeypatch.setattr(
+            workflow_verify_checksums,
+            "ValidateChecksumTask",
+            ValidateChecksumTask
+        )
+        workflow.create_new_task(
+            task_builder=task_builder,
+            **job_args
+        )
+        assert task_builder.add_subtask.called is True
+
+        ValidateChecksumTask.assert_called_with(
+            file_name=job_args['filename'],
+            file_path=job_args['path'],
+            expected_hash=job_args['expected_hash'],
+            source_report=job_args['source_report']
+        )
