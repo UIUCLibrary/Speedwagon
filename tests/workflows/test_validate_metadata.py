@@ -135,3 +135,40 @@ class TestValidateMetadataWorkflow:
             job_args['filename'],
             job_args['profile_name']
         )
+
+    def test_generate_report_on_success(self, workflow, default_options):
+        user_options = default_options.copy()
+        user_options["Input"] = os.path.join("some", "valid", "path")
+        user_options['Profile'] = 'HathiTrust JPEG 2000'
+        ResultValues = workflow_validate_metadata.ResultValues
+        results = [
+            tasks.Result(
+                workflow_validate_metadata.ValidateImageMetadataTask,
+                {
+                    ResultValues.VALID: True
+                }
+            )
+        ]
+        report = workflow.generate_report(results, **user_options)
+        assert isinstance(report, str)
+        assert "Total files checked: 1" in report
+
+    def test_generate_report_on_failure(self, workflow, default_options):
+        user_options = default_options.copy()
+        user_options["Input"] = os.path.join("some", "valid", "path")
+        user_options['Profile'] = 'HathiTrust JPEG 2000'
+        ResultValues = workflow_validate_metadata.ResultValues
+        results = [
+            tasks.Result(
+                workflow_validate_metadata.ValidateImageMetadataTask,
+                {
+                    ResultValues.VALID: False,
+                    ResultValues.FILENAME: "MyFailingFile.jp2",
+                    ResultValues.REPORT: "spam.txt"
+                }
+            )
+        ]
+        report = workflow.generate_report(results, **user_options)
+        assert isinstance(report, str)
+        assert "MyFailingFile.jp2" in report
+
