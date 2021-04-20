@@ -1,5 +1,5 @@
 import os
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock
 
 import pytest
 
@@ -199,4 +199,104 @@ class TestChecksumWorkflow:
         )
         assert len(job_metadata) == 1
 
+    def test_generator_report_failure(self, workflow, default_options):
+        result_enums = workflow_verify_checksums.ResultValues
+        results = [
+            tasks.Result(workflow_verify_checksums.ValidateChecksumTask,
+                {
+                    result_enums.VALID: False,
+                    result_enums.CHECKSUM_REPORT_FILE: "SomeFile.md5",
+                    result_enums.FILENAME: "somefile.txt"
 
+                }
+            )
+        ]
+        report = workflow.generate_report(results=results)
+        assert isinstance(report, str)
+        assert "failed checksum validation" in report
+
+    def test_generator_report_success(self, workflow, default_options):
+        result_enums = workflow_verify_checksums.ResultValues
+        results = [
+            tasks.Result(
+                workflow_verify_checksums.ValidateChecksumTask,
+                {
+                    result_enums.VALID: True,
+                    result_enums.CHECKSUM_REPORT_FILE: "SomeFile.md5",
+                    result_enums.FILENAME: "somefile.txt"
+
+                }
+            )
+        ]
+        report = workflow.generate_report(results=results)
+        assert isinstance(report, str)
+        assert "passed checksum validation" in report
+
+
+class TestReadChecksumReportTask:
+    def test_work(self, monkeypatch):
+        task = workflow_verify_checksums.ReadChecksumReportTask(
+            checksum_file="somefile.md5"
+        )
+        import hathi_validate
+
+        def extracts_checksums(checksum_file):
+            for h in [
+                ("abc1234", "somefile.txt")
+
+            ]:
+                yield h
+
+        monkeypatch.setattr(
+            hathi_validate.process, "extracts_checksums", extracts_checksums
+        )
+        assert task.work() is True
+        assert len(task.results) == 1 and \
+               task.results[0]['filename'] == 'somefile.txt'
+
+
+class TestValidateChecksumTask:
+    @pytest.mark.parametrize(
+        "file_name,"
+        "file_path,expected_hash,actual_hash,source_report,should_be_valid", [
+            (
+                    "somefile.txt",
+                    os.path.join("some", "path"),
+                    "abc123",
+                    "abc123",
+                    "checksum.md5",
+                    True
+            ),
+            (
+                    "somefile.txt",
+                    os.path.join("some", "path"),
+                    "abc123",
+                    "badhash",
+                    "checksum.md5",
+                    False
+            ),
+        ]
+    )
+    def test_work(self,
+                  monkeypatch,
+                  file_name,
+                  file_path,
+                  expected_hash,
+                  actual_hash,
+                  source_report,
+                  should_be_valid):
+
+        task = workflow_verify_checksums.ValidateChecksumTask(
+            file_name=file_name,
+            file_path=file_path,
+            expected_hash=expected_hash,
+            source_report=source_report
+        )
+        import hathi_validate
+        result_enums = workflow_verify_checksums.ResultValues
+
+        calculate_md5 = Mock(return_value=actual_hash)
+        with monkeypatch.context() as mp:
+            mp.setattr(hathi_validate.process, "calculate_md5", calculate_md5)
+            assert task.work() is True
+            assert task.results[result_enums.VALID] is should_be_valid
