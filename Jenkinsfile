@@ -759,7 +759,7 @@ pipeline {
                             }
                             steps{
                                 timeout(5){
-                                    sh script: 'python -m pep517.build .'
+                                    sh script: 'python -m build .'
                                 }
                             }
                             post{
