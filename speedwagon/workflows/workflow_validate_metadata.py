@@ -1,4 +1,5 @@
 import os
+import typing
 import warnings
 from typing import Iterable, Optional, List, Any, Union
 import enum
@@ -97,7 +98,7 @@ class ValidateMetadataWorkflow(AbsWorkflow):
         return options
 
     @staticmethod
-    def validate_user_options(**user_args) -> bool:
+    def validate_user_options(**user_args: str) -> bool:
         input_data = user_args[UserArgs.INPUT.value]
         if input_data is None:
             raise ValueError("Missing value in input")
@@ -108,7 +109,7 @@ class ValidateMetadataWorkflow(AbsWorkflow):
 
     def create_new_task(self,
                         task_builder: "speedwagon.tasks.TaskBuilder",
-                        **job_args):
+                        **job_args: str):
         filename = job_args[JobValues.ITEM_FILENAME.value]
 
         subtask = \
@@ -128,13 +129,13 @@ class ValidateMetadataWorkflow(AbsWorkflow):
                 return False
             return True
 
-        def filter_only_invalid(task_result):
+        def filter_only_invalid(task_result) -> bool:
             if task_result[ResultValues.VALID]:
                 return False
             else:
                 return True
 
-        def invalid_messages(task_result):
+        def invalid_messages(task_result) -> str:
             source = task_result[ResultValues.FILENAME]
             messages = task_result[ResultValues.REPORT]
             message = "\n".join([
@@ -197,7 +198,11 @@ class LocateImagesTask(speedwagon.tasks.Subtask):
                  profile_name: str) -> None:
         super().__init__()
         self._root = root
-        self._profile = imagevalidate.get_profile(profile_name)
+
+        self._profile = typing.cast(
+            imagevalidate.profiles.AbsProfile,
+            imagevalidate.get_profile(profile_name)
+        )
 
     def work(self) -> bool:
         image_files = []
@@ -222,7 +227,10 @@ class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
 
         super().__init__()
         self._filename = filename
-        self._profile = imagevalidate.get_profile(profile_name)
+        self._profile = typing.cast(
+            imagevalidate.profiles.AbsProfile,
+            imagevalidate.get_profile(profile_name)
+        )
 
     def work(self) -> bool:
         self.log(f"Validating {self._filename}")
