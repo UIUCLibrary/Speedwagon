@@ -30,6 +30,7 @@ class TestCaptureOneToHathiTiffPackageWorkflow:
 
         initial_results = []
         additional_data = {}
+
         def locate_packages(_, path):
             packages = [
                 Mock()
@@ -37,7 +38,10 @@ class TestCaptureOneToHathiTiffPackageWorkflow:
             return packages
 
         monkeypatch.setattr(
-            workflow_capture_one_to_hathi.packager.PackageFactory, "locate_packages", locate_packages)
+            workflow_capture_one_to_hathi.packager.PackageFactory,
+            "locate_packages",
+            locate_packages
+        )
 
         task_metadata = \
             workflow.discover_task_metadata(
@@ -51,25 +55,25 @@ class TestCaptureOneToHathiTiffPackageWorkflow:
                task_metadata[0]['source_path'] == user_args["Input"]
 
     def test_create_new_task(self, workflow, monkeypatch):
-            import os
-            job_args = {
-                'package': MagicMock(),
-                "source_path": os.path.join("some", "source", "path"),
-                "output": os.path.join("some", "destination", "path"),
-            }
-            task_builder = Mock()
-            PackageConverter = Mock()
-            PackageConverter.name = "PackageConverter"
-            monkeypatch.setattr(
-                workflow_capture_one_to_hathi,
-                "PackageConverter",
-                PackageConverter
-            )
+        import os
+        job_args = {
+            'package': MagicMock(),
+            "source_path": os.path.join("some", "source", "path"),
+            "output": os.path.join("some", "destination", "path"),
+        }
+        task_builder = Mock()
+        PackageConverter = Mock()
+        PackageConverter.name = "PackageConverter"
+        monkeypatch.setattr(
+            workflow_capture_one_to_hathi,
+            "PackageConverter",
+            PackageConverter
+        )
 
-            workflow.create_new_task(task_builder, **job_args)
+        workflow.create_new_task(task_builder, **job_args)
 
-            assert task_builder.add_subtask.called is True
-            assert PackageConverter.called is True
+        assert task_builder.add_subtask.called is True
+        assert PackageConverter.called is True
 
 
 class TestPackageConverter:
@@ -86,6 +90,11 @@ class TestPackageConverter:
 
         )
         transform = Mock()
-        monkeypatch.setattr(workflow_capture_one_to_hathi.packager.PackageFactory, "transform", transform)
+        monkeypatch.setattr(
+            workflow_capture_one_to_hathi.packager.PackageFactory,
+            "transform",
+            transform
+        )
+
         assert task.work() is True
         assert transform.called is True
