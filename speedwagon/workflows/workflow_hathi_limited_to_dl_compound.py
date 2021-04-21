@@ -8,7 +8,6 @@ from speedwagon.job import Workflow
 from speedwagon import tasks, reports
 from speedwagon.worker import GuiLogHandler
 from . import shared_custom_widgets as options
-
 __all__ = ['HathiLimitedToDLWorkflow']
 
 
@@ -20,7 +19,8 @@ class HathiLimitedToDLWorkflow(Workflow):
     active = True
 
     def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
+                               additional_data, **user_args: str) -> List[dict]:
+
         hathi_limited_view_packager = packager.PackageFactory(
             packager.packages.HathiLimitedView())
 
@@ -36,7 +36,7 @@ class HathiLimitedToDLWorkflow(Workflow):
                              dst=job_args['destination'])
         )
 
-    def user_options(self):
+    def user_options(self) -> List[options.UserOption3]:
         return [
             options.UserOptionCustomDataType("Input", options.FolderData),
             options.UserOptionCustomDataType("Output", options.FolderData)
@@ -53,7 +53,7 @@ class HathiLimitedToDLWorkflow(Workflow):
 """
 
     @staticmethod
-    def validate_user_options(**user_args):
+    def validate_user_options(**user_args: str) -> bool:
         required = ['Input', "Output"]
         for arg in required:
             if user_args[arg] is None or str(user_args[arg]).strip() == "":
@@ -67,12 +67,13 @@ class HathiLimitedToDLWorkflow(Workflow):
 
         if not os.path.exists(user_args['Output']):
             raise ValueError("Output does not exist")
+        return True
 
 
 class PackageConverter(tasks.Subtask):
 
     @contextmanager
-    def log_config(self, logger):
+    def log_config(self, logger: logging.Logger):
         gui_logger = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)
@@ -80,7 +81,7 @@ class PackageConverter(tasks.Subtask):
         finally:
             logger.removeHandler(gui_logger)
 
-    def __init__(self, src, dst) -> None:
+    def __init__(self, src: str, dst: str) -> None:
         super().__init__()
         self.src = src
         self.dst = dst
