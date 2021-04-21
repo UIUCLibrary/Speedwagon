@@ -230,3 +230,25 @@ class TestConvertTiffPreservationToDLJp2Workflow:
         report = workflow.generate_report(results, **user_args)
         assert isinstance(report, str)
         assert "Failed" in report
+
+
+class TestPackageImageConverterTask:
+    def test_work(self, monkeypatch):
+        source_file_path = "source_file"
+        dest_path = "output_path"
+        tasks = capture_one_workflow.PackageImageConverterTask(
+            source_file_path=source_file_path,
+            dest_path=dest_path
+        )
+        makedirs = Mock()
+        monkeypatch.setattr(capture_one_workflow.os, "makedirs", makedirs)
+        process = Mock()
+
+        monkeypatch.setattr(
+            capture_one_workflow.ProcessFile,
+            "process",
+            process
+        )
+
+        assert tasks.work() is True
+        assert process.called is True
