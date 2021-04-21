@@ -12,7 +12,7 @@ __all__ = ['ValidateImageMetadataWorkflow']
 
 
 class ImageFile(options.AbsBrowseableWidget):
-    def browse_clicked(self):
+    def browse_clicked(self) -> None:
         selection = QtWidgets.QFileDialog.getOpenFileName(
             filter="Tiff files (*.tif)"
         )
@@ -25,7 +25,7 @@ class ImageFile(options.AbsBrowseableWidget):
 class TiffFileCheckData(options.AbsCustomData3):
 
     @classmethod
-    def is_valid(cls, value) -> bool:
+    def is_valid(cls, value: str) -> bool:
         if not value:
             return False
 
@@ -55,8 +55,10 @@ class ValidateImageMetadataWorkflow(AbsWorkflow):
 
     active = True
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
+    def discover_task_metadata(self,
+                               initial_results: List[Any],
+                               additional_data,
+                               **user_args: str) -> List[dict]:
         jobs = []
         source_input = user_args["Input"]
         jobs.append({
@@ -64,19 +66,24 @@ class ValidateImageMetadataWorkflow(AbsWorkflow):
         })
         return jobs
 
-    def user_options(self):
+    def user_options(self) -> List[options.UserOption3]:
         return [
             options.UserOptionCustomDataType("Input",
                                              TiffFileCheckData),
         ]
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(
+            self,
+            task_builder: tasks.TaskBuilder,
+            **job_args: str
+    ) -> None:
+
         source_file = job_args["source_file"]
         new_task = MetadataValidatorTask(source_file)
         task_builder.add_subtask(new_task)
 
     @staticmethod
-    def validate_user_options(**user_args):
+    def validate_user_options(**user_args: str) -> bool:
         file_path = user_args["Input"]
 
         if not file_path:
@@ -92,11 +99,11 @@ class ValidateImageMetadataWorkflow(AbsWorkflow):
 
 class MetadataValidatorTask(tasks.Subtask):
 
-    def __init__(self, source_file) -> None:
+    def __init__(self, source_file: str) -> None:
         super().__init__()
         self._source_file = source_file
 
-    def work(self):
+    def work(self) -> bool:
         hathi_tiff_profile = imagevalidate.Profile(
             imagevalidate.profiles.HathiTiff())
 
