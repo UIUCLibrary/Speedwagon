@@ -141,3 +141,33 @@ class TestImageConvertTask:
                set_dpi.called is True
         kdu_compress_cli2.assert_called_with(
             'source_file.tif', ANY, in_args=ANY)
+
+
+class TestCopyTask:
+    def test_work(self, monkeypatch):
+        import os
+        source_file_path = "source_file.tif"
+        output_path = os.path.join("output", "path")
+
+        makedirs = Mock()
+        monkeypatch.setattr(
+            workflow_convertTifftoHathiTrustJP2.os,
+            "makedirs",
+            makedirs
+        )
+
+        process = Mock()
+        monkeypatch.setattr(
+            workflow_convertTifftoHathiTrustJP2.ProcessFile,
+            "process",
+            process
+        )
+        task = workflow_convertTifftoHathiTrustJP2.CopyTask(
+            source_file_path=source_file_path,
+            output_path=output_path
+        )
+        assert task.work() is True
+        assert makedirs.called is True and \
+               process.called is True
+        process.assert_called_with(
+            'source_file.tif', ANY)
