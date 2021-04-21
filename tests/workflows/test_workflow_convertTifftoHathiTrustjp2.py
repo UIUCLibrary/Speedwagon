@@ -1,4 +1,4 @@
-from unittest.mock import Mock, MagicMock, ANY
+from unittest.mock import Mock, MagicMock, ANY, call
 
 import pytest
 from speedwagon.workflows import workflow_convertTifftoHathiTrustJP2
@@ -102,3 +102,42 @@ class TestConvertTiffToHathiJp2Workflow:
         with pytest.raises(Exception) as e:
             workflow.create_new_task(task_builder, **job_args)
         assert "Don't know what to do for bad task type" in str(e.value)
+
+
+class TestImageConvertTask:
+    def test_work(self, monkeypatch):
+        import os
+        source_file_path = "source_file.tif"
+        output_path = os.path.join("output", "path")
+
+        makedirs = Mock()
+        monkeypatch.setattr(
+            workflow_convertTifftoHathiTrustJP2.os,
+            "makedirs",
+            makedirs
+        )
+
+        kdu_compress_cli2 = Mock()
+        monkeypatch.setattr(
+            workflow_convertTifftoHathiTrustJP2.pykdu_compress,
+            "kdu_compress_cli2",
+            kdu_compress_cli2
+        )
+
+        set_dpi = Mock()
+        monkeypatch.setattr(
+            workflow_convertTifftoHathiTrustJP2,
+            "set_dpi",
+            set_dpi
+        )
+
+        task = workflow_convertTifftoHathiTrustJP2.ImageConvertTask(
+            source_file_path=source_file_path,
+            output_path=output_path
+        )
+        assert task.work() is True
+        assert makedirs.called is True and \
+               kdu_compress_cli2.called is True and \
+               set_dpi.called is True
+        kdu_compress_cli2.assert_called_with(
+            'source_file.tif', ANY, in_args=ANY)
