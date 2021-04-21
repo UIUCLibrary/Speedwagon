@@ -70,3 +70,22 @@ class TestCaptureOneToHathiTiffPackageWorkflow:
 
             assert task_builder.add_subtask.called is True
             assert PackageConverter.called is True
+
+
+class TestPackageConverter:
+    def test_work(self, monkeypatch):
+        source_path = ""
+        packaging_id = ""
+        existing_package = Mock()
+        new_package_root = ""
+        task = workflow_capture_one_to_hathi.PackageConverter(
+            source_path=source_path,
+            packaging_id=packaging_id,
+            existing_package=existing_package,
+            new_package_root=new_package_root
+
+        )
+        transform = Mock()
+        monkeypatch.setattr(workflow_capture_one_to_hathi.packager.PackageFactory, "transform", transform)
+        assert task.work() is True
+        assert transform.called is True
