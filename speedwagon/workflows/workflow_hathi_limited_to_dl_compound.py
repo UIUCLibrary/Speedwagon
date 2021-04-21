@@ -18,8 +18,11 @@ class HathiLimitedToDLWorkflow(Workflow):
 
     active = True
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args: str) -> List[dict]:
+    def discover_task_metadata(
+            self,
+            initial_results: List[Any],
+            additional_data, **user_args: str
+    ) -> List[dict]:
 
         hathi_limited_view_packager = packager.PackageFactory(
             packager.packages.HathiLimitedView())

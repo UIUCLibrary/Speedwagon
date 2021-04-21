@@ -74,7 +74,10 @@ class MakeChecksumBatchSingleWorkflow(AbcMakeChecksumWorkflow):
                 jobs.append(job)
         return jobs
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(self,
+                        task_builder: tasks.TaskBuilder,
+                        **job_args: str) -> None:
+
         source_path = job_args['source_path']
         filename = job_args['filename']
         report_name = job_args['save_to_filename']
@@ -111,7 +114,7 @@ class MakeChecksumBatchSingleWorkflow(AbcMakeChecksumWorkflow):
 
         return "\n".join(report_lines)
 
-    def user_options(self):
+    def user_options(self) -> List[options.UserOption3]:
         return [
             options.UserOptionCustomDataType("Input",
                                              options.FolderData),
@@ -131,8 +134,12 @@ class MakeChecksumBatchMultipleWorkflow(AbcMakeChecksumWorkflow):
                   "Input: Path to a root directory that contains " \
                   "subdirectories to generate checksum.md5 files"
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
+    def discover_task_metadata(
+            self,
+            initial_results: List[Any],
+            additional_data,
+            **user_args: str
+    ) -> List[typing.Dict[str, str]]:
 
         jobs = []
 
@@ -156,13 +163,18 @@ class MakeChecksumBatchMultipleWorkflow(AbcMakeChecksumWorkflow):
                     jobs.append(job)
         return jobs
 
-    def user_options(self):
+    def user_options(self) -> List[options.UserOption3]:
         return [
             options.UserOptionCustomDataType("Input",
                                              options.FolderData),
         ]
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(
+            self,
+            task_builder: tasks.TaskBuilder,
+            **job_args: str
+    ) -> None:
+
         source_path = job_args['source_path']
         filename = job_args['filename']
         report_name = job_args['save_to_filename']
@@ -252,7 +264,7 @@ class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
     @classmethod
     @add_report_borders
     def generate_report(cls, results: List[tasks.Result],
-                        **user_args) -> Optional[str]:
+                        **user_args: str) -> Optional[str]:
 
         report_lines = []
 
