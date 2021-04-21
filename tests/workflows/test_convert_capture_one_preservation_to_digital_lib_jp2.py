@@ -5,6 +5,7 @@ import pytest
 from speedwagon.workflows import \
     workflow_convertCaptureOnePreservationToDigitalLibJP2 as \
         capture_one_workflow
+from speedwagon import models, tasks
 
 
 def test_package_image_task_success(monkeypatch):
@@ -114,3 +115,118 @@ def test_package_image_task_failure(monkeypatch):
             dest_path="eggs"
         )
         assert task.work() is False
+
+
+class TestConvertTiffPreservationToDLJp2Workflow:
+    @pytest.fixture
+    def workflow(self):
+        return \
+            capture_one_workflow.ConvertTiffPreservationToDLJp2Workflow()
+
+    @pytest.fixture
+    def default_options(self, workflow):
+        return models.ToolOptionsModel3(
+            workflow.user_options()
+        ).get()
+
+    def test_validate_user_options_valid(self, monkeypatch, workflow, default_options):
+        user_args = default_options.copy()
+        import os
+
+        user_args["Input"] = os.path.join(
+            "some", "valid" , "path", "preservation")
+
+        monkeypatch.setattr(capture_one_workflow.os.path, "exists", lambda path: path == user_args["Input"] )
+        monkeypatch.setattr(capture_one_workflow.os.path, "isdir", lambda path: path == user_args["Input"] )
+        assert workflow.validate_user_options(**user_args) is True
+
+    def test_discover_task_metadata(
+            self,
+            monkeypatch,
+            workflow,
+            default_options
+    ):
+        import os
+        user_args = default_options.copy()
+        user_args["Input"] = os.path.join(
+            "some", "valid", "path", "preservation")
+
+        initial_results = []
+        additional_data = {}
+
+        def scandir(path):
+            path_file = Mock(
+                path=os.path.join(path, "123.tif"),
+            )
+            path_file.name = "123.tif"
+            return [path_file]
+
+        monkeypatch.setattr(
+            capture_one_workflow.os,
+            "scandir",
+            scandir
+        )
+
+        task_metadata = \
+            workflow.discover_task_metadata(
+                initial_results=initial_results,
+                additional_data=additional_data,
+                **user_args
+            )
+        assert len(task_metadata) == 1 and \
+               task_metadata[0]['source_file'] == \
+               os.path.join(user_args["Input"], "123.tif")
+
+    def test_create_new_task(self, workflow, monkeypatch):
+            import os
+            job_args = {
+                "source_file": os.path.join("some", "source", "preservation"),
+                "output_path": os.path.join("some", "source", "access"),
+            }
+            task_builder = Mock()
+            PackageImageConverterTask = Mock()
+            PackageImageConverterTask.name = "PackageImageConverterTask"
+            monkeypatch.setattr(
+                capture_one_workflow,
+                "PackageImageConverterTask",
+                PackageImageConverterTask
+            )
+
+            workflow.create_new_task(task_builder, **job_args)
+
+            assert task_builder.add_subtask.called is True
+            PackageImageConverterTask.assert_called_with(
+                source_file_path=job_args['source_file'],
+                dest_path=job_args['output_path'],
+            )
+
+    def test_generate_report_success(self, workflow, default_options):
+        user_args = default_options.copy()
+        results = [
+            tasks.Result(
+                capture_one_workflow.PackageImageConverterTask,
+                {
+                    "success": True,
+                    "output_filename": "somefile"
+                }
+            )
+        ]
+        report = workflow.generate_report(results, **user_args)
+        assert isinstance(report, str)
+        assert "Success" in report
+
+    def test_generate_report_failure(self, workflow, default_options):
+        user_args = default_options.copy()
+        results = [
+            tasks.Result(
+                capture_one_workflow.PackageImageConverterTask,
+                {
+                    "success": False,
+                    "output_filename": "somefile",
+                    "source_filename": "some_source"
+                }
+            )
+        ]
+        report = workflow.generate_report(results, **user_args)
+        assert isinstance(report, str)
+        assert "Failed" in report
