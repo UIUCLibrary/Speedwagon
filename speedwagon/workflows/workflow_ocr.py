@@ -2,7 +2,7 @@ import io
 import os
 import sys
 
-from typing import List, Any, Optional, Iterator, Dict
+from typing import List, Any, Optional, Iterator, Dict, Union
 import contextlib
 from uiucprescon import ocr
 import speedwagon
@@ -13,7 +13,7 @@ from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 
 __all__ = ['OCRWorkflow']
 
-from speedwagon.workflows.shared_custom_widgets import UserOption2
+from speedwagon.workflows.shared_custom_widgets import UserOption2, UserOption3
 
 
 def locate_tessdata() -> Optional[str]:
@@ -99,7 +99,7 @@ class OCRWorkflow(speedwagon.Workflow):
     def discover_task_metadata(self,
                                initial_results: List[tasks.Result],
                                additional_data: Dict[str, Any],
-                               **user_args) -> List[dict]:
+                               **user_args: str) -> List[dict]:
 
         if self.tessdata_path is not None and \
                 not os.path.exists(self.tessdata_path):
@@ -161,7 +161,7 @@ class OCRWorkflow(speedwagon.Workflow):
     def get_file_extension(cls, file_type: str) -> str:
         return cls.SUPPORTED_IMAGE_TYPES[file_type]
 
-    def user_options(self):
+    def user_options(self) -> List[Union[UserOption2, UserOption3]]:
         def valid_tessdata_path(item: Optional[str]) -> bool:
 
             if item is None:
@@ -172,7 +172,7 @@ class OCRWorkflow(speedwagon.Workflow):
 
             return path_contains_traineddata(item)
 
-        options: List[UserOption2] = []
+        options: List[Union[UserOption2, UserOption3]] = []
 
         package_type = shared_custom_widgets.ListSelection("Image File Type")
 
