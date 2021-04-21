@@ -172,3 +172,24 @@ class TestValidateMetadataWorkflow:
         assert isinstance(report, str)
         assert "MyFailingFile.jp2" in report
 
+
+class TestLocateImagesTask:
+    def test_work(self, monkeypatch):
+        root_path = os.path.join("some", "path")
+        profile_name = "HathiTrust JPEG 2000"
+        task = workflow_validate_metadata.LocateImagesTask(
+            root=root_path,
+            profile_name=profile_name
+        )
+
+        def walk(root):
+            files = [
+                (root, (), ("1222.jp2", "111.jp2"))
+            ]
+            for item in files:
+                yield item
+        monkeypatch.setattr(os, "walk", walk)
+        assert \
+            task.work() is True and \
+            len(task.results) == 2
+
