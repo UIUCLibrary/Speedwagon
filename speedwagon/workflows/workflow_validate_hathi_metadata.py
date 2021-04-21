@@ -87,6 +87,7 @@ class ValidateImageMetadataWorkflow(AbsWorkflow):
 
         if not os.path.isfile(file_path):
             raise ValueError("Invalid input selection")
+        return True
 
 
 class MetadataValidatorTask(tasks.Subtask):
