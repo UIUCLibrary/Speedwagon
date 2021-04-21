@@ -77,14 +77,14 @@ class TestValidateImageMetadataWorkflow:
                 monkeypatch,
                 workflow,
                 default_options
-        ):
+    ):
         user_args = default_options.copy()
         initial_results = []
         additional_data = {}
         task_metadata = \
             workflow.discover_task_metadata(
-                initial_results = initial_results,
-                additional_data = additional_data,
+                initial_results=initial_results,
+                additional_data=additional_data,
                 **user_args
             )
 
