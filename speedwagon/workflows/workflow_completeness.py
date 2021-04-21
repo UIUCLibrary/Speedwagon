@@ -64,7 +64,7 @@ class CompletenessWorkflow(AbsWorkflow):
                                ) -> List[Dict[str, Union[str, bool]]]:
         jobs = []
 
-        def directory_only_filter(item: os.DirEntry) -> bool:
+        def directory_only_filter(item: 'os.DirEntry[str]') -> bool:
             if not item.is_dir():
                 return False
 
