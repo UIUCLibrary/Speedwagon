@@ -193,3 +193,29 @@ class TestLocateImagesTask:
             task.work() is True and \
             len(task.results) == 2
 
+
+class TestValidateImageMetadataTask:
+    def test_work(self, monkeypatch):
+        from uiucprescon import imagevalidate
+        ResultValues = workflow_validate_metadata.ResultValues
+
+        filename = "asdasd"
+        profile_name = "HathiTrust JPEG 2000"
+        task = workflow_validate_metadata.ValidateImageMetadataTask(
+            filename=filename,
+            profile_name=profile_name
+        )
+
+        def validate(_, file_name):
+            report = imagevalidate.Report()
+            report.filename = file_name
+            return report
+
+        monkeypatch.setattr(imagevalidate.Profile, "validate", validate)
+        assert \
+            task.work() is True and \
+            task.results == {
+                ResultValues.FILENAME: filename,
+                ResultValues.VALID: True,
+                ResultValues.REPORT: "* "
+            }
