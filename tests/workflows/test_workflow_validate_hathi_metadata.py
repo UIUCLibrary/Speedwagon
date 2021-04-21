@@ -112,3 +112,20 @@ class TestValidateImageMetadataWorkflow:
 
         assert task_builder.add_subtask.called is True
         MetadataValidatorTask.assert_called_with(job_args['source_file'])
+
+
+class TestMetadataValidatorTask:
+    def test_work(self, monkeypatch):
+        source_file = "some_file.tif"
+        task = workflow_validate_hathi_metadata.MetadataValidatorTask(
+            source_file
+        )
+        validate = Mock()
+        #
+        monkeypatch.setattr(
+            workflow_validate_hathi_metadata.imagevalidate.Profile,
+            "validate",
+            validate
+        )
+        assert task.work() is True
+        validate.assert_called_with(source_file)
