@@ -4,7 +4,8 @@ import pytest
 
 from speedwagon.workflows import \
     workflow_convertCaptureOnePreservationToDigitalLibJP2 as \
-        capture_one_workflow
+    capture_one_workflow
+
 from speedwagon import models, tasks
 
 
@@ -30,9 +31,7 @@ def test_validate_user_options_valid(monkeypatch):
     monkeypatch.setattr(os.path, "exists", lambda x: True)
     monkeypatch.setattr(os.path, "isdir", lambda x: True)
     validator = \
-        capture_one_workflow. \
-            ConvertTiffPreservationToDLJp2Workflow. \
-            validate_user_options
+        capture_one_workflow.ConvertTiffPreservationToDLJp2Workflow.validate_user_options
     assert validator(**user_args) is True
 
 
@@ -40,14 +39,9 @@ def test_validate_user_options_missing_input(monkeypatch):
     user_args = {
         "Input": None
     }
-    import os.path
-    # monkeypatch.setattr(os.path, "exists", lambda x: True)
-    # monkeypatch.setattr(os.path, "isdir", lambda x: True)
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError):
         validator = \
-            capture_one_workflow. \
-                ConvertTiffPreservationToDLJp2Workflow. \
-                validate_user_options
+            capture_one_workflow.ConvertTiffPreservationToDLJp2Workflow.validate_user_options
         validator(**user_args)
 
 
@@ -58,11 +52,9 @@ def test_validate_user_options_input_not_exists(monkeypatch):
     import os.path
     monkeypatch.setattr(os.path, "exists", lambda x: False)
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError):
         validator = \
-            capture_one_workflow. \
-                ConvertTiffPreservationToDLJp2Workflow. \
-                validate_user_options
+            capture_one_workflow.ConvertTiffPreservationToDLJp2Workflow.validate_user_options
         validator(**user_args)
 
 
@@ -74,11 +66,9 @@ def test_validate_user_options_input_is_file(monkeypatch):
     monkeypatch.setattr(os.path, "exists", lambda x: True)
     monkeypatch.setattr(os.path, "isdir", lambda x: False)
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError):
         validator = \
-            capture_one_workflow. \
-                ConvertTiffPreservationToDLJp2Workflow. \
-                validate_user_options
+            capture_one_workflow.ConvertTiffPreservationToDLJp2Workflow.validate_user_options
         validator(**user_args)
 
 
@@ -90,11 +80,9 @@ def test_validate_user_options_input_not_pres(monkeypatch):
     monkeypatch.setattr(os.path, "exists", lambda x: True)
     monkeypatch.setattr(os.path, "isdir", lambda x: True)
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError):
         validator = \
-            capture_one_workflow. \
-                ConvertTiffPreservationToDLJp2Workflow. \
-                validate_user_options
+            capture_one_workflow.ConvertTiffPreservationToDLJp2Workflow.validate_user_options
         validator(**user_args)
 
 
@@ -129,15 +117,30 @@ class TestConvertTiffPreservationToDLJp2Workflow:
             workflow.user_options()
         ).get()
 
-    def test_validate_user_options_valid(self, monkeypatch, workflow, default_options):
+    def test_validate_user_options_valid(
+            self,
+            monkeypatch,
+            workflow,
+            default_options
+    ):
         user_args = default_options.copy()
         import os
 
         user_args["Input"] = os.path.join(
-            "some", "valid" , "path", "preservation")
+            "some", "valid", "path", "preservation")
 
-        monkeypatch.setattr(capture_one_workflow.os.path, "exists", lambda path: path == user_args["Input"] )
-        monkeypatch.setattr(capture_one_workflow.os.path, "isdir", lambda path: path == user_args["Input"] )
+        monkeypatch.setattr(
+            capture_one_workflow.os.path,
+            "exists",
+            lambda path: path == user_args["Input"]
+        )
+
+        monkeypatch.setattr(
+            capture_one_workflow.os.path,
+            "isdir",
+            lambda path: path == user_args["Input"]
+        )
+
         assert workflow.validate_user_options(**user_args) is True
 
     def test_discover_task_metadata(
@@ -178,27 +181,27 @@ class TestConvertTiffPreservationToDLJp2Workflow:
                os.path.join(user_args["Input"], "123.tif")
 
     def test_create_new_task(self, workflow, monkeypatch):
-            import os
-            job_args = {
-                "source_file": os.path.join("some", "source", "preservation"),
-                "output_path": os.path.join("some", "source", "access"),
-            }
-            task_builder = Mock()
-            PackageImageConverterTask = Mock()
-            PackageImageConverterTask.name = "PackageImageConverterTask"
-            monkeypatch.setattr(
-                capture_one_workflow,
-                "PackageImageConverterTask",
-                PackageImageConverterTask
-            )
+        import os
+        job_args = {
+            "source_file": os.path.join("some", "source", "preservation"),
+            "output_path": os.path.join("some", "source", "access"),
+        }
+        task_builder = Mock()
+        PackageImageConverterTask = Mock()
+        PackageImageConverterTask.name = "PackageImageConverterTask"
+        monkeypatch.setattr(
+            capture_one_workflow,
+            "PackageImageConverterTask",
+            PackageImageConverterTask
+        )
 
-            workflow.create_new_task(task_builder, **job_args)
+        workflow.create_new_task(task_builder, **job_args)
 
-            assert task_builder.add_subtask.called is True
-            PackageImageConverterTask.assert_called_with(
-                source_file_path=job_args['source_file'],
-                dest_path=job_args['output_path'],
-            )
+        assert task_builder.add_subtask.called is True
+        PackageImageConverterTask.assert_called_with(
+            source_file_path=job_args['source_file'],
+            dest_path=job_args['output_path'],
+        )
 
     def test_generate_report_success(self, workflow, default_options):
         user_args = default_options.copy()
