@@ -139,3 +139,25 @@ class TestZipPackagesWorkflow:
         results = []
         report = workflow.generate_report(results=results, **user_args)
         assert "Zipping complete" in report
+
+
+class TestZipTask:
+    def test_work(self, monkeypatch):
+        source_path = "source"
+        destination_path = "destination"
+        task = workflow_zip_packages.ZipTask(
+            source_path=source_path,
+            destination_path=destination_path
+        )
+        compress_folder_inplace = Mock()
+        monkeypatch.setattr(
+            workflow_zip_packages.hathizip.process,
+            "compress_folder_inplace",
+            compress_folder_inplace
+        )
+
+        assert task.work() is True
+        compress_folder_inplace.assert_called_with(
+            path=source_path,
+            dst=destination_path
+        )
