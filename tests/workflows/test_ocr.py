@@ -113,12 +113,13 @@ def test_runs(tool_job_manager_spy, tmpdir):
 
     my_logger = logging.getLogger(__file__)
     image_path = tmpdir / "images"
-    (image_path / "00000001.jp2").ensure()
+    tessdata_dir = tmpdir / "sample"
 
+    (image_path / "00000001.jp2").ensure()
     tool_job_manager_spy.run(
         None,
         MockOCRWorkflow(global_settings={
-            "tessdata": "sample"
+            "tessdata": tessdata_dir.strpath
         }),
         options={
             "Path": image_path.strpath,
