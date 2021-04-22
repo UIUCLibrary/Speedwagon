@@ -209,13 +209,13 @@ class MakeChecksumBatchMultipleWorkflow(AbcMakeChecksumWorkflow):
                         results: List[tasks.Result],
                         **user_args: str) -> Optional[str]:
 
-        report_lines = []
-
-        for checksum_report, items_written in \
-                cls.sort_results([i.data for i in results]).items():
-
-            report_lines.append(f"Checksum values for {len(items_written)} "
-                                f"files written to {checksum_report}")
+        report_lines = [
+            f"Checksum values for {len(items_written)} "
+            f"files written to {checksum_report}"
+            for checksum_report, items_written in cls.sort_results(
+                [i.data for i in results]
+            ).items()
+        ]
 
         return "\n".join(report_lines)
 
@@ -282,13 +282,14 @@ class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
     def generate_report(cls, results: List[tasks.Result],
                         **user_args: str) -> Optional[str]:
 
-        report_lines = []
+        report_lines = [
+            f"Checksum values for {len(items_written)} "
+            f"files written to {checksum_report}"
+            for checksum_report, items_written in cls.sort_results(
+                [i.data for i in results]
+            ).items()
+        ]
 
-        for checksum_report, items_written in \
-                cls.sort_results([i.data for i in results]).items():
-
-            report_lines.append(f"Checksum values for {len(items_written)} "
-                                f"files written to {checksum_report}")
 
         return "\n".join(report_lines)
 
@@ -415,12 +416,13 @@ class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
                         results: List[tasks.Result],
                         **user_args: str) -> Optional[str]:
 
-        report_lines = []
+        report_lines = [
+            f"Checksum values for {len(items_written)} "
+            f"files written to {checksum_report}"
+            for checksum_report, items_written in cls.sort_results(
+                [i.data for i in results]
+            ).items()
+        ]
 
-        for checksum_report, items_written in \
-                cls.sort_results([i.data for i in results]).items():
-
-            report_lines.append(f"Checksum values for {len(items_written)} "
-                                f"files written to {checksum_report}")
 
         return "\n".join(report_lines)
