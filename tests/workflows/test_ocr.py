@@ -1,5 +1,5 @@
 import logging
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, ANY
 
 import pytest
 import os.path
@@ -7,6 +7,8 @@ from speedwagon.workflows import workflow_ocr
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from speedwagon.tasks import Result
 from uiucprescon.ocr import reader, tesseractwrap
+from speedwagon import models, tasks
+
 
 def test_no_config():
     with pytest.raises(MissingConfiguration):
@@ -131,3 +133,193 @@ def test_runs(tool_job_manager_spy, tmpdir):
     expected_ocr_file = image_path / "00000001.txt"
     with open(expected_ocr_file) as f:
         assert f.read() == "Spam bacon eggs"
+
+
+class TestOCRWorkflow:
+    @pytest.fixture
+    def workflow(self, monkeypatch):
+        global_settings = {
+            "tessdata": os.path.join("some", "path")
+        }
+        monkeypatch.setattr(
+            workflow_ocr.os.path,
+            "exists",
+            lambda path: path == global_settings["tessdata"]
+        )
+        return \
+            workflow_ocr.OCRWorkflow(global_settings)
+
+    @pytest.fixture
+    def default_options(self, workflow):
+        return models.ToolOptionsModel3(
+            workflow.user_options()
+        ).get()
+
+    def test_validate_user_options_valid(
+            self,
+            monkeypatch,
+            workflow,
+            default_options
+    ):
+        import os
+        user_options = default_options.copy()
+        user_options["Path"] = os.path.join("some", "path")
+        monkeypatch.setattr(
+            workflow_ocr.os.path,
+            "isdir",
+            lambda path: path == user_options["Path"]
+        )
+        assert workflow.validate_user_options(**user_options) is True
+
+    def test_validate_user_options_invalid_empty_path(
+            self,
+            monkeypatch,
+            workflow,
+            default_options
+    ):
+        user_options = default_options.copy()
+        user_options["Path"] = None
+        user_options["Language"] = "eng"
+        with pytest.raises(ValueError):
+            workflow.validate_user_options(**user_options)
+
+    @pytest.mark.parametrize("check_function", ["isdir", "exists"])
+    def test_validate_user_options_invalid(
+            self,
+            monkeypatch,
+            workflow,
+            default_options,
+            check_function
+    ):
+        import os
+        user_options = default_options.copy()
+        user_options["Path"] = os.path.join("some", "path")
+        user_options["Language"] = "eng"
+
+        monkeypatch.setattr(
+            workflow_ocr.os.path,
+            check_function,
+            lambda path: False
+        )
+
+        with pytest.raises(ValueError):
+            workflow.validate_user_options(**user_options)
+
+    def test_discover_task_metadata(self, workflow, default_options):
+        user_options = default_options.copy()
+        user_options["Language"] = "English"
+        user_options["Path"] = os.path.join("some", "path")
+
+        initial_results = [
+            tasks.Result(workflow_ocr.FindImagesTask, [
+                "spam.jp2"
+            ])
+        ]
+        additional_data = {}
+        tasks_generated = workflow.discover_task_metadata(
+            initial_results=initial_results,
+            additional_data=additional_data,
+            **user_options
+        )
+        assert len(tasks_generated) == 1
+        task = tasks_generated[0]
+        assert task['lang_code'] == "eng" and \
+               task['source_file_path'] == "spam.jp2" and \
+               task["output_file_name"] == "spam.txt"
+
+    def test_create_new_task(self, workflow, monkeypatch):
+        import os
+        job_args = {
+            "source_file_path": os.path.join("some", "path", "bacon.jp2"),
+            "output_file_name": "bacon.txt",
+            "lang_code": "eng",
+            'destination_path':
+                os.path.join(
+                    "some",
+                    "path",
+                )
+        }
+        task_builder = Mock()
+        GenerateOCRFileTask = Mock()
+        GenerateOCRFileTask.name = "GenerateOCRFileTask"
+        monkeypatch.setattr(workflow_ocr, "GenerateOCRFileTask",
+                            GenerateOCRFileTask)
+        #
+        workflow.create_new_task(task_builder, **job_args)
+        assert task_builder.add_subtask.called is True
+        GenerateOCRFileTask.assert_called_with(
+            source_image=job_args['source_file_path'],
+            out_text_file=os.path.join("some", "path", "bacon.txt"),
+            lang="eng",
+            tesseract_path=ANY
+        )
+
+    def test_generate_report(self, workflow, default_options):
+        user_args = default_options.copy()
+        results = [
+            tasks.Result(workflow_ocr.GenerateOCRFileTask, {}),
+            tasks.Result(workflow_ocr.GenerateOCRFileTask, {}),
+        ]
+        report = workflow.generate_report(results=results, **user_args)
+        assert "Completed generating OCR 2 files" in report
+
+    @pytest.mark.parametrize("image_file_type,expected_file_extension", [
+        ('JPEG 2000', '.jp2'),
+        ('TIFF', '.tif'),
+    ])
+    def test_initial_task(self, monkeypatch, workflow, default_options,
+                          image_file_type, expected_file_extension):
+
+        user_args = default_options.copy()
+        user_args['Image File Type'] = image_file_type
+        task_builder = Mock()
+        FindImagesTask = Mock()
+
+        monkeypatch.setattr(
+            workflow_ocr,
+            "FindImagesTask",
+            FindImagesTask
+        )
+
+        workflow.initial_task(task_builder, **user_args)
+        assert task_builder.add_subtask.called is True
+
+        FindImagesTask.assert_called_with(
+            ANY,
+            file_extension=expected_file_extension
+        )
+
+    def test_get_available_languages(self, workflow, monkeypatch):
+        path = "tessdir"
+
+        def scandir(path):
+            results = []
+            m = Mock()
+            m.name = "eng.traineddata"
+            m.path = os.path.join(path, m.name)
+            results.append(m)
+            return results
+
+        monkeypatch.setattr(workflow_ocr.os, "scandir", scandir)
+        languages = list(workflow.get_available_languages(path))
+        assert len(languages) == 1
+
+    def test_get_available_languages_ignores_osd(self, workflow, monkeypatch):
+        path = "tessdir"
+
+        def scandir(path):
+            results = []
+            osd = Mock()
+            osd.name = "osd.traineddata"
+            osd.path = os.path.join(path, osd.name)
+            results.append(osd)
+
+            eng = Mock()
+            eng.name = "eng.traineddata"
+            eng.path = os.path.join(path, eng.name)
+            results.append(eng)
+            return results
+
+        monkeypatch.setattr(workflow_ocr.os, "scandir", scandir)
+        languages = list(workflow.get_available_languages(path))
+        assert len(languages) == 1
