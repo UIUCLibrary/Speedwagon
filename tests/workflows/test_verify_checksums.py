@@ -300,3 +300,144 @@ class TestValidateChecksumTask:
             mp.setattr(hathi_validate.process, "calculate_md5", calculate_md5)
             assert task.work() is True
             assert task.results[result_enums.VALID] is should_be_valid
+
+
+class TestVerifyChecksumBatchSingleWorkflow:
+    @pytest.fixture
+    def workflow(self):
+        return \
+            workflow_verify_checksums.VerifyChecksumBatchSingleWorkflow()
+
+    @pytest.fixture
+    def default_options(self, workflow):
+        return models.ToolOptionsModel3(workflow.user_options()).get()
+
+    def test_discover_task_metadata(self, workflow, default_options,
+                                    monkeypatch):
+
+        user_args = default_options.copy()
+        UserArgs = workflow_verify_checksums.UserArgs
+        user_args[UserArgs.INPUT.value] = os.path.join("some", "path")
+
+        monkeypatch.setattr(
+            workflow_verify_checksums.hathi_validate.process,
+            "extracts_checksums",
+            lambda report: [
+                ("42312efb063c44844cd96e47a19e3441", "file.txt")
+            ]
+        )
+
+        initial_results = []
+        additional_data = {}
+        tasks_generated = workflow.discover_task_metadata(
+            initial_results=initial_results,
+            additional_data=additional_data,
+            **user_args
+        )
+
+        JobValues = workflow_verify_checksums.JobValues
+
+        assert len(tasks_generated) == 1
+        task = tasks_generated[0]
+        assert task[JobValues.EXPECTED_HASH.value] == \
+               "42312efb063c44844cd96e47a19e3441" and \
+               task[JobValues.ITEM_FILENAME.value] == "file.txt"
+
+    def test_create_new_task(self, workflow, monkeypatch):
+        JobValues = workflow_verify_checksums.JobValues
+        job_args = {
+            JobValues.EXPECTED_HASH.value: "42312efb063c44844cd96e47a19e3441"
+        }
+        task_builder = Mock()
+        ChecksumTask = Mock()
+        ChecksumTask.name = "ChecksumTask"
+        monkeypatch.setattr(workflow_verify_checksums, "ChecksumTask",
+                            ChecksumTask)
+        #
+        workflow.create_new_task(task_builder, **job_args)
+        assert task_builder.add_subtask.called is True
+        assert ChecksumTask.called is True
+
+    def test_generate_report_success(self, workflow, default_options):
+        user_args = default_options.copy()
+        ResultValues = workflow_verify_checksums.ResultValues
+        results = [
+            tasks.Result(workflow_verify_checksums.ChecksumTask, {
+                ResultValues.CHECKSUM_REPORT_FILE: "checksum.md5",
+                ResultValues.FILENAME: "file1.jp2",
+                ResultValues.VALID: True,
+            }),
+            tasks.Result(workflow_verify_checksums.ChecksumTask, {
+                ResultValues.CHECKSUM_REPORT_FILE: "checksum.md5",
+                ResultValues.FILENAME: "file2.jp2",
+                ResultValues.VALID: True,
+            }),
+        ]
+        report = workflow.generate_report(results=results, **user_args)
+        assert "All 2 passed checksum validation." in report
+
+    def test_generate_report_failure(self, workflow, default_options):
+        user_args = default_options.copy()
+        ResultValues = workflow_verify_checksums.ResultValues
+        results = [
+            tasks.Result(workflow_verify_checksums.ChecksumTask, {
+                ResultValues.CHECKSUM_REPORT_FILE: "checksum.md5",
+                ResultValues.FILENAME: "file1.jp2",
+                ResultValues.VALID: False,
+            }),
+            tasks.Result(workflow_verify_checksums.ChecksumTask, {
+                ResultValues.CHECKSUM_REPORT_FILE: "checksum.md5",
+                ResultValues.FILENAME: "file2.jp2",
+                ResultValues.VALID: False,
+            }),
+        ]
+        report = workflow.generate_report(results=results, **user_args)
+        assert "2 files failed checksum validation." in report
+
+
+class TestChecksumTask:
+    def test_work_matching(self, monkeypatch):
+        JobValues = workflow_verify_checksums.JobValues
+        job_args = {
+            JobValues.ITEM_FILENAME.value: "file.txt",
+            JobValues.SOURCE_REPORT.value: "checksum.md5",
+            JobValues.EXPECTED_HASH.value: "42312efb063c44844cd96e47a19e3441",
+            JobValues.ROOT_PATH.value: os.path.join("some", "path"),
+        }
+
+        calculate_md5 = Mock(return_value='42312efb063c44844cd96e47a19e3441')
+        monkeypatch.setattr(
+            workflow_verify_checksums.hathi_validate.process,
+            "calculate_md5",
+            calculate_md5
+        )
+
+        task = workflow_verify_checksums.ChecksumTask(**job_args)
+
+        ResultValues = workflow_verify_checksums.ResultValues
+        assert task.work() is True
+        assert task.results[ResultValues.FILENAME] == "file.txt" and \
+               task.results[ResultValues.VALID] is True
+
+    def test_work_non_matching(self, monkeypatch):
+        JobValues = workflow_verify_checksums.JobValues
+        job_args = {
+            JobValues.ITEM_FILENAME.value: "file.txt",
+            JobValues.SOURCE_REPORT.value: "checksum.md5",
+            JobValues.EXPECTED_HASH.value: "42312efb063c44844cd96e47a19e3441",
+            JobValues.ROOT_PATH.value: os.path.join("some", "path"),
+        }
+
+        calculate_md5 = Mock(return_value='something_else')
+        monkeypatch.setattr(
+            workflow_verify_checksums.hathi_validate.process,
+            "calculate_md5",
+            calculate_md5
+        )
+
+        task = workflow_verify_checksums.ChecksumTask(**job_args)
+
+        ResultValues = workflow_verify_checksums.ResultValues
+        assert task.work() is True
+        assert task.results[ResultValues.FILENAME] == "file.txt" and \
+               task.results[ResultValues.VALID] is False
