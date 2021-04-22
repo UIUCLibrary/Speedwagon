@@ -181,6 +181,7 @@ def test_create_jp2(monkeypatch, profile_name):
         return 0
 
     with monkeypatch.context() as mp:
+        mp.setattr(workflow_make_jp2.os, "makedirs", Mock())
         mp.setattr(pykdu_compress, "kdu_compress_cli2", mock_kdu_compress_cli2)
         for n in new_tasks.subtasks:
             n.work()
