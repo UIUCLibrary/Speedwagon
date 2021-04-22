@@ -1,5 +1,5 @@
 import logging
-from unittest.mock import MagicMock, Mock, ANY
+from unittest.mock import MagicMock, Mock, ANY, mock_open, patch
 
 import pytest
 import os.path
@@ -323,3 +323,64 @@ class TestOCRWorkflow:
         monkeypatch.setattr(workflow_ocr.os, "scandir", scandir)
         languages = list(workflow.get_available_languages(path))
         assert len(languages) == 1
+
+
+class TestFindImagesTask:
+    def test_work(self, monkeypatch):
+        root = os.path.join("some", "directory")
+        file_extension = ".jp2"
+        task = workflow_ocr.FindImagesTask(
+            root=root,
+            file_extension=file_extension
+        )
+
+        def walk(path):
+            return [
+                ("12345", ('access'), ('sample.jp2', "sample.txt"))
+            ]
+
+        monkeypatch.setattr(workflow_ocr.os, "walk", walk)
+        assert task.work() is True
+        assert os.path.join("12345", "sample.jp2") in task.results and \
+               os.path.join("12345", "sample.txt") not in task.results
+
+
+class TestGenerateOCRFileTask:
+    def test_work(self, monkeypatch):
+        source_image = os.path.join("12345", "sample.jp2")
+        out_text_file = os.path.join("12345", "sample.txt")
+        lang = "eng"
+        tesseract_path = "tesspath"
+        workflow_ocr.GenerateOCRFileTask.set_tess_path = Mock()
+        workflow_ocr.GenerateOCRFileTask.engine = Mock()
+        task = workflow_ocr.GenerateOCRFileTask(
+            source_image=source_image,
+            out_text_file=out_text_file,
+            lang=lang,
+            tesseract_path=tesseract_path
+        )
+        m = mock_open()
+        with patch('speedwagon.workflows.workflow_ocr.open', m):
+            assert task.work() is True
+        assert m.called is True
+
+    def test_read_image(self, monkeypatch):
+        source_image = os.path.join("12345", "sample.jp2")
+        out_text_file = os.path.join("12345", "sample.txt")
+        lang = "eng"
+        tesseract_path = "tesspath"
+        workflow_ocr.GenerateOCRFileTask.set_tess_path = Mock()
+        workflow_ocr.GenerateOCRFileTask.engine = Mock()
+
+        reader = Mock()
+        workflow_ocr.GenerateOCRFileTask.engine.get_reader = \
+            lambda args: reader
+
+        task = workflow_ocr.GenerateOCRFileTask(
+            source_image=source_image,
+            out_text_file=out_text_file,
+            lang=lang,
+            tesseract_path=tesseract_path
+        )
+        task.read_image(source_image, "eng")
+        assert reader.read.called is True
