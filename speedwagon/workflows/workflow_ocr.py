@@ -246,15 +246,13 @@ class OCRWorkflow(speedwagon.Workflow):
                         **user_args) -> Optional[str]:
         amount = len(cls._get_ocr_tasks(results))
 
-        report = \
-            "*************************************\n" \
+        return "*************************************\n" \
             "Report\n" \
             "*************************************\n" \
             "Completed generating OCR {} files.\n" \
             "\n" \
             "*************************************\n" \
             "Done\n".format(amount)
-        return report
 
     @staticmethod
     def _get_ocr_tasks(results: List[tasks.Result]) -> List[tasks.Result]:
