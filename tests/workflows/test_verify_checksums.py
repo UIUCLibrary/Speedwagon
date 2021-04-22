@@ -393,3 +393,51 @@ class TestVerifyChecksumBatchSingleWorkflow:
         ]
         report = workflow.generate_report(results=results, **user_args)
         assert "2 files failed checksum validation." in report
+
+
+class TestChecksumTask:
+    def test_work_matching(self, monkeypatch):
+        JobValues = workflow_verify_checksums.JobValues
+        job_args = {
+            JobValues.ITEM_FILENAME.value: "file.txt",
+            JobValues.SOURCE_REPORT.value: "checksum.md5",
+            JobValues.EXPECTED_HASH.value: "42312efb063c44844cd96e47a19e3441",
+            JobValues.ROOT_PATH.value: os.path.join("some", "path"),
+        }
+
+        calculate_md5 = Mock(return_value='42312efb063c44844cd96e47a19e3441')
+        monkeypatch.setattr(
+            workflow_verify_checksums.hathi_validate.process,
+            "calculate_md5",
+            calculate_md5
+        )
+
+        task = workflow_verify_checksums.ChecksumTask(**job_args)
+
+        ResultValues = workflow_verify_checksums.ResultValues
+        assert task.work() is True
+        assert task.results[ResultValues.FILENAME] == "file.txt" and \
+               task.results[ResultValues.VALID] is True
+
+    def test_work_non_matching(self, monkeypatch):
+        JobValues = workflow_verify_checksums.JobValues
+        job_args = {
+            JobValues.ITEM_FILENAME.value: "file.txt",
+            JobValues.SOURCE_REPORT.value: "checksum.md5",
+            JobValues.EXPECTED_HASH.value: "42312efb063c44844cd96e47a19e3441",
+            JobValues.ROOT_PATH.value: os.path.join("some", "path"),
+        }
+
+        calculate_md5 = Mock(return_value='something_else')
+        monkeypatch.setattr(
+            workflow_verify_checksums.hathi_validate.process,
+            "calculate_md5",
+            calculate_md5
+        )
+
+        task = workflow_verify_checksums.ChecksumTask(**job_args)
+
+        ResultValues = workflow_verify_checksums.ResultValues
+        assert task.work() is True
+        assert task.results[ResultValues.FILENAME] == "file.txt" and \
+               task.results[ResultValues.VALID] is False
