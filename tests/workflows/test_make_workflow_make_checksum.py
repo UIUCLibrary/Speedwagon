@@ -314,7 +314,8 @@ class TestRegenerateChecksumBatchMultipleWorkflow:
                 **user_args
             )
         assert len(task_metadata) == 1 and \
-               task_metadata[0]['source_path'] == os.path.join(user_args["Input"], "something") and \
+               task_metadata[0]['source_path'] == os.path.join(
+                   user_args["Input"], "something") and \
                task_metadata[0]['filename'] == "some_file.txt" and \
                task_metadata[0]['save_to_filename'] == os.path.join(
                     "some", "source", "something", "checksum.md5")
