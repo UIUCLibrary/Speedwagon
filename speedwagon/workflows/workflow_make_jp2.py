@@ -262,11 +262,10 @@ class MakeJp2Workflow(job.AbsWorkflow):
             files_generated.append(res.data["file_created"])
             print(res)
         files_generated_list = "\n".join(files_generated)
-        report = f"{report_title}" \
-            f"\n" \
-            f"\nCreated the following files:" \
-            f"\n{files_generated_list}"
-        return report
+        return f"{report_title}" \
+               f"\n" \
+               f"\nCreated the following files:" \
+               f"\n{files_generated_list}"
 
 
 class EnsurePathTask(tasks.Subtask):

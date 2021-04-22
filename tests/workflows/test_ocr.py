@@ -91,8 +91,7 @@ def test_generate_task_creates_a_file(monkeypatch, tmpdir):
 
 class MockGenerateOCRFileTask(workflow_ocr.GenerateOCRFileTask):
     def mock_reader(self, *args, **kwargs):
-        mock_class = Mock(read=Mock(return_value="Spam bacon eggs"))
-        return mock_class
+        return Mock(read=Mock(return_value="Spam bacon eggs"))
 
     engine = Mock(get_reader=mock_reader)
 
