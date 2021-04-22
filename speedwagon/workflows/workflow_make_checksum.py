@@ -55,8 +55,10 @@ class MakeChecksumBatchSingleWorkflow(AbcMakeChecksumWorkflow):
                   "\n" \
                   "Input: Path to a root folder"
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
+    def discover_task_metadata(self,
+                               initial_results: List[tasks.Result],
+                               additional_data,
+                               **user_args: str) -> List[dict]:
         jobs = []
         package_root = user_args["Input"]
         report_to_save_to = os.path.normpath(os.path.join(package_root,
@@ -87,8 +89,10 @@ class MakeChecksumBatchSingleWorkflow(AbcMakeChecksumWorkflow):
 
         task_builder.add_subtask(new_task)
 
-    def completion_task(self, task_builder: tasks.TaskBuilder, results,
-                        **user_args) -> None:
+    def completion_task(self,
+                        task_builder: tasks.TaskBuilder,
+                        results: List[tasks.Result],
+                        **user_args: str) -> None:
 
         sorted_results = self.sort_results([i.data for i in results])
 
@@ -101,8 +105,9 @@ class MakeChecksumBatchSingleWorkflow(AbcMakeChecksumWorkflow):
 
     @classmethod
     @add_report_borders
-    def generate_report(cls, results: List[tasks.Result],
-                        **user_args) -> Optional[str]:
+    def generate_report(cls,
+                        results: List[tasks.Result],
+                        **user_args: str) -> Optional[str]:
 
         report_lines = [
             f"Checksum values for {len(items_written)} "
@@ -184,8 +189,10 @@ class MakeChecksumBatchMultipleWorkflow(AbcMakeChecksumWorkflow):
 
         task_builder.add_subtask(new_task)
 
-    def completion_task(self, task_builder: tasks.TaskBuilder, results,
-                        **user_args) -> None:
+    def completion_task(self,
+                        task_builder: tasks.TaskBuilder,
+                        results: List[tasks.Result],
+                        **user_args: str) -> None:
 
         sorted_results = self.sort_results([i.data for i in results])
 
@@ -196,9 +203,11 @@ class MakeChecksumBatchMultipleWorkflow(AbcMakeChecksumWorkflow):
 
             task_builder.add_subtask(process)
 
+    @classmethod
     @add_report_borders
-    def generate_report(cls, results: List[tasks.Result],
-                        **user_args) -> Optional[str]:
+    def generate_report(cls,
+                        results: List[tasks.Result],
+                        **user_args: str) -> Optional[str]:
 
         report_lines = []
 
@@ -218,8 +227,10 @@ class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
                   "\n" \
                   "Input: Path to a root folder"
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
+    def discover_task_metadata(self,
+                               initial_results: List[tasks.Result],
+                               additional_data,
+                               **user_args: str) -> List[dict]:
         jobs = []
 
         report_to_save_to = user_args["Input"]
@@ -239,7 +250,10 @@ class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
                 jobs.append(job)
         return jobs
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(self,
+                        task_builder: tasks.TaskBuilder,
+                        **job_args: str) -> None:
+
         source_path = job_args['source_path']
         filename = job_args['filename']
         report_name = job_args['save_to_filename']
@@ -249,8 +263,10 @@ class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
 
         task_builder.add_subtask(new_task)
 
-    def completion_task(self, task_builder: tasks.TaskBuilder, results,
-                        **user_args) -> None:
+    def completion_task(self,
+                        task_builder: tasks.TaskBuilder,
+                        results: List[tasks.Result],
+                        **user_args: str) -> None:
 
         sorted_results = self.sort_results([i.data for i in results])
 
@@ -296,7 +312,7 @@ class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
                 new_results[k].append(result_data)
         return dict(new_results)
 
-    def user_options(self):
+    def user_options(self) -> List[options.UserOption3]:
         return [
             options.UserOptionCustomDataType(
                 "Input", shared_custom_widgets.ChecksumData),
@@ -311,8 +327,10 @@ class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
                   "Input: Path to a root directory that contains " \
                   "subdirectories to generate checksum.md5 files"
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
+    def discover_task_metadata(self,
+                               initial_results: List[Any],
+                               additional_data,
+                               **user_args: str) -> List[dict]:
 
         jobs = []
 
@@ -338,13 +356,16 @@ class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
                     jobs.append(job)
         return jobs
 
-    def user_options(self):
+    def user_options(self) -> List[options.UserOption3]:
         return [
             options.UserOptionCustomDataType("Input",
                                              options.FolderData),
         ]
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(self,
+                        task_builder: tasks.TaskBuilder,
+                        **job_args: str) -> None:
+
         source_path = job_args['source_path']
         filename = job_args['filename']
         report_name = job_args['save_to_filename']
@@ -374,8 +395,10 @@ class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
                 new_results[k].append(result_data)
         return dict(new_results)
 
-    def completion_task(self, task_builder: tasks.TaskBuilder, results,
-                        **user_args) -> None:
+    def completion_task(self,
+                        task_builder: tasks.TaskBuilder,
+                        results: List[tasks.Result],
+                        **user_args: str) -> None:
 
         sorted_results = self.sort_results([i.data for i in results])
 
@@ -386,9 +409,11 @@ class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
 
             task_builder.add_subtask(process)
 
+    @classmethod
     @add_report_borders
-    def generate_report(cls, results: List[tasks.Result],
-                        **user_args) -> Optional[str]:
+    def generate_report(cls,
+                        results: List[tasks.Result],
+                        **user_args: str) -> Optional[str]:
 
         report_lines = []
 
