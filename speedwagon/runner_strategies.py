@@ -82,11 +82,11 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 except JobCancelled:
                     return
 
-                except TaskFailed as e:
+                except TaskFailed as error:
 
                     logger.error(
                         "Job stopped during pre-task phase. "
-                        "Reason: {}".format(e)
+                        "Reason: {}".format(error)
                     )
 
                     return
@@ -100,11 +100,11 @@ class UsingExternalManagerForAdapter(AbsRunner):
                                                     build_dir,
                                                     logger)
 
-                except TaskFailed as e:
+                except TaskFailed as error:
 
                     logger.error(
                         "Job stopped during main tasks phase. "
-                        "Reason: {}".format(e)
+                        "Reason: {}".format(error)
                     )
 
                     return
@@ -114,11 +114,11 @@ class UsingExternalManagerForAdapter(AbsRunner):
                                                     results, build_dir,
                                                     logger)
 
-                except TaskFailed as e:
+                except TaskFailed as error:
 
                     logger.error(
                         "Job stopped during post-task phase. "
-                        "Reason: {}".format(e)
+                        "Reason: {}".format(error)
                     )
 
                     return
