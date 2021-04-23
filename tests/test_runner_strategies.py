@@ -1,7 +1,7 @@
 import logging
 
 import pytest
-from unittest.mock import Mock, MagicMock, ANY
+from unittest.mock import Mock, MagicMock
 
 from speedwagon import runner_strategies
 import speedwagon
@@ -51,7 +51,13 @@ def test_job_call_order(monkeypatch):
            job.discover_task_metadata.called is True and \
            job.completion_task.called is True and \
            job.generate_report.called is True
-    assert call_order == ['initial_task', 'discover_task_metadata', 'completion_task', 'generate_report']
+
+    assert call_order == [
+        'initial_task',
+        'discover_task_metadata',
+        'completion_task',
+        'generate_report'
+    ]
 
 
 @pytest.mark.parametrize("step", [
@@ -76,10 +82,15 @@ def test_task_exception_logs_error(step):
     options = {}
     logger = Mock()
     job.discover_task_metadata = Mock(return_value=[])
-    setattr(job, step, Mock(
-        side_effect=runner_strategies.TaskFailed("error")
+
+    setattr(
+        job,
+        step,
+        Mock(
+            side_effect=runner_strategies.TaskFailed("error")
+        )
     )
-)
+
     runner.run(
         parent=parent,
         job=job,
@@ -87,6 +98,7 @@ def test_task_exception_logs_error(step):
         logger=logger
     )
     assert logger.error.called is True
+
 
 @pytest.mark.parametrize("step", [
     "initial_task",
@@ -144,4 +156,3 @@ def test_task_aborted(caplog, step, monkeypatch):
 
         assert caplog.messages, "No logs recorded"
         assert "Reason: User Aborted" in caplog.text
-
