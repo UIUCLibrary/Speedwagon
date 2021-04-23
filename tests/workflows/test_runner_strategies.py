@@ -56,6 +56,7 @@ def test_job_call_order(monkeypatch):
 @pytest.mark.parametrize("step", [
     "initial_task",
     'discover_task_metadata',
+    'completion_task'
 ])
 def test_task_exception_logs_error(step):
     manager = Mock(name="manager")
@@ -73,6 +74,7 @@ def test_task_exception_logs_error(step):
     job.__class__ = speedwagon.job.AbsWorkflow
     options = {}
     logger = Mock()
+    job.discover_task_metadata = Mock(return_value=[])
     setattr(job, step, Mock(
         side_effect=runner_strategies.TaskFailed("error")
     )
