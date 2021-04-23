@@ -252,13 +252,13 @@ class UsingExternalManagerForAdapter(AbsRunner):
             logger: logging.Logger
     ) -> List[Any]:
 
-        results = []
-
         with self._manager.open(parent=parent,
                                 runner=worker.WorkRunnerExternal3) as runner:
 
             runner.dialog.setRange(0, 0)
             logger.addHandler(runner.progress_dialog_box_handler)
+
+            results = []
 
             try:
                 task_builder = tasks.TaskBuilder(
