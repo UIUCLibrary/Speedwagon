@@ -138,8 +138,6 @@ class UsingExternalManagerForAdapter(AbsRunner):
                         logger: logging.Logger
                         ) -> list:
 
-        results = []
-
         with self._manager.open(parent=parent,
                                 runner=worker.WorkRunnerExternal3) as runner:
 
@@ -147,6 +145,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
             i = -1
             runner.dialog.setRange(0, 0)
             runner.dialog.setWindowTitle(job.name)
+
+            results = []
 
             try:
                 logger.addHandler(runner.progress_dialog_box_handler)
