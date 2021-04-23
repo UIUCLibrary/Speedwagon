@@ -37,7 +37,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
     def __init__(self, manager: "worker.ToolJobManager") -> None:
         self._manager = manager
 
-    def _update_progress(self, runner, current: int, total: int):
+    @staticmethod
+    def _update_progress(runner, current: int, total: int):
 
         if total != runner.dialog.maximum():
             runner.dialog.setMaximum(total)
