@@ -37,7 +37,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
     def __init__(self, manager: "worker.ToolJobManager") -> None:
         self._manager = manager
 
-    def _update_progress(self, runner, current: int, total: int):
+    @staticmethod
+    def _update_progress(runner, current: int, total: int):
 
         if total != runner.dialog.maximum():
             runner.dialog.setMaximum(total)
@@ -82,11 +83,11 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 except JobCancelled:
                     return
 
-                except TaskFailed as e:
+                except TaskFailed as error:
 
                     logger.error(
                         "Job stopped during pre-task phase. "
-                        "Reason: {}".format(e)
+                        "Reason: {}".format(error)
                     )
 
                     return
@@ -100,11 +101,11 @@ class UsingExternalManagerForAdapter(AbsRunner):
                                                     build_dir,
                                                     logger)
 
-                except TaskFailed as e:
+                except TaskFailed as error:
 
                     logger.error(
                         "Job stopped during main tasks phase. "
-                        "Reason: {}".format(e)
+                        "Reason: {}".format(error)
                     )
 
                     return
@@ -114,11 +115,11 @@ class UsingExternalManagerForAdapter(AbsRunner):
                                                     results, build_dir,
                                                     logger)
 
-                except TaskFailed as e:
+                except TaskFailed as error:
 
                     logger.error(
                         "Job stopped during post-task phase. "
-                        "Reason: {}".format(e)
+                        "Reason: {}".format(error)
                     )
 
                     return
@@ -138,8 +139,6 @@ class UsingExternalManagerForAdapter(AbsRunner):
                         logger: logging.Logger
                         ) -> list:
 
-        results = []
-
         with self._manager.open(parent=parent,
                                 runner=worker.WorkRunnerExternal3) as runner:
 
@@ -147,6 +146,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
             i = -1
             runner.dialog.setRange(0, 0)
             runner.dialog.setWindowTitle(job.name)
+
+            results = []
 
             try:
                 logger.addHandler(runner.progress_dialog_box_handler)
@@ -251,13 +252,13 @@ class UsingExternalManagerForAdapter(AbsRunner):
             logger: logging.Logger
     ) -> List[Any]:
 
-        results = []
-
         with self._manager.open(parent=parent,
                                 runner=worker.WorkRunnerExternal3) as runner:
 
             runner.dialog.setRange(0, 0)
             logger.addHandler(runner.progress_dialog_box_handler)
+
+            results = []
 
             try:
                 task_builder = tasks.TaskBuilder(
