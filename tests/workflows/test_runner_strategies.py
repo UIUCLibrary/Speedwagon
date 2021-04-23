@@ -1,6 +1,7 @@
+import logging
+
 import pytest
-from typing import List, Any, Dict
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock, MagicMock, ANY
 
 from speedwagon import runner_strategies
 import speedwagon
@@ -86,3 +87,61 @@ def test_task_exception_logs_error(step):
         logger=logger
     )
     assert logger.error.called is True
+
+@pytest.mark.parametrize("step", [
+    "initial_task",
+    'discover_task_metadata',
+    'completion_task'
+])
+def test_task_aborted(caplog, step, monkeypatch):
+    manager = Mock(name="manager")
+    manager.get_results = Mock(return_value=[])
+    manager.open = MagicMock(name="manager.open")
+    runner = Mock(name="runner", was_aborted=False)
+    manager.open.return_value.__enter__.return_value = runner
+
+    runner_strategy = runner_strategies.UsingExternalManagerForAdapter(manager)
+    parent = Mock(name="parent")
+    job = Mock(name="job")
+    job.__class__ = speedwagon.job.AbsWorkflow
+
+    options = {}
+    logger = logging.getLogger(__name__)
+    job.discover_task_metadata = Mock(
+        return_value=[MagicMock(name="new_task_metadata")])
+
+    setattr(
+        job,
+        step,
+        Mock(
+            side_effect=lambda *_: setattr(runner, "was_aborted", True)
+        )
+    )
+
+    def build_task(_):
+        mock_task = Mock(name="task")
+        mock_task.subtasks = [
+            MagicMock()
+        ]
+        mock_task.main_subtasks = [
+            MagicMock()
+        ]
+        return mock_task
+
+    with monkeypatch.context() as mp:
+        mp.setattr(
+            runner_strategies.tasks.TaskBuilder,
+            "build_task",
+            build_task
+        )
+
+        runner_strategy.run(
+            parent=parent,
+            job=job,
+            options=options,
+            logger=logger
+        )
+
+        assert caplog.messages, "No logs recorded"
+        assert "Reason: User Aborted" in caplog.text
+
