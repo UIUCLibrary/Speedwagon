@@ -290,7 +290,6 @@ class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
             ).items()
         ]
 
-
         return "\n".join(report_lines)
 
     @classmethod
@@ -423,6 +422,5 @@ class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
                 [i.data for i in results]
             ).items()
         ]
-
 
         return "\n".join(report_lines)
