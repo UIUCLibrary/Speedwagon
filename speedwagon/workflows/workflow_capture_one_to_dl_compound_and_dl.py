@@ -56,6 +56,8 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
         workflow only requires a single output to be set. Any empty output
             parameters will result in that output format not being made.
 
+        Add EAS package format support for input
+
     """
 
     name = "Convert CaptureOne TIFF to Digital Library Compound Object and " \
