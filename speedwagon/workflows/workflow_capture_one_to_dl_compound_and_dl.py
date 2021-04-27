@@ -44,7 +44,8 @@ class JobArguments(TypedDict):
 SUPPORTED_PACKAGE_SOURCES = {
     "Capture One": packager.packages.CaptureOnePackage(delimiter="-"),
     "Archival collections/Non EAS": packager.packages.ArchivalNonEAS(),
-    "Cataloged collections/Non EAS": packager.packages.CatalogedNonEAS()
+    "Cataloged collections/Non EAS": packager.packages.CatalogedNonEAS(),
+    "EAS": packager.packages.Eas()
 }
 
 
