@@ -430,9 +430,15 @@ class ChecksumTask(tasks.Subtask):
 
     def work(self) -> bool:
         filename = typing.cast(str, self._kwarg[JobValues.ITEM_FILENAME.value])
-        source_report = typing.cast(str, self._kwarg[JobValues.SOURCE_REPORT.value])
+
+        source_report = \
+            typing.cast(str, self._kwarg[JobValues.SOURCE_REPORT.value])
+
         expected = typing.cast(str, self._kwarg[JobValues.EXPECTED_HASH.value])
-        checksum_path = typing.cast(str, self._kwarg[JobValues.ROOT_PATH.value])
+
+        checksum_path = \
+            typing.cast(str, self._kwarg[JobValues.ROOT_PATH.value])
+
         full_path = os.path.join(checksum_path, filename)
         self.log("Calculating MD5 for {}".format(filename))
         actual_md5: str = hathi_validate.process.calculate_md5(full_path)
