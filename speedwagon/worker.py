@@ -67,7 +67,7 @@ class AbsJobWorker(metaclass=QtMeta):
 
 
 class ProcessJobWorker(AbsJobWorker):
-    _mq = None
+    _mq : Optional[queue.Queue[str]] = None
 
     def __init__(self) -> None:
         super().__init__()
@@ -75,7 +75,7 @@ class ProcessJobWorker(AbsJobWorker):
     def process(self, *args, **kwargs) -> None:
         pass
 
-    def set_message_queue(self, value) -> None:
+    def set_message_queue(self, value: queue.Queue[str]) -> None:
         self._mq = value
 
     def log(self, message: str) -> None:
@@ -237,7 +237,7 @@ class GuiLogHandler(logging.Handler):
 
 
 class WorkRunnerExternal3(contextlib.AbstractContextManager):
-    def __init__(self, parent) -> None:
+    def __init__(self, parent: QtWidgets.QWidget) -> None:
         self.results: typing.List[Result] = []
         self._parent = parent
         self.abort_callback = None
@@ -453,7 +453,7 @@ class SubtaskJobAdapter(AbsJobAdapter,
         self.adaptee.exec()
         self.result = self.adaptee.task_result
 
-    def set_message_queue(self, value) -> None:
+    def set_message_queue(self, value: queue.Queue[str]) -> None:
         self.adaptee.parent_task_log_q.set_message_queue(value)
 
     @property
