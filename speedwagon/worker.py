@@ -8,7 +8,7 @@ import queue
 import sys
 import traceback
 import typing
-from typing import Callable, Optional
+from typing import Callable, Optional, Any, Dict
 from collections import namedtuple
 
 from PyQt5 import QtCore, QtWidgets  # type: ignore
@@ -85,7 +85,7 @@ class ProcessJobWorker(AbsJobWorker):
 
 class JobPair(typing.NamedTuple):
     task: ProcessJobWorker
-    args: dict
+    args: Dict[str, Any]
 
 
 class WorkerMeta(type(QtCore.QObject), abc.ABCMeta):  # type: ignore
@@ -232,7 +232,7 @@ class GuiLogHandler(logging.Handler):
         super().__init__(level)
         self.callback = callback
 
-    def emit(self, record) -> None:
+    def emit(self, record: logging.LogRecord) -> None:
         self.callback(logging.Formatter().format(record))
 
 
@@ -311,7 +311,10 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
     def open(self, parent, runner, *args, **kwargs):
         return runner(*args, **kwargs, parent=parent)
 
-    def add_job(self, new_job: ProcessJobWorker, settings: dict) -> None:
+    def add_job(self,
+                new_job: ProcessJobWorker,
+                settings: Dict[str, Any]) -> None:
+
         self._pending_jobs.put(JobPair(new_job, settings))
 
     def start(self) -> None:
