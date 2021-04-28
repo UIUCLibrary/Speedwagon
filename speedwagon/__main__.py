@@ -2,6 +2,8 @@ import logging
 import sys
 
 import importlib
+from typing import List
+
 import speedwagon
 import speedwagon.config
 import speedwagon.startup
@@ -11,7 +13,7 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
 
-def main(argv=None) -> None:
+def main(argv: List[str] = None) -> None:
     argv = argv or sys.argv
 
     if len(argv) > 1 and argv[1] == "--pytest":

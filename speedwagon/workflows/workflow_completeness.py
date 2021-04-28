@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import sys
+import typing
 from typing import Mapping, Any, Dict, List, Type, Union, Optional, \
     Iterator, Tuple, Generator
 import itertools
@@ -92,11 +93,18 @@ class CompletenessWorkflow(AbsWorkflow):
             )
         return jobs
 
-    def create_new_task(self, task_builder: "speedwagon.tasks.TaskBuilder",
-                        **job_args: Any) -> None:
-        package_path: str = os.path.normcase(job_args['package_path'])
-        request_ocr_validation: bool = job_args['check_ocr_data']
-        request_ocr_utf8_validation: bool = job_args['_check_ocr_utf8']
+    def create_new_task(self,
+                        task_builder: "speedwagon.tasks.TaskBuilder",
+                        **job_args: Union[str, bool]) -> None:
+
+        package_path = \
+            os.path.normcase(typing.cast(str, job_args['package_path']))
+
+        request_ocr_validation = \
+            typing.cast(bool, job_args['check_ocr_data'])
+
+        request_ocr_utf8_validation = \
+            typing.cast(bool, job_args['_check_ocr_utf8'])
 
         task_builder.add_subtask(
             subtask=PackageNamingConventionTask(package_path))
@@ -571,7 +579,7 @@ class ValidateOCFilesUTF8Task(CompletenessSubTask):
         self.package_path = package_path
 
     def work(self) -> bool:
-        def filter_ocr_only(entry: os.DirEntry) -> bool:
+        def filter_ocr_only(entry: 'os.DirEntry[str]') -> bool:
             if not entry.is_file():
                 return False
 
@@ -591,7 +599,7 @@ class ValidateOCFilesUTF8Task(CompletenessSubTask):
         with self.log_config(my_logger):
             errors: List[hathi_result.Result] = []
 
-            ocr_file: os.DirEntry
+            ocr_file: 'os.DirEntry[str]'
             for ocr_file in filter(filter_ocr_only,
                                    os.scandir(self.package_path)):
                 self.log("Looking for invalid characters in {}".format(

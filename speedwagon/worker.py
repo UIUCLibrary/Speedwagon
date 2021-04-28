@@ -8,7 +8,7 @@ import queue
 import sys
 import traceback
 import typing
-from typing import Callable, Optional
+from typing import Callable, Optional, Any, Dict
 from collections import namedtuple
 
 from PyQt5 import QtCore, QtWidgets  # type: ignore
@@ -67,7 +67,7 @@ class AbsJobWorker(metaclass=QtMeta):
 
 
 class ProcessJobWorker(AbsJobWorker):
-    _mq = None
+    _mq: 'Optional[queue.Queue[str]]' = None
 
     def __init__(self) -> None:
         super().__init__()
@@ -75,7 +75,7 @@ class ProcessJobWorker(AbsJobWorker):
     def process(self, *args, **kwargs) -> None:
         pass
 
-    def set_message_queue(self, value) -> None:
+    def set_message_queue(self, value: 'queue.Queue[str]') -> None:
         self._mq = value
 
     def log(self, message: str) -> None:
@@ -85,7 +85,7 @@ class ProcessJobWorker(AbsJobWorker):
 
 class JobPair(typing.NamedTuple):
     task: ProcessJobWorker
-    args: dict
+    args: Dict[str, Any]
 
 
 class WorkerMeta(type(QtCore.QObject), abc.ABCMeta):  # type: ignore
@@ -187,7 +187,7 @@ class ProgressMessageBoxLogHandler(logging.Handler):
         super().__init__(level)
         self.dialog_box = dialog_box
 
-    def emit(self, record) -> None:
+    def emit(self, record: logging.LogRecord) -> None:
         try:
             self.dialog_box.setLabelText(record.msg)
         except RuntimeError as e:
@@ -232,12 +232,12 @@ class GuiLogHandler(logging.Handler):
         super().__init__(level)
         self.callback = callback
 
-    def emit(self, record) -> None:
+    def emit(self, record: logging.LogRecord) -> None:
         self.callback(logging.Formatter().format(record))
 
 
 class WorkRunnerExternal3(contextlib.AbstractContextManager):
-    def __init__(self, parent) -> None:
+    def __init__(self, parent: QtWidgets.QWidget) -> None:
         self.results: typing.List[Result] = []
         self._parent = parent
         self.abort_callback = None
@@ -311,7 +311,10 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
     def open(self, parent, runner, *args, **kwargs):
         return runner(*args, **kwargs, parent=parent)
 
-    def add_job(self, new_job: ProcessJobWorker, settings: dict) -> None:
+    def add_job(self,
+                new_job: ProcessJobWorker,
+                settings: Dict[str, Any]) -> None:
+
         self._pending_jobs.put(JobPair(new_job, settings))
 
     def start(self) -> None:
@@ -453,7 +456,7 @@ class SubtaskJobAdapter(AbsJobAdapter,
         self.adaptee.exec()
         self.result = self.adaptee.task_result
 
-    def set_message_queue(self, value) -> None:
+    def set_message_queue(self, value: 'queue.Queue[str]') -> None:
         self.adaptee.parent_task_log_q.set_message_queue(value)
 
     @property

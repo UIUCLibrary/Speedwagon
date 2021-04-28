@@ -1,4 +1,5 @@
 import logging
+import typing
 from typing import List, Any, Dict
 from contextlib import contextmanager
 from uiucprescon import packager
@@ -26,18 +27,20 @@ class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
                   "new files will be written."
     active = True
 
-    def discover_task_metadata(self,
-                               initial_results: List[Any],
-                               additional_data: Dict[str, Any],
-                               **user_args) -> List[dict]:
+    def discover_task_metadata(
+            self,
+            initial_results: List[Any],
+            additional_data: Dict[str, Any],
+            **user_args: str
+    ) -> List[typing.Dict[str, Any]]:
 
-        jobs = []
         source_input: str = user_args["Input"]
         dest: str = user_args["Output"]
 
         package_factory = packager.PackageFactory(
             packager.packages.CaptureOnePackage())
 
+        jobs: List[typing.Dict[str, Any]] = []
         for package in package_factory.locate_packages(source_input):
             jobs.append({
                 "package": package,

@@ -5,6 +5,8 @@ import logging
 import tempfile
 from typing import List, Any, Dict
 
+from PyQt5 import QtWidgets
+
 from . import tasks
 from . import worker
 from .job import AbsWorkflow, Workflow, JobCancelled
@@ -17,7 +19,7 @@ class TaskFailed(Exception):
 class AbsRunner(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def run(self, parent, job: AbsWorkflow, options: dict,
+    def run(self, parent: QtWidgets.QWidget, job: AbsWorkflow, options: dict,
             logger: logging.Logger, completion_callback=None) -> None:
         pass
 
@@ -26,8 +28,11 @@ class RunRunner:
     def __init__(self, strategy: AbsRunner) -> None:
         self._strategy = strategy
 
-    def run(self, parent, tool: AbsWorkflow, options: dict,
-            logger: logging.Logger, completion_callback=None) -> None:
+    def run(self,
+            parent: QtWidgets.QWidget,
+            tool: AbsWorkflow, options: dict,
+            logger: logging.Logger,
+            completion_callback=None) -> None:
 
         self._strategy.run(parent, tool, options, logger, completion_callback)
 
@@ -38,7 +43,10 @@ class UsingExternalManagerForAdapter(AbsRunner):
         self._manager = manager
 
     @staticmethod
-    def _update_progress(runner, current: int, total: int):
+    def _update_progress(
+            runner: worker.WorkRunnerExternal3,
+            current: int,
+            total: int) -> None:
 
         if total != runner.dialog.maximum():
             runner.dialog.setMaximum(total)
@@ -49,7 +57,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
             runner.dialog.accept()
 
     def run(self,
-            parent,
+            parent: QtWidgets.QWidget,
             job: AbsWorkflow,
             options: dict,
             logger: logging.Logger,
@@ -130,7 +138,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                     logger.info(report)
 
     def _run_main_tasks(self,
-                        parent,
+                        parent: QtWidgets.QWidget,
                         job: AbsWorkflow,
                         options,
                         pretask_results,
@@ -198,7 +206,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
             return results
 
     def _run_post_tasks(self,
-                        parent,
+                        parent: QtWidgets.QWidget,
                         job: AbsWorkflow,
                         options,
                         results,
@@ -245,7 +253,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
 
     def _run_pre_tasks(
             self,
-            parent,
+            parent: QtWidgets.QWidget,
             job: AbsWorkflow,
             options: Dict[str, Any],
             working_dir: str,

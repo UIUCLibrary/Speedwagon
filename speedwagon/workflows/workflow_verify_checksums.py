@@ -4,6 +4,7 @@ import itertools
 import os
 import enum
 from typing import DefaultDict, Iterable, Optional, Dict, List, Any, Union
+import typing
 
 import hathi_validate.process
 
@@ -13,6 +14,8 @@ from speedwagon.reports import add_report_borders
 from . import shared_custom_widgets
 
 __all__ = ['ChecksumWorkflow', 'VerifyChecksumBatchSingleWorkflow']
+
+TaskResult = Union[str, bool]
 
 
 class UserArgs(enum.Enum):
@@ -52,13 +55,14 @@ class ChecksumWorkflow(AbsWorkflow):
                     continue
                 yield os.path.join(root, file_)
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data,
-                               **user_args) -> List[Dict[str, str]]:
-        jobs = []
+    def discover_task_metadata(self,
+                               initial_results: List[tasks.Result],
+                               additional_data: Dict[str, None],
+                               **user_args: str) -> List[Dict[str, str]]:
+        jobs: List[Dict[str, str]] = []
         for result in initial_results:
             for file_to_check in result.data:
-                new_job = {
+                new_job: Dict[str, str] = {
                     JobValues.EXPECTED_HASH.value:
                         file_to_check["expected_hash"],
                     JobValues.ITEM_FILENAME.value:
@@ -111,8 +115,9 @@ class ChecksumWorkflow(AbsWorkflow):
                                  source_report=source_report))
 
     @classmethod
-    def generate_report(cls, results: List[tasks.Result],
-                        **user_args) -> Optional[str]:
+    def generate_report(cls,
+                        results: List[tasks.Result],
+                        **user_args: str) -> Optional[str]:
 
         def validation_result_filter(
                 task_result: tasks.Result) -> bool:
@@ -148,10 +153,11 @@ class ChecksumWorkflow(AbsWorkflow):
         return report
 
     @classmethod
-    def find_failed(cls,
-                    new_results: Dict[str,
-                                      List[Dict[ResultValues,
-                                                Union[bool, str]]]]) -> dict:
+    def find_failed(
+            cls,
+            new_results: Dict[str, List[Dict[ResultValues, TaskResult]]]
+    ) -> dict:
+
         failed: DefaultDict[str, list] = collections.defaultdict(list)
         for checksum_file, results in new_results.items():
 
@@ -161,12 +167,11 @@ class ChecksumWorkflow(AbsWorkflow):
         return dict(failed)
 
     @classmethod
-    def _sort_results(cls, results) -> Dict[str,
-                                            List[
-                                                Dict[ResultValues,
-                                                     Union[bool, str]]]]:
-        """ Sort the data and put it into a dictionary with the source as the
-        key
+    def _sort_results(
+            cls,
+            results: Iterable[Dict[ResultValues, Any]]
+    ) -> Dict[str, List[Dict[ResultValues, TaskResult]]]:
+        """Sort the data & put it into a dict with the source for the key.
 
         Args:
             results:
@@ -175,7 +180,10 @@ class ChecksumWorkflow(AbsWorkflow):
                  the value contains all the files updated
 
         """
-        new_results: DefaultDict[str, list] = collections.defaultdict(list)
+        new_results: \
+            DefaultDict[str, List[Dict[ResultValues, TaskResult]]] = \
+            collections.defaultdict(list)
+
         sorted_results = sorted(results,
                                 key=lambda it:
                                 it[ResultValues.CHECKSUM_REPORT_FILE])
@@ -221,7 +229,7 @@ class ValidateChecksumTask(tasks.Subtask):
                  file_name: str,
                  file_path: str,
                  expected_hash: str,
-                 source_report) -> None:
+                 source_report: str) -> None:
         super().__init__()
         self._file_name = file_name
         self._file_path = file_path
@@ -234,7 +242,7 @@ class ValidateChecksumTask(tasks.Subtask):
         actual_md5 = hathi_validate.process.calculate_md5(
             os.path.join(self._file_path, self._file_name))
 
-        result = {
+        result: Dict[ResultValues, TaskResult] = {
             ResultValues.FILENAME: self._file_name,
             ResultValues.PATH: self._file_path,
             ResultValues.CHECKSUM_REPORT_FILE: self._source_report
@@ -292,9 +300,11 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
                   "and their md5 values. The listed files are expected to " \
                   "be siblings to the checksum file."
 
-    def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data, **user_args) -> List[dict]:
-        jobs = []
+    def discover_task_metadata(self,
+                               initial_results: List[tasks.Result],
+                               additional_data: Dict[str, None],
+                               **user_args: str) -> List[dict]:
+        jobs: List[Dict[str, str]] = []
         relative_path = os.path.dirname(user_args[UserArgs.INPUT.value])
         checksum_report_file = os.path.abspath(user_args[UserArgs.INPUT.value])
 
@@ -303,7 +313,7 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
                     checksum_report_file
                 ):
 
-            new_job = {
+            new_job: Dict[str, str] = {
                 JobValues.EXPECTED_HASH.value: report_md5_hash,
                 JobValues.ITEM_FILENAME.value: filename,
                 JobValues.ROOT_PATH.value: relative_path,
@@ -368,11 +378,9 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
         return report
 
     @classmethod
-    def sort_results(cls, results) -> \
-            Dict[str, List[Dict[ResultValues, Union[bool, str]]]]:
-
-        """ Sort the data and put it into a dictionary with the source as the
-        key
+    def sort_results(cls, results: List[Any]) -> \
+            Dict[str, List[Dict[ResultValues, TaskResult]]]:
+        """Sort the data and put it into a dictionary using source as the key.
 
         Args:
             results:
@@ -381,7 +389,7 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
                  the value contains all the files updated
 
         """
-        new_results: DefaultDict[str, list] = \
+        new_results: DefaultDict[str, List[Dict[ResultValues, TaskResult]]] = \
             collections.defaultdict(list)
 
         sorted_results = sorted(
@@ -397,12 +405,13 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
         return dict(new_results)
 
     @classmethod
-    def find_failed(cls, new_results: Dict[str,
-                                           List[Dict[ResultValues,
-                                                     Union[bool,
-                                                           str]]]]) -> dict:
+    def find_failed(
+            cls,
+            new_results: Dict[str, List[Dict[ResultValues, TaskResult]]]
+    ) -> Dict[str, List[Dict[ResultValues, TaskResult]]]:
 
-        failed: DefaultDict[str, list] = collections.defaultdict(list)
+        failed: DefaultDict[str, List[Dict[ResultValues, TaskResult]]] = \
+            collections.defaultdict(list)
 
         for checksum_file, results in new_results.items():
 
@@ -415,20 +424,26 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
 
 class ChecksumTask(tasks.Subtask):
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *_: None, **kwargs: Union[str, bool]) -> None:
         super().__init__()
-        self._args = args
         self._kwarg = kwargs
 
     def work(self) -> bool:
-        filename = self._kwarg[JobValues.ITEM_FILENAME.value]
-        source_report = self._kwarg[JobValues.SOURCE_REPORT.value]
-        expected = self._kwarg[JobValues.EXPECTED_HASH.value]
-        checksum_path = self._kwarg[JobValues.ROOT_PATH.value]
+        filename = typing.cast(str, self._kwarg[JobValues.ITEM_FILENAME.value])
+
+        source_report = \
+            typing.cast(str, self._kwarg[JobValues.SOURCE_REPORT.value])
+
+        expected = typing.cast(str, self._kwarg[JobValues.EXPECTED_HASH.value])
+
+        checksum_path = \
+            typing.cast(str, self._kwarg[JobValues.ROOT_PATH.value])
+
         full_path = os.path.join(checksum_path, filename)
         self.log("Calculating MD5 for {}".format(filename))
-        actual_md5 = hathi_validate.process.calculate_md5(full_path)
-        result = {
+        actual_md5: str = hathi_validate.process.calculate_md5(full_path)
+
+        result: Dict[ResultValues, Union[str, bool]] = {
             ResultValues.FILENAME: filename,
             ResultValues.PATH: checksum_path,
             ResultValues.CHECKSUM_REPORT_FILE: source_report
