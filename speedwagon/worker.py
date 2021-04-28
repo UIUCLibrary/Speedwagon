@@ -453,7 +453,7 @@ class SubtaskJobAdapter(AbsJobAdapter,
         self.adaptee.exec()
         self.result = self.adaptee.task_result
 
-    def set_message_queue(self, value: queue.Queue[str]) -> None:
+    def set_message_queue(self, value: 'queue.Queue[str]') -> None:
         self.adaptee.parent_task_log_q.set_message_queue(value)
 
     @property
