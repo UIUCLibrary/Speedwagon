@@ -19,7 +19,7 @@ class TaskFailed(Exception):
 class AbsRunner(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def run(self, parent, job: AbsWorkflow, options: dict,
+    def run(self, parent: QtWidgets.QWidget, job: AbsWorkflow, options: dict,
             logger: logging.Logger, completion_callback=None) -> None:
         pass
 
