@@ -1,7 +1,7 @@
 # The following dependencies are not accessible on PyPi. Add the following 
 # with distribution.
 
-HathiValidate==0.3.6b6
+HathiValidate==0.3.6
 HathiZip==0.1.9
 py3exiv2bind==0.1.5
 pyhathiprep==0.1.5
