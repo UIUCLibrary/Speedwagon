@@ -187,7 +187,7 @@ class ProgressMessageBoxLogHandler(logging.Handler):
         super().__init__(level)
         self.dialog_box = dialog_box
 
-    def emit(self, record) -> None:
+    def emit(self, record: logging.LogRecord) -> None:
         try:
             self.dialog_box.setLabelText(record.msg)
         except RuntimeError as e:
