@@ -67,7 +67,7 @@ class AbsJobWorker(metaclass=QtMeta):
 
 
 class ProcessJobWorker(AbsJobWorker):
-    _mq : Optional[queue.Queue[str]] = None
+    _mq: 'Optional[queue.Queue[str]]' = None
 
     def __init__(self) -> None:
         super().__init__()
