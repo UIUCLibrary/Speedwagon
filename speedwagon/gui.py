@@ -22,6 +22,8 @@ except ImportError:  # pragma: no cover
     import importlib_resources as resources  # type: ignore
 
 from PyQt5 import QtWidgets, QtCore, QtGui  # type: ignore
+from PyQt5 import uic
+
 import speedwagon.dialog
 import speedwagon.dialog.dialogs
 import speedwagon.dialog.settings
@@ -29,7 +31,6 @@ from speedwagon import tabs, worker
 import speedwagon
 import speedwagon.startup
 import speedwagon.config
-from PyQt5 import uic
 from collections import namedtuple
 
 DEBUG_LOGGING_FORMAT = logging.Formatter(
