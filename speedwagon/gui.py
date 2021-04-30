@@ -48,32 +48,25 @@ CONSOLE_SIZE_POLICY = QtWidgets.QSizePolicy(
 Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 
 
+class ToolConsole2(QtWidgets.QWidget):
+    def __init__(self, parent: QtWidgets.QWidget) -> None:
+        super().__init__(parent)
+        with resources.path("speedwagon.ui",
+                            "console.ui") as ui_file:
+            uic.loadUi(ui_file, self)
+
+    def add_message(self, message: str) -> None:
+        self._console.append(message)
+
+
 class ToolConsole(QtWidgets.QWidget):
     """asdfasdf"""
 
     def __init__(self, parent: QtWidgets.QWidget) -> None:
         super().__init__(parent)
-        layout = QtWidgets.QVBoxLayout(self)
-
-        # set only the top margin to 0
-        default_style = self.style()
-
-        left_margin = default_style.pixelMetric(
-            QtWidgets.QStyle.PM_LayoutLeftMargin)
-
-        right_margin = default_style.pixelMetric(
-            QtWidgets.QStyle.PM_LayoutRightMargin)
-
-        bottom_margin = default_style.pixelMetric(
-            QtWidgets.QStyle.PM_LayoutBottomMargin)
-
-        layout.setContentsMargins(left_margin, 0, right_margin, bottom_margin)
-
-        self.setLayout(layout)
-
-        self._console = QtWidgets.QTextBrowser(self)
-
-        self.layout().addWidget(self._console)
+        with resources.path("speedwagon.ui",
+                            "console.ui") as ui_file:
+            uic.loadUi(ui_file, self)
 
         #  Use a monospaced font based on what's on system running
         monospaced_font = \
@@ -82,12 +75,17 @@ class ToolConsole(QtWidgets.QWidget):
         self._log = QtGui.QTextDocument()
         self._log.setDefaultFont(monospaced_font)
 
-        self._console.setSource(self._log.baseUrl())
-        self._console.setUpdatesEnabled(True)
+        self._console.setDocument(self._log)
         self._console.setFont(monospaced_font)
 
     def add_message(self, message: str) -> None:
-        self._console.append(message)
+        cursor = QtGui.QTextCursor(self._log)
+        cursor.movePosition(cursor.End)
+        cursor.insertText(message)
+        self._console.setTextCursor(cursor)
+        # To get the new line
+        self._console.append(None)
+        QtCore.QCoreApplication.processEvents()
 
 
 class ConsoleLogger(logging.Handler):
@@ -149,15 +147,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.log_manager.setLevel(logging.DEBUG)
 
         with resources.path("speedwagon.ui",
-                            "main_window_shell.ui") as ui_file:
+                            "main_window2.ui") as ui_file:
             uic.loadUi(ui_file, self)
 
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.main_splitter = QtWidgets.QSplitter(self.centralwidget)
-        self.main_splitter.setOrientation(QtCore.Qt.Vertical)
-        self.main_splitter.setChildrenCollapsible(False)
-        self.main_splitter.setSizePolicy(CONSOLE_SIZE_POLICY)
+        # self.main_splitter.setSizePolicy(CONSOLE_SIZE_POLICY)
 
         self.mainLayout.addWidget(self.main_splitter)
 
@@ -178,6 +173,7 @@ class MainWindow(QtWidgets.QMainWindow):
         ###########################################################
         #  Console
         ###########################################################
+        # self.console = ToolConsole2(self.main_splitter)
         self.console = ToolConsole(self.main_splitter)
         self.console.setMinimumHeight(75)
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
