@@ -23,9 +23,6 @@
    <layout class="QVBoxLayout" name="mainLayout"/>
   </widget>
  </widget>
-<!-- <tabstops>-->
-<!--  <tabstop>tabWidget</tabstop>-->
-<!-- </tabstops>-->
  <resources/>
  <connections/>
 </ui>
