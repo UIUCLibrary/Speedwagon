@@ -83,9 +83,9 @@ class ToolConsole(QtWidgets.QWidget):
         cursor.movePosition(cursor.End)
         cursor.insertText(message)
         self._console.setTextCursor(cursor)
-        # To get the new line
+
+        # To get the new line character
         self._console.append(None)
-        QtCore.QCoreApplication.processEvents()
 
 
 class ConsoleLogger(logging.Handler):
