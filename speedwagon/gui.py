@@ -10,10 +10,16 @@ import traceback
 import webbrowser
 from typing import List
 import io
+
 try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
+
+try:
+    from importlib import resources
+except ImportError:
+    import importlib_resources as resources  # type: ignore
 
 from PyQt5 import QtWidgets, QtCore, QtGui  # type: ignore
 import speedwagon.dialog
@@ -23,7 +29,8 @@ from speedwagon import tabs, worker
 import speedwagon
 import speedwagon.startup
 import speedwagon.config
-from speedwagon.ui import main_window_shell_ui  # type: ignore
+# from speedwagon.ui import main_window_shell_ui  # type: ignore
+from PyQt5 import uic
 from collections import namedtuple
 
 DEBUG_LOGGING_FORMAT = logging.Formatter(
@@ -125,8 +132,7 @@ class ItemTabsWidget(QtWidgets.QWidget):
         self.tabs.addTab(tab, name)
 
 
-class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
-    # noinspection PyUnresolvedReferences
+class MainWindow(QtWidgets.QMainWindow):
     def __init__(
             self,
             work_manager: worker.ToolJobManager,
@@ -134,6 +140,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     ) -> None:
 
         super().__init__()
+
         self._debug = debug
         self.user_settings = None
 
@@ -142,7 +149,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.log_manager = self._work_manager.logger
         self.log_manager.setLevel(logging.DEBUG)
 
-        self.setupUi(self)
+        with resources.path("speedwagon.ui",
+                            "main_window_shell.ui") as ui_file:
+            uic.loadUi(ui_file, self)
+
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
 
         self.main_splitter = QtWidgets.QSplitter(self.centralwidget)

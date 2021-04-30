@@ -388,7 +388,6 @@ def create_wheels(){
 def buildSphinx(){
     def sphinx  = load('ci/jenkins/scripts/sphinx.groovy')
     sh(script: '''mkdir -p logs
-                  python setup.py build_ui
                   '''
       )
 

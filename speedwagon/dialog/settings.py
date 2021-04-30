@@ -1,13 +1,19 @@
 import abc
 import os
 import platform
+
+try:
+    from importlib import resources
+except ImportError:
+    import importlib_resources as resources  # type: ignore
+
 from typing import Optional, Dict, cast, Type
 
 from PyQt5 import QtWidgets, QtCore  # type: ignore
-
+from PyQt5 import uic
 from speedwagon import config, models, tabs, job
 from speedwagon.config import build_setting_model
-from speedwagon.ui import tab_editor_ui
+
 
 __all__ = ['GlobalSettingsTab', 'TabsConfigurationTab', 'TabEditor']
 
@@ -239,11 +245,12 @@ class TabsConfigurationTab(QtWidgets.QWidget):
         self.editor.set_all_workflows(workflows)
 
 
-class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
-
+class TabEditor(QtWidgets.QWidget):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.setupUi(self)
+        with resources.path("speedwagon.ui", "tab_editor.ui") as ui_file:
+            uic.loadUi(ui_file, self)
+
         self._tabs_file: Optional[str] = None
 
         self._tabs_model: QtCore.QAbstractListModel = models.TabsModel()

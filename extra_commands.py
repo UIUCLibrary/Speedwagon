@@ -78,7 +78,6 @@ class TesseractData(setuptools.Command):
 
 class CustomBuildPy(build_py):
     def run(self):
-        self.run_command("build_ui")
         self.run_command("dl_tessdata")
         super().run()
 
