@@ -29,7 +29,6 @@ from speedwagon import tabs, worker
 import speedwagon
 import speedwagon.startup
 import speedwagon.config
-# from speedwagon.ui import main_window_shell_ui  # type: ignore
 from PyQt5 import uic
 from collections import namedtuple
 
