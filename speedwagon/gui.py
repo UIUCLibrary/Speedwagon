@@ -16,9 +16,9 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
 
-try:
+try:  # pragma: no cover
     from importlib import resources
-except ImportError:
+except ImportError:  # pragma: no cover
     import importlib_resources as resources  # type: ignore
 
 from PyQt5 import QtWidgets, QtCore, QtGui  # type: ignore

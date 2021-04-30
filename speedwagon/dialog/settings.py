@@ -2,9 +2,9 @@ import abc
 import os
 import platform
 
-try:
+try:  # pragma: no cover
     from importlib import resources
-except ImportError:
+except ImportError:  # pragma: no cover
     import importlib_resources as resources  # type: ignore
 
 from typing import Optional, Dict, cast, Type
