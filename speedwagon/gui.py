@@ -51,7 +51,7 @@ Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 class ToolConsole(QtWidgets.QWidget):
     """Logging console."""
 
-    def __init__(self, parent: QtWidgets.QWidget) -> None:
+    def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
         with resources.path("speedwagon.ui",
                             "console.ui") as ui_file:
@@ -75,6 +75,10 @@ class ToolConsole(QtWidgets.QWidget):
 
         # To get the new line character
         self._console.append(None)
+
+    @property
+    def text(self) -> str:
+        return self._log.toPlainText()
 
 
 class ConsoleLogger(logging.Handler):
