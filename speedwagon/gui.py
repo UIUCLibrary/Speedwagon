@@ -100,23 +100,10 @@ class ItemTabsWidget(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
-        layout = QtWidgets.QVBoxLayout(self)
+        with resources.path("speedwagon.ui",
+                            "setup_job.ui") as ui_file:
+            uic.loadUi(ui_file, self)
 
-        default_style = self.style()
-
-        left_margin = default_style.pixelMetric(
-            QtWidgets.QStyle.PM_LayoutLeftMargin)
-
-        right_margin = default_style.pixelMetric(
-            QtWidgets.QStyle.PM_LayoutRightMargin)
-
-        top_margin = default_style.pixelMetric(
-            QtWidgets.QStyle.PM_LayoutTopMargin)
-
-        layout.setContentsMargins(left_margin, top_margin, right_margin, 0)
-
-        self.tabs = QtWidgets.QTabWidget()
-        self.setLayout(layout)
         self.layout().addWidget(self.tabs)
 
     def add_tab(self, tab: QtWidgets.QWidget, name: str) -> None:
@@ -145,8 +132,6 @@ class MainWindow(QtWidgets.QMainWindow):
             uic.loadUi(ui_file, self)
 
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
-
-        # self.main_splitter.setSizePolicy(CONSOLE_SIZE_POLICY)
 
         self.mainLayout.addWidget(self.main_splitter)
 

@@ -66,10 +66,13 @@ if __name__ == "__main__":
                 "speedwagon/workflows/tessdata/osd.traineddata",
             ],
             'speedwagon': ["favicon.ico", "logo.png"],
-            'speedwagon.ui': ["tab_editor.ui", "main_window_shell.ui"],
+            'speedwagon.ui': [
+                "tab_editor.ui",
+                "main_window_shell.ui",
+                "main_window2.ui",
+                "console.ui",
+                'setup_job.ui'
+            ],
         },
         cmdclass=cmdclass
     )
-
-# TODO: Overwrite install command class to check if the UI file have converted
-#  into py files. if not, run build_ui
