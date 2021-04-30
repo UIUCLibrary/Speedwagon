@@ -48,19 +48,8 @@ CONSOLE_SIZE_POLICY = QtWidgets.QSizePolicy(
 Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 
 
-class ToolConsole2(QtWidgets.QWidget):
-    def __init__(self, parent: QtWidgets.QWidget) -> None:
-        super().__init__(parent)
-        with resources.path("speedwagon.ui",
-                            "console.ui") as ui_file:
-            uic.loadUi(ui_file, self)
-
-    def add_message(self, message: str) -> None:
-        self._console.append(message)
-
-
 class ToolConsole(QtWidgets.QWidget):
-    """asdfasdf"""
+    """Logging console."""
 
     def __init__(self, parent: QtWidgets.QWidget) -> None:
         super().__init__(parent)
@@ -173,7 +162,6 @@ class MainWindow(QtWidgets.QMainWindow):
         ###########################################################
         #  Console
         ###########################################################
-        # self.console = ToolConsole2(self.main_splitter)
         self.console = ToolConsole(self.main_splitter)
         self.console.setMinimumHeight(75)
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
