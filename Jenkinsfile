@@ -736,16 +736,16 @@ pipeline {
             }
         }
         stage('Packaging'){
-            when{
-                anyOf{
-                    equals expected: true, actual: params.BUILD_PACKAGES
-                    equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
-                    equals expected: true, actual: params.DEPLOY_DEVPI
-                    equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
-                    equals expected: true, actual: params.DEPLOY_CHOCOLATEY
-                }
-                beforeAgent true
-            }
+//             when{
+//                 anyOf{
+//                     equals expected: true, actual: params.BUILD_PACKAGES
+//                     equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
+//                     equals expected: true, actual: params.DEPLOY_DEVPI
+//                     equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+//                     equals expected: true, actual: params.DEPLOY_CHOCOLATEY
+//                 }
+//                 beforeAgent true
+//             }
             stages{
                 stage('Python Packages'){
                     stages{
@@ -780,7 +780,8 @@ pipeline {
                         }
                         stage('Testing Python Package'){
                             when{
-                                equals expected: true, actual: params.TEST_PACKAGES
+                                equals expected: true, actual: false
+//                                 equals expected: true, actual: params.TEST_PACKAGES
                             }
                             steps{
                                 script{
@@ -1005,14 +1006,14 @@ pipeline {
                             }
                         }
                         stage('Windows Standalone'){
-                            when{
-                                anyOf{
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
-                                }
-                                beforeAgent true
-                            }
+//                             when{
+//                                 anyOf{
+//                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+//                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+//                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+//                                 }
+//                                 beforeAgent true
+//                             }
                             stages{
                                 stage('CMake Build'){
                                     agent {
@@ -1020,7 +1021,8 @@ pipeline {
                                             filename 'ci/docker/windows_standalone/Dockerfile'
                                             label 'Windows&&Docker'
                                             args '-u ContainerAdministrator'
-                                            additionalBuildArgs get_build_args()
+                                            additionalBuildArgs '--build-arg CHOCOLATEY_SOURCE'
+//                                             additionalBuildArgs get_build_args()
                                           }
                                     }
                                     steps {
