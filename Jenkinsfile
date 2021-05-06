@@ -31,16 +31,6 @@ def getDevPiStagingIndex(){
 
 CONFIGURATIONS = loadConfigs()
 
-def get_build_args(){
-    script{
-        def CHOCOLATEY_SOURCE = ''
-        try{
-            CHOCOLATEY_SOURCE = powershell(script: '(Get-ChildItem Env:Path).value', returnStdout: true).trim()
-        } finally {
-            return CHOCOLATEY_SOURCE?.trim() ? '--build-arg ' + 'CHOCOLATEY_REPO=' + CHOCOLATEY_SOURCE : ''
-        }
-    }
-}
 
 def run_pylint(){
     catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
@@ -218,7 +208,6 @@ def createNewChocolateyPackage(args=[:]){
         )
 
 
-//
     powershell(
         label: 'Adding data to Chocolatey package workspace',
         script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
@@ -1020,7 +1009,7 @@ pipeline {
                                             filename 'ci/docker/windows_standalone/Dockerfile'
                                             label 'Windows&&Docker'
                                             args '-u ContainerAdministrator'
-                                            additionalBuildArgs get_build_args()
+                                            additionalBuildArgs '--build-arg CHOCOLATEY_SOURCE'
                                           }
                                     }
                                     steps {
