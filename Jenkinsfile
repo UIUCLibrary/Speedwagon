@@ -31,16 +31,6 @@ def getDevPiStagingIndex(){
 
 CONFIGURATIONS = loadConfigs()
 
-def get_build_args(){
-    script{
-        def CHOCOLATEY_SOURCE = ''
-        try{
-            CHOCOLATEY_SOURCE = powershell(script: '(Get-ChildItem Env:Path).value', returnStdout: true).trim()
-        } finally {
-            return CHOCOLATEY_SOURCE?.trim() ? '--build-arg ' + 'CHOCOLATEY_REPO=' + CHOCOLATEY_SOURCE : ''
-        }
-    }
-}
 
 def run_pylint(){
     catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
@@ -218,7 +208,6 @@ def createNewChocolateyPackage(args=[:]){
         )
 
 
-//
     powershell(
         label: 'Adding data to Chocolatey package workspace',
         script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
@@ -736,16 +725,16 @@ pipeline {
             }
         }
         stage('Packaging'){
-//             when{
-//                 anyOf{
-//                     equals expected: true, actual: params.BUILD_PACKAGES
-//                     equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
-//                     equals expected: true, actual: params.DEPLOY_DEVPI
-//                     equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
-//                     equals expected: true, actual: params.DEPLOY_CHOCOLATEY
-//                 }
-//                 beforeAgent true
-//             }
+            when{
+                anyOf{
+                    equals expected: true, actual: params.BUILD_PACKAGES
+                    equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
+                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+                    equals expected: true, actual: params.DEPLOY_CHOCOLATEY
+                }
+                beforeAgent true
+            }
             stages{
                 stage('Python Packages'){
                     stages{
@@ -780,8 +769,7 @@ pipeline {
                         }
                         stage('Testing Python Package'){
                             when{
-                                equals expected: true, actual: false
-//                                 equals expected: true, actual: params.TEST_PACKAGES
+                                equals expected: true, actual: params.TEST_PACKAGES
                             }
                             steps{
                                 script{
@@ -1006,14 +994,14 @@ pipeline {
                             }
                         }
                         stage('Windows Standalone'){
-//                             when{
-//                                 anyOf{
-//                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-//                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
-//                                     equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
-//                                 }
-//                                 beforeAgent true
-//                             }
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+                                }
+                                beforeAgent true
+                            }
                             stages{
                                 stage('CMake Build'){
                                     agent {
@@ -1022,7 +1010,6 @@ pipeline {
                                             label 'Windows&&Docker'
                                             args '-u ContainerAdministrator'
                                             additionalBuildArgs '--build-arg CHOCOLATEY_SOURCE'
-//                                             additionalBuildArgs get_build_args()
                                           }
                                     }
                                     steps {
