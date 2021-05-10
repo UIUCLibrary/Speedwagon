@@ -497,8 +497,8 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                            args '--mount source=sonar-cache-speedwagon,target=/home/user/.sonar/cache'
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                            args '--mount source=sonar-cache-speedwagon,target=/opt/sonar/.sonar/cache'
                           }
                     }
                     stages{

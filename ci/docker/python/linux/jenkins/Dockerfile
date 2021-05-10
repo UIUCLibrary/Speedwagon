@@ -18,19 +18,25 @@ RUN python -m pip install --upgrade pip &&  \
     pip wheel --wheel-dir=/wheels -r /tmp/requirements-extra.txt && \
     rm -rf  /root/.cache
 
-FROM python:${PYTHON_VERSION}
-ARG USER_ID=1000
-ARG GROUP_ID=1000
+#==============================================================================
+FROM python:${PYTHON_VERSION} as SONAR_BUILDER
+RUN apt-get update && \
+    apt-get install -y unzip
+ENV SONAR_SCANNER_VERSION=4.4.0.2170
+ARG SONAR_SCANNER_HOME=/opt/sonar/${SONAR_SCANNER_VERSION}-linux
+ENV SONAR_USER_HOME=/opt/sonar/.sonar
+RUN curl --create-dirs -sSLo /tmp/sonar-scanner.zip \
+        https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux.zip && \
+    unzip -o /tmp/sonar-scanner.zip -d /opt/sonar/ && \
+    rm /tmp/sonar-scanner.zip && \
+    mkdir -p $SONAR_USER_HOME/cache && \
+    chmod -R 777 "${SONAR_USER_HOME}" &&\
+    ln -s /opt/sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
+    which sonar-scanner
 
-RUN if id $USER_ID ; then \
-        echo 'Existing user id found: Creating an alias' ;\
-        groupadd --non-unique --gid $GROUP_ID user ; \
-        useradd  --non-unique --uid $USER_ID -s /bin/sh -m -d /home/user -g user user  ; \
-    else \
-        groupadd -g $GROUP_ID user ; \
-        useradd  -u $USER_ID -s /bin/sh -m -d /home/user -g user user ;\
-    fi && \
-    mkdir -p /.cache/pip && chown -R user /.cache/pip
+
+#==============================================================================
+FROM python:${PYTHON_VERSION}
 
 
 RUN apt-get update && apt-get install -y tzdata && \
@@ -42,6 +48,9 @@ RUN apt-get update && apt-get install -y tzdata && \
                        latexmk \
                        texlive-formats-extra \
                        xvfb
+RUN mkdir -p /.cache/pip && \
+    chmod -R 777 /.cache
+
 ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 ENV QT_QPA_PLATFORM="offscreen"
@@ -55,18 +64,9 @@ RUN python -m pip install --upgrade pip && \
         -r /tmp/requirements-ci.txt
 
 ENV PIP_FIND_LINKS=/wheels
-USER user
-WORKDIR /home/user
-
+COPY --from=SONAR_BUILDER /opt/sonar /opt/sonar/
 ENV SONAR_SCANNER_VERSION=4.4.0.2170
-ENV SONAR_SCANNER_HOME=/home/user/.sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux
-RUN curl --create-dirs -sSLo $HOME/.sonar/sonar-scanner.zip \
-        https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux.zip && \
-    unzip -o $HOME/.sonar/sonar-scanner.zip -d $HOME/.sonar/ && \
-    rm $HOME/.sonar/sonar-scanner.zip && \
-    mkdir -p /home/user/.sonar/cache && \
-    chown user:user /home/user/.sonar/cache
-ENV PATH=$SONAR_SCANNER_HOME/bin:$PATH
-ENV SONAR_SCANNER_OPTS="-server"
-
-
+ARG SONAR_SCANNER_HOME=/opt/sonar/${SONAR_SCANNER_VERSION}-linux
+RUN ln -s /opt/sonar/sonar-scanner-${SONAR_SCANNER_VERSION}-linux/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
+    which sonar-scanner
+RUN mkdir -p /home/user/.sonar/ && chmod -R 777 /home/user/
