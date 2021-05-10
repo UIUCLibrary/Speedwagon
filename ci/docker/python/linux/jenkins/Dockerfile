@@ -37,18 +37,6 @@ RUN curl --create-dirs -sSLo /tmp/sonar-scanner.zip \
 
 #==============================================================================
 FROM python:${PYTHON_VERSION}
-ARG USER_ID=1000
-ARG GROUP_ID=1000
-
-RUN if id $USER_ID ; then \
-        echo 'Existing user id found: Creating an alias' ;\
-        groupadd --non-unique --gid $GROUP_ID user ; \
-        useradd  --non-unique --uid $USER_ID -s /bin/sh -m -d /home/user -g user user  ; \
-    else \
-        groupadd -g $GROUP_ID user ; \
-        useradd  -u $USER_ID -s /bin/sh -m -d /home/user -g user user ;\
-    fi && \
-    mkdir -p /.cache/pip && chown -R user /.cache/pip
 
 
 RUN apt-get update && apt-get install -y tzdata && \
@@ -60,6 +48,9 @@ RUN apt-get update && apt-get install -y tzdata && \
                        latexmk \
                        texlive-formats-extra \
                        xvfb
+RUN mkdir -p /.cache/pip && \
+    chmod -R 777 /.cache
+
 ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 ENV QT_QPA_PLATFORM="offscreen"
