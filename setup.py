@@ -30,7 +30,7 @@ if __name__ == "__main__":
             "pyyaml",
             "uiucprescon.imagevalidate>=0.1.5",
             "uiucprescon.ocr>=0.1.2",
-            "uiucprescon.packager[kdu]>=0.2.11b12",
+            "uiucprescon.packager[kdu]>=0.2.11b13",
             "uiucprescon.images",
             "pykdu-compress>=0.1.4.b1",
             'importlib_resources;python_version<"3.9"',
