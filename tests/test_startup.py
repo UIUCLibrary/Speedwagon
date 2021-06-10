@@ -183,3 +183,57 @@ def test_standalone_tab_editor_loads(qtbot, monkeypatch):
     monkeypatch.setattr(config, "get_platform_settings", get_platform_settings)
     startup.standalone_tab_editor(app)
     assert app.exec.called is True
+
+
+class TestCustomTabsFileReader:
+    def test_load_custom_tabs_file_not_found(self, capsys):
+        from speedwagon import startup
+        all_workflows = Mock()
+        reader = startup.CustomTabsFileReader(all_workflows)
+        reader.read_yml_file = Mock()
+        reader.read_yml_file.side_effect=FileNotFoundError()
+
+        fake_file = Mock()
+        all(reader.load_custom_tabs(fake_file))
+        captured = capsys.readouterr()
+        assert "Custom tabs file not found" in captured.err
+
+    def test_load_custom_tabs_file_attribute_error(self, capsys):
+        from speedwagon import startup
+        all_workflows = Mock()
+        reader = startup.CustomTabsFileReader(all_workflows)
+        reader.read_yml_file = Mock()
+        reader.read_yml_file.side_effect=AttributeError()
+
+        fake_file = Mock()
+        all(reader.load_custom_tabs(fake_file))
+        captured = capsys.readouterr()
+        assert "Custom tabs file failed to load" in captured.err
+
+    def test_load_custom_tabs_file_yaml_error(self, capsys):
+        from speedwagon import startup
+        import yaml
+
+        all_workflows = Mock()
+        reader = startup.CustomTabsFileReader(all_workflows)
+        reader.read_yml_file = Mock()
+        reader.read_yml_file.side_effect=yaml.YAMLError()
+
+        fake_file = Mock()
+        all(reader.load_custom_tabs(fake_file))
+        captured = capsys.readouterr()
+        assert "file failed to load" in captured.err
+
+    def test_load_custom_tabs_file_error_loading_tab(self, capsys):
+        from speedwagon import startup
+
+        all_workflows = Mock()
+        reader = startup.CustomTabsFileReader(all_workflows)
+        reader.read_yml_file = Mock(return_value={"my tab": []})
+        reader._get_tab_items = Mock()
+        reader._get_tab_items.side_effect=TypeError()
+
+        fake_file = Mock()
+        all(reader.load_custom_tabs(fake_file))
+        captured = capsys.readouterr()
+        assert "Error loading tab" in captured.err
