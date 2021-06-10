@@ -121,10 +121,12 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
         return True
 
 
-class Workflow(AbsWorkflow):
+class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
     """Base class for defining a new workflow item
 
-        Subclass this class to generate a new workflow
+        Subclass this class to generate a new workflow.
+        Notes:
+            You need to implement the discover_task_metadata() method.
     """
 
     def get_additional_info(self, parent: QtWidgets.QWidget,
