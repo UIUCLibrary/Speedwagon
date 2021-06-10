@@ -96,7 +96,7 @@ class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
         dest = user_args["Output"]
 
         def filter_only_tif_files(filename: str) -> bool:
-            basename, ext = os.path.splitext(filename)
+            _, ext = os.path.splitext(filename)
             if ext.lower() != ".tif":
                 return False
             return True

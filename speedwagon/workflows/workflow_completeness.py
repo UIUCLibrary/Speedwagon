@@ -379,7 +379,7 @@ class ValidateChecksumsTask(CompletenessSubTask):
             try:
                 files_to_check = []
 
-                for a, file_name in \
+                for _, file_name in \
                         validate_process.extracts_checksums(checksum_report):
                     files_to_check.append(file_name)
 
