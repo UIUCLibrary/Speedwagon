@@ -280,7 +280,7 @@ class FindImagesTask(speedwagon.tasks.Subtask):
             if os.path.isdir(file_located):
                 return False
 
-            base, ext = os.path.splitext(file_located)
+            _, ext = os.path.splitext(file_located)
             if ext.lower() != self._extension:
                 return False
 

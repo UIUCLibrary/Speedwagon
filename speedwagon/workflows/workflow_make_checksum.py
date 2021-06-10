@@ -236,7 +236,7 @@ class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
         report_to_save_to = user_args["Input"]
         package_root = os.path.dirname(report_to_save_to)
 
-        for root, dirs, files in os.walk(package_root):
+        for root, _, files in os.walk(package_root):
             for file_ in files:
                 full_path = os.path.join(root, file_)
                 if os.path.samefile(report_to_save_to, full_path):
@@ -342,7 +342,7 @@ class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
             report_to_save_to = os.path.normpath(
                 os.path.join(package_root, "checksum.md5"))
 
-            for root, dirs, files in os.walk(package_root):
+            for root, _, files in os.walk(package_root):
                 for file_ in files:
                     full_path = os.path.join(root, file_)
                     if os.path.samefile(report_to_save_to, full_path):

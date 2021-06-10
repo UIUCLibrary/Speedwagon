@@ -91,7 +91,7 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
             if not item.is_file():
                 return False
 
-            basename, ext = os.path.splitext(item.name)
+            _, ext = os.path.splitext(item.name)
             if ext.lower() != ".tif":
                 return False
 
@@ -197,8 +197,7 @@ class PackageImageConverterTask(tasks.Subtask):
 
     def work(self) -> bool:
         des_path = self._dest_path
-
-        basename, _ = os.path.splitext(self._source_file_path)
+        # __, _ = os.path.splitext(self._source_file_path)
 
         process_task = ProcessFile(ConvertFile())
 
