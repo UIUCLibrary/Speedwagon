@@ -142,13 +142,20 @@ def get_selection(all_workflows):
     return new_workflow_set
 
 
-class CustomTabsGetter:
+class CustomTabsFileReader:
+    """Reads the tab file data."""
 
-    def __init__(self,
-                 all_workflows: Dict[str, Type[speedwagon.Workflow]]) -> None:
+    def __init__(
+            self, all_workflows: Dict[str, Type[speedwagon.Workflow]]) -> None:
+        """Load all workflows supported.
+
+        Args:
+            all_workflows:
+        """
         self.all_workflows = all_workflows
 
     def read_yml_file(self, yaml_file: str):
+        """Read the contents of the yml file."""
         with open(yaml_file) as f:
             tabs_config_data = yaml.load(f.read(), Loader=yaml.SafeLoader)
         if not isinstance(tabs_config_data, dict):
@@ -171,6 +178,16 @@ class CustomTabsGetter:
         return new_tab_items
 
     def load_custom_tabs(self, yaml_file: str) -> Iterator[Tuple[str, dict]]:
+        """Get custom tabs data from config yaml.
+
+        Args:
+            yaml_file: file path to a yaml file containing custom.
+
+        Yields:
+            Yields a tuple containing the name of the tab and the containing
+                workflows.
+
+        """
         try:
             tabs_config_data = self.read_yml_file(yaml_file)
             if tabs_config_data:
@@ -204,7 +221,7 @@ def get_custom_tabs(
         all_workflows: Dict[str, Type[speedwagon.Workflow]],
         yaml_file: str
 ) -> Iterator[Tuple[str, dict]]:
-    getter = CustomTabsGetter(all_workflows)
+    getter = CustomTabsFileReader(all_workflows)
     yield from getter.load_custom_tabs(yaml_file)
 
 
