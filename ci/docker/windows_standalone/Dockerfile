@@ -62,7 +62,7 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
     { `
         Write-Host "Installing packages with Chocolatey - Done" ; `
     } else { `
-        throw "Installing packages with Chocolatey - Failed with exit code ($process.ExitCode)" ;  `
+        throw 'Installing packages with Chocolatey - Failed with none zero exit code' ;  `
     };`
     Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse ; `
     Remove-Item -Force -Recurse ${Env:TEMP}\* ; `
