@@ -16,6 +16,7 @@ class TaskFailed(Exception):
     pass
 
 
+# pylint: disable=too-few-public-methods
 class AbsRunner(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
