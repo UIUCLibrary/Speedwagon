@@ -18,6 +18,7 @@ import logging
 import os
 import sys
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
+import pathlib
 import yaml
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 
@@ -29,7 +30,8 @@ from speedwagon import worker, job
 from speedwagon.dialog.settings import TabEditor
 from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.tabs import extract_tab_information
-import pathlib
+
+
 try:  # pragma: no cover
     from importlib import metadata
     import importlib.resources as resources  # type: ignore
