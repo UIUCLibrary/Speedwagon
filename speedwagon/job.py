@@ -41,7 +41,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
     def completion_task(self, task_builder: tasks.TaskBuilder, results,
                         **user_args) -> None:
-        pass
+        """Last task after Job is completed."""
 
     def initial_task(self, task_builder: tasks.TaskBuilder,
                      **user_args) -> None:
