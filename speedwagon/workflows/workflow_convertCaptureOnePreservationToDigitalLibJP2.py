@@ -197,7 +197,6 @@ class PackageImageConverterTask(tasks.Subtask):
 
     def work(self) -> bool:
         des_path = self._dest_path
-        # __, _ = os.path.splitext(self._source_file_path)
 
         process_task = ProcessFile(ConvertFile())
 
