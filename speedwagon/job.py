@@ -199,8 +199,8 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
                         and module_class.active:
                     yield module_class.name, module_class
 
-        except ImportError as e:
-            msg = "Unable to load {}. Reason: {}".format(module_file, e)
+        except ImportError as error:
+            msg = "Unable to load {}. Reason: {}".format(module_file, error)
             print(msg, file=sys.stderr)
             self.logger.warning(msg)
 
