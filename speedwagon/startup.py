@@ -141,25 +141,28 @@ def get_selection(all_workflows):
 
 
 class CustomTabsGetter:
+    def read_yml_file(self, yaml_file: str):
+        with open(yaml_file) as f:
+            tabs_config_data = yaml.load(f.read(), Loader=yaml.SafeLoader)
+        if not isinstance(tabs_config_data, dict):
+            raise FileFormatError("Failed to parse file")
+        return tabs_config_data
+
     def get(
             self,
             all_workflows: Dict[str, Type[speedwagon.Workflow]],
             yaml_file: str
     ) -> Iterator[Tuple[str, dict]]:
         try:
-            with open(yaml_file) as f:
-                tabs_config_data = yaml.load(f.read(), Loader=yaml.SafeLoader)
-            if not isinstance(tabs_config_data, dict):
-                raise FileFormatError("Failed to parse file")
-
+            tabs_config_data = self.read_yml_file(yaml_file)
             if tabs_config_data:
                 tabs_config_data = cast(Dict[str, List[str]], tabs_config_data)
                 for tab_name in tabs_config_data:
 
                     try:
-                        new_tab_items = dict()
                         new_tab = tabs_config_data.get(tab_name)
                         if new_tab is not None:
+                            new_tab_items = {}
                             for item_name in new_tab:
                                 try:
                                     workflow = all_workflows[item_name]
