@@ -349,15 +349,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         config_dialog.exec()
 
-    def start_workflow(self) -> None:
-        num_selected = self._workflow_selector_view.selectedIndexes()
-        if len(num_selected) != 1:
-            print(
-                "Invalid number of selected Indexes. "
-                "Expected 1. Found {}".format(num_selected)
-            )
-            return
-
     def save_log(self) -> None:
         data = self._log_data.getvalue()
 

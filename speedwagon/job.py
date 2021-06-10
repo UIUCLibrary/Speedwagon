@@ -41,7 +41,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
     def completion_task(self, task_builder: tasks.TaskBuilder, results,
                         **user_args) -> None:
-        pass
+        """Last task after Job is completed."""
 
     def initial_task(self, task_builder: tasks.TaskBuilder,
                      **user_args) -> None:
@@ -121,10 +121,12 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
         return True
 
 
-class Workflow(AbsWorkflow):
+class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
     """Base class for defining a new workflow item
 
-        Subclass this class to generate a new workflow
+        Subclass this class to generate a new workflow.
+        Notes:
+            You need to implement the discover_task_metadata() method.
     """
 
     def get_additional_info(self, parent: QtWidgets.QWidget,
@@ -191,14 +193,14 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
             )
             members = inspect.getmembers(module, class_member_filter)
 
-            for name_, module_class in members:
+            for _, module_class in members:
 
                 if issubclass(module_class, self.base_class) \
                         and module_class.active:
                     yield module_class.name, module_class
 
-        except ImportError as e:
-            msg = "Unable to load {}. Reason: {}".format(module_file, e)
+        except ImportError as error:
+            msg = "Unable to load {}. Reason: {}".format(module_file, error)
             print(msg, file=sys.stderr)
             self.logger.warning(msg)
 

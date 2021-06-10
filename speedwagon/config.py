@@ -110,7 +110,7 @@ class ConfigManager(contextlib.AbstractContextManager):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        pass
+        return None
 
     @property
     def global_settings(self) -> dict:
