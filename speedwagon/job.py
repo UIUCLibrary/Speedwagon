@@ -168,8 +168,8 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
         located_class = dict()
         tree = os.scandir(self.path)
 
-        for m in filter(self.py_module_filter, tree):
-            for name, module in self.load(m.name):
+        for module_file in filter(self.py_module_filter, tree):
+            for name, module in self.load(module_file.name):
                 located_class[name] = module
         return located_class
 

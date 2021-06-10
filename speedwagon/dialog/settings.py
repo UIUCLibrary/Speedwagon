@@ -187,8 +187,8 @@ class GlobalSettingsTab(QtWidgets.QWidget):
 
         print("Saving changes")
         data = config.serialize_settings_model(self.settings_table.model())
-        with open(self.config_file, "w") as fw:
-            fw.write(data)
+        with open(self.config_file, "w") as file_writer:
+            file_writer.write(data)
 
         msg_box = QtWidgets.QMessageBox(self)
         msg_box.setWindowTitle("Saved changes")
