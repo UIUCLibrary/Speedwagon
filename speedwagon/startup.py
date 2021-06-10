@@ -141,6 +141,11 @@ def get_selection(all_workflows):
 
 
 class CustomTabsGetter:
+
+    def __init__(self, all_workflows: Dict[str, Type[speedwagon.Workflow]]) -> None:
+        self.all_workflows = all_workflows
+
+
     def read_yml_file(self, yaml_file: str):
         with open(yaml_file) as f:
             tabs_config_data = yaml.load(f.read(), Loader=yaml.SafeLoader)
@@ -148,11 +153,22 @@ class CustomTabsGetter:
             raise FileFormatError("Failed to parse file")
         return tabs_config_data
 
-    def get(
-            self,
-            all_workflows: Dict[str, Type[speedwagon.Workflow]],
-            yaml_file: str
-    ) -> Iterator[Tuple[str, dict]]:
+    def _get_tab_items(self, tab, tab_name):
+        new_tab_items = {}
+        for item_name in tab:
+            try:
+                workflow = self.all_workflows[item_name]
+                if workflow.active is False:
+                    print("workflow not active")
+                new_tab_items[item_name] = workflow
+
+            except LookupError:
+                print(
+                    f"Unable to load '{item_name}' in "
+                    f"tab {tab_name}", file=sys.stderr)
+        return new_tab_items
+
+    def load_custom_tabs(self, yaml_file: str) -> Iterator[Tuple[str, dict]]:
         try:
             tabs_config_data = self.read_yml_file(yaml_file)
             if tabs_config_data:
@@ -162,19 +178,9 @@ class CustomTabsGetter:
                     try:
                         new_tab = tabs_config_data.get(tab_name)
                         if new_tab is not None:
-                            new_tab_items = {}
-                            for item_name in new_tab:
-                                try:
-                                    workflow = all_workflows[item_name]
-                                    if workflow.active is False:
-                                        print("workflow not active")
-                                    new_tab_items[item_name] = workflow
+                            yield tab_name, \
+                                  self._get_tab_items(new_tab, tab_name)
 
-                                except LookupError:
-                                    print(
-                                        f"Unable to load '{item_name}' in "
-                                        f"tab {tab_name}", file=sys.stderr)
-                            yield tab_name, new_tab_items
                     except TypeError as e:
                         print("Error loading tab '{}'. "
                               "Reason: {}".format(tab_name, e), file=sys.stderr)
@@ -196,8 +202,8 @@ def get_custom_tabs(
         all_workflows: Dict[str, Type[speedwagon.Workflow]],
         yaml_file: str
 ) -> Iterator[Tuple[str, dict]]:
-    getter = CustomTabsGetter()
-    yield from getter.get(all_workflows, yaml_file)
+    getter = CustomTabsGetter(all_workflows)
+    yield from getter.load_custom_tabs(yaml_file)
 
 
 class AbsStarter(metaclass=abc.ABCMeta):
