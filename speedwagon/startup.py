@@ -186,6 +186,8 @@ class CustomTabsFileReader:
         Yields:
             Yields a tuple containing the name of the tab and the containing
                 workflows.
+        Notes:
+            Failure to load will only a print message to standard error.
 
         """
         try:
