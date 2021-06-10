@@ -193,7 +193,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
             )
             members = inspect.getmembers(module, class_member_filter)
 
-            for name_, module_class in members:
+            for _, module_class in members:
 
                 if issubclass(module_class, self.base_class) \
                         and module_class.active:
