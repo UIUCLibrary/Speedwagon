@@ -142,9 +142,9 @@ def get_selection(all_workflows):
 
 class CustomTabsGetter:
 
-    def __init__(self, all_workflows: Dict[str, Type[speedwagon.Workflow]]) -> None:
+    def __init__(self,
+                 all_workflows: Dict[str, Type[speedwagon.Workflow]]) -> None:
         self.all_workflows = all_workflows
-
 
     def read_yml_file(self, yaml_file: str):
         with open(yaml_file) as f:
@@ -174,7 +174,6 @@ class CustomTabsGetter:
             if tabs_config_data:
                 tabs_config_data = cast(Dict[str, List[str]], tabs_config_data)
                 for tab_name in tabs_config_data:
-
                     try:
                         new_tab = tabs_config_data.get(tab_name)
                         if new_tab is not None:
@@ -183,7 +182,8 @@ class CustomTabsGetter:
 
                     except TypeError as e:
                         print("Error loading tab '{}'. "
-                              "Reason: {}".format(tab_name, e), file=sys.stderr)
+                              "Reason: {}".format(tab_name, e),
+                              file=sys.stderr)
                         continue
 
         except FileNotFoundError as e:
