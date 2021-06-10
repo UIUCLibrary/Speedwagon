@@ -191,7 +191,7 @@ class TestCustomTabsFileReader:
         all_workflows = Mock()
         reader = startup.CustomTabsFileReader(all_workflows)
         reader.read_yml_file = Mock()
-        reader.read_yml_file.side_effect=FileNotFoundError()
+        reader.read_yml_file.side_effect = FileNotFoundError()
 
         fake_file = Mock()
         all(reader.load_custom_tabs(fake_file))
@@ -203,7 +203,7 @@ class TestCustomTabsFileReader:
         all_workflows = Mock()
         reader = startup.CustomTabsFileReader(all_workflows)
         reader.read_yml_file = Mock()
-        reader.read_yml_file.side_effect=AttributeError()
+        reader.read_yml_file.side_effect = AttributeError()
 
         fake_file = Mock()
         all(reader.load_custom_tabs(fake_file))
@@ -217,7 +217,7 @@ class TestCustomTabsFileReader:
         all_workflows = Mock()
         reader = startup.CustomTabsFileReader(all_workflows)
         reader.read_yml_file = Mock()
-        reader.read_yml_file.side_effect=yaml.YAMLError()
+        reader.read_yml_file.side_effect = yaml.YAMLError()
 
         fake_file = Mock()
         all(reader.load_custom_tabs(fake_file))
@@ -231,7 +231,7 @@ class TestCustomTabsFileReader:
         reader = startup.CustomTabsFileReader(all_workflows)
         reader.read_yml_file = Mock(return_value={"my tab": []})
         reader._get_tab_items = Mock()
-        reader._get_tab_items.side_effect=TypeError()
+        reader._get_tab_items.side_effect = TypeError()
 
         fake_file = Mock()
         all(reader.load_custom_tabs(fake_file))
