@@ -140,52 +140,61 @@ def get_selection(all_workflows):
     return new_workflow_set
 
 
+class CustomTabsGetter:
+    def get(
+            self,
+            all_workflows: Dict[str, Type[speedwagon.Workflow]],
+            yaml_file: str
+    ) -> Iterator[Tuple[str, dict]]:
+        try:
+            with open(yaml_file) as f:
+                tabs_config_data = yaml.load(f.read(), Loader=yaml.SafeLoader)
+            if not isinstance(tabs_config_data, dict):
+                raise FileFormatError("Failed to parse file")
+
+            if tabs_config_data:
+                tabs_config_data = cast(Dict[str, List[str]], tabs_config_data)
+                for tab_name in tabs_config_data:
+
+                    try:
+                        new_tab_items = dict()
+                        new_tab = tabs_config_data.get(tab_name)
+                        if new_tab is not None:
+                            for item_name in new_tab:
+                                try:
+                                    workflow = all_workflows[item_name]
+                                    if workflow.active is False:
+                                        print("workflow not active")
+                                    new_tab_items[item_name] = workflow
+
+                                except LookupError:
+                                    print(
+                                        f"Unable to load '{item_name}' in "
+                                        f"tab {tab_name}", file=sys.stderr)
+                            yield tab_name, new_tab_items
+                    except TypeError as e:
+                        print("Error loading tab '{}'. "
+                              "Reason: {}".format(tab_name, e), file=sys.stderr)
+                        continue
+
+        except FileNotFoundError as e:
+            print("Custom tabs file not found. "
+                  "Reason: {}".format(e), file=sys.stderr)
+        except AttributeError as e:
+            print("Custom tabs file failed to load. "
+                  "Reason: {}".format(e), file=sys.stderr)
+
+        except yaml.YAMLError as e:
+            print("{} file failed to load. "
+                  "Reason: {}".format(yaml_file, e), file=sys.stderr)
+
+
 def get_custom_tabs(
         all_workflows: Dict[str, Type[speedwagon.Workflow]],
         yaml_file: str
 ) -> Iterator[Tuple[str, dict]]:
-
-    try:
-        with open(yaml_file) as f:
-            tabs_config_data = yaml.load(f.read(), Loader=yaml.SafeLoader)
-        if not isinstance(tabs_config_data, dict):
-            raise FileFormatError("Failed to parse file")
-
-        if tabs_config_data:
-            tabs_config_data = cast(Dict[str, List[str]], tabs_config_data)
-            for tab_name in tabs_config_data:
-
-                try:
-                    new_tab_items = dict()
-                    new_tab = tabs_config_data.get(tab_name)
-                    if new_tab is not None:
-                        for item_name in new_tab:
-                            try:
-                                workflow = all_workflows[item_name]
-                                if workflow.active is False:
-                                    print("workflow not active")
-                                new_tab_items[item_name] = workflow
-
-                            except LookupError:
-                                print(
-                                    f"Unable to load '{item_name}' in "
-                                    f"tab {tab_name}", file=sys.stderr)
-                        yield tab_name, new_tab_items
-                except TypeError as e:
-                    print("Error loading tab '{}'. "
-                          "Reason: {}".format(tab_name, e), file=sys.stderr)
-                    continue
-
-    except FileNotFoundError as e:
-        print("Custom tabs file not found. "
-              "Reason: {}".format(e), file=sys.stderr)
-    except AttributeError as e:
-        print("Custom tabs file failed to load. "
-              "Reason: {}".format(e), file=sys.stderr)
-
-    except yaml.YAMLError as e:
-        print("{} file failed to load. "
-              "Reason: {}".format(yaml_file, e), file=sys.stderr)
+    getter = CustomTabsGetter()
+    yield from getter.get(all_workflows, yaml_file)
 
 
 class AbsStarter(metaclass=abc.ABCMeta):
