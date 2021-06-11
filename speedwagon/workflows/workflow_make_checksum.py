@@ -403,11 +403,12 @@ class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
         sorted_results = self.sort_results([i.data for i in results])
 
         for checksum_report, checksums in sorted_results.items():
-
-            process = checksum_tasks.MakeCheckSumReportTask(
-                checksum_report, checksums)
-
-            task_builder.add_subtask(process)
+            task_builder.add_subtask(
+                checksum_tasks.MakeCheckSumReportTask(
+                    checksum_report,
+                    checksums
+                )
+            )
 
     @classmethod
     @add_report_borders
