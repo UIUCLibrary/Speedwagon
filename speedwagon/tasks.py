@@ -463,8 +463,8 @@ class TaskBuilder:
     ) -> str:
 
         return os.path.join(task_working_path,
-                                   task_type,
-                                   str(subtask_id))
+                            task_type,
+                            str(subtask_id))
 
     @staticmethod
     def _build_task_working_path(temp_path: str, task_id: str) -> str:
