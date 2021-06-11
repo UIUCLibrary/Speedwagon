@@ -435,8 +435,7 @@ class TaskBuilder:
         self.task_id = TaskBuilder._task_counter
 
     def build_task(self) -> MultiStageTask:
-        task = self._builder.build_task()
-        return task
+        return self._builder.build_task()
 
     def add_subtask(self, subtask: Subtask) -> None:
         self._subtask_counter += 1
