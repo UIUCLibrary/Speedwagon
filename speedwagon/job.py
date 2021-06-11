@@ -167,7 +167,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
         pass
 
     def locate(self) -> Dict["str", AbsWorkflow]:
-        located_class = dict()
+        located_class = {}
         tree = os.scandir(self.path)
 
         for module_file in filter(self.py_module_filter, tree):
@@ -214,9 +214,7 @@ class WorkflowFinder(AbsDynamicFinder):
 
     @staticmethod
     def py_module_filter(item: os.DirEntry) -> bool:
-        if not str(item.name).startswith("workflow_"):
-            return False
-        return True
+        return bool(str(item.name).startswith("workflow_"))
 
     @property
     def package_name(self) -> str:

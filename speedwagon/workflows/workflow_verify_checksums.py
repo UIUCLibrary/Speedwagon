@@ -48,7 +48,8 @@ class ChecksumWorkflow(AbsWorkflow):
                   "values. The listed files are expected to be siblings to " \
                   "the checksum file."
 
-    def _locate_checksum_files(self, root: str) -> Iterable[str]:
+    @staticmethod
+    def _locate_checksum_files(root: str) -> Iterable[str]:
         for root, dirs, files in os.walk(root):
             for file_ in files:
                 if file_ != "checksum.md5":
@@ -396,12 +397,12 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
             results, key=lambda it: it[ResultValues.CHECKSUM_REPORT_FILE]
         )
 
-        for k, v in itertools.groupby(
+        for key, value in itertools.groupby(
                 sorted_results,
                 key=lambda it: it[ResultValues.CHECKSUM_REPORT_FILE]
         ):
-            for result_data in v:
-                new_results[k].append(result_data)
+            for result_data in value:
+                new_results[key].append(result_data)
         return dict(new_results)
 
     @classmethod

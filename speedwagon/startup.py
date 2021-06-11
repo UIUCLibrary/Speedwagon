@@ -154,10 +154,13 @@ class CustomTabsFileReader:
         """
         self.all_workflows = all_workflows
 
-    def read_yml_file(self, yaml_file: str):
+    @staticmethod
+    def read_yml_file(yaml_file: str):
         """Read the contents of the yml file."""
-        with open(yaml_file) as f:
-            tabs_config_data = yaml.load(f.read(), Loader=yaml.SafeLoader)
+        with open(yaml_file) as file_handler:
+            tabs_config_data = yaml.load(file_handler.read(),
+                                         Loader=yaml.SafeLoader)
+
         if not isinstance(tabs_config_data, dict):
             raise FileFormatError("Failed to parse file")
         return tabs_config_data
@@ -201,22 +204,22 @@ class CustomTabsFileReader:
                             yield tab_name, \
                                   self._get_tab_items(new_tab, tab_name)
 
-                    except TypeError as e:
+                    except TypeError as tab_error:
                         print("Error loading tab '{}'. "
-                              "Reason: {}".format(tab_name, e),
+                              "Reason: {}".format(tab_name, tab_error),
                               file=sys.stderr)
                         continue
 
-        except FileNotFoundError as e:
+        except FileNotFoundError as error:
             print("Custom tabs file not found. "
-                  "Reason: {}".format(e), file=sys.stderr)
-        except AttributeError as e:
+                  "Reason: {}".format(error), file=sys.stderr)
+        except AttributeError as error:
             print("Custom tabs file failed to load. "
-                  "Reason: {}".format(e), file=sys.stderr)
+                  "Reason: {}".format(error), file=sys.stderr)
 
-        except yaml.YAMLError as e:
+        except yaml.YAMLError as error:
             print("{} file failed to load. "
-                  "Reason: {}".format(yaml_file, e), file=sys.stderr)
+                  "Reason: {}".format(yaml_file, error), file=sys.stderr)
 
 
 def get_custom_tabs(
@@ -313,7 +316,7 @@ class StartupDefault(AbsStarter):
             except metadata.PackageNotFoundError:
                 app_version = ""
 
-            self._logger.info(f"{app_title} {app_version}")
+            self._logger.info("%s %s", app_title, app_version)
 
             QtWidgets.QApplication.processEvents()
 

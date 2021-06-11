@@ -43,7 +43,8 @@ class ValidateMetadataWorkflow(AbsWorkflow):
                   "Input is path that contains subdirectory which " \
                   "containing a series of jp2 files."
 
-    def _locate_checksum_files(self, root: str) -> Iterable[str]:
+    @staticmethod
+    def _locate_checksum_files(root: str) -> Iterable[str]:
         for root, dirs, files in os.walk(root):
             for file_ in files:
                 if file_ != "checksum.md5":
@@ -132,8 +133,7 @@ class ValidateMetadataWorkflow(AbsWorkflow):
         def filter_only_invalid(task_result) -> bool:
             if task_result[ResultValues.VALID]:
                 return False
-            else:
-                return True
+            return True
 
         def invalid_messages(task_result) -> str:
             source = task_result[ResultValues.FILENAME]

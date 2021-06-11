@@ -288,7 +288,7 @@ class FindImagesTask(speedwagon.tasks.Subtask):
 
         directories = []
 
-        for root, dirs, files in os.walk(self._root):
+        for root, _, files in os.walk(self._root):
             for file_name in filter(find_images, files):
                 file_path = os.path.join(root, file_name)
                 self.log(f"Located {file_path}")

@@ -14,6 +14,7 @@ try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
+from collections import namedtuple
 
 from PyQt5 import QtWidgets, QtCore, QtGui  # type: ignore
 import speedwagon.dialog
@@ -24,7 +25,7 @@ import speedwagon
 import speedwagon.startup
 import speedwagon.config
 from speedwagon.ui import main_window_shell_ui  # type: ignore
-from collections import namedtuple
+
 
 DEBUG_LOGGING_FORMAT = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s')

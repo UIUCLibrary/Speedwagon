@@ -68,8 +68,7 @@ class WorkflowListModel(ItemListModel):
                 )
 
             if role == QtCore.Qt.UserRole:
-                job = self.jobs[index.row()]
-                return job
+                return self.jobs[index.row()]
             if role == QtCore.Qt.SizeHintRole:
                 return QtCore.QSize(10, 20)
 
@@ -412,11 +411,7 @@ class TabsModel(QtCore.QAbstractListModel):
         self.tabs: List[tabs.TabData] = []
 
     def __contains__(self, value: "tabs.TabData") -> bool:
-        # Looks for the tab based on the tab_name string
-        for tab in self.tabs:
-            if tab.tab_name == value:
-                return True
-        return False
+        return any(tab.tab_name == value for tab in self.tabs)
 
     def __iadd__(self, other: "tabs.TabData") -> "TabsModel":
         self.add_tab(other)
