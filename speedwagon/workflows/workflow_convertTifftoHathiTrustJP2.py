@@ -45,7 +45,7 @@ class ProcessFile:
 class ConvertFile(AbsProcessStrategy):
 
     def process(self, source_file: str, destination_path: str) -> None:
-        basename, ext = os.path.splitext(os.path.basename(source_file))
+        basename, _ = os.path.splitext(os.path.basename(source_file))
 
         output_file_path = os.path.join(destination_path,
                                         basename + ".jp2"
@@ -101,7 +101,7 @@ class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
                 return False
             return True
 
-        for root, dirs, files in os.walk(source_input):
+        for root, _, files in os.walk(source_input):
             file_iter_1, file_iter_2 = itertools.tee(files)
             tiff_files = filter(filter_only_tif_files, file_iter_1)
 
