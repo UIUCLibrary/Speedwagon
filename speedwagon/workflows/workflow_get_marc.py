@@ -9,9 +9,9 @@ from typing import List, Any, Optional, Union, Sequence, Dict, Set, Tuple, \
     Iterator, Collection
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
-import requests
 import traceback
 import sys
+import requests
 
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from speedwagon import tasks, reports, validators
