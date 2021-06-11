@@ -102,7 +102,15 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
     @classmethod
     def filter_bib_id_folders(cls, item: os.DirEntry) -> bool:
+        """Filter only folders with bibids.
 
+        Args:
+            item:
+
+        Returns:
+            True is the item is a folder with a bibid, else returns false
+
+        """
         if not item.is_dir():
             return False
 
@@ -523,7 +531,7 @@ class MarcGeneratorTask(tasks.Subtask):
     def identifier_type(self) -> str:
         """Type of identifier.
 
-            Such as MMS ID or BIBID
+        Such as MMS ID or BIBID
         """
         return self._identifier_type
 
