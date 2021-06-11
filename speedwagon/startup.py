@@ -313,7 +313,7 @@ class StartupDefault(AbsStarter):
             except metadata.PackageNotFoundError:
                 app_version = ""
 
-            self._logger.info(f"{app_title} {app_version}")
+            self._logger.info("%s %s", app_title, app_version)
 
             QtWidgets.QApplication.processEvents()
 
