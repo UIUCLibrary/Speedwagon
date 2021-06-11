@@ -114,7 +114,6 @@ class SystemInfoDialog(QtWidgets.QDialog):
             metadata.distributions(),
             key=lambda x: x.metadata['Name'].upper()
         )
-        installed_python_packages = [
+        return [
             f"{x.metadata['Name']} {x.metadata['Version']}" for x in pkgs
         ]
-        return installed_python_packages
