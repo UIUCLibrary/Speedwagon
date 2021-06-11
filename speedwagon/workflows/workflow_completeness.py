@@ -376,11 +376,13 @@ class ValidateChecksumsTask(CompletenessSubTask):
             )
 
             try:
-                files_to_check = []
+                files_to_check = [
+                    file_name
+                    for _, file_name in validate_process.extracts_checksums(
+                        checksum_report
+                    )
+                ]
 
-                for _, file_name in \
-                        validate_process.extracts_checksums(checksum_report):
-                    files_to_check.append(file_name)
 
                 self.log(
                     "Validating checksums of the {} files "
