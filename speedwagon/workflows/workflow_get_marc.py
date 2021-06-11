@@ -10,14 +10,14 @@ from typing import List, Any, Optional, Union, Sequence, Dict, Set, Tuple, \
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 import requests
-
+import traceback
+import sys
 
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from speedwagon import tasks, reports, validators
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
-import traceback
-import sys
+
 
 __all__ = ['GenerateMarcXMLFilesWorkflow']
 
