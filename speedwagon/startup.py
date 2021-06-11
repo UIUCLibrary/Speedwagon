@@ -154,10 +154,13 @@ class CustomTabsFileReader:
         """
         self.all_workflows = all_workflows
 
-    def read_yml_file(self, yaml_file: str):
+    @staticmethod
+    def read_yml_file(yaml_file: str):
         """Read the contents of the yml file."""
-        with open(yaml_file) as f:
-            tabs_config_data = yaml.load(f.read(), Loader=yaml.SafeLoader)
+        with open(yaml_file) as file_handler:
+            tabs_config_data = yaml.load(file_handler.read(),
+                                         Loader=yaml.SafeLoader)
+
         if not isinstance(tabs_config_data, dict):
             raise FileFormatError("Failed to parse file")
         return tabs_config_data
