@@ -634,8 +634,8 @@ class EnhancementTask(tasks.Subtask):
                       .split("\n")]).replace("\n", "")
         return str(minidom.parseString(flat_xml_string).toprettyxml())
 
+    @staticmethod
     def redraw_tree(
-            self,
             tree: ET.ElementTree,
             *new_datafields: ET.Element
     ) -> ET.Element:
