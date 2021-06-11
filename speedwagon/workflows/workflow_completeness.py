@@ -383,7 +383,6 @@ class ValidateChecksumsTask(CompletenessSubTask):
                     )
                 ]
 
-
                 self.log(
                     "Validating checksums of the {} files "
                     "included in {}".format(
