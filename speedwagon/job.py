@@ -49,15 +49,15 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
                      **user_args) -> None:
         """Create a task to run before the main tasks start.
 
-            The initial task is run prior to the get_additional_info method.
-            Results generated here will then be passed to get_additional_info.
+        The initial task is run prior to the get_additional_info method.
+        Results generated here will then be passed to get_additional_info.
 
-            This is useful for locating additional information that will be
-            needed by other tasks and the user needs to additional decisions
-            before running the main tasks.
+        This is useful for locating additional information that will be
+        needed by other tasks and the user needs to additional decisions
+        before running the main tasks.
 
-            In general, prefer :py:meth:`discover_task_metadata` if you don't
-            need a user's interaction.
+        In general, prefer :py:meth:`discover_task_metadata` if you don't
+        need a user's interaction.
         """
 
     def create_new_task(
@@ -66,7 +66,6 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
             **job_args
     ) -> None:
         """Add a new task to be accomplished when the workflow is started.
-
 
         Use the task_builder parameter's add_subtask method to include a
         :py:class:`speedwagon.Subtask()`
@@ -88,20 +87,20 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
             -> Optional[str]:
         """Generate a text report for the results of the workflow.
 
-            Example:
-                .. code-block::
+        Example:
+            .. code-block::
 
-                    report_lines = []
+                report_lines = []
 
-                    for checksum_report, items_written in \\
-                            cls.sort_results([i.data for \n
-                            i in results]).items():
+                for checksum_report, items_written in \\
+                        cls.sort_results([i.data for \n
+                        i in results]).items():
 
-                        report_lines.append(
-                            f"Checksum values for {len(items_written)} "
-                            f"files written to {checksum_report}")
+                    report_lines.append(
+                        f"Checksum values for {len(items_written)} "
+                        f"files written to {checksum_report}")
 
-                    return '\\n'.join(report_lines)
+                return '\\n'.join(report_lines)
 
         """
 
