@@ -37,7 +37,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
     def __init__(self,
                  global_settings: Optional[Dict[str, str]] = None
                  ) -> None:
-        """CaptureOne Batch to HathiTrust TIFF Complete Package.
+        """Convert CaptureOne Batch to HathiTrust TIFF Complete Package.
 
         Args:
             global_settings:
