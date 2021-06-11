@@ -270,10 +270,9 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
             f"  * {i['identifier']}. Reason: {i['output']}" for i in failed
         )
 
-
         return f"{status}" \
-                      f"\n" \
-                      f"\n{failed_list}"
+               f"\n" \
+               f"\n{failed_list}"
 
     @staticmethod
     def _get_identifier_volume(job_args) -> Tuple[str, Union[str, None]]:
