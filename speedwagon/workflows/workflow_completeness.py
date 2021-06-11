@@ -19,12 +19,11 @@ import speedwagon
 from speedwagon.tasks import Subtask
 from speedwagon.worker import GuiLogHandler
 from speedwagon.job import AbsWorkflow
+from speedwagon import tasks
 from . import shared_custom_widgets as options
+from .shared_custom_widgets import UserOption2, UserOption3
 
 __all__ = ['CompletenessWorkflow']
-
-from .shared_custom_widgets import UserOption2, UserOption3
-from speedwagon import tasks
 
 
 class CompletenessWorkflow(AbsWorkflow):
