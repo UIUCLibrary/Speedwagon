@@ -134,7 +134,6 @@ class ConfigManager(contextlib.AbstractContextManager):
 
 def generate_default(config_file: str) -> None:
     """Generate config file with default settings."""
-
     base_directory = os.path.dirname(config_file)
     if base_directory and not os.path.exists(base_directory):
         os.makedirs(base_directory)
