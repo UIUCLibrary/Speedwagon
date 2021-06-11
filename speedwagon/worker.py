@@ -466,9 +466,8 @@ class SubtaskJobAdapter(AbsJobAdapter,
     def settings(self) -> typing.Dict[str, str]:
         if self.adaptee.settings:
             return self.adaptee.settings
-        else:
-            return {key: value for key, value in self.adaptee.__dict__.items()
-                    if key != "parent_task_log_q"}
+        return {key: value for key, value in self.adaptee.__dict__.items()
+                if key != "parent_task_log_q"}
 
     @property
     def name(self) -> str:  # type: ignore
