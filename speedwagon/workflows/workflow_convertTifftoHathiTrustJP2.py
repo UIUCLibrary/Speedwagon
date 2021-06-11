@@ -50,7 +50,11 @@ class ConvertFile(AbsProcessStrategy):
         output_file_path = os.path.join(destination_path,
                                         basename + ".jp2"
                                         )
+        self.generate_jp2(source_file, output_file_path)
+        self.status = "Generated {}".format(output_file_path)
 
+    @staticmethod
+    def generate_jp2(source_file: str, output_file_path: str):
         in_args = [
             "Clevels=5",
             "Clayers=8",
@@ -66,8 +70,6 @@ class ConvertFile(AbsProcessStrategy):
             source_file, output_file_path, in_args=in_args
         )
         set_dpi(output_file_path, x=400, y=400)
-
-        self.status = "Generated {}".format(output_file_path)
 
 
 class CopyFile(AbsProcessStrategy):
