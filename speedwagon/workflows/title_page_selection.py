@@ -1,10 +1,10 @@
 import os
 import typing
+from typing import NamedTuple, Any
 
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 from PyQt5.QtCore import Qt  # type: ignore
 from uiucprescon.packager.packages import collection
-from typing import NamedTuple, Any
 
 
 class ModelField(NamedTuple):
