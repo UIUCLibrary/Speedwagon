@@ -740,11 +740,15 @@ class MarcEnhancement035Task(EnhancementTask):
         tree = ET.parse(self.xml_file)
         uiudb_subfields = list(self.find_959_field_with_uiudb(tree))
 
-        if not uiudb_subfields:
-            return True
-        root = self.redraw_tree(tree, self.new_035_field(uiudb_subfields[0]))
-        with open(self.xml_file, "w", encoding="utf-8") as write_file:
-            write_file.write(self.to_pretty_string(root))
+        if uiudb_subfields:
+            root = self.redraw_tree(
+                tree,
+                self.new_035_field(uiudb_subfields[0])
+            )
+
+            with open(self.xml_file, "w", encoding="utf-8") as write_file:
+                write_file.write(self.to_pretty_string(root))
+
         return True
 
 
