@@ -1,3 +1,5 @@
+"""Configuration settings."""
+
 import abc
 import os
 import platform

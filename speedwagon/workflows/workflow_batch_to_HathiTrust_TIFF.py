@@ -1,3 +1,5 @@
+"""Workflow for batch converting HathiTrust tiff files."""
+
 import itertools
 import os
 import shutil

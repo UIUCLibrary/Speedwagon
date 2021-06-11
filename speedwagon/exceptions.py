@@ -1,3 +1,5 @@
+"""Speedwagon exceptions."""
+
 from typing import Optional
 
 

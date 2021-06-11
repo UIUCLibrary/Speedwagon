@@ -1,3 +1,5 @@
+"""Workflows for generating checksums."""
+
 import collections
 import typing
 

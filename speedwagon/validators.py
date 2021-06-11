@@ -1,3 +1,5 @@
+"""Shared validation code."""
+
 import abc
 import os
 from typing import Dict, Any

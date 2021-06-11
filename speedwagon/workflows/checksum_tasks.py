@@ -1,3 +1,5 @@
+"""Shared checksum tasks."""
+
 import os
 
 from pyhathiprep import checksum

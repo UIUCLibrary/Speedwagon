@@ -1,3 +1,5 @@
+"""Workflow to convert hathi limited packages to digital library format."""
+
 import logging
 import os
 from contextlib import contextmanager

@@ -1,3 +1,5 @@
+"""Validating technical metadata."""
+
 import os
 import typing
 import warnings

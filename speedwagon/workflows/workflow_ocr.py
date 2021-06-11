@@ -1,3 +1,5 @@
+"""Workflow for performing OCR on image files."""
+
 import io
 import os
 import sys

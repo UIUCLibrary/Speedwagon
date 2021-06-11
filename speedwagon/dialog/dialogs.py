@@ -1,3 +1,5 @@
+"""Dialog boxes."""
+
 from typing import Collection
 
 from PyQt5 import QtWidgets, QtGui  # type: ignore
