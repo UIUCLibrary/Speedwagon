@@ -167,7 +167,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
         pass
 
     def locate(self) -> Dict["str", AbsWorkflow]:
-        located_class = dict()
+        located_class = {}
         tree = os.scandir(self.path)
 
         for module_file in filter(self.py_module_filter, tree):
