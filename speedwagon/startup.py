@@ -1,4 +1,4 @@
-"""Define how Speedwagon starts up on the current system
+"""Define how Speedwagon starts up on the current system.
 
 Use for loading and starting up the main application
 
@@ -469,7 +469,7 @@ class StartupDefault(AbsStarter):
 
 
 class TabsEditorApp(QtWidgets.QDialog):
-    """Dialog box for editing tabs.yml file"""
+    """Dialog box for editing tabs.yml file."""
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)

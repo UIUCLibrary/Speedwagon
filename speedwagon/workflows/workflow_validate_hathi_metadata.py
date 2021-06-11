@@ -1,3 +1,5 @@
+"""Workflow for validating image metadata."""
+
 import os
 from typing import List, Any
 from uiucprescon import imagevalidate

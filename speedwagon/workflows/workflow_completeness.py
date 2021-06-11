@@ -1,3 +1,5 @@
+"""Workflow for validating package completeness for HathiTrust."""
+
 import logging
 import os
 import re

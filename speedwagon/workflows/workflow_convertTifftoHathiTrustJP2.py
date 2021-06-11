@@ -1,3 +1,5 @@
+"""Workflow for converting tiff files to hathitrust jp2s."""
+
 import abc
 import enum
 import os

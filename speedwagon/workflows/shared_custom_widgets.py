@@ -1,3 +1,5 @@
+"""Shared custom widgets."""
+
 import abc
 import os
 

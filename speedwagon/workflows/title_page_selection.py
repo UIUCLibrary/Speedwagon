@@ -1,3 +1,5 @@
+"""Selection of title page widget."""
+
 import os
 import typing
 from typing import NamedTuple, Any

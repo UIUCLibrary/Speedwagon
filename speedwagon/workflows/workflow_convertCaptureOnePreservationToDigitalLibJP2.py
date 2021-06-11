@@ -1,3 +1,5 @@
+"""Workflow for converting CaptureOne images to Digital Library format."""
+
 import abc
 import itertools
 import os

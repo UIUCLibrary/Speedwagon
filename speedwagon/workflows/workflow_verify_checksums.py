@@ -1,3 +1,5 @@
+"""Workflow for verifying checksums."""
+
 import abc
 import collections
 import itertools
