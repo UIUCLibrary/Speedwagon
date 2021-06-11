@@ -177,17 +177,14 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
             )
         )
 
-        invalid_messages = []
-        for validation in [
-            option_validators.get("Input"),
-            option_validators.get("Input Required"),
-            option_validators.get("Identifier type Required"),
-            option_validators.get('Match 035 and 955')
-        ]:
-            if not validation.is_valid(**user_args):
-                invalid_messages.append(validation.explanation(**user_args))
-
-        if len(invalid_messages) > 0:
+        invalid_messages = [
+            validation.explanation(**user_args) for validation in [
+                option_validators.get("Input"),
+                option_validators.get("Input Required"),
+                option_validators.get("Identifier type Required"),
+                option_validators.get('Match 035 and 955')
+            ] if not validation.is_valid(**user_args)]
+        if invalid_messages:
             raise ValueError("\n".join(invalid_messages))
         return True
 
