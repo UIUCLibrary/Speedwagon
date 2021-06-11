@@ -254,30 +254,26 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
         """
         all_results = [i.data for i in results]
-        failed = []
+        failed = [
+            result for result in all_results if result["success"] is not True
+        ]
 
-        for result in all_results:
-            if not result["success"] is True:
-                failed.append(result)
+        if not failed:
 
-        if failed:
-
-            status = f"Warning! [{len(failed)}] packages experienced errors " \
-                     f"retrieving MARC.XML files:"
-
-            failed_list = "\n".join([
-                f"  * {i['identifier']}. Reason: {i['output']}" for i in failed
-            ])
-
-            message = f"{status}" \
-                      f"\n" \
-                      f"\n{failed_list}"
-        else:
-
-            message = f"Success! [{len(all_results)}] MARC.XML files were " \
+            return f"Success! [{len(all_results)}] MARC.XML files were " \
                       f"retrieved and written to their named folders"
 
-        return message
+        status = f"Warning! [{len(failed)}] packages experienced errors " \
+                 f"retrieving MARC.XML files:"
+
+        failed_list = "\n".join(
+            f"  * {i['identifier']}. Reason: {i['output']}" for i in failed
+        )
+
+
+        return f"{status}" \
+                      f"\n" \
+                      f"\n{failed_list}"
 
     @staticmethod
     def _get_identifier_volume(job_args) -> Tuple[str, Union[str, None]]:
