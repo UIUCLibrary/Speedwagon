@@ -23,6 +23,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
     .. versionadded:: 0.1.5
         Supports MMSID and bibid id types
     """
+
     name = "CaptureOne Batch to HathiTrust TIFF Complete Package"
     description = "This workflow chains together a number of tools to take " \
                   "a batch of CaptureOne files and structure them as " \
