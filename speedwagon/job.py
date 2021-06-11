@@ -85,7 +85,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
     @classmethod
     def generate_report(cls, results: List[tasks.Result], **user_args) \
             -> Optional[str]:
-        """Generate a text report for the results of the workflow.
+        r"""Generate a text report for the results of the workflow.
 
         Example:
             .. code-block::
