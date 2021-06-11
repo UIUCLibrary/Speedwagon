@@ -132,8 +132,7 @@ class ValidateMetadataWorkflow(AbsWorkflow):
         def filter_only_invalid(task_result) -> bool:
             if task_result[ResultValues.VALID]:
                 return False
-            else:
-                return True
+            return True
 
         def invalid_messages(task_result) -> str:
             source = task_result[ResultValues.FILENAME]
