@@ -28,7 +28,7 @@ if __name__ == "__main__":
             "HathiValidate>=0.3.6",
             "pyhathiprep>=0.1.5",
             "pyyaml",
-            "uiucprescon.imagevalidate>=0.1.6b2",
+            "uiucprescon.imagevalidate>=0.1.6",
             "uiucprescon.ocr>=0.1.2",
             "uiucprescon.packager[kdu]>=0.2.11",
             "uiucprescon.images",
