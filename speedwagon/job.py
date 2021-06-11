@@ -214,9 +214,7 @@ class WorkflowFinder(AbsDynamicFinder):
 
     @staticmethod
     def py_module_filter(item: os.DirEntry) -> bool:
-        if not str(item.name).startswith("workflow_"):
-            return False
-        return True
+        return bool(str(item.name).startswith("workflow_"))
 
     @property
     def package_name(self) -> str:

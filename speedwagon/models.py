@@ -68,8 +68,7 @@ class WorkflowListModel(ItemListModel):
                 )
 
             if role == QtCore.Qt.UserRole:
-                job = self.jobs[index.row()]
-                return job
+                return self.jobs[index.row()]
             if role == QtCore.Qt.SizeHintRole:
                 return QtCore.QSize(10, 20)
 

@@ -142,10 +142,8 @@ class Subtask(AbsSubtask):
     def exec(self) -> None:
         self.status = TaskStatus.WORKING
 
-        if not self.work():
-            self.status = TaskStatus.FAILED
-        else:
-            self.status = TaskStatus.SUCCESS
+        self.status = \
+            TaskStatus.FAILED if not self.work() else TaskStatus.SUCCESS
 
 
 class PreTask(AbsSubtask):
@@ -170,10 +168,8 @@ class PreTask(AbsSubtask):
         self._parent_task_log_q = value
 
     def exec(self) -> None:
-        if not self.work():
-            self._status = TaskStatus.FAILED
-        else:
-            self._status = TaskStatus.SUCCESS
+        self._status = \
+            TaskStatus.FAILED if not self.work() else TaskStatus.SUCCESS
 
     def log(self, message):
         self._parent_task_log_q.append(message)
@@ -466,15 +462,13 @@ class TaskBuilder:
             subtask_id: str
     ) -> str:
 
-        working_dir = os.path.join(task_working_path,
+        return os.path.join(task_working_path,
                                    task_type,
                                    str(subtask_id))
-        return working_dir
 
     @staticmethod
     def _build_task_working_path(temp_path: str, task_id: str) -> str:
-        working_dir = os.path.join(temp_path, task_id)
-        return working_dir
+        return os.path.join(temp_path, task_id)
 
     def set_pretask(self, subtask: Subtask) -> None:
 
@@ -530,13 +524,11 @@ class TaskBuilder:
     @staticmethod
     def load(data):
         task_cls, attributes = pickle.loads(data)
-        obj = TaskBuilder._deserialize_task(task_cls, attributes)
-        return obj
+        return TaskBuilder._deserialize_task(task_cls, attributes)
 
     @staticmethod
     def _serialize_task(task_obj: MultiStageTask):
-        res = task_obj.__class__, task_obj.__dict__
-        return res
+        return task_obj.__class__, task_obj.__dict__
 
     @staticmethod
     def _deserialize_task(task_cls, attributes):
