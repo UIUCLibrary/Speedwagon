@@ -127,7 +127,7 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
     """Base class for defining a new workflow item.
 
     Subclass this class to generate a new workflow.
-    
+
     Notes:
         You need to implement the discover_task_metadata() method.
     """
@@ -212,7 +212,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def package_name(self) -> str:
-        """The name of the python package."""
+        """Get he name of the python package."""
 
 
 class WorkflowFinder(AbsDynamicFinder):
