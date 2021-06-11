@@ -1,4 +1,4 @@
-"""Defining execution of a given workflow steps and processes"""
+"""Defining execution of a given workflow steps and processes."""
 
 import abc
 import logging

@@ -1,4 +1,4 @@
-"""Define a single step in the workflow"""
+"""Define a single step in the workflow."""
 import abc
 import os
 
@@ -26,7 +26,7 @@ class AbsSubtask(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def log(self, message: str) -> None:
-        """Log a message to the console on the main window"""
+        """Log a message to the console on the main window."""
 
     @property
     def task_result(self) -> Optional['Result']:
@@ -71,7 +71,7 @@ class Result(NamedTuple):
 
 
 class Subtask(AbsSubtask):
-    """Base class for defining a new task for a :py:class:`Workflow` to create
+    """Base class for defining a new task for a :py:class:`Workflow` to create.
 
     Subclass this generate a new task
     """
@@ -118,7 +118,7 @@ class Subtask(AbsSubtask):
         self._status = value
 
     def work(self) -> bool:
-        """This method is called when the task's work should be done
+        """This method is called when the task's work should be done.
 
         Override this method to accomplish the task.
 

@@ -10,8 +10,7 @@ import speedwagon
 
 
 class ErrorDialogBox(QtWidgets.QMessageBox):
-    """Dialog box to use for Error Messages causes while trying to run a job
-    in Speedwagon"""
+    """Dialog box for Error Messages causes while running a job."""
 
     def __init__(self, *__args) -> None:
         super().__init__(*__args)
@@ -45,7 +44,7 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
 
 
 class WorkProgressBar(QtWidgets.QProgressDialog):
-    """Use this for showing progress """
+    """Use this for showing progress."""
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         super().closeEvent(event)

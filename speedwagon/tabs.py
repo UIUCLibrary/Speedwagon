@@ -1,4 +1,4 @@
-"""Creating and managing tabs in the UI display"""
+"""Creating and managing tabs in the UI display."""
 import abc
 import logging
 import os
@@ -43,12 +43,12 @@ class TabWidgets(enum.Enum):
 class Tab:
     @abc.abstractmethod
     def compose_tab_layout(self) -> None:
-        """Draw the layout of the tab"""
+        """Draw the layout of the tab."""
 
     @abc.abstractmethod
     def create_actions(self) -> Tuple[Dict[str, QtWidgets.QWidget],
                                       QtWidgets.QLayout]:
-        """Generate action widgets"""
+        """Generate action widgets."""
 
     def __init__(self,
                  parent: QtWidgets.QWidget,

@@ -1,4 +1,4 @@
-"""Main UI code
+"""Main UI code.
 
 Mainly for connecting GUI elements, such as buttons, to functions and methods
 that do the work"""
@@ -44,7 +44,7 @@ Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 
 
 class ToolConsole(QtWidgets.QWidget):
-    """asdfasdf"""
+    """Tool Console."""
 
     def __init__(self, parent: QtWidgets.QWidget) -> None:
         super().__init__(parent)

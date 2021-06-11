@@ -1,4 +1,4 @@
-"""Define how various jobs are described"""
+"""Define how various jobs are described."""
 
 import abc
 import importlib
@@ -31,7 +31,9 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data: Dict[str, Any],
                                **user_args) -> List[dict]:
-        """Generate data or parameters needed for task to complete based on
+        """Generate data or parameters needed for upcoming tasks.
+
+        Generate data or parameters needed for task to complete based on
         the user's original configuration
 
         Return a list of dictionaries of types that can be serialized,
@@ -122,7 +124,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
 
 class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
-    """Base class for defining a new workflow item
+    """Base class for defining a new workflow item.
 
         Subclass this class to generate a new workflow.
         Notes:
@@ -131,7 +133,9 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
 
     def get_additional_info(self, parent: QtWidgets.QWidget,
                             options: dict, pretask_results: list) -> dict:
-        """If a user needs to be prompted for more information, run this
+        """Request additional information from the user.
+
+        If a user needs to be prompted for more information, run this
 
         Args:
             parent: QtWidget to build off of
@@ -207,7 +211,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def package_name(self) -> str:
-        """The name of the python package"""
+        """The name of the python package."""
 
 
 class WorkflowFinder(AbsDynamicFinder):
@@ -226,9 +230,9 @@ class WorkflowFinder(AbsDynamicFinder):
 
 
 def available_workflows() -> dict:
-    """
-    Locate all workflow class found in workflows subpackage with the workflow
-    prefix
+    """Locate all workflow class in workflows subpackage.
+
+    This looks for a workflow prefix in the naming.
 
     Returns:
         Dictionary of all workflow

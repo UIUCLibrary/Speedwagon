@@ -6,7 +6,7 @@ from typing import Dict, Any
 class AbsOptionValidator(abc.ABC):
     @abc.abstractmethod
     def is_valid(self, **user_data: Any) -> bool:
-        """Evaluate if the kwargs are valid"""
+        """Evaluate if the kwargs are valid."""
 
     @abc.abstractmethod
     def explanation(self, **user_data: Any) -> str:
