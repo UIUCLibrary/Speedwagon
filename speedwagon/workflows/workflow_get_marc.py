@@ -615,13 +615,13 @@ class EnhancementTask(tasks.Subtask):
         self.xml_file = xml_file
 
     @staticmethod
-    def to_prety_string(root: ET.Element) -> str:
+    def to_pretty_string(root: ET.Element) -> str:
         """Convert lxml Element into a pretty formatted string."""
         ET.register_namespace('', 'http://www.loc.gov/MARC21/slim')
         flat_xml_string = \
-            "\n".join([line.strip() for line in ET.tostring(
-                root, encoding="unicode")
-                      .split("\n")]).replace("\n", "")
+            "\n".join(line.strip() for line in ET.tostring(
+                    root, encoding="unicode")
+                          .split("\n")).replace("\n", "")
         return str(minidom.parseString(flat_xml_string).toprettyxml())
 
     @staticmethod
@@ -744,7 +744,7 @@ class MarcEnhancement035Task(EnhancementTask):
             return True
         root = self.redraw_tree(tree, self.new_035_field(uiudb_subfields[0]))
         with open(self.xml_file, "w", encoding="utf-8") as write_file:
-            write_file.write(self.to_prety_string(root))
+            write_file.write(self.to_pretty_string(root))
         return True
 
 
@@ -772,7 +772,7 @@ class MarcEnhancement955Task(EnhancementTask):
         tree = ET.parse(self.xml_file)
         root = self.enhance_tree_with_955(tree)
         with open(self.xml_file, "w", encoding="utf-8") as write_file:
-            write_file.write(self.to_prety_string(root))
+            write_file.write(self.to_pretty_string(root))
 
         return True
 
