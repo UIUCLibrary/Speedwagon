@@ -348,7 +348,7 @@ class DependentTruthyValueValidation(validators.AbsOptionValidator):
     @staticmethod
     def _requirement_is_also_true(key: bool, dependents: List[bool]) -> bool:
         # If the first part is false, there is no reason to check the rest
-        if key is False:
+        if not key:
             return True
 
         if not all(dependents):
@@ -361,12 +361,10 @@ class DependentTruthyValueValidation(validators.AbsOptionValidator):
             if self._has_required_key(user_data, required_key):
                 return False
 
-        if self._requirement_is_also_true(
-                bool(user_data['Add 035 field']), [
-                    bool(user_data['Add 955 field'])
-                ]) is False:
-            return False
-        return True
+        return self._requirement_is_also_true(
+            bool(user_data['Add 035 field']),
+            [bool(user_data['Add 955 field'])]
+        ) is not False
 
     def explanation(self, **user_data: Union[str, bool]) -> str:
         """Get reason for is_valid.
@@ -402,7 +400,7 @@ class RequiredValueValidation(validators.AbsOptionValidator):
 
     @staticmethod
     def _has_key(user_data: Dict[str, Union[str, bool]], key: str) -> bool:
-        return key in user_data.keys()
+        return key in user_data
 
     @staticmethod
     def _is_not_none(user_data: Dict[str, Union[str, bool]], key: str) -> bool:
@@ -743,7 +741,7 @@ class MarcEnhancement035Task(EnhancementTask):
         tree = ET.parse(self.xml_file)
         uiudb_subfields = list(self.find_959_field_with_uiudb(tree))
 
-        if len(uiudb_subfields) == 0:
+        if not uiudb_subfields:
             return True
         root = self.redraw_tree(tree, self.new_035_field(uiudb_subfields[0]))
         with open(self.xml_file, "w", encoding="utf-8") as write_file:
@@ -792,8 +790,7 @@ class MarcEnhancement955Task(EnhancementTask):
         """
         new_datafield = self.create_new_955_element(self.added_value)
 
-        root = self.redraw_tree(tree, new_datafield)
-        return root
+        return self.redraw_tree(tree, new_datafield)
 
     @staticmethod
     def create_new_955_element(added_value: str) -> ET.Element:
