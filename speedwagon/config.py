@@ -75,7 +75,7 @@ class NixConfig(AbsConfig):
 
 
 class WindowsConfig(AbsConfig):
-    """Speedwagon configuration for running on Microsoft Windows machine.
+    r"""Speedwagon configuration for running on Microsoft Windows machine.
 
     It uses a subfolder in the user's home directory to store data such as
     tesseract ocr data. For example:
