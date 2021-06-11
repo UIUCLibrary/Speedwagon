@@ -162,7 +162,8 @@ def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
         AbsConfig:
     """Load a configuration of config.AbsConfig.
 
-    If no argument is included, it will try to guess the best one."""
+    If no argument is included, it will try to guess the best one.
+    """
     configurations: Dict[str, Type[AbsConfig]] = {
         "Windows": WindowsConfig,
         "Darwin": NixConfig,

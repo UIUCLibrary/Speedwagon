@@ -1,7 +1,8 @@
 """Main UI code.
 
 Mainly for connecting GUI elements, such as buttons, to functions and methods
-that do the work"""
+that do the work
+"""
 import logging
 import os
 import sys
