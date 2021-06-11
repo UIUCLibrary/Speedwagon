@@ -201,22 +201,22 @@ class CustomTabsFileReader:
                             yield tab_name, \
                                   self._get_tab_items(new_tab, tab_name)
 
-                    except TypeError as e:
+                    except TypeError as tab_error:
                         print("Error loading tab '{}'. "
-                              "Reason: {}".format(tab_name, e),
+                              "Reason: {}".format(tab_name, tab_error),
                               file=sys.stderr)
                         continue
 
-        except FileNotFoundError as e:
+        except FileNotFoundError as error:
             print("Custom tabs file not found. "
-                  "Reason: {}".format(e), file=sys.stderr)
-        except AttributeError as e:
+                  "Reason: {}".format(error), file=sys.stderr)
+        except AttributeError as error:
             print("Custom tabs file failed to load. "
-                  "Reason: {}".format(e), file=sys.stderr)
+                  "Reason: {}".format(error), file=sys.stderr)
 
-        except yaml.YAMLError as e:
+        except yaml.YAMLError as error:
             print("{} file failed to load. "
-                  "Reason: {}".format(yaml_file, e), file=sys.stderr)
+                  "Reason: {}".format(yaml_file, error), file=sys.stderr)
 
 
 def get_custom_tabs(
