@@ -238,7 +238,6 @@ def available_workflows() -> dict:
         Dictionary of all workflow
 
     """
-
     root = os.path.join(os.path.dirname(__file__), "workflows")
     finder = WorkflowFinder(root)
     return finder.locate()
