@@ -118,7 +118,9 @@ class Subtask(AbsSubtask):
         self._status = value
 
     def work(self) -> bool:
-        """This method is called when the task's work should be done.
+        """Perform work.
+
+        This method is called when the task's work should be done.
 
         Override this method to accomplish the task.
 
