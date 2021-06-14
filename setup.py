@@ -32,7 +32,7 @@ if __name__ == "__main__":
             "uiucprescon.ocr>=0.1.2",
             "uiucprescon.packager[kdu]>=0.2.11",
             "uiucprescon.images",
-            "pykdu-compress>=0.1.4.b1",
+            "pykdu-compress>=0.1.5",
             'importlib_resources;python_version<"3.9"',
             'importlib-metadata;python_version<"3.8"',
             'typing-extensions;python_version<"3.8"',
