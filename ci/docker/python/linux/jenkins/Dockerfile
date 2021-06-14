@@ -64,6 +64,8 @@ RUN python -m pip install --upgrade pip && \
         -r /tmp/requirements-ci.txt
 
 ENV PIP_FIND_LINKS=/wheels
+RUN python -m pip install types-PyYAML types-requests
+
 COPY --from=SONAR_BUILDER /opt/sonar /opt/sonar/
 ENV SONAR_SCANNER_VERSION=4.4.0.2170
 ARG SONAR_SCANNER_HOME=/opt/sonar/${SONAR_SCANNER_VERSION}-linux
