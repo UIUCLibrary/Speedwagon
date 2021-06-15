@@ -1259,9 +1259,9 @@ pipeline {
                 stage('Deploy to pypi') {
                     agent {
                         dockerfile {
-                            filename DEFAULT_AGENT.filename
-                            label DEFAULT_AGENT.label
-                            additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         }
                     }
                     when{
