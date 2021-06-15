@@ -1265,7 +1265,11 @@ pipeline {
                         }
                     }
                     when{
-                        equals expected: true, actual: params.DEPLOY_PYPI
+                        allOf{
+                            equals expected: true, actual: params.DEPLOY_PYPI
+                            equals expected: true, actual: params.BUILD_PACKAGES
+
+                        }
                         beforeAgent true
                         beforeInput true
                     }
