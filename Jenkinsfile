@@ -328,18 +328,12 @@ def startup(){
     parallel(
     [
         failFast: true,
-        'Loading helper functions': {
+        'Loading Reference Build Information': {
             node(){
                 checkout scm
-                devpi = load('ci/jenkins/scripts/devpi.groovy')
+                discoverGitReferenceBuild()
             }
         },
-        'Loading Reference Build Information': {
-                node(){
-                    checkout scm
-                    discoverGitReferenceBuild()
-                }
-            },
         'Getting Distribution Info': {
             node('linux && docker') {
                 timeout(2){
@@ -1139,7 +1133,7 @@ pipeline {
                         unstash 'DOCS_ARCHIVE'
                         unstash 'PYTHON_PACKAGES'
                         script{
-                            devpi.upload(
+                            load('ci/jenkins/scripts/devpi.groovy').upload(
                                     server: 'https://devpi.library.illinois.edu',
                                     credentialsId: 'DS_devpi',
                                     index: getDevPiStagingIndex(),
@@ -1222,7 +1216,7 @@ pipeline {
                     }
                     steps {
                         script{
-                            devpi.pushPackageToIndex(
+                            load('ci/jenkins/scripts/devpi.groovy').pushPackageToIndex(
                                 pkgName: props.Name,
                                 pkgVersion: props.Version,
                                 server: 'https://devpi.library.illinois.edu',
@@ -1240,7 +1234,8 @@ pipeline {
                        script{
                             if (!env.TAG_NAME?.trim()){
                                 docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
-                                    devpi.pushPackageToIndex(
+                                    checkout scm
+                                    load('ci/jenkins/scripts/devpi.groovy').pushPackageToIndex(
                                         pkgName: props.Name,
                                         pkgVersion: props.Version,
                                         server: 'https://devpi.library.illinois.edu',
@@ -1257,7 +1252,8 @@ pipeline {
                     node('linux && docker') {
                        script{
                             docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
-                                devpi.removePackage(
+                                checkout scm
+                                load('ci/jenkins/scripts/devpi.groovy').removePackage(
                                     pkgName: props.Name,
                                     pkgVersion: props.Version,
                                     index: "DS_Jenkins/${getDevPiStagingIndex()}",
@@ -1285,7 +1281,6 @@ pipeline {
                         allOf{
                             equals expected: true, actual: params.DEPLOY_PYPI
                             equals expected: true, actual: params.BUILD_PACKAGES
-
                         }
                         beforeAgent true
                         beforeInput true
