@@ -324,33 +324,50 @@ def test_pkg(glob, timeout_time){
 }
 
 def startup(){
-    node(){
-        checkout scm
-        devpi = load('ci/jenkins/scripts/devpi.groovy')
-    }
-    node('linux && docker') {
-        timeout(2){
-            ws{
+
+    parallel(
+    [
+        failFast: true,
+        'Loading helper functions': {
+            node(){
                 checkout scm
-                try{
-                    docker.image('python').inside {
-                        stage('Getting Distribution Info'){
-                            withEnv(['PIP_NO_CACHE_DIR=off']) {
-                                sh(
-                                   label: 'Running setup.py with dist_info',
-                                   script: 'python setup.py dist_info'
-                                )
+                devpi = load('ci/jenkins/scripts/devpi.groovy')
+            }
+        },
+        'Loading Reference Build Information': {
+                node(){
+                    checkout scm
+                    discoverGitReferenceBuild()
+                }
+            },
+        'Getting Distribution Info': {
+            node('linux && docker') {
+                timeout(2){
+                    ws{
+                        checkout scm
+                        try{
+                            docker.image('python').inside {
+//                                 stage('Getting Distribution Info'){
+                                withEnv(['PIP_NO_CACHE_DIR=off']) {
+                                    sh(
+                                       label: 'Running setup.py with dist_info',
+                                       script: 'python setup.py dist_info'
+                                    )
+                                }
+                                stash includes: '*.dist-info/**', name: 'DIST-INFO'
+                                archiveArtifacts artifacts: '*.dist-info/**'
                             }
-                            stash includes: '*.dist-info/**', name: 'DIST-INFO'
-                            archiveArtifacts artifacts: '*.dist-info/**'
+//                             }
+                        } finally{
+                            deleteDir()
                         }
                     }
-                } finally{
-                    deleteDir()
                 }
             }
         }
-    }
+    ]
+    )
+
 }
 
 
