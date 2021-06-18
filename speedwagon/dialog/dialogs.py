@@ -1,3 +1,5 @@
+"""Dialog boxes."""
+
 from typing import Collection
 
 from PyQt5 import QtWidgets, QtGui  # type: ignore
@@ -10,8 +12,7 @@ import speedwagon
 
 
 class ErrorDialogBox(QtWidgets.QMessageBox):
-    """Dialog box to use for Error Messages causes while trying to run a job
-    in Speedwagon"""
+    """Dialog box for Error Messages causes while running a job."""
 
     def __init__(self, *__args) -> None:
         super().__init__(*__args)
@@ -45,7 +46,7 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
 
 
 class WorkProgressBar(QtWidgets.QProgressDialog):
-    """Use this for showing progress """
+    """Use this for showing progress."""
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         super().closeEvent(event)
@@ -114,7 +115,6 @@ class SystemInfoDialog(QtWidgets.QDialog):
             metadata.distributions(),
             key=lambda x: x.metadata['Name'].upper()
         )
-        installed_python_packages = [
+        return [
             f"{x.metadata['Name']} {x.metadata['Version']}" for x in pkgs
         ]
-        return installed_python_packages

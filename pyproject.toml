@@ -10,3 +10,7 @@ junit_family="xunit2"
 markers=[
     "adapter"
 ]
+
+[tool.pydocstyle]
+# Ignore files that end in _ui.py because they are machine generated
+match="((?!test).*)(^(?!.*(ui)).*)\\.py"

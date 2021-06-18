@@ -1,3 +1,5 @@
+"""Entry-point for running speedwagon as an executable module."""
+
 import logging
 import sys
 

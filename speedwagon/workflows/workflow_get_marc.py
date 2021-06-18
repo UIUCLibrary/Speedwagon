@@ -9,15 +9,15 @@ from typing import List, Any, Optional, Union, Sequence, Dict, Set, Tuple, \
     Iterator, Collection
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
+import traceback
+import sys
 import requests
-
 
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from speedwagon import tasks, reports, validators
 from speedwagon.job import AbsWorkflow
 from . import shared_custom_widgets as options
-import traceback
-import sys
+
 
 __all__ = ['GenerateMarcXMLFilesWorkflow']
 
@@ -102,7 +102,15 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
     @classmethod
     def filter_bib_id_folders(cls, item: os.DirEntry) -> bool:
+        """Filter only folders with bibids.
 
+        Args:
+            item:
+
+        Returns:
+            True is the item is a folder with a bibid, else returns false
+
+        """
         if not item.is_dir():
             return False
 
@@ -177,17 +185,14 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
             )
         )
 
-        invalid_messages = []
-        for validation in [
-            option_validators.get("Input"),
-            option_validators.get("Input Required"),
-            option_validators.get("Identifier type Required"),
-            option_validators.get('Match 035 and 955')
-        ]:
-            if not validation.is_valid(**user_args):
-                invalid_messages.append(validation.explanation(**user_args))
-
-        if len(invalid_messages) > 0:
+        invalid_messages = [
+            validation.explanation(**user_args) for validation in [
+                option_validators.get("Input"),
+                option_validators.get("Input Required"),
+                option_validators.get("Identifier type Required"),
+                option_validators.get('Match 035 and 955')
+            ] if not validation.is_valid(**user_args)]
+        if invalid_messages:
             raise ValueError("\n".join(invalid_messages))
         return True
 
@@ -257,30 +262,25 @@ class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
 
         """
         all_results = [i.data for i in results]
-        failed = []
+        failed = [
+            result for result in all_results if result["success"] is not True
+        ]
 
-        for result in all_results:
-            if not result["success"] is True:
-                failed.append(result)
+        if not failed:
 
-        if failed:
-
-            status = f"Warning! [{len(failed)}] packages experienced errors " \
-                     f"retrieving MARC.XML files:"
-
-            failed_list = "\n".join([
-                f"  * {i['identifier']}. Reason: {i['output']}" for i in failed
-            ])
-
-            message = f"{status}" \
-                      f"\n" \
-                      f"\n{failed_list}"
-        else:
-
-            message = f"Success! [{len(all_results)}] MARC.XML files were " \
+            return f"Success! [{len(all_results)}] MARC.XML files were " \
                       f"retrieved and written to their named folders"
 
-        return message
+        status = f"Warning! [{len(failed)}] packages experienced errors " \
+                 f"retrieving MARC.XML files:"
+
+        failed_list = "\n".join(
+            f"  * {i['identifier']}. Reason: {i['output']}" for i in failed
+        )
+
+        return f"{status}" \
+               f"\n" \
+               f"\n{failed_list}"
 
     @staticmethod
     def _get_identifier_volume(job_args) -> Tuple[str, Union[str, None]]:
@@ -355,7 +355,7 @@ class DependentTruthyValueValidation(validators.AbsOptionValidator):
     @staticmethod
     def _requirement_is_also_true(key: bool, dependents: List[bool]) -> bool:
         # If the first part is false, there is no reason to check the rest
-        if key is False:
+        if not key:
             return True
 
         if not all(dependents):
@@ -368,12 +368,10 @@ class DependentTruthyValueValidation(validators.AbsOptionValidator):
             if self._has_required_key(user_data, required_key):
                 return False
 
-        if self._requirement_is_also_true(
-                bool(user_data['Add 035 field']), [
-                    bool(user_data['Add 955 field'])
-                ]) is False:
-            return False
-        return True
+        return self._requirement_is_also_true(
+            bool(user_data['Add 035 field']),
+            [bool(user_data['Add 955 field'])]
+        ) is not False
 
     def explanation(self, **user_data: Union[str, bool]) -> str:
         """Get reason for is_valid.
@@ -409,7 +407,7 @@ class RequiredValueValidation(validators.AbsOptionValidator):
 
     @staticmethod
     def _has_key(user_data: Dict[str, Union[str, bool]], key: str) -> bool:
-        return key in user_data.keys()
+        return key in user_data
 
     @staticmethod
     def _is_not_none(user_data: Dict[str, Union[str, bool]], key: str) -> bool:
@@ -533,7 +531,7 @@ class MarcGeneratorTask(tasks.Subtask):
     def identifier_type(self) -> str:
         """Type of identifier.
 
-            Such as MMS ID or BIBID
+        Such as MMS ID or BIBID
         """
         return self._identifier_type
 
@@ -625,17 +623,17 @@ class EnhancementTask(tasks.Subtask):
         self.xml_file = xml_file
 
     @staticmethod
-    def to_prety_string(root: ET.Element) -> str:
+    def to_pretty_string(root: ET.Element) -> str:
         """Convert lxml Element into a pretty formatted string."""
         ET.register_namespace('', 'http://www.loc.gov/MARC21/slim')
         flat_xml_string = \
-            "\n".join([line.strip() for line in ET.tostring(
-                root, encoding="unicode")
-                      .split("\n")]).replace("\n", "")
+            "\n".join(line.strip() for line in ET.tostring(
+                    root, encoding="unicode")
+                          .split("\n")).replace("\n", "")
         return str(minidom.parseString(flat_xml_string).toprettyxml())
 
+    @staticmethod
     def redraw_tree(
-            self,
             tree: ET.ElementTree,
             *new_datafields: ET.Element
     ) -> ET.Element:
@@ -750,11 +748,15 @@ class MarcEnhancement035Task(EnhancementTask):
         tree = ET.parse(self.xml_file)
         uiudb_subfields = list(self.find_959_field_with_uiudb(tree))
 
-        if len(uiudb_subfields) == 0:
-            return True
-        root = self.redraw_tree(tree, self.new_035_field(uiudb_subfields[0]))
-        with open(self.xml_file, "w", encoding="utf-8") as write_file:
-            write_file.write(self.to_prety_string(root))
+        if uiudb_subfields:
+            root = self.redraw_tree(
+                tree,
+                self.new_035_field(uiudb_subfields[0])
+            )
+
+            with open(self.xml_file, "w", encoding="utf-8") as write_file:
+                write_file.write(self.to_pretty_string(root))
+
         return True
 
 
@@ -782,7 +784,7 @@ class MarcEnhancement955Task(EnhancementTask):
         tree = ET.parse(self.xml_file)
         root = self.enhance_tree_with_955(tree)
         with open(self.xml_file, "w", encoding="utf-8") as write_file:
-            write_file.write(self.to_prety_string(root))
+            write_file.write(self.to_pretty_string(root))
 
         return True
 
@@ -799,8 +801,7 @@ class MarcEnhancement955Task(EnhancementTask):
         """
         new_datafield = self.create_new_955_element(self.added_value)
 
-        root = self.redraw_tree(tree, new_datafield)
-        return root
+        return self.redraw_tree(tree, new_datafield)
 
     @staticmethod
     def create_new_955_element(added_value: str) -> ET.Element:

@@ -63,7 +63,8 @@ class HathiTrustProfile(AbsProfile):
                     os.scandir(root_access)):
                 yield source_file.path
 
-    def _find_root_access(self, path: str) -> Iterable[str]:
+    @staticmethod
+    def _find_root_access(path: str) -> Iterable[str]:
         for root, dirs, _ in os.walk(path):
             for _dir in dirs:
                 if _dir == "access":

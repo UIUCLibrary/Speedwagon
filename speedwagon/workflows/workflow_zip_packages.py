@@ -1,3 +1,5 @@
+"""Workflow for creating zip archives."""
+
 import logging
 
 import os

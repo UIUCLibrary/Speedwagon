@@ -1,4 +1,4 @@
-"""Define how various jobs are described"""
+"""Define how various jobs are described."""
 
 import abc
 import importlib
@@ -31,7 +31,9 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data: Dict[str, Any],
                                **user_args) -> List[dict]:
-        """Generate data or parameters needed for task to complete based on
+        """Generate data or parameters needed for upcoming tasks.
+
+        Generate data or parameters needed for task to complete based on
         the user's original configuration
 
         Return a list of dictionaries of types that can be serialized,
@@ -41,21 +43,21 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
     def completion_task(self, task_builder: tasks.TaskBuilder, results,
                         **user_args) -> None:
-        pass
+        """Last task after Job is completed."""
 
     def initial_task(self, task_builder: tasks.TaskBuilder,
                      **user_args) -> None:
         """Create a task to run before the main tasks start.
 
-            The initial task is run prior to the get_additional_info method.
-            Results generated here will then be passed to get_additional_info.
+        The initial task is run prior to the get_additional_info method.
+        Results generated here will then be passed to get_additional_info.
 
-            This is useful for locating additional information that will be
-            needed by other tasks and the user needs to additional decisions
-            before running the main tasks.
+        This is useful for locating additional information that will be
+        needed by other tasks and the user needs to additional decisions
+        before running the main tasks.
 
-            In general, prefer :py:meth:`discover_task_metadata` if you don't
-            need a user's interaction.
+        In general, prefer :py:meth:`discover_task_metadata` if you don't
+        need a user's interaction.
         """
 
     def create_new_task(
@@ -64,7 +66,6 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
             **job_args
     ) -> None:
         """Add a new task to be accomplished when the workflow is started.
-
 
         Use the task_builder parameter's add_subtask method to include a
         :py:class:`speedwagon.Subtask()`
@@ -84,22 +85,22 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
     @classmethod
     def generate_report(cls, results: List[tasks.Result], **user_args) \
             -> Optional[str]:
-        """Generate a text report for the results of the workflow.
+        r"""Generate a text report for the results of the workflow.
 
-            Example:
-                .. code-block::
+        Example:
+            .. code-block::
 
-                    report_lines = []
+                report_lines = []
 
-                    for checksum_report, items_written in \\
-                            cls.sort_results([i.data for \n
-                            i in results]).items():
+                for checksum_report, items_written in \\
+                        cls.sort_results([i.data for \n
+                        i in results]).items():
 
-                        report_lines.append(
-                            f"Checksum values for {len(items_written)} "
-                            f"files written to {checksum_report}")
+                    report_lines.append(
+                        f"Checksum values for {len(items_written)} "
+                        f"files written to {checksum_report}")
 
-                    return '\\n'.join(report_lines)
+                return '\\n'.join(report_lines)
 
         """
 
@@ -121,15 +122,20 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
         return True
 
 
-class Workflow(AbsWorkflow):
-    """Base class for defining a new workflow item
+class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
+    """Base class for defining a new workflow item.
 
-        Subclass this class to generate a new workflow
+    Subclass this class to generate a new workflow.
+
+    Notes:
+        You need to implement the discover_task_metadata() method.
     """
 
     def get_additional_info(self, parent: QtWidgets.QWidget,
                             options: dict, pretask_results: list) -> dict:
-        """If a user needs to be prompted for more information, run this
+        """Request additional information from the user.
+
+        If a user needs to be prompted for more information, run this
 
         Args:
             parent: QtWidget to build off of
@@ -165,11 +171,11 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
         pass
 
     def locate(self) -> Dict["str", AbsWorkflow]:
-        located_class = dict()
+        located_class = {}
         tree = os.scandir(self.path)
 
-        for m in filter(self.py_module_filter, tree):
-            for name, module in self.load(m.name):
+        for module_file in filter(self.py_module_filter, tree):
+            for name, module in self.load(module_file.name):
                 located_class[name] = module
         return located_class
 
@@ -191,30 +197,28 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
             )
             members = inspect.getmembers(module, class_member_filter)
 
-            for name_, module_class in members:
+            for _, module_class in members:
 
                 if issubclass(module_class, self.base_class) \
                         and module_class.active:
                     yield module_class.name, module_class
 
-        except ImportError as e:
-            msg = "Unable to load {}. Reason: {}".format(module_file, e)
+        except ImportError as error:
+            msg = "Unable to load {}. Reason: {}".format(module_file, error)
             print(msg, file=sys.stderr)
             self.logger.warning(msg)
 
     @property
     @abc.abstractmethod
     def package_name(self) -> str:
-        """The name of the python package"""
+        """Get he name of the python package."""
 
 
 class WorkflowFinder(AbsDynamicFinder):
 
     @staticmethod
     def py_module_filter(item: os.DirEntry) -> bool:
-        if not str(item.name).startswith("workflow_"):
-            return False
-        return True
+        return bool(str(item.name).startswith("workflow_"))
 
     @property
     def package_name(self) -> str:
@@ -226,15 +230,14 @@ class WorkflowFinder(AbsDynamicFinder):
 
 
 def available_workflows() -> dict:
-    """
-    Locate all workflow class found in workflows subpackage with the workflow
-    prefix
+    """Locate all workflow class in workflows subpackage.
+
+    This looks for a workflow prefix in the naming.
 
     Returns:
         Dictionary of all workflow
 
     """
-
     root = os.path.join(os.path.dirname(__file__), "workflows")
     finder = WorkflowFinder(root)
     return finder.locate()

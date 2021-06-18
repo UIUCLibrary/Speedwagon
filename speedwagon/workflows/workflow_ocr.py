@@ -1,3 +1,5 @@
+"""Workflow for performing OCR on image files."""
+
 import io
 import os
 import sys
@@ -225,8 +227,8 @@ class OCRWorkflow(speedwagon.Workflow):
 
             return True
 
-        for f in filter(filter_only_trainingdata, os.scandir(path)):
-            yield os.path.splitext(f.name)[0]
+        for file in filter(filter_only_trainingdata, os.scandir(path)):
+            yield os.path.splitext(file.name)[0]
 
     @staticmethod
     def validate_user_options(**user_args: str) -> bool:
@@ -280,7 +282,7 @@ class FindImagesTask(speedwagon.tasks.Subtask):
             if os.path.isdir(file_located):
                 return False
 
-            base, ext = os.path.splitext(file_located)
+            _, ext = os.path.splitext(file_located)
             if ext.lower() != self._extension:
                 return False
 
@@ -288,7 +290,7 @@ class FindImagesTask(speedwagon.tasks.Subtask):
 
         directories = []
 
-        for root, dirs, files in os.walk(self._root):
+        for root, _, files in os.walk(self._root):
             for file_name in filter(find_images, files):
                 file_path = os.path.join(root, file_name)
                 self.log(f"Located {file_path}")

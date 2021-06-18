@@ -1,3 +1,5 @@
+"""Workflow for validating package completeness for HathiTrust."""
+
 import logging
 import os
 import re
@@ -19,12 +21,11 @@ import speedwagon
 from speedwagon.tasks import Subtask
 from speedwagon.worker import GuiLogHandler
 from speedwagon.job import AbsWorkflow
+from speedwagon import tasks
 from . import shared_custom_widgets as options
+from .shared_custom_widgets import UserOption2, UserOption3
 
 __all__ = ['CompletenessWorkflow']
-
-from .shared_custom_widgets import UserOption2, UserOption3
-from speedwagon import tasks
 
 
 class CompletenessWorkflow(AbsWorkflow):
@@ -377,11 +378,12 @@ class ValidateChecksumsTask(CompletenessSubTask):
             )
 
             try:
-                files_to_check = []
-
-                for a, file_name in \
-                        validate_process.extracts_checksums(checksum_report):
-                    files_to_check.append(file_name)
+                files_to_check = [
+                    file_name
+                    for _, file_name in validate_process.extracts_checksums(
+                        checksum_report
+                    )
+                ]
 
                 self.log(
                     "Validating checksums of the {} files "

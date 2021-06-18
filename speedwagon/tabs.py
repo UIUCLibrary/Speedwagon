@@ -1,4 +1,4 @@
-"""Creating and managing tabs in the UI display"""
+"""Creating and managing tabs in the UI display."""
 import abc
 import logging
 import os
@@ -43,12 +43,12 @@ class TabWidgets(enum.Enum):
 class Tab:
     @abc.abstractmethod
     def compose_tab_layout(self) -> None:
-        """Draw the layout of the tab"""
+        """Draw the layout of the tab."""
 
     @abc.abstractmethod
     def create_actions(self) -> Tuple[Dict[str, QtWidgets.QWidget],
                                       QtWidgets.QLayout]:
-        """Generate action widgets"""
+        """Generate action widgets."""
 
     def __init__(self,
                  parent: QtWidgets.QWidget,
@@ -496,8 +496,9 @@ def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
     tabs_file_size = os.path.getsize(yaml_file)
     if tabs_file_size > 0:
         try:
-            with open(yaml_file) as f:
-                tabs_config_data = yaml.load(f.read(), Loader=yaml.SafeLoader)
+            with open(yaml_file) as file:
+                tabs_config_data = \
+                    yaml.load(file.read(), Loader=yaml.SafeLoader)
             if not isinstance(tabs_config_data, dict):
                 raise Exception("Failed to parse file")
 

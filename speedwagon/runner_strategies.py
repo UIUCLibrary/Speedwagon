@@ -1,4 +1,4 @@
-"""Defining execution of a given workflow steps and processes"""
+"""Defining execution of a given workflow steps and processes."""
 
 import abc
 import logging
@@ -11,11 +11,14 @@ from . import tasks
 from . import worker
 from .job import AbsWorkflow, Workflow, JobCancelled
 
+USER_ABORTED_MESSAGE = "User Aborted"
+
 
 class TaskFailed(Exception):
     pass
 
 
+# pylint: disable=too-few-public-methods
 class AbsRunner(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
@@ -200,7 +203,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                     if result is not None:
                         results.append(result)
                 if runner.was_aborted:
-                    raise TaskFailed("User Aborted")
+                    raise TaskFailed(USER_ABORTED_MESSAGE)
             finally:
                 logger.removeHandler(runner.progress_dialog_box_handler)
             return results
@@ -246,7 +249,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 runner.dialog.accept()
                 runner.dialog.close()
                 if runner.was_aborted:
-                    raise TaskFailed("User Aborted")
+                    raise TaskFailed(USER_ABORTED_MESSAGE)
                 return _results
             finally:
                 logger.removeHandler(runner.progress_dialog_box_handler)
@@ -294,7 +297,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 runner.dialog.accept()
                 runner.dialog.close()
                 if runner.was_aborted:
-                    raise TaskFailed("User Aborted")
+                    raise TaskFailed(USER_ABORTED_MESSAGE)
                 return results
             finally:
                 logger.removeHandler(runner.progress_dialog_box_handler)

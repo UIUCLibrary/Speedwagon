@@ -1,4 +1,4 @@
-"""Load and save user configurations"""
+"""Load and save user configurations."""
 import configparser
 import contextlib
 import os
@@ -18,7 +18,7 @@ from speedwagon.models import SettingsModel
 
 
 class AbsConfig(collections.abc.Mapping):
-    """Abstract class for defining where speedwagon should locate data files"""
+    """Abstract class for defining where speedwagon should find data files."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -26,11 +26,11 @@ class AbsConfig(collections.abc.Mapping):
 
     @abc.abstractmethod
     def get_user_data_directory(self) -> str:
-        """Location for user data"""
+        """Location for user data."""
 
     @abc.abstractmethod
     def get_app_data_directory(self) -> str:
-        """Location to the application data. Such as .ini file"""
+        """Location to the application data. Such as .ini file."""
 
     def __len__(self) -> int:
         return len(self._data)
@@ -75,7 +75,7 @@ class NixConfig(AbsConfig):
 
 
 class WindowsConfig(AbsConfig):
-    """Speedwagon configuration for running on Microsoft Windows machine
+    r"""Speedwagon configuration for running on Microsoft Windows machine.
 
     It uses a subfolder in the user's home directory to store data such as
     tesseract ocr data. For example:
@@ -110,7 +110,7 @@ class ConfigManager(contextlib.AbstractContextManager):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        pass
+        return None
 
     @property
     def global_settings(self) -> dict:
@@ -133,8 +133,7 @@ class ConfigManager(contextlib.AbstractContextManager):
 
 
 def generate_default(config_file: str) -> None:
-    """Generate config file with default settings"""
-
+    """Generate config file with default settings."""
     base_directory = os.path.dirname(config_file)
     if base_directory and not os.path.exists(base_directory):
         os.makedirs(base_directory)
@@ -161,8 +160,10 @@ def generate_default(config_file: str) -> None:
 
 def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
         AbsConfig:
-    """Load a configuration of config.AbsConfig
-    If no argument is included, it will try to guess the best one."""
+    """Load a configuration of config.AbsConfig.
+
+    If no argument is included, it will try to guess the best one.
+    """
     configurations: Dict[str, Type[AbsConfig]] = {
         "Windows": WindowsConfig,
         "Darwin": NixConfig,
@@ -177,7 +178,7 @@ def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
 
 
 def build_setting_model(config_file: str) -> SettingsModel:
-    """Read a configuration file and generate a SettingsModel"""
+    """Read a configuration file and generate a SettingsModel."""
     if not os.path.exists(config_file):
         raise FileNotFoundError(f"No existing Configuration in ${config_file}")
 

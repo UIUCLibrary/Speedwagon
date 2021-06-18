@@ -1,4 +1,4 @@
-"""Consumer of tasks"""
+"""Consumer of tasks."""
 import abc
 import concurrent.futures
 import contextlib
@@ -96,25 +96,25 @@ class Worker2(metaclass=abc.ABCMeta):
     @classmethod
     @abc.abstractmethod
     def initialize_worker(cls) -> None:
-        """Initialize the executor"""
+        """Initialize the executor."""
 
 
 class Worker(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def initialize_worker(self) -> None:
-        """Initialize the executor"""
+        """Initialize the executor."""
 
     @abc.abstractmethod
     def cancel(self) -> None:
-        """Shutdown the executor"""
+        """Shutdown the executor."""
 
     @abc.abstractmethod
     def run_all_jobs(self) -> None:
-        """Execute jobs in loaded in q"""
+        """Execute jobs in loaded in q."""
 
     @abc.abstractmethod
     def add_job(self, job: typing.Type[ProcessJobWorker], **job_args) -> None:
-        """Load jobs into queue"""
+        """Load jobs into queue."""
 
 
 class UIWorker(Worker):
@@ -372,12 +372,15 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         futures = [(i, False) for i in self.futures]
         while self.active:
             try:
-                for f in concurrent.futures.as_completed(self.futures,
-                                                         timeout=0.01):
+                for completed_futures in concurrent.futures.as_completed(
+                        self.futures,
+                        timeout=0.01):
                     self.flush_message_buffer()
-                    if not f.cancel() and f.done():
+                    if not completed_futures.cancel() and \
+                            completed_futures.done():
+
                         completed += 1
-                        self.futures.remove(f)
+                        self.futures.remove(completed_futures)
                         if timeout_callback:
                             timeout_callback(completed, total_jobs)
                         for i, (future, reported) in enumerate(futures):
@@ -403,7 +406,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
             except concurrent.futures.process.BrokenProcessPool as e:
                 traceback.print_tb(e.__traceback__)
                 print(e, file=sys.stderr)
-                print(f.exception(), file=sys.stderr)
+                print(completed_futures.exception(), file=sys.stderr)
                 raise
             self.flush_message_buffer()
 
@@ -463,9 +466,8 @@ class SubtaskJobAdapter(AbsJobAdapter,
     def settings(self) -> typing.Dict[str, str]:
         if self.adaptee.settings:
             return self.adaptee.settings
-        else:
-            return {key: value for key, value in self.adaptee.__dict__.items()
-                    if key != "parent_task_log_q"}
+        return {key: value for key, value in self.adaptee.__dict__.items()
+                if key != "parent_task_log_q"}
 
     @property
     def name(self) -> str:  # type: ignore

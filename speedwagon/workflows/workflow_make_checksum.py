@@ -1,3 +1,5 @@
+"""Workflows for generating checksums."""
+
 import collections
 import typing
 
@@ -236,7 +238,7 @@ class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
         report_to_save_to = user_args["Input"]
         package_root = os.path.dirname(report_to_save_to)
 
-        for root, dirs, files in os.walk(package_root):
+        for root, _, files in os.walk(package_root):
             for file_ in files:
                 full_path = os.path.join(root, file_)
                 if os.path.samefile(report_to_save_to, full_path):
@@ -304,12 +306,12 @@ class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
         sorted_results = sorted(results,
                                 key=lambda it: it[ResultsValues.CHECKSUM_FILE])
 
-        for k, v in itertools.groupby(
+        for key, value in itertools.groupby(
                 sorted_results,
                 key=lambda it: it[ResultsValues.CHECKSUM_FILE]):
 
-            for result_data in v:
-                new_results[k].append(result_data)
+            for result_data in value:
+                new_results[key].append(result_data)
         return dict(new_results)
 
     def user_options(self) -> List[options.UserOption3]:
@@ -342,7 +344,7 @@ class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
             report_to_save_to = os.path.normpath(
                 os.path.join(package_root, "checksum.md5"))
 
-            for root, dirs, files in os.walk(package_root):
+            for root, _, files in os.walk(package_root):
                 for file_ in files:
                     full_path = os.path.join(root, file_)
                     if os.path.samefile(report_to_save_to, full_path):
@@ -403,11 +405,12 @@ class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
         sorted_results = self.sort_results([i.data for i in results])
 
         for checksum_report, checksums in sorted_results.items():
-
-            process = checksum_tasks.MakeCheckSumReportTask(
-                checksum_report, checksums)
-
-            task_builder.add_subtask(process)
+            task_builder.add_subtask(
+                checksum_tasks.MakeCheckSumReportTask(
+                    checksum_report,
+                    checksums
+                )
+            )
 
     @classmethod
     @add_report_borders

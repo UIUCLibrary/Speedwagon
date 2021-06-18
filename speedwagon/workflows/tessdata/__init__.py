@@ -1,1 +1,1 @@
-# Put your tesseract ocr data in this directory
+"""Put your tesseract ocr data in this directory."""

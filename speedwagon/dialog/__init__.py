@@ -1,1 +1,1 @@
-"""Subpackage: Common elements for creating UI dialog box"""
+"""Subpackage: Common elements for creating UI dialog box."""

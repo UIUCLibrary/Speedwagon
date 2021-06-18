@@ -1,4 +1,4 @@
-"""Common code to help generate reports for the user"""
+"""Common code to help generate reports for the user."""
 
 import functools
 import typing

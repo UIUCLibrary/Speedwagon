@@ -1,4 +1,4 @@
-"""Define how Speedwagon starts up on the current system
+"""Define how Speedwagon starts up on the current system.
 
 Use for loading and starting up the main application
 
@@ -18,6 +18,7 @@ import logging
 import os
 import sys
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
+import pathlib
 import yaml
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 
@@ -29,7 +30,8 @@ from speedwagon import worker, job
 from speedwagon.dialog.settings import TabEditor
 from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.tabs import extract_tab_information
-import pathlib
+
+
 try:  # pragma: no cover
     from importlib import metadata
     import importlib.resources as resources  # type: ignore
@@ -140,52 +142,92 @@ def get_selection(all_workflows):
     return new_workflow_set
 
 
+class CustomTabsFileReader:
+    """Reads the tab file data."""
+
+    def __init__(
+            self, all_workflows: Dict[str, Type[speedwagon.Workflow]]) -> None:
+        """Load all workflows supported.
+
+        Args:
+            all_workflows:
+        """
+        self.all_workflows = all_workflows
+
+    @staticmethod
+    def read_yml_file(yaml_file: str):
+        """Read the contents of the yml file."""
+        with open(yaml_file) as file_handler:
+            tabs_config_data = yaml.load(file_handler.read(),
+                                         Loader=yaml.SafeLoader)
+
+        if not isinstance(tabs_config_data, dict):
+            raise FileFormatError("Failed to parse file")
+        return tabs_config_data
+
+    def _get_tab_items(self, tab, tab_name):
+        new_tab_items = {}
+        for item_name in tab:
+            try:
+                workflow = self.all_workflows[item_name]
+                if workflow.active is False:
+                    print("workflow not active")
+                new_tab_items[item_name] = workflow
+
+            except LookupError:
+                print(
+                    f"Unable to load '{item_name}' in "
+                    f"tab {tab_name}", file=sys.stderr)
+        return new_tab_items
+
+    def load_custom_tabs(self, yaml_file: str) -> Iterator[Tuple[str, dict]]:
+        """Get custom tabs data from config yaml.
+
+        Args:
+            yaml_file: file path to a yaml file containing custom.
+
+        Yields:
+            Yields a tuple containing the name of the tab and the containing
+                workflows.
+        Notes:
+            Failure to load will only a print message to standard error.
+
+        """
+        try:
+            tabs_config_data = self.read_yml_file(yaml_file)
+            if tabs_config_data:
+                tabs_config_data = cast(Dict[str, List[str]], tabs_config_data)
+                for tab_name in tabs_config_data:
+                    try:
+                        new_tab = tabs_config_data.get(tab_name)
+                        if new_tab is not None:
+                            yield tab_name, \
+                                  self._get_tab_items(new_tab, tab_name)
+
+                    except TypeError as tab_error:
+                        print("Error loading tab '{}'. "
+                              "Reason: {}".format(tab_name, tab_error),
+                              file=sys.stderr)
+                        continue
+
+        except FileNotFoundError as error:
+            print("Custom tabs file not found. "
+                  "Reason: {}".format(error), file=sys.stderr)
+        except AttributeError as error:
+            print("Custom tabs file failed to load. "
+                  "Reason: {}".format(error), file=sys.stderr)
+
+        except yaml.YAMLError as error:
+            print("{} file failed to load. "
+                  "Reason: {}".format(yaml_file, error), file=sys.stderr)
+
+
 def get_custom_tabs(
         all_workflows: Dict[str, Type[speedwagon.Workflow]],
         yaml_file: str
 ) -> Iterator[Tuple[str, dict]]:
-
-    try:
-        with open(yaml_file) as f:
-            tabs_config_data = yaml.load(f.read(), Loader=yaml.SafeLoader)
-        if not isinstance(tabs_config_data, dict):
-            raise FileFormatError("Failed to parse file")
-
-        if tabs_config_data:
-            tabs_config_data = cast(Dict[str, List[str]], tabs_config_data)
-            for tab_name in tabs_config_data:
-
-                try:
-                    new_tab_items = dict()
-                    new_tab = tabs_config_data.get(tab_name)
-                    if new_tab is not None:
-                        for item_name in new_tab:
-                            try:
-                                workflow = all_workflows[item_name]
-                                if workflow.active is False:
-                                    print("workflow not active")
-                                new_tab_items[item_name] = workflow
-
-                            except LookupError:
-                                print(
-                                    f"Unable to load '{item_name}' in "
-                                    f"tab {tab_name}", file=sys.stderr)
-                        yield tab_name, new_tab_items
-                except TypeError as e:
-                    print("Error loading tab '{}'. "
-                          "Reason: {}".format(tab_name, e), file=sys.stderr)
-                    continue
-
-    except FileNotFoundError as e:
-        print("Custom tabs file not found. "
-              "Reason: {}".format(e), file=sys.stderr)
-    except AttributeError as e:
-        print("Custom tabs file failed to load. "
-              "Reason: {}".format(e), file=sys.stderr)
-
-    except yaml.YAMLError as e:
-        print("{} file failed to load. "
-              "Reason: {}".format(yaml_file, e), file=sys.stderr)
+    getter = CustomTabsFileReader(all_workflows)
+    yield from getter.load_custom_tabs(yaml_file)
 
 
 class AbsStarter(metaclass=abc.ABCMeta):
@@ -274,7 +316,7 @@ class StartupDefault(AbsStarter):
             except metadata.PackageNotFoundError:
                 app_version = ""
 
-            self._logger.info(f"{app_title} {app_version}")
+            self._logger.info("%s %s", app_title, app_version)
 
             QtWidgets.QApplication.processEvents()
 
@@ -427,7 +469,7 @@ class StartupDefault(AbsStarter):
 
 
 class TabsEditorApp(QtWidgets.QDialog):
-    """Dialog box for editing tabs.yml file"""
+    """Dialog box for editing tabs.yml file."""
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)

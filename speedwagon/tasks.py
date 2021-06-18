@@ -1,4 +1,4 @@
-"""Define a single step in the workflow"""
+"""Define a single step in the workflow."""
 import abc
 import os
 
@@ -26,7 +26,7 @@ class AbsSubtask(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def log(self, message: str) -> None:
-        """Log a message to the console on the main window"""
+        """Log a message to the console on the main window."""
 
     @property
     def task_result(self) -> Optional['Result']:
@@ -71,7 +71,7 @@ class Result(NamedTuple):
 
 
 class Subtask(AbsSubtask):
-    """Base class for defining a new task for a :py:class:`Workflow` to create
+    """Base class for defining a new task for a :py:class:`Workflow` to create.
 
     Subclass this generate a new task
     """
@@ -118,7 +118,9 @@ class Subtask(AbsSubtask):
         self._status = value
 
     def work(self) -> bool:
-        """This method is called when the task's work should be done
+        """Perform work.
+
+        This method is called when the task's work should be done.
 
         Override this method to accomplish the task.
 
@@ -142,10 +144,8 @@ class Subtask(AbsSubtask):
     def exec(self) -> None:
         self.status = TaskStatus.WORKING
 
-        if not self.work():
-            self.status = TaskStatus.FAILED
-        else:
-            self.status = TaskStatus.SUCCESS
+        self.status = \
+            TaskStatus.FAILED if not self.work() else TaskStatus.SUCCESS
 
 
 class PreTask(AbsSubtask):
@@ -170,10 +170,8 @@ class PreTask(AbsSubtask):
         self._parent_task_log_q = value
 
     def exec(self) -> None:
-        if not self.work():
-            self._status = TaskStatus.FAILED
-        else:
-            self._status = TaskStatus.SUCCESS
+        self._status = \
+            TaskStatus.FAILED if not self.work() else TaskStatus.SUCCESS
 
     def log(self, message):
         self._parent_task_log_q.append(message)
@@ -435,8 +433,7 @@ class TaskBuilder:
         self.task_id = TaskBuilder._task_counter
 
     def build_task(self) -> MultiStageTask:
-        task = self._builder.build_task()
-        return task
+        return self._builder.build_task()
 
     def add_subtask(self, subtask: Subtask) -> None:
         self._subtask_counter += 1
@@ -467,15 +464,13 @@ class TaskBuilder:
             subtask_id: str
     ) -> str:
 
-        working_dir = os.path.join(task_working_path,
-                                   task_type,
-                                   str(subtask_id))
-        return working_dir
+        return os.path.join(task_working_path,
+                            task_type,
+                            str(subtask_id))
 
     @staticmethod
     def _build_task_working_path(temp_path: str, task_id: str) -> str:
-        working_dir = os.path.join(temp_path, task_id)
-        return working_dir
+        return os.path.join(temp_path, task_id)
 
     def set_pretask(self, subtask: Subtask) -> None:
 
@@ -531,13 +526,11 @@ class TaskBuilder:
     @staticmethod
     def load(data):
         task_cls, attributes = pickle.loads(data)
-        obj = TaskBuilder._deserialize_task(task_cls, attributes)
-        return obj
+        return TaskBuilder._deserialize_task(task_cls, attributes)
 
     @staticmethod
     def _serialize_task(task_obj: MultiStageTask):
-        res = task_obj.__class__, task_obj.__dict__
-        return res
+        return task_obj.__class__, task_obj.__dict__
 
     @staticmethod
     def _deserialize_task(task_cls, attributes):

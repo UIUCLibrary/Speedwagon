@@ -11,6 +11,12 @@ DOCKER_PLATFORM_BUILD_ARGS = [
     windows: '--build-arg CHOCOLATEY_SOURCE'
 ]
 
+PYPI_SERVERS = [
+    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_public/',
+    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python/',
+    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_testing/'
+    ]
+
 def loadConfigs(){
     node(){
         echo 'loading configurations'
@@ -31,16 +37,6 @@ def getDevPiStagingIndex(){
 
 CONFIGURATIONS = loadConfigs()
 
-def get_build_args(){
-    script{
-        def CHOCOLATEY_SOURCE = ''
-        try{
-            CHOCOLATEY_SOURCE = powershell(script: '(Get-ChildItem Env:Path).value', returnStdout: true).trim()
-        } finally {
-            return CHOCOLATEY_SOURCE?.trim() ? '--build-arg ' + 'CHOCOLATEY_REPO=' + CHOCOLATEY_SOURCE : ''
-        }
-    }
-}
 
 def run_pylint(){
     catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
@@ -218,7 +214,6 @@ def createNewChocolateyPackage(args=[:]){
         )
 
 
-//
     powershell(
         label: 'Adding data to Chocolatey package workspace',
         script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
@@ -329,33 +324,50 @@ def test_pkg(glob, timeout_time){
 }
 
 def startup(){
-    node(){
-        checkout scm
-        devpi = load('ci/jenkins/scripts/devpi.groovy')
-    }
-    node('linux && docker') {
-        timeout(2){
-            ws{
+
+    parallel(
+    [
+        failFast: true,
+        'Loading helper functions': {
+            node(){
                 checkout scm
-                try{
-                    docker.image('python').inside {
-                        stage('Getting Distribution Info'){
-                            withEnv(['PIP_NO_CACHE_DIR=off']) {
-                                sh(
-                                   label: 'Running setup.py with dist_info',
-                                   script: 'python setup.py dist_info'
-                                )
+                devpi = load('ci/jenkins/scripts/devpi.groovy')
+            }
+        },
+        'Loading Reference Build Information': {
+                node(){
+                    checkout scm
+                    discoverGitReferenceBuild()
+                }
+            },
+        'Getting Distribution Info': {
+            node('linux && docker') {
+                timeout(2){
+                    ws{
+                        checkout scm
+                        try{
+                            docker.image('python').inside {
+//                                 stage('Getting Distribution Info'){
+                                withEnv(['PIP_NO_CACHE_DIR=off']) {
+                                    sh(
+                                       label: 'Running setup.py with dist_info',
+                                       script: 'python setup.py dist_info'
+                                    )
+                                }
+                                stash includes: '*.dist-info/**', name: 'DIST-INFO'
+                                archiveArtifacts artifacts: '*.dist-info/**'
                             }
-                            stash includes: '*.dist-info/**', name: 'DIST-INFO'
-                            archiveArtifacts artifacts: '*.dist-info/**'
+//                             }
+                        } finally{
+                            deleteDir()
                         }
                     }
-                } finally{
-                    deleteDir()
                 }
             }
         }
-    }
+    ]
+    )
+
 }
 
 
@@ -439,6 +451,7 @@ pipeline {
         booleanParam(name: 'PACKAGE_WINDOWS_STANDALONE_ZIP', defaultValue: false, description: 'Create a standalone portable package')
         booleanParam(name: 'DEPLOY_DEVPI', defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: 'DEPLOY_DEVPI_PRODUCTION', defaultValue: false, description: 'Deploy to https://devpi.library.illinois.edu/production/release')
+        booleanParam(name: 'DEPLOY_PYPI', defaultValue: false, description: 'Deploy to pypi')
         booleanParam(name: 'DEPLOY_CHOCOLATEY', defaultValue: false, description: 'Deploy to Chocolatey repository')
         booleanParam(name: 'DEPLOY_HATHI_TOOL_BETA', defaultValue: false, description: 'Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/')
         booleanParam(name: 'DEPLOY_SCCM', defaultValue: false, description: 'Request deployment of MSI installer to SCCM')
@@ -507,8 +520,8 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                            args '--mount source=sonar-cache-speedwagon,target=/home/user/.sonar/cache'
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                            args '--mount source=sonar-cache-speedwagon,target=/opt/sonar/.sonar/cache'
                           }
                     }
                     stages{
@@ -1019,7 +1032,7 @@ pipeline {
                                             filename 'ci/docker/windows_standalone/Dockerfile'
                                             label 'Windows&&Docker'
                                             args '-u ContainerAdministrator'
-                                            additionalBuildArgs get_build_args()
+                                            additionalBuildArgs '--build-arg CHOCOLATEY_SOURCE'
                                           }
                                     }
                                     steps {
@@ -1259,6 +1272,64 @@ pipeline {
         }
         stage('Deploy'){
             parallel {
+                stage('Deploy to pypi') {
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                        }
+                    }
+                    when{
+                        allOf{
+                            equals expected: true, actual: params.DEPLOY_PYPI
+                            equals expected: true, actual: params.BUILD_PACKAGES
+
+                        }
+                        beforeAgent true
+                        beforeInput true
+                    }
+                    options{
+                        retry(3)
+                    }
+                    input {
+                        message 'Upload to pypi server?'
+                        parameters {
+                            choice(
+                                choices: PYPI_SERVERS,
+                                description: 'Url to the pypi index to upload python packages.',
+                                name: 'SERVER_URL'
+                            )
+                        }
+                    }
+                    steps{
+                        unstash 'PYTHON_PACKAGES'
+                        script{
+                            def pypi = fileLoader.fromGit(
+                                    'pypi',
+                                    'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
+                                    '2',
+                                    null,
+                                    ''
+                                )
+                            pypi.pypiUpload(
+                                credentialsId: 'jenkins-nexus',
+                                repositoryUrl: SERVER_URL,
+                                glob: 'dist/*'
+                                )
+                        }
+                    }
+                    post{
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                        [pattern: 'dist/', type: 'INCLUDE']
+                                    ]
+                            )
+                        }
+                    }
+                }
                 stage('Deploy to Chocolatey') {
                     when{
                         equals expected: true, actual: params.DEPLOY_CHOCOLATEY

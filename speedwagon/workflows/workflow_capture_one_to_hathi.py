@@ -1,3 +1,5 @@
+"""Workflow for converting capture one packages to Hathi packages."""
+
 import logging
 import typing
 from typing import List, Any, Dict
