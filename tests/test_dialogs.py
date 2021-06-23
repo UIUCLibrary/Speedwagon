@@ -2,7 +2,7 @@ import platform
 from unittest.mock import Mock, patch, mock_open
 import pytest
 from speedwagon.dialog import settings
-
+from PyQt5 import QtCore
 
 def test_settings_open_dir_if_location_is_set(qtbot, monkeypatch):
     settings_dialog = settings.SettingsDialog()
@@ -122,9 +122,37 @@ class TestTabEditor:
         from speedwagon import job
         mock_workflow.__type__ = job.Workflow
         workflows = {
-            'ssss': mock_workflow
+            '': mock_workflow
         }
         editor.allWorkflowsListView.setModel = Mock()
         editor.set_all_workflows(workflows)
         assert editor.allWorkflowsListView.setModel.called is True
+
+    def test_create_new_tab(self, qtbot, monkeypatch):
+        editor = settings.TabEditor()
+        qtbot.addWidget(editor)
+        assert editor.selectedTabComboBox.model().rowCount() == 0
+        with monkeypatch.context() as mp:
+            mp.setattr(
+                settings.QtWidgets.QInputDialog,
+                "getText",
+                lambda *args, **kwargs: ("new tab", True)
+            )
+            qtbot.mouseClick(editor.newTabButton, QtCore.Qt.LeftButton)
+        assert editor.selectedTabComboBox.model().rowCount() == 1
+
+    def test_delete_tab(self, qtbot, monkeypatch):
+
+        editor = settings.TabEditor()
+        qtbot.addWidget(editor)
+        with monkeypatch.context() as mp:
+            mp.setattr(
+                settings.QtWidgets.QInputDialog,
+                "getText",
+                lambda *args, **kwargs: ("new tab", True)
+            )
+            qtbot.mouseClick(editor.newTabButton, QtCore.Qt.LeftButton)
+        assert editor.selectedTabComboBox.model().rowCount() == 1
+        qtbot.mouseClick(editor.deleteCurrentTabButton, QtCore.Qt.LeftButton)
+        assert editor.selectedTabComboBox.model().rowCount() == 0
 
