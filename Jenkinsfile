@@ -331,7 +331,7 @@ def startup(){
         'Loading Reference Build Information': {
             node(){
                 checkout scm
-                discoverGitReferenceBuild()
+                discoverGitReferenceBuild(latestBuildIfNotFound: true)
             }
         },
         'Getting Distribution Info': {
