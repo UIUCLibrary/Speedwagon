@@ -4,6 +4,7 @@ import pytest
 from speedwagon.dialog import settings
 from PyQt5 import QtCore
 
+
 def test_settings_open_dir_if_location_is_set(qtbot, monkeypatch):
     settings_dialog = settings.SettingsDialog()
     qtbot.addWidget(settings_dialog)
@@ -184,13 +185,11 @@ class TestTabEditor:
             # Make sure that this can exit
             QMessageBox = Mock()
             QMessageBox.exec = \
-                Mock(side_effect=
-                     lambda context=mp: context.setattr(
+                Mock(side_effect=lambda context=mp: context.setattr(
                          settings.QtWidgets.QInputDialog,
                          "getText",
                          lambda *args, **kwargs: ("new tab", False)
-                     )
-                 )
+                     ))
 
             QMessageBox.name = 'QMessageBox'
 
