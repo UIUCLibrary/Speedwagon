@@ -115,8 +115,11 @@ class TestTabsConfigurationTab:
 
 
 class TestTabEditor:
-    def test_set_all_workflows_set_model(self, qtbot):
-        editor = settings.TabEditor()
+    @pytest.fixture()
+    def editor(self):
+        return settings.TabEditor()
+
+    def test_set_all_workflows_set_model(self, qtbot, editor):
         qtbot.addWidget(editor)
         mock_workflow = Mock()
         from speedwagon import job
@@ -128,8 +131,7 @@ class TestTabEditor:
         editor.set_all_workflows(workflows)
         assert editor.allWorkflowsListView.setModel.called is True
 
-    def test_create_new_tab(self, qtbot, monkeypatch):
-        editor = settings.TabEditor()
+    def test_create_new_tab(self, qtbot, monkeypatch, editor):
         qtbot.addWidget(editor)
         assert editor.selectedTabComboBox.model().rowCount() == 0
         with monkeypatch.context() as mp:
@@ -141,9 +143,66 @@ class TestTabEditor:
             qtbot.mouseClick(editor.newTabButton, QtCore.Qt.LeftButton)
         assert editor.selectedTabComboBox.model().rowCount() == 1
 
-    def test_delete_tab(self, qtbot, monkeypatch):
+    def test_create_new_tab_can_cancel(self, qtbot, monkeypatch, editor):
+        qtbot.addWidget(editor)
+        assert editor.selectedTabComboBox.model().rowCount() == 0
+        with monkeypatch.context() as mp:
+            mp.setattr(
+                settings.QtWidgets.QInputDialog,
+                "getText",
+                lambda *args, **kwargs: ("new tab", False)
+            )
+            qtbot.mouseClick(editor.newTabButton, QtCore.Qt.LeftButton)
+        assert editor.selectedTabComboBox.model().rowCount() == 0
 
-        editor = settings.TabEditor()
+    def test_create_new_tab_cannot_create_same_name_tabs(
+            self,
+            qtbot,
+            monkeypatch,
+            editor
+    ):
+        qtbot.addWidget(editor)
+        from speedwagon.tabs import TabData
+        from speedwagon import models
+        with monkeypatch.context() as mp:
+            def read_tabs_yaml(*args, **kwargs):
+                return [
+                    TabData("existing tab", models.WorkflowListModel2())
+                ]
+
+            mp.setattr(settings.tabs, "read_tabs_yaml", read_tabs_yaml)
+            editor.tabs_file = "dummy.yml"
+
+        with monkeypatch.context() as mp:
+
+            mp.setattr(
+                settings.QtWidgets.QInputDialog,
+                "getText",
+                lambda *args, **kwargs: ("existing tab", True)
+            )
+
+            # Make sure that this can exit
+            QMessageBox = Mock()
+            QMessageBox.exec = \
+                Mock(side_effect=
+                     lambda context=mp: context.setattr(
+                         settings.QtWidgets.QInputDialog,
+                         "getText",
+                         lambda *args, **kwargs: ("new tab", False)
+                     )
+                 )
+
+            QMessageBox.name = 'QMessageBox'
+
+            mp.setattr(
+                settings.QtWidgets,
+                "QMessageBox",
+                Mock(return_value=QMessageBox)
+            )
+            qtbot.mouseClick(editor.newTabButton, QtCore.Qt.LeftButton)
+            assert QMessageBox.setWindowTitle.called is True
+
+    def test_delete_tab(self, qtbot, monkeypatch, editor):
         qtbot.addWidget(editor)
         with monkeypatch.context() as mp:
             mp.setattr(
