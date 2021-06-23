@@ -645,6 +645,7 @@ pipeline {
                                                 adapters: [
                                                         coberturaAdapter('reports/coverage.xml')
                                                     ],
+                                                calculateDiffForChangeRequests: true,
                                                 sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                                             )
                                         }
