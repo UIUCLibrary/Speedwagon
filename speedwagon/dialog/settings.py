@@ -350,8 +350,9 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
             workflows: Dict[str, Type[job.Workflow]]
     ) -> None:
 
-        for k, v in workflows.items():
-            self._all_workflows_model.add_workflow(v)
+        for values in workflows.values():
+            self._all_workflows_model.add_workflow(values)
+
         self._all_workflows_model.sort(0)
         self.allWorkflowsListView.setModel(self._all_workflows_model)
 

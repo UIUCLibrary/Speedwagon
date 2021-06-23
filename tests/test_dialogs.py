@@ -112,3 +112,19 @@ class TestTabsConfigurationTab:
         assert \
             mock_exec.called is True and \
             write_tabs_yaml.called is writes_to_file
+
+
+class TestTabEditor:
+    def test_set_all_workflows_set_model(self, qtbot):
+        editor = settings.TabEditor()
+        qtbot.addWidget(editor)
+        mock_workflow = Mock()
+        from speedwagon import job
+        mock_workflow.__type__ = job.Workflow
+        workflows = {
+            'ssss': mock_workflow
+        }
+        editor.allWorkflowsListView.setModel = Mock()
+        editor.set_all_workflows(workflows)
+        assert editor.allWorkflowsListView.setModel.called is True
+
