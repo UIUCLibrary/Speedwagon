@@ -325,7 +325,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
     def _delete_tab(self) -> None:
         data = self.selectedTabComboBox.currentData()
         model = self.selectedTabComboBox.model()
-        model -= data
+        model.remove_tab(data)
 
     def _add_items_to_tab(self) -> None:
         model: models.WorkflowListModel2 = self.tabWorkflowsListView.model()
