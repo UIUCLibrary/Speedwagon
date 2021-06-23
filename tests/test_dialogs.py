@@ -213,7 +213,3 @@ class TestTabEditor:
         assert editor.selectedTabComboBox.model().rowCount() == 1
         qtbot.mouseClick(editor.deleteCurrentTabButton, QtCore.Qt.LeftButton)
         assert editor.selectedTabComboBox.model().rowCount() == 0
-
-
-def test_dialog_can_be_imported():
-    from speedwagon import dialog
