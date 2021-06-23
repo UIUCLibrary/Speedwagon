@@ -331,7 +331,7 @@ def startup(){
         'Loading Reference Build Information': {
             node(){
                 checkout scm
-                discoverGitReferenceBuild()
+                discoverGitReferenceBuild(latestBuildIfNotFound: true)
             }
         },
         'Getting Distribution Info': {
@@ -645,6 +645,7 @@ pipeline {
                                                 adapters: [
                                                         coberturaAdapter('reports/coverage.xml')
                                                     ],
+                                                calculateDiffForChangeRequests: true,
                                                 sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                                             )
                                         }
