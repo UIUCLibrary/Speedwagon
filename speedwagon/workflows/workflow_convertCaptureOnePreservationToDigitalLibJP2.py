@@ -213,8 +213,8 @@ class PackageImageConverterTask(tasks.Subtask):
         try:
             process_task.process(self._source_file_path, des_path)
             success = True
-        except ProcessingException as e:
-            print(e, file=sys.stderr)
+        except ProcessingException as error:
+            print(error, file=sys.stderr)
             success = False
 
         self.set_results(
