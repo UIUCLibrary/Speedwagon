@@ -47,7 +47,7 @@ def run_pylint(){
         )
     }
     sh(
-        script: 'pylint speedwagon  -r n --persistent=no --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt',
+        script: 'pylint speedwagon -d duplicate-code -r n --persistent=no --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt',
         label: 'Running pylint for sonarqube',
         returnStatus: true
     )
