@@ -67,6 +67,7 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
 
 
 def about_dialog_box(parent):
+    """Launch the about speedwagon dialog box."""
     try:
         pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
         summary = pkg_metadata['Summary']

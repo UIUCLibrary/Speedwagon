@@ -45,6 +45,7 @@ class FileFormatError(Exception):
 
 
 def parse_args() -> argparse.ArgumentParser:
+    """Parse command line arguments."""
     return CliArgsSetter.get_arg_parser()
 
 
@@ -135,6 +136,7 @@ class ConfigFileSetter(AbsSetting):
 
 
 def get_selection(all_workflows):
+    """Get current selection of workflows."""
     new_workflow_set = dict()
     for k, v in all_workflows.items():
         if "Verify" in k:
@@ -226,6 +228,7 @@ def get_custom_tabs(
         all_workflows: Dict[str, Type[speedwagon.Workflow]],
         yaml_file: str
 ) -> Iterator[Tuple[str, dict]]:
+    """Load custom tab yaml file."""
     getter = CustomTabsFileReader(all_workflows)
     yield from getter.load_custom_tabs(yaml_file)
 
@@ -514,6 +517,7 @@ class TabsEditorApp(QtWidgets.QDialog):
         self.close()
 
     def load_tab_file(self, filename: str) -> None:
+        """Load tab file."""
         self.editor.tabs_file = filename
 
     @property
@@ -526,6 +530,7 @@ class TabsEditorApp(QtWidgets.QDialog):
 
 
 def standalone_tab_editor(app: QtWidgets.QApplication = None) -> None:
+    """Launch standalone tab editor app."""
     print("Loading settings")
     settings = speedwagon.config.get_platform_settings()
 
@@ -543,6 +548,7 @@ def standalone_tab_editor(app: QtWidgets.QApplication = None) -> None:
 
 
 def main(argv: List[str] = None) -> None:
+    """Launch main entry point."""
     argv = argv or sys.argv
     if "tab-editor" in argv:
         standalone_tab_editor()
