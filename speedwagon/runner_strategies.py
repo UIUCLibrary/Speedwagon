@@ -37,11 +37,12 @@ class RunRunner:
             tool: AbsWorkflow, options: dict,
             logger: logging.Logger,
             completion_callback=None) -> None:
-
+        """Execute runner job."""
         self._strategy.run(parent, tool, options, logger, completion_callback)
 
 
 class UsingExternalManagerForAdapter(AbsRunner):
+    """Runner that uses external manager."""
 
     def __init__(self, manager: "worker.ToolJobManager") -> None:
         """Create a new runner."""
