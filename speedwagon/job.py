@@ -174,6 +174,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
         pass
 
     def locate(self) -> Dict["str", AbsWorkflow]:
+        """Locate workflows."""
         located_class = {}
         tree = os.scandir(self.path)
 
@@ -189,7 +190,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
 
     def load(self, module_file: str) -> \
             Iterable[Tuple[str, Any]]:
-
+        """Load module file."""
         def class_member_filter(item) -> bool:
             return inspect.isclass(item) and not inspect.isabstract(item)
 

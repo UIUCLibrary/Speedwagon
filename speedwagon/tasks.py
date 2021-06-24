@@ -449,6 +449,7 @@ class TaskBuilder:
         self.task_id = TaskBuilder._task_counter
 
     def build_task(self) -> MultiStageTask:
+        """Build Multi stage task."""
         return self._builder.build_task()
 
     def add_subtask(self, subtask: Subtask) -> None:

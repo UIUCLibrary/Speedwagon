@@ -69,6 +69,7 @@ class OptionValidatorFactory:
         self._validators[key] = validator
 
     def create(self, key: str) -> AbsOptionValidator:
+        """Create a new option validator."""
         builder = self._validators.get(key)
         if not builder:
             raise ValueError(key)

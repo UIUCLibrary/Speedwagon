@@ -82,6 +82,7 @@ class ProcessJobWorker(AbsJobWorker):
         self._mq = value
 
     def log(self, message: str) -> None:
+        """Log message."""
         if self._mq:
             self._mq.put(message)
 
@@ -165,7 +166,7 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
         self._jobs_queue.put(new_job)
 
     def run_all_jobs(self) -> None:
-
+        """Run all jobs."""
         while self._jobs_queue.qsize() != 0:
             job_, args, message_queue = self._jobs_queue.get()
             fut = self._exec_job(job_, args, message_queue)
@@ -180,7 +181,7 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
 
     @abc.abstractmethod
     def on_completion(self, *args, **kwargs) -> None:
-        pass
+        """Run the subtask designed to be run after main task."""
 
 
 class ProgressMessageBoxLogHandler(logging.Handler):
