@@ -199,7 +199,7 @@ class AbsTask(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def exec(self, *args, **kwargs):
-        pass
+        """Execute task."""
 
     @property
     @abc.abstractmethod
@@ -258,6 +258,7 @@ class Task(AbsTask, AbsTaskComponents):
         self._post_task = value
 
     def on_completion(self, *args, **kwargs):
+        """Run task for after main task is completed."""
         return super().on_completion(*args, **kwargs)
 
     def exec(self, *args, **kwargs):
@@ -377,7 +378,7 @@ class AbsTaskBuilder(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def add_subtask(self, task):
-        pass
+        """Add subtask to builder."""
 
     @abc.abstractmethod
     def build_task(self):
