@@ -119,7 +119,7 @@ class Worker(metaclass=abc.ABCMeta):
         """Execute jobs in loaded in q."""
 
     @abc.abstractmethod
-    def add_job(self, job: typing.Type[ProcessJobWorker], **job_args) -> None:
+    def add_job(self, job: ProcessJobWorker, **job_args) -> None:
         """Load jobs into queue."""
 
 
