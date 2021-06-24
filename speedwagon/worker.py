@@ -8,6 +8,7 @@ import queue
 import sys
 import traceback
 import typing
+from abc import ABC
 from typing import Callable, Optional, Any, Dict
 from collections import namedtuple
 
@@ -119,9 +120,11 @@ class Worker(metaclass=abc.ABCMeta):
         """Load jobs into queue."""
 
 
-class UIWorker(Worker):
+class UIWorker(Worker, ABC):
     def __init__(self, parent) -> None:
-        """Interface for managing jobs. Designed handle loading and executing jobs.
+        """Interface for managing jobs.
+
+        Designed handle loading and executing jobs.
 
         Args:
             parent: The widget controlling the worker
