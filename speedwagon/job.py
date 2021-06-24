@@ -230,6 +230,7 @@ class WorkflowFinder(AbsDynamicFinder):
 
     @property
     def base_class(self):
+        """Get base class."""
         return AbsWorkflow
 
 

@@ -453,6 +453,7 @@ class TaskBuilder:
         return self._builder.build_task()
 
     def add_subtask(self, subtask: Subtask) -> None:
+        """Add subtask to builder."""
         self._subtask_counter += 1
 
         if subtask.name is not None:

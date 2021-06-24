@@ -97,6 +97,8 @@ class WorkerMeta(type(QtCore.QObject), abc.ABCMeta):  # type: ignore
 
 
 class Worker2(metaclass=abc.ABCMeta):
+    """Worker."""
+
     @classmethod
     @abc.abstractmethod
     def initialize_worker(cls) -> None:
@@ -185,6 +187,7 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
 
 
 class ProgressMessageBoxLogHandler(logging.Handler):
+    """Log handler for progress dialog box."""
 
     def __init__(self, dialog_box: QtWidgets.QProgressDialog,
                  level: int = logging.NOTSET) -> None:
@@ -216,6 +219,7 @@ class AbsSubject(metaclass=abc.ABCMeta):
         self._observers |= {observer}
 
     def unsubscribe(self, observer: AbsObserver) -> None:
+        """Remove observer from getting notifications."""
         self._observers -= {observer}
 
     def notify(self, value=None):
@@ -446,6 +450,7 @@ class AbsJobAdapter(metaclass=abc.ABCMeta):
 
     @property
     def adaptee(self):
+        """Get the adaptee."""
         return self._adaptee
 
     @abc.abstractmethod
@@ -481,6 +486,7 @@ class SubtaskJobAdapter(AbsJobAdapter,
         self.result = self.adaptee.task_result
 
     def set_message_queue(self, value: 'queue.Queue[str]') -> None:
+        """Set message queue."""
         self.adaptee.parent_task_log_q.set_message_queue(value)
 
     @property
