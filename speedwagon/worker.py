@@ -199,10 +199,12 @@ class ProgressMessageBoxLogHandler(logging.Handler):
             traceback.print_tb(e.__traceback__)
 
 
+# pylint: disable=too-few-public-methods
 class AbsObserver(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def emit(self, value) -> None:
         pass
+# pylint: enable=too-few-public-methods
 
 
 class AbsSubject(metaclass=abc.ABCMeta):
