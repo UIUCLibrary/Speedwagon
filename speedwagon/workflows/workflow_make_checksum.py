@@ -26,6 +26,13 @@ DEFAULT_CHECKSUM_FILE_NAME = "checksum.md5"
 
 
 class CreateChecksumWorkflow(AbsWorkflow, ABC):
+    @staticmethod
+    def locate_files(package_root: str):
+        for root, _, files in os.walk(package_root):
+            for file_ in files:
+                yield os.path.join(root, file_)
+
+
     @classmethod
     def sort_results(cls,
                      results: typing.List[typing.Mapping[ResultsValues, str]]
@@ -69,17 +76,14 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
         report_to_save_to = os.path.normpath(
             os.path.join(package_root, DEFAULT_CHECKSUM_FILE_NAME)
         )
-
-        for root, _, files in os.walk(package_root):
-            for file_ in files:
-                full_path = os.path.join(root, file_)
-                relpath = os.path.relpath(full_path, package_root)
-                job = {
-                    "source_path": package_root,
-                    "filename": relpath,
-                    "save_to_filename": report_to_save_to
-                }
-                jobs.append(job)
+        for file_path in self.locate_files(package_root):
+            relpath = os.path.relpath(file_path, package_root)
+            job = {
+                "source_path": package_root,
+                "filename": relpath,
+                "save_to_filename": report_to_save_to
+            }
+            jobs.append(job)
         return jobs
 
     def create_new_task(self,
@@ -244,18 +248,14 @@ class RegenerateChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
         report_to_save_to = user_args["Input"]
         package_root = os.path.dirname(report_to_save_to)
 
-        for root, _, files in os.walk(package_root):
-            for file_ in files:
-                full_path = os.path.join(root, file_)
-                if os.path.samefile(report_to_save_to, full_path):
-                    continue
-                relpath = os.path.relpath(full_path, package_root)
-                job = {
-                    "source_path": package_root,
-                    "filename": relpath,
-                    "save_to_filename": report_to_save_to
-                }
-                jobs.append(job)
+        for file_path in self.locate_files(package_root):
+            relpath = os.path.relpath(file_path, package_root)
+            job = {
+                "source_path": package_root,
+                "filename": relpath,
+                "save_to_filename": report_to_save_to
+            }
+            jobs.append(job)
         return jobs
 
     def create_new_task(self,
