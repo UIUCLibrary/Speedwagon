@@ -190,11 +190,12 @@ class ChecksumWorkflow(AbsWorkflow):
         sorted_results = sorted(results,
                                 key=lambda it:
                                 it[ResultValues.CHECKSUM_REPORT_FILE])
-        for k, v in itertools.groupby(sorted_results,
-                                      key=lambda it:
-                                      it[ResultValues.CHECKSUM_REPORT_FILE]):
-            for result_data in v:
-                new_results[k].append(result_data)
+        for key, value in itertools.groupby(
+                sorted_results,
+                key=lambda it: it[ResultValues.CHECKSUM_REPORT_FILE]):
+
+            for result_data in value:
+                new_results[key].append(result_data)
         return dict(new_results)
 
 
