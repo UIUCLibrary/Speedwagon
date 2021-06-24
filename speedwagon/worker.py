@@ -459,7 +459,6 @@ class AbsJobAdapter(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def set_message_queue(self, value) -> None:
         """Set the message queue used by the job."""
-        pass
 
     @property
     @abc.abstractmethod
