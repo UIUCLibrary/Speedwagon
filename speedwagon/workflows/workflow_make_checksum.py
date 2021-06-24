@@ -6,6 +6,7 @@ import typing
 import os
 
 import itertools
+from abc import ABC
 from typing import List, Any, DefaultDict, Optional
 
 from speedwagon.job import AbsWorkflow
@@ -22,7 +23,7 @@ __all__ = [
 ]
 
 
-class AbcMakeChecksumWorkflow(AbsWorkflow):
+class CreateChecksumWorkflow(AbsWorkflow, ABC):
     @classmethod
     def sort_results(cls,
                      results: typing.List[typing.Mapping[ResultsValues, str]]
@@ -44,7 +45,7 @@ class AbcMakeChecksumWorkflow(AbsWorkflow):
         return dict(new_results)
 
 
-class MakeChecksumBatchSingleWorkflow(AbcMakeChecksumWorkflow):
+class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
     name = "Make Checksum Batch [Single]"
     description = "The checksum is a signature of a file.  If any data is " \
                   "changed, the checksum will provide a different " \
@@ -128,7 +129,7 @@ class MakeChecksumBatchSingleWorkflow(AbcMakeChecksumWorkflow):
         ]
 
 
-class MakeChecksumBatchMultipleWorkflow(AbcMakeChecksumWorkflow):
+class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
     name = "Make Checksum Batch [Multiple]"
     description = "The checksum is a signature of a file.  If any data " \
                   "is changed, the checksum will provide a different " \
@@ -222,7 +223,7 @@ class MakeChecksumBatchMultipleWorkflow(AbcMakeChecksumWorkflow):
         return "\n".join(report_lines)
 
 
-class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
+class RegenerateChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
     name = "Regenerate Checksum Batch [Single]"
     description = "Regenerates hash values for every file inside for a " \
                   "given checksum.md5 file" \
@@ -294,26 +295,6 @@ class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
 
         return "\n".join(report_lines)
 
-    @classmethod
-    def sort_results(cls,
-                     results: typing.List[typing.Mapping[ResultsValues, str]]
-                     ) -> typing.Dict[str,
-                                      typing.List[typing.Dict[ResultsValues,
-                                                              str]]]:
-
-        new_results: DefaultDict[str, list] = collections.defaultdict(list)
-
-        sorted_results = sorted(results,
-                                key=lambda it: it[ResultsValues.CHECKSUM_FILE])
-
-        for key, value in itertools.groupby(
-                sorted_results,
-                key=lambda it: it[ResultsValues.CHECKSUM_FILE]):
-
-            for result_data in value:
-                new_results[key].append(result_data)
-        return dict(new_results)
-
     def user_options(self) -> List[options.UserOption3]:
         return [
             options.UserOptionCustomDataType(
@@ -321,7 +302,7 @@ class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
         ]
 
 
-class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
+class RegenerateChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
     name = "Regenerate Checksum Batch [Multiple]"
     description = "Regenerates the hash values for every checksum.md5 " \
                   "located inside a given path\n" \
@@ -377,26 +358,6 @@ class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
 
         task_builder.add_subtask(new_task)
 
-    @classmethod
-    def sort_results(cls,
-                     results: typing.List[typing.Mapping[ResultsValues, str]]
-                     ) -> typing.Dict[str,
-                                      typing.List[typing.Dict[ResultsValues,
-                                                              str]]]:
-
-        new_results: DefaultDict[str, list] = collections.defaultdict(list)
-
-        sorted_results = sorted(results,
-                                key=lambda it: it[ResultsValues.CHECKSUM_FILE])
-
-        for key, value in itertools.groupby(
-                sorted_results,
-                key=lambda it: it[ResultsValues.CHECKSUM_FILE]):
-
-            for result_data in value:
-                new_results[key].append(result_data)
-        return dict(new_results)
-
     def completion_task(self,
                         task_builder: tasks.TaskBuilder,
                         results: List[tasks.Result],
@@ -417,7 +378,6 @@ class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
     def generate_report(cls,
                         results: List[tasks.Result],
                         **user_args: str) -> Optional[str]:
-
         report_lines = [
             f"Checksum values for {len(items_written)} "
             f"files written to {checksum_report}"
