@@ -26,6 +26,7 @@ class JobModelData(enum.Enum):
 class ItemListModel(QtCore.QAbstractTableModel):
 
     def __init__(self, data: Dict["str", Type[AbsWorkflow]]) -> None:
+        """Create a new ItemListModel qt list model for workflows."""
         super().__init__()
         self.jobs: List[Type[AbsWorkflow]] = list(data.values())
 
@@ -82,15 +83,20 @@ class WorkflowListModel(ItemListModel):
 
 
 class WorkflowListModel2(QtCore.QAbstractListModel):
+    """Workflow Qt list model."""
+
     def __init__(self, parent: QtCore.QObject = None) -> None:
+        """Create a new WorkflowListModel2 qt list model."""
         super().__init__(parent)
         self.workflows: List[Type[Workflow]] = []
 
     def __iadd__(self, other: Type["Workflow"]) -> "WorkflowListModel2":
+        """Add a workflow to the model."""
         self.add_workflow(other)
         return self
 
     def __isub__(self, other: Type["Workflow"]) -> "WorkflowListModel2":
+        """Remove a workflow from the model."""
         self.remove_workflow(other)
         return self
 
@@ -130,6 +136,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         cast(QtCore.pyqtBoundSignal, self.layoutChanged).emit()
 
     def add_workflow(self, workflow: Type[Workflow]) -> None:
+        """Add workflow to model."""
         for existing_workflow in self.workflows:
             if workflow.name == existing_workflow.name:
                 break
@@ -169,7 +176,10 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
 
 
 class ToolOptionsModel(QtCore.QAbstractTableModel):
+    """Tool options Qt table model."""
+
     def __init__(self, parent):
+        """Create a new ToolOptionsModel qt table model."""
         super().__init__(parent)
         self._data = []
 
@@ -186,6 +196,7 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
         raise NotImplementedError
 
     def flags(self, index: QtCore.QModelIndex):
+        """Get flags for a given index."""
         if not index.isValid():
             return QtCore.Qt.ItemIsEnabled
 
@@ -199,8 +210,18 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
 
 
 class ToolOptionsPairsModel(ToolOptionsModel):
+    """Tool Options Pairs Qt table model.
+
+    Warnings:
+        This class is deprecated. Use ToolOptionsModel2 instead.
+    """
 
     def __init__(self, data: Dict[str, str], parent=None) -> None:
+        """Create a new ToolOptionsPairsModel model.
+
+        Warnings:
+            This is deprecated. Use ToolOptionsModel2 instead.
+        """
         warnings.warn("Use ToolOptionsModel2 instead", DeprecationWarning)
         super().__init__(parent)
         for key, value in data.items():
@@ -264,7 +285,7 @@ class ToolOptionsModel3(ToolOptionsModel):
             data: List[shared_custom_widgets.UserOptionPythonDataType2],
             parent: QtCore.QObject = None
     ) -> None:
-
+        """Create a new tool options Qt model."""
         if data is None:
             raise NotImplementedError
         super().__init__(parent)
@@ -328,8 +349,10 @@ class ToolOptionsModel3(ToolOptionsModel):
 
 
 class SettingsModel(QtCore.QAbstractTableModel):
+    """Settings Qt table model."""
 
     def __init__(self, *__args) -> None:
+        """Create a new settings Qt model."""
         super().__init__(*__args)
         self._data: List[Tuple[str, str]] = []
         self._headers = {
@@ -342,7 +365,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
             index: QtCore.QModelIndex,
             role: QtConstant = None
     ) -> Union[str, QtCore.QVariant]:
-
+        """Get role data from an index."""
         if not index.isValid():
             return QtCore.QVariant()
 
@@ -376,6 +399,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
         return QtCore.QVariant()
 
     def flags(self, index: QtCore.QModelIndex):
+        """Manage display flags for a given index."""
         if self._headers.get(index.column(), "") == "Key":
             return QtCore.Qt.NoItemFlags
 
@@ -390,7 +414,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
             data,
             role: QtConstant = None
     ) -> bool:
-
+        """Set data in model."""
         if not index.isValid():
             return False
         row = index.row()
@@ -405,19 +429,24 @@ class SettingsModel(QtCore.QAbstractTableModel):
 
 
 class TabsModel(QtCore.QAbstractListModel):
+    """Tabs Qt list Model."""
 
     def __init__(self, parent: QtCore.QObject = None) -> None:
+        """Create a new tab qt list model."""
         super().__init__(parent)
         self.tabs: List[tabs.TabData] = []
 
     def __contains__(self, value: "tabs.TabData") -> bool:
+        """Check if a tab is in the model."""
         return any(tab.tab_name == value for tab in self.tabs)
 
     def __iadd__(self, other: "tabs.TabData") -> "TabsModel":
+        """Add a tab to the model."""
         self.add_tab(other)
         return self
 
     def __isub__(self, other: "tabs.TabData") -> "TabsModel":
+        """Remove a tab from the model."""
         self.remove_tab(other)
         return self
 

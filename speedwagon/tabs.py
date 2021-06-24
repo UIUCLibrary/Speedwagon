@@ -54,7 +54,7 @@ class Tab:
                  parent: QtWidgets.QWidget,
                  work_manager: worker.ToolJobManager
                  ) -> None:
-
+        """Create a new tab."""
         self.parent = parent
         self.work_manager = work_manager
         self.tab, self.tab_layout = self.create_tab()
@@ -142,7 +142,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             work_manager: worker.ToolJobManager,
             log_manager: logging.Logger
     ) -> None:
-
+        """Create a new item selection tab."""
         super().__init__(parent, work_manager)
         self.log_manager = log_manager
         self.item_selection_model = item_model
@@ -355,13 +355,19 @@ class WorkflowsTab(ItemSelectionTab):
             workflows: Dict[str, Type[speedwagon.job.AbsWorkflow]],
             work_manager=None,
             log_manager=None) -> None:
-
+        """Create a new workflow tab."""
         super().__init__("Workflow", parent,
                          models.WorkflowListModel(workflows), work_manager,
                          log_manager)
+
         self._worflows = workflows
 
     def is_ready_to_start(self) -> bool:
+        """Get if the workflow is ready to start.
+
+        Returns:
+            Returns True is ready, false if not ready.
+        """
         if len(self.item_selector_view.selectedIndexes()) != 1:
             print(
                 "Invalid number of selected Indexes. "
@@ -493,6 +499,7 @@ class TabData(NamedTuple):
 
 
 def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
+    """Read a custom tab yaml file."""
     tabs_file_size = os.path.getsize(yaml_file)
     if tabs_file_size > 0:
         try:
@@ -536,6 +543,7 @@ def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
 
 
 def write_tabs_yaml(yaml_file: str, tabs: List[TabData]) -> None:
+    """Write out tab custom information to a yaml file."""
     tabs_data = dict()
     for tab in tabs:
         tab_model = tab.workflows_model
@@ -550,6 +558,7 @@ def write_tabs_yaml(yaml_file: str, tabs: List[TabData]) -> None:
 def extract_tab_information(
         model: "speedwagon.models.TabsModel"
 ) -> List[TabData]:
+    """Get tab information."""
     tabs = []
     for tab in model.tabs:
         new_tab = TabData(tab.tab_name, tab.workflows_model)

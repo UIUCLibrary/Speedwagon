@@ -148,7 +148,7 @@ class GlobalSettingsTab(QtWidgets.QWidget):
             parent: QtWidgets.QWidget = None,
             *args, **kwargs
     ) -> None:
-
+        """Create a global settings tab widget."""
         super().__init__(parent, *args, **kwargs)
         self.config_file: Optional[str] = None
         self._modified = False
@@ -203,7 +203,7 @@ class TabsConfigurationTab(QtWidgets.QWidget):
                  parent: QtWidgets.QWidget = None,
                  *args,
                  **kwargs) -> None:
-
+        """Create a tab configuration widget."""
         super().__init__(parent, *args, **kwargs)
         self.settings_location: Optional[str] = None
         self._modified = False
@@ -244,6 +244,7 @@ class TabsConfigurationTab(QtWidgets.QWidget):
 class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
 
     def __init__(self, *args, **kwargs) -> None:
+        """Create a tab editor widget."""
         super().__init__(*args, **kwargs)
         self.setupUi(self)
         self._tabs_file: Optional[str] = None

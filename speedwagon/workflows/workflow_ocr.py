@@ -44,6 +44,7 @@ class OCRWorkflow(speedwagon.Workflow):
     }
 
     def __init__(self, *args, **kwargs) -> None:
+        """Create a OCR Workflow."""
         super().__init__(*args, **kwargs)
         self.global_settings = kwargs.get('global_settings', {})
         self.tessdata_path = self._get_tessdata_dir(args, self.global_settings)

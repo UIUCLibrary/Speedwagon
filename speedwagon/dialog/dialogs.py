@@ -15,6 +15,7 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
     """Dialog box for Error Messages causes while running a job."""
 
     def __init__(self, *__args) -> None:
+        """Create a error dialog box."""
         super().__init__(*__args)
         self.setIcon(QtWidgets.QMessageBox.Critical)
         self.setStandardButtons(QtWidgets.QMessageBox.Abort)
@@ -52,6 +53,7 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
         super().closeEvent(event)
 
     def __init__(self, *args) -> None:
+        """Create a work progress dialog window."""
         super().__init__(*args)
         self.setModal(True)
         self.setMinimumHeight(100)
@@ -67,6 +69,7 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
 
 
 def about_dialog_box(parent):
+    """Launch the about speedwagon dialog box."""
     try:
         pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
         summary = pkg_metadata['Summary']
@@ -84,8 +87,10 @@ def about_dialog_box(parent):
 
 
 class SystemInfoDialog(QtWidgets.QDialog):
+    """System information dialog window."""
 
     def __init__(self, parent: QtWidgets.QWidget, *args, **kwargs) -> None:
+        """Display System information."""
         super().__init__(parent, *args, **kwargs)
 
         self.setWindowTitle("System Information")

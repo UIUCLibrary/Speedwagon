@@ -17,6 +17,7 @@ class MakeChecksumTask(tasks.Subtask):
             filename: str,
             checksum_report: str
     ) -> None:
+        """Create a make checksum task."""
         super().__init__()
         self._source_path = source_path
         self._filename = filename
@@ -48,6 +49,7 @@ class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
             output_filename: str,
             checksum_calculations
     ) -> None:
+        """Create a checksum report task."""
         super().__init__()
         self._output_filename = output_filename
         self._checksum_calculations = checksum_calculations

@@ -27,6 +27,7 @@ class CustomItemWidget(QtWidgets.QWidget):
     editingFinished = QtCore.pyqtSignal()
 
     def __init__(self, parent=None, *args, **kwargs) -> None:
+        """Create a custom item widget."""
         super().__init__(parent, *args, **kwargs)
         self._data = ""
         self.inner_layout = QtWidgets.QHBoxLayout(parent)
@@ -45,8 +46,10 @@ class CustomItemWidget(QtWidgets.QWidget):
 
 
 class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
+    """Abstract browsable widget."""
 
     def __init__(self, *args, **kwargs) -> None:
+        """Create the base structure for a browseable widget."""
         super().__init__()
         self.text_line = QtWidgets.QLineEdit(self)
         self.action = \
@@ -152,7 +155,10 @@ class FolderData(AbsCustomData3, metaclass=abc.ABCMeta):
 
 
 class UserOption3(metaclass=abc.ABCMeta):
+    """User option."""
+
     def __init__(self, label_text: str):
+        """Create user option data."""
         self.label_text = label_text
         self.data = None
 
@@ -161,16 +167,18 @@ class UserOption3(metaclass=abc.ABCMeta):
         pass
 
     def edit_widget(self) -> QtWidgets.QWidget:
-        pass
+        """Get widget for editing."""
 
 
 class UserOptionCustomDataType(UserOption3):
+    """User option custom data type."""
+
     def __init__(
             self,
             label_text: str,
             data_type: Type[AbsCustomData3]
     ) -> None:
-
+        """Create a custom user options data type."""
         super().__init__(label_text)
         self.data_type = data_type
         self.data = None
@@ -183,7 +191,10 @@ class UserOptionCustomDataType(UserOption3):
 
 
 class UserOption2(metaclass=abc.ABCMeta):
+    """User Option."""
+
     def __init__(self, label_text):
+        """Create user option data."""
         self.label_text = label_text
         self.data = None
 
@@ -196,7 +207,10 @@ class UserOption2(metaclass=abc.ABCMeta):
 
 
 class UserOptionPythonDataType2(UserOption2):
+    """User option Python data type."""
+
     def __init__(self, label_text: str, data_type=str) -> None:
+        """Create a user options data type."""
         super().__init__(label_text)
         self.data_type = data_type
         self.data = None
@@ -206,8 +220,10 @@ class UserOptionPythonDataType2(UserOption2):
 
 
 class ListSelectionWidget(CustomItemWidget, metaclass=WidgetMeta):
+    """List selection widget."""
 
     def __init__(self, selections, *args, **kwargs) -> None:
+        """Create a list selection widget."""
         super().__init__()
         self._combobox = QtWidgets.QComboBox()
         self._selections = selections
@@ -224,8 +240,10 @@ class ListSelectionWidget(CustomItemWidget, metaclass=WidgetMeta):
 
 
 class ListSelection(UserOption2):
+    """List selection."""
 
     def __init__(self, label_text):
+        """Create a list selection."""
         super().__init__(label_text)
         self._selections = []
 

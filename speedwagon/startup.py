@@ -45,6 +45,7 @@ class FileFormatError(Exception):
 
 
 def parse_args() -> argparse.ArgumentParser:
+    """Parse command line arguments."""
     return CliArgsSetter.get_arg_parser()
 
 
@@ -125,9 +126,11 @@ class ConfigFileSetter(AbsSetting):
     FRIENDLY_NAME = "Config file settings"
 
     def __init__(self, config_file: str):
+        """Create a new config file setter."""
         self.config_file = config_file
 
     def update(self, settings=None) -> Dict["str", Union[str, bool]]:
+        """Update setting configuration."""
         new_settings = super().update(settings)
         with speedwagon.config.ConfigManager(self.config_file) as cfg:
             new_settings.update(cfg.global_settings.items())
@@ -135,6 +138,7 @@ class ConfigFileSetter(AbsSetting):
 
 
 def get_selection(all_workflows):
+    """Get current selection of workflows."""
     new_workflow_set = dict()
     for k, v in all_workflows.items():
         if "Verify" in k:
@@ -226,6 +230,7 @@ def get_custom_tabs(
         all_workflows: Dict[str, Type[speedwagon.Workflow]],
         yaml_file: str
 ) -> Iterator[Tuple[str, dict]]:
+    """Load custom tab yaml file."""
     getter = CustomTabsFileReader(all_workflows)
     yield from getter.load_custom_tabs(yaml_file)
 
@@ -237,11 +242,14 @@ class AbsStarter(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def initialize(self) -> None:
-        pass
+        """Initialize startup routine."""
 
 
 class StartupDefault(AbsStarter):
+    """Default startup."""
+
     def __init__(self, app: QtWidgets.QApplication = None) -> None:
+        """Create a new default startup routine."""
         self._logger = logging.getLogger(__name__)
         self._logger.setLevel(logging.DEBUG)
 
@@ -472,6 +480,7 @@ class TabsEditorApp(QtWidgets.QDialog):
     """Dialog box for editing tabs.yml file."""
 
     def __init__(self, *args, **kwargs) -> None:
+        """Create a tabs editor dialog window."""
         super().__init__(*args, **kwargs)
         self.setWindowTitle("Speedwagon Tabs Editor")
         layout = QtWidgets.QVBoxLayout()
@@ -514,6 +523,7 @@ class TabsEditorApp(QtWidgets.QDialog):
         self.close()
 
     def load_tab_file(self, filename: str) -> None:
+        """Load tab file."""
         self.editor.tabs_file = filename
 
     @property
@@ -526,6 +536,7 @@ class TabsEditorApp(QtWidgets.QDialog):
 
 
 def standalone_tab_editor(app: QtWidgets.QApplication = None) -> None:
+    """Launch standalone tab editor app."""
     print("Loading settings")
     settings = speedwagon.config.get_platform_settings()
 
@@ -543,6 +554,7 @@ def standalone_tab_editor(app: QtWidgets.QApplication = None) -> None:
 
 
 def main(argv: List[str] = None) -> None:
+    """Launch main entry point."""
     argv = argv or sys.argv
     if "tab-editor" in argv:
         standalone_tab_editor()

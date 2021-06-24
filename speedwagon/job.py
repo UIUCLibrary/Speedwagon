@@ -24,6 +24,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
     required_settings_keys: Set[str] = set()
 
     def __init__(self, *args, **kwargs) -> None:
+        """Populate the base structure of a workflow class."""
         super().__init__()
         self.options = []  # type: ignore
 
@@ -160,8 +161,10 @@ class NullWorkflow(Workflow):
 
 
 class AbsDynamicFinder(metaclass=abc.ABCMeta):
+    """Dyanmic finder base class."""
 
     def __init__(self, path) -> None:
+        """Populate the base structure of a dynamic finder."""
         self.path = path
         self.logger = logging.getLogger(__name__)
 
@@ -171,6 +174,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
         pass
 
     def locate(self) -> Dict["str", AbsWorkflow]:
+        """Locate workflows."""
         located_class = {}
         tree = os.scandir(self.path)
 
@@ -186,7 +190,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
 
     def load(self, module_file: str) -> \
             Iterable[Tuple[str, Any]]:
-
+        """Load module file."""
         def class_member_filter(item) -> bool:
             return inspect.isclass(item) and not inspect.isabstract(item)
 
@@ -226,6 +230,7 @@ class WorkflowFinder(AbsDynamicFinder):
 
     @property
     def base_class(self):
+        """Get base class."""
         return AbsWorkflow
 
 
