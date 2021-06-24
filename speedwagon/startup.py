@@ -130,6 +130,7 @@ class ConfigFileSetter(AbsSetting):
         self.config_file = config_file
 
     def update(self, settings=None) -> Dict["str", Union[str, bool]]:
+        """Update setting configuration."""
         new_settings = super().update(settings)
         with speedwagon.config.ConfigManager(self.config_file) as cfg:
             new_settings.update(cfg.global_settings.items())
@@ -241,10 +242,12 @@ class AbsStarter(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def initialize(self) -> None:
-        pass
+        """Initialize startup routine."""
 
 
 class StartupDefault(AbsStarter):
+    """Default startup."""
+
     def __init__(self, app: QtWidgets.QApplication = None) -> None:
         """Create a new default startup routine."""
         self._logger = logging.getLogger(__name__)
