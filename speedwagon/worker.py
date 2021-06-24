@@ -8,6 +8,7 @@ import queue
 import sys
 import traceback
 import typing
+from abc import ABC
 from typing import Callable, Optional, Any, Dict
 from collections import namedtuple
 
@@ -29,7 +30,7 @@ class NoWorkError(RuntimeError):
     pass
 
 
-class AbsJobWorker(metaclass=QtMeta):
+class AbsJobWorker:
     name: typing.Optional[str] = None
 
     def __init__(self) -> None:
@@ -69,10 +70,6 @@ class AbsJobWorker(metaclass=QtMeta):
 
 class ProcessJobWorker(AbsJobWorker):
     _mq: 'Optional[queue.Queue[str]]' = None
-
-    def __init__(self) -> None:
-        """Create a process job worker."""
-        super().__init__()
 
     def process(self, *args, **kwargs) -> None:
         """Process job."""
@@ -119,13 +116,15 @@ class Worker(metaclass=abc.ABCMeta):
         """Execute jobs in loaded in q."""
 
     @abc.abstractmethod
-    def add_job(self, job: typing.Type[ProcessJobWorker], **job_args) -> None:
+    def add_job(self, job: ProcessJobWorker, **job_args) -> None:
         """Load jobs into queue."""
 
 
-class UIWorker(Worker):
+class UIWorker(Worker, ABC):
     def __init__(self, parent) -> None:
-        """Interface for managing jobs. Designed handle loading and executing jobs.
+        """Interface for managing jobs.
+
+        Designed handle loading and executing jobs.
 
         Args:
             parent: The widget controlling the worker
@@ -135,7 +134,7 @@ class UIWorker(Worker):
         self._jobs_queue: queue.Queue[typing.Any] = queue.Queue()
 
 
-class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
+class ProcessWorker(UIWorker):
     executor = concurrent.futures.ProcessPoolExecutor(max_workers=1)
 
     def __init__(self, *args, **kwargs) -> None:
@@ -203,10 +202,12 @@ class ProgressMessageBoxLogHandler(logging.Handler):
             traceback.print_tb(e.__traceback__)
 
 
+# pylint: disable=too-few-public-methods
 class AbsObserver(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def emit(self, value) -> None:
         pass
+# pylint: enable=too-few-public-methods
 
 
 class AbsSubject(metaclass=abc.ABCMeta):
@@ -461,7 +462,6 @@ class AbsJobAdapter(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def set_message_queue(self, value) -> None:
         """Set the message queue used by the job."""
-        pass
 
     @property
     @abc.abstractmethod
