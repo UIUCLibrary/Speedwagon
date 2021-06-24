@@ -150,7 +150,7 @@ class Subtask(AbsSubtask):
 
 
 class PreTask(AbsSubtask):
-    """Pre-task subtask"""
+    """Pre-task subtask."""
 
     def __init__(self) -> None:
         """Create a new pre-task."""
@@ -187,6 +187,7 @@ class PreTask(AbsSubtask):
         pass
 
     def work(self) -> bool:
+        """Perform the task."""
         return super().work()
 
 
@@ -264,6 +265,7 @@ class Task(AbsTask, AbsTaskComponents):
 
     @property
     def status(self) -> TaskStatus:
+        """Get task status."""
         return super().status
 
 
@@ -576,6 +578,7 @@ class MultiStageTaskBuilder(BaseTaskBuilder):
 
     @property
     def task(self) -> MultiStageTask:
+        """Get the task."""
         task = MultiStageTask()
         task.working_dir = self._working_dir
         return task
