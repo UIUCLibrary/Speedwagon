@@ -186,8 +186,10 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
                 return False
             return True
 
-        t1, t2 = itertools.tee(results)
-        return itertools.filterfalse(successful, t1), filter(successful, t2)
+        iterator_1, iterator_2 = itertools.tee(results)
+        return \
+            itertools.filterfalse(successful, iterator_1), \
+            filter(successful, iterator_2)
 
 
 class PackageImageConverterTask(tasks.Subtask):
