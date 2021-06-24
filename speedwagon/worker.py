@@ -70,10 +70,6 @@ class AbsJobWorker:
 class ProcessJobWorker(AbsJobWorker):
     _mq: 'Optional[queue.Queue[str]]' = None
 
-    def __init__(self) -> None:
-        """Create a process job worker."""
-        super().__init__()
-
     def process(self, *args, **kwargs) -> None:
         """Process job."""
 
