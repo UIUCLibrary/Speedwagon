@@ -32,7 +32,6 @@ class CreateChecksumWorkflow(AbsWorkflow, ABC):
             for file_ in files:
                 yield os.path.join(root, file_)
 
-
     @classmethod
     def sort_results(cls,
                      results: typing.List[typing.Mapping[ResultsValues, str]]
