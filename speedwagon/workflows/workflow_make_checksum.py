@@ -22,6 +22,8 @@ __all__ = [
     'MakeChecksumBatchMultipleWorkflow'
 ]
 
+DEFAULT_CHECKSUM_FILE_NAME = "checksum.md5"
+
 
 class CreateChecksumWorkflow(AbsWorkflow, ABC):
     @classmethod
@@ -49,12 +51,12 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
     name = "Make Checksum Batch [Single]"
     description = "The checksum is a signature of a file.  If any data is " \
                   "changed, the checksum will provide a different " \
-                  "signature.  The checksum.md5 contains a record of each " \
-                  "file in a single item along with respective checksum " \
-                  "values " \
+                  f"signature.  The {DEFAULT_CHECKSUM_FILE_NAME} contains a " \
+                  f"record of each file in a single item along with " \
+                  f"respective checksum values " \
                   "\n" \
-                  "Creates a single checksum.md5 for every file inside a " \
-                  "given folder" \
+                  f"Creates a single {DEFAULT_CHECKSUM_FILE_NAME} for every " \
+                  f"file inside a given folder" \
                   "\n" \
                   "Input: Path to a root folder"
 
@@ -64,8 +66,9 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
                                **user_args: str) -> List[dict]:
         jobs = []
         package_root = user_args["Input"]
-        report_to_save_to = os.path.normpath(os.path.join(package_root,
-                                                          "checksum.md5"))
+        report_to_save_to = os.path.normpath(
+            os.path.join(package_root, DEFAULT_CHECKSUM_FILE_NAME)
+        )
 
         for root, _, files in os.walk(package_root):
             for file_ in files:
@@ -133,14 +136,15 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
     name = "Make Checksum Batch [Multiple]"
     description = "The checksum is a signature of a file.  If any data " \
                   "is changed, the checksum will provide a different " \
-                  "signature.  The checksum.md5 contains a record of the " \
-                  "files for a given package." \
+                  f"signature.  The {DEFAULT_CHECKSUM_FILE_NAME} contains a " \
+                  f"record of the files for a given package." \
                   "\n" \
-                  "The tool creates a checksum.md5 for every subdirectory " \
-                  "found inside a given path." \
+                  f"The tool creates a {DEFAULT_CHECKSUM_FILE_NAME} for " \
+                  f"every subdirectory found inside a given path." \
                   "\n" \
                   "Input: Path to a root directory that contains " \
-                  "subdirectories to generate checksum.md5 files"
+                  f"subdirectories to generate {DEFAULT_CHECKSUM_FILE_NAME} " \
+                  f"files"
 
     def discover_task_metadata(
             self,
@@ -157,7 +161,8 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
 
             package_root = sub_dir.path
             report_to_save_to = os.path.normpath(
-                os.path.join(package_root, "checksum.md5"))
+                os.path.join(package_root, DEFAULT_CHECKSUM_FILE_NAME)
+            )
 
             for root, _, files in os.walk(package_root):
                 for file_ in files:
@@ -226,7 +231,7 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
 class RegenerateChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
     name = "Regenerate Checksum Batch [Single]"
     description = "Regenerates hash values for every file inside for a " \
-                  "given checksum.md5 file" \
+                  f"given {DEFAULT_CHECKSUM_FILE_NAME} file" \
                   "\n" \
                   "Input: Path to a root folder"
 
@@ -304,11 +309,13 @@ class RegenerateChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
 
 class RegenerateChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
     name = "Regenerate Checksum Batch [Multiple]"
-    description = "Regenerates the hash values for every checksum.md5 " \
-                  "located inside a given path\n" \
+    description = f"Regenerates the hash values for every " \
+                  f"{DEFAULT_CHECKSUM_FILE_NAME} located inside a " \
+                  f"given path\n" \
                   "\n" \
                   "Input: Path to a root directory that contains " \
-                  "subdirectories to generate checksum.md5 files"
+                  f"subdirectories to generate {DEFAULT_CHECKSUM_FILE_NAME} " \
+                  f"files"
 
     def discover_task_metadata(self,
                                initial_results: List[Any],
@@ -322,8 +329,10 @@ class RegenerateChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
                               os.scandir(root_for_all_packages)):
 
             package_root = sub_dir.path
+
             report_to_save_to = os.path.normpath(
-                os.path.join(package_root, "checksum.md5"))
+                os.path.join(package_root, DEFAULT_CHECKSUM_FILE_NAME)
+            )
 
             for root, _, files in os.walk(package_root):
                 for file_ in files:
