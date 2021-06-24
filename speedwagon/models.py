@@ -136,6 +136,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         cast(QtCore.pyqtBoundSignal, self.layoutChanged).emit()
 
     def add_workflow(self, workflow: Type[Workflow]) -> None:
+        """Add workflow to model."""
         for existing_workflow in self.workflows:
             if workflow.name == existing_workflow.name:
                 break
@@ -195,6 +196,7 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
         raise NotImplementedError
 
     def flags(self, index: QtCore.QModelIndex):
+        """Get flags for a given index."""
         if not index.isValid():
             return QtCore.Qt.ItemIsEnabled
 
@@ -210,8 +212,8 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
 class ToolOptionsPairsModel(ToolOptionsModel):
     """Tool Options Pairs Qt table model.
 
-        Warnings:
-            This class is deprecated. Use ToolOptionsModel2 instead.
+    Warnings:
+        This class is deprecated. Use ToolOptionsModel2 instead.
     """
 
     def __init__(self, data: Dict[str, str], parent=None) -> None:
@@ -363,7 +365,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
             index: QtCore.QModelIndex,
             role: QtConstant = None
     ) -> Union[str, QtCore.QVariant]:
-
+        """Get role data from an index."""
         if not index.isValid():
             return QtCore.QVariant()
 
@@ -397,6 +399,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
         return QtCore.QVariant()
 
     def flags(self, index: QtCore.QModelIndex):
+        """Manage display flags for a given index."""
         if self._headers.get(index.column(), "") == "Key":
             return QtCore.Qt.NoItemFlags
 
@@ -411,7 +414,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
             data,
             role: QtConstant = None
     ) -> bool:
-
+        """Set data in model."""
         if not index.isValid():
             return False
         row = index.row()
