@@ -83,6 +83,8 @@ class WorkflowListModel(ItemListModel):
 
 
 class WorkflowListModel2(QtCore.QAbstractListModel):
+    """Workflow Qt list model."""
+
     def __init__(self, parent: QtCore.QObject = None) -> None:
         """Create a new WorkflowListModel2 qt list model."""
         super().__init__(parent)
@@ -173,6 +175,8 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
 
 
 class ToolOptionsModel(QtCore.QAbstractTableModel):
+    """Tool options Qt table model."""
+
     def __init__(self, parent):
         """Create a new ToolOptionsModel qt table model."""
         super().__init__(parent)
@@ -204,6 +208,11 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
 
 
 class ToolOptionsPairsModel(ToolOptionsModel):
+    """Tool Options Pairs Qt table model.
+
+        Warnings:
+            This class is deprecated. Use ToolOptionsModel2 instead.
+    """
 
     def __init__(self, data: Dict[str, str], parent=None) -> None:
         """Create a new ToolOptionsPairsModel model.
@@ -338,6 +347,7 @@ class ToolOptionsModel3(ToolOptionsModel):
 
 
 class SettingsModel(QtCore.QAbstractTableModel):
+    """Settings Qt table model."""
 
     def __init__(self, *__args) -> None:
         """Create a new settings Qt model."""
@@ -416,6 +426,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
 
 
 class TabsModel(QtCore.QAbstractListModel):
+    """Tabs Qt list Model."""
 
     def __init__(self, parent: QtCore.QObject = None) -> None:
         """Create a new tab qt list model."""
