@@ -488,7 +488,6 @@ class GetMarcMMSID(AbsMarcFileStrategy):
         return self.download_record(f"{self.url}/api/record?mms_id={ident}")
 
 
-
 def strip_volume(full_bib_id: str) -> int:
     # Only pull the base bib id
     volume_regex = re.compile("^[0-9]{7}(?=((v[0-9]*)((i[0-9])?)?)?$)")
