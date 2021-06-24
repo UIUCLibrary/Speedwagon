@@ -75,7 +75,7 @@ class ProcessJobWorker(AbsJobWorker):
         super().__init__()
 
     def process(self, *args, **kwargs) -> None:
-        pass
+        """Process job."""
 
     def set_message_queue(self, value: 'queue.Queue[str]') -> None:
         self._mq = value
@@ -217,6 +217,7 @@ class AbsSubject(metaclass=abc.ABCMeta):
         self._observers -= {observer}
 
     def notify(self, value=None):
+        """Notify observers of value."""
         with self.lock:
             for observer in self._observers:
                 if value is None:
@@ -240,6 +241,8 @@ class GuiLogHandler(logging.Handler):
 
 
 class WorkRunnerExternal3(contextlib.AbstractContextManager):
+    """Work runner that uses external manager."""
+
     def __init__(self, parent: QtWidgets.QWidget) -> None:
         """Create a work runner."""
         self.results: typing.List[Result] = []
@@ -289,6 +292,7 @@ class AbsJobManager(metaclass=abc.ABCMeta):
 
 
 class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
+    """Tool job manager."""
 
     def __init__(self, max_workers: int = 1) -> None:
         """Create a tool job manager."""
@@ -327,6 +331,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         self._pending_jobs.put(JobPair(new_job, settings))
 
     def start(self) -> None:
+        """Start jobs."""
         self.active = True
         while not self._pending_jobs.empty():
             job_, settings = self._pending_jobs.get()
@@ -431,6 +436,8 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
 
 class AbsJobAdapter(metaclass=abc.ABCMeta):
+    """Job adapter abstract base class."""
+
     def __init__(self, adaptee) -> None:
         """Create the base structure for a job adapter class."""
         self._adaptee = adaptee
