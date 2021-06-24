@@ -26,6 +26,7 @@ class JobModelData(enum.Enum):
 class ItemListModel(QtCore.QAbstractTableModel):
 
     def __init__(self, data: Dict["str", Type[AbsWorkflow]]) -> None:
+        """Create a new ItemListModel qt list model for workflows."""
         super().__init__()
         self.jobs: List[Type[AbsWorkflow]] = list(data.values())
 
@@ -83,6 +84,7 @@ class WorkflowListModel(ItemListModel):
 
 class WorkflowListModel2(QtCore.QAbstractListModel):
     def __init__(self, parent: QtCore.QObject = None) -> None:
+        """Create a new WorkflowListModel2 qt list model."""
         super().__init__(parent)
         self.workflows: List[Type[Workflow]] = []
 
@@ -172,6 +174,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
 
 class ToolOptionsModel(QtCore.QAbstractTableModel):
     def __init__(self, parent):
+        """Create a new ToolOptionsModel qt table model."""
         super().__init__(parent)
         self._data = []
 
@@ -203,6 +206,11 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
 class ToolOptionsPairsModel(ToolOptionsModel):
 
     def __init__(self, data: Dict[str, str], parent=None) -> None:
+        """Create a new ToolOptionsPairsModel model.
+
+        Warnings:
+            This is deprecated. Use ToolOptionsModel2 instead.
+        """
         warnings.warn("Use ToolOptionsModel2 instead", DeprecationWarning)
         super().__init__(parent)
         for key, value in data.items():
@@ -266,7 +274,7 @@ class ToolOptionsModel3(ToolOptionsModel):
             data: List[shared_custom_widgets.UserOptionPythonDataType2],
             parent: QtCore.QObject = None
     ) -> None:
-
+        """Create a new tool options Qt model."""
         if data is None:
             raise NotImplementedError
         super().__init__(parent)
@@ -332,6 +340,7 @@ class ToolOptionsModel3(ToolOptionsModel):
 class SettingsModel(QtCore.QAbstractTableModel):
 
     def __init__(self, *__args) -> None:
+        """Create a new settings Qt model."""
         super().__init__(*__args)
         self._data: List[Tuple[str, str]] = []
         self._headers = {
@@ -409,6 +418,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
 class TabsModel(QtCore.QAbstractListModel):
 
     def __init__(self, parent: QtCore.QObject = None) -> None:
+        """Create a new tab qt list model."""
         super().__init__(parent)
         self.tabs: List[tabs.TabData] = []
 

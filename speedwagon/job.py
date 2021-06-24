@@ -24,6 +24,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
     required_settings_keys: Set[str] = set()
 
     def __init__(self, *args, **kwargs) -> None:
+        """Populate the base structure of a workflow class."""
         super().__init__()
         self.options = []  # type: ignore
 
@@ -162,6 +163,7 @@ class NullWorkflow(Workflow):
 class AbsDynamicFinder(metaclass=abc.ABCMeta):
 
     def __init__(self, path) -> None:
+        """Populate the base structure of a dynamic finder."""
         self.path = path
         self.logger = logging.getLogger(__name__)
 

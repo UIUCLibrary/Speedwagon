@@ -77,6 +77,7 @@ class Subtask(AbsSubtask):
     """
 
     def __init__(self) -> None:
+        """Create a new sub-task."""
         self._result: Optional[Result] = None
         # TODO: refactor into state machine
         self._status = TaskStatus.IDLE
@@ -151,6 +152,7 @@ class Subtask(AbsSubtask):
 class PreTask(AbsSubtask):
 
     def __init__(self) -> None:
+        """Create a new pre-task."""
         self._status = TaskStatus.IDLE
         self._parent_task_log_q: Optional[Deque[str]] = None
         self._result: Optional[Result] = None
@@ -228,6 +230,7 @@ class AbsTaskComponents(metaclass=abc.ABCMeta):
 
 class Task(AbsTask, AbsTaskComponents):
     def __init__(self) -> None:
+        """Create a new task."""
         self.log_q: Deque[str] = collections.deque()
         self.result: Any = None
         self._pre_task: Optional[AbsSubtask] = None
@@ -264,6 +267,7 @@ class MultiStageTask(Task):
     name = "Task"
 
     def __init__(self) -> None:
+        """Create a new multi-stage task."""
         super().__init__()
         # Todo: use the results builder from validate
         self._main_subtasks: List[AbsSubtask] = []
@@ -384,6 +388,7 @@ class AbsTaskBuilder(metaclass=abc.ABCMeta):
 class BaseTaskBuilder(AbsTaskBuilder):
 
     def __init__(self) -> None:
+        """Create base structure of a task builder class."""
         self._main_subtasks: List[AbsSubtask] = []
         self._pretask: Optional[AbsSubtask] = None
         self._posttask: Optional[AbsSubtask] = None
@@ -426,6 +431,7 @@ class TaskBuilder:
     _task_counter = 0
 
     def __init__(self, builder: BaseTaskBuilder, working_dir) -> None:
+        """Create a new task builder."""
         self._builder = builder
         self._working_dir = working_dir
         self._subtask_counter = 0
@@ -542,6 +548,7 @@ class TaskBuilder:
 class QueueAdapter:
 
     def __init__(self) -> None:
+        """Create a new queue adapter."""
         super().__init__()
         self._queue: Optional[queue.Queue] = None
 
@@ -555,6 +562,7 @@ class QueueAdapter:
 class MultiStageTaskBuilder(BaseTaskBuilder):
 
     def __init__(self, working_dir: str) -> None:
+        """Create a new multi-stage task builder."""
         super().__init__()
         self._working_dir = working_dir
 

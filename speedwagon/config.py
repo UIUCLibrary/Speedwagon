@@ -21,6 +21,7 @@ class AbsConfig(collections.abc.Mapping):
     """Abstract class for defining where speedwagon should find data files."""
 
     def __init__(self) -> None:
+        """Populate the base structure of a config class."""
         super().__init__()
         self._data: Dict[str, str] = dict()
 

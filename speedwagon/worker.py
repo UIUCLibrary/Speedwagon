@@ -33,6 +33,7 @@ class AbsJobWorker(metaclass=QtMeta):
     name: typing.Optional[str] = None
 
     def __init__(self) -> None:
+        """Create the base structure for a job worker."""
         self.result = None
         self.successful: typing.Optional[bool] = None
 
@@ -70,6 +71,7 @@ class ProcessJobWorker(AbsJobWorker):
     _mq: 'Optional[queue.Queue[str]]' = None
 
     def __init__(self) -> None:
+        """Create a process job worker."""
         super().__init__()
 
     def process(self, *args, **kwargs) -> None:
@@ -133,6 +135,7 @@ class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
     executor = concurrent.futures.ProcessPoolExecutor(max_workers=1)
 
     def __init__(self, *args, **kwargs) -> None:
+        """Create a process worker."""
         super().__init__(*args, **kwargs)
         self.manager = multiprocessing.Manager()
         self._message_queue = self.manager.Queue()
@@ -183,7 +186,7 @@ class ProgressMessageBoxLogHandler(logging.Handler):
 
     def __init__(self, dialog_box: QtWidgets.QProgressDialog,
                  level: int = logging.NOTSET) -> None:
-
+        """Create a log handler for progress message box."""
         super().__init__(level)
         self.dialog_box = dialog_box
 
@@ -228,7 +231,7 @@ class GuiLogHandler(logging.Handler):
             callback: typing.Callable[[str], None],
             level: int = logging.NOTSET
     ) -> None:
-
+        """Create a gui log handler."""
         super().__init__(level)
         self.callback = callback
 
@@ -238,6 +241,7 @@ class GuiLogHandler(logging.Handler):
 
 class WorkRunnerExternal3(contextlib.AbstractContextManager):
     def __init__(self, parent: QtWidgets.QWidget) -> None:
+        """Create a work runner."""
         self.results: typing.List[Result] = []
         self._parent = parent
         self.abort_callback = None
@@ -287,6 +291,7 @@ class AbsJobManager(metaclass=abc.ABCMeta):
 class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
     def __init__(self, max_workers: int = 1) -> None:
+        """Create a tool job manager."""
         self.settings_path: Optional[str] = None
         self.manager = multiprocessing.Manager()
         self._max_workers = max_workers
@@ -427,6 +432,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
 class AbsJobAdapter(metaclass=abc.ABCMeta):
     def __init__(self, adaptee) -> None:
+        """Create the base structure for a job adapter class."""
         self._adaptee = adaptee
 
     @property
@@ -452,6 +458,7 @@ class SubtaskJobAdapter(AbsJobAdapter,
                         ProcessJobWorker):
 
     def __init__(self, adaptee: AbsSubtask) -> None:
+        """Create a sub-task job adapter."""
         AbsJobAdapter.__init__(self, adaptee)
         ProcessJobWorker.__init__(self)
         self.adaptee.parent_task_log_q = QueueAdapter()

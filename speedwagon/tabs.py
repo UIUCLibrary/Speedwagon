@@ -54,7 +54,7 @@ class Tab:
                  parent: QtWidgets.QWidget,
                  work_manager: worker.ToolJobManager
                  ) -> None:
-
+        """Create a new tab."""
         self.parent = parent
         self.work_manager = work_manager
         self.tab, self.tab_layout = self.create_tab()
@@ -142,7 +142,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             work_manager: worker.ToolJobManager,
             log_manager: logging.Logger
     ) -> None:
-
+        """Create a new item selection tab."""
         super().__init__(parent, work_manager)
         self.log_manager = log_manager
         self.item_selection_model = item_model
@@ -355,10 +355,11 @@ class WorkflowsTab(ItemSelectionTab):
             workflows: Dict[str, Type[speedwagon.job.AbsWorkflow]],
             work_manager=None,
             log_manager=None) -> None:
-
+        """Create a new workflow tab."""
         super().__init__("Workflow", parent,
                          models.WorkflowListModel(workflows), work_manager,
                          log_manager)
+
         self._worflows = workflows
 
     def is_ready_to_start(self) -> bool:

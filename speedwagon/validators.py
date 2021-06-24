@@ -26,6 +26,7 @@ class AbsOptionValidator(abc.ABC):
 class DirectoryValidation(AbsOptionValidator):
 
     def __init__(self, key: str) -> None:
+        """Create a new directory validator."""
         self._key: str = key
 
     @staticmethod
@@ -56,6 +57,7 @@ class DirectoryValidation(AbsOptionValidator):
 
 class OptionValidatorFactory:
     def __init__(self) -> None:
+        """Create an optional validator factory."""
         self._validators: Dict[str, AbsOptionValidator] = {}
 
     def register_validator(self,

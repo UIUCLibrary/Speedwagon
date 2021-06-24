@@ -126,6 +126,7 @@ class ConfigFileSetter(AbsSetting):
     FRIENDLY_NAME = "Config file settings"
 
     def __init__(self, config_file: str):
+        """Create a new config file setter."""
         self.config_file = config_file
 
     def update(self, settings=None) -> Dict["str", Union[str, bool]]:
@@ -245,6 +246,7 @@ class AbsStarter(metaclass=abc.ABCMeta):
 
 class StartupDefault(AbsStarter):
     def __init__(self, app: QtWidgets.QApplication = None) -> None:
+        """Create a new default startup routine."""
         self._logger = logging.getLogger(__name__)
         self._logger.setLevel(logging.DEBUG)
 
@@ -475,6 +477,7 @@ class TabsEditorApp(QtWidgets.QDialog):
     """Dialog box for editing tabs.yml file."""
 
     def __init__(self, *args, **kwargs) -> None:
+        """Create a tabs editor dialog window."""
         super().__init__(*args, **kwargs)
         self.setWindowTitle("Speedwagon Tabs Editor")
         layout = QtWidgets.QVBoxLayout()

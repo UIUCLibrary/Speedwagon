@@ -29,6 +29,7 @@ class AbsRunner(metaclass=abc.ABCMeta):
 
 class RunRunner:
     def __init__(self, strategy: AbsRunner) -> None:
+        """Create a new runner executor."""
         self._strategy = strategy
 
     def run(self,
@@ -43,6 +44,7 @@ class RunRunner:
 class UsingExternalManagerForAdapter(AbsRunner):
 
     def __init__(self, manager: "worker.ToolJobManager") -> None:
+        """Create a new runner."""
         self._manager = manager
 
     @staticmethod
