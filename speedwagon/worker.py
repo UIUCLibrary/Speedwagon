@@ -348,6 +348,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
             self.futures.append(fut)
 
     def abort(self) -> None:
+        """Abort jobs."""
         self.active = False
         still_running: typing.List[concurrent.futures.Future] = []
 
@@ -455,7 +456,7 @@ class AbsJobAdapter(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def process(self, *args, **kwargs) -> None:
-        pass
+        """Process the adapter."""
 
     @abc.abstractmethod
     def set_message_queue(self, value) -> None:
