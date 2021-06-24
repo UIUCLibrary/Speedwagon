@@ -29,7 +29,7 @@ class NoWorkError(RuntimeError):
     pass
 
 
-class AbsJobWorker(metaclass=QtMeta):
+class AbsJobWorker:
     name: typing.Optional[str] = None
 
     def __init__(self) -> None:
@@ -135,7 +135,7 @@ class UIWorker(Worker):
         self._jobs_queue: queue.Queue[typing.Any] = queue.Queue()
 
 
-class ProcessWorker(UIWorker, QtCore.QObject, metaclass=WorkerMeta):
+class ProcessWorker(UIWorker):
     executor = concurrent.futures.ProcessPoolExecutor(max_workers=1)
 
     def __init__(self, *args, **kwargs) -> None:
