@@ -150,6 +150,7 @@ class Subtask(AbsSubtask):
 
 
 class PreTask(AbsSubtask):
+    """Pre-task subtask"""
 
     def __init__(self) -> None:
         """Create a new pre-task."""
@@ -229,6 +230,8 @@ class AbsTaskComponents(metaclass=abc.ABCMeta):
 
 
 class Task(AbsTask, AbsTaskComponents):
+    """Task."""
+
     def __init__(self) -> None:
         """Create a new task."""
         self.log_q: Deque[str] = collections.deque()
@@ -250,6 +253,7 @@ class Task(AbsTask, AbsTaskComponents):
 
     @posttask.setter
     def posttask(self, value: AbsSubtask):
+        """Set the post-task sub-task."""
         self._post_task = value
 
     def on_completion(self, *args, **kwargs):
@@ -279,6 +283,7 @@ class MultiStageTask(Task):
 
     @property
     def subtasks(self):
+        """Get all subtasks."""
         all_subtasks = []
 
         if self.pretask:
@@ -382,10 +387,11 @@ class AbsTaskBuilder(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def set_posttask(self, subtask: AbsSubtask):
-        pass
+        """Set the post-task task."""
 
 
 class BaseTaskBuilder(AbsTaskBuilder):
+    """Task builder base class."""
 
     def __init__(self) -> None:
         """Create base structure of a task builder class."""
@@ -546,6 +552,7 @@ class TaskBuilder:
 
 
 class QueueAdapter:
+    """Queue adapter class."""
 
     def __init__(self) -> None:
         """Create a new queue adapter."""
@@ -560,6 +567,7 @@ class QueueAdapter:
 
 
 class MultiStageTaskBuilder(BaseTaskBuilder):
+    """Multi stage task builder."""
 
     def __init__(self, working_dir: str) -> None:
         """Create a new multi-stage task builder."""
