@@ -439,6 +439,7 @@ class AbsJobAdapter(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def set_message_queue(self, value) -> None:
+        """Set the message queue used by the job."""
         pass
 
     @property
@@ -468,6 +469,7 @@ class SubtaskJobAdapter(AbsJobAdapter,
 
     @property
     def settings(self) -> typing.Dict[str, str]:
+        """Get the settings for the subtask."""
         if self.adaptee.settings:
             return self.adaptee.settings
         return {key: value for key, value in self.adaptee.__dict__.items()
