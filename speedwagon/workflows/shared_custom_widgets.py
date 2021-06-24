@@ -46,6 +46,7 @@ class CustomItemWidget(QtWidgets.QWidget):
 
 
 class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
+    """Abstract browsable widget."""
 
     def __init__(self, *args, **kwargs) -> None:
         """Create the base structure for a browseable widget."""
@@ -154,6 +155,8 @@ class FolderData(AbsCustomData3, metaclass=abc.ABCMeta):
 
 
 class UserOption3(metaclass=abc.ABCMeta):
+    """User option."""
+
     def __init__(self, label_text: str):
         """Create user option data."""
         self.label_text = label_text
@@ -164,10 +167,12 @@ class UserOption3(metaclass=abc.ABCMeta):
         pass
 
     def edit_widget(self) -> QtWidgets.QWidget:
-        pass
+        """Get widget for editing."""
 
 
 class UserOptionCustomDataType(UserOption3):
+    """User option custom data type."""
+
     def __init__(
             self,
             label_text: str,
@@ -186,6 +191,8 @@ class UserOptionCustomDataType(UserOption3):
 
 
 class UserOption2(metaclass=abc.ABCMeta):
+    """User Option."""
+
     def __init__(self, label_text):
         """Create user option data."""
         self.label_text = label_text
@@ -200,6 +207,8 @@ class UserOption2(metaclass=abc.ABCMeta):
 
 
 class UserOptionPythonDataType2(UserOption2):
+    """User option Python data type."""
+
     def __init__(self, label_text: str, data_type=str) -> None:
         """Create a user options data type."""
         super().__init__(label_text)
@@ -211,6 +220,7 @@ class UserOptionPythonDataType2(UserOption2):
 
 
 class ListSelectionWidget(CustomItemWidget, metaclass=WidgetMeta):
+    """List selection widget."""
 
     def __init__(self, selections, *args, **kwargs) -> None:
         """Create a list selection widget."""
@@ -230,9 +240,10 @@ class ListSelectionWidget(CustomItemWidget, metaclass=WidgetMeta):
 
 
 class ListSelection(UserOption2):
+    """List selection."""
 
     def __init__(self, label_text):
-        """Creat a list selection."""
+        """Create a list selection."""
         super().__init__(label_text)
         self._selections = []
 
