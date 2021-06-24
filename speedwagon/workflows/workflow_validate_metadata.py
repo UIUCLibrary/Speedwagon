@@ -3,7 +3,7 @@
 import os
 import typing
 import warnings
-from typing import Iterable, Optional, List, Any, Union
+from typing import Optional, List, Any, Union
 import enum
 
 from uiucprescon import imagevalidate
