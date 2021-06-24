@@ -380,6 +380,6 @@ class SplashScreenLogHandler(logging.Handler):
 
     def emit(self, record) -> None:
         self.widget.showMessage(
-            f"{record.msg}",
+            f"{self.format(record)}",
             QtCore.Qt.AlignCenter,
         )
