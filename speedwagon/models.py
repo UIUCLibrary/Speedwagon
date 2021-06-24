@@ -87,10 +87,12 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         self.workflows: List[Type[Workflow]] = []
 
     def __iadd__(self, other: Type["Workflow"]) -> "WorkflowListModel2":
+        """Add a workflow to the model."""
         self.add_workflow(other)
         return self
 
     def __isub__(self, other: Type["Workflow"]) -> "WorkflowListModel2":
+        """Remove a workflow from the model."""
         self.remove_workflow(other)
         return self
 
@@ -411,13 +413,16 @@ class TabsModel(QtCore.QAbstractListModel):
         self.tabs: List[tabs.TabData] = []
 
     def __contains__(self, value: "tabs.TabData") -> bool:
+        """Check if a tab is in the model."""
         return any(tab.tab_name == value for tab in self.tabs)
 
     def __iadd__(self, other: "tabs.TabData") -> "TabsModel":
+        """Add a tab to the model."""
         self.add_tab(other)
         return self
 
     def __isub__(self, other: "tabs.TabData") -> "TabsModel":
+        """Remove a tab from the model."""
         self.remove_tab(other)
         return self
 

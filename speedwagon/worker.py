@@ -244,6 +244,7 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         self.was_aborted = False
 
     def __enter__(self) -> "WorkRunnerExternal3":
+        """Start worker."""
         self.dialog = WorkProgressBar(self._parent)
         self.dialog.setLabelText("Initializing")
         self.dialog.setMinimumDuration(100)
@@ -261,6 +262,7 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
                 self.abort_callback()
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """Close runner."""
         self.dialog.close()
 
 
@@ -296,6 +298,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         self.configuration_file: Optional[str] = None
 
     def __enter__(self) -> "ToolJobManager":
+        """Startup job management and load a worker pool."""
         self._message_queue = self.manager.Queue()
 
         self._executor = concurrent.futures.ProcessPoolExecutor(
@@ -305,6 +308,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """Clean up manager and show down the executor."""
         self._cleanup()
         self._executor.shutdown()
 

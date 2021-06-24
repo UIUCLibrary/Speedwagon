@@ -33,13 +33,15 @@ class AbsConfig(collections.abc.Mapping):
         """Location to the application data. Such as .ini file."""
 
     def __len__(self) -> int:
+        """Get the size of the configuration."""
         return len(self._data)
 
     def __iter__(self) -> Iterator[str]:
+        """Iterate over the configuration information."""
         return iter(self._data)
 
     def __contains__(self, x: object) -> bool:
-
+        """Check if configuration key is in configuration."""
         if x == "app_data_directory":
             return True
 
@@ -49,7 +51,7 @@ class AbsConfig(collections.abc.Mapping):
         return x in self._data
 
     def __getitem__(self, k: str) -> str:
-
+        """Get configuration value from a key."""
         if k == "user_data_directory":
             return self.get_user_data_directory()
 
@@ -101,15 +103,18 @@ class ConfigManager(contextlib.AbstractContextManager):
         ]
 
     def __init__(self, config_file):
+        """Set up configuration manager."""
         self._config_file = config_file
         self.cfg_parser = None
 
     def __enter__(self):
+        """Open file with parser."""
         self.cfg_parser = configparser.ConfigParser()
         self.cfg_parser.read(self._config_file)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        """Close configuration parser."""
         return None
 
     @property
