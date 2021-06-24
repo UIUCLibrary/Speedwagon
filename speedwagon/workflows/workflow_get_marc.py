@@ -1,5 +1,4 @@
 """Generating MARC XML files by retrieving from a server."""
-# pylint: disable=unsubscriptable-object, too-few-public-methods
 import abc
 import functools
 import os
@@ -329,6 +328,13 @@ class AbsMarcFileStrategy(abc.ABC):
 
         """
 
+    @staticmethod
+    def download_record(url: str):
+        """Download a marc record from the url."""
+        record = requests.get(url)
+        record.raise_for_status()
+        return record.text
+
 
 class DependentTruthyValueValidation(validators.AbsOptionValidator):
     """Validate depending optional values are checked in right order."""
@@ -463,11 +469,7 @@ class GetMarcBibId(AbsMarcFileStrategy):
             str: Record requested as a string
 
         """
-        record = requests.get(
-            f"{self.url}/api/record?bib_id={ident}"
-        )
-        record.raise_for_status()
-        return record.text
+        return self.download_record(f"{self.url}/api/record?bib_id={ident}")
 
 
 class GetMarcMMSID(AbsMarcFileStrategy):
@@ -483,11 +485,8 @@ class GetMarcMMSID(AbsMarcFileStrategy):
             str: Record requested as a string
 
         """
-        record = requests.get(
-            f"{self.url}/api/record?mms_id={ident}"
-        )
-        record.raise_for_status()
-        return record.text
+        return self.download_record(f"{self.url}/api/record?mms_id={ident}")
+
 
 
 def strip_volume(full_bib_id: str) -> int:
