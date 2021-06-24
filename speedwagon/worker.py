@@ -189,9 +189,9 @@ class ProgressMessageBoxLogHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:
         try:
-            self.dialog_box.setLabelText(record.msg)
+            self.dialog_box.setLabelText(self.format(record))
         except RuntimeError as e:
-            print(record.msg, file=sys.stderr)
+            print(self.format(record), file=sys.stderr)
             traceback.print_tb(e.__traceback__)
 
 
