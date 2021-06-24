@@ -78,6 +78,7 @@ class ProcessJobWorker(AbsJobWorker):
         """Process job."""
 
     def set_message_queue(self, value: 'queue.Queue[str]') -> None:
+        """Set message queue."""
         self._mq = value
 
     def log(self, message: str) -> None:

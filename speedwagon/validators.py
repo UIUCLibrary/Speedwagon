@@ -56,14 +56,16 @@ class DirectoryValidation(AbsOptionValidator):
 
 
 class OptionValidatorFactory:
+    """Option validator factory."""
+
     def __init__(self) -> None:
-        """Create an optional validator factory."""
+        """Create an option validator factory."""
         self._validators: Dict[str, AbsOptionValidator] = {}
 
     def register_validator(self,
                            key: str,
                            validator: AbsOptionValidator) -> None:
-
+        """Register validator."""
         self._validators[key] = validator
 
     def create(self, key: str) -> AbsOptionValidator:

@@ -161,6 +161,7 @@ class NullWorkflow(Workflow):
 
 
 class AbsDynamicFinder(metaclass=abc.ABCMeta):
+    """Dyanmic finder base class."""
 
     def __init__(self, path) -> None:
         """Populate the base structure of a dynamic finder."""

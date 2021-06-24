@@ -92,6 +92,7 @@ class WindowsConfig(AbsConfig):
         return os.path.join(str(Path.home()), "Speedwagon", "data")
 
     def get_app_data_directory(self) -> str:
+        """Get path the app data for the current system."""
         data_path = os.getenv("LocalAppData")
         if data_path:
             return os.path.join(data_path, "Speedwagon")

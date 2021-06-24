@@ -262,6 +262,7 @@ class Task(AbsTask, AbsTaskComponents):
         return super().on_completion(*args, **kwargs)
 
     def exec(self, *args, **kwargs):
+        """Execute task."""
         return super().exec(*args, **kwargs)
 
     @property
@@ -382,11 +383,11 @@ class AbsTaskBuilder(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def build_task(self):
-        pass
+        """Build task."""
 
     @abc.abstractmethod
     def set_pretask(self, subtask: AbsSubtask):
-        pass
+        """Set pre-task subtask."""
 
     @abc.abstractmethod
     def set_posttask(self, subtask: AbsSubtask):

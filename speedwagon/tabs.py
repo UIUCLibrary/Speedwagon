@@ -363,6 +363,11 @@ class WorkflowsTab(ItemSelectionTab):
         self._worflows = workflows
 
     def is_ready_to_start(self) -> bool:
+        """Get if the workflow is ready to start.
+
+        Returns:
+            Returns True is ready, false if not ready.
+        """
         if len(self.item_selector_view.selectedIndexes()) != 1:
             print(
                 "Invalid number of selected Indexes. "

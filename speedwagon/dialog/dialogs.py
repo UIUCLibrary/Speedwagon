@@ -87,6 +87,7 @@ def about_dialog_box(parent):
 
 
 class SystemInfoDialog(QtWidgets.QDialog):
+    """System information dialog window."""
 
     def __init__(self, parent: QtWidgets.QWidget, *args, **kwargs) -> None:
         """Display System information."""
