@@ -330,10 +330,7 @@ class StartupDefault(AbsStarter):
 
             # ==================================================
             # Load configurations
-            self._logger.debug("Applying settings to Speedwagon")
-
-            work_manager.user_settings = self.platform_settings
-            work_manager.configuration_file = self.config_file
+            self._load_configurations(work_manager)
 
             # ==================================================
             self._load_workflows(windows)
@@ -353,6 +350,13 @@ class StartupDefault(AbsStarter):
             self._logger.removeHandler(windows.console_log_handler)
             self._logger.removeHandler(splash_message_handler)
             return self.app.exec_()
+
+    def _load_configurations(self,
+                             work_manager: worker.ToolJobManager) -> None:
+
+        self._logger.debug("Applying settings to Speedwagon")
+        work_manager.user_settings = self.platform_settings
+        work_manager.configuration_file = self.config_file
 
     def _load_workflows(self, application: MainWindow) -> None:
         self._logger.debug("Loading Workflows")
