@@ -7,16 +7,6 @@ RUN apt update && \
     cat /tmp/apt-packages.txt | xargs apt-get -y install
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
-ARG USER_ID=1000
-ARG GROUP_ID=1000
-RUN if id $USER_ID ; then \
-        echo 'Existing user id found: Creating an alias' ;\
-        groupadd --non-unique --gid $GROUP_ID user ; \
-        useradd  --non-unique --uid $USER_ID -s /bin/sh -m -d /home/user -g user user  ; \
-    else \
-        groupadd -g $GROUP_ID user ; \
-        useradd  -u $USER_ID -s /bin/sh -m -d /home/user -g user user ;\
-    fi
 
 FROM wheel_builder_base as WHEEL_BUILDER_PY36
 ARG PIP_EXTRA_INDEX_URL
