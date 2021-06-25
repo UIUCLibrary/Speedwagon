@@ -328,11 +328,7 @@ class StartupDefault(AbsStarter):
 
             QtWidgets.QApplication.processEvents()
 
-            # ==================================================
-            # Load configurations
             self._load_configurations(work_manager)
-
-            # ==================================================
             self._load_workflows(windows)
 
             self._logger.debug("Loading User Interface")
@@ -488,10 +484,10 @@ class TabsEditorApp(QtWidgets.QDialog):
         layout = QtWidgets.QVBoxLayout()
         self.editor = TabEditor()
         layout.addWidget(self.editor)
-        self.dialogButtonBox = QtWidgets.QDialogButtonBox(self)
-        layout.addWidget(self.dialogButtonBox)
+        self.dialog_button_box = QtWidgets.QDialogButtonBox(self)
+        layout.addWidget(self.dialog_button_box)
 
-        self.dialogButtonBox.setStandardButtons(
+        self.dialog_button_box.setStandardButtons(
             cast(
                 QtWidgets.QDialogButtonBox.StandardButtons,
                 QtWidgets.QDialogButtonBox.Cancel |
@@ -501,8 +497,8 @@ class TabsEditorApp(QtWidgets.QDialog):
 
         self.setLayout(layout)
 
-        self.dialogButtonBox.accepted.connect(self.on_okay)
-        self.dialogButtonBox.rejected.connect(self.on_cancel)
+        self.dialog_button_box.accepted.connect(self.on_okay)
+        self.dialog_button_box.rejected.connect(self.on_cancel)
         self.rejected.connect(self.on_cancel)
 
     def load_all_workflows(self) -> None:
