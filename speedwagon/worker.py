@@ -12,7 +12,7 @@ from abc import ABC
 from typing import Callable, Optional, Any, Dict
 from collections import namedtuple
 
-from PyQt5 import QtCore, QtWidgets  # type: ignore
+from PyQt5 import QtWidgets  # type: ignore
 
 from .dialog.dialogs import WorkProgressBar
 from .tasks import AbsSubtask, QueueAdapter, Result
@@ -20,10 +20,6 @@ if typing.TYPE_CHECKING:
     import speedwagon.config
 
 MessageLog = namedtuple("MessageLog", ("message",))
-
-
-class QtMeta(type(QtCore.QObject), abc.ABCMeta):  # type: ignore
-    pass
 
 
 class NoWorkError(RuntimeError):
@@ -87,10 +83,6 @@ class ProcessJobWorker(AbsJobWorker):
 class JobPair(typing.NamedTuple):
     task: ProcessJobWorker
     args: Dict[str, Any]
-
-
-class WorkerMeta(type(QtCore.QObject), abc.ABCMeta):  # type: ignore
-    pass
 
 
 class Worker2(metaclass=abc.ABCMeta):
