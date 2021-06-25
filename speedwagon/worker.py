@@ -12,7 +12,7 @@ from abc import ABC
 from typing import Callable, Optional, Any, Dict
 from collections import namedtuple
 
-from PyQt5 import QtCore, QtWidgets  # type: ignore
+from PyQt5 import QtWidgets  # type: ignore
 
 from .dialog.dialogs import WorkProgressBar
 from .tasks import AbsSubtask, QueueAdapter, Result
