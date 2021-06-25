@@ -164,7 +164,7 @@ class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
             task_builder.add_subtask(CopyTask(source_file_path, output_path))
 
         else:
-            raise Exception("Don't know what to do for {}".format(task_type))
+            raise RuntimeError(f"Don't know what to do for {task_type}")
 
 
 class ImageConvertTask(tasks.Subtask):

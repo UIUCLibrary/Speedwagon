@@ -3,7 +3,7 @@
 import os
 import typing
 import warnings
-from typing import Iterable, Optional, List, Any, Union
+from typing import Optional, List, Any, Union
 import enum
 
 from uiucprescon import imagevalidate
@@ -44,14 +44,6 @@ class ValidateMetadataWorkflow(AbsWorkflow):
                   "\n" \
                   "Input is path that contains subdirectory which " \
                   "containing a series of jp2 files."
-
-    @staticmethod
-    def _locate_checksum_files(root: str) -> Iterable[str]:
-        for root, dirs, files in os.walk(root):
-            for file_ in files:
-                if file_ != "checksum.md5":
-                    continue
-                yield os.path.join(root, file_)
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data,

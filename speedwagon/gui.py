@@ -308,10 +308,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
             pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
             webbrowser.open_new(pkg_metadata['Home-page'])
 
-        except metadata.PackageNotFoundError as e:
+        except metadata.PackageNotFoundError as error:
 
             self.log_manager.warning(
-                "No help link available. Reason: {}".format(e))
+                "No help link available. Reason: {}".format(error))
 
     def show_about_window(self) -> None:
         speedwagon.dialog.dialogs.about_dialog_box(parent=self)
