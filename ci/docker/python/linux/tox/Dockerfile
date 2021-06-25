@@ -16,10 +16,12 @@ COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-d
 ENV PYTHON=python3.6
 RUN $PYTHON -m pip install pip --upgrade pip && \
     $PYTHON -m pip install wheel && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements.txt -r /tmp/requirements-dev.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-vendor.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-ci.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-extra.txt
+    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v \
+        -r /tmp/requirements.txt \
+        -r /tmp/requirements-dev.txt \
+        -r /tmp/requirements-vendor.txt \
+        -r /tmp/requirements-ci.txt \
+        -r /tmp/requirements-extra.txt
 RUN $PYTHON -m pip wheel -w /wheels --no-cache-dir -v devpi_client
 
 # ==============================================================================
@@ -31,10 +33,12 @@ COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-d
 ENV PYTHON=python3.7
 RUN $PYTHON -m pip install pip --upgrade pip && \
     $PYTHON -m pip install wheel && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements.txt -r /tmp/requirements-dev.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-vendor.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-ci.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-extra.txt
+    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v \
+        -r /tmp/requirements.txt \
+        -r /tmp/requirements-dev.txt \
+        -r /tmp/requirements-vendor.txt \
+        -r /tmp/requirements-ci.txt \
+        -r /tmp/requirements-extra.txt
 RUN $PYTHON -m pip wheel -w /wheels --no-cache-dir -v devpi_client
 
 # ==============================================================================
@@ -46,10 +50,12 @@ COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-d
 ENV PYTHON=python3.8
 RUN $PYTHON -m pip install pip --upgrade pip && \
     $PYTHON -m pip install wheel && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements.txt -r /tmp/requirements-dev.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-vendor.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-ci.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-extra.txt
+    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v \
+        -r /tmp/requirements.txt \
+        -r /tmp/requirements-dev.txt \
+        -r /tmp/requirements-vendor.txt \
+        -r /tmp/requirements-ci.txt \
+        -r /tmp/requirements-extra.txt
 RUN $PYTHON -m pip wheel -w /wheels --no-cache-dir -v devpi_client
 
 # ==============================================================================
@@ -61,10 +67,12 @@ COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-d
 ENV PYTHON=python3.9
 RUN $PYTHON -m pip install pip --upgrade pip && \
     $PYTHON -m pip install wheel && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements.txt -r /tmp/requirements-dev.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-vendor.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-ci.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-extra.txt
+    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v \
+        -r /tmp/requirements.txt \
+        -r /tmp/requirements-dev.txt \
+        -r /tmp/requirements-vendor.txt \
+        -r /tmp/requirements-ci.txt \
+        -r /tmp/requirements-extra.txt
 RUN $PYTHON -m pip wheel -w /wheels --no-cache-dir -v devpi_client
 
 # ==============================================================================
