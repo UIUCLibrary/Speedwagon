@@ -85,10 +85,6 @@ class JobPair(typing.NamedTuple):
     args: Dict[str, Any]
 
 
-class WorkerMeta(type(QtCore.QObject), abc.ABCMeta):  # type: ignore
-    pass
-
-
 class Worker2(metaclass=abc.ABCMeta):
     """Worker."""
 
