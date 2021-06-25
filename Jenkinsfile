@@ -46,11 +46,13 @@ def run_pylint(){
             label: 'Running pylint'
         )
     }
-    sh(
-        script: 'pylint speedwagon -d duplicate-code -r n --persistent=no --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt',
-        label: 'Running pylint for sonarqube',
-        returnStatus: true
-    )
+    tee('reports/pylint_issues.txt'){
+        sh(
+            script: 'pylint speedwagon -d duplicate-code -r n --persistent=no --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
+            label: 'Running pylint for sonarqube',
+            returnStatus: true
+        )
+    }
 }
 
 def get_package_name(stashName, metadataFile){
