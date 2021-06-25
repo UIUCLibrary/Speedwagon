@@ -77,6 +77,8 @@ RUN $PYTHON -m pip wheel -w /wheels --no-cache-dir -v devpi_client
 
 # ==============================================================================
 FROM wheel_builder_base
+RUN mkdir -p /.cache/pip && \
+    chmod -R 777 /.cache
 ENV QT_QPA_PLATFORM="offscreen"
 RUN pip3 install tox
 ARG PIP_EXTRA_INDEX_URL
