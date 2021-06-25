@@ -39,19 +39,23 @@ CONFIGURATIONS = loadConfigs()
 
 
 def run_pylint(){
-    catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-        sh(
-            script: '''mkdir -p reports
-                       pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt''',
-            label: 'Running pylint'
-        )
-    }
-    tee('reports/pylint_issues.txt'){
-        sh(
-            script: 'pylint speedwagon -d duplicate-code -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
-            label: 'Running pylint for sonarqube',
-            returnStatus: true
-        )
+    withEnv(['PYLINTHOME=.']) {
+        catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+            tee('reports/pylint.txt')
+                sh(
+                    script: '''mkdir -p reports
+                               pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" ''',
+                    label: 'Running pylint'
+                )
+            }
+        }
+        tee('reports/pylint_issues.txt'){
+            sh(
+                script: 'pylint speedwagon -d duplicate-code -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
+                label: 'Running pylint for sonarqube',
+                returnStatus: true
+            )
+        }
     }
 }
 
