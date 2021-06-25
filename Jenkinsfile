@@ -44,8 +44,7 @@ def run_pylint(){
             tee('reports/pylint.txt'){
                 sh(
                     label: 'Running pylint',
-                    script: '''mkdir -p reports
-                               pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" ''',
+                    script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
                 )
             }
         }
