@@ -367,10 +367,12 @@ class StartupDefault(AbsStarter):
                         get_custom_tabs(all_workflows, self.tabs_file):
                     application.add_tab(tab_name, collections.OrderedDict(
                         sorted(extra_tab.items())))
-            except FileFormatError as e:
+            except FileFormatError as error:
                 self._logger.warning(
-                    "Unable to load custom tabs from {}. "
-                    "Reason: {}".format(self.tabs_file, e))
+                    "Unable to load custom tabs from %s. Reason: %s",
+                    self.tabs_file,
+                    error
+                )
         # All Workflows tab
         self._logger.debug("Loading Tab All")
         application.add_tab("All", collections.OrderedDict(
