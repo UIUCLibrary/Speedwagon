@@ -7,7 +7,7 @@ SUPPORTED_MAC_VERSIONS = ['3.8', '3.9']
 SUPPORTED_LINUX_VERSIONS = ['3.7', '3.8', '3.9']
 SUPPORTED_WINDOWS_VERSIONS = ['3.7', '3.8', '3.9']
 DOCKER_PLATFORM_BUILD_ARGS = [
-    linux: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)',
+    linux: '',
     windows: '--build-arg CHOCOLATEY_SOURCE'
 ]
 
@@ -136,7 +136,7 @@ def runTox(){
                             envNamePrefix: 'Tox Linux',
                             label: 'linux && docker',
                             dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
-                            dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                            dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         )
                 },
                 'Windows':{
@@ -838,7 +838,7 @@ pipeline {
                                                     dockerfile: [
                                                         label: 'linux && docker',
                                                         filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                                     ]
                                                 ],
                                                 glob: 'dist/*.tar.gz',
@@ -852,7 +852,7 @@ pipeline {
                                                     dockerfile: [
                                                         label: 'linux && docker',
                                                         filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                                     ]
                                                 ],
                                                 glob: 'dist/*.whl',
