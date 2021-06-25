@@ -42,13 +42,13 @@ def run_pylint(){
     catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
         sh(
             script: '''mkdir -p reports
-                       pylint speedwagon -r n --persistent=no --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt''',
+                       pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt''',
             label: 'Running pylint'
         )
     }
     tee('reports/pylint_issues.txt'){
         sh(
-            script: 'pylint speedwagon -d duplicate-code -r n --persistent=no --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
+            script: 'pylint speedwagon -d duplicate-code -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
             label: 'Running pylint for sonarqube',
             returnStatus: true
         )
