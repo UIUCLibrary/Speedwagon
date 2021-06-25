@@ -41,14 +41,14 @@ CONFIGURATIONS = loadConfigs()
 def run_pylint(){
     withEnv(['PYLINTHOME=.']) {
         catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-            tee('reports/pylint.txt'){
+            tee('reports/pylint_issues.txt'){
                 sh(
                     label: 'Running pylint',
                     script: 'pylint speedwagon -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
                 )
             }
         }
-        tee('reports/pylint_issues.txt'){
+        tee('reports/pylint.txt'){
             sh(
                 label: 'Running pylint for sonarqube',
                 script: 'pylint speedwagon -d duplicate-code --output-format=parseable',
