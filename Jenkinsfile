@@ -39,19 +39,23 @@ CONFIGURATIONS = loadConfigs()
 
 
 def run_pylint(){
-    catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-        sh(
-            script: '''mkdir -p reports
-                       pylint speedwagon -r n --persistent=no --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt''',
-            label: 'Running pylint'
-        )
-    }
-    tee('reports/pylint_issues.txt'){
-        sh(
-            script: 'pylint speedwagon -d duplicate-code -r n --persistent=no --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
-            label: 'Running pylint for sonarqube',
-            returnStatus: true
-        )
+    withEnv(['PYLINTHOME=.']) {
+        catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+            tee('reports/pylint_issues.txt'){
+                sh(
+                    label: 'Running pylint',
+                    script: 'pylint speedwagon -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
+                )
+            }
+        }
+        tee('reports/pylint.txt'){
+            sh(
+                label: 'Running pylint for sonarqube',
+                script: 'pylint speedwagon -d duplicate-code --output-format=parseable',
+//                 script: 'pylint speedwagon -d duplicate-code -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
+                returnStatus: true
+            )
+        }
     }
 }
 
@@ -604,7 +608,7 @@ pipeline {
                                             post{
                                                 always{
                                                     stash includes: 'reports/pylint_issues.txt,reports/pylint.txt', name: 'PYLINT_REPORT'
-                                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
+                                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint_issues.txt')])
                                                 }
                                             }
                                         }
