@@ -191,9 +191,9 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
             **job_args: str
     ) -> None:
 
-        source_path = job_args['source_path']
         filename = job_args['filename']
         report_name = job_args['save_to_filename']
+        source_path = job_args['source_path']
 
         new_task = checksum_tasks.MakeChecksumTask(
             source_path, filename, report_name)
