@@ -22,10 +22,6 @@ if typing.TYPE_CHECKING:
 MessageLog = namedtuple("MessageLog", ("message",))
 
 
-class QtMeta(type(QtCore.QObject), abc.ABCMeta):  # type: ignore
-    pass
-
-
 class NoWorkError(RuntimeError):
     pass
 
