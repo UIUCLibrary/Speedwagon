@@ -44,14 +44,14 @@ def run_pylint(){
             tee('reports/pylint.txt'){
                 sh(
                     label: 'Running pylint',
-                    script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
+                    script: 'pylint speedwagon -d duplicate-code -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
                 )
             }
         }
         tee('reports/pylint_issues.txt'){
             sh(
                 label: 'Running pylint for sonarqube',
-                script: 'pylint speedwagon -d duplicate-code -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
+                script: 'pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
                 returnStatus: true
             )
         }
