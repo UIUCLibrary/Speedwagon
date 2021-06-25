@@ -607,7 +607,7 @@ pipeline {
                                             post{
                                                 always{
                                                     stash includes: 'reports/pylint_issues.txt,reports/pylint.txt', name: 'PYLINT_REPORT'
-                                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
+                                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint_issues.txt')])
                                                 }
                                             }
                                         }
