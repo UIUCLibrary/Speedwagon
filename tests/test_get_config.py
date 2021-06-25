@@ -235,9 +235,13 @@ debug: False
     assert model is not None
 
 
-def test_find_missing_configs(tmpdir):
+def test_find_missing_configs(tmpdir, monkeypatch):
     config_file = str(os.path.join(tmpdir, "config.ini"))
-    speedwagon.config.generate_default(config_file)
+    with monkeypatch.context() as mp:
+        mp.setattr(
+            speedwagon.config, "get_platform_settings", lambda: {'user_data_directory': tmpdir.strpath}
+        )
+        speedwagon.config.generate_default(config_file)
     keys_that_dont_exist = {"spam", "bacon", "eggs"}
 
     missing_keys = speedwagon.config.find_missing_global_entries(
@@ -247,9 +251,15 @@ def test_find_missing_configs(tmpdir):
     assert missing_keys == keys_that_dont_exist
 
 
-def test_find_no_missing_configs(tmpdir):
+def test_find_no_missing_configs(tmpdir, monkeypatch):
     config_file = str(os.path.join(tmpdir, "config.ini"))
-    speedwagon.config.generate_default(config_file)
+    with monkeypatch.context() as mp:
+        mp.setattr(
+            speedwagon.config,
+            "get_platform_settings",
+            lambda: {'user_data_directory': tmpdir.strpath}
+        )
+        speedwagon.config.generate_default(config_file)
     keys_that_exist = {"spam", "bacon", "eggs"}
     with open(config_file, "a+") as wf:
         for k in keys_that_exist:
