@@ -252,12 +252,13 @@ class RegenerateChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
 
         for file_path in self.locate_files(package_root):
             relpath = os.path.relpath(file_path, package_root)
-            job = {
-                "source_path": package_root,
-                "filename": relpath,
-                "save_to_filename": report_to_save_to
-            }
-            jobs.append(job)
+            jobs.append(
+                {
+                    "source_path": package_root,
+                    "filename": relpath,
+                    "save_to_filename": report_to_save_to
+                }
+            )
         return jobs
 
     def create_new_task(self,
