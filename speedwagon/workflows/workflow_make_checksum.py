@@ -357,8 +357,8 @@ class RegenerateChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
                         task_builder: tasks.TaskBuilder,
                         **job_args: str) -> None:
 
-        source_path = job_args['source_path']
         filename = job_args['filename']
+        source_path = job_args['source_path']
         report_name = job_args['save_to_filename']
 
         new_task = \
