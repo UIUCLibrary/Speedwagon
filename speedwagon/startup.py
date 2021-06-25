@@ -336,38 +336,8 @@ class StartupDefault(AbsStarter):
             work_manager.configuration_file = self.config_file
 
             # ==================================================
-            self._logger.debug("Loading Workflows")
-            loading_workflows_stream = io.StringIO()
-            with contextlib.redirect_stderr(loading_workflows_stream):
-                all_workflows = job.available_workflows()
+            self._load_workflows(windows)
 
-            # Load every user configured tab
-            tabs_file_size = os.path.getsize(self.tabs_file)
-            if tabs_file_size > 0:
-                try:
-                    for tab_name, extra_tab in \
-                            get_custom_tabs(all_workflows, self.tabs_file):
-
-                        windows.add_tab(tab_name, collections.OrderedDict(
-                            sorted(extra_tab.items())))
-                except FileFormatError as e:
-                    self._logger.warning(
-                        "Unable to load custom tabs from {}. "
-                        "Reason: {}".format(self.tabs_file, e))
-
-            # All Workflows tab
-
-            self._logger.debug("Loading Tab All")
-            windows.add_tab("All", collections.OrderedDict(
-                sorted(all_workflows.items())))
-
-            workflow_errors_msg = loading_workflows_stream.getvalue().strip()
-
-            if workflow_errors_msg:
-                for line in workflow_errors_msg.split("\n"):
-                    self._logger.warning(line)
-
-            # ==================================================
             self._logger.debug("Loading User Interface")
 
             windows.show()
@@ -383,6 +353,32 @@ class StartupDefault(AbsStarter):
             self._logger.removeHandler(windows.console_log_handler)
             self._logger.removeHandler(splash_message_handler)
             return self.app.exec_()
+
+    def _load_workflows(self, application: MainWindow) -> None:
+        self._logger.debug("Loading Workflows")
+        loading_workflows_stream = io.StringIO()
+        with contextlib.redirect_stderr(loading_workflows_stream):
+            all_workflows = job.available_workflows()
+        # Load every user configured tab
+        tabs_file_size = os.path.getsize(self.tabs_file)
+        if tabs_file_size > 0:
+            try:
+                for tab_name, extra_tab in \
+                        get_custom_tabs(all_workflows, self.tabs_file):
+                    application.add_tab(tab_name, collections.OrderedDict(
+                        sorted(extra_tab.items())))
+            except FileFormatError as e:
+                self._logger.warning(
+                    "Unable to load custom tabs from {}. "
+                    "Reason: {}".format(self.tabs_file, e))
+        # All Workflows tab
+        self._logger.debug("Loading Tab All")
+        application.add_tab("All", collections.OrderedDict(
+            sorted(all_workflows.items())))
+        workflow_errors_msg = loading_workflows_stream.getvalue().strip()
+        if workflow_errors_msg:
+            for line in workflow_errors_msg.split("\n"):
+                self._logger.warning(line)
 
     def read_settings_file(self, settings_file: str) -> None:
         with speedwagon.config.ConfigManager(settings_file) as f:
