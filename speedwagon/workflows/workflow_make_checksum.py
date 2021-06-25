@@ -195,10 +195,13 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
         report_name = job_args['save_to_filename']
         source_path = job_args['source_path']
 
-        new_task = checksum_tasks.MakeChecksumTask(
-            source_path, filename, report_name)
-
-        task_builder.add_subtask(new_task)
+        task_builder.add_subtask(
+            checksum_tasks.MakeChecksumTask(
+                source_path,
+                filename,
+                report_name
+            )
+        )
 
     def completion_task(self,
                         task_builder: tasks.TaskBuilder,
