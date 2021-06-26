@@ -448,7 +448,7 @@ class StartupDefault(AbsStarter):
             pathlib.Path(self.tabs_file).touch()
 
             self._logger.debug(
-                "No tabs.yml file found. Generated {}".format(self.tabs_file))
+                "No tabs.yml file found. Generated %s", self.tabs_file)
         else:
             self._logger.debug(
                 "Found existing tabs file %s", self.tabs_file)
