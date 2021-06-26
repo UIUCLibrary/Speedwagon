@@ -451,7 +451,7 @@ class StartupDefault(AbsStarter):
                 "No tabs.yml file found. Generated {}".format(self.tabs_file))
         else:
             self._logger.debug(
-                "Found existing tabs file {}".format(self.tabs_file))
+                "Found existing tabs file %s", self.tabs_file)
 
         if self.user_data_dir and not os.path.exists(self.user_data_dir):
             os.makedirs(self.user_data_dir)
