@@ -278,10 +278,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     def set_current_tab(self, tab_name: str) -> None:
 
         size = self.tabWidget.tabs.count()
-        for t in range(size):
-            tab_title = self.tabWidget.tabs.tabText(t)
+        for tab in range(size):
+            tab_title = self.tabWidget.tabs.tabText(tab)
             if tab_name == tab_title:
-                self.tabWidget.tabs.setCurrentIndex(t)
+                self.tabWidget.tabs.setCurrentIndex(tab)
                 return
         self.log_manager.warning("Unable to set tab to {}.".format(tab_name))
 
