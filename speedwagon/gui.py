@@ -364,8 +364,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         if not log_file_name:
             return
-        with open(log_file_name, "w") as f:
-            f.write(data)
+        with open(log_file_name, "w") as file_handle:
+            file_handle.write(data)
 
         self.log_manager.info("Saved log to {}".format(log_file_name))
 
