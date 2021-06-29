@@ -89,8 +89,8 @@ class SettingsDialog(QtWidgets.QDialog):
 
         self.setWindowTitle("Settings")
         layout = QtWidgets.QVBoxLayout(self)
-        self.tabsWidget = QtWidgets.QTabWidget(self)
-        layout.addWidget(self.tabsWidget)
+        self.tabs_widget = QtWidgets.QTabWidget(self)
+        layout.addWidget(self.tabs_widget)
 
         self.open_settings_path_button = QtWidgets.QPushButton(self)
         self.open_settings_path_button.setText("Open Config File Directory")
@@ -119,7 +119,7 @@ class SettingsDialog(QtWidgets.QDialog):
         self.setFixedWidth(600)
 
     def add_tab(self, tab: QtWidgets.QWidget, tab_name: str) -> None:
-        self.tabsWidget.addTab(tab, tab_name)
+        self.tabs_widget.addTab(tab, tab_name)
 
     def open_settings_dir(self, strategy: AbsOpenSettings = None) -> None:
         if self.settings_location is None:
