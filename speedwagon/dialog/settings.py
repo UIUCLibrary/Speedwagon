@@ -95,9 +95,13 @@ class SettingsDialog(QtWidgets.QDialog):
         self.open_settings_path_button = QtWidgets.QPushButton(self)
         self.open_settings_path_button.setText("Open Config File Directory")
 
+        # pylint: disable=unnecessary-lambda
+        # This needs a lambda to delay execution. Otherwise Qt might segfault
+        # when it tries to open the dialog box
         self.open_settings_path_button.clicked.connect(
             lambda: self.open_settings_dir()
         )
+        # pylint: enable=unnecessary-lambda
 
         layout.addWidget(self.open_settings_path_button)
 
