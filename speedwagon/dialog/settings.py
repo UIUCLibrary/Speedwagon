@@ -89,15 +89,19 @@ class SettingsDialog(QtWidgets.QDialog):
 
         self.setWindowTitle("Settings")
         layout = QtWidgets.QVBoxLayout(self)
-        self.tabsWidget = QtWidgets.QTabWidget(self)
-        layout.addWidget(self.tabsWidget)
+        self.tabs_widget = QtWidgets.QTabWidget(self)
+        layout.addWidget(self.tabs_widget)
 
         self.open_settings_path_button = QtWidgets.QPushButton(self)
         self.open_settings_path_button.setText("Open Config File Directory")
 
+        # pylint: disable=unnecessary-lambda
+        # This needs a lambda to delay execution. Otherwise Qt might segfault
+        # when it tries to open the dialog box
         self.open_settings_path_button.clicked.connect(
             lambda: self.open_settings_dir()
         )
+        # pylint: enable=unnecessary-lambda
 
         layout.addWidget(self.open_settings_path_button)
 
@@ -119,7 +123,7 @@ class SettingsDialog(QtWidgets.QDialog):
         self.setFixedWidth(600)
 
     def add_tab(self, tab: QtWidgets.QWidget, tab_name: str) -> None:
-        self.tabsWidget.addTab(tab, tab_name)
+        self.tabs_widget.addTab(tab, tab_name)
 
     def open_settings_dir(self, strategy: AbsOpenSettings = None) -> None:
         if self.settings_location is None:
