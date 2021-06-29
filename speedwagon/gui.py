@@ -157,14 +157,14 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         ###########################################################
         # Tabs
         ###########################################################
-        self.tabWidget = ItemTabsWidget(self.main_splitter)
-        self.tabWidget.setVisible(False)
+        self.tab_widget = ItemTabsWidget(self.main_splitter)
+        self.tab_widget.setVisible(False)
 
         self._tabs: List[speedwagon.tabs.ItemSelectionTab] = []
 
         # Add the tabs widget as the first widget
-        self.tabWidget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
-        self.main_splitter.addWidget(self.tabWidget)
+        self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
+        self.main_splitter.addWidget(self.tab_widget)
         self.main_splitter.setStretchFactor(0, 0)
         self.main_splitter.setStretchFactor(1, 2)
 
@@ -277,11 +277,11 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
     def set_current_tab(self, tab_name: str) -> None:
 
-        size = self.tabWidget.tabs.count()
+        size = self.tab_widget.tabs.count()
         for tab in range(size):
-            tab_title = self.tabWidget.tabs.tabText(tab)
+            tab_title = self.tab_widget.tabs.tabText(tab)
             if tab_name == tab_title:
-                self.tabWidget.tabs.setCurrentIndex(tab)
+                self.tab_widget.tabs.setCurrentIndex(tab)
                 return
         self.log_manager.warning("Unable to set tab to {}.".format(tab_name))
 
@@ -296,8 +296,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         workflows_tab.parent = self
         workflows_tab.workflows = workflows
         self._tabs.append(workflows_tab)
-        self.tabWidget.add_tab(workflows_tab.tab, workflow_name)
-        self.tabWidget.setVisible(True)
+        self.tab_widget.add_tab(workflows_tab.tab, workflow_name)
+        self.tab_widget.setVisible(True)
 
     def closeEvent(self, *args, **kwargs) -> None:
         self.log_manager.removeHandler(self.console_log_handler)
@@ -364,8 +364,8 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
 
         if not log_file_name:
             return
-        with open(log_file_name, "w") as f:
-            f.write(data)
+        with open(log_file_name, "w") as file_handle:
+            file_handle.write(data)
 
         self.log_manager.info("Saved log to {}".format(log_file_name))
 

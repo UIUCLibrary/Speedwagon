@@ -1,4 +1,4 @@
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock, MagicMock, patch, mock_open
 import webbrowser
 
 import speedwagon.startup
@@ -82,3 +82,34 @@ def test_show_configuration_menu(qtbot, monkeypatch):
 
     settings_action.trigger()
     assert mock_exec.called is True
+
+
+def test_window_save_log(qtbot, monkeypatch):
+    mock_work_manager = MagicMock(settings_path="some-path")
+    main_window = speedwagon.gui.MainWindow(mock_work_manager)
+
+    qtbot.addWidget(main_window)
+    monkeypatch.setattr(
+        speedwagon.gui.QtWidgets.QFileDialog,
+        "getSaveFileName",
+        lambda *args, **kwargs: ("spam.log", None)
+    )
+
+    m = mock_open()
+    with patch('builtins.open', m):
+        main_window.save_log()
+
+    m.assert_called_once_with('spam.log', 'w')
+
+
+def test_set_current_tab(qtbot):
+    mock_work_manager = MagicMock(settings_path="some-path")
+    main_window = speedwagon.gui.MainWindow(mock_work_manager)
+
+    qtbot.addWidget(main_window)
+    main_window.tab_widget.tabs.count = Mock(return_value=1)
+    main_window.tab_widget.tabs.tabText = Mock(return_value='spam')
+    main_window.tab_widget.tabs.setCurrentIndex = Mock()
+
+    main_window.set_current_tab("spam")
+    assert main_window.tab_widget.tabs.setCurrentIndex.called
