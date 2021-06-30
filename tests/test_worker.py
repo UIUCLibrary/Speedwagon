@@ -14,6 +14,11 @@ class TestWorkRunnerExternal3:
             r.abort()
         assert r.abort_callback.called is True
 
+    def test_abort_worth_with_no_callback(self, qtbot):
+        with worker.WorkRunnerExternal3(QtWidgets.QWidget()) as r:
+            r.abort_callback = None
+            r.abort()
+
     def test_someone_resetting_dialog_throws_error(self, qtbot):
         with pytest.raises(AttributeError) as e:
             work_runner = worker.WorkRunnerExternal3(QtWidgets.QWidget())
