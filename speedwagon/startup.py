@@ -383,8 +383,8 @@ class StartupDefault(AbsStarter):
                 self._logger.warning(line)
 
     def read_settings_file(self, settings_file: str) -> None:
-        with speedwagon.config.ConfigManager(settings_file) as f:
-            self.platform_settings._data.update(f.global_settings)
+        with speedwagon.config.ConfigManager(settings_file) as config:
+            self.platform_settings._data.update(config.global_settings)
 
     def set_app_display_metadata(self) -> None:
         with resources.open_binary(speedwagon.__name__, "favicon.ico") as icon:
