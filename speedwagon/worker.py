@@ -272,7 +272,7 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
             if callable(self.abort_callback):
                 self.abort_callback()  # pylint: disable=not-callable
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    def __exit__(self, exc_type, exc_value, tb) -> None:
         """Close runner."""
         if self.dialog is None:
             raise AttributeError("dialog was set to None before closing")
