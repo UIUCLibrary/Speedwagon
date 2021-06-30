@@ -248,6 +248,7 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         self._parent = parent
         self.abort_callback = None
         self.was_aborted = False
+        self.dialog = None
 
     def __enter__(self) -> "WorkRunnerExternal3":
         """Start worker."""
