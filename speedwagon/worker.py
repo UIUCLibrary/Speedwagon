@@ -246,9 +246,11 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         """Create a work runner."""
         self.results: typing.List[Result] = []
         self._parent = parent
-        self.abort_callback = None
+        self.abort_callback: Optional[Callable[[], None]] = None
         self.was_aborted = False
         self.dialog: Optional[WorkProgressBar] = None
+        self.progress_dialog_box_handler: \
+            Optional[ProgressMessageBoxLogHandler] = None
 
     def __enter__(self) -> "WorkRunnerExternal3":
         """Start worker."""
