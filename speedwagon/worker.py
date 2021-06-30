@@ -246,8 +246,11 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         """Create a work runner."""
         self.results: typing.List[Result] = []
         self._parent = parent
-        self.abort_callback = None
+        self.abort_callback: Optional[Callable[[], None]] = None
         self.was_aborted = False
+        self.dialog: Optional[WorkProgressBar] = None
+        self.progress_dialog_box_handler: \
+            Optional[ProgressMessageBoxLogHandler] = None
 
     def __enter__(self) -> "WorkRunnerExternal3":
         """Start worker."""
@@ -262,13 +265,17 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         return self
 
     def abort(self) -> None:
-        if self.dialog.result() == QtWidgets.QProgressDialog.Rejected:
+        """Abort on any running tasks."""
+        if self.dialog is not None and \
+                self.dialog.result() == QtWidgets.QProgressDialog.Rejected:
             self.was_aborted = True
-            if self.abort_callback is not None:
-                self.abort_callback()
+            if callable(self.abort_callback):
+                self.abort_callback()  # pylint: disable=not-callable
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    def __exit__(self, exc_type, exc_value, tb) -> None:
         """Close runner."""
+        if self.dialog is None:
+            raise AttributeError("dialog was set to None before closing")
         self.dialog.close()
 
 

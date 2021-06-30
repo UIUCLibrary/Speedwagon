@@ -53,14 +53,15 @@ class UsingExternalManagerForAdapter(AbsRunner):
             runner: worker.WorkRunnerExternal3,
             current: int,
             total: int) -> None:
+        if runner.dialog is not None:
+            dialog_box = runner.dialog
+            if total != dialog_box.maximum():
+                dialog_box.setMaximum(total)
+            if current != dialog_box.value():
+                dialog_box.setValue(current)
 
-        if total != runner.dialog.maximum():
-            runner.dialog.setMaximum(total)
-        if current != runner.dialog.value():
-            runner.dialog.setValue(current)
-
-        if current == total:
-            runner.dialog.accept()
+            if current == total:
+                dialog_box.accept()
 
     def run(self,
             parent: QtWidgets.QWidget,
