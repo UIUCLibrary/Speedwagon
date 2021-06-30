@@ -269,8 +269,8 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         if self.dialog is not None and \
                 self.dialog.result() == QtWidgets.QProgressDialog.Rejected:
             self.was_aborted = True
-            if self.abort_callback is not None:
-                self.abort_callback()
+            if callable(self.abort_callback):
+                self.abort_callback()  # pylint: disable=not-callable
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         """Close runner."""
