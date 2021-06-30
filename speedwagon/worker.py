@@ -248,7 +248,7 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         self._parent = parent
         self.abort_callback = None
         self.was_aborted = False
-        self.dialog = None
+        self.dialog: Optional[WorkProgressBar] = None
 
     def __enter__(self) -> "WorkRunnerExternal3":
         """Start worker."""
@@ -263,14 +263,17 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         return self
 
     def abort(self) -> None:
-        if self.dialog.result() == QtWidgets.QProgressDialog.Rejected:
+
+        if self.dialog is not None and \
+                self.dialog.result() == QtWidgets.QProgressDialog.Rejected:
             self.was_aborted = True
             if self.abort_callback is not None:
                 self.abort_callback()
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         """Close runner."""
-        self.dialog.close()
+        if self.dialog is not None:
+            self.dialog.close()
 
 
 class AbsJobManager(metaclass=abc.ABCMeta):
