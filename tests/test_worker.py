@@ -1,5 +1,6 @@
 from unittest.mock import Mock
 
+import pytest
 from PyQt5 import QtWidgets
 
 from speedwagon import worker
@@ -12,3 +13,10 @@ class TestWorkRunnerExternal3:
             r.abort_callback = Mock()
             r.abort()
         assert r.abort_callback.called is True
+
+    def test_someone_resetting_dialog_throws_error(self, qtbot):
+        with pytest.raises(AttributeError) as e:
+            work_runner = worker.WorkRunnerExternal3(QtWidgets.QWidget())
+            with work_runner as r:
+                r.dialog = None
+        assert "dialog" in str(e.value)
