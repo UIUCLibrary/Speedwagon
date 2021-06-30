@@ -265,7 +265,7 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         return self
 
     def abort(self) -> None:
-
+        """Abort on any running tasks."""
         if self.dialog is not None and \
                 self.dialog.result() == QtWidgets.QProgressDialog.Rejected:
             self.was_aborted = True
