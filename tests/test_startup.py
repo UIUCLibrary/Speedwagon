@@ -1,4 +1,5 @@
 import argparse
+import os.path
 from unittest.mock import Mock, MagicMock, mock_open, patch
 
 import pytest
@@ -311,3 +312,147 @@ class TestStartupDefault:
         resolution.update = lambda _: update()
         startup_worker.resolve_settings()
         assert default_setter.called is True
+
+    def test_ensure_settings_files_called_generate_default(
+            self,
+            monkeypatch,
+            first_time_startup_worker
+    ):
+        import speedwagon.startup
+        generate_default = Mock()
+
+        monkeypatch.setattr(
+            speedwagon.startup.speedwagon.config,
+            "generate_default",
+            generate_default
+        )
+
+        first_time_startup_worker.ensure_settings_files()
+        assert generate_default.called is True
+
+    @pytest.fixture()
+    def first_time_startup_worker(self, monkeypatch):
+        import speedwagon.startup
+        startup_worker = speedwagon.startup.StartupDefault(app=Mock())
+        startup_worker.config_file = "dummy.yml"
+        startup_worker.tabs_file = "tabs.yml"
+        startup_worker.app_data_dir = \
+            os.path.join("invalid", "app_data", "path")
+
+        startup_worker.user_data_dir = os.path.join("invalid", "path")
+
+        def exists(path):
+            config_files = [
+                startup_worker.config_file,
+                startup_worker.tabs_file,
+                startup_worker.app_data_dir,
+                startup_worker.user_data_dir
+            ]
+            if path in config_files:
+                return False
+
+            return False
+
+        monkeypatch.setattr(
+            speedwagon.startup.os.path, "exists", exists
+        )
+
+        makedirs = Mock()
+        monkeypatch.setattr(speedwagon.startup.os, "makedirs", makedirs)
+
+        touch = Mock()
+        monkeypatch.setattr(speedwagon.startup.pathlib.Path, "touch", touch)
+
+        return startup_worker
+
+    @pytest.fixture()
+    def returning_startup_worker(self, monkeypatch):
+        import speedwagon.startup
+        startup_worker = speedwagon.startup.StartupDefault(app=Mock())
+        startup_worker.config_file = "dummy.yml"
+        startup_worker.tabs_file = "tabs.yml"
+        startup_worker.app_data_dir = os.path.join("some", "path")
+        startup_worker.user_data_dir = os.path.join("some", "user", "path")
+
+        def exists(path):
+            config_files = [
+                startup_worker.config_file,
+                startup_worker.tabs_file,
+                startup_worker.app_data_dir,
+                startup_worker.user_data_dir
+            ]
+            if path in config_files:
+                return True
+            return False
+
+        monkeypatch.setattr(
+            speedwagon.startup.os.path, "exists", exists
+        )
+        makedirs = Mock()
+        monkeypatch.setattr(speedwagon.startup.os, "makedirs", makedirs)
+
+        touch = Mock()
+        monkeypatch.setattr(speedwagon.startup.pathlib.Path, "touch", touch)
+
+        return startup_worker
+
+    @pytest.mark.parametrize(
+        "expected_message",
+        [
+            'No config file found',
+            "No tabs.yml file found",
+            "Created",
+            "Created directory "
+        ]
+    )
+    def test_ensure_settings_files_called_messages(
+            self,
+            monkeypatch,
+            caplog,
+            expected_message,
+            first_time_startup_worker
+    ):
+        import speedwagon.startup
+        generate_default = Mock()
+
+        monkeypatch.setattr(
+            speedwagon.startup.speedwagon.config,
+            "generate_default",
+            generate_default
+        )
+
+        first_time_startup_worker.ensure_settings_files()
+
+        assert any(
+            expected_message in m for m in caplog.messages
+        )
+
+    @pytest.mark.parametrize(
+        "expected_message",
+        [
+            'Found existing config file',
+            "Found existing tabs file",
+            "Found existing app data",
+            "Found existing user data directory"
+        ]
+    )
+    def test_ensure_settings_files_called_messages_on_success(
+            self,
+            monkeypatch,
+            caplog,
+            expected_message,
+            returning_startup_worker
+    ):
+        import speedwagon.startup
+        generate_default = Mock()
+
+        monkeypatch.setattr(
+            speedwagon.startup.speedwagon.config,
+            "generate_default",
+            generate_default
+        )
+
+        returning_startup_worker.ensure_settings_files()
+        assert any(
+            expected_message in m for m in caplog.messages
+        )
