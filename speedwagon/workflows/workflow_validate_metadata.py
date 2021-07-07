@@ -10,7 +10,6 @@ from uiucprescon import imagevalidate
 
 from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
-import speedwagon.tasks
 from . import shared_custom_widgets
 
 
@@ -103,7 +102,7 @@ class ValidateMetadataWorkflow(AbsWorkflow):
         return True
 
     def create_new_task(self,
-                        task_builder: "speedwagon.tasks.TaskBuilder",
+                        task_builder: "tasks.TaskBuilder",
                         **job_args: str):
         filename = job_args[JobValues.ITEM_FILENAME.value]
 
@@ -115,11 +114,11 @@ class ValidateMetadataWorkflow(AbsWorkflow):
 
     @classmethod
     def generate_report(cls,
-                        results: List[speedwagon.tasks.Result],
+                        results: List[tasks.Result],
                         **user_args) -> Optional[str]:
 
         def validation_result_filter(
-                task_result: speedwagon.tasks.Result) -> bool:
+                task_result: tasks.Result) -> bool:
             if task_result.source != ValidateImageMetadataTask:
                 return False
             return True
@@ -165,7 +164,7 @@ class ValidateMetadataWorkflow(AbsWorkflow):
         return report
 
 
-class LocateTiffImageTask(speedwagon.tasks.Subtask):
+class LocateTiffImageTask(tasks.Subtask):
 
     def __init__(self, root: str) -> None:
         warnings.warn("Use LocateImagesTask instead", DeprecationWarning)
@@ -186,7 +185,7 @@ class LocateTiffImageTask(speedwagon.tasks.Subtask):
         return True
 
 
-class LocateImagesTask(speedwagon.tasks.Subtask):
+class LocateImagesTask(tasks.Subtask):
     def __init__(self,
                  root: str,
                  profile_name: str) -> None:
@@ -212,7 +211,7 @@ class LocateImagesTask(speedwagon.tasks.Subtask):
         return True
 
 
-class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
+class ValidateImageMetadataTask(tasks.Subtask):
     def __init__(
             self,
             filename: str,
