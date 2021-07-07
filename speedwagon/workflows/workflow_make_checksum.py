@@ -158,9 +158,8 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
 
         jobs = []
 
-        root_for_all_packages = user_args["Input"]
         for sub_dir in filter(lambda it: it.is_dir(),
-                              os.scandir(root_for_all_packages)):
+                              os.scandir(user_args["Input"])):
 
             package_root = sub_dir.path
             report_to_save_to = os.path.normpath(
@@ -327,9 +326,8 @@ class RegenerateChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
 
         jobs = []
 
-        root_for_all_packages = user_args["Input"]
         for sub_dir in filter(lambda it: it.is_dir(),
-                              os.scandir(root_for_all_packages)):
+                              os.scandir(user_args["Input"])):
 
             package_root = sub_dir.path
 
