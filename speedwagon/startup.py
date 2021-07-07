@@ -409,21 +409,23 @@ class StartupDefault(AbsStarter):
         self.read_settings_file(self.config_file)
         for settings_strategy in resolution_strategy_order:
 
-            self._logger.debug("Loading settings from {}".format(
-                settings_strategy.FRIENDLY_NAME))
+            self._logger.debug("Loading settings from %s",
+                               settings_strategy.FRIENDLY_NAME)
 
             try:
                 self.startup_settings = settings_strategy.update(
                     self.startup_settings)
-            except ValueError as e:
+            except ValueError as error:
                 if isinstance(settings_strategy, ConfigFileSetter):
                     self._logger.warning(
-                        "{} contains an invalid setting. Details: {} ".format(
-                            self.config_file, e)
+                        "%s contains an invalid setting. Details: %s",
+                        self.config_file,
+                        error
                     )
 
                 else:
-                    self._logger.warning("{} is an invalid setting".format(e))
+                    self._logger.warning("%s is an invalid setting",
+                                         error)
         try:
             self._debug = cast(bool, self.startup_settings['debug'])
         except KeyError:
@@ -431,10 +433,11 @@ class StartupDefault(AbsStarter):
                 "Unable to find a key for debug mode. Setting false")
 
             self._debug = False
-        except ValueError as e:
+        except ValueError as error:
             self._logger.warning(
-                "{} is an invalid setting for debug mode."
-                "Setting false".format(e))
+                "%s is an invalid setting for debug mode."
+                "Setting false",
+                error)
 
             self._debug = False
 
@@ -443,10 +446,14 @@ class StartupDefault(AbsStarter):
             speedwagon.config.generate_default(self.config_file)
 
             self._logger.debug(
-                "No config file found. Generated {}".format(self.config_file))
+                "No config file found. Generated %s",
+                self.config_file
+            )
         else:
             self._logger.debug(
-                "Found existing config file {}".format(self.config_file))
+                "Found existing config file %s",
+                self.config_file
+            )
 
         if not os.path.exists(self.tabs_file):
             pathlib.Path(self.tabs_file).touch()
@@ -459,23 +466,25 @@ class StartupDefault(AbsStarter):
 
         if self.user_data_dir and not os.path.exists(self.user_data_dir):
             os.makedirs(self.user_data_dir)
-            self._logger.debug("Created directory {}".format(
-                self.user_data_dir))
+            self._logger.debug("Created directory %s", self.user_data_dir)
 
         else:
             self._logger.debug(
-                "Found existing user data directory {}".format(
-                    self.user_data_dir))
+                "Found existing user data directory %s",
+                self.user_data_dir
+            )
 
         if self.app_data_dir is not None and \
                 not os.path.exists(self.app_data_dir):
 
             os.makedirs(self.app_data_dir)
-            self._logger.debug("Created {}".format(self.app_data_dir))
+            self._logger.debug("Created %s", self.app_data_dir)
         else:
             self._logger.debug(
                 "Found existing app data "
-                "directory {}".format(self.app_data_dir))
+                "directory %s",
+                self.app_data_dir
+            )
 
 
 class TabsEditorApp(QtWidgets.QDialog):
