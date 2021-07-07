@@ -179,7 +179,7 @@ class OCRWorkflow(speedwagon.Workflow):
 
         package_type = shared_custom_widgets.ListSelection("Image File Type")
 
-        for file_type in OCRWorkflow.SUPPORTED_IMAGE_TYPES.keys():
+        for file_type in OCRWorkflow.SUPPORTED_IMAGE_TYPES:
             package_type.add_selection(file_type)
         options.append(package_type)
 
