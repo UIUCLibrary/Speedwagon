@@ -128,10 +128,13 @@ class ChecksumWorkflow(AbsWorkflow):
                 return False
             return True
 
-        data = map(lambda x: x.data, filter(validation_result_filter, results))
         line_sep = "\n" + "-" * 60
-        sorted_results = cls._sort_results(data)
-        results_with_failures = cls.find_failed(sorted_results)
+        results_with_failures = cls.find_failed(
+            cls._sort_results(
+                map(lambda x: x.data,
+                    filter(validation_result_filter, results))
+            )
+        )
 
         if len(results_with_failures) > 0:
             messages = []
