@@ -409,21 +409,23 @@ class StartupDefault(AbsStarter):
         self.read_settings_file(self.config_file)
         for settings_strategy in resolution_strategy_order:
 
-            self._logger.debug("Loading settings from {}".format(
-                settings_strategy.FRIENDLY_NAME))
+            self._logger.debug("Loading settings from %s",
+                               settings_strategy.FRIENDLY_NAME)
 
             try:
                 self.startup_settings = settings_strategy.update(
                     self.startup_settings)
-            except ValueError as e:
+            except ValueError as error:
                 if isinstance(settings_strategy, ConfigFileSetter):
                     self._logger.warning(
-                        "{} contains an invalid setting. Details: {} ".format(
-                            self.config_file, e)
+                        "%s contains an invalid setting. Details: %s",
+                        self.config_file,
+                        error
                     )
 
                 else:
-                    self._logger.warning("{} is an invalid setting".format(e))
+                    self._logger.warning("%s is an invalid setting",
+                                         error)
         try:
             self._debug = cast(bool, self.startup_settings['debug'])
         except KeyError:
