@@ -137,8 +137,9 @@ class ValidateMetadataWorkflow(AbsWorkflow):
             ])
             return message
 
-        data = [i for i in map(
-            lambda x: x.data, filter(validation_result_filter, results))]
+        data = list(
+            map(lambda x: x.data, filter(validation_result_filter, results))
+        )
 
         line_sep = "\n" + "-" * 60
         total_results = len(data)
