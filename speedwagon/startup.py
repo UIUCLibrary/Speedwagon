@@ -446,10 +446,14 @@ class StartupDefault(AbsStarter):
             speedwagon.config.generate_default(self.config_file)
 
             self._logger.debug(
-                "No config file found. Generated {}".format(self.config_file))
+                "No config file found. Generated %s",
+                self.config_file
+            )
         else:
             self._logger.debug(
-                "Found existing config file {}".format(self.config_file))
+                "Found existing config file %s",
+                self.config_file
+            )
 
         if not os.path.exists(self.tabs_file):
             pathlib.Path(self.tabs_file).touch()
@@ -462,23 +466,25 @@ class StartupDefault(AbsStarter):
 
         if self.user_data_dir and not os.path.exists(self.user_data_dir):
             os.makedirs(self.user_data_dir)
-            self._logger.debug("Created directory {}".format(
-                self.user_data_dir))
+            self._logger.debug("Created directory %s", self.user_data_dir)
 
         else:
             self._logger.debug(
-                "Found existing user data directory {}".format(
-                    self.user_data_dir))
+                "Found existing user data directory %s",
+                self.user_data_dir
+            )
 
         if self.app_data_dir is not None and \
                 not os.path.exists(self.app_data_dir):
 
             os.makedirs(self.app_data_dir)
-            self._logger.debug("Created {}".format(self.app_data_dir))
+            self._logger.debug("Created %s", self.app_data_dir)
         else:
             self._logger.debug(
                 "Found existing app data "
-                "directory {}".format(self.app_data_dir))
+                "directory %s",
+                self.app_data_dir
+            )
 
 
 class TabsEditorApp(QtWidgets.QDialog):
