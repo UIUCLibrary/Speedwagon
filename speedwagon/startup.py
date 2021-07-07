@@ -433,10 +433,11 @@ class StartupDefault(AbsStarter):
                 "Unable to find a key for debug mode. Setting false")
 
             self._debug = False
-        except ValueError as e:
+        except ValueError as error:
             self._logger.warning(
-                "{} is an invalid setting for debug mode."
-                "Setting false".format(e))
+                "%s is an invalid setting for debug mode."
+                "Setting false",
+                error)
 
             self._debug = False
 
