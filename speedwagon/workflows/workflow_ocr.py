@@ -265,7 +265,7 @@ class OCRWorkflow(speedwagon.Workflow):
                 return False
             return True
 
-        return [r for r in filter(filter_ocr_gen_tasks, results)]
+        return list(filter(filter_ocr_gen_tasks, results))
 
 
 class FindImagesTask(speedwagon.tasks.Subtask):
