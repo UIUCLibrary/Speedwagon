@@ -237,3 +237,77 @@ class TestCustomTabsFileReader:
         all(reader.load_custom_tabs(fake_file))
         captured = capsys.readouterr()
         assert "Error loading tab" in captured.err
+
+
+class TestStartupDefault:
+    def test_invalid_setting_logs_warning(self, caplog):
+        import speedwagon.startup
+
+        def update(*_, **__):
+            raise ValueError("oops")
+        startup_worker = speedwagon.startup.StartupDefault(app=Mock())
+        resolution = Mock(FRIENDLY_NAME="dummy")
+        resolution.update = lambda _: update()
+        startup_worker.resolve_settings(resolution_strategy_order=[resolution])
+        assert any("oops is an invalid setting" in m for m in caplog.messages)
+
+    def test_invalid_setting_logs_warning_for_ConfigFileSetter(self, caplog):
+        import speedwagon.startup
+
+        def update(*_, **__):
+            raise ValueError("oops")
+        startup_worker = speedwagon.startup.StartupDefault(app=Mock())
+        resolution = Mock(FRIENDLY_NAME="dummy")
+        resolution.__class__ = speedwagon.startup.ConfigFileSetter
+        resolution.update = lambda _: update()
+        startup_worker.resolve_settings(resolution_strategy_order=[resolution])
+        assert any("contains an invalid setting" in m for m in caplog.messages)
+
+    def test_missing_debug_setting(self, caplog):
+        import speedwagon.startup
+        startup_worker = speedwagon.startup.StartupDefault(app=Mock())
+        startup_worker.startup_settings = MagicMock()
+
+        startup_worker.startup_settings.__getitem__ = Mock(
+            side_effect=KeyError
+        )
+
+        startup_worker.resolve_settings([])
+        assert any(
+            "Unable to find a key for debug mode" in m for m in caplog.messages
+        )
+
+    def test_invalid_debug_setting(self, caplog):
+        import speedwagon.startup
+        startup_worker = speedwagon.startup.StartupDefault(app=Mock())
+        startup_worker.startup_settings = MagicMock()
+
+        startup_worker.startup_settings.__getitem__ = Mock(
+            side_effect=ValueError
+        )
+
+        startup_worker.resolve_settings([])
+        assert any(
+            "invalid setting for debug mode" in m for m in caplog.messages
+        )
+
+    def test_default_resolve_settings_calls_default_setter(self, monkeypatch):
+        import speedwagon.startup
+
+        def update(*_, **__):
+            raise ValueError("oops")
+
+        default_setter = Mock()
+        monkeypatch.setattr(
+            speedwagon.startup, "DefaultsSetter", default_setter
+        )
+
+        monkeypatch.setattr(
+            speedwagon.startup.CliArgsSetter, "update", MagicMock()
+        )
+
+        startup_worker = speedwagon.startup.StartupDefault(app=Mock())
+        resolution = Mock(FRIENDLY_NAME="dummy")
+        resolution.update = lambda _: update()
+        startup_worker.resolve_settings()
+        assert default_setter.called is True

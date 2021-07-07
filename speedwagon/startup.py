@@ -396,14 +396,18 @@ class StartupDefault(AbsStarter):
         self.app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
         QtWidgets.QApplication.processEvents()
 
-    def resolve_settings(self) -> None:
-        resolution_order: List[AbsSetting] = [
-            DefaultsSetter(),
-            ConfigFileSetter(self.config_file),
-            CliArgsSetter(),
-        ]
+    def resolve_settings(
+            self,
+            resolution_strategy_order: Optional[List[AbsSetting]] = None
+    ) -> None:
+        if resolution_strategy_order is None:
+            resolution_strategy_order = [
+                DefaultsSetter(),
+                ConfigFileSetter(self.config_file),
+                CliArgsSetter(),
+            ]
         self.read_settings_file(self.config_file)
-        for settings_strategy in resolution_order:
+        for settings_strategy in resolution_strategy_order:
 
             self._logger.debug("Loading settings from {}".format(
                 settings_strategy.FRIENDLY_NAME))
