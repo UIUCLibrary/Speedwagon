@@ -179,7 +179,7 @@ class OCRWorkflow(speedwagon.Workflow):
 
         package_type = shared_custom_widgets.ListSelection("Image File Type")
 
-        for file_type in OCRWorkflow.SUPPORTED_IMAGE_TYPES.keys():
+        for file_type in OCRWorkflow.SUPPORTED_IMAGE_TYPES:
             package_type.add_selection(file_type)
         options.append(package_type)
 
@@ -265,7 +265,7 @@ class OCRWorkflow(speedwagon.Workflow):
                 return False
             return True
 
-        return [r for r in filter(filter_ocr_gen_tasks, results)]
+        return list(filter(filter_ocr_gen_tasks, results))
 
 
 class FindImagesTask(speedwagon.tasks.Subtask):
