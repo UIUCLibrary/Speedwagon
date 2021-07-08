@@ -520,8 +520,8 @@ class ValidateOCRFilesTask(CompletenessSubTask):
                 self.set_results(report_builder.construct())
                 return False
 
-            except Exception as e:
-                print(e)
+            except Exception as uncaught_error:
+                print(uncaught_error)
                 raise
 
             if ocr_errors:
