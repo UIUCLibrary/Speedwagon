@@ -3,7 +3,6 @@
 import abc
 import os
 import platform
-import typing
 from typing import Optional, Dict, cast, Type
 
 from PyQt5 import QtWidgets, QtCore  # type: ignore
