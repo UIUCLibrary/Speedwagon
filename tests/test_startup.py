@@ -250,7 +250,7 @@ class TestStartupDefault:
         # Monkey patch Path.home() because this will fail on linux systems if
         # uid not found. For example: in some docker containers
         monkeypatch.setattr(
-            speedwagon.config.Path, "home", lambda : "my_home"
+            speedwagon.config.Path, "home", lambda: "my_home"
         )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         resolution = Mock(FRIENDLY_NAME="dummy")
@@ -269,7 +269,7 @@ class TestStartupDefault:
         # Monkey patch Path.home() because this will fail on linux systems if
         # uid not found. For example: in some docker containers
         monkeypatch.setattr(
-            speedwagon.config.Path, "home", lambda : "my_home"
+            speedwagon.config.Path, "home", lambda: "my_home"
         )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         resolution = Mock(FRIENDLY_NAME="dummy")
@@ -284,7 +284,7 @@ class TestStartupDefault:
         # Monkey patch Path.home() because this will fail on linux systems if
         # uid not found. For example: in some docker containers
         monkeypatch.setattr(
-            speedwagon.config.Path, "home", lambda : "my_home"
+            speedwagon.config.Path, "home", lambda: "my_home"
         )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.startup_settings = MagicMock()
@@ -304,7 +304,7 @@ class TestStartupDefault:
         # Monkey patch Path.home() because this will fail on linux systems if
         # uid not found. For example: in some docker containers
         monkeypatch.setattr(
-            speedwagon.config.Path, "home", lambda : "my_home"
+            speedwagon.config.Path, "home", lambda: "my_home"
         )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.startup_settings = MagicMock()
@@ -333,7 +333,7 @@ class TestStartupDefault:
         # Monkey patch Path.home() because this will fail on linux systems if
         # uid not found. For example: in some docker containers
         monkeypatch.setattr(
-            speedwagon.config.Path, "home", lambda : "my_home"
+            speedwagon.config.Path, "home", lambda: "my_home"
         )
 
         monkeypatch.setattr(
@@ -366,6 +366,12 @@ class TestStartupDefault:
     @pytest.fixture()
     def first_time_startup_worker(self, monkeypatch):
         import speedwagon.startup
+        import speedwagon.config
+        # Monkey patch Path.home() because this will fail on linux systems if
+        # uid not found. For example: in some docker containers
+        monkeypatch.setattr(
+            speedwagon.config.Path, "home", lambda: "my_home"
+        )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.config_file = "dummy.yml"
         startup_worker.tabs_file = "tabs.yml"
@@ -401,6 +407,12 @@ class TestStartupDefault:
     @pytest.fixture()
     def returning_startup_worker(self, monkeypatch):
         import speedwagon.startup
+        import speedwagon.config
+        # Monkey patch Path.home() because this will fail on linux systems if
+        # uid not found. For example: in some docker containers
+        monkeypatch.setattr(
+            speedwagon.config.Path, "home", lambda: "my_home"
+        )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.config_file = "dummy.yml"
         startup_worker.tabs_file = "tabs.yml"
