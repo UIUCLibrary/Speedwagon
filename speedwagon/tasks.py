@@ -115,7 +115,7 @@ class Subtask(AbsSubtask):
         return self._status
 
     @status.setter
-    def status(self, value: TaskStatus):
+    def status(self, value: TaskStatus) -> None:
         self._status = value
 
     def work(self) -> bool:
