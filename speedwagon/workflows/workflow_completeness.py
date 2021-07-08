@@ -510,11 +510,13 @@ class ValidateOCRFilesTask(CompletenessSubTask):
                     validator.ValidateOCRFiles(path=self.package_path)
                 )
 
-            except PermissionError as e:
+            except PermissionError as permission_error:
                 report_builder = hathi_result.SummaryDirector(
                    source=self.package_path
                 )
-                report_builder.add_error("Permission issues. \"{}\"".format(e))
+                report_builder.add_error(
+                    f'Permission issues. "{permission_error}"'
+                )
                 self.set_results(report_builder.construct())
                 return False
 
