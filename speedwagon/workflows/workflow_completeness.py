@@ -164,7 +164,7 @@ class CompletenessWorkflow(AbsWorkflow):
 
         error_results += cls._get_result(results_grouped,
                                          ValidateYMLTask)
-        error_report = hathi_reporter.get_report_as_str(error_results, 70)
+        error_report: str = hathi_reporter.get_report_as_str(error_results, 70)
 
         # ########################### Warnings ###########################
         warning_results: List[hathi_result.Result] = []
@@ -251,8 +251,11 @@ class HathiCheckMissingPackageFilesTask(CompletenessSubTask):
         my_logger.setLevel(logging.INFO)
 
         with self.log_config(my_logger):
-            missing_files_errors = validate_process.run_validation(
-                validator.ValidateMissingFiles(path=self.package_path))
+
+            missing_files_errors: List[hathi_result.Result] = \
+                validate_process.run_validation(
+                    validator.ValidateMissingFiles(path=self.package_path)
+                )
             if missing_files_errors:
                 for error in missing_files_errors:
                     self.log(error.message)
@@ -278,12 +281,13 @@ class HathiCheckMissingComponentsTask(CompletenessSubTask):
             if self.check_ocr:
                 extensions.append(".xml")
             try:
-                missing_files_errors = validate_process.run_validation(
-                    validator.ValidateComponents(
-                        self.package_path,
-                        "^[0-9]{8}$",
-                        *extensions
-                    )
+                missing_files_errors: List[hathi_result.Result] = \
+                    validate_process.run_validation(
+                        validator.ValidateComponents(
+                            self.package_path,
+                            "^[0-9]{8}$",
+                            *extensions
+                        )
                 )
             except FileNotFoundError:
                 report_builder = hathi_result.SummaryDirector(
@@ -332,9 +336,11 @@ class ValidateExtraSubdirectoriesTask(CompletenessSubTask):
 
         with self.log_config(my_logger):
             try:
-                extra_subdirectories_errors = validate_process.run_validation(
-                    validator.ValidateExtraSubdirectories(
-                        path=self.package_path)
+                extra_subdirectories_errors: List[hathi_result.Result] = \
+                    validate_process.run_validation(
+                        validator.ValidateExtraSubdirectories(
+                            path=self.package_path
+                        )
                 )
             except PermissionError as e:
                 report_builder = hathi_result.SummaryDirector(
@@ -393,9 +399,12 @@ class ValidateChecksumsTask(CompletenessSubTask):
                     )
                 )
 
-                checksum_report_errors = validate_process.run_validation(
-                    validator.ValidateChecksumReport(self.package_path,
-                                                     checksum_report)
+                checksum_report_errors: List[hathi_result.Result] = \
+                    validate_process.run_validation(
+                        validator.ValidateChecksumReport(
+                            self.package_path,
+                            checksum_report
+                        )
                 )
                 if not checksum_report_errors:
                     self.log(
@@ -451,9 +460,10 @@ class ValidateMarcTask(CompletenessSubTask):
                         "Validating marc.xml in {}".format(self.package_path)
                     )
 
-                    marc_errors = validate_process.run_validation(
-                        validator.ValidateMarc(marc_file)
-                    )
+                    marc_errors: List[hathi_result.Result] = \
+                        validate_process.run_validation(
+                            validator.ValidateMarc(marc_file)
+                        )
 
                     if not marc_errors:
                         self.log("{} successfully validated".format(marc_file))
@@ -608,7 +618,8 @@ class ValidateOCFilesUTF8Task(CompletenessSubTask):
                     ocr_file.path)
                 )
 
-                invalid_ocr_character = validate_process.run_validation(
+                invalid_ocr_character: List[hathi_result.Result] =\
+                    validate_process.run_validation(
                     validator.ValidateUTF8Files(ocr_file.path)
                 )
 
