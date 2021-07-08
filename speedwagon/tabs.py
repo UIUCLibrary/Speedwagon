@@ -288,13 +288,13 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             if current.isValid():
                 self.item_selected(current)
                 self.item_form.setCurrentModelIndex(current)
-        except Exception as e:
+        except Exception as error:
             if previous.isValid():
                 self.item_selected(previous)
                 self.item_form.setCurrentModelIndex(previous)
                 self.item_selector_view.setCurrentIndex(previous)
             else:
-                traceback.print_tb(e.__traceback__)
+                traceback.print_tb(error.__traceback__)
                 self.item_selector_view.setCurrentIndex(previous)
 
     def item_selected(self, index: QtCore.QModelIndex) -> None:
