@@ -41,8 +41,8 @@ class AbsJobWorker:
             self.on_completion(*args, **kwargs)
             self.successful = True
             return self.result
-        except Exception as e:
-            print("Failed {}".format(e), file=sys.stderr)
+        except Exception as error:
+            print("Failed {}".format(error), file=sys.stderr)
             self.successful = False
             raise
 
@@ -190,9 +190,9 @@ class ProgressMessageBoxLogHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
         try:
             self.dialog_box.setLabelText(self.format(record))
-        except RuntimeError as e:
+        except RuntimeError as error:
             print(self.format(record), file=sys.stderr)
-            traceback.print_tb(e.__traceback__)
+            traceback.print_tb(error.__traceback__)
 
 
 # pylint: disable=too-few-public-methods
@@ -431,9 +431,9 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
                 QtWidgets.QApplication.processEvents()
                 if self.active:
                     continue
-            except concurrent.futures.process.BrokenProcessPool as e:
-                traceback.print_tb(e.__traceback__)
-                print(e, file=sys.stderr)
+            except concurrent.futures.process.BrokenProcessPool as error:
+                traceback.print_tb(error.__traceback__)
+                print(error, file=sys.stderr)
                 print(completed_futures.exception(), file=sys.stderr)
                 raise
             self.flush_message_buffer()
