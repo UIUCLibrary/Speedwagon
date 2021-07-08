@@ -254,7 +254,7 @@ class TestStartupDefault:
         )
 
         monkeypatch.setattr(
-            speedwagon.config.get_platform_settings(),
+            speedwagon.config.WindowsConfig,
             "get_app_data_directory",
             lambda: "app_data_dir"
         )
@@ -278,7 +278,7 @@ class TestStartupDefault:
             speedwagon.config.Path, "home", lambda: "my_home"
         )
         monkeypatch.setattr(
-            speedwagon.config.get_platform_settings(),
+            speedwagon.config.WindowsConfig,
             "get_app_data_directory",
             lambda: "app_data_dir"
         )
@@ -298,7 +298,7 @@ class TestStartupDefault:
             speedwagon.config.Path, "home", lambda: "my_home"
         )
         monkeypatch.setattr(
-            speedwagon.config.get_platform_settings(),
+            speedwagon.config.WindowsConfig,
             "get_app_data_directory",
             lambda: "app_data_dir"
         )
@@ -323,7 +323,7 @@ class TestStartupDefault:
             speedwagon.config.Path, "home", lambda: "my_home"
         )
         monkeypatch.setattr(
-            speedwagon.config.get_platform_settings(),
+            speedwagon.config.WindowsConfig,
             "get_app_data_directory",
             lambda: "app_data_dir"
         )
@@ -358,7 +358,7 @@ class TestStartupDefault:
         )
 
         monkeypatch.setattr(
-            speedwagon.config.get_platform_settings(),
+            speedwagon.config.WindowsConfig,
             "get_app_data_directory",
             lambda: "app_data_dir"
         )
@@ -400,7 +400,7 @@ class TestStartupDefault:
             speedwagon.config.Path, "home", lambda: "my_home"
         )
         monkeypatch.setattr(
-            speedwagon.config.get_platform_settings(),
+            speedwagon.config.WindowsConfig,
             "get_app_data_directory",
             lambda: "app_data_dir"
         )
@@ -446,7 +446,7 @@ class TestStartupDefault:
             speedwagon.config.Path, "home", lambda: "my_home"
         )
         monkeypatch.setattr(
-            speedwagon.config.get_platform_settings(),
+            speedwagon.config.WindowsConfig,
             "get_app_data_directory",
             lambda: "app_data_dir"
         )
