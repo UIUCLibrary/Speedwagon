@@ -2,7 +2,6 @@
 
 import abc
 import os
-import typing
 
 from typing import Type, Union, List
 from PyQt5 import QtWidgets, QtCore, QtGui
