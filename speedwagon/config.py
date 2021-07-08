@@ -229,7 +229,7 @@ def serialize_settings_model(model: QAbstractItemModel) -> str:
 
 def find_missing_global_entries(
         config_file: str,
-        expected_keys) -> Optional[Set[str]]:
+        expected_keys: Iterable[str]) -> Optional[Set[str]]:
     """Locate any missing entries from a config file.
 
     Notes:
