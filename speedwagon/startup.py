@@ -17,7 +17,8 @@ import io
 import logging
 import os
 import sys
-from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
+from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type, \
+    Any
 import pathlib
 import yaml
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
@@ -57,7 +58,10 @@ class AbsSetting(metaclass=abc.ABCMeta):
     def FRIENDLY_NAME():
         return NotImplementedError
 
-    def update(self, settings=None) -> Dict["str", Union[str, bool]]:
+    def update(
+            self,
+            settings: Dict[str, Union[str, bool]] = None
+    ) -> Dict["str", Union[str, bool]]:
         if settings is None:
             return dict()
         else:
@@ -67,7 +71,10 @@ class AbsSetting(metaclass=abc.ABCMeta):
 class DefaultsSetter(AbsSetting):
     FRIENDLY_NAME = "Setting defaults"
 
-    def update(self, settings=None) -> Dict["str", Union[str, bool]]:
+    def update(
+            self,
+            settings: Dict[str, Union[str, bool]] = None
+    ) -> Dict["str", Union[str, bool]]:
         new_settings = super().update(settings)
         new_settings["debug"] = False
         return new_settings
@@ -77,7 +84,10 @@ class CliArgsSetter(AbsSetting):
 
     FRIENDLY_NAME = "Command line arguments setting"
 
-    def update(self, settings=None) -> Dict["str", Union[str, bool]]:
+    def update(
+            self,
+            settings: Dict[str, Union[str, bool]] = None
+    ) -> Dict["str", Union[str, bool]]:
         new_settings = super().update(settings)
 
         args = self._parse_args()
@@ -129,7 +139,10 @@ class ConfigFileSetter(AbsSetting):
         """Create a new config file setter."""
         self.config_file = config_file
 
-    def update(self, settings=None) -> Dict["str", Union[str, bool]]:
+    def update(
+            self,
+            settings: Dict[str, Union[str, bool]] = None
+    ) -> Dict["str", Union[str, bool]]:
         """Update setting configuration."""
         new_settings = super().update(settings)
         with speedwagon.config.ConfigManager(self.config_file) as cfg:
