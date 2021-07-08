@@ -231,7 +231,9 @@ class ToolOptionsPairsModel(ToolOptionsModel):
         for key, value in data.items():
             self._data.append(OptionPair(key, value))
 
-    def data(self, index: QtCore.QModelIndex, role: Optional[QtConstant] = None):
+    def data(self,
+             index: QtCore.QModelIndex,
+             role: Optional[QtConstant] = None):
         if index.isValid():
             if role == QtCore.Qt.DisplayRole:
                 return self._data[index.row()].data
@@ -402,13 +404,14 @@ class SettingsModel(QtCore.QAbstractTableModel):
             return self._headers.get(index, "")
         return QtCore.QVariant()
 
-    def flags(self, index: QtCore.QModelIndex):
+    def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
         """Manage display flags for a given index."""
         if self._headers.get(index.column(), "") == "Key":
-            return QtCore.Qt.NoItemFlags
+            return cast(QtCore.Qt.ItemFlags, QtCore.Qt.NoItemFlags)
 
         if self._headers.get(index.column(), "") == "Value":
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
+            return cast(QtCore.Qt.ItemFlags,
+                        QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable)
 
         return super().flags(index)
 
