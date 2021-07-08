@@ -280,6 +280,7 @@ class TestStartupDefault:
 
     def test_invalid_debug_setting(self, caplog, monkeypatch):
         import speedwagon.startup
+        import speedwagon.config
         # Monkey patch Path.home() because this will fail on linux systems if
         # uid not found. For example: in some docker containers
         monkeypatch.setattr(
