@@ -182,7 +182,9 @@ class CustomTabsFileReader:
             raise FileFormatError("Failed to parse file")
         return tabs_config_data
 
-    def _get_tab_items(self, tab, tab_name: str):
+    def _get_tab_items(self,
+                       tab: List[str],
+                       tab_name: str) -> Dict[str, Type[job.Workflow]]:
         new_tab_items = {}
         for item_name in tab:
             try:
