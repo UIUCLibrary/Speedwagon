@@ -328,7 +328,7 @@ class ToolOptionsModel3(ToolOptionsModel):
             self,
             index: int,
             orientation: int,
-            role=None) -> Union[QtCore.QVariant, str]:
+            role: QtConstant = None) -> Union[QtCore.QVariant, str]:
 
         if orientation == QtCore.Qt.Vertical and \
                 role == QtCore.Qt.DisplayRole:

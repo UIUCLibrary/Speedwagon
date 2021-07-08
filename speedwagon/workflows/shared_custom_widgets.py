@@ -195,7 +195,7 @@ class UserOption2(metaclass=abc.ABCMeta):
 
     def __init__(self, label_text):
         """Create user option data."""
-        self.label_text = label_text
+        self.label_text: str = label_text
         self.data = None
 
     @abc.abstractmethod
