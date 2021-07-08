@@ -3,6 +3,7 @@
 import abc
 import os
 import platform
+import typing
 from typing import Optional, Dict, cast, Type
 
 from PyQt5 import QtWidgets, QtCore  # type: ignore
@@ -253,7 +254,7 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         self.setupUi(self)
         self._tabs_file: Optional[str] = None
 
-        self._tabs_model: QtCore.QAbstractListModel = models.TabsModel()
+        self._tabs_model = models.TabsModel()
 
         self._all_workflows_model: models.WorkflowListModel2 = \
             models.WorkflowListModel2()
@@ -303,10 +304,12 @@ class TabEditor(QtWidgets.QWidget, tab_editor_ui.Ui_Form):
         else:
             self.tabWorkflowsListView.setModel(models.WorkflowListModel2())
 
-    def _create_new_tab(self):
+    def _create_new_tab(self) -> None:
         while True:
+            new_tab_name: str
+            accepted: bool
             new_tab_name, accepted = QtWidgets.QInputDialog.getText(
-                self.parent(), "Create New Tab", "Tab name")
+                self.parentWidget(), "Create New Tab", "Tab name")
 
             # The user cancelled
             if not accepted:

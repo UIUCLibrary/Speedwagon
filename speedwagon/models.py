@@ -436,7 +436,7 @@ class TabsModel(QtCore.QAbstractListModel):
         super().__init__(parent)
         self.tabs: List[tabs.TabData] = []
 
-    def __contains__(self, value: "tabs.TabData") -> bool:
+    def __contains__(self, value: str) -> bool:
         """Check if a tab is in the model."""
         return any(tab.tab_name == value for tab in self.tabs)
 
