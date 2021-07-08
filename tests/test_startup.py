@@ -252,6 +252,12 @@ class TestStartupDefault:
         monkeypatch.setattr(
             speedwagon.config.Path, "home", lambda: "my_home"
         )
+
+        monkeypatch.setattr(
+            speedwagon.config.get_platform_settings(),
+            "get_app_data_directory",
+            lambda: "app_data_dir"
+        )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         resolution = Mock(FRIENDLY_NAME="dummy")
         resolution.update = lambda _: update()
@@ -271,6 +277,11 @@ class TestStartupDefault:
         monkeypatch.setattr(
             speedwagon.config.Path, "home", lambda: "my_home"
         )
+        monkeypatch.setattr(
+            speedwagon.config.get_platform_settings(),
+            "get_app_data_directory",
+            lambda: "app_data_dir"
+        )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         resolution = Mock(FRIENDLY_NAME="dummy")
         resolution.__class__ = speedwagon.startup.ConfigFileSetter
@@ -285,6 +296,11 @@ class TestStartupDefault:
         # uid not found. For example: in some docker containers
         monkeypatch.setattr(
             speedwagon.config.Path, "home", lambda: "my_home"
+        )
+        monkeypatch.setattr(
+            speedwagon.config.get_platform_settings(),
+            "get_app_data_directory",
+            lambda: "app_data_dir"
         )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.startup_settings = MagicMock()
@@ -305,6 +321,11 @@ class TestStartupDefault:
         # uid not found. For example: in some docker containers
         monkeypatch.setattr(
             speedwagon.config.Path, "home", lambda: "my_home"
+        )
+        monkeypatch.setattr(
+            speedwagon.config.get_platform_settings(),
+            "get_app_data_directory",
+            lambda: "app_data_dir"
         )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.startup_settings = MagicMock()
