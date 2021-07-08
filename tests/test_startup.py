@@ -294,6 +294,7 @@ class TestStartupDefault:
 
     def test_default_resolve_settings_calls_default_setter(self, monkeypatch):
         import speedwagon.startup
+        import speedwagon.config
 
         def update(*_, **__):
             raise ValueError("oops")
@@ -301,6 +302,12 @@ class TestStartupDefault:
         default_setter = Mock()
         monkeypatch.setattr(
             speedwagon.startup, "DefaultsSetter", default_setter
+        )
+
+        # Monkey patch Path.home() because this will fail on linux systems if
+        # uid not found. For example: in some docker containers
+        monkeypatch.setattr(
+            speedwagon.config.Path, "home", lambda : "my_home"
         )
 
         monkeypatch.setattr(
