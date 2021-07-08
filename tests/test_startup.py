@@ -241,22 +241,47 @@ class TestCustomTabsFileReader:
 
 
 class TestStartupDefault:
-    def test_invalid_setting_logs_warning(self, caplog):
+    def test_invalid_setting_logs_warning(self, caplog, monkeypatch):
         import speedwagon.startup
+        import speedwagon.config
 
         def update(*_, **__):
             raise ValueError("oops")
+        # Monkey patch Path.home() because this will fail on linux systems if
+        # uid not found. For example: in some docker containers
+        monkeypatch.setattr(
+            speedwagon.config.Path, "home", lambda: "my_home"
+        )
+
+        monkeypatch.setattr(
+            speedwagon.config.WindowsConfig,
+            "get_app_data_directory",
+            lambda *_: "app_data_dir"
+        )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         resolution = Mock(FRIENDLY_NAME="dummy")
         resolution.update = lambda _: update()
         startup_worker.resolve_settings(resolution_strategy_order=[resolution])
         assert any("oops is an invalid setting" in m for m in caplog.messages)
 
-    def test_invalid_setting_logs_warning_for_ConfigFileSetter(self, caplog):
+    def test_invalid_setting_logs_warning_for_ConfigFileSetter(
+            self, caplog, monkeypatch):
         import speedwagon.startup
+        import speedwagon.config
 
         def update(*_, **__):
             raise ValueError("oops")
+
+        # Monkey patch Path.home() because this will fail on linux systems if
+        # uid not found. For example: in some docker containers
+        monkeypatch.setattr(
+            speedwagon.config.Path, "home", lambda: "my_home"
+        )
+        monkeypatch.setattr(
+            speedwagon.config.WindowsConfig,
+            "get_app_data_directory",
+            lambda *_: "app_data_dir"
+        )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         resolution = Mock(FRIENDLY_NAME="dummy")
         resolution.__class__ = speedwagon.startup.ConfigFileSetter
@@ -264,8 +289,19 @@ class TestStartupDefault:
         startup_worker.resolve_settings(resolution_strategy_order=[resolution])
         assert any("contains an invalid setting" in m for m in caplog.messages)
 
-    def test_missing_debug_setting(self, caplog):
+    def test_missing_debug_setting(self, caplog, monkeypatch):
         import speedwagon.startup
+        import speedwagon.config
+        # Monkey patch Path.home() because this will fail on linux systems if
+        # uid not found. For example: in some docker containers
+        monkeypatch.setattr(
+            speedwagon.config.Path, "home", lambda: "my_home"
+        )
+        monkeypatch.setattr(
+            speedwagon.config.WindowsConfig,
+            "get_app_data_directory",
+            lambda *_: "app_data_dir"
+        )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.startup_settings = MagicMock()
 
@@ -278,8 +314,19 @@ class TestStartupDefault:
             "Unable to find a key for debug mode" in m for m in caplog.messages
         )
 
-    def test_invalid_debug_setting(self, caplog):
+    def test_invalid_debug_setting(self, caplog, monkeypatch):
         import speedwagon.startup
+        import speedwagon.config
+        # Monkey patch Path.home() because this will fail on linux systems if
+        # uid not found. For example: in some docker containers
+        monkeypatch.setattr(
+            speedwagon.config.Path, "home", lambda: "my_home"
+        )
+        monkeypatch.setattr(
+            speedwagon.config.WindowsConfig,
+            "get_app_data_directory",
+            lambda *_: "app_data_dir"
+        )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.startup_settings = MagicMock()
 
@@ -294,6 +341,7 @@ class TestStartupDefault:
 
     def test_default_resolve_settings_calls_default_setter(self, monkeypatch):
         import speedwagon.startup
+        import speedwagon.config
 
         def update(*_, **__):
             raise ValueError("oops")
@@ -301,6 +349,18 @@ class TestStartupDefault:
         default_setter = Mock()
         monkeypatch.setattr(
             speedwagon.startup, "DefaultsSetter", default_setter
+        )
+
+        # Monkey patch Path.home() because this will fail on linux systems if
+        # uid not found. For example: in some docker containers
+        monkeypatch.setattr(
+            speedwagon.config.Path, "home", lambda: "my_home"
+        )
+
+        monkeypatch.setattr(
+            speedwagon.config.WindowsConfig,
+            "get_app_data_directory",
+            lambda *_: "app_data_dir"
         )
 
         monkeypatch.setattr(
@@ -333,6 +393,17 @@ class TestStartupDefault:
     @pytest.fixture()
     def first_time_startup_worker(self, monkeypatch):
         import speedwagon.startup
+        import speedwagon.config
+        # Monkey patch Path.home() because this will fail on linux systems if
+        # uid not found. For example: in some docker containers
+        monkeypatch.setattr(
+            speedwagon.config.Path, "home", lambda: "my_home"
+        )
+        monkeypatch.setattr(
+            speedwagon.config.WindowsConfig,
+            "get_app_data_directory",
+            lambda *_: "app_data_dir"
+        )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.config_file = "dummy.yml"
         startup_worker.tabs_file = "tabs.yml"
@@ -368,6 +439,17 @@ class TestStartupDefault:
     @pytest.fixture()
     def returning_startup_worker(self, monkeypatch):
         import speedwagon.startup
+        import speedwagon.config
+        # Monkey patch Path.home() because this will fail on linux systems if
+        # uid not found. For example: in some docker containers
+        monkeypatch.setattr(
+            speedwagon.config.Path, "home", lambda: "my_home"
+        )
+        monkeypatch.setattr(
+            speedwagon.config.WindowsConfig,
+            "get_app_data_directory",
+            lambda *_: "app_data_dir"
+        )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.config_file = "dummy.yml"
         startup_worker.tabs_file = "tabs.yml"
