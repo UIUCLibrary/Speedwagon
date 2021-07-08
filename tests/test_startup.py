@@ -278,8 +278,13 @@ class TestStartupDefault:
             "Unable to find a key for debug mode" in m for m in caplog.messages
         )
 
-    def test_invalid_debug_setting(self, caplog):
+    def test_invalid_debug_setting(self, caplog, monkeypatch):
         import speedwagon.startup
+        # Monkey patch Path.home() because this will fail on linux systems if
+        # uid not found. For example: in some docker containers
+        monkeypatch.setattr(
+            speedwagon.config.Path, "home", lambda : "my_home"
+        )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.startup_settings = MagicMock()
 
