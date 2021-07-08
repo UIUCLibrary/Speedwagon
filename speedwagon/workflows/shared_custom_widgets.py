@@ -2,8 +2,9 @@
 
 import abc
 import os
+import typing
 
-from typing import Type
+from typing import Type, Union, List
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 
@@ -209,7 +210,9 @@ class UserOption2(metaclass=abc.ABCMeta):
 class UserOptionPythonDataType2(UserOption2):
     """User option Python data type."""
 
-    def __init__(self, label_text: str, data_type=str) -> None:
+    def __init__(self,
+                 label_text: str,
+                 data_type: Type[Union[str, int, bool]] = str) -> None:
         """Create a user options data type."""
         super().__init__(label_text)
         self.data_type = data_type
@@ -222,7 +225,7 @@ class UserOptionPythonDataType2(UserOption2):
 class ListSelectionWidget(CustomItemWidget, metaclass=WidgetMeta):
     """List selection widget."""
 
-    def __init__(self, selections, *args, **kwargs) -> None:
+    def __init__(self, selections: List[str], *args, **kwargs) -> None:
         """Create a list selection widget."""
         super().__init__()
         self._combobox = QtWidgets.QComboBox()
@@ -242,10 +245,10 @@ class ListSelectionWidget(CustomItemWidget, metaclass=WidgetMeta):
 class ListSelection(UserOption2):
     """List selection."""
 
-    def __init__(self, label_text):
+    def __init__(self, label_text: str) -> None:
         """Create a list selection."""
         super().__init__(label_text)
-        self._selections = []
+        self._selections: List[str] = []
 
     def is_valid(self) -> bool:
         return True
