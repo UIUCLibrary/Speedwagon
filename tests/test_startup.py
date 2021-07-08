@@ -337,6 +337,12 @@ class TestStartupDefault:
         )
 
         monkeypatch.setattr(
+            speedwagon.config.get_platform_settings(),
+            "get_app_data_directory",
+            lambda: "app_data_dir"
+        )
+
+        monkeypatch.setattr(
             speedwagon.startup.CliArgsSetter, "update", MagicMock()
         )
 
