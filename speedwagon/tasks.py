@@ -61,7 +61,7 @@ class AbsSubtask(metaclass=abc.ABCMeta):
 
     @parent_task_log_q.setter  # type: ignore
     @abc.abstractmethod
-    def parent_task_log_q(self, value: Deque[str]):
+    def parent_task_log_q(self, value: Deque[str]) -> None:
         pass
 
 
@@ -103,7 +103,7 @@ class Subtask(AbsSubtask):
         return self._parent_task_log_q
 
     @parent_task_log_q.setter
-    def parent_task_log_q(self, value: Deque[str]):
+    def parent_task_log_q(self, value: Deque[str]) -> None:
         self._parent_task_log_q = value
 
     @property
@@ -216,7 +216,7 @@ class AbsTaskComponents(metaclass=abc.ABCMeta):
 
     @pretask.setter  # type: ignore
     @abc.abstractmethod
-    def pretask(self, value: AbsSubtask):
+    def pretask(self, value: AbsSubtask) -> None:
         pass
 
     @property  # type: ignore
@@ -226,7 +226,7 @@ class AbsTaskComponents(metaclass=abc.ABCMeta):
 
     @posttask.setter  # type: ignore
     @abc.abstractmethod
-    def posttask(self, value: AbsSubtask):
+    def posttask(self, value: AbsSubtask) -> None:
         pass
 
 
@@ -245,7 +245,7 @@ class Task(AbsTask, AbsTaskComponents):
         return self._pre_task
 
     @pretask.setter
-    def pretask(self, value: AbsSubtask):
+    def pretask(self, value: AbsSubtask) -> None:
         self._pre_task = value
 
     @property
@@ -253,7 +253,7 @@ class Task(AbsTask, AbsTaskComponents):
         return self._post_task
 
     @posttask.setter
-    def posttask(self, value: AbsSubtask):
+    def posttask(self, value: AbsSubtask) -> None:
         """Set the post-task sub-task."""
         self._post_task = value
 
@@ -340,7 +340,7 @@ class MultiStageTask(Task):
              if task.status > TaskStatus.WORKING])
         return amount_completed / len(self.main_subtasks)
 
-    def exec(self, *args, **kwargs):
+    def exec(self, *args, **kwargs) -> None:
 
         subtask_results = []
         try:
