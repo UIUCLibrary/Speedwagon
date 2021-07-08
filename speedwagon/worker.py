@@ -276,12 +276,11 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
     def __exit__(self,
                  exc_type: Optional[Type[BaseException]],
                  exc_value: Optional[BaseException],
-                 exc_tb: Optional[TracebackType]) -> Optional[bool]:
+                 exc_tb: Optional[TracebackType]):
         """Close runner."""
         if self.dialog is None:
             raise AttributeError("dialog was set to None before closing")
         self.dialog.close()
-        return None
 
 
 class AbsJobManager(metaclass=abc.ABCMeta):
@@ -330,11 +329,10 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
     def __exit__(self,
                  exc_type: Optional[Type[BaseException]],
                  exc_value: Optional[BaseException],
-                 exc_tb: Optional[TracebackType]) -> Optional[bool]:
+                 exc_tb: Optional[TracebackType]):
         """Clean up manager and show down the executor."""
         self._cleanup()
         self._executor.shutdown()
-        return None
 
     def open(self, parent, runner, *args, **kwargs):
         return runner(*args, **kwargs, parent=parent)
