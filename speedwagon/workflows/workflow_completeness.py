@@ -211,8 +211,8 @@ class CompletenessWorkflow(AbsWorkflow):
             for result_group in results_grouped[key]:
                 for result in result_group:
                     results.append(result)
-        except KeyError as e:
-            print("KeyError: {}".format(e), file=sys.stderr)
+        except KeyError as error:
+            print("KeyError: {}".format(error), file=sys.stderr)
         return results
 
     @staticmethod
