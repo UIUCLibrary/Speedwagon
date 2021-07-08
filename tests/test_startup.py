@@ -378,6 +378,11 @@ class TestStartupDefault:
         monkeypatch.setattr(
             speedwagon.config.Path, "home", lambda: "my_home"
         )
+        monkeypatch.setattr(
+            speedwagon.config.get_platform_settings(),
+            "get_app_data_directory",
+            lambda: "app_data_dir"
+        )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.config_file = "dummy.yml"
         startup_worker.tabs_file = "tabs.yml"
@@ -418,6 +423,11 @@ class TestStartupDefault:
         # uid not found. For example: in some docker containers
         monkeypatch.setattr(
             speedwagon.config.Path, "home", lambda: "my_home"
+        )
+        monkeypatch.setattr(
+            speedwagon.config.get_platform_settings(),
+            "get_app_data_directory",
+            lambda: "app_data_dir"
         )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.config_file = "dummy.yml"
