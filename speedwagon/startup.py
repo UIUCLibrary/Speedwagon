@@ -182,7 +182,7 @@ class CustomTabsFileReader:
             raise FileFormatError("Failed to parse file")
         return tabs_config_data
 
-    def _get_tab_items(self, tab, tab_name):
+    def _get_tab_items(self, tab, tab_name: str):
         new_tab_items = {}
         for item_name in tab:
             try:
