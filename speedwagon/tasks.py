@@ -568,7 +568,7 @@ class QueueAdapter:
     def append(self, item):
         self._queue.put(item)
 
-    def set_message_queue(self, value: queue.Queue):
+    def set_message_queue(self, value: queue.Queue) -> None:
         self._queue = value
 
 
