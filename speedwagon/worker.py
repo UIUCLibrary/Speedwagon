@@ -9,7 +9,8 @@ import sys
 import traceback
 import typing
 from abc import ABC
-from typing import Callable, Optional, Any, Dict
+from typing import Callable, Optional, Any, Dict, Type
+from types import TracebackType
 from collections import namedtuple
 
 from PyQt5 import QtWidgets  # type: ignore
@@ -272,11 +273,15 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
             if callable(self.abort_callback):
                 self.abort_callback()  # pylint: disable=not-callable
 
-    def __exit__(self, exc_type, exc_value, tb) -> None:
+    def __exit__(self,
+                 exc_type: Optional[Type[BaseException]],
+                 exc_value: Optional[BaseException],
+                 exc_tb: Optional[TracebackType]) -> Optional[bool]:
         """Close runner."""
         if self.dialog is None:
             raise AttributeError("dialog was set to None before closing")
         self.dialog.close()
+        return None
 
 
 class AbsJobManager(metaclass=abc.ABCMeta):
@@ -322,10 +327,14 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    def __exit__(self,
+                 exc_type: Optional[Type[BaseException]],
+                 exc_value: Optional[BaseException],
+                 exc_tb: Optional[TracebackType]) -> Optional[bool]:
         """Clean up manager and show down the executor."""
         self._cleanup()
         self._executor.shutdown()
+        return None
 
     def open(self, parent, runner, *args, **kwargs):
         return runner(*args, **kwargs, parent=parent)
