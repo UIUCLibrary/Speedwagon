@@ -17,8 +17,7 @@ import io
 import logging
 import os
 import sys
-from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type, \
-    Any
+from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
 import pathlib
 import yaml
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
