@@ -256,7 +256,7 @@ class TestStartupDefault:
         monkeypatch.setattr(
             speedwagon.config.WindowsConfig,
             "get_app_data_directory",
-            lambda: "app_data_dir"
+            lambda *_: "app_data_dir"
         )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         resolution = Mock(FRIENDLY_NAME="dummy")
@@ -280,7 +280,7 @@ class TestStartupDefault:
         monkeypatch.setattr(
             speedwagon.config.WindowsConfig,
             "get_app_data_directory",
-            lambda: "app_data_dir"
+            lambda *_: "app_data_dir"
         )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         resolution = Mock(FRIENDLY_NAME="dummy")
@@ -300,7 +300,7 @@ class TestStartupDefault:
         monkeypatch.setattr(
             speedwagon.config.WindowsConfig,
             "get_app_data_directory",
-            lambda: "app_data_dir"
+            lambda *_: "app_data_dir"
         )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.startup_settings = MagicMock()
@@ -325,7 +325,7 @@ class TestStartupDefault:
         monkeypatch.setattr(
             speedwagon.config.WindowsConfig,
             "get_app_data_directory",
-            lambda: "app_data_dir"
+            lambda *_: "app_data_dir"
         )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.startup_settings = MagicMock()
@@ -360,7 +360,7 @@ class TestStartupDefault:
         monkeypatch.setattr(
             speedwagon.config.WindowsConfig,
             "get_app_data_directory",
-            lambda: "app_data_dir"
+            lambda *_: "app_data_dir"
         )
 
         monkeypatch.setattr(
@@ -402,7 +402,7 @@ class TestStartupDefault:
         monkeypatch.setattr(
             speedwagon.config.WindowsConfig,
             "get_app_data_directory",
-            lambda: "app_data_dir"
+            lambda *_: "app_data_dir"
         )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.config_file = "dummy.yml"
@@ -448,7 +448,7 @@ class TestStartupDefault:
         monkeypatch.setattr(
             speedwagon.config.WindowsConfig,
             "get_app_data_directory",
-            lambda: "app_data_dir"
+            lambda *_: "app_data_dir"
         )
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.config_file = "dummy.yml"
