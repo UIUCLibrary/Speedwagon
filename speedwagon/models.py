@@ -41,9 +41,11 @@ class ItemListModel(QtCore.QAbstractTableModel):
         return len(self.jobs)
 
     @staticmethod
-    def _extract_job_metadata(job: Type[AbsWorkflow],
-                              data_type: JobModelData):
-        static_data_values: Dict[JobModelData, Any] = {
+    def _extract_job_metadata(
+            job: Type[AbsWorkflow],
+            data_type: JobModelData
+    ) -> Optional[str]:
+        static_data_values: Dict[JobModelData, Optional[str]] = {
             JobModelData.NAME: job.name,
             JobModelData.DESCRIPTION: job.description
         }
@@ -66,7 +68,7 @@ class WorkflowListModel(ItemListModel):
                 return self._extract_job_metadata(
                     job=data,
                     data_type=JobModelData(index.column())
-                )
+                ) or QtCore.QVariant()
 
             if role == QtCore.Qt.UserRole:
                 return self.jobs[index.row()]
