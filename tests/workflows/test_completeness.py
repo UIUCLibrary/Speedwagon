@@ -317,3 +317,15 @@ def test_package_naming_convention_task(monkeypatch):
         mp.setattr(os.path, "isdir", lambda x: x == package_path)
         assert task.work() is True
     assert len(task.results) == 1
+
+
+def test_extra_subdirectory_permission_issues(monkeypatch, caplog):
+    task = workflow_completeness.ValidateExtraSubdirectoriesTask("some_path")
+    monkeypatch.setattr(
+        workflow_completeness.validate_process,
+        "run_validation",
+        Mock(side_effect=PermissionError))
+    task.work()
+    assert any(
+        "Permission issues" in result.message for result in task.results
+    )
