@@ -83,7 +83,7 @@ Version 0.1.2
     * Compatibility with white spaces in file path no longer breaks jp2 conversion
 
 Version 0.1.1
-+++++
++++++++++++++
 * General:
    * Added Workflow tab
    * Add Worflow API
