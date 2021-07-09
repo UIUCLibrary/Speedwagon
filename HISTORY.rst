@@ -2,8 +2,10 @@
 
 Release History
 ---------------
-0.1.5
-+++++
+
+Version 0.1.5
++++++++++++++
+
 * General
     * Windows versions are available with a private Chocolatey repository.
 
@@ -26,8 +28,8 @@ Release History
         * Support adding 955 field
         * getmarc stops and present an error message if connectivity problems with server
 
-0.1.4
-+++++
+Version 0.1.4
++++++++++++++
 
 * General
    * Splash screen while loading UI
@@ -44,8 +46,9 @@ Release History
 * New Tools:
    * Make JP2
 
-0.1.3
-+++++
+Version 0.1.3
++++++++++++++
+
 * General:
   * Text from the console can be exported to a log file
 * New Workflows:
@@ -55,8 +58,9 @@ Release History
     * DPI is updated when creating access files for hathi
 
 
-0.1.2
-+++++
+Version 0.1.2
++++++++++++++
+
 * New Tools:
    * Validate Tiff Image Metadata for HathiTrust
 * New Workflows:
@@ -78,7 +82,7 @@ Release History
     * Error message returned by jp2 converter are decoded correctly
     * Compatibility with white spaces in file path no longer breaks jp2 conversion
 
-0.1.1
+Version 0.1.1
 +++++
 * General:
    * Added Workflow tab
@@ -94,8 +98,9 @@ Release History
    * CaptureOne Batch to HathiTrust TIFF Complete Package
 
 
-0.0.3
-+++++
+Version 0.0.3
++++++++++++++
+
 * Improved performance and responsiveness
 * New Tools:
    * Convert CaptureOne TIFF to Hathi TIFF package
@@ -105,8 +110,9 @@ Release History
    * * Verify HathiTrust Package Completeness optionally checks if the OCR files contain any characters that are not in UTF-8
 
 
-0.0.2
-+++++
+Version 0.0.2
++++++++++++++
+
 * General:
    * Report more verbose detail on the processes working. This is done by piping the log information used by the dependent tools into the information presented to the user.
 * User Interface:
@@ -120,8 +126,8 @@ Release History
    * Verify HathiTrust Package Completeness generates a file manifest report as well as an error report
 
 
-0.0.1
-+++++
+Version 0.0.1
++++++++++++++
 * Named Forseti
 * Working Tools:
    * Verify HathiTrust Package Completeness
@@ -131,7 +137,3 @@ Release History
 * Fixes:
    * Verify HathiTrust Package Completeness optionally checks for OCR files
    * Verify HathiTrust Package Completeness issue when dealing with paths that include spaces
-
-
-Dev
-+++
