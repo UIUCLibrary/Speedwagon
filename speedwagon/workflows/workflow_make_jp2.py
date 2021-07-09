@@ -98,12 +98,13 @@ class MakeJp2Workflow(job.AbsWorkflow):
                   "For example, the following directory would have " \
                   "\"c:\\package_dirs\" for Input:\n" \
                   "\n" \
-                  "c:\\package_dirs\n"\
-                  " └── 99423682912205899/\n"\
-                  "    └── access/\n" \
-                  "        ├── 99423682912205899-00000001.tif\n" \
-                  "        ├── 99423682912205899-00000002.tif\n" \
-                  "            and etc...\n"
+                  "| c:\\package_dirs\n"\
+                  "|.└── 99423682912205899/\n"\
+                  "|....└── access/\n" \
+                  "|.......├── 99423682912205899-00000001.tif\n" \
+                  "|.......├── 99423682912205899-00000002.tif\n" \
+                  "\n" \
+                  "    and etc...\n"
 
     active = True
 
