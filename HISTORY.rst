@@ -2,6 +2,30 @@
 
 Release History
 ---------------
+0.1.5
++++++
+* General
+    * Windows versions are available with a private Chocolatey repository.
+
+* New Workflows
+    * Convert HathiTrust limited view to Digital library
+* Workflow improvements
+    * CaptureOne Batch to HathiTrust TIFF Complete Package
+        * Support for MMSID and bibid identifiers.
+        * Support for new marc data server.
+    * Convert CaptureOne TIFF to Digital Library Compound Object
+        * Support file names using a dash delimiter
+    * Convert CaptureOne TIFF to Digital Library Compound Object and HathiTrust
+        * Support for MMSID and bibid identifiers.
+        * When an output format is not set in the settings, no output format
+            will for that format will be generated. As long as one output
+            format is set, the workflow will run. Previously, speedwagon  would
+            present the user with an error.
+    * Generate MARC.XML Files
+        * Support MMSID identifiers
+        * Support adding 955 field
+        * getmarc stops and present an error message if connectivity problems with server
+
 0.1.4
 +++++
 
@@ -111,5 +135,3 @@ Release History
 
 Dev
 +++
-
-* getmarc stops and present an error message if connectivity problems with server
