@@ -267,3 +267,14 @@ def test_kdu_non_zero_throws_exception(monkeypatch):
             Mock(return_value=2)
         )
         process.process("dummy", "out")
+
+
+def test_kdu_success(monkeypatch):
+    process = capture_one_workflow.ConvertFile()
+    monkeypatch.setattr(
+        capture_one_workflow.pykdu_compress,
+        'kdu_compress_cli2',
+        Mock(return_value=0)
+    )
+    process.process("dummy", "out.jp2")
+    assert "Generated out.jp2" in process.status
