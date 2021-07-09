@@ -66,7 +66,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
     def run(self,
             parent: QtWidgets.QWidget,
             job: AbsWorkflow,
-            options: dict,
+            options: Dict[str, Any],
             logger: logging.Logger,
             completion_callback=None
             ) -> None:
@@ -147,9 +147,9 @@ class UsingExternalManagerForAdapter(AbsRunner):
     def _run_main_tasks(self,
                         parent: QtWidgets.QWidget,
                         job: AbsWorkflow,
-                        options,
+                        options: Dict[str, Any],
                         pretask_results,
-                        additional_data,
+                        additional_data: Dict[str, Any],
                         working_dir: str,
                         logger: logging.Logger
                         ) -> list:
@@ -215,7 +215,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
     def _run_post_tasks(self,
                         parent: QtWidgets.QWidget,
                         job: AbsWorkflow,
-                        options,
+                        options: Dict[str, Any],
                         results,
                         working_dir: str,
                         logger: logging.Logger) -> list:
@@ -307,6 +307,9 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 logger.removeHandler(runner.progress_dialog_box_handler)
 
     @staticmethod
-    def _get_additional_options(parent, job, options, pretask_results) -> dict:
+    def _get_additional_options(parent,
+                                job: Workflow,
+                                options: Dict[str, Any],
+                                pretask_results) -> Dict[str, Any]:
 
         return job.get_additional_info(parent, options, pretask_results)

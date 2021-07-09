@@ -57,12 +57,12 @@ class ConvertFile(AbsProcessStrategy):
                                         basename + ".jp2"
                                         )
 
-        rc = pykdu_compress.kdu_compress_cli2(
+        return_core = pykdu_compress.kdu_compress_cli2(
             infile=source_file, outfile=output_file_path)
 
-        if rc != 0:
+        if return_core != 0:
             raise ProcessingException("kdu_compress_cli returned "
-                                      "nonzero value: {}.".format(rc))
+                                      "nonzero value: {}.".format(return_core))
         self.output = output_file_path
         self.status = "Generated {}".format(output_file_path)
 

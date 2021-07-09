@@ -2,7 +2,7 @@
 
 from typing import Collection
 
-from PyQt5 import QtWidgets, QtGui  # type: ignore
+from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
@@ -21,7 +21,7 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
         self.setStandardButtons(QtWidgets.QMessageBox.Abort)
         self.setSizeGripEnabled(True)
 
-    def event(self, event) -> bool:
+    def event(self, event: QtCore.QEvent) -> bool:
         # Allow the dialog box to be resized so that the additional information
         # can be readable
 
@@ -68,7 +68,7 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
         self.setMinimumHeight(self._label.sizeHint().height() + 75)
 
 
-def about_dialog_box(parent):
+def about_dialog_box(parent) -> None:
     """Launch the about speedwagon dialog box."""
     try:
         pkg_metadata = dict(metadata.metadata(speedwagon.__name__))

@@ -8,7 +8,8 @@ from pathlib import Path
 import io
 import abc
 import collections.abc
-from typing import Optional, Dict, Type, Set, Iterator, Iterable
+from typing import Optional, Dict, Type, Set, Iterator, Iterable, Union
+from types import TracebackType
 import platform
 
 from PyQt5.QtCore import QAbstractItemModel
@@ -23,7 +24,7 @@ class AbsConfig(collections.abc.Mapping):
     def __init__(self) -> None:
         """Populate the base structure of a config class."""
         super().__init__()
-        self._data: Dict[str, str] = dict()
+        self._data: Dict[str,  Union[str, bool]] = dict()
 
     @abc.abstractmethod
     def get_user_data_directory(self) -> str:
@@ -51,7 +52,7 @@ class AbsConfig(collections.abc.Mapping):
 
         return x in self._data
 
-    def __getitem__(self, k: str) -> str:
+    def __getitem__(self, k: str) -> Union[str, bool]:
         """Get configuration value from a key."""
         if k == "user_data_directory":
             return self.get_user_data_directory()
@@ -104,25 +105,30 @@ class ConfigManager(contextlib.AbstractContextManager):
             "debug",
         ]
 
-    def __init__(self, config_file):
+    def __init__(self, config_file: str):
         """Set up configuration manager."""
         self._config_file = config_file
-        self.cfg_parser = None
+        self.cfg_parser: Optional['configparser.ConfigParser'] = None
 
-    def __enter__(self):
+    def __enter__(self) -> "ConfigManager":
         """Open file with parser."""
         self.cfg_parser = configparser.ConfigParser()
         self.cfg_parser.read(self._config_file)
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        """Close configuration parser."""
+    def __exit__(self,
+                 exctype: Optional[Type[BaseException]],
+                 excinst: Optional[BaseException],
+                 exctb: Optional[TracebackType]) -> Optional[bool]:
         return None
 
     @property
-    def global_settings(self) -> dict:
+    def global_settings(self) -> Dict[str, Union[str, bool]]:
 
-        global_settings = dict()
+        if self.cfg_parser is None:
+            return {}
+
+        global_settings: Dict[str, Union[str, bool]] = dict()
         try:
             global_section = self.cfg_parser["GLOBAL"]
             for setting in ConfigManager.BOOLEAN_SETTINGS:
@@ -223,7 +229,7 @@ def serialize_settings_model(model: QAbstractItemModel) -> str:
 
 def find_missing_global_entries(
         config_file: str,
-        expected_keys) -> Optional[Set[str]]:
+        expected_keys: Iterable[str]) -> Optional[Set[str]]:
     """Locate any missing entries from a config file.
 
     Notes:

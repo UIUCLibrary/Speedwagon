@@ -1,5 +1,6 @@
 from unittest.mock import Mock
 
+import pykdu_compress
 import pytest
 
 from speedwagon.workflows import \
@@ -255,3 +256,25 @@ class TestPackageImageConverterTask:
 
         assert tasks.work() is True
         assert process.called is True
+
+
+def test_kdu_non_zero_throws_exception(monkeypatch):
+    with pytest.raises(capture_one_workflow.ProcessingException):
+        process = capture_one_workflow.ConvertFile()
+        monkeypatch.setattr(
+            capture_one_workflow.pykdu_compress,
+            'kdu_compress_cli2',
+            Mock(return_value=2)
+        )
+        process.process("dummy", "out")
+
+
+def test_kdu_success(monkeypatch):
+    process = capture_one_workflow.ConvertFile()
+    monkeypatch.setattr(
+        capture_one_workflow.pykdu_compress,
+        'kdu_compress_cli2',
+        Mock(return_value=0)
+    )
+    process.process("dummy", "out.jp2")
+    assert "Generated out.jp2" in process.status

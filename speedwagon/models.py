@@ -41,9 +41,11 @@ class ItemListModel(QtCore.QAbstractTableModel):
         return len(self.jobs)
 
     @staticmethod
-    def _extract_job_metadata(job: Type[AbsWorkflow],
-                              data_type: JobModelData):
-        static_data_values: Dict[JobModelData, Any] = {
+    def _extract_job_metadata(
+            job: Type[AbsWorkflow],
+            data_type: JobModelData
+    ) -> Optional[str]:
+        static_data_values: Dict[JobModelData, Optional[str]] = {
             JobModelData.NAME: job.name,
             JobModelData.DESCRIPTION: job.description
         }
@@ -57,7 +59,7 @@ class WorkflowListModel(ItemListModel):
     def data(
             self,
             index: QtCore.QModelIndex,
-            role: QtConstant = None
+            role: Optional[QtConstant] = None
     ) -> Union[str, Type[AbsWorkflow], QtCore.QSize, QtCore.QVariant]:
 
         if index.isValid():
@@ -66,7 +68,7 @@ class WorkflowListModel(ItemListModel):
                 return self._extract_job_metadata(
                     job=data,
                     data_type=JobModelData(index.column())
-                )
+                ) or QtCore.QVariant()
 
             if role == QtCore.Qt.UserRole:
                 return self.jobs[index.row()]
@@ -110,7 +112,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
     def data(
             self,
             index: QtCore.QModelIndex,
-            role: QtConstant = None
+            role: Optional[QtConstant] = None
     ) -> Union[str, Type[Workflow], QtCore.QVariant]:
         if not index.isValid():
             return QtCore.QVariant()
@@ -148,8 +150,10 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
             self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
             self.endInsertRows()
 
-    def setData(self, index: QtCore.QModelIndex,
-                workflow: Type[Workflow], role: QtConstant = None) -> bool:
+    def setData(self,
+                index: QtCore.QModelIndex,
+                workflow: Type[Workflow],
+                role: Optional[QtConstant] = None) -> bool:
 
         if not index.isValid():
             return False
@@ -227,7 +231,9 @@ class ToolOptionsPairsModel(ToolOptionsModel):
         for key, value in data.items():
             self._data.append(OptionPair(key, value))
 
-    def data(self, index: QtCore.QModelIndex, role: QtConstant = None):
+    def data(self,
+             index: QtCore.QModelIndex,
+             role: Optional[QtConstant] = None):
         if index.isValid():
             if role == QtCore.Qt.DisplayRole:
                 return self._data[index.row()].data
@@ -251,7 +257,7 @@ class ToolOptionsPairsModel(ToolOptionsModel):
             self,
             index: int,
             orientation: QtConstant,
-            role: QtConstant = None
+            role: Optional[QtConstant] = None
     ) -> Union[str, QtCore.QVariant]:
         if orientation == QtCore.Qt.Vertical \
                 and role == QtCore.Qt.DisplayRole:
@@ -326,7 +332,7 @@ class ToolOptionsModel3(ToolOptionsModel):
             self,
             index: int,
             orientation: int,
-            role=None) -> Union[QtCore.QVariant, str]:
+            role: Optional[QtConstant] = None) -> Union[QtCore.QVariant, str]:
 
         if orientation == QtCore.Qt.Vertical and \
                 role == QtCore.Qt.DisplayRole:
@@ -339,7 +345,7 @@ class ToolOptionsModel3(ToolOptionsModel):
             self,
             index: QtCore.QModelIndex,
             data,
-            role: QtConstant = None
+            role: Optional[QtConstant] = None
     ) -> bool:
 
         if not index.isValid():
@@ -363,7 +369,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
     def data(
             self,
             index: QtCore.QModelIndex,
-            role: QtConstant = None
+            role: Optional[QtConstant] = None
     ) -> Union[str, QtCore.QVariant]:
         """Get role data from an index."""
         if not index.isValid():
@@ -390,7 +396,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
             self,
             index: int,
             orientation: int,
-            role: QtConstant = None
+            role: Optional[QtConstant] = None
     ) -> Union[str, QtCore.QVariant]:
 
         if orientation == QtCore.Qt.Horizontal and \
@@ -398,13 +404,14 @@ class SettingsModel(QtCore.QAbstractTableModel):
             return self._headers.get(index, "")
         return QtCore.QVariant()
 
-    def flags(self, index: QtCore.QModelIndex):
+    def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
         """Manage display flags for a given index."""
         if self._headers.get(index.column(), "") == "Key":
-            return QtCore.Qt.NoItemFlags
+            return cast(QtCore.Qt.ItemFlags, QtCore.Qt.NoItemFlags)
 
         if self._headers.get(index.column(), "") == "Value":
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
+            return cast(QtCore.Qt.ItemFlags,
+                        QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable)
 
         return super().flags(index)
 
@@ -412,7 +419,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
             self,
             index: QtCore.QModelIndex,
             data,
-            role: QtConstant = None
+            role: Optional[QtConstant] = None
     ) -> bool:
         """Set data in model."""
         if not index.isValid():
@@ -436,7 +443,7 @@ class TabsModel(QtCore.QAbstractListModel):
         super().__init__(parent)
         self.tabs: List[tabs.TabData] = []
 
-    def __contains__(self, value: "tabs.TabData") -> bool:
+    def __contains__(self, value: str) -> bool:
         """Check if a tab is in the model."""
         return any(tab.tab_name == value for tab in self.tabs)
 
@@ -452,7 +459,7 @@ class TabsModel(QtCore.QAbstractListModel):
 
     def data(self,
              index: QtCore.QModelIndex,
-             role: QtConstant = None
+             role: Optional[QtConstant] = None
              ) -> Union[QtCore.QVariant, str, "tabs.TabData"]:
 
         if not index.isValid():
@@ -493,7 +500,7 @@ class TabsModel(QtCore.QAbstractListModel):
             self,
             index: QtCore.QModelIndex,
             tab: "tabs.TabData",
-            role: QtConstant = None
+            role: Optional[QtConstant] = None
     ) -> bool:
 
         if not index.isValid():
