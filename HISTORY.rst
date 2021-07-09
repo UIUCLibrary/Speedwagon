@@ -51,6 +51,7 @@ Version 0.1.3
 
 * General:
   * Text from the console can be exported to a log file
+
 * New Workflows:
    * Generate OCR Files
 * Fixes:
