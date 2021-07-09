@@ -1,6 +1,4 @@
 #!groovy
-// @Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
-// import org.ds.*
 import static groovy.json.JsonOutput.* // For pretty printing json data
 
 SUPPORTED_MAC_VERSIONS = ['3.8', '3.9']
@@ -13,7 +11,6 @@ DOCKER_PLATFORM_BUILD_ARGS = [
 
 PYPI_SERVERS = [
     'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_public/',
-    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python/',
     'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_testing/'
     ]
 
@@ -52,7 +49,6 @@ def run_pylint(){
             sh(
                 label: 'Running pylint for sonarqube',
                 script: 'pylint speedwagon -d duplicate-code --output-format=parseable',
-//                 script: 'pylint speedwagon -d duplicate-code -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
                 returnStatus: true
             )
         }
@@ -103,10 +99,6 @@ def deploy_artifacts_to_url(regex, urlDestination, jiraIssueKey){
         installer_files.each{
             simple_file_names << it.name
         }
-
-
-        //input "Update standalone ${simple_file_names.join(', ')} to '${urlDestination}'? More information: ${currentBuild.absoluteUrl}"
-
         def new_urls = []
         try{
             installer_files.each{
@@ -347,7 +339,6 @@ def startup(){
                         checkout scm
                         try{
                             docker.image('python').inside {
-//                                 stage('Getting Distribution Info'){
                                 withEnv(['PIP_NO_CACHE_DIR=off']) {
                                     sh(
                                        label: 'Running setup.py with dist_info',
@@ -357,7 +348,6 @@ def startup(){
                                 stash includes: '*.dist-info/**', name: 'DIST-INFO'
                                 archiveArtifacts artifacts: '*.dist-info/**'
                             }
-//                             }
                         } finally{
                             deleteDir()
                         }
@@ -457,7 +447,7 @@ pipeline {
         booleanParam(name: 'DEPLOY_HATHI_TOOL_BETA', defaultValue: false, description: 'Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/')
         booleanParam(name: 'DEPLOY_SCCM', defaultValue: false, description: 'Request deployment of MSI installer to SCCM')
         booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
-//         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
+        string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
     stages {
 
@@ -669,7 +659,6 @@ pipeline {
                             }
                         }
                         stage('Run Sonarqube Analysis'){
-//                             agent none
                             options{
                                 lock('speedwagon-sonarscanner')
                             }
@@ -1172,7 +1161,6 @@ pipeline {
                             dockerfile {
                                 additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}"
                                 filename "ci/docker/python/${PLATFORM}/tox/Dockerfile"
-//                                 filename "ci/docker/python/${PLATFORM}/jenkins/Dockerfile"
                                 label "${PLATFORM} && docker"
                             }
                         }
