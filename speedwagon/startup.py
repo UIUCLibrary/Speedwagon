@@ -578,13 +578,32 @@ def standalone_tab_editor(app: QtWidgets.QApplication = None) -> None:
     app.exec()
 
 
+class ApplicationLauncher:
+    """Application launcher."""
+
+    def __init__(self, strategy: AbsStarter = None) -> None:
+        """Strategy pattern for loading speedwagon in different ways.
+
+        Args:
+            strategy: Starter strategy class.
+        """
+        super().__init__()
+        self.strategy = strategy or StartupDefault()
+
+    def initialize(self) -> None:
+        self.strategy.initialize()
+
+    def run(self) -> int:
+        return self.strategy.run()
+
+
 def main(argv: List[str] = None) -> None:
     """Launch main entry point."""
     argv = argv or sys.argv
     if "tab-editor" in argv:
         standalone_tab_editor()
         return
-    app = StartupDefault()
+    app = ApplicationLauncher()
     app.initialize()
     sys.exit(app.run())
 
