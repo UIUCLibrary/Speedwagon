@@ -637,8 +637,7 @@ class ApplicationLauncher:
     .. versionadded:: 0.2.0
        Added ApplicationLauncher for launching speedwagon in different ways.
 
-   Examples:
-
+    Examples:
        The easy way
 
         .. testsetup::
