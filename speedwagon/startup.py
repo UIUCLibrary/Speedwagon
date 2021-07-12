@@ -656,13 +656,15 @@ class ApplicationLauncher:
 
         .. testsetup::
 
-            from speedwagon.workflows.workflow_capture_one_to_dl_compound_and_dl import CaptureOneToDlCompoundAndDLWorkflow
+            from speedwagon.workflows.workflow_capture_one_to_dl_compound_and_dl import CaptureOneToDlCompoundAndDLWorkflow  # noqa: E501
 
         .. testcode::
            :skipif: True
 
            >>> startup_strategy = SingleWorkflowLauncher()
-           >>> startup_strategy.set_workflow(CaptureOneToDlCompoundAndDLWorkflow())
+           >>> startup_strategy.set_workflow(
+           ...      CaptureOneToDlCompoundAndDLWorkflow()
+           ... )
            >>> startup_strategy.options = {
            ...      "Input": "source/images/",
            ...      "Package Type": "Capture One",
