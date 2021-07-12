@@ -26,7 +26,7 @@ import speedwagon
 import speedwagon.config
 import speedwagon.models
 import speedwagon.tabs
-from speedwagon import worker, job
+from speedwagon import worker, job, runner_strategies
 from speedwagon.dialog.settings import TabEditor
 from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.tabs import extract_tab_information
@@ -499,6 +499,42 @@ class StartupDefault(AbsStarter):
                 "directory %s",
                 self.app_data_dir
             )
+
+
+class SingleWorkflowLauncher(AbsStarter):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.window: Optional[MainWindow] = None
+        self._active_workflow: Optional[job.AbsWorkflow] = None
+        self.options: Dict[str, Union[str, bool]] = {}
+
+    def run(self) -> int:
+        with worker.ToolJobManager() as work_manager:
+
+            window = MainWindow(
+                work_manager=work_manager,
+                debug=False)
+
+            window.show()
+
+            runner_strategy = \
+                runner_strategies.UsingExternalManagerForAdapter(work_manager)
+
+            self._active_workflow.validate_user_options(**self.options)
+
+            runner_strategy.run(window,
+                                self._active_workflow,
+                                self.options,
+                                window.log_manager)
+            window.log_manager.handlers.clear()
+        return 0
+
+    def initialize(self) -> None:
+        pass
+
+    def set_workflow(self, workflow: job.AbsWorkflow):
+        self._active_workflow = workflow
 
 
 class TabsEditorApp(QtWidgets.QDialog):
