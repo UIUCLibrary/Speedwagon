@@ -502,14 +502,17 @@ class StartupDefault(AbsStarter):
 
 
 class SingleWorkflowLauncher(AbsStarter):
+    """Single workflow launcher."""
 
     def __init__(self) -> None:
+        """Set up window for running a single workflow."""
         super().__init__()
         self.window: Optional[MainWindow] = None
         self._active_workflow: Optional[job.AbsWorkflow] = None
         self.options: Dict[str, Union[str, bool]] = {}
 
     def run(self) -> int:
+        """Run the workflow configured with the options given."""
         if self._active_workflow is None:
             raise AttributeError("Workflow has not been set")
 
@@ -537,6 +540,7 @@ class SingleWorkflowLauncher(AbsStarter):
         """No initialize is needed."""
 
     def set_workflow(self, workflow: job.AbsWorkflow):
+        """Set the current workflow."""
         self._active_workflow = workflow
 
 
@@ -630,9 +634,11 @@ class ApplicationLauncher:
         self.strategy = strategy or StartupDefault()
 
     def initialize(self) -> None:
+        """Initialize anything that needs to done prior to running."""
         self.strategy.initialize()
 
     def run(self) -> int:
+        """Run Speedwagon."""
         return self.strategy.run()
 
 
