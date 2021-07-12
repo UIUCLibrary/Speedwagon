@@ -639,22 +639,38 @@ class ApplicationLauncher:
 
    Examples:
 
-       >>> app = ApplicationLauncher()
-       >>> app.run()
+       The easy way
+
+        .. testsetup::
+
+            from speedwagon.startup import ApplicationLauncher, StartupDefault
+            from unittest.mock import Mock
+
+        .. doctest::
+           :skipif: True
+
+           >>> app = ApplicationLauncher()
+           >>> app.run()
 
        or
 
-       >>> from speedwagon.workflows.workflow_capture_one_to_dl_compound_and_dl import CaptureOneToDlCompoundAndDLWorkflow
-       >>> startup_strategy = SingleWorkflowLauncher()
-       >>> startup_strategy.set_workflow(CaptureOneToDlCompoundAndDLWorkflow())
-       >>> startup_strategy.options = {
-       ...      "Input": "source/images/",
-       ...      "Package Type": "Capture One",
-       ...      "Output Digital Library": "output/dl",
-       ...      "Output HathiTrust": "output/ht"
-       ... }
-       >>> app = ApplicationLauncher(strategy=startup_strategy)
-       >>> app.run()
+        .. testsetup::
+
+            from speedwagon.workflows.workflow_capture_one_to_dl_compound_and_dl import CaptureOneToDlCompoundAndDLWorkflow
+
+        .. testcode::
+           :skipif: True
+
+           >>> startup_strategy = SingleWorkflowLauncher()
+           >>> startup_strategy.set_workflow(CaptureOneToDlCompoundAndDLWorkflow())
+           >>> startup_strategy.options = {
+           ...      "Input": "source/images/",
+           ...      "Package Type": "Capture One",
+           ...      "Output Digital Library": "output/dl",
+           ...      "Output HathiTrust": "output/ht"
+           ... }
+           >>> app = ApplicationLauncher(strategy=startup_strategy)
+           >>> app.run()
     """
 
     def __init__(self, strategy: AbsStarter = None) -> None:
