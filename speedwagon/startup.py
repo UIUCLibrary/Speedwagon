@@ -502,7 +502,13 @@ class StartupDefault(AbsStarter):
 
 
 class SingleWorkflowLauncher(AbsStarter):
-    """Single workflow launcher."""
+    """Single workflow launcher.
+
+    .. versionadded:: 0.1.6
+       Added SingleWorkflowLauncher class for running a single workflow \
+            without user interaction. Useful for building new workflows.
+
+    """
 
     def __init__(self) -> None:
         """Set up window for running a single workflow."""
