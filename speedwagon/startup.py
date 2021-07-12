@@ -510,6 +510,9 @@ class SingleWorkflowLauncher(AbsStarter):
         self.options: Dict[str, Union[str, bool]] = {}
 
     def run(self) -> int:
+        if self._active_workflow is None:
+            raise AttributeError("Workflow has not been set")
+
         with worker.ToolJobManager() as work_manager:
 
             window = MainWindow(

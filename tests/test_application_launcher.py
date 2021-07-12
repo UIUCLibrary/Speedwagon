@@ -19,7 +19,7 @@ class TestSingleWorkflowLauncher:
             monkeypatch.setattr(workflow, "create_new_task", Mock())
             single_item_launcher.set_workflow(workflow)
             single_item_launcher.options = {
-                "Input": "someinput",
+                "Input": "somefakeinput",
                 "Profile": "HathiTrust Tiff"
             }
             app_ = startup.ApplicationLauncher(strategy=single_item_launcher)
@@ -29,6 +29,10 @@ class TestSingleWorkflowLauncher:
                    workflow.discover_task_metadata.called is True and \
                    workflow.generate_report.called is True
 
+    def test_workflow_not_set_throw_exception_when_run(self):
+        single_item_launcher = startup.SingleWorkflowLauncher()
+        with pytest.raises(AttributeError):
+            single_item_launcher.run()
 
 class TestApplicationLauncher:
     def test_application_launcher_startup(self):
