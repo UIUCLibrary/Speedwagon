@@ -26,7 +26,7 @@ import speedwagon
 import speedwagon.config
 import speedwagon.models
 import speedwagon.tabs
-from speedwagon import worker, job
+from speedwagon import worker, job, runner_strategies
 from speedwagon.dialog.settings import TabEditor
 from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.tabs import extract_tab_information
@@ -260,7 +260,11 @@ class AbsStarter(metaclass=abc.ABCMeta):
 
 
 class StartupDefault(AbsStarter):
-    """Default startup."""
+    """Default startup.
+
+    .. versionadded:: 0.2.0
+       Added StartupDefault class for speedwagon with the normal Qt-based GUI.
+    """
 
     def __init__(self, app: QtWidgets.QApplication = None) -> None:
         """Create a new default startup routine."""
@@ -501,6 +505,55 @@ class StartupDefault(AbsStarter):
             )
 
 
+class SingleWorkflowLauncher(AbsStarter):
+    """Single workflow launcher.
+
+    .. versionadded:: 0.2.0
+       Added SingleWorkflowLauncher class for running a single workflow \
+            without user interaction. Useful for building new workflows.
+
+    """
+
+    def __init__(self) -> None:
+        """Set up window for running a single workflow."""
+        super().__init__()
+        self.window: Optional[MainWindow] = None
+        self._active_workflow: Optional[job.AbsWorkflow] = None
+        self.options: Dict[str, Union[str, bool]] = {}
+
+    def run(self) -> int:
+        """Run the workflow configured with the options given."""
+        if self._active_workflow is None:
+            raise AttributeError("Workflow has not been set")
+
+        with worker.ToolJobManager() as work_manager:
+
+            window = MainWindow(
+                work_manager=work_manager,
+                debug=False)
+
+            window.show()
+
+            runner_strategy = \
+                runner_strategies.UsingExternalManagerForAdapter(work_manager)
+
+            self._active_workflow.validate_user_options(**self.options)
+
+            runner_strategy.run(window,
+                                self._active_workflow,
+                                self.options,
+                                window.log_manager)
+            window.log_manager.handlers.clear()
+        return 0
+
+    def initialize(self) -> None:
+        """No initialize is needed."""
+
+    def set_workflow(self, workflow: job.AbsWorkflow):
+        """Set the current workflow."""
+        self._active_workflow = workflow
+
+
 class TabsEditorApp(QtWidgets.QDialog):
     """Dialog box for editing tabs.yml file."""
 
@@ -578,13 +631,75 @@ def standalone_tab_editor(app: QtWidgets.QApplication = None) -> None:
     app.exec()
 
 
+class ApplicationLauncher:
+    """Application launcher.
+
+    .. versionadded:: 0.2.0
+       Added ApplicationLauncher for launching speedwagon in different ways.
+
+    Examples:
+       The easy way
+
+        .. testsetup::
+
+            from speedwagon.startup import ApplicationLauncher, StartupDefault
+            from unittest.mock import Mock
+
+        .. doctest::
+           :skipif: True
+
+           >>> app = ApplicationLauncher()
+           >>> app.run()
+
+       or
+
+        .. testsetup::
+
+            from speedwagon.workflows.workflow_capture_one_to_dl_compound_and_dl import CaptureOneToDlCompoundAndDLWorkflow  # noqa: E501 pylint: disable=line-too-long
+
+
+        .. testcode::
+           :skipif: True
+
+           >>> startup_strategy = SingleWorkflowLauncher()
+           >>> startup_strategy.set_workflow(
+           ...      CaptureOneToDlCompoundAndDLWorkflow()
+           ... )
+           >>> startup_strategy.options = {
+           ...      "Input": "source/images/",
+           ...      "Package Type": "Capture One",
+           ...      "Output Digital Library": "output/dl",
+           ...      "Output HathiTrust": "output/ht"
+           ... }
+           >>> app = ApplicationLauncher(strategy=startup_strategy)
+           >>> app.run()
+    """
+
+    def __init__(self, strategy: AbsStarter = None) -> None:
+        """Strategy pattern for loading speedwagon in different ways.
+
+        Args:
+            strategy: Starter strategy class.
+        """
+        super().__init__()
+        self.strategy = strategy or StartupDefault()
+
+    def initialize(self) -> None:
+        """Initialize anything that needs to done prior to running."""
+        self.strategy.initialize()
+
+    def run(self) -> int:
+        """Run Speedwagon."""
+        return self.strategy.run()
+
+
 def main(argv: List[str] = None) -> None:
     """Launch main entry point."""
     argv = argv or sys.argv
     if "tab-editor" in argv:
         standalone_tab_editor()
         return
-    app = StartupDefault()
+    app = ApplicationLauncher()
     app.initialize()
     sys.exit(app.run())
 
