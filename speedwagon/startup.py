@@ -531,7 +531,7 @@ class SingleWorkflowLauncher(AbsStarter):
         return 0
 
     def initialize(self) -> None:
-        pass
+        """No initialize is needed."""
 
     def set_workflow(self, workflow: job.AbsWorkflow):
         self._active_workflow = workflow
