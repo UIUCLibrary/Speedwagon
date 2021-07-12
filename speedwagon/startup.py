@@ -260,7 +260,11 @@ class AbsStarter(metaclass=abc.ABCMeta):
 
 
 class StartupDefault(AbsStarter):
-    """Default startup."""
+    """Default startup.
+
+    .. versionadded:: 0.2.0
+       Added StartupDefault class for speedwagon with the normal Qt-based GUI.
+    """
 
     def __init__(self, app: QtWidgets.QApplication = None) -> None:
         """Create a new default startup routine."""
@@ -504,7 +508,7 @@ class StartupDefault(AbsStarter):
 class SingleWorkflowLauncher(AbsStarter):
     """Single workflow launcher.
 
-    .. versionadded:: 0.1.6
+    .. versionadded:: 0.2.0
        Added SingleWorkflowLauncher class for running a single workflow \
             without user interaction. Useful for building new workflows.
 
@@ -628,7 +632,30 @@ def standalone_tab_editor(app: QtWidgets.QApplication = None) -> None:
 
 
 class ApplicationLauncher:
-    """Application launcher."""
+    """Application launcher.
+
+    .. versionadded:: 0.2.0
+       Added ApplicationLauncher for launching speedwagon in different ways.
+
+   Examples:
+
+       >>> app = ApplicationLauncher()
+       >>> app.run()
+
+       or
+
+       >>> from speedwagon.workflows.workflow_capture_one_to_dl_compound_and_dl import CaptureOneToDlCompoundAndDLWorkflow
+       >>> startup_strategy = SingleWorkflowLauncher()
+       >>> startup_strategy.set_workflow(CaptureOneToDlCompoundAndDLWorkflow())
+       >>> startup_strategy.options = {
+       ...      "Input": "source/images/",
+       ...      "Package Type": "Capture One",
+       ...      "Output Digital Library": "output/dl",
+       ...      "Output HathiTrust": "output/ht"
+       ... }
+       >>> app = ApplicationLauncher(strategy=startup_strategy)
+       >>> app.run()
+    """
 
     def __init__(self, strategy: AbsStarter = None) -> None:
         """Strategy pattern for loading speedwagon in different ways.
