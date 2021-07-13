@@ -76,25 +76,20 @@ class UsingExternalManagerForAdapter(AbsRunner):
         temp_dir = tempfile.TemporaryDirectory()
         with temp_dir as build_dir:
             if isinstance(job, AbsWorkflow):
-
                 try:
                     pre_results = self._run_pre_tasks(parent, job, options,
                                                       build_dir, logger)
 
                     results += pre_results
 
-                    if isinstance(job, Workflow):
-                        new_options = self._get_additional_options(
-                            parent,
-                            job,
-                            options,
-                            pre_results.copy()
-                        )
+                    additional_data = \
+                        self._get_additional_data(job,
+                                                  options,
+                                                  parent,
+                                                  pre_results)
+                    if additional_data:
+                        options = {**options, **additional_data}
 
-                        if new_options:
-                            options = {**options, **new_options}
-                    else:
-                        new_options = {}
                 except JobCancelled:
                     return
 
@@ -112,7 +107,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                                                     job,
                                                     options,
                                                     pre_results,
-                                                    new_options,
+                                                    additional_data,
                                                     build_dir,
                                                     logger)
 
@@ -143,6 +138,19 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 report = job.generate_report(results, **options)
                 if report:
                     logger.info(report)
+
+    def _get_additional_data(self, job, options, parent, pre_results):
+        if isinstance(job, Workflow):
+            additional_data = self._get_additional_options(
+                parent,
+                job,
+                options,
+                pre_results.copy()
+            )
+
+        else:
+            additional_data = {}
+        return additional_data
 
     def _run_main_tasks(self,
                         parent: QtWidgets.QWidget,
