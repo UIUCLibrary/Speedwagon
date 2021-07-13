@@ -394,53 +394,9 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
     def get_results(self,
                     timeout_callback: Callable[[int, int], None] = None
                     ) -> typing.Generator[typing.Any, None, None]:
-
-        total_jobs = len(self.futures)
-        completed = 0
-        futures = [(i, False) for i in self.futures]
-        while self.active:
-            try:
-                for completed_futures in concurrent.futures.as_completed(
-                        self.futures,
-                        timeout=0.01):
-                    self.flush_message_buffer()
-                    if not completed_futures.cancel() and \
-                            completed_futures.done():
-
-                        completed += 1
-                        self.futures.remove(completed_futures)
-                        if timeout_callback:
-                            timeout_callback(completed, total_jobs)
-                        yield from self._report_results_from_future(futures)
-                    if timeout_callback:
-                        timeout_callback(completed, total_jobs)
-
-                self.active = False
-                self.futures.clear()
-                self.flush_message_buffer()
-
-            except concurrent.futures.TimeoutError:
-                self.flush_message_buffer()
-                if timeout_callback:
-                    timeout_callback(completed, total_jobs)
-                QtWidgets.QApplication.processEvents()
-                if self.active:
-                    continue
-            except concurrent.futures.process.BrokenProcessPool as error:
-                traceback.print_tb(error.__traceback__)
-                print(error, file=sys.stderr)
-                print(completed_futures.exception(), file=sys.stderr)
-                raise
-            self.flush_message_buffer()
-
-    @staticmethod
-    def _report_results_from_future(futures):
-        for i, (future, reported) in enumerate(futures):
-
-            if not reported and future.done():
-                result = future.result()
-                yield result
-                futures[i] = future, True
+        processor = JobProcessor(self)
+        processor.timeout_callback = timeout_callback
+        yield from processor.process()
 
     def flush_message_buffer(self) -> None:
         while not self._message_queue.empty():
@@ -451,6 +407,65 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         if self._pending_jobs.unfinished_tasks > 0:
             self.logger.warning("Pending jobs has unfinished tasks")
         self._pending_jobs.join()
+
+
+class JobProcessor:
+    def __init__(self, parent: ToolJobManager):
+        self._parent = parent
+        self.completed = 0
+        self._total_jobs = None
+        self.timeout_callback = None
+
+    @staticmethod
+    def _report_results_from_future(futures):
+        for i, (future, reported) in enumerate(futures):
+
+            if not reported and future.done():
+                result = future.result()
+                yield result
+                futures[i] = future, True
+
+    def process(self):
+        self._total_jobs = len(self._parent.futures)
+        total_jobs = self._total_jobs
+        futures = [(i, False) for i in self._parent.futures]
+
+        while self._parent.active:
+            try:
+                yield from self._process_all_futures(futures)
+
+                self._parent.active = False
+                futures.clear()
+                self._parent.flush_message_buffer()
+
+            except concurrent.futures.TimeoutError:
+                self._parent.flush_message_buffer()
+                if callable(self.timeout_callback):
+                    self.timeout_callback(self.completed, total_jobs)
+                QtWidgets.QApplication.processEvents()
+                if self._parent.active:
+                    continue
+            except concurrent.futures.process.BrokenProcessPool as error:
+                traceback.print_tb(error.__traceback__)
+                print(error, file=sys.stderr)
+                raise
+            self._parent.flush_message_buffer()
+
+    def _process_all_futures(self, futures):
+        for completed_futures in concurrent.futures.as_completed(
+                self._parent.futures,
+                timeout=0.01):
+            self._parent.flush_message_buffer()
+            if not completed_futures.cancel() and \
+                    completed_futures.done():
+                self.completed += 1
+                self._parent.futures.remove(completed_futures)
+                if self.timeout_callback:
+                    self.timeout_callback(self.completed, self._total_jobs)
+                yield from self._report_results_from_future(futures)
+
+            if self.timeout_callback:
+                self.timeout_callback(self.completed, self._total_jobs)
 
 
 class AbsJobAdapter(metaclass=abc.ABCMeta):
