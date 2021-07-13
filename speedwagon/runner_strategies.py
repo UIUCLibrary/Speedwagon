@@ -141,16 +141,14 @@ class UsingExternalManagerForAdapter(AbsRunner):
 
     def _get_additional_data(self, job, options, parent, pre_results):
         if isinstance(job, Workflow):
-            additional_data = self._get_additional_options(
+            return self._get_additional_options(
                 parent,
                 job,
                 options,
                 pre_results.copy()
             )
 
-        else:
-            additional_data = {}
-        return additional_data
+        return {}
 
     def _run_main_tasks(self,
                         parent: QtWidgets.QWidget,
