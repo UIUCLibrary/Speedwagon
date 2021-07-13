@@ -195,7 +195,7 @@ class AbsTask(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def on_completion(self, *args, **kwargs):
-        pass
+        """Call when task is finished."""
 
     @abc.abstractmethod
     def exec(self, *args, **kwargs):
