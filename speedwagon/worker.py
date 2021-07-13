@@ -414,7 +414,7 @@ class JobProcessor:
         self._parent = parent
         self.completed = 0
         self._total_jobs = None
-        self.timeout_callback = None
+        self.timeout_callback: Optional[Callable[[int, int], None]] = None
 
     @staticmethod
     def report_results_from_future(futures):
