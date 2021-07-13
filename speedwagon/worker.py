@@ -417,7 +417,7 @@ class JobProcessor:
         self.timeout_callback = None
 
     @staticmethod
-    def _report_results_from_future(futures):
+    def report_results_from_future(futures):
         for i, (future, reported) in enumerate(futures):
 
             if not reported and future.done():
@@ -462,7 +462,7 @@ class JobProcessor:
                 self._parent.futures.remove(completed_futures)
                 if self.timeout_callback:
                     self.timeout_callback(self.completed, self._total_jobs)
-                yield from self._report_results_from_future(futures)
+                yield from self.report_results_from_future(futures)
 
             if self.timeout_callback:
                 self.timeout_callback(self.completed, self._total_jobs)
