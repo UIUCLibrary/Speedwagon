@@ -411,12 +411,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
                         self.futures.remove(completed_futures)
                         if timeout_callback:
                             timeout_callback(completed, total_jobs)
-                        for i, (future, reported) in enumerate(futures):
-
-                            if not reported and future.done():
-                                result = future.result()
-                                yield result
-                                futures[i] = future, True
+                        yield from self._report_results_from_future(futures)
                     if timeout_callback:
                         timeout_callback(completed, total_jobs)
 
@@ -437,6 +432,15 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
                 print(completed_futures.exception(), file=sys.stderr)
                 raise
             self.flush_message_buffer()
+
+    @staticmethod
+    def _report_results_from_future(futures):
+        for i, (future, reported) in enumerate(futures):
+
+            if not reported and future.done():
+                result = future.result()
+                yield result
+                futures[i] = future, True
 
     def flush_message_buffer(self) -> None:
         while not self._message_queue.empty():
