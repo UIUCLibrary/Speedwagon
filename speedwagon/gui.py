@@ -3,6 +3,7 @@
 Mainly for connecting GUI elements, such as buttons, to functions and methods
 that do the work
 """
+import io
 import logging
 import os
 import sys
@@ -10,7 +11,6 @@ import time
 import traceback
 import webbrowser
 from typing import List
-import io
 
 try:  # pragma: no cover
     from importlib import metadata
