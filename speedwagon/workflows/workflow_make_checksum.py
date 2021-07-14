@@ -1,9 +1,12 @@
+"""Workflows for generating checksums."""
+
 import collections
 import typing
 
 import os
 
 import itertools
+from abc import ABC
 from typing import List, Any, DefaultDict, Optional
 
 from speedwagon.job import AbsWorkflow
@@ -19,8 +22,16 @@ __all__ = [
     'MakeChecksumBatchMultipleWorkflow'
 ]
 
+DEFAULT_CHECKSUM_FILE_NAME = "checksum.md5"
 
-class AbcMakeChecksumWorkflow(AbsWorkflow):
+
+class CreateChecksumWorkflow(AbsWorkflow, ABC):
+    @staticmethod
+    def locate_files(package_root: str):
+        for root, _, files in os.walk(package_root):
+            for file_ in files:
+                yield os.path.join(root, file_)
+
     @classmethod
     def sort_results(cls,
                      results: typing.List[typing.Mapping[ResultsValues, str]]
@@ -42,16 +53,16 @@ class AbcMakeChecksumWorkflow(AbsWorkflow):
         return dict(new_results)
 
 
-class MakeChecksumBatchSingleWorkflow(AbcMakeChecksumWorkflow):
+class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
     name = "Make Checksum Batch [Single]"
     description = "The checksum is a signature of a file.  If any data is " \
                   "changed, the checksum will provide a different " \
-                  "signature.  The checksum.md5 contains a record of each " \
-                  "file in a single item along with respective checksum " \
-                  "values " \
+                  f"signature.  The {DEFAULT_CHECKSUM_FILE_NAME} contains a " \
+                  f"record of each file in a single item along with " \
+                  f"respective checksum values " \
                   "\n" \
-                  "Creates a single checksum.md5 for every file inside a " \
-                  "given folder" \
+                  f"Creates a single {DEFAULT_CHECKSUM_FILE_NAME} for every " \
+                  f"file inside a given folder" \
                   "\n" \
                   "Input: Path to a root folder"
 
@@ -61,19 +72,17 @@ class MakeChecksumBatchSingleWorkflow(AbcMakeChecksumWorkflow):
                                **user_args: str) -> List[dict]:
         jobs = []
         package_root = user_args["Input"]
-        report_to_save_to = os.path.normpath(os.path.join(package_root,
-                                                          "checksum.md5"))
-
-        for root, _, files in os.walk(package_root):
-            for file_ in files:
-                full_path = os.path.join(root, file_)
-                relpath = os.path.relpath(full_path, package_root)
-                job = {
-                    "source_path": package_root,
-                    "filename": relpath,
-                    "save_to_filename": report_to_save_to
-                }
-                jobs.append(job)
+        report_to_save_to = os.path.normpath(
+            os.path.join(package_root, DEFAULT_CHECKSUM_FILE_NAME)
+        )
+        for file_path in self.locate_files(package_root):
+            relpath = os.path.relpath(file_path, package_root)
+            job = {
+                "source_path": package_root,
+                "filename": relpath,
+                "save_to_filename": report_to_save_to
+            }
+            jobs.append(job)
         return jobs
 
     def create_new_task(self,
@@ -126,18 +135,19 @@ class MakeChecksumBatchSingleWorkflow(AbcMakeChecksumWorkflow):
         ]
 
 
-class MakeChecksumBatchMultipleWorkflow(AbcMakeChecksumWorkflow):
+class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
     name = "Make Checksum Batch [Multiple]"
     description = "The checksum is a signature of a file.  If any data " \
                   "is changed, the checksum will provide a different " \
-                  "signature.  The checksum.md5 contains a record of the " \
-                  "files for a given package." \
+                  f"signature.  The {DEFAULT_CHECKSUM_FILE_NAME} contains a " \
+                  f"record of the files for a given package." \
                   "\n" \
-                  "The tool creates a checksum.md5 for every subdirectory " \
-                  "found inside a given path." \
+                  f"The tool creates a {DEFAULT_CHECKSUM_FILE_NAME} for " \
+                  f"every subdirectory found inside a given path." \
                   "\n" \
                   "Input: Path to a root directory that contains " \
-                  "subdirectories to generate checksum.md5 files"
+                  f"subdirectories to generate {DEFAULT_CHECKSUM_FILE_NAME} " \
+                  f"files"
 
     def discover_task_metadata(
             self,
@@ -148,13 +158,13 @@ class MakeChecksumBatchMultipleWorkflow(AbcMakeChecksumWorkflow):
 
         jobs = []
 
-        root_for_all_packages = user_args["Input"]
         for sub_dir in filter(lambda it: it.is_dir(),
-                              os.scandir(root_for_all_packages)):
+                              os.scandir(user_args["Input"])):
 
             package_root = sub_dir.path
             report_to_save_to = os.path.normpath(
-                os.path.join(package_root, "checksum.md5"))
+                os.path.join(package_root, DEFAULT_CHECKSUM_FILE_NAME)
+            )
 
             for root, _, files in os.walk(package_root):
                 for file_ in files:
@@ -180,14 +190,17 @@ class MakeChecksumBatchMultipleWorkflow(AbcMakeChecksumWorkflow):
             **job_args: str
     ) -> None:
 
-        source_path = job_args['source_path']
         filename = job_args['filename']
         report_name = job_args['save_to_filename']
+        source_path = job_args['source_path']
 
-        new_task = checksum_tasks.MakeChecksumTask(
-            source_path, filename, report_name)
-
-        task_builder.add_subtask(new_task)
+        task_builder.add_subtask(
+            checksum_tasks.MakeChecksumTask(
+                source_path,
+                filename,
+                report_name
+            )
+        )
 
     def completion_task(self,
                         task_builder: tasks.TaskBuilder,
@@ -220,10 +233,10 @@ class MakeChecksumBatchMultipleWorkflow(AbcMakeChecksumWorkflow):
         return "\n".join(report_lines)
 
 
-class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
+class RegenerateChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
     name = "Regenerate Checksum Batch [Single]"
     description = "Regenerates hash values for every file inside for a " \
-                  "given checksum.md5 file" \
+                  f"given {DEFAULT_CHECKSUM_FILE_NAME} file" \
                   "\n" \
                   "Input: Path to a root folder"
 
@@ -236,18 +249,15 @@ class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
         report_to_save_to = user_args["Input"]
         package_root = os.path.dirname(report_to_save_to)
 
-        for root, dirs, files in os.walk(package_root):
-            for file_ in files:
-                full_path = os.path.join(root, file_)
-                if os.path.samefile(report_to_save_to, full_path):
-                    continue
-                relpath = os.path.relpath(full_path, package_root)
-                job = {
+        for file_path in self.locate_files(package_root):
+            relpath = os.path.relpath(file_path, package_root)
+            jobs.append(
+                {
                     "source_path": package_root,
                     "filename": relpath,
                     "save_to_filename": report_to_save_to
                 }
-                jobs.append(job)
+            )
         return jobs
 
     def create_new_task(self,
@@ -292,26 +302,6 @@ class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
 
         return "\n".join(report_lines)
 
-    @classmethod
-    def sort_results(cls,
-                     results: typing.List[typing.Mapping[ResultsValues, str]]
-                     ) -> typing.Dict[str,
-                                      typing.List[typing.Dict[ResultsValues,
-                                                              str]]]:
-
-        new_results: DefaultDict[str, list] = collections.defaultdict(list)
-
-        sorted_results = sorted(results,
-                                key=lambda it: it[ResultsValues.CHECKSUM_FILE])
-
-        for k, v in itertools.groupby(
-                sorted_results,
-                key=lambda it: it[ResultsValues.CHECKSUM_FILE]):
-
-            for result_data in v:
-                new_results[k].append(result_data)
-        return dict(new_results)
-
     def user_options(self) -> List[options.UserOption3]:
         return [
             options.UserOptionCustomDataType(
@@ -319,13 +309,15 @@ class RegenerateChecksumBatchSingleWorkflow(AbsWorkflow):
         ]
 
 
-class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
+class RegenerateChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
     name = "Regenerate Checksum Batch [Multiple]"
-    description = "Regenerates the hash values for every checksum.md5 " \
-                  "located inside a given path\n" \
+    description = f"Regenerates the hash values for every " \
+                  f"{DEFAULT_CHECKSUM_FILE_NAME} located inside a " \
+                  f"given path\n" \
                   "\n" \
                   "Input: Path to a root directory that contains " \
-                  "subdirectories to generate checksum.md5 files"
+                  f"subdirectories to generate {DEFAULT_CHECKSUM_FILE_NAME} " \
+                  f"files"
 
     def discover_task_metadata(self,
                                initial_results: List[Any],
@@ -334,15 +326,16 @@ class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
 
         jobs = []
 
-        root_for_all_packages = user_args["Input"]
         for sub_dir in filter(lambda it: it.is_dir(),
-                              os.scandir(root_for_all_packages)):
+                              os.scandir(user_args["Input"])):
 
             package_root = sub_dir.path
-            report_to_save_to = os.path.normpath(
-                os.path.join(package_root, "checksum.md5"))
 
-            for root, dirs, files in os.walk(package_root):
+            report_to_save_to = os.path.normpath(
+                os.path.join(package_root, DEFAULT_CHECKSUM_FILE_NAME)
+            )
+
+            for root, _, files in os.walk(package_root):
                 for file_ in files:
                     full_path = os.path.join(root, file_)
                     if os.path.samefile(report_to_save_to, full_path):
@@ -366,34 +359,14 @@ class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
                         task_builder: tasks.TaskBuilder,
                         **job_args: str) -> None:
 
-        source_path = job_args['source_path']
         filename = job_args['filename']
+        source_path = job_args['source_path']
         report_name = job_args['save_to_filename']
 
         new_task = \
             checksum_tasks.MakeChecksumTask(source_path, filename, report_name)
 
         task_builder.add_subtask(new_task)
-
-    @classmethod
-    def sort_results(cls,
-                     results: typing.List[typing.Mapping[ResultsValues, str]]
-                     ) -> typing.Dict[str,
-                                      typing.List[typing.Dict[ResultsValues,
-                                                              str]]]:
-
-        new_results: DefaultDict[str, list] = collections.defaultdict(list)
-
-        sorted_results = sorted(results,
-                                key=lambda it: it[ResultsValues.CHECKSUM_FILE])
-
-        for k, v in itertools.groupby(
-                sorted_results,
-                key=lambda it: it[ResultsValues.CHECKSUM_FILE]):
-
-            for result_data in v:
-                new_results[k].append(result_data)
-        return dict(new_results)
 
     def completion_task(self,
                         task_builder: tasks.TaskBuilder,
@@ -403,18 +376,18 @@ class RegenerateChecksumBatchMultipleWorkflow(AbsWorkflow):
         sorted_results = self.sort_results([i.data for i in results])
 
         for checksum_report, checksums in sorted_results.items():
-
-            process = checksum_tasks.MakeCheckSumReportTask(
-                checksum_report, checksums)
-
-            task_builder.add_subtask(process)
+            task_builder.add_subtask(
+                checksum_tasks.MakeCheckSumReportTask(
+                    checksum_report,
+                    checksums
+                )
+            )
 
     @classmethod
     @add_report_borders
     def generate_report(cls,
                         results: List[tasks.Result],
                         **user_args: str) -> Optional[str]:
-
         report_lines = [
             f"Checksum values for {len(items_written)} "
             f"files written to {checksum_report}"

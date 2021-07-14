@@ -62,7 +62,7 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
     { `
         Write-Host "Installing packages with Chocolatey - Done" ; `
     } else { `
-        throw "Installing packages with Chocolatey - Failed with exit code ($process.ExitCode)" ;  `
+        throw 'Installing packages with Chocolatey - Failed with none zero exit code' ;  `
     };`
     Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse ; `
     Remove-Item -Force -Recurse ${Env:TEMP}\* ; `
@@ -74,20 +74,21 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
 
 
 # Install WiX toolset for making .msi installers and put the tools on the path
-ADD ci/docker/windows_standalone/nuget/packages.config nuget/packages.config
-RUN Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force ; `
-    nuget update -self ;`
-    nuget install nuget/packages.config -OutputDirectory c:\BuildTools\ ; `
-    [Environment]::SetEnvironmentVariable('PATH', \"$($env:Path);$((Get-Childitem -Path C:\BuildTools -Include wix.dll -File -Recurse)[0].DirectoryName)\", [EnvironmentVariableTarget]::Machine)
-
-# Install python version from URL
-ARG PYTHON_INSTALLER_URL=https://www.python.org/ftp/python/3.7.5/python-3.7.5-amd64.exe
+RUN Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force ;`
+    Register-PackageSource -Name MyNuGet -Location https://www.nuget.org/api/v2 -ProviderName NuGet ;`
+    Install-Package -Name WiX -Source MyNuGet -Force ; `
+    $WIX_NUGET_PATH = $(Split-Path((Get-Package -Name Wix)[0].Source));`
+    $WIX_PATH ="$((Get-Childitem -Path $WIX_NUGET_PATH -Include wix.dll -File -Recurse)[0].DirectoryName)" ; `
+    $env:Path += $WIX_PATH ; `
+    [Environment]::SetEnvironmentVariable('Path', $env:Path, [EnvironmentVariableTarget]::Machine ) ;`
+    Write-Host "Updated path to = $env:Path"
+ARG PYTHON_INSTALLER_URL=https://www.python.org/ftp/python/3.9.6/python-3.9.6-amd64.exe
 
 RUN $ErrorActionPreference = 'Stop'; `
     Invoke-WebRequest $Env:PYTHON_INSTALLER_URL -OutFile c:\python-installer.exe ; `
     Start-Process python-installer.exe -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' -Wait ; `
     Remove-Item c:\python-installer.exe -Force ; `
-    $process = start-process -NoNewWindow -PassThru -FilePath 'c:\Program Files\Python37\python.exe' -ArgumentList "--version" -Wait ;`
+    $process = start-process -NoNewWindow -PassThru -FilePath 'c:\Program Files\Python39\python.exe' -ArgumentList "--version" -Wait ;`
     if ( $process.ExitCode -eq 0) `
     { `
         Write-Host "Installed Python`

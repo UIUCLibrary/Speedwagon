@@ -1,15 +1,18 @@
 #!groovy
-// @Library("ds-utils@v0.2.3") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
-// import org.ds.*
 import static groovy.json.JsonOutput.* // For pretty printing json data
 
 SUPPORTED_MAC_VERSIONS = ['3.8', '3.9']
 SUPPORTED_LINUX_VERSIONS = ['3.7', '3.8', '3.9']
 SUPPORTED_WINDOWS_VERSIONS = ['3.7', '3.8', '3.9']
 DOCKER_PLATFORM_BUILD_ARGS = [
-    linux: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)',
+    linux: '',
     windows: '--build-arg CHOCOLATEY_SOURCE'
 ]
+
+PYPI_SERVERS = [
+    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_public/',
+    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_testing/'
+    ]
 
 def loadConfigs(){
     node(){
@@ -31,30 +34,25 @@ def getDevPiStagingIndex(){
 
 CONFIGURATIONS = loadConfigs()
 
-def get_build_args(){
-    script{
-        def CHOCOLATEY_SOURCE = ''
-        try{
-            CHOCOLATEY_SOURCE = powershell(script: '(Get-ChildItem Env:Path).value', returnStdout: true).trim()
-        } finally {
-            return CHOCOLATEY_SOURCE?.trim() ? '--build-arg ' + 'CHOCOLATEY_REPO=' + CHOCOLATEY_SOURCE : ''
-        }
-    }
-}
 
 def run_pylint(){
-    catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-        sh(
-            script: '''mkdir -p reports
-                       pylint speedwagon -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt''',
-            label: 'Running pylint'
-        )
+    withEnv(['PYLINTHOME=.']) {
+        catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+            tee('reports/pylint_issues.txt'){
+                sh(
+                    label: 'Running pylint',
+                    script: 'pylint speedwagon -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
+                )
+            }
+        }
+        tee('reports/pylint.txt'){
+            sh(
+                label: 'Running pylint for sonarqube',
+                script: 'pylint speedwagon -d duplicate-code --output-format=parseable',
+                returnStatus: true
+            )
+        }
     }
-    sh(
-        script: 'pylint speedwagon  -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint_issues.txt',
-        label: 'Running pylint for sonarqube',
-        returnStatus: true
-    )
 }
 
 def get_package_name(stashName, metadataFile){
@@ -101,10 +99,6 @@ def deploy_artifacts_to_url(regex, urlDestination, jiraIssueKey){
         installer_files.each{
             simple_file_names << it.name
         }
-
-
-        //input "Update standalone ${simple_file_names.join(', ')} to '${urlDestination}'? More information: ${currentBuild.absoluteUrl}"
-
         def new_urls = []
         try{
             installer_files.each{
@@ -138,7 +132,7 @@ def runTox(){
                             envNamePrefix: 'Tox Linux',
                             label: 'linux && docker',
                             dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
-                            dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                            dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         )
                 },
                 'Windows':{
@@ -218,7 +212,6 @@ def createNewChocolateyPackage(args=[:]){
         )
 
 
-//
     powershell(
         label: 'Adding data to Chocolatey package workspace',
         script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
@@ -329,33 +322,42 @@ def test_pkg(glob, timeout_time){
 }
 
 def startup(){
-    node(){
-        checkout scm
-        devpi = load('ci/jenkins/scripts/devpi.groovy')
-    }
-    node('linux && docker') {
-        timeout(2){
-            ws{
+
+    parallel(
+    [
+        failFast: true,
+        'Loading Reference Build Information': {
+            node(){
                 checkout scm
-                try{
-                    docker.image('python').inside {
-                        stage('Getting Distribution Info'){
-                            withEnv(['PIP_NO_CACHE_DIR=off']) {
-                                sh(
-                                   label: 'Running setup.py with dist_info',
-                                   script: 'python setup.py dist_info'
-                                )
+                discoverGitReferenceBuild(latestBuildIfNotFound: true)
+            }
+        },
+        'Getting Distribution Info': {
+            node('linux && docker') {
+                timeout(2){
+                    ws{
+                        checkout scm
+                        try{
+                            docker.image('python').inside {
+                                withEnv(['PIP_NO_CACHE_DIR=off']) {
+                                    sh(
+                                       label: 'Running setup.py with dist_info',
+                                       script: 'python setup.py dist_info'
+                                    )
+                                }
+                                stash includes: '*.dist-info/**', name: 'DIST-INFO'
+                                archiveArtifacts artifacts: '*.dist-info/**'
                             }
-                            stash includes: '*.dist-info/**', name: 'DIST-INFO'
-                            archiveArtifacts artifacts: '*.dist-info/**'
+                        } finally{
+                            deleteDir()
                         }
                     }
-                } finally{
-                    deleteDir()
                 }
             }
         }
-    }
+    ]
+    )
+
 }
 
 
@@ -439,11 +441,12 @@ pipeline {
         booleanParam(name: 'PACKAGE_WINDOWS_STANDALONE_ZIP', defaultValue: false, description: 'Create a standalone portable package')
         booleanParam(name: 'DEPLOY_DEVPI', defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: 'DEPLOY_DEVPI_PRODUCTION', defaultValue: false, description: 'Deploy to https://devpi.library.illinois.edu/production/release')
+        booleanParam(name: 'DEPLOY_PYPI', defaultValue: false, description: 'Deploy to pypi')
         booleanParam(name: 'DEPLOY_CHOCOLATEY', defaultValue: false, description: 'Deploy to Chocolatey repository')
         booleanParam(name: 'DEPLOY_HATHI_TOOL_BETA', defaultValue: false, description: 'Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/')
         booleanParam(name: 'DEPLOY_SCCM', defaultValue: false, description: 'Request deployment of MSI installer to SCCM')
         booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
-//         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
+        string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
     stages {
 
@@ -468,7 +471,7 @@ pipeline {
                 dockerfile {
                     filename 'ci/docker/python/linux/jenkins/Dockerfile'
                     label 'linux && docker'
-                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                    additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                   }
             }
             steps {
@@ -476,7 +479,7 @@ pipeline {
             }
             post{
                 always{
-                    recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx.log')])
+                    recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx_html.log')])
                     stash includes: 'dist/docs/*.pdf', name: 'SPEEDWAGON_DOC_PDF'
                 }
                 success{
@@ -507,8 +510,8 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                            args '--mount source=sonar-cache-speedwagon,target=/home/user/.sonar/cache'
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                            args '--mount source=sonar-cache-speedwagon,target=/opt/sonar/.sonar/cache'
                           }
                     }
                     stages{
@@ -594,7 +597,7 @@ pipeline {
                                             post{
                                                 always{
                                                     stash includes: 'reports/pylint_issues.txt,reports/pylint.txt', name: 'PYLINT_REPORT'
-                                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
+                                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint_issues.txt')])
                                                 }
                                             }
                                         }
@@ -637,6 +640,7 @@ pipeline {
                                                 adapters: [
                                                         coberturaAdapter('reports/coverage.xml')
                                                     ],
+                                                calculateDiffForChangeRequests: true,
                                                 sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                                             )
                                         }
@@ -654,7 +658,6 @@ pipeline {
                             }
                         }
                         stage('Run Sonarqube Analysis'){
-//                             agent none
                             options{
                                 lock('speedwagon-sonarscanner')
                             }
@@ -683,8 +686,8 @@ pipeline {
                                                     dockerfile: [
                                                         filename: 'ci/docker/python/linux/jenkins/Dockerfile',
                                                         label: 'linux && docker',
-                                                        additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                        args: '--mount source=sonar-cache-speedwagon,target=/home/user/.sonar/cache',
+                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                        args: '--mount source=sonar-cache-speedwagon,target=/opt/sonar/.sonar/cache',
                                                     ]
                                                 ]
                                     if (env.CHANGE_ID){
@@ -753,7 +756,7 @@ pipeline {
                                 dockerfile {
                                     filename 'ci/docker/python/linux/jenkins/Dockerfile'
                                     label 'linux && docker'
-                                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                    additionalBuildArgs ' --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                   }
                             }
                             steps{
@@ -827,7 +830,7 @@ pipeline {
                                                     dockerfile: [
                                                         label: 'linux && docker',
                                                         filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                                     ]
                                                 ],
                                                 glob: 'dist/*.tar.gz',
@@ -841,7 +844,7 @@ pipeline {
                                                     dockerfile: [
                                                         label: 'linux && docker',
                                                         filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                                     ]
                                                 ],
                                                 glob: 'dist/*.whl',
@@ -1019,7 +1022,7 @@ pipeline {
                                             filename 'ci/docker/windows_standalone/Dockerfile'
                                             label 'Windows&&Docker'
                                             args '-u ContainerAdministrator'
-                                            additionalBuildArgs get_build_args()
+                                            additionalBuildArgs '--build-arg CHOCOLATEY_SOURCE'
                                           }
                                     }
                                     steps {
@@ -1118,14 +1121,14 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux&&docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                            additionalBuildArgs ' --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                           }
                     }
                     steps {
                         unstash 'DOCS_ARCHIVE'
                         unstash 'PYTHON_PACKAGES'
                         script{
-                            devpi.upload(
+                            load('ci/jenkins/scripts/devpi.groovy').upload(
                                     server: 'https://devpi.library.illinois.edu',
                                     credentialsId: 'DS_devpi',
                                     index: getDevPiStagingIndex(),
@@ -1157,7 +1160,6 @@ pipeline {
                             dockerfile {
                                 additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}"
                                 filename "ci/docker/python/${PLATFORM}/tox/Dockerfile"
-//                                 filename "ci/docker/python/${PLATFORM}/jenkins/Dockerfile"
                                 label "${PLATFORM} && docker"
                             }
                         }
@@ -1200,7 +1202,7 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                           }
                     }
                     input {
@@ -1208,7 +1210,7 @@ pipeline {
                     }
                     steps {
                         script{
-                            devpi.pushPackageToIndex(
+                            load('ci/jenkins/scripts/devpi.groovy').pushPackageToIndex(
                                 pkgName: props.Name,
                                 pkgVersion: props.Version,
                                 server: 'https://devpi.library.illinois.edu',
@@ -1225,8 +1227,9 @@ pipeline {
                     node('linux && docker') {
                        script{
                             if (!env.TAG_NAME?.trim()){
-                                docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
-                                    devpi.pushPackageToIndex(
+                                docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
+                                    checkout scm
+                                    load('ci/jenkins/scripts/devpi.groovy').pushPackageToIndex(
                                         pkgName: props.Name,
                                         pkgVersion: props.Version,
                                         server: 'https://devpi.library.illinois.edu',
@@ -1242,8 +1245,9 @@ pipeline {
                 cleanup{
                     node('linux && docker') {
                        script{
-                            docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
-                                devpi.removePackage(
+                            docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
+                                checkout scm
+                                load('ci/jenkins/scripts/devpi.groovy').removePackage(
                                     pkgName: props.Name,
                                     pkgVersion: props.Version,
                                     index: "DS_Jenkins/${getDevPiStagingIndex()}",
@@ -1259,6 +1263,63 @@ pipeline {
         }
         stage('Deploy'){
             parallel {
+                stage('Deploy to pypi') {
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                        }
+                    }
+                    when{
+                        allOf{
+                            equals expected: true, actual: params.DEPLOY_PYPI
+                            equals expected: true, actual: params.BUILD_PACKAGES
+                        }
+                        beforeAgent true
+                        beforeInput true
+                    }
+                    options{
+                        retry(3)
+                    }
+                    input {
+                        message 'Upload to pypi server?'
+                        parameters {
+                            choice(
+                                choices: PYPI_SERVERS,
+                                description: 'Url to the pypi index to upload python packages.',
+                                name: 'SERVER_URL'
+                            )
+                        }
+                    }
+                    steps{
+                        unstash 'PYTHON_PACKAGES'
+                        script{
+                            def pypi = fileLoader.fromGit(
+                                    'pypi',
+                                    'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
+                                    '2',
+                                    null,
+                                    ''
+                                )
+                            pypi.pypiUpload(
+                                credentialsId: 'jenkins-nexus',
+                                repositoryUrl: SERVER_URL,
+                                glob: 'dist/*'
+                                )
+                        }
+                    }
+                    post{
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                        [pattern: 'dist/', type: 'INCLUDE']
+                                    ]
+                            )
+                        }
+                    }
+                }
                 stage('Deploy to Chocolatey') {
                     when{
                         equals expected: true, actual: params.DEPLOY_CHOCOLATEY

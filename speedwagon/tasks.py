@@ -1,4 +1,4 @@
-"""Define a single step in the workflow"""
+"""Define a single step in the workflow."""
 import abc
 import os
 
@@ -26,7 +26,7 @@ class AbsSubtask(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def log(self, message: str) -> None:
-        """Log a message to the console on the main window"""
+        """Log a message to the console on the main window."""
 
     @property
     def task_result(self) -> Optional['Result']:
@@ -61,7 +61,7 @@ class AbsSubtask(metaclass=abc.ABCMeta):
 
     @parent_task_log_q.setter  # type: ignore
     @abc.abstractmethod
-    def parent_task_log_q(self, value: Deque[str]):
+    def parent_task_log_q(self, value: Deque[str]) -> None:
         pass
 
 
@@ -71,12 +71,13 @@ class Result(NamedTuple):
 
 
 class Subtask(AbsSubtask):
-    """Base class for defining a new task for a :py:class:`Workflow` to create
+    """Base class for defining a new task for a :py:class:`Workflow` to create.
 
     Subclass this generate a new task
     """
 
     def __init__(self) -> None:
+        """Create a new sub-task."""
         self._result: Optional[Result] = None
         # TODO: refactor into state machine
         self._status = TaskStatus.IDLE
@@ -102,7 +103,7 @@ class Subtask(AbsSubtask):
         return self._parent_task_log_q
 
     @parent_task_log_q.setter
-    def parent_task_log_q(self, value: Deque[str]):
+    def parent_task_log_q(self, value: Deque[str]) -> None:
         self._parent_task_log_q = value
 
     @property
@@ -114,11 +115,13 @@ class Subtask(AbsSubtask):
         return self._status
 
     @status.setter
-    def status(self, value: TaskStatus):
+    def status(self, value: TaskStatus) -> None:
         self._status = value
 
     def work(self) -> bool:
-        """This method is called when the task's work should be done
+        """Perform work.
+
+        This method is called when the task's work should be done.
 
         Override this method to accomplish the task.
 
@@ -142,15 +145,15 @@ class Subtask(AbsSubtask):
     def exec(self) -> None:
         self.status = TaskStatus.WORKING
 
-        if not self.work():
-            self.status = TaskStatus.FAILED
-        else:
-            self.status = TaskStatus.SUCCESS
+        self.status = \
+            TaskStatus.FAILED if not self.work() else TaskStatus.SUCCESS
 
 
 class PreTask(AbsSubtask):
+    """Pre-task subtask."""
 
     def __init__(self) -> None:
+        """Create a new pre-task."""
         self._status = TaskStatus.IDLE
         self._parent_task_log_q: Optional[Deque[str]] = None
         self._result: Optional[Result] = None
@@ -170,10 +173,8 @@ class PreTask(AbsSubtask):
         self._parent_task_log_q = value
 
     def exec(self) -> None:
-        if not self.work():
-            self._status = TaskStatus.FAILED
-        else:
-            self._status = TaskStatus.SUCCESS
+        self._status = \
+            TaskStatus.FAILED if not self.work() else TaskStatus.SUCCESS
 
     def log(self, message):
         self._parent_task_log_q.append(message)
@@ -186,6 +187,7 @@ class PreTask(AbsSubtask):
         pass
 
     def work(self) -> bool:
+        """Perform the task."""
         return super().work()
 
 
@@ -193,11 +195,11 @@ class AbsTask(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def on_completion(self, *args, **kwargs):
-        pass
+        """Call when task is finished."""
 
     @abc.abstractmethod
     def exec(self, *args, **kwargs):
-        pass
+        """Execute task."""
 
     @property
     @abc.abstractmethod
@@ -214,7 +216,7 @@ class AbsTaskComponents(metaclass=abc.ABCMeta):
 
     @pretask.setter  # type: ignore
     @abc.abstractmethod
-    def pretask(self, value: AbsSubtask):
+    def pretask(self, value: AbsSubtask) -> None:
         pass
 
     @property  # type: ignore
@@ -224,12 +226,15 @@ class AbsTaskComponents(metaclass=abc.ABCMeta):
 
     @posttask.setter  # type: ignore
     @abc.abstractmethod
-    def posttask(self, value: AbsSubtask):
+    def posttask(self, value: AbsSubtask) -> None:
         pass
 
 
 class Task(AbsTask, AbsTaskComponents):
+    """Task."""
+
     def __init__(self) -> None:
+        """Create a new task."""
         self.log_q: Deque[str] = collections.deque()
         self.result: Any = None
         self._pre_task: Optional[AbsSubtask] = None
@@ -240,7 +245,7 @@ class Task(AbsTask, AbsTaskComponents):
         return self._pre_task
 
     @pretask.setter
-    def pretask(self, value: AbsSubtask):
+    def pretask(self, value: AbsSubtask) -> None:
         self._pre_task = value
 
     @property
@@ -248,17 +253,21 @@ class Task(AbsTask, AbsTaskComponents):
         return self._post_task
 
     @posttask.setter
-    def posttask(self, value: AbsSubtask):
+    def posttask(self, value: AbsSubtask) -> None:
+        """Set the post-task sub-task."""
         self._post_task = value
 
     def on_completion(self, *args, **kwargs):
+        """Run task for after main task is completed."""
         return super().on_completion(*args, **kwargs)
 
     def exec(self, *args, **kwargs):
+        """Execute task."""
         return super().exec(*args, **kwargs)
 
     @property
     def status(self) -> TaskStatus:
+        """Get task status."""
         return super().status
 
 
@@ -266,6 +275,7 @@ class MultiStageTask(Task):
     name = "Task"
 
     def __init__(self) -> None:
+        """Create a new multi-stage task."""
         super().__init__()
         # Todo: use the results builder from validate
         self._main_subtasks: List[AbsSubtask] = []
@@ -277,6 +287,7 @@ class MultiStageTask(Task):
 
     @property
     def subtasks(self):
+        """Get all subtasks."""
         all_subtasks = []
 
         if self.pretask:
@@ -329,7 +340,7 @@ class MultiStageTask(Task):
              if task.status > TaskStatus.WORKING])
         return amount_completed / len(self.main_subtasks)
 
-    def exec(self, *args, **kwargs):
+    def exec(self, *args, **kwargs) -> None:
 
         subtask_results = []
         try:
@@ -368,24 +379,26 @@ class AbsTaskBuilder(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def add_subtask(self, task):
-        pass
+        """Add subtask to builder."""
 
     @abc.abstractmethod
     def build_task(self):
-        pass
+        """Build task."""
 
     @abc.abstractmethod
     def set_pretask(self, subtask: AbsSubtask):
-        pass
+        """Set pre-task subtask."""
 
     @abc.abstractmethod
     def set_posttask(self, subtask: AbsSubtask):
-        pass
+        """Set the post-task task."""
 
 
 class BaseTaskBuilder(AbsTaskBuilder):
+    """Task builder base class."""
 
     def __init__(self) -> None:
+        """Create base structure of a task builder class."""
         self._main_subtasks: List[AbsSubtask] = []
         self._pretask: Optional[AbsSubtask] = None
         self._posttask: Optional[AbsSubtask] = None
@@ -428,6 +441,7 @@ class TaskBuilder:
     _task_counter = 0
 
     def __init__(self, builder: BaseTaskBuilder, working_dir) -> None:
+        """Create a new task builder."""
         self._builder = builder
         self._working_dir = working_dir
         self._subtask_counter = 0
@@ -435,10 +449,11 @@ class TaskBuilder:
         self.task_id = TaskBuilder._task_counter
 
     def build_task(self) -> MultiStageTask:
-        task = self._builder.build_task()
-        return task
+        """Build Multi stage task."""
+        return self._builder.build_task()
 
     def add_subtask(self, subtask: Subtask) -> None:
+        """Add subtask to builder."""
         self._subtask_counter += 1
 
         if subtask.name is not None:
@@ -467,15 +482,13 @@ class TaskBuilder:
             subtask_id: str
     ) -> str:
 
-        working_dir = os.path.join(task_working_path,
-                                   task_type,
-                                   str(subtask_id))
-        return working_dir
+        return os.path.join(task_working_path,
+                            task_type,
+                            str(subtask_id))
 
     @staticmethod
     def _build_task_working_path(temp_path: str, task_id: str) -> str:
-        working_dir = os.path.join(temp_path, task_id)
-        return working_dir
+        return os.path.join(temp_path, task_id)
 
     def set_pretask(self, subtask: Subtask) -> None:
 
@@ -531,13 +544,11 @@ class TaskBuilder:
     @staticmethod
     def load(data):
         task_cls, attributes = pickle.loads(data)
-        obj = TaskBuilder._deserialize_task(task_cls, attributes)
-        return obj
+        return TaskBuilder._deserialize_task(task_cls, attributes)
 
     @staticmethod
     def _serialize_task(task_obj: MultiStageTask):
-        res = task_obj.__class__, task_obj.__dict__
-        return res
+        return task_obj.__class__, task_obj.__dict__
 
     @staticmethod
     def _deserialize_task(task_cls, attributes):
@@ -547,26 +558,31 @@ class TaskBuilder:
 
 
 class QueueAdapter:
+    """Queue adapter class."""
 
     def __init__(self) -> None:
+        """Create a new queue adapter."""
         super().__init__()
         self._queue: Optional[queue.Queue] = None
 
     def append(self, item):
         self._queue.put(item)
 
-    def set_message_queue(self, value: queue.Queue):
+    def set_message_queue(self, value: queue.Queue) -> None:
         self._queue = value
 
 
 class MultiStageTaskBuilder(BaseTaskBuilder):
+    """Multi stage task builder."""
 
     def __init__(self, working_dir: str) -> None:
+        """Create a new multi-stage task builder."""
         super().__init__()
         self._working_dir = working_dir
 
     @property
     def task(self) -> MultiStageTask:
+        """Get the task."""
         task = MultiStageTask()
         task.working_dir = self._working_dir
         return task

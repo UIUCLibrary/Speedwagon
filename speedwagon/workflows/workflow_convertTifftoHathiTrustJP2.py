@@ -1,3 +1,5 @@
+"""Workflow for converting tiff files to hathitrust jp2s."""
+
 import abc
 import enum
 import os
@@ -45,12 +47,16 @@ class ProcessFile:
 class ConvertFile(AbsProcessStrategy):
 
     def process(self, source_file: str, destination_path: str) -> None:
-        basename, ext = os.path.splitext(os.path.basename(source_file))
+        basename, _ = os.path.splitext(os.path.basename(source_file))
 
         output_file_path = os.path.join(destination_path,
                                         basename + ".jp2"
                                         )
+        self.generate_jp2(source_file, output_file_path)
+        self.status = "Generated {}".format(output_file_path)
 
+    @staticmethod
+    def generate_jp2(source_file: str, output_file_path: str):
         in_args = [
             "Clevels=5",
             "Clayers=8",
@@ -66,8 +72,6 @@ class ConvertFile(AbsProcessStrategy):
             source_file, output_file_path, in_args=in_args
         )
         set_dpi(output_file_path, x=400, y=400)
-
-        self.status = "Generated {}".format(output_file_path)
 
 
 class CopyFile(AbsProcessStrategy):
@@ -96,12 +100,12 @@ class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
         dest = user_args["Output"]
 
         def filter_only_tif_files(filename: str) -> bool:
-            basename, ext = os.path.splitext(filename)
+            _, ext = os.path.splitext(filename)
             if ext.lower() != ".tif":
                 return False
             return True
 
-        for root, dirs, files in os.walk(source_input):
+        for root, _, files in os.walk(source_input):
             file_iter_1, file_iter_2 = itertools.tee(files)
             tiff_files = filter(filter_only_tif_files, file_iter_1)
 
@@ -160,7 +164,7 @@ class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
             task_builder.add_subtask(CopyTask(source_file_path, output_path))
 
         else:
-            raise Exception("Don't know what to do for {}".format(task_type))
+            raise RuntimeError(f"Don't know what to do for {task_type}")
 
 
 class ImageConvertTask(tasks.Subtask):

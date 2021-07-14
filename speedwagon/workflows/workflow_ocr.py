@@ -1,3 +1,5 @@
+"""Workflow for performing OCR on image files."""
+
 import io
 import os
 import sys
@@ -42,6 +44,7 @@ class OCRWorkflow(speedwagon.Workflow):
     }
 
     def __init__(self, *args, **kwargs) -> None:
+        """Create a OCR Workflow."""
         super().__init__(*args, **kwargs)
         self.global_settings = kwargs.get('global_settings', {})
         self.tessdata_path = self._get_tessdata_dir(args, self.global_settings)
@@ -176,7 +179,7 @@ class OCRWorkflow(speedwagon.Workflow):
 
         package_type = shared_custom_widgets.ListSelection("Image File Type")
 
-        for file_type in OCRWorkflow.SUPPORTED_IMAGE_TYPES.keys():
+        for file_type in OCRWorkflow.SUPPORTED_IMAGE_TYPES:
             package_type.add_selection(file_type)
         options.append(package_type)
 
@@ -225,8 +228,8 @@ class OCRWorkflow(speedwagon.Workflow):
 
             return True
 
-        for f in filter(filter_only_trainingdata, os.scandir(path)):
-            yield os.path.splitext(f.name)[0]
+        for file in filter(filter_only_trainingdata, os.scandir(path)):
+            yield os.path.splitext(file.name)[0]
 
     @staticmethod
     def validate_user_options(**user_args: str) -> bool:
@@ -262,7 +265,7 @@ class OCRWorkflow(speedwagon.Workflow):
                 return False
             return True
 
-        return [r for r in filter(filter_ocr_gen_tasks, results)]
+        return list(filter(filter_ocr_gen_tasks, results))
 
 
 class FindImagesTask(speedwagon.tasks.Subtask):
@@ -280,7 +283,7 @@ class FindImagesTask(speedwagon.tasks.Subtask):
             if os.path.isdir(file_located):
                 return False
 
-            base, ext = os.path.splitext(file_located)
+            _, ext = os.path.splitext(file_located)
             if ext.lower() != self._extension:
                 return False
 
@@ -288,7 +291,7 @@ class FindImagesTask(speedwagon.tasks.Subtask):
 
         directories = []
 
-        for root, dirs, files in os.walk(self._root):
+        for root, _, files in os.walk(self._root):
             for file_name in filter(find_images, files):
                 file_path = os.path.join(root, file_name)
                 self.log(f"Located {file_path}")

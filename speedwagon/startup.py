@@ -1,4 +1,4 @@
-"""Define how Speedwagon starts up on the current system
+"""Define how Speedwagon starts up on the current system.
 
 Use for loading and starting up the main application
 
@@ -18,6 +18,7 @@ import logging
 import os
 import sys
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
+import pathlib
 import yaml
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 
@@ -25,11 +26,12 @@ import speedwagon
 import speedwagon.config
 import speedwagon.models
 import speedwagon.tabs
-from speedwagon import worker, job
+from speedwagon import worker, job, runner_strategies
 from speedwagon.dialog.settings import TabEditor
 from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.tabs import extract_tab_information
-import pathlib
+
+
 try:  # pragma: no cover
     from importlib import metadata
     import importlib.resources as resources  # type: ignore
@@ -43,6 +45,7 @@ class FileFormatError(Exception):
 
 
 def parse_args() -> argparse.ArgumentParser:
+    """Parse command line arguments."""
     return CliArgsSetter.get_arg_parser()
 
 
@@ -54,7 +57,10 @@ class AbsSetting(metaclass=abc.ABCMeta):
     def FRIENDLY_NAME():
         return NotImplementedError
 
-    def update(self, settings=None) -> Dict["str", Union[str, bool]]:
+    def update(
+            self,
+            settings: Dict[str, Union[str, bool]] = None
+    ) -> Dict["str", Union[str, bool]]:
         if settings is None:
             return dict()
         else:
@@ -64,7 +70,10 @@ class AbsSetting(metaclass=abc.ABCMeta):
 class DefaultsSetter(AbsSetting):
     FRIENDLY_NAME = "Setting defaults"
 
-    def update(self, settings=None) -> Dict["str", Union[str, bool]]:
+    def update(
+            self,
+            settings: Dict[str, Union[str, bool]] = None
+    ) -> Dict["str", Union[str, bool]]:
         new_settings = super().update(settings)
         new_settings["debug"] = False
         return new_settings
@@ -74,7 +83,10 @@ class CliArgsSetter(AbsSetting):
 
     FRIENDLY_NAME = "Command line arguments setting"
 
-    def update(self, settings=None) -> Dict["str", Union[str, bool]]:
+    def update(
+            self,
+            settings: Dict[str, Union[str, bool]] = None
+    ) -> Dict["str", Union[str, bool]]:
         new_settings = super().update(settings)
 
         args = self._parse_args()
@@ -123,9 +135,14 @@ class ConfigFileSetter(AbsSetting):
     FRIENDLY_NAME = "Config file settings"
 
     def __init__(self, config_file: str):
+        """Create a new config file setter."""
         self.config_file = config_file
 
-    def update(self, settings=None) -> Dict["str", Union[str, bool]]:
+    def update(
+            self,
+            settings: Dict[str, Union[str, bool]] = None
+    ) -> Dict["str", Union[str, bool]]:
+        """Update setting configuration."""
         new_settings = super().update(settings)
         with speedwagon.config.ConfigManager(self.config_file) as cfg:
             new_settings.update(cfg.global_settings.items())
@@ -133,6 +150,7 @@ class ConfigFileSetter(AbsSetting):
 
 
 def get_selection(all_workflows):
+    """Get current selection of workflows."""
     new_workflow_set = dict()
     for k, v in all_workflows.items():
         if "Verify" in k:
@@ -140,52 +158,95 @@ def get_selection(all_workflows):
     return new_workflow_set
 
 
+class CustomTabsFileReader:
+    """Reads the tab file data."""
+
+    def __init__(
+            self, all_workflows: Dict[str, Type[speedwagon.Workflow]]) -> None:
+        """Load all workflows supported.
+
+        Args:
+            all_workflows:
+        """
+        self.all_workflows = all_workflows
+
+    @staticmethod
+    def read_yml_file(yaml_file: str) -> Dict[str,  List[str]]:
+        """Read the contents of the yml file."""
+        with open(yaml_file) as file_handler:
+            tabs_config_data = yaml.load(file_handler.read(),
+                                         Loader=yaml.SafeLoader)
+
+        if not isinstance(tabs_config_data, dict):
+            raise FileFormatError("Failed to parse file")
+        return tabs_config_data
+
+    def _get_tab_items(self,
+                       tab: List[str],
+                       tab_name: str) -> Dict[str, Type[job.Workflow]]:
+        new_tab_items = {}
+        for item_name in tab:
+            try:
+                workflow = self.all_workflows[item_name]
+                if workflow.active is False:
+                    print("workflow not active")
+                new_tab_items[item_name] = workflow
+
+            except LookupError:
+                print(
+                    f"Unable to load '{item_name}' in "
+                    f"tab {tab_name}", file=sys.stderr)
+        return new_tab_items
+
+    def load_custom_tabs(self, yaml_file: str) -> Iterator[Tuple[str, dict]]:
+        """Get custom tabs data from config yaml.
+
+        Args:
+            yaml_file: file path to a yaml file containing custom.
+
+        Yields:
+            Yields a tuple containing the name of the tab and the containing
+                workflows.
+        Notes:
+            Failure to load will only a print message to standard error.
+
+        """
+        try:
+            tabs_config_data = self.read_yml_file(yaml_file)
+            if tabs_config_data:
+                tabs_config_data = cast(Dict[str, List[str]], tabs_config_data)
+                for tab_name in tabs_config_data:
+                    try:
+                        new_tab = tabs_config_data.get(tab_name)
+                        if new_tab is not None:
+                            yield tab_name, \
+                                  self._get_tab_items(new_tab, tab_name)
+
+                    except TypeError as tab_error:
+                        print("Error loading tab '{}'. "
+                              "Reason: {}".format(tab_name, tab_error),
+                              file=sys.stderr)
+                        continue
+
+        except FileNotFoundError as error:
+            print("Custom tabs file not found. "
+                  "Reason: {}".format(error), file=sys.stderr)
+        except AttributeError as error:
+            print("Custom tabs file failed to load. "
+                  "Reason: {}".format(error), file=sys.stderr)
+
+        except yaml.YAMLError as error:
+            print("{} file failed to load. "
+                  "Reason: {}".format(yaml_file, error), file=sys.stderr)
+
+
 def get_custom_tabs(
         all_workflows: Dict[str, Type[speedwagon.Workflow]],
         yaml_file: str
 ) -> Iterator[Tuple[str, dict]]:
-
-    try:
-        with open(yaml_file) as f:
-            tabs_config_data = yaml.load(f.read(), Loader=yaml.SafeLoader)
-        if not isinstance(tabs_config_data, dict):
-            raise FileFormatError("Failed to parse file")
-
-        if tabs_config_data:
-            tabs_config_data = cast(Dict[str, List[str]], tabs_config_data)
-            for tab_name in tabs_config_data:
-
-                try:
-                    new_tab_items = dict()
-                    new_tab = tabs_config_data.get(tab_name)
-                    if new_tab is not None:
-                        for item_name in new_tab:
-                            try:
-                                workflow = all_workflows[item_name]
-                                if workflow.active is False:
-                                    print("workflow not active")
-                                new_tab_items[item_name] = workflow
-
-                            except LookupError:
-                                print(
-                                    f"Unable to load '{item_name}' in "
-                                    f"tab {tab_name}", file=sys.stderr)
-                        yield tab_name, new_tab_items
-                except TypeError as e:
-                    print("Error loading tab '{}'. "
-                          "Reason: {}".format(tab_name, e), file=sys.stderr)
-                    continue
-
-    except FileNotFoundError as e:
-        print("Custom tabs file not found. "
-              "Reason: {}".format(e), file=sys.stderr)
-    except AttributeError as e:
-        print("Custom tabs file failed to load. "
-              "Reason: {}".format(e), file=sys.stderr)
-
-    except yaml.YAMLError as e:
-        print("{} file failed to load. "
-              "Reason: {}".format(yaml_file, e), file=sys.stderr)
+    """Load custom tab yaml file."""
+    getter = CustomTabsFileReader(all_workflows)
+    yield from getter.load_custom_tabs(yaml_file)
 
 
 class AbsStarter(metaclass=abc.ABCMeta):
@@ -195,11 +256,18 @@ class AbsStarter(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def initialize(self) -> None:
-        pass
+        """Initialize startup routine."""
 
 
 class StartupDefault(AbsStarter):
+    """Default startup.
+
+    .. versionadded:: 0.2.0
+       Added StartupDefault class for speedwagon with the normal Qt-based GUI.
+    """
+
     def __init__(self, app: QtWidgets.QApplication = None) -> None:
+        """Create a new default startup routine."""
         self._logger = logging.getLogger(__name__)
         self._logger.setLevel(logging.DEBUG)
 
@@ -274,50 +342,13 @@ class StartupDefault(AbsStarter):
             except metadata.PackageNotFoundError:
                 app_version = ""
 
-            self._logger.info(f"{app_title} {app_version}")
+            self._logger.info("%s %s", app_title, app_version)
 
             QtWidgets.QApplication.processEvents()
 
-            # ==================================================
-            # Load configurations
-            self._logger.debug("Applying settings to Speedwagon")
+            self._load_configurations(work_manager)
+            self._load_workflows(windows)
 
-            work_manager.user_settings = self.platform_settings
-            work_manager.configuration_file = self.config_file
-
-            # ==================================================
-            self._logger.debug("Loading Workflows")
-            loading_workflows_stream = io.StringIO()
-            with contextlib.redirect_stderr(loading_workflows_stream):
-                all_workflows = job.available_workflows()
-
-            # Load every user configured tab
-            tabs_file_size = os.path.getsize(self.tabs_file)
-            if tabs_file_size > 0:
-                try:
-                    for tab_name, extra_tab in \
-                            get_custom_tabs(all_workflows, self.tabs_file):
-
-                        windows.add_tab(tab_name, collections.OrderedDict(
-                            sorted(extra_tab.items())))
-                except FileFormatError as e:
-                    self._logger.warning(
-                        "Unable to load custom tabs from {}. "
-                        "Reason: {}".format(self.tabs_file, e))
-
-            # All Workflows tab
-
-            self._logger.debug("Loading Tab All")
-            windows.add_tab("All", collections.OrderedDict(
-                sorted(all_workflows.items())))
-
-            workflow_errors_msg = loading_workflows_stream.getvalue().strip()
-
-            if workflow_errors_msg:
-                for line in workflow_errors_msg.split("\n"):
-                    self._logger.warning(line)
-
-            # ==================================================
             self._logger.debug("Loading User Interface")
 
             windows.show()
@@ -334,9 +365,44 @@ class StartupDefault(AbsStarter):
             self._logger.removeHandler(splash_message_handler)
             return self.app.exec_()
 
+    def _load_configurations(self,
+                             work_manager: worker.ToolJobManager) -> None:
+
+        self._logger.debug("Applying settings to Speedwagon")
+        work_manager.user_settings = self.platform_settings
+        work_manager.configuration_file = self.config_file
+
+    def _load_workflows(self, application: MainWindow) -> None:
+        self._logger.debug("Loading Workflows")
+        loading_workflows_stream = io.StringIO()
+        with contextlib.redirect_stderr(loading_workflows_stream):
+            all_workflows = job.available_workflows()
+        # Load every user configured tab
+        tabs_file_size = os.path.getsize(self.tabs_file)
+        if tabs_file_size > 0:
+            try:
+                for tab_name, extra_tab in \
+                        get_custom_tabs(all_workflows, self.tabs_file):
+                    application.add_tab(tab_name, collections.OrderedDict(
+                        sorted(extra_tab.items())))
+            except FileFormatError as error:
+                self._logger.warning(
+                    "Unable to load custom tabs from %s. Reason: %s",
+                    self.tabs_file,
+                    error
+                )
+        # All Workflows tab
+        self._logger.debug("Loading Tab All")
+        application.add_tab("All", collections.OrderedDict(
+            sorted(all_workflows.items())))
+        workflow_errors_msg = loading_workflows_stream.getvalue().strip()
+        if workflow_errors_msg:
+            for line in workflow_errors_msg.split("\n"):
+                self._logger.warning(line)
+
     def read_settings_file(self, settings_file: str) -> None:
-        with speedwagon.config.ConfigManager(settings_file) as f:
-            self.platform_settings._data.update(f.global_settings)
+        with speedwagon.config.ConfigManager(settings_file) as config:
+            self.platform_settings._data.update(config.global_settings)
 
     def set_app_display_metadata(self) -> None:
         with resources.open_binary(speedwagon.__name__, "favicon.ico") as icon:
@@ -348,30 +414,36 @@ class StartupDefault(AbsStarter):
         self.app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
         QtWidgets.QApplication.processEvents()
 
-    def resolve_settings(self) -> None:
-        resolution_order: List[AbsSetting] = [
-            DefaultsSetter(),
-            ConfigFileSetter(self.config_file),
-            CliArgsSetter(),
-        ]
+    def resolve_settings(
+            self,
+            resolution_strategy_order: Optional[List[AbsSetting]] = None
+    ) -> None:
+        if resolution_strategy_order is None:
+            resolution_strategy_order = [
+                DefaultsSetter(),
+                ConfigFileSetter(self.config_file),
+                CliArgsSetter(),
+            ]
         self.read_settings_file(self.config_file)
-        for settings_strategy in resolution_order:
+        for settings_strategy in resolution_strategy_order:
 
-            self._logger.debug("Loading settings from {}".format(
-                settings_strategy.FRIENDLY_NAME))
+            self._logger.debug("Loading settings from %s",
+                               settings_strategy.FRIENDLY_NAME)
 
             try:
                 self.startup_settings = settings_strategy.update(
                     self.startup_settings)
-            except ValueError as e:
+            except ValueError as error:
                 if isinstance(settings_strategy, ConfigFileSetter):
                     self._logger.warning(
-                        "{} contains an invalid setting. Details: {} ".format(
-                            self.config_file, e)
+                        "%s contains an invalid setting. Details: %s",
+                        self.config_file,
+                        error
                     )
 
                 else:
-                    self._logger.warning("{} is an invalid setting".format(e))
+                    self._logger.warning("%s is an invalid setting",
+                                         error)
         try:
             self._debug = cast(bool, self.startup_settings['debug'])
         except KeyError:
@@ -379,10 +451,11 @@ class StartupDefault(AbsStarter):
                 "Unable to find a key for debug mode. Setting false")
 
             self._debug = False
-        except ValueError as e:
+        except ValueError as error:
             self._logger.warning(
-                "{} is an invalid setting for debug mode."
-                "Setting false".format(e))
+                "%s is an invalid setting for debug mode."
+                "Setting false",
+                error)
 
             self._debug = False
 
@@ -391,54 +464,112 @@ class StartupDefault(AbsStarter):
             speedwagon.config.generate_default(self.config_file)
 
             self._logger.debug(
-                "No config file found. Generated {}".format(self.config_file))
+                "No config file found. Generated %s",
+                self.config_file
+            )
         else:
             self._logger.debug(
-                "Found existing config file {}".format(self.config_file))
+                "Found existing config file %s",
+                self.config_file
+            )
 
         if not os.path.exists(self.tabs_file):
             pathlib.Path(self.tabs_file).touch()
 
             self._logger.debug(
-                "No tabs.yml file found. Generated {}".format(self.tabs_file))
+                "No tabs.yml file found. Generated %s", self.tabs_file)
         else:
             self._logger.debug(
-                "Found existing tabs file {}".format(self.tabs_file))
+                "Found existing tabs file %s", self.tabs_file)
 
         if self.user_data_dir and not os.path.exists(self.user_data_dir):
             os.makedirs(self.user_data_dir)
-            self._logger.debug("Created directory {}".format(
-                self.user_data_dir))
+            self._logger.debug("Created directory %s", self.user_data_dir)
 
         else:
             self._logger.debug(
-                "Found existing user data directory {}".format(
-                    self.user_data_dir))
+                "Found existing user data directory %s",
+                self.user_data_dir
+            )
 
         if self.app_data_dir is not None and \
                 not os.path.exists(self.app_data_dir):
 
             os.makedirs(self.app_data_dir)
-            self._logger.debug("Created {}".format(self.app_data_dir))
+            self._logger.debug("Created %s", self.app_data_dir)
         else:
             self._logger.debug(
                 "Found existing app data "
-                "directory {}".format(self.app_data_dir))
+                "directory %s",
+                self.app_data_dir
+            )
+
+
+class SingleWorkflowLauncher(AbsStarter):
+    """Single workflow launcher.
+
+    .. versionadded:: 0.2.0
+       Added SingleWorkflowLauncher class for running a single workflow \
+            without user interaction. Useful for building new workflows.
+
+    """
+
+    def __init__(self) -> None:
+        """Set up window for running a single workflow."""
+        super().__init__()
+        self.window: Optional[MainWindow] = None
+        self._active_workflow: Optional[job.AbsWorkflow] = None
+        self.options: Dict[str, Union[str, bool]] = {}
+
+    def run(self) -> int:
+        """Run the workflow configured with the options given."""
+        if self._active_workflow is None:
+            raise AttributeError("Workflow has not been set")
+
+        with worker.ToolJobManager() as work_manager:
+            self._run(work_manager)
+        return 0
+
+    def _run(self, work_manager):
+        window = MainWindow(
+            work_manager=work_manager,
+            debug=False)
+
+        window.show()
+
+        runner_strategy = \
+            runner_strategies.UsingExternalManagerForAdapter(work_manager)
+
+        self._active_workflow.validate_user_options(**self.options)
+
+        runner_strategy.run(window,
+                            self._active_workflow,
+                            self.options,
+                            window.log_manager)
+        window.log_manager.handlers.clear()
+
+    def initialize(self) -> None:
+        """No initialize is needed."""
+
+    def set_workflow(self, workflow: job.AbsWorkflow):
+        """Set the current workflow."""
+        self._active_workflow = workflow
 
 
 class TabsEditorApp(QtWidgets.QDialog):
-    """Dialog box for editing tabs.yml file"""
+    """Dialog box for editing tabs.yml file."""
 
     def __init__(self, *args, **kwargs) -> None:
+        """Create a tabs editor dialog window."""
         super().__init__(*args, **kwargs)
         self.setWindowTitle("Speedwagon Tabs Editor")
         layout = QtWidgets.QVBoxLayout()
         self.editor = TabEditor()
         layout.addWidget(self.editor)
-        self.dialogButtonBox = QtWidgets.QDialogButtonBox(self)
-        layout.addWidget(self.dialogButtonBox)
+        self.dialog_button_box = QtWidgets.QDialogButtonBox(self)
+        layout.addWidget(self.dialog_button_box)
 
-        self.dialogButtonBox.setStandardButtons(
+        self.dialog_button_box.setStandardButtons(
             cast(
                 QtWidgets.QDialogButtonBox.StandardButtons,
                 QtWidgets.QDialogButtonBox.Cancel |
@@ -448,8 +579,8 @@ class TabsEditorApp(QtWidgets.QDialog):
 
         self.setLayout(layout)
 
-        self.dialogButtonBox.accepted.connect(self.on_okay)
-        self.dialogButtonBox.rejected.connect(self.on_cancel)
+        self.dialog_button_box.accepted.connect(self.on_okay)
+        self.dialog_button_box.rejected.connect(self.on_cancel)
         self.rejected.connect(self.on_cancel)
 
     def load_all_workflows(self) -> None:
@@ -472,6 +603,7 @@ class TabsEditorApp(QtWidgets.QDialog):
         self.close()
 
     def load_tab_file(self, filename: str) -> None:
+        """Load tab file."""
         self.editor.tabs_file = filename
 
     @property
@@ -484,6 +616,7 @@ class TabsEditorApp(QtWidgets.QDialog):
 
 
 def standalone_tab_editor(app: QtWidgets.QApplication = None) -> None:
+    """Launch standalone tab editor app."""
     print("Loading settings")
     settings = speedwagon.config.get_platform_settings()
 
@@ -500,12 +633,75 @@ def standalone_tab_editor(app: QtWidgets.QApplication = None) -> None:
     app.exec()
 
 
+class ApplicationLauncher:
+    """Application launcher.
+
+    .. versionadded:: 0.2.0
+       Added ApplicationLauncher for launching speedwagon in different ways.
+
+    Examples:
+       The easy way
+
+        .. testsetup::
+
+            from speedwagon.startup import ApplicationLauncher, StartupDefault
+            from unittest.mock import Mock
+
+        .. doctest::
+           :skipif: True
+
+           >>> app = ApplicationLauncher()
+           >>> app.run()
+
+       or
+
+        .. testsetup::
+
+            from speedwagon.workflows.workflow_capture_one_to_dl_compound_and_dl import CaptureOneToDlCompoundAndDLWorkflow  # noqa: E501 pylint: disable=line-too-long
+
+
+        .. testcode::
+           :skipif: True
+
+           >>> startup_strategy = SingleWorkflowLauncher()
+           >>> startup_strategy.set_workflow(
+           ...      CaptureOneToDlCompoundAndDLWorkflow()
+           ... )
+           >>> startup_strategy.options = {
+           ...      "Input": "source/images/",
+           ...      "Package Type": "Capture One",
+           ...      "Output Digital Library": "output/dl",
+           ...      "Output HathiTrust": "output/ht"
+           ... }
+           >>> app = ApplicationLauncher(strategy=startup_strategy)
+           >>> app.run()
+    """
+
+    def __init__(self, strategy: AbsStarter = None) -> None:
+        """Strategy pattern for loading speedwagon in different ways.
+
+        Args:
+            strategy: Starter strategy class.
+        """
+        super().__init__()
+        self.strategy = strategy or StartupDefault()
+
+    def initialize(self) -> None:
+        """Initialize anything that needs to done prior to running."""
+        self.strategy.initialize()
+
+    def run(self) -> int:
+        """Run Speedwagon."""
+        return self.strategy.run()
+
+
 def main(argv: List[str] = None) -> None:
+    """Launch main entry point."""
     argv = argv or sys.argv
     if "tab-editor" in argv:
         standalone_tab_editor()
         return
-    app = StartupDefault()
+    app = ApplicationLauncher()
     app.initialize()
     sys.exit(app.run())
 

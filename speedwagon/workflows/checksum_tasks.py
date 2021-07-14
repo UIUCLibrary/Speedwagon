@@ -1,4 +1,7 @@
+"""Shared checksum tasks."""
+
 import os
+import typing
 
 from pyhathiprep import checksum
 
@@ -15,6 +18,7 @@ class MakeChecksumTask(tasks.Subtask):
             filename: str,
             checksum_report: str
     ) -> None:
+        """Create a make checksum task."""
         super().__init__()
         self._source_path = source_path
         self._filename = filename
@@ -44,8 +48,11 @@ class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
     def __init__(
             self,
             output_filename: str,
-            checksum_calculations
+            checksum_calculations: typing.Iterable[
+                typing.Mapping[ResultsValues, str]
+            ]
     ) -> None:
+        """Create a checksum report task."""
         super().__init__()
         self._output_filename = output_filename
         self._checksum_calculations = checksum_calculations
@@ -57,7 +64,7 @@ class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
             filename = item[ResultsValues.SOURCE_FILE]
             hash_value = item[ResultsValues.SOURCE_HASH]
             report_builder.add_entry(filename, hash_value)
-        report = report_builder.build()
+        report: str = report_builder.build()
 
         with open(self._output_filename, "w", encoding="utf-8") as write_file:
             write_file.write(report)

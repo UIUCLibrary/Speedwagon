@@ -1,3 +1,5 @@
+"""Configuration settings."""
+
 import abc
 import os
 import platform
@@ -93,15 +95,19 @@ class SettingsDialog(QtWidgets.QDialog):
 
         self.setWindowTitle("Settings")
         layout = QtWidgets.QVBoxLayout(self)
-        self.tabsWidget = QtWidgets.QTabWidget(self)
-        layout.addWidget(self.tabsWidget)
+        self.tabs_widget = QtWidgets.QTabWidget(self)
+        layout.addWidget(self.tabs_widget)
 
         self.open_settings_path_button = QtWidgets.QPushButton(self)
         self.open_settings_path_button.setText("Open Config File Directory")
 
+        # pylint: disable=unnecessary-lambda
+        # This needs a lambda to delay execution. Otherwise Qt might segfault
+        # when it tries to open the dialog box
         self.open_settings_path_button.clicked.connect(
             lambda: self.open_settings_dir()
         )
+        # pylint: enable=unnecessary-lambda
 
         layout.addWidget(self.open_settings_path_button)
 
@@ -123,7 +129,7 @@ class SettingsDialog(QtWidgets.QDialog):
         self.setFixedWidth(600)
 
     def add_tab(self, tab: QtWidgets.QWidget, tab_name: str) -> None:
-        self.tabsWidget.addTab(tab, tab_name)
+        self.tabs_widget.addTab(tab, tab_name)
 
     def open_settings_dir(self, strategy: AbsOpenSettings = None) -> None:
         if self.settings_location is None:
@@ -152,7 +158,7 @@ class GlobalSettingsTab(QtWidgets.QWidget):
             parent: QtWidgets.QWidget = None,
             *args, **kwargs
     ) -> None:
-
+        """Create a global settings tab widget."""
         super().__init__(parent, *args, **kwargs)
         self.config_file: Optional[str] = None
         self._modified = False
@@ -193,8 +199,8 @@ class GlobalSettingsTab(QtWidgets.QWidget):
 
         print("Saving changes")
         data = config.serialize_settings_model(self.settings_table.model())
-        with open(self.config_file, "w") as fw:
-            fw.write(data)
+        with open(self.config_file, "w") as file_writer:
+            file_writer.write(data)
 
         msg_box = QtWidgets.QMessageBox(self)
         msg_box.setWindowTitle("Saved changes")
@@ -207,7 +213,7 @@ class TabsConfigurationTab(QtWidgets.QWidget):
                  parent: QtWidgets.QWidget = None,
                  *args,
                  **kwargs) -> None:
-
+        """Create a tab configuration widget."""
         super().__init__(parent, *args, **kwargs)
         self.settings_location: Optional[str] = None
         self._modified = False
@@ -247,13 +253,14 @@ class TabsConfigurationTab(QtWidgets.QWidget):
 
 class TabEditor(QtWidgets.QWidget):
     def __init__(self, *args, **kwargs) -> None:
+        """Create a tab editor widget."""
         super().__init__(*args, **kwargs)
         with resources.path("speedwagon.ui", "tab_editor.ui") as ui_file:
             uic.loadUi(ui_file, self)
 
         self._tabs_file: Optional[str] = None
 
-        self._tabs_model: QtCore.QAbstractListModel = models.TabsModel()
+        self._tabs_model = models.TabsModel()
 
         self._all_workflows_model: models.WorkflowListModel2 = \
             models.WorkflowListModel2()
@@ -303,10 +310,12 @@ class TabEditor(QtWidgets.QWidget):
         else:
             self.tabWorkflowsListView.setModel(models.WorkflowListModel2())
 
-    def _create_new_tab(self):
+    def _create_new_tab(self) -> None:
         while True:
+            new_tab_name: str
+            accepted: bool
             new_tab_name, accepted = QtWidgets.QInputDialog.getText(
-                self.parent(), "Create New Tab", "Tab name")
+                self.parentWidget(), "Create New Tab", "Tab name")
 
             # The user cancelled
             if not accepted:
@@ -330,7 +339,7 @@ class TabEditor(QtWidgets.QWidget):
     def _delete_tab(self) -> None:
         data = self.selectedTabComboBox.currentData()
         model = self.selectedTabComboBox.model()
-        model -= data
+        model.remove_tab(data)
 
     def _add_items_to_tab(self) -> None:
         model: models.WorkflowListModel2 = self.tabWorkflowsListView.model()
@@ -355,8 +364,9 @@ class TabEditor(QtWidgets.QWidget):
             workflows: Dict[str, Type[job.Workflow]]
     ) -> None:
 
-        for k, v in workflows.items():
-            self._all_workflows_model.add_workflow(v)
+        for values in workflows.values():
+            self._all_workflows_model.add_workflow(values)
+
         self._all_workflows_model.sort(0)
         self.allWorkflowsListView.setModel(self._all_workflows_model)
 

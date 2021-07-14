@@ -1,14 +1,15 @@
+"""Validating technical metadata."""
+
 import os
 import typing
 import warnings
-from typing import Iterable, Optional, List, Any, Union
+from typing import Optional, List, Any, Union
 import enum
 
 from uiucprescon import imagevalidate
 
 from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
-import speedwagon.tasks
 from . import shared_custom_widgets
 
 
@@ -42,13 +43,6 @@ class ValidateMetadataWorkflow(AbsWorkflow):
                   "\n" \
                   "Input is path that contains subdirectory which " \
                   "containing a series of jp2 files."
-
-    def _locate_checksum_files(self, root: str) -> Iterable[str]:
-        for root, dirs, files in os.walk(root):
-            for file_ in files:
-                if file_ != "checksum.md5":
-                    continue
-                yield os.path.join(root, file_)
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data,
@@ -108,7 +102,7 @@ class ValidateMetadataWorkflow(AbsWorkflow):
         return True
 
     def create_new_task(self,
-                        task_builder: "speedwagon.tasks.TaskBuilder",
+                        task_builder: "tasks.TaskBuilder",
                         **job_args: str):
         filename = job_args[JobValues.ITEM_FILENAME.value]
 
@@ -120,11 +114,11 @@ class ValidateMetadataWorkflow(AbsWorkflow):
 
     @classmethod
     def generate_report(cls,
-                        results: List[speedwagon.tasks.Result],
+                        results: List[tasks.Result],
                         **user_args) -> Optional[str]:
 
         def validation_result_filter(
-                task_result: speedwagon.tasks.Result) -> bool:
+                task_result: tasks.Result) -> bool:
             if task_result.source != ValidateImageMetadataTask:
                 return False
             return True
@@ -132,8 +126,7 @@ class ValidateMetadataWorkflow(AbsWorkflow):
         def filter_only_invalid(task_result) -> bool:
             if task_result[ResultValues.VALID]:
                 return False
-            else:
-                return True
+            return True
 
         def invalid_messages(task_result) -> str:
             source = task_result[ResultValues.FILENAME]
@@ -144,8 +137,9 @@ class ValidateMetadataWorkflow(AbsWorkflow):
             ])
             return message
 
-        data = [i for i in map(
-            lambda x: x.data, filter(validation_result_filter, results))]
+        data = list(
+            map(lambda x: x.data, filter(validation_result_filter, results))
+        )
 
         line_sep = "\n" + "-" * 60
         total_results = len(data)
@@ -171,7 +165,7 @@ class ValidateMetadataWorkflow(AbsWorkflow):
         return report
 
 
-class LocateTiffImageTask(speedwagon.tasks.Subtask):
+class LocateTiffImageTask(tasks.Subtask):
 
     def __init__(self, root: str) -> None:
         warnings.warn("Use LocateImagesTask instead", DeprecationWarning)
@@ -192,7 +186,7 @@ class LocateTiffImageTask(speedwagon.tasks.Subtask):
         return True
 
 
-class LocateImagesTask(speedwagon.tasks.Subtask):
+class LocateImagesTask(tasks.Subtask):
     def __init__(self,
                  root: str,
                  profile_name: str) -> None:
@@ -206,9 +200,9 @@ class LocateImagesTask(speedwagon.tasks.Subtask):
 
     def work(self) -> bool:
         image_files = []
-        for root, dirs, files in os.walk(self._root):
+        for root, _, files in os.walk(self._root):
             for file_name in files:
-                base, ext = os.path.splitext(file_name)
+                _, ext = os.path.splitext(file_name)
                 if not ext.lower() in self._profile.valid_extensions:
                     continue
                 image_file = os.path.join(root, file_name)
@@ -218,7 +212,7 @@ class LocateImagesTask(speedwagon.tasks.Subtask):
         return True
 
 
-class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
+class ValidateImageMetadataTask(tasks.Subtask):
     def __init__(
             self,
             filename: str,

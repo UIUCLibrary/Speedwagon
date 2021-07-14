@@ -63,7 +63,8 @@ class HathiTrustProfile(AbsProfile):
                     os.scandir(root_access)):
                 yield source_file.path
 
-    def _find_root_access(self, path: str) -> Iterable[str]:
+    @staticmethod
+    def _find_root_access(path: str) -> Iterable[str]:
         for root, dirs, _ in os.walk(path):
             for _dir in dirs:
                 if _dir == "access":
@@ -97,12 +98,13 @@ class MakeJp2Workflow(job.AbsWorkflow):
                   "For example, the following directory would have " \
                   "\"c:\\package_dirs\" for Input:\n" \
                   "\n" \
-                  "c:\\package_dirs\n"\
-                  " └── 99423682912205899/\n"\
-                  "    └── access/\n" \
-                  "        ├── 99423682912205899-00000001.tif\n" \
-                  "        ├── 99423682912205899-00000002.tif\n" \
-                  "            and etc...\n"
+                  "| c:\\package_dirs\n"\
+                  "|.└── 99423682912205899/\n"\
+                  "|....└── access/\n" \
+                  "|.......├── 99423682912205899-00000001.tif\n" \
+                  "|.......├── 99423682912205899-00000002.tif\n" \
+                  "\n" \
+                  "    and etc...\n"
 
     active = True
 

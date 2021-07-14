@@ -10,3 +10,12 @@ junit_family="xunit2"
 markers=[
     "adapter"
 ]
+
+[tool.pydocstyle]
+# Ignore files that end in _ui.py because they are machine generated
+match="((?!test).*)(^(?!.*(ui)).*)\\.py"
+
+[tool.mypy]
+python_version = "3.8"
+ignore_missing_imports = true
+

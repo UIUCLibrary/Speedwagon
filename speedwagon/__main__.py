@@ -1,3 +1,5 @@
+"""Entry-point for running speedwagon as an executable module."""
+
 import logging
 import sys
 
@@ -14,6 +16,7 @@ logger.addHandler(logging.StreamHandler())
 
 
 def main(argv: List[str] = None) -> None:
+    """Launch main entry point."""
     argv = argv or sys.argv
 
     if len(argv) > 1 and argv[1] == "--pytest":

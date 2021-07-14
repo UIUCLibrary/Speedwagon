@@ -1,4 +1,4 @@
-"""Load and save user configurations"""
+"""Load and save user configurations."""
 import configparser
 import contextlib
 import os
@@ -8,7 +8,8 @@ from pathlib import Path
 import io
 import abc
 import collections.abc
-from typing import Optional, Dict, Type, Set, Iterator, Iterable
+from typing import Optional, Dict, Type, Set, Iterator, Iterable, Union
+from types import TracebackType
 import platform
 
 from PyQt5.QtCore import QAbstractItemModel
@@ -18,28 +19,31 @@ from speedwagon.models import SettingsModel
 
 
 class AbsConfig(collections.abc.Mapping):
-    """Abstract class for defining where speedwagon should locate data files"""
+    """Abstract class for defining where speedwagon should find data files."""
 
     def __init__(self) -> None:
+        """Populate the base structure of a config class."""
         super().__init__()
-        self._data: Dict[str, str] = dict()
+        self._data: Dict[str,  Union[str, bool]] = dict()
 
     @abc.abstractmethod
     def get_user_data_directory(self) -> str:
-        """Location for user data"""
+        """Location for user data."""
 
     @abc.abstractmethod
     def get_app_data_directory(self) -> str:
-        """Location to the application data. Such as .ini file"""
+        """Location to the application data. Such as .ini file."""
 
     def __len__(self) -> int:
+        """Get the size of the configuration."""
         return len(self._data)
 
     def __iter__(self) -> Iterator[str]:
+        """Iterate over the configuration information."""
         return iter(self._data)
 
     def __contains__(self, x: object) -> bool:
-
+        """Check if configuration key is in configuration."""
         if x == "app_data_directory":
             return True
 
@@ -48,8 +52,8 @@ class AbsConfig(collections.abc.Mapping):
 
         return x in self._data
 
-    def __getitem__(self, k: str) -> str:
-
+    def __getitem__(self, k: str) -> Union[str, bool]:
+        """Get configuration value from a key."""
         if k == "user_data_directory":
             return self.get_user_data_directory()
 
@@ -75,7 +79,7 @@ class NixConfig(AbsConfig):
 
 
 class WindowsConfig(AbsConfig):
-    """Speedwagon configuration for running on Microsoft Windows machine
+    r"""Speedwagon configuration for running on Microsoft Windows machine.
 
     It uses a subfolder in the user's home directory to store data such as
     tesseract ocr data. For example:
@@ -89,6 +93,7 @@ class WindowsConfig(AbsConfig):
         return os.path.join(str(Path.home()), "Speedwagon", "data")
 
     def get_app_data_directory(self) -> str:
+        """Get path the app data for the current system."""
         data_path = os.getenv("LocalAppData")
         if data_path:
             return os.path.join(data_path, "Speedwagon")
@@ -100,22 +105,30 @@ class ConfigManager(contextlib.AbstractContextManager):
             "debug",
         ]
 
-    def __init__(self, config_file):
+    def __init__(self, config_file: str):
+        """Set up configuration manager."""
         self._config_file = config_file
-        self.cfg_parser = None
+        self.cfg_parser: Optional['configparser.ConfigParser'] = None
 
-    def __enter__(self):
+    def __enter__(self) -> "ConfigManager":
+        """Open file with parser."""
         self.cfg_parser = configparser.ConfigParser()
         self.cfg_parser.read(self._config_file)
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        pass
+    def __exit__(self,
+                 exctype: Optional[Type[BaseException]],
+                 excinst: Optional[BaseException],
+                 exctb: Optional[TracebackType]) -> Optional[bool]:
+        return None
 
     @property
-    def global_settings(self) -> dict:
+    def global_settings(self) -> Dict[str, Union[str, bool]]:
 
-        global_settings = dict()
+        if self.cfg_parser is None:
+            return {}
+
+        global_settings: Dict[str, Union[str, bool]] = dict()
         try:
             global_section = self.cfg_parser["GLOBAL"]
             for setting in ConfigManager.BOOLEAN_SETTINGS:
@@ -133,8 +146,7 @@ class ConfigManager(contextlib.AbstractContextManager):
 
 
 def generate_default(config_file: str) -> None:
-    """Generate config file with default settings"""
-
+    """Generate config file with default settings."""
     base_directory = os.path.dirname(config_file)
     if base_directory and not os.path.exists(base_directory):
         os.makedirs(base_directory)
@@ -161,8 +173,10 @@ def generate_default(config_file: str) -> None:
 
 def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
         AbsConfig:
-    """Load a configuration of config.AbsConfig
-    If no argument is included, it will try to guess the best one."""
+    """Load a configuration of config.AbsConfig.
+
+    If no argument is included, it will try to guess the best one.
+    """
     configurations: Dict[str, Type[AbsConfig]] = {
         "Windows": WindowsConfig,
         "Darwin": NixConfig,
@@ -177,7 +191,7 @@ def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
 
 
 def build_setting_model(config_file: str) -> SettingsModel:
-    """Read a configuration file and generate a SettingsModel"""
+    """Read a configuration file and generate a SettingsModel."""
     if not os.path.exists(config_file):
         raise FileNotFoundError(f"No existing Configuration in ${config_file}")
 
@@ -215,7 +229,7 @@ def serialize_settings_model(model: QAbstractItemModel) -> str:
 
 def find_missing_global_entries(
         config_file: str,
-        expected_keys) -> Optional[Set[str]]:
+        expected_keys: Iterable[str]) -> Optional[Set[str]]:
     """Locate any missing entries from a config file.
 
     Notes:

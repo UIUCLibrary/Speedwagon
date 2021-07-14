@@ -1,3 +1,5 @@
+"""Workflow for converting CaptureOne images to Digital Library format."""
+
 import abc
 import itertools
 import os
@@ -55,12 +57,12 @@ class ConvertFile(AbsProcessStrategy):
                                         basename + ".jp2"
                                         )
 
-        rc = pykdu_compress.kdu_compress_cli2(
+        return_core = pykdu_compress.kdu_compress_cli2(
             infile=source_file, outfile=output_file_path)
 
-        if rc != 0:
+        if return_core != 0:
             raise ProcessingException("kdu_compress_cli returned "
-                                      "nonzero value: {}.".format(rc))
+                                      "nonzero value: {}.".format(return_core))
         self.output = output_file_path
         self.status = "Generated {}".format(output_file_path)
 
@@ -91,7 +93,7 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
             if not item.is_file():
                 return False
 
-            basename, ext = os.path.splitext(item.name)
+            _, ext = os.path.splitext(item.name)
             if ext.lower() != ".tif":
                 return False
 
@@ -184,8 +186,10 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
                 return False
             return True
 
-        t1, t2 = itertools.tee(results)
-        return itertools.filterfalse(successful, t1), filter(successful, t2)
+        iterator_1, iterator_2 = itertools.tee(results)
+        return \
+            itertools.filterfalse(successful, iterator_1), \
+            filter(successful, iterator_2)
 
 
 class PackageImageConverterTask(tasks.Subtask):
@@ -198,8 +202,6 @@ class PackageImageConverterTask(tasks.Subtask):
     def work(self) -> bool:
         des_path = self._dest_path
 
-        basename, _ = os.path.splitext(self._source_file_path)
-
         process_task = ProcessFile(ConvertFile())
 
         try:
@@ -211,8 +213,8 @@ class PackageImageConverterTask(tasks.Subtask):
         try:
             process_task.process(self._source_file_path, des_path)
             success = True
-        except ProcessingException as e:
-            print(e, file=sys.stderr)
+        except ProcessingException as error:
+            print(error, file=sys.stderr)
             success = False
 
         self.set_results(

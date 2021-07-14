@@ -1,6 +1,8 @@
+"""Dialog boxes."""
+
 from typing import Collection
 
-from PyQt5 import QtWidgets, QtGui  # type: ignore
+from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
@@ -10,16 +12,16 @@ import speedwagon
 
 
 class ErrorDialogBox(QtWidgets.QMessageBox):
-    """Dialog box to use for Error Messages causes while trying to run a job
-    in Speedwagon"""
+    """Dialog box for Error Messages causes while running a job."""
 
     def __init__(self, *__args) -> None:
+        """Create a error dialog box."""
         super().__init__(*__args)
         self.setIcon(QtWidgets.QMessageBox.Critical)
         self.setStandardButtons(QtWidgets.QMessageBox.Abort)
         self.setSizeGripEnabled(True)
 
-    def event(self, event) -> bool:
+    def event(self, event: QtCore.QEvent) -> bool:
         # Allow the dialog box to be resized so that the additional information
         # can be readable
 
@@ -45,12 +47,13 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
 
 
 class WorkProgressBar(QtWidgets.QProgressDialog):
-    """Use this for showing progress """
+    """Use this for showing progress."""
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         super().closeEvent(event)
 
     def __init__(self, *args) -> None:
+        """Create a work progress dialog window."""
         super().__init__(*args)
         self.setModal(True)
         self.setMinimumHeight(100)
@@ -65,7 +68,8 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
         self.setMinimumHeight(self._label.sizeHint().height() + 75)
 
 
-def about_dialog_box(parent):
+def about_dialog_box(parent) -> None:
+    """Launch the about speedwagon dialog box."""
     try:
         pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
         summary = pkg_metadata['Summary']
@@ -83,8 +87,10 @@ def about_dialog_box(parent):
 
 
 class SystemInfoDialog(QtWidgets.QDialog):
+    """System information dialog window."""
 
     def __init__(self, parent: QtWidgets.QWidget, *args, **kwargs) -> None:
+        """Display System information."""
         super().__init__(parent, *args, **kwargs)
 
         self.setWindowTitle("System Information")
@@ -114,7 +120,6 @@ class SystemInfoDialog(QtWidgets.QDialog):
             metadata.distributions(),
             key=lambda x: x.metadata['Name'].upper()
         )
-        installed_python_packages = [
+        return [
             f"{x.metadata['Name']} {x.metadata['Version']}" for x in pkgs
         ]
-        return installed_python_packages

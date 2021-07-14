@@ -1,3 +1,5 @@
+"""Workflow for verifying checksums."""
+
 import abc
 import collections
 import itertools
@@ -48,7 +50,8 @@ class ChecksumWorkflow(AbsWorkflow):
                   "values. The listed files are expected to be siblings to " \
                   "the checksum file."
 
-    def _locate_checksum_files(self, root: str) -> Iterable[str]:
+    @staticmethod
+    def _locate_checksum_files(root: str) -> Iterable[str]:
         for root, dirs, files in os.walk(root):
             for file_ in files:
                 if file_ != "checksum.md5":
@@ -125,10 +128,13 @@ class ChecksumWorkflow(AbsWorkflow):
                 return False
             return True
 
-        data = map(lambda x: x.data, filter(validation_result_filter, results))
         line_sep = "\n" + "-" * 60
-        sorted_results = cls._sort_results(data)
-        results_with_failures = cls.find_failed(sorted_results)
+        results_with_failures = cls.find_failed(
+            cls._sort_results(
+                map(lambda x: x.data,
+                    filter(validation_result_filter, results))
+            )
+        )
 
         if len(results_with_failures) > 0:
             messages = []
@@ -187,11 +193,12 @@ class ChecksumWorkflow(AbsWorkflow):
         sorted_results = sorted(results,
                                 key=lambda it:
                                 it[ResultValues.CHECKSUM_REPORT_FILE])
-        for k, v in itertools.groupby(sorted_results,
-                                      key=lambda it:
-                                      it[ResultValues.CHECKSUM_REPORT_FILE]):
-            for result_data in v:
-                new_results[k].append(result_data)
+        for key, value in itertools.groupby(
+                sorted_results,
+                key=lambda it: it[ResultValues.CHECKSUM_REPORT_FILE]):
+
+            for result_data in value:
+                new_results[key].append(result_data)
         return dict(new_results)
 
 
@@ -396,12 +403,12 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
             results, key=lambda it: it[ResultValues.CHECKSUM_REPORT_FILE]
         )
 
-        for k, v in itertools.groupby(
+        for key, value in itertools.groupby(
                 sorted_results,
                 key=lambda it: it[ResultValues.CHECKSUM_REPORT_FILE]
         ):
-            for result_data in v:
-                new_results[k].append(result_data)
+            for result_data in value:
+                new_results[key].append(result_data)
         return dict(new_results)
 
     @classmethod

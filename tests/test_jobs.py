@@ -18,3 +18,15 @@ def test_all_required_workflow_keys(monkeypatch):
     assert speedwagon.job.all_required_workflow_keys() == {
         "spam_setting", "bacon_setting"
     }
+
+
+class TestWorkflowFinder:
+    def test_no_module_error(self):
+        finder = speedwagon.job.WorkflowFinder("fakepath")
+        finder.logger.warning = Mock()
+        all( finder.load("notavalidmodule"))
+        assert finder.logger.warning.called is True
+        finder.logger.warning.assert_called_with(
+            "Unable to load notavalidmodule. "
+            "Reason: No module named 'speedwagon.workflows.notavalidmodule'"
+        )

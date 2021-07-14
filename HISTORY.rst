@@ -2,8 +2,34 @@
 
 Release History
 ---------------
-0.1.4
-+++++
+
+Version 0.1.5
++++++++++++++
+
+* General
+    * Windows versions are available with a private Chocolatey repository.
+
+* New Workflows
+    * Convert HathiTrust limited view to Digital library
+* Workflow improvements
+    * CaptureOne Batch to HathiTrust TIFF Complete Package
+        * Support for MMSID and bibid identifiers.
+        * Support for new marc data server.
+    * Convert CaptureOne TIFF to Digital Library Compound Object
+        * Support file names using a dash delimiter
+    * Convert CaptureOne TIFF to Digital Library Compound Object and HathiTrust
+        * Support for MMSID and bibid identifiers.
+        * When an output format is not set in the settings, no output format
+            will for that format will be generated. As long as one output
+            format is set, the workflow will run. Previously, speedwagon  would
+            present the user with an error.
+    * Generate MARC.XML Files
+        * Support MMSID identifiers
+        * Support adding 955 field
+        * getmarc stops and present an error message if connectivity problems with server
+
+Version 0.1.4
++++++++++++++
 
 * General
    * Splash screen while loading UI
@@ -20,19 +46,21 @@ Release History
 * New Tools:
    * Make JP2
 
-0.1.3
-+++++
+Version 0.1.3
++++++++++++++
+
 * General:
-  * Text from the console can be exported to a log file
+    * Text from the console can be exported to a log file
 * New Workflows:
-   * Generate OCR Files
+    * Generate OCR Files
 * Fixes:
     * Verify HathiTrust Package Completeness workflow no longer fails on hidden system directories.
     * DPI is updated when creating access files for hathi
 
 
-0.1.2
-+++++
+Version 0.1.2
++++++++++++++
+
 * New Tools:
    * Validate Tiff Image Metadata for HathiTrust
 * New Workflows:
@@ -54,8 +82,8 @@ Release History
     * Error message returned by jp2 converter are decoded correctly
     * Compatibility with white spaces in file path no longer breaks jp2 conversion
 
-0.1.1
-+++++
+Version 0.1.1
++++++++++++++
 * General:
    * Added Workflow tab
    * Add Worflow API
@@ -70,8 +98,9 @@ Release History
    * CaptureOne Batch to HathiTrust TIFF Complete Package
 
 
-0.0.3
-+++++
+Version 0.0.3
++++++++++++++
+
 * Improved performance and responsiveness
 * New Tools:
    * Convert CaptureOne TIFF to Hathi TIFF package
@@ -81,8 +110,9 @@ Release History
    * * Verify HathiTrust Package Completeness optionally checks if the OCR files contain any characters that are not in UTF-8
 
 
-0.0.2
-+++++
+Version 0.0.2
++++++++++++++
+
 * General:
    * Report more verbose detail on the processes working. This is done by piping the log information used by the dependent tools into the information presented to the user.
 * User Interface:
@@ -96,8 +126,8 @@ Release History
    * Verify HathiTrust Package Completeness generates a file manifest report as well as an error report
 
 
-0.0.1
-+++++
+Version 0.0.1
++++++++++++++
 * Named Forseti
 * Working Tools:
    * Verify HathiTrust Package Completeness
@@ -107,9 +137,3 @@ Release History
 * Fixes:
    * Verify HathiTrust Package Completeness optionally checks for OCR files
    * Verify HathiTrust Package Completeness issue when dealing with paths that include spaces
-
-
-Dev
-+++
-
-* getmarc stops and present an error message if connectivity problems with server

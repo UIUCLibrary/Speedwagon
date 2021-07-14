@@ -1,7 +1,8 @@
-"""Main UI code
+"""Main UI code.
 
 Mainly for connecting GUI elements, such as buttons, to functions and methods
-that do the work"""
+that do the work
+"""
 import logging
 import os
 import sys
@@ -15,6 +16,7 @@ try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
+from collections import namedtuple
 
 try:  # pragma: no cover
     from importlib import resources
@@ -31,7 +33,8 @@ from speedwagon import tabs, worker
 import speedwagon
 import speedwagon.startup
 import speedwagon.config
-from collections import namedtuple
+from speedwagon.ui import main_window_shell_ui  # type: ignore
+
 
 DEBUG_LOGGING_FORMAT = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -50,13 +53,31 @@ Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 
 
 class ToolConsole(QtWidgets.QWidget):
-    """Logging console."""
+    """Tool Console."""
 
-    def __init__(self, parent: QtWidgets.QWidget = None) -> None:
+    def __init__(self, parent: QtWidgets.QWidget) -> None:
         super().__init__(parent)
-        with resources.path("speedwagon.ui",
-                            "console.ui") as ui_file:
-            uic.loadUi(ui_file, self)
+        layout = QtWidgets.QVBoxLayout(self)
+
+        # set only the top margin to 0
+        default_style = self.style()
+
+        left_margin = default_style.pixelMetric(
+            QtWidgets.QStyle.PM_LayoutLeftMargin)
+
+        right_margin = default_style.pixelMetric(
+            QtWidgets.QStyle.PM_LayoutRightMargin)
+
+        bottom_margin = default_style.pixelMetric(
+            QtWidgets.QStyle.PM_LayoutBottomMargin)
+
+        layout.setContentsMargins(left_margin, 0, right_margin, bottom_margin)
+
+        self.setLayout(layout)
+
+        self._console = QtWidgets.QTextBrowser(self)
+
+        self.layout().addWidget(self._console)
 
         #  Use a monospaced font based on what's on system running
         monospaced_font = \
@@ -138,14 +159,14 @@ class MainWindow(QtWidgets.QMainWindow):
         ###########################################################
         # Tabs
         ###########################################################
-        self.tabWidget = ItemTabsWidget(self.main_splitter)
-        self.tabWidget.setVisible(False)
+        self.tab_widget = ItemTabsWidget(self.main_splitter)
+        self.tab_widget.setVisible(False)
 
         self._tabs: List[speedwagon.tabs.ItemSelectionTab] = []
 
         # Add the tabs widget as the first widget
-        self.tabWidget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
-        self.main_splitter.addWidget(self.tabWidget)
+        self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
+        self.main_splitter.addWidget(self.tab_widget)
         self.main_splitter.setStretchFactor(0, 0)
         self.main_splitter.setStretchFactor(1, 2)
 
@@ -258,11 +279,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def set_current_tab(self, tab_name: str) -> None:
 
-        size = self.tabWidget.tabs.count()
-        for t in range(size):
-            tab_title = self.tabWidget.tabs.tabText(t)
+        size = self.tab_widget.tabs.count()
+        for tab in range(size):
+            tab_title = self.tab_widget.tabs.tabText(tab)
             if tab_name == tab_title:
-                self.tabWidget.tabs.setCurrentIndex(t)
+                self.tab_widget.tabs.setCurrentIndex(tab)
                 return
         self.log_manager.warning("Unable to set tab to {}.".format(tab_name))
 
@@ -277,8 +298,8 @@ class MainWindow(QtWidgets.QMainWindow):
         workflows_tab.parent = self
         workflows_tab.workflows = workflows
         self._tabs.append(workflows_tab)
-        self.tabWidget.add_tab(workflows_tab.tab, workflow_name)
-        self.tabWidget.setVisible(True)
+        self.tab_widget.add_tab(workflows_tab.tab, workflow_name)
+        self.tab_widget.setVisible(True)
 
     def closeEvent(self, *args, **kwargs) -> None:
         self.log_manager.removeHandler(self.console_log_handler)
@@ -289,10 +310,10 @@ class MainWindow(QtWidgets.QMainWindow):
             pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
             webbrowser.open_new(pkg_metadata['Home-page'])
 
-        except metadata.PackageNotFoundError as e:
+        except metadata.PackageNotFoundError as error:
 
             self.log_manager.warning(
-                "No help link available. Reason: {}".format(e))
+                "No help link available. Reason: {}".format(error))
 
     def show_about_window(self) -> None:
         speedwagon.dialog.dialogs.about_dialog_box(parent=self)
@@ -332,15 +353,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         config_dialog.exec()
 
-    def start_workflow(self) -> None:
-        num_selected = self._workflow_selector_view.selectedIndexes()
-        if len(num_selected) != 1:
-            print(
-                "Invalid number of selected Indexes. "
-                "Expected 1. Found {}".format(num_selected)
-            )
-            return
-
     def save_log(self) -> None:
         data = self._log_data.getvalue()
 
@@ -354,8 +366,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if not log_file_name:
             return
-        with open(log_file_name, "w") as f:
-            f.write(data)
+        with open(log_file_name, "w") as file_handle:
+            file_handle.write(data)
 
         self.log_manager.info("Saved log to {}".format(log_file_name))
 
@@ -370,6 +382,6 @@ class SplashScreenLogHandler(logging.Handler):
 
     def emit(self, record) -> None:
         self.widget.showMessage(
-            f"{record.msg}",
+            self.format(record),
             QtCore.Qt.AlignCenter,
         )

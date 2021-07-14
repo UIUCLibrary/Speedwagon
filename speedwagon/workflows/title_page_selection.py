@@ -1,10 +1,12 @@
+"""Selection of title page widget."""
+
 import os
 import typing
+from typing import NamedTuple, Any
 
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 from PyQt5.QtCore import Qt  # type: ignore
 from uiucprescon.packager.packages import collection
-from typing import NamedTuple, Any
 
 
 class ModelField(NamedTuple):
@@ -15,7 +17,7 @@ class ModelField(NamedTuple):
 
 class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
     def __init__(self, parent):
-
+        """Create a file selection item delegate widget."""
         super().__init__(parent)
 
     def createEditor(
@@ -87,7 +89,7 @@ class PackagesModel(QtCore.QAbstractTableModel):
             packages: typing.List[collection.AbsPackageComponent],
             parent=None
     ) -> None:
-
+        """Create a new package model."""
         super().__init__(parent)
         self._packages = packages
 
@@ -150,7 +152,7 @@ class PackageBrowser(QtWidgets.QDialog):
             flags: typing.Union[
                 Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
     ) -> None:
-
+        """Create a package browser dialog window."""
         super().__init__(parent, flags)
         self._parent = parent
         self._packages = packages

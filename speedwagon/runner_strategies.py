@@ -1,4 +1,4 @@
-"""Defining execution of a given workflow steps and processes"""
+"""Defining execution of a given workflow steps and processes."""
 
 import abc
 import logging
@@ -11,11 +11,14 @@ from . import tasks
 from . import worker
 from .job import AbsWorkflow, Workflow, JobCancelled
 
+USER_ABORTED_MESSAGE = "User Aborted"
+
 
 class TaskFailed(Exception):
     pass
 
 
+# pylint: disable=too-few-public-methods
 class AbsRunner(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
@@ -26,6 +29,7 @@ class AbsRunner(metaclass=abc.ABCMeta):
 
 class RunRunner:
     def __init__(self, strategy: AbsRunner) -> None:
+        """Create a new runner executor."""
         self._strategy = strategy
 
     def run(self,
@@ -33,13 +37,15 @@ class RunRunner:
             tool: AbsWorkflow, options: dict,
             logger: logging.Logger,
             completion_callback=None) -> None:
-
+        """Execute runner job."""
         self._strategy.run(parent, tool, options, logger, completion_callback)
 
 
 class UsingExternalManagerForAdapter(AbsRunner):
+    """Runner that uses external manager."""
 
     def __init__(self, manager: "worker.ToolJobManager") -> None:
+        """Create a new runner."""
         self._manager = manager
 
     @staticmethod
@@ -47,19 +53,20 @@ class UsingExternalManagerForAdapter(AbsRunner):
             runner: worker.WorkRunnerExternal3,
             current: int,
             total: int) -> None:
+        if runner.dialog is not None:
+            dialog_box = runner.dialog
+            if total != dialog_box.maximum():
+                dialog_box.setMaximum(total)
+            if current != dialog_box.value():
+                dialog_box.setValue(current)
 
-        if total != runner.dialog.maximum():
-            runner.dialog.setMaximum(total)
-        if current != runner.dialog.value():
-            runner.dialog.setValue(current)
-
-        if current == total:
-            runner.dialog.accept()
+            if current == total:
+                dialog_box.accept()
 
     def run(self,
             parent: QtWidgets.QWidget,
             job: AbsWorkflow,
-            options: dict,
+            options: Dict[str, Any],
             logger: logging.Logger,
             completion_callback=None
             ) -> None:
@@ -69,25 +76,20 @@ class UsingExternalManagerForAdapter(AbsRunner):
         temp_dir = tempfile.TemporaryDirectory()
         with temp_dir as build_dir:
             if isinstance(job, AbsWorkflow):
-
                 try:
                     pre_results = self._run_pre_tasks(parent, job, options,
                                                       build_dir, logger)
 
                     results += pre_results
 
-                    if isinstance(job, Workflow):
-                        new_options = self._get_additional_options(
-                            parent,
-                            job,
-                            options,
-                            pre_results.copy()
-                        )
+                    additional_data = \
+                        self._get_additional_data(job,
+                                                  options,
+                                                  parent,
+                                                  pre_results)
+                    if additional_data:
+                        options = {**options, **additional_data}
 
-                        if new_options:
-                            options = {**options, **new_options}
-                    else:
-                        new_options = {}
                 except JobCancelled:
                     return
 
@@ -105,7 +107,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                                                     job,
                                                     options,
                                                     pre_results,
-                                                    new_options,
+                                                    additional_data,
                                                     build_dir,
                                                     logger)
 
@@ -137,12 +139,23 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 if report:
                     logger.info(report)
 
+    def _get_additional_data(self, job, options, parent, pre_results):
+        if isinstance(job, Workflow):
+            return self._get_additional_options(
+                parent,
+                job,
+                options,
+                pre_results.copy()
+            )
+
+        return {}
+
     def _run_main_tasks(self,
                         parent: QtWidgets.QWidget,
                         job: AbsWorkflow,
-                        options,
+                        options: Dict[str, Any],
                         pretask_results,
-                        additional_data,
+                        additional_data: Dict[str, Any],
                         working_dir: str,
                         logger: logging.Logger
                         ) -> list:
@@ -200,7 +213,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                     if result is not None:
                         results.append(result)
                 if runner.was_aborted:
-                    raise TaskFailed("User Aborted")
+                    raise TaskFailed(USER_ABORTED_MESSAGE)
             finally:
                 logger.removeHandler(runner.progress_dialog_box_handler)
             return results
@@ -208,7 +221,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
     def _run_post_tasks(self,
                         parent: QtWidgets.QWidget,
                         job: AbsWorkflow,
-                        options,
+                        options: Dict[str, Any],
                         results,
                         working_dir: str,
                         logger: logging.Logger) -> list:
@@ -246,7 +259,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 runner.dialog.accept()
                 runner.dialog.close()
                 if runner.was_aborted:
-                    raise TaskFailed("User Aborted")
+                    raise TaskFailed(USER_ABORTED_MESSAGE)
                 return _results
             finally:
                 logger.removeHandler(runner.progress_dialog_box_handler)
@@ -294,12 +307,15 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 runner.dialog.accept()
                 runner.dialog.close()
                 if runner.was_aborted:
-                    raise TaskFailed("User Aborted")
+                    raise TaskFailed(USER_ABORTED_MESSAGE)
                 return results
             finally:
                 logger.removeHandler(runner.progress_dialog_box_handler)
 
     @staticmethod
-    def _get_additional_options(parent, job, options, pretask_results) -> dict:
+    def _get_additional_options(parent,
+                                job: Workflow,
+                                options: Dict[str, Any],
+                                pretask_results) -> Dict[str, Any]:
 
         return job.get_additional_info(parent, options, pretask_results)

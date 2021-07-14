@@ -1,4 +1,4 @@
-"""Common code to help generate reports for the user"""
+"""Common code to help generate reports for the user."""
 
 import functools
 import typing
@@ -7,7 +7,7 @@ import typing
 def add_report_borders(
         func: typing.Callable[..., typing.Optional[str]]
 ) -> typing.Callable[..., typing.Optional[str]]:
-
+    """Create a star character border around text report."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> typing.Optional[str]:
         report = func(*args, **kwargs)

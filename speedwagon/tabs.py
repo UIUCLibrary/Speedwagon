@@ -1,4 +1,4 @@
-"""Creating and managing tabs in the UI display"""
+"""Creating and managing tabs in the UI display."""
 import abc
 import logging
 import os
@@ -43,18 +43,18 @@ class TabWidgets(enum.Enum):
 class Tab:
     @abc.abstractmethod
     def compose_tab_layout(self) -> None:
-        """Draw the layout of the tab"""
+        """Draw the layout of the tab."""
 
     @abc.abstractmethod
     def create_actions(self) -> Tuple[Dict[str, QtWidgets.QWidget],
                                       QtWidgets.QLayout]:
-        """Generate action widgets"""
+        """Generate action widgets."""
 
     def __init__(self,
                  parent: QtWidgets.QWidget,
                  work_manager: worker.ToolJobManager
                  ) -> None:
-
+        """Create a new tab."""
         self.parent = parent
         self.work_manager = work_manager
         self.tab, self.tab_layout = self.create_tab()
@@ -142,7 +142,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             work_manager: worker.ToolJobManager,
             log_manager: logging.Logger
     ) -> None:
-
+        """Create a new item selection tab."""
         super().__init__(parent, work_manager)
         self.log_manager = log_manager
         self.item_selection_model = item_model
@@ -288,13 +288,13 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             if current.isValid():
                 self.item_selected(current)
                 self.item_form.setCurrentModelIndex(current)
-        except Exception as e:
+        except Exception as error:
             if previous.isValid():
                 self.item_selected(previous)
                 self.item_form.setCurrentModelIndex(previous)
                 self.item_selector_view.setCurrentIndex(previous)
             else:
-                traceback.print_tb(e.__traceback__)
+                traceback.print_tb(error.__traceback__)
                 self.item_selector_view.setCurrentIndex(previous)
 
     def item_selected(self, index: QtCore.QModelIndex) -> None:
@@ -355,13 +355,19 @@ class WorkflowsTab(ItemSelectionTab):
             workflows: Dict[str, Type[speedwagon.job.AbsWorkflow]],
             work_manager=None,
             log_manager=None) -> None:
-
+        """Create a new workflow tab."""
         super().__init__("Workflow", parent,
                          models.WorkflowListModel(workflows), work_manager,
                          log_manager)
+
         self._worflows = workflows
 
     def is_ready_to_start(self) -> bool:
+        """Get if the workflow is ready to start.
+
+        Returns:
+            Returns True is ready, false if not ready.
+        """
         if len(self.item_selector_view.selectedIndexes()) != 1:
             print(
                 "Invalid number of selected Indexes. "
@@ -493,11 +499,13 @@ class TabData(NamedTuple):
 
 
 def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
+    """Read a custom tab yaml file."""
     tabs_file_size = os.path.getsize(yaml_file)
     if tabs_file_size > 0:
         try:
-            with open(yaml_file) as f:
-                tabs_config_data = yaml.load(f.read(), Loader=yaml.SafeLoader)
+            with open(yaml_file) as file:
+                tabs_config_data = \
+                    yaml.load(file.read(), Loader=yaml.SafeLoader)
             if not isinstance(tabs_config_data, dict):
                 raise Exception("Failed to parse file")
 
@@ -535,6 +543,7 @@ def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
 
 
 def write_tabs_yaml(yaml_file: str, tabs: List[TabData]) -> None:
+    """Write out tab custom information to a yaml file."""
     tabs_data = dict()
     for tab in tabs:
         tab_model = tab.workflows_model
@@ -549,6 +558,7 @@ def write_tabs_yaml(yaml_file: str, tabs: List[TabData]) -> None:
 def extract_tab_information(
         model: "speedwagon.models.TabsModel"
 ) -> List[TabData]:
+    """Get tab information."""
     tabs = []
     for tab in model.tabs:
         new_tab = TabData(tab.tab_name, tab.workflows_model)
