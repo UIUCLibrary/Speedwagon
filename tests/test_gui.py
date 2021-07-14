@@ -86,7 +86,7 @@ def test_show_configuration_menu(qtbot, monkeypatch):
 
 class TestToolConsole:
     def test_add_message(self, qtbot):
-        console = speedwagon.gui.ToolConsole()
+        console = speedwagon.gui.ToolConsole(None)
         qtbot.addWidget(console)
         console.add_message("I'm a message")
         assert "I'm a message" in console.text
