@@ -22,6 +22,8 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     import importlib_resources as resources  # type: ignore
 
+from collections import namedtuple
+
 from PyQt5 import QtWidgets, QtCore, QtGui  # type: ignore
 from PyQt5 import uic
 
@@ -32,7 +34,7 @@ from speedwagon import tabs, worker
 import speedwagon
 import speedwagon.startup
 import speedwagon.config
-from collections import namedtuple
+
 
 
 DEBUG_LOGGING_FORMAT = logging.Formatter(
