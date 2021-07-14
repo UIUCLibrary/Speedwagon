@@ -14,14 +14,6 @@ PYPI_SERVERS = [
     'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_testing/'
     ]
 
-def loadConfigs(){
-    node(){
-        echo 'loading configurations'
-        checkout scm
-        return load('ci/jenkins/scripts/configs.groovy').getConfigurations()
-    }
-}
-
 def getDevPiStagingIndex(){
 
     if (env.TAG_NAME?.trim()){
@@ -31,8 +23,11 @@ def getDevPiStagingIndex(){
     }
 }
 
-
-CONFIGURATIONS = loadConfigs()
+DEVPI_CONFIG = [
+    index: getDevPiStagingIndex(),
+    server: 'https://devpi.library.illinois.edu',
+    credentialsId: 'DS_devpi',
+]
 
 
 def run_pylint(){
@@ -1137,51 +1132,174 @@ pipeline {
                         }
                     }
                 }
-                stage('Test DevPi packages') {
-                    matrix {
-                        axes {
-                            axis {
-                                name 'PLATFORM'
-                                values(
-                                    'windows',
-                                    'linux'
-                                    )
+                stage("Test DevPi packages") {
+                    steps{
+                        script{
+                            def devpi
+                            node(){
+                                devpi = load('ci/jenkins/scripts/devpi.groovy')
                             }
-                            axis {
-                                name 'PYTHON_VERSION'
-                                values(
-                                    '3.7',
-                                    '3.8',
-                                    '3.9'
-                                    )
-                            }
-                        }
-                        agent {
-                            dockerfile {
-                                additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}"
-                                filename "ci/docker/python/${PLATFORM}/tox/Dockerfile"
-                                label "${PLATFORM} && docker"
-                            }
-                        }
-                        options{
-                            retry(3)
-                        }
-                        stages{
-                            stage('Testing DevPi Package wheel'){
-                                steps{
-                                    timeout(10){
-                                        testDevpiPackage(getDevPiStagingIndex(), props.Name, props.Version, "whl", CONFIGURATIONS[PYTHON_VERSION].tox_env)
+                             def macPackages = [:]
+                            SUPPORTED_MAC_VERSIONS.each{pythonVersion ->
+                                macPackages["Test Python ${pythonVersion}: wheel Mac"] = {
+                                    withEnv(['QT_QPA_PLATFORM=offscreen']) {
+                                        devpi.testDevpiPackage(
+                                            agent: [
+                                                label: "mac && python${pythonVersion}"
+                                            ],
+                                            devpi: [
+                                                index: DEVPI_CONFIG.index,
+                                                server: DEVPI_CONFIG.server,
+                                                credentialsId: DEVPI_CONFIG.credentialsId,
+                                                devpiExec: 'venv/bin/devpi'
+                                            ],
+                                            package:[
+                                                name: props.Name,
+                                                version: props.Version,
+                                                selector: 'whl'
+                                            ],
+                                            test:[
+                                                setup: {
+                                                    sh(
+                                                        label:'Installing Devpi client',
+                                                        script: '''python3 -m venv venv
+                                                                    venv/bin/python -m pip install pip --upgrade
+                                                                    venv/bin/python -m pip install devpi_client
+                                                                    '''
+                                                    )
+                                                },
+                                                toxEnv: "py${pythonVersion}".replace('.',''),
+                                                teardown: {
+                                                    sh( label: 'Remove Devpi client', script: 'rm -r venv')
+                                                }
+                                            ]
+                                        )
+                                    }
+                                }
+                                macPackages["Test Python ${pythonVersion}: sdist Mac"] = {
+                                    withEnv(['QT_QPA_PLATFORM=offscreen']) {
+                                        devpi.testDevpiPackage(
+                                            agent: [
+                                                label: "mac && python${pythonVersion}"
+                                            ],
+                                            devpi: [
+                                                index: DEVPI_CONFIG.index,
+                                                server: DEVPI_CONFIG.server,
+                                                credentialsId: DEVPI_CONFIG.credentialsId,
+                                                devpiExec: 'venv/bin/devpi'
+                                            ],
+                                            package:[
+                                                name: props.Name,
+                                                version: props.Version,
+                                                selector: 'tar.gz'
+                                            ],
+                                            test:[
+                                                setup: {
+                                                    checkout scm
+                                                    sh(
+                                                        label:'Installing Devpi client',
+                                                        script: '''python3 -m venv venv
+                                                                    venv/bin/python -m pip install pip --upgrade
+                                                                    venv/bin/python -m pip install devpi_client
+                                                                    '''
+                                                    )
+                                                },
+                                                toxEnv: "py${pythonVersion}".replace('.',''),
+                                                teardown: {
+                                                    sh( label: 'Remove Devpi client', script: 'rm -r venv')
+                                                }
+                                            ]
+                                        )
                                     }
                                 }
                             }
-                            stage('Testing DevPi sdist Package'){
-                                steps{
-                                    timeout(10){
-                                        testDevpiPackage(getDevPiStagingIndex(), props.Name, props.Version, "tar.gz", CONFIGURATIONS[PYTHON_VERSION].tox_env)
-                                    }
+                            windowsPackages = [:]
+                            SUPPORTED_WINDOWS_VERSIONS.each{pythonVersion ->
+                                windowsPackages["Test Python ${pythonVersion}: sdist Windows"] = {
+                                    devpi.testDevpiPackage(
+                                        agent: [
+                                            dockerfile: [
+                                                filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                                additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE",
+                                                label: 'windows && docker'
+                                            ]
+                                        ],
+                                        devpi: DEVPI_CONFIG,
+                                        package:[
+                                            name: props.Name,
+                                            version: props.Version,
+                                            selector: 'tar.gz'
+                                        ],
+                                        test:[
+                                            toxEnv: "py${pythonVersion}".replace('.',''),
+                                        ]
+                                    )
+                                }
+                                windowsPackages["Test Python ${pythonVersion}: wheel Windows"] = {
+                                    devpi.testDevpiPackage(
+                                        agent: [
+                                            dockerfile: [
+                                                filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                                additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE",
+                                                label: 'windows && docker'
+                                            ]
+                                        ],
+                                        devpi: DEVPI_CONFIG,
+                                        package:[
+                                            name: props.Name,
+                                            version: props.Version,
+                                            selector: 'whl'
+                                        ],
+                                        test:[
+                                            toxEnv: "py${pythonVersion}".replace('.',''),
+                                        ]
+                                    )
                                 }
                             }
-
+                            def linuxPackages = [:]
+                            SUPPORTED_LINUX_VERSIONS.each{pythonVersion ->
+                                linuxPackages["Test Python ${pythonVersion}: sdist Linux"] = {
+                                    devpi.testDevpiPackage(
+                                        agent: [
+                                            dockerfile: [
+                                                filename: 'ci/docker/python/linux/tox/Dockerfile',
+                                                additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL",
+                                                label: 'linux && docker'
+                                            ]
+                                        ],
+                                        devpi: DEVPI_CONFIG,
+                                        package:[
+                                            name: props.Name,
+                                            version: props.Version,
+                                            selector: 'tar.gz'
+                                        ],
+                                        test:[
+                                            toxEnv: "py${pythonVersion}".replace('.',''),
+                                        ]
+                                    )
+                                }
+                                linuxPackages["Test Python ${pythonVersion}: wheel Linux"] = {
+                                    devpi.testDevpiPackage(
+                                        agent: [
+                                            dockerfile: [
+                                                filename: 'ci/docker/python/linux/tox/Dockerfile',
+                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                label: 'linux && docker'
+                                            ]
+                                        ],
+                                        devpi: DEVPI_CONFIG,
+                                        package:[
+                                            name: props.Name,
+                                            version: props.Version,
+                                            selector: 'whl'
+                                        ],
+                                        test:[
+                                            toxEnv: "py${pythonVersion}".replace('.',''),
+                                        ]
+                                    )
+                                }
+                            }
+                            parallel(linuxPackages + windowsPackages + macPackages)
                         }
                     }
                 }
