@@ -78,7 +78,6 @@ class TesseractData(setuptools.Command):
 
 class CustomBuildPy(build_py):
     def run(self):
-        self.run_command("build_ui")
         self.run_command("dl_tessdata")
         super().run()
 
@@ -86,7 +85,6 @@ class CustomBuildPy(build_py):
 class Clean(_clean):
     def run(self):
         super().run()
-        self.clean_ui()
         self.clean_tesseract_data()
 
     @staticmethod
@@ -100,16 +98,3 @@ class Clean(_clean):
         for tesseract_data_file in glob.glob(glob_exp):
             print("Removing {}".format(tesseract_data_file))
             os.remove(tesseract_data_file)
-
-    @staticmethod
-    def clean_ui():
-        config = Config()
-        config.load()
-        for glob_exp, dest in config.files:
-            for src in glob.glob(glob_exp):
-
-                if src.endswith(".ui"):
-                    gen_file = "{}_ui.py".format(os.path.splitext(src)[0])
-                    if os.path.exists(gen_file):
-                        print("Removing {}".format(gen_file))
-                        os.remove(gen_file)

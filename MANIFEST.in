@@ -2,7 +2,6 @@ include LICENSE README.rst requirements.txt requirements-dev.txt tox.ini extra_c
 include .pylintrc
 include speedwagon/logo.png
 include speedwagon/favicon.ico
-recursive-include speedwagon/ui *.py
 recursive-include speedwagon/ui *.ui
 include speedwagon/ui/__init__.py
 recursive-include tests *.py

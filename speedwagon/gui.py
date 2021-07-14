@@ -3,6 +3,7 @@
 Mainly for connecting GUI elements, such as buttons, to functions and methods
 that do the work
 """
+import io
 import logging
 import os
 import sys
@@ -10,14 +11,22 @@ import time
 import traceback
 import webbrowser
 from typing import List
-import io
+
 try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
+
+try:  # pragma: no cover
+    from importlib import resources
+except ImportError:  # pragma: no cover
+    import importlib_resources as resources  # type: ignore
+
 from collections import namedtuple
 
 from PyQt5 import QtWidgets, QtCore, QtGui  # type: ignore
+from PyQt5 import uic
+
 import speedwagon.dialog
 import speedwagon.dialog.dialogs
 import speedwagon.dialog.settings
@@ -25,7 +34,6 @@ from speedwagon import tabs, worker
 import speedwagon
 import speedwagon.startup
 import speedwagon.config
-from speedwagon.ui import main_window_shell_ui  # type: ignore
 
 
 DEBUG_LOGGING_FORMAT = logging.Formatter(
@@ -45,31 +53,13 @@ Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 
 
 class ToolConsole(QtWidgets.QWidget):
-    """Tool Console."""
+    """Logging console."""
 
-    def __init__(self, parent: QtWidgets.QWidget) -> None:
+    def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
-        layout = QtWidgets.QVBoxLayout(self)
-
-        # set only the top margin to 0
-        default_style = self.style()
-
-        left_margin = default_style.pixelMetric(
-            QtWidgets.QStyle.PM_LayoutLeftMargin)
-
-        right_margin = default_style.pixelMetric(
-            QtWidgets.QStyle.PM_LayoutRightMargin)
-
-        bottom_margin = default_style.pixelMetric(
-            QtWidgets.QStyle.PM_LayoutBottomMargin)
-
-        layout.setContentsMargins(left_margin, 0, right_margin, bottom_margin)
-
-        self.setLayout(layout)
-
-        self._console = QtWidgets.QTextBrowser(self)
-
-        self.layout().addWidget(self._console)
+        with resources.path("speedwagon.ui",
+                            "console.ui") as ui_file:
+            uic.loadUi(ui_file, self)
 
         #  Use a monospaced font based on what's on system running
         monospaced_font = \
@@ -78,12 +68,21 @@ class ToolConsole(QtWidgets.QWidget):
         self._log = QtGui.QTextDocument()
         self._log.setDefaultFont(monospaced_font)
 
-        self._console.setSource(self._log.baseUrl())
-        self._console.setUpdatesEnabled(True)
+        self._console.setDocument(self._log)
         self._console.setFont(monospaced_font)
 
     def add_message(self, message: str) -> None:
-        self._console.append(message)
+        cursor = QtGui.QTextCursor(self._log)
+        cursor.movePosition(cursor.End)
+        cursor.insertText(message)
+        self._console.setTextCursor(cursor)
+
+        # To get the new line character
+        self._console.append(None)
+
+    @property
+    def text(self) -> str:
+        return self._log.toPlainText()
 
 
 class ConsoleLogger(logging.Handler):
@@ -104,31 +103,17 @@ class ItemTabsWidget(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
-        layout = QtWidgets.QVBoxLayout(self)
+        with resources.path("speedwagon.ui",
+                            "setup_job.ui") as ui_file:
+            uic.loadUi(ui_file, self)
 
-        default_style = self.style()
-
-        left_margin = default_style.pixelMetric(
-            QtWidgets.QStyle.PM_LayoutLeftMargin)
-
-        right_margin = default_style.pixelMetric(
-            QtWidgets.QStyle.PM_LayoutRightMargin)
-
-        top_margin = default_style.pixelMetric(
-            QtWidgets.QStyle.PM_LayoutTopMargin)
-
-        layout.setContentsMargins(left_margin, top_margin, right_margin, 0)
-
-        self.tabs = QtWidgets.QTabWidget()
-        self.setLayout(layout)
         self.layout().addWidget(self.tabs)
 
     def add_tab(self, tab: QtWidgets.QWidget, name: str) -> None:
         self.tabs.addTab(tab, name)
 
 
-class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
-    # noinspection PyUnresolvedReferences
+class MainWindow(QtWidgets.QMainWindow):
     def __init__(
             self,
             work_manager: worker.ToolJobManager,
@@ -136,6 +121,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
     ) -> None:
 
         super().__init__()
+
         self._debug = debug
         self.user_settings = None
 
@@ -144,13 +130,11 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         self.log_manager = self._work_manager.logger
         self.log_manager.setLevel(logging.DEBUG)
 
-        self.setupUi(self)
-        self.mainLayout.setContentsMargins(0, 0, 0, 0)
+        with resources.path("speedwagon.ui",
+                            "main_window2.ui") as ui_file:
+            uic.loadUi(ui_file, self)
 
-        self.main_splitter = QtWidgets.QSplitter(self.centralwidget)
-        self.main_splitter.setOrientation(QtCore.Qt.Vertical)
-        self.main_splitter.setChildrenCollapsible(False)
-        self.main_splitter.setSizePolicy(CONSOLE_SIZE_POLICY)
+        self.mainLayout.setContentsMargins(0, 0, 0, 0)
 
         self.mainLayout.addWidget(self.main_splitter)
 
@@ -350,6 +334,14 @@ class MainWindow(QtWidgets.QMainWindow, main_window_shell_ui.Ui_MainWindow):
         config_dialog.accepted.connect(tabs_tab.on_okay)
 
         config_dialog.exec()
+
+    def start_workflow(self) -> None:
+        num_selected = self._workflow_selector_view.selectedIndexes()
+        if len(num_selected) != 1:
+            print(
+                "Invalid number of selected Indexes. "
+                "Expected 1. Found {}".format(num_selected)
+            )
 
     def save_log(self) -> None:
         data = self._log_data.getvalue()
