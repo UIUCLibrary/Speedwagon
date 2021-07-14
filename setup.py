@@ -11,11 +11,11 @@ cmdclass = {
     "clean": extra_commands.Clean,
     # "build_py": extra_commands.build_py,
 }
-try:
-    from pyqt_distutils.build_ui import build_ui
-    cmdclass["build_ui"] = build_ui
-except ModuleNotFoundError:
-    pass
+# try:
+#     from pyqt_distutils.build_ui import build_ui
+#     cmdclass["build_ui"] = build_ui
+# except ModuleNotFoundError:
+#     pass
 
 cmdclass['dl_tessdata'] = extra_commands.TesseractData
 
@@ -48,7 +48,7 @@ if __name__ == "__main__":
             "speedwagon.ui",
 
         ],
-        setup_requires=['pytest-runner','PyQt5', 'pyqt-distutils'],
+        setup_requires=['pytest-runner'],
         tests_require=['pytest', "behave", "pytest-qt"],
         python_requires=">=3.6",
 
@@ -66,9 +66,13 @@ if __name__ == "__main__":
                 "speedwagon/workflows/tessdata/osd.traineddata",
             ],
             'speedwagon': ["favicon.ico", "logo.png"],
+            'speedwagon.ui': [
+                "tab_editor.ui",
+                "main_window_shell.ui",
+                "main_window2.ui",
+                "console.ui",
+                'setup_job.ui'
+            ],
         },
         cmdclass=cmdclass
     )
-
-# TODO: Overwrite install command class to check if the UI file have converted
-#  into py files. if not, run build_ui

@@ -84,6 +84,15 @@ def test_show_configuration_menu(qtbot, monkeypatch):
     assert mock_exec.called is True
 
 
+class TestToolConsole:
+    def test_add_message(self, qtbot):
+        console = speedwagon.gui.ToolConsole(None)
+        qtbot.addWidget(console)
+        console.add_message("I'm a message")
+        assert "I'm a message" in console.text
+
+
+
 def test_window_save_log(qtbot, monkeypatch):
     mock_work_manager = MagicMock(settings_path="some-path")
     main_window = speedwagon.gui.MainWindow(mock_work_manager)
