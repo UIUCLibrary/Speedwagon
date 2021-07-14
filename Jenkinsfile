@@ -1137,54 +1137,54 @@ pipeline {
                         }
                     }
                 }
-                stage('Test DevPi packages') {
-                    matrix {
-                        axes {
-                            axis {
-                                name 'PLATFORM'
-                                values(
-                                    'windows',
-                                    'linux'
-                                    )
-                            }
-                            axis {
-                                name 'PYTHON_VERSION'
-                                values(
-                                    '3.7',
-                                    '3.8',
-                                    '3.9'
-                                    )
-                            }
-                        }
-                        agent {
-                            dockerfile {
-                                additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}"
-                                filename "ci/docker/python/${PLATFORM}/tox/Dockerfile"
-                                label "${PLATFORM} && docker"
-                            }
-                        }
-                        options{
-                            retry(3)
-                        }
-                        stages{
-                            stage('Testing DevPi Package wheel'){
-                                steps{
-                                    timeout(10){
-                                        testDevpiPackage(getDevPiStagingIndex(), props.Name, props.Version, "whl", CONFIGURATIONS[PYTHON_VERSION].tox_env)
-                                    }
-                                }
-                            }
-                            stage('Testing DevPi sdist Package'){
-                                steps{
-                                    timeout(10){
-                                        testDevpiPackage(getDevPiStagingIndex(), props.Name, props.Version, "tar.gz", CONFIGURATIONS[PYTHON_VERSION].tox_env)
-                                    }
-                                }
-                            }
-
-                        }
-                    }
-                }
+//                 stage('Test DevPi packages') {
+//                     matrix {
+//                         axes {
+//                             axis {
+//                                 name 'PLATFORM'
+//                                 values(
+//                                     'windows',
+//                                     'linux'
+//                                     )
+//                             }
+//                             axis {
+//                                 name 'PYTHON_VERSION'
+//                                 values(
+//                                     '3.7',
+//                                     '3.8',
+//                                     '3.9'
+//                                     )
+//                             }
+//                         }
+//                         agent {
+//                             dockerfile {
+//                                 additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}"
+//                                 filename "ci/docker/python/${PLATFORM}/tox/Dockerfile"
+//                                 label "${PLATFORM} && docker"
+//                             }
+//                         }
+//                         options{
+//                             retry(3)
+//                         }
+//                         stages{
+//                             stage('Testing DevPi Package wheel'){
+//                                 steps{
+//                                     timeout(10){
+//                                         testDevpiPackage(getDevPiStagingIndex(), props.Name, props.Version, "whl", CONFIGURATIONS[PYTHON_VERSION].tox_env)
+//                                     }
+//                                 }
+//                             }
+//                             stage('Testing DevPi sdist Package'){
+//                                 steps{
+//                                     timeout(10){
+//                                         testDevpiPackage(getDevPiStagingIndex(), props.Name, props.Version, "tar.gz", CONFIGURATIONS[PYTHON_VERSION].tox_env)
+//                                     }
+//                                 }
+//                             }
+//
+//                         }
+//                     }
+//                 }
                 stage('Deploy to DevPi Production') {
                     when {
                         allOf{
