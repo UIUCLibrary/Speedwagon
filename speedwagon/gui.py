@@ -16,7 +16,6 @@ try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
-from collections import namedtuple
 
 try:  # pragma: no cover
     from importlib import resources
@@ -33,6 +32,7 @@ from speedwagon import tabs, worker
 import speedwagon
 import speedwagon.startup
 import speedwagon.config
+from collections import namedtuple
 from speedwagon.ui import main_window_shell_ui  # type: ignore
 
 
@@ -53,31 +53,13 @@ Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 
 
 class ToolConsole(QtWidgets.QWidget):
-    """Tool Console."""
+    """Logging console."""
 
-    def __init__(self, parent: QtWidgets.QWidget) -> None:
+    def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
-        layout = QtWidgets.QVBoxLayout(self)
-
-        # set only the top margin to 0
-        default_style = self.style()
-
-        left_margin = default_style.pixelMetric(
-            QtWidgets.QStyle.PM_LayoutLeftMargin)
-
-        right_margin = default_style.pixelMetric(
-            QtWidgets.QStyle.PM_LayoutRightMargin)
-
-        bottom_margin = default_style.pixelMetric(
-            QtWidgets.QStyle.PM_LayoutBottomMargin)
-
-        layout.setContentsMargins(left_margin, 0, right_margin, bottom_margin)
-
-        self.setLayout(layout)
-
-        self._console = QtWidgets.QTextBrowser(self)
-
-        self.layout().addWidget(self._console)
+        with resources.path("speedwagon.ui",
+                            "console.ui") as ui_file:
+            uic.loadUi(ui_file, self)
 
         #  Use a monospaced font based on what's on system running
         monospaced_font = \
@@ -352,6 +334,15 @@ class MainWindow(QtWidgets.QMainWindow):
         config_dialog.accepted.connect(tabs_tab.on_okay)
 
         config_dialog.exec()
+
+    def start_workflow(self) -> None:
+        num_selected = self._workflow_selector_view.selectedIndexes()
+        if len(num_selected) != 1:
+            print(
+                "Invalid number of selected Indexes. "
+                "Expected 1. Found {}".format(num_selected)
+            )
+            return
 
     def save_log(self) -> None:
         data = self._log_data.getvalue()
