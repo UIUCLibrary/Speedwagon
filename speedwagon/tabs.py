@@ -360,7 +360,7 @@ class WorkflowsTab(ItemSelectionTab):
                          models.WorkflowListModel(workflows), work_manager,
                          log_manager)
 
-        self._worflows = workflows
+        self._workflows = workflows
 
     def is_ready_to_start(self) -> bool:
         """Get if the workflow is ready to start.
