@@ -36,7 +36,6 @@ import speedwagon.startup
 import speedwagon.config
 
 
-
 DEBUG_LOGGING_FORMAT = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -343,7 +342,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 "Invalid number of selected Indexes. "
                 "Expected 1. Found {}".format(num_selected)
             )
-            return
 
     def save_log(self) -> None:
         data = self._log_data.getvalue()
