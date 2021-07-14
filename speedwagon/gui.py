@@ -33,7 +33,6 @@ import speedwagon
 import speedwagon.startup
 import speedwagon.config
 from collections import namedtuple
-from speedwagon.ui import main_window_shell_ui  # type: ignore
 
 
 DEBUG_LOGGING_FORMAT = logging.Formatter(
