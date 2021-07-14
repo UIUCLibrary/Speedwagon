@@ -527,24 +527,26 @@ class SingleWorkflowLauncher(AbsStarter):
             raise AttributeError("Workflow has not been set")
 
         with worker.ToolJobManager() as work_manager:
-
-            window = MainWindow(
-                work_manager=work_manager,
-                debug=False)
-
-            window.show()
-
-            runner_strategy = \
-                runner_strategies.UsingExternalManagerForAdapter(work_manager)
-
-            self._active_workflow.validate_user_options(**self.options)
-
-            runner_strategy.run(window,
-                                self._active_workflow,
-                                self.options,
-                                window.log_manager)
-            window.log_manager.handlers.clear()
+            self._run(work_manager)
         return 0
+
+    def _run(self, work_manager):
+        window = MainWindow(
+            work_manager=work_manager,
+            debug=False)
+
+        window.show()
+
+        runner_strategy = \
+            runner_strategies.UsingExternalManagerForAdapter(work_manager)
+
+        self._active_workflow.validate_user_options(**self.options)
+
+        runner_strategy.run(window,
+                            self._active_workflow,
+                            self.options,
+                            window.log_manager)
+        window.log_manager.handlers.clear()
 
     def initialize(self) -> None:
         """No initialize is needed."""
