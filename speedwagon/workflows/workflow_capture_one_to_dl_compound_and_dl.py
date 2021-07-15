@@ -1,6 +1,7 @@
 """Workflow for converting Capture One tiff file into two formats."""
 from __future__ import annotations
 import logging
+import os
 import typing
 
 try:  # pragma: no cover
@@ -8,7 +9,8 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     from typing_extensions import TypedDict
 
-from typing import List, Any, Dict, Callable, Iterator, Optional,  Union
+from typing import List, Any, Dict, Callable, Iterator, Optional, Union, \
+    Iterable
 from contextlib import contextmanager
 from uiucprescon import packager
 from uiucprescon.packager.packages.abs_package_builder import AbsPackageBuilder
@@ -158,7 +160,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
 
         option_validators.register_validator(
             'At least one output',
-            OutputValidator(
+            MinimumOutputsValidator(
                 at_least_one_of=[
                     "Output Digital Library",
                     "Output HathiTrust"
@@ -166,12 +168,23 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
             )
         )
         option_validators.register_validator(
+            'At least one output exists',
+            OutputsValidValuesValidator(
+                keys_to_check=[
+                    'Output Digital Library',
+                    'Output HathiTrust'
+                ]
+            )
+        )
+
+        option_validators.register_validator(
             'Input',
             validators.DirectoryValidation(key="Input")
         )
         invalid_messages: List[str] = []
         for validation in [
             option_validators.get('At least one output'),
+            option_validators.get('At least one output exists'),
             option_validators.get("Input")
 
         ]:
@@ -224,7 +237,47 @@ class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
             task_builder.add_subtask(ht_packaging_task)
 
 
-class OutputValidator(validators.AbsOptionValidator):
+class OutputsValidValuesValidator(validators.AbsOptionValidator):
+    """Validator to make sure that output directories are valid."""
+
+    def __init__(self, keys_to_check: Iterable[str]) -> None:
+        super().__init__()
+        self.keys_to_check = keys_to_check
+        self.directory_validator = None
+
+    @staticmethod
+    def is_entry_valid_dir(
+            entry: str,
+            callback: Optional[Callable[[str], bool]] = None
+    ) -> bool:
+
+        if entry is None or entry == "":
+            return True
+        return (callback or os.path.exists)(entry)
+
+    def is_valid(self, **user_data: Any) -> bool:
+        return all(self.is_entry_valid_dir(
+                    user_data[key],
+                    self.directory_validator
+            ) for key in self.keys_to_check)
+
+    def explanation(self, **user_data: Any) -> str:
+        folders_not_exists: typing.Set[str] = {
+            user_data[key]
+            for key in self.keys_to_check
+            if not self.is_entry_valid_dir(
+                user_data[key], self.directory_validator
+            )
+        }
+        if len(folders_not_exists) > 0:
+            return "\n".join(
+                f"Directory {directory} does not exist"
+                for directory in folders_not_exists
+            )
+        return "ok"
+
+
+class MinimumOutputsValidator(validators.AbsOptionValidator):
 
     def __init__(self, at_least_one_of: List[str]) -> None:
         super().__init__()
