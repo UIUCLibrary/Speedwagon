@@ -83,6 +83,7 @@ ENV QT_QPA_PLATFORM="offscreen"
 RUN pip3 install tox
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
+RUN pip3 wheel -w /wheels --no-cache-dir wheel
 COPY --from=WHEEL_BUILDER_PY36 /wheels/* /wheels/
 COPY --from=WHEEL_BUILDER_PY37 /wheels/* /wheels/
 COPY --from=WHEEL_BUILDER_PY38 /wheels/* /wheels/
