@@ -50,16 +50,6 @@ def run_pylint(){
     }
 }
 
-def get_package_name(stashName, metadataFile){
-    ws {
-        unstash stashName
-        script{
-            def props = readProperties interpolate: true, file: metadataFile
-            cleanWs(patterns: [[pattern: metadataFile, type: 'INCLUDE']])
-            return props.Name
-        }
-    }
-}
 
 def get_build_number(){
     script{
@@ -143,46 +133,6 @@ def runTox(){
         }
         parallel(windowsJobs + linuxJobs)
     }
-}
-
-def test_mac_packages(label, pythonPath, wheelStash, sdistStash){
-    def mac
-    node(){
-        checkout scm
-        mac = load('ci/jenkins/scripts/mac.groovy')
-    }
-    def wheelGlob = 'dist/*.whl'
-    stage('Test wheel'){
-        mac.test_mac_package(
-            label: label,
-            pythonPath: pythonPath,
-            stash: wheelStash,
-            glob: wheelGlob
-        )
-    }
-
-    def sdistGlob = 'dist/*.tar.gz,dist/*.zip'
-    stage('Test sdist'){
-        mac.test_mac_package(
-            label: label,
-            pythonPath: pythonPath,
-            stash: sdistStash,
-            glob: sdistGlob
-        )
-    }
-}
-def testDevpiPackage(index, pkgName, pkgVersion, pkgSelector, toxEnv){
-    def devpiServer = 'https://devpi.library.illinois.edu'
-    def credentialsId = 'DS_devpi'
-    load('ci/jenkins/scripts/devpi.groovy').testDevpiPackage(
-        devpiIndex: index,
-        server: devpiServer,
-        credentialsId: credentialsId,
-        pkgName: pkgName,
-        pkgVersion: pkgVersion,
-        pkgSelector: pkgSelector,
-        toxEnv: toxEnv
-    )
 }
 
 def createNewChocolateyPackage(args=[:]){
@@ -290,31 +240,6 @@ def testSpeedwagonChocolateyPkg(version){
     bat 'speedwagon --help'
 }
 
-def test_pkg(glob, timeout_time){
-
-    def pkgFiles = findFiles( glob: glob)
-    if( pkgFiles.size() == 0){
-        error "Unable to check package. No files found with ${glob}"
-    }
-
-    pkgFiles.each{
-        timeout(timeout_time){
-            if(isUnix()){
-                sh(label: "Testing ${it}",
-                   script: """python --version
-                              tox --installpkg=${it.path} -e py -vv
-                              """
-                )
-            } else {
-                bat(label: "Testing ${it}",
-                    script: """python --version
-                               tox --installpkg=${it.path} -e py -vv
-                               """
-                )
-            }
-        }
-    }
-}
 
 def startup(){
 
