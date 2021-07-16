@@ -227,6 +227,7 @@ def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
     }
 }
 def testSpeedwagonChocolateyPkg(version){
+    echo 'Testing Chocolatey package'
     script{
         def chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
         chocolatey.install_chocolatey_package(
