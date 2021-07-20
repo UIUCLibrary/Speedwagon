@@ -245,42 +245,33 @@ def testSpeedwagonChocolateyPkg(version){
 
 
 def startup(){
-
-    parallel(
-    [
-        failFast: true,
-        'Loading Reference Build Information': {
-            node(){
+    echo 'Loading Reference Build Information'
+    node(){
+        checkout scm
+        discoverGitReferenceBuild(latestBuildIfNotFound: true)
+    }
+    echo 'Getting Distribution Info'
+    node('linux && docker') {
+        timeout(2){
+            ws{
                 checkout scm
-                discoverGitReferenceBuild(latestBuildIfNotFound: true)
-            }
-        },
-        'Getting Distribution Info': {
-            node('linux && docker') {
-                timeout(2){
-                    ws{
-                        checkout scm
-                        try{
-                            docker.image('python').inside {
-                                withEnv(['PIP_NO_CACHE_DIR=off']) {
-                                    sh(
-                                       label: 'Running setup.py with dist_info',
-                                       script: 'python setup.py dist_info'
-                                    )
-                                }
-                                stash includes: '*.dist-info/**', name: 'DIST-INFO'
-                                archiveArtifacts artifacts: '*.dist-info/**'
-                            }
-                        } finally{
-                            deleteDir()
+                try{
+                    docker.image('python').inside {
+                        withEnv(['PIP_NO_CACHE_DIR=off']) {
+                            sh(
+                               label: 'Running setup.py with dist_info',
+                               script: 'python setup.py dist_info'
+                            )
                         }
+                        stash includes: '*.dist-info/**', name: 'DIST-INFO'
+                        archiveArtifacts artifacts: '*.dist-info/**'
                     }
+                } finally{
+                    deleteDir()
                 }
             }
         }
-    ]
-    )
-
+    }
 }
 
 
