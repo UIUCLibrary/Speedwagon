@@ -514,13 +514,13 @@ class SingleWorkflowLauncher(AbsStarter):
 
     """
 
-    def __init__(self) -> None:
+    def __init__(self, logger=None) -> None:
         """Set up window for running a single workflow."""
         super().__init__()
         self.window: Optional[MainWindow] = None
         self._active_workflow: Optional[job.AbsWorkflow] = None
         self.options: Dict[str, Union[str, bool]] = {}
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger or logging.getLogger(__name__)
 
     def run(self) -> int:
         """Run the workflow configured with the options given."""
@@ -538,7 +538,7 @@ class SingleWorkflowLauncher(AbsStarter):
             debug=False)
 
         window.show()
-
+        window.setWindowTitle(self._active_workflow.name)
         runner_strategy = \
             runner_strategies.UsingExternalManagerForAdapter(work_manager)
 
