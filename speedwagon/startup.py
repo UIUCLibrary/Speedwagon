@@ -520,6 +520,7 @@ class SingleWorkflowLauncher(AbsStarter):
         self.window: Optional[MainWindow] = None
         self._active_workflow: Optional[job.AbsWorkflow] = None
         self.options: Dict[str, Union[str, bool]] = {}
+        self.logger = logging.getLogger(__name__)
 
     def run(self) -> int:
         """Run the workflow configured with the options given."""
@@ -527,6 +528,7 @@ class SingleWorkflowLauncher(AbsStarter):
             raise AttributeError("Workflow has not been set")
 
         with worker.ToolJobManager() as work_manager:
+            work_manager.logger = self.logger
             self._run(work_manager)
         return 0
 
