@@ -145,6 +145,8 @@ def createNewChocolateyPackage(args=[:]){
     def dependenciesDir = args.files.dependenciesDir
     def docsDir = args.files.docsDir
 
+    echo 'Creating new Chocolatey package'
+
     node(){
         checkout scm
         sanitizedPackageVersion = load('ci/jenkins/scripts/chocolatey.groovy').sanitize_chocolatey_version(args.version)
@@ -225,6 +227,7 @@ def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
     }
 }
 def testSpeedwagonChocolateyPkg(version){
+    echo 'Testing Chocolatey package'
     script{
         def chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
         chocolatey.install_chocolatey_package(

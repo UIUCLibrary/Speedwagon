@@ -160,6 +160,7 @@ class MockDigitalLibraryCompound(DigitalLibraryCompound):
     def mock_transform(i, source: str, destination: str, logger: logging.Logger) -> str:
         pass
 
+
 def test_hathi_limited_to_dl_compound_run(tool_job_manager_spy,
                                           hathi_limited_view_package_dirs,
                                           monkeypatch,

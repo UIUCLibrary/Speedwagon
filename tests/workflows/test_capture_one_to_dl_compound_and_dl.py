@@ -274,7 +274,7 @@ def test_output_validator(monkeypatch, dl_outpath, ht_outpath, is_valid):
         "exists",
         lambda path: path in existing_paths and path is not None
     )
-    validator = ht_wf.OutputValidator(checks)
+    validator = ht_wf.MinimumOutputsValidator(checks)
     assert \
         validator.is_valid(
             **user_options
@@ -286,12 +286,12 @@ def test_output_validator_success_is_ok(user_options, monkeypatch):
     user_options['Output Digital Library'] = "some/real/output_path_for_dl"
     user_options['Output HathiTrust'] = "some/real/output_path_for_ht"
 
-    validator = ht_wf.OutputValidator(
+    validator = ht_wf.MinimumOutputsValidator(
         ['Output Digital Library', "Output HathiTrust"]
     )
     with monkeypatch.context() as mp:
         mp.setattr(
-            ht_wf.OutputValidator,
+            ht_wf.MinimumOutputsValidator,
             "is_valid",
             lambda *args, **user_args: True
         )
@@ -400,3 +400,132 @@ def test_package_converter_invalid_format():
             package_format="invalid package format"
         )
     assert "is not a known value" in str(e.value)
+
+
+class TestOutputsValidValuesValidator:
+    def test_valid(self):
+        validator = ht_wf.OutputsValidValuesValidator(
+            keys_to_check=[
+                'Output Digital Library',
+                'Output HathiTrust'
+            ]
+        )
+        user_options = {
+            "Input": "some_path",
+            "Package Type": "Capture One",
+            "Output Digital Library":
+                os.path.join("valid", "path", "that", "exists", "1"),
+            "Output HathiTrust":
+                os.path.join("valid", "path", "that", "exists", "2"),
+        }
+        validator.directory_validator = lambda entry: True
+        assert validator.is_valid(**user_options) is True
+
+    def test_valid_explaination_ok(self):
+        validator = ht_wf.OutputsValidValuesValidator(
+            keys_to_check=[
+                'Output Digital Library',
+                'Output HathiTrust'
+            ]
+        )
+        user_options = {
+            "Input": "some_path",
+            "Package Type": "Capture One",
+            "Output Digital Library":
+                os.path.join("valid", "path", "that", "exists", "1"),
+            "Output HathiTrust":
+                os.path.join("valid", "path", "that", "exists", "2"),
+        }
+        validator.directory_validator = lambda entry: True
+        assert validator.explanation(**user_options) == "ok"
+
+    def test_single_invalid_dir(self):
+        validator = ht_wf.OutputsValidValuesValidator(
+            keys_to_check=[
+                'Output Digital Library',
+                'Output HathiTrust'
+            ]
+        )
+        user_options = {
+            "Input": "some_path",
+            "Package Type": "Capture One",
+            "Output Digital Library":
+                os.path.join("valid", "path", "that", "doesnot", "exist"),
+            "Output HathiTrust":
+                os.path.join("valid", "path", "that", "exists", "2"),
+        }
+
+        validator.directory_validator = \
+            lambda entry: entry == user_options['Output Digital Library']
+
+        assert validator.is_valid(**user_options) is False
+
+    def test_single_invalid_dir_message(self):
+        validator = ht_wf.OutputsValidValuesValidator(
+            keys_to_check=[
+                'Output Digital Library',
+                'Output HathiTrust'
+            ]
+        )
+        user_options = {
+            "Input": "some_path",
+            "Package Type": "Capture One",
+            "Output Digital Library":
+                os.path.join("valid", "path", "that", "doesnot", "exist"),
+            "Output HathiTrust":
+                os.path.join("valid", "path", "that", "exists", "2"),
+        }
+
+        validator.directory_validator = \
+            lambda entry: entry != user_options['Output Digital Library']
+
+        assert user_options['Output Digital Library'] in \
+               validator.explanation(**user_options)
+
+    def test_multiple_invalid_dir_message(self):
+        validator = ht_wf.OutputsValidValuesValidator(
+            keys_to_check=[
+                'Output Digital Library',
+                'Output HathiTrust'
+            ]
+        )
+
+        user_options = {
+            "Input": "some_path",
+            "Package Type": "Capture One",
+            "Output Digital Library":
+                os.path.join("valid", "path", "that", "doesnot", "exist", "1"),
+            "Output HathiTrust":
+                os.path.join("valid", "path", "that", "doesnot", "exist", "2"),
+        }
+
+        validator.directory_validator = \
+            lambda entry: entry not in [
+                user_options['Output Digital Library'],
+                user_options['Output HathiTrust'],
+            ]
+
+        explanation = validator.explanation(**user_options)
+
+        assert user_options['Output Digital Library'] in explanation and \
+               user_options['Output HathiTrust'] in explanation
+
+    def test_one_valid_on_none(self):
+        validator = ht_wf.OutputsValidValuesValidator(
+            keys_to_check=[
+                'Output Digital Library',
+                'Output HathiTrust'
+            ]
+        )
+        user_options = {
+            "Input": "some_path",
+            "Package Type": "Capture One",
+            "Output Digital Library": None,
+            "Output HathiTrust":
+                os.path.join("valid", "path", "that", "exists"),
+        }
+
+        validator.directory_validator = \
+            lambda entry: entry == user_options['Output HathiTrust']
+
+        assert validator.is_valid(**user_options) is True
