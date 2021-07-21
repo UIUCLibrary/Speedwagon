@@ -575,7 +575,6 @@ class SingleWorkflowJSON(AbsStarter):
         available_workflows = job.available_workflows()
         self.workflow = available_workflows[workflow_name]()
 
-
     def run(self) -> int:
         if self.options is None:
             raise ValueError("no data loaded")
