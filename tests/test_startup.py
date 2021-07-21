@@ -2,12 +2,21 @@ import argparse
 import os.path
 from unittest.mock import Mock, MagicMock, mock_open, patch
 
+import json
+import logging
+import os
+import importlib
+import yaml
 import pytest
+from PyQt5 import QtWidgets
+
+import speedwagon.startup
+import speedwagon.config
 
 
 def test_version_exits_after_being_called(monkeypatch):
-    from speedwagon import startup
-    parser = startup.CliArgsSetter.get_arg_parser()
+
+    parser = speedwagon.startup.CliArgsSetter.get_arg_parser()
     version_exit_mock = Mock()
 
     with monkeypatch.context() as m:
@@ -18,7 +27,6 @@ def test_version_exits_after_being_called(monkeypatch):
 
 
 def test_run_loads_window(qtbot, monkeypatch, tmpdir):
-    from speedwagon import startup, config
     app = Mock()
     app.exec_ = MagicMock()
 
@@ -27,8 +35,12 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
         app_data_dir.ensure_dir()
         return app_data_dir.strpath
 
-    monkeypatch.setattr(config.get_platform_settings().__class__, "get_app_data_directory", dummy_app_data_dir)
-    standard_startup = startup.StartupDefault(app=app)
+    monkeypatch.setattr(
+        speedwagon.config.get_platform_settings().__class__,
+        "get_app_data_directory",
+        dummy_app_data_dir
+    )
+    standard_startup = speedwagon.startup.StartupDefault(app=app)
 
     standard_startup.startup_settings['debug'] = True
     tabs_file = tmpdir / "tabs.yaml"
@@ -37,9 +49,9 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
     # get_app_data_directory
 
     standard_startup.tabs_file = tabs_file
-    from PyQt5 import QtWidgets
+
     monkeypatch.setattr(QtWidgets, "QSplashScreen", MagicMock())
-    monkeypatch.setattr(startup, "MainWindow", MagicMock())
+    monkeypatch.setattr(speedwagon.startup, "MainWindow", MagicMock())
     standard_startup._logger = Mock()
     standard_startup.run()
     assert app.exec_.called is True
@@ -47,8 +59,7 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
 
 class TestTabsEditorApp:
     def test_on_okay_closes(self, qtbot):
-        from speedwagon import startup
-        editor = startup.TabsEditorApp()
+        editor = speedwagon.startup.TabsEditorApp()
         qtbot.addWidget(editor)
         editor.close = Mock()
         editor.on_okay()
@@ -56,7 +67,6 @@ class TestTabsEditorApp:
 
 
 def test_start_up_calls_default(monkeypatch):
-    import speedwagon.startup
     StartupDefault_ = MagicMock()
     monkeypatch.setattr(speedwagon.startup, "StartupDefault", StartupDefault_)
     with pytest.raises(SystemExit):
@@ -65,7 +75,6 @@ def test_start_up_calls_default(monkeypatch):
 
 
 def test_start_up_tab_editor(monkeypatch):
-    import speedwagon.startup
     standalone_tab_editor = Mock()
 
     with monkeypatch.context() as mp:
@@ -78,10 +87,9 @@ def test_start_up_tab_editor(monkeypatch):
 
 
 def test_load_as_module(monkeypatch):
-    import logging
+
     monkeypatch.setattr(logging, "getLogger", Mock())
     import speedwagon.__main__
-    import speedwagon.startup
     main_mock = Mock()
     monkeypatch.setattr(speedwagon.startup, "main", main_mock)
     speedwagon.__main__.main()
@@ -89,9 +97,8 @@ def test_load_as_module(monkeypatch):
 
 
 def test_load_module_self_test(monkeypatch):
-    import logging
     monkeypatch.setattr(logging, "getLogger", Mock())
-    import importlib
+
     pytest_mock = MagicMock()
     monkeypatch.setattr(importlib, "import_module", lambda x: pytest_mock)
     import speedwagon.__main__
@@ -102,35 +109,35 @@ def test_load_module_self_test(monkeypatch):
 
 
 def test_get_custom_tabs_missing_file(capsys, monkeypatch):
-    from speedwagon import startup
     all_workflows = {
         "my workflow": Mock()
     }
-    import os
     monkeypatch.setattr(os.path, "exists", lambda x: False)
-    list(startup.get_custom_tabs(all_workflows, "not_a_real_file"))
+    list(speedwagon.startup.get_custom_tabs(all_workflows, "not_a_real_file"))
     captured = capsys.readouterr()
     assert "file not found" in captured.err
 
 
 def test_get_custom_tabs_bad_data_raises_exception(monkeypatch):
-    from speedwagon import startup
-    from speedwagon.startup import FileFormatError
-    import os
     test_file = "test.yml"
     monkeypatch.setattr(os.path, "exists", lambda x: x == test_file)
-    with pytest.raises(FileFormatError):
+    with pytest.raises(speedwagon.startup.FileFormatError):
         with patch('speedwagon.startup.open', mock_open(
                 read_data='not valid yml data')) as m:
-            list(startup.get_custom_tabs({"my workflow": Mock()}, test_file))
+            list(
+                speedwagon.startup.get_custom_tabs(
+                    {
+                        "my workflow": Mock()
+                    }, 
+                    test_file
+                )
+            )
 
 
 def test_missing_workflow(monkeypatch, capsys):
-    from speedwagon import startup
-    import os
     test_file = "test.yml"
     monkeypatch.setattr(os.path, "exists", lambda x: x == test_file)
-    import yaml
+
 
     # These workflow are not valid
     tabs_config_data = {
@@ -144,17 +151,21 @@ def test_missing_workflow(monkeypatch, capsys):
     load.__class__ = dict
     monkeypatch.setattr(yaml, "load", load)
     with patch('speedwagon.startup.open', mock_open()) as m:
-        list(startup.get_custom_tabs({"my workflow": Mock()}, test_file))
+        list(
+            speedwagon.startup.get_custom_tabs(
+                {
+                    "my workflow": Mock()
+                },
+                test_file
+            )
+        )
     captured = capsys.readouterr()
     assert "Unable to load" in captured.err
 
 
 def test_get_custom_tabs_loads_workflows_from_file(monkeypatch):
-    from speedwagon import startup
-    import os
     test_file = "test.yml"
     monkeypatch.setattr(os.path, "exists", lambda x: x == test_file)
-    import yaml
     all_workflows = {
         "spam": Mock(active=True)
     }
@@ -168,29 +179,33 @@ def test_get_custom_tabs_loads_workflows_from_file(monkeypatch):
     monkeypatch.setattr(yaml, "load", load)
     with patch('speedwagon.startup.open', mock_open()) as m:
         tab_name, workflows = next(
-            startup.get_custom_tabs(all_workflows, test_file)
+            speedwagon.startup.get_custom_tabs(all_workflows, test_file)
         )
     assert "my workflow" == tab_name and "spam" in workflows
 
 
 def test_standalone_tab_editor_loads(qtbot, monkeypatch):
-    from speedwagon import startup, config
     TabsEditorApp = MagicMock()
-    monkeypatch.setattr(startup, "TabsEditorApp", TabsEditorApp)
+    monkeypatch.setattr(speedwagon.startup, "TabsEditorApp", TabsEditorApp)
     app = Mock()
     settings = Mock()
     get_platform_settings = Mock(return_value=settings)
     settings.get_app_data_directory = Mock(return_value=".")
-    monkeypatch.setattr(config, "get_platform_settings", get_platform_settings)
-    startup.standalone_tab_editor(app)
+
+    monkeypatch.setattr(
+        speedwagon.config,
+        "get_platform_settings",
+        get_platform_settings
+    )
+
+    speedwagon.startup.standalone_tab_editor(app)
     assert app.exec.called is True
 
 
 class TestCustomTabsFileReader:
     def test_load_custom_tabs_file_not_found(self, capsys):
-        from speedwagon import startup
         all_workflows = Mock()
-        reader = startup.CustomTabsFileReader(all_workflows)
+        reader = speedwagon.startup.CustomTabsFileReader(all_workflows)
         reader.read_yml_file = Mock()
         reader.read_yml_file.side_effect = FileNotFoundError()
 
@@ -200,9 +215,8 @@ class TestCustomTabsFileReader:
         assert "Custom tabs file not found" in captured.err
 
     def test_load_custom_tabs_file_attribute_error(self, capsys):
-        from speedwagon import startup
         all_workflows = Mock()
-        reader = startup.CustomTabsFileReader(all_workflows)
+        reader = speedwagon.startup.CustomTabsFileReader(all_workflows)
         reader.read_yml_file = Mock()
         reader.read_yml_file.side_effect = AttributeError()
 
@@ -212,11 +226,9 @@ class TestCustomTabsFileReader:
         assert "Custom tabs file failed to load" in captured.err
 
     def test_load_custom_tabs_file_yaml_error(self, capsys):
-        from speedwagon import startup
-        import yaml
 
         all_workflows = Mock()
-        reader = startup.CustomTabsFileReader(all_workflows)
+        reader = speedwagon.startup.CustomTabsFileReader(all_workflows)
         reader.read_yml_file = Mock()
         reader.read_yml_file.side_effect = yaml.YAMLError()
 
@@ -226,10 +238,8 @@ class TestCustomTabsFileReader:
         assert "file failed to load" in captured.err
 
     def test_load_custom_tabs_file_error_loading_tab(self, capsys):
-        from speedwagon import startup
-
         all_workflows = Mock()
-        reader = startup.CustomTabsFileReader(all_workflows)
+        reader = speedwagon.startup.CustomTabsFileReader(all_workflows)
         reader.read_yml_file = Mock(return_value={"my tab": []})
         reader._get_tab_items = Mock()
         reader._get_tab_items.side_effect = TypeError()
@@ -242,8 +252,6 @@ class TestCustomTabsFileReader:
 
 class TestStartupDefault:
     def test_invalid_setting_logs_warning(self, caplog, monkeypatch):
-        import speedwagon.startup
-        import speedwagon.config
 
         def update(*_, **__):
             raise ValueError("oops")
@@ -266,8 +274,6 @@ class TestStartupDefault:
 
     def test_invalid_setting_logs_warning_for_ConfigFileSetter(
             self, caplog, monkeypatch):
-        import speedwagon.startup
-        import speedwagon.config
 
         def update(*_, **__):
             raise ValueError("oops")
@@ -290,8 +296,6 @@ class TestStartupDefault:
         assert any("contains an invalid setting" in m for m in caplog.messages)
 
     def test_missing_debug_setting(self, caplog, monkeypatch):
-        import speedwagon.startup
-        import speedwagon.config
         # Monkey patch Path.home() because this will fail on linux systems if
         # uid not found. For example: in some docker containers
         monkeypatch.setattr(
@@ -315,8 +319,6 @@ class TestStartupDefault:
         )
 
     def test_invalid_debug_setting(self, caplog, monkeypatch):
-        import speedwagon.startup
-        import speedwagon.config
         # Monkey patch Path.home() because this will fail on linux systems if
         # uid not found. For example: in some docker containers
         monkeypatch.setattr(
@@ -340,8 +342,6 @@ class TestStartupDefault:
         )
 
     def test_default_resolve_settings_calls_default_setter(self, monkeypatch):
-        import speedwagon.startup
-        import speedwagon.config
 
         def update(*_, **__):
             raise ValueError("oops")
@@ -378,7 +378,6 @@ class TestStartupDefault:
             monkeypatch,
             first_time_startup_worker
     ):
-        import speedwagon.startup
         generate_default = Mock()
 
         monkeypatch.setattr(
@@ -392,8 +391,6 @@ class TestStartupDefault:
 
     @pytest.fixture()
     def first_time_startup_worker(self, monkeypatch):
-        import speedwagon.startup
-        import speedwagon.config
         # Monkey patch Path.home() because this will fail on linux systems if
         # uid not found. For example: in some docker containers
         monkeypatch.setattr(
@@ -438,8 +435,6 @@ class TestStartupDefault:
 
     @pytest.fixture()
     def returning_startup_worker(self, monkeypatch):
-        import speedwagon.startup
-        import speedwagon.config
         # Monkey patch Path.home() because this will fail on linux systems if
         # uid not found. For example: in some docker containers
         monkeypatch.setattr(
@@ -494,7 +489,6 @@ class TestStartupDefault:
             expected_message,
             first_time_startup_worker
     ):
-        import speedwagon.startup
         generate_default = Mock()
 
         monkeypatch.setattr(
@@ -525,7 +519,6 @@ class TestStartupDefault:
             expected_message,
             returning_startup_worker
     ):
-        import speedwagon.startup
         generate_default = Mock()
 
         monkeypatch.setattr(
@@ -538,3 +531,24 @@ class TestStartupDefault:
         assert any(
             expected_message in m for m in caplog.messages
         )
+
+
+class TestSingleWorkflowJSON:
+    def test_load_json(self):
+        startup = speedwagon.startup.SingleWorkflowJSON()
+
+        startup.load_json_string(
+            json.dumps(
+                {
+                    "workflow": "Zip Packages",
+                    "options": {
+                        "Source": "dummy_source",
+                        "Output": "dummy_out"
+                    }
+                }
+            )
+        )
+
+        assert startup.options["Source"] == "dummy_source" and \
+               startup.options["Output"] == "dummy_out"
+        # assert startup.workflow.name == 'Zip Packages'

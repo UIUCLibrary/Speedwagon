@@ -14,6 +14,7 @@ import argparse
 import collections
 import contextlib
 import io
+import json
 import logging
 import os
 import sys
@@ -556,6 +557,54 @@ class SingleWorkflowLauncher(AbsStarter):
     def set_workflow(self, workflow: job.AbsWorkflow):
         """Set the current workflow."""
         self._active_workflow = workflow
+
+
+class SingleWorkflowJSON(AbsStarter):
+
+    def __init__(self, logger=None) -> None:
+        self.options = None
+        self.workflow = None
+        self.logger = logger or logging.getLogger(__name__)
+
+    def load_json_string(self, data: str) -> None:
+        s = json.loads(data)
+        self.options = s['options']
+        self._set_workflow(s['workflow'])
+
+    def _set_workflow(self, workflow_name: str) -> None:
+        available_workflows = job.available_workflows()
+        self.workflow = available_workflows[workflow_name]()
+
+
+    def run(self) -> int:
+        if self.options is None:
+            raise ValueError("no data loaded")
+        with worker.ToolJobManager() as work_manager:
+            work_manager.logger = self.logger
+            self._run(work_manager)
+        return 0
+
+    def initialize(self) -> None:
+        if self.options is None:
+            raise ValueError("no data loaded")
+
+    def _run(self, work_manager):
+        window = MainWindow(
+            work_manager=work_manager,
+            debug=False)
+
+        window.show()
+        window.setWindowTitle(self.workflow.name)
+        runner_strategy = \
+            runner_strategies.UsingExternalManagerForAdapter(work_manager)
+
+        self.workflow.validate_user_options(**self.options)
+
+        runner_strategy.run(window,
+                            self.workflow,
+                            self.options,
+                            window.log_manager)
+        window.log_manager.handlers.clear()
 
 
 class TabsEditorApp(QtWidgets.QDialog):
