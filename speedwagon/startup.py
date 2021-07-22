@@ -568,9 +568,9 @@ class SingleWorkflowJSON(AbsStarter):
         self.logger = logger or logging.getLogger(__name__)
 
     def load_json_string(self, data: str) -> None:
-        data = typing.cast(typing.Dict[str, typing.Any], json.loads(data))
-        self.options = data['options']
-        self._set_workflow(data['workflow'])
+        loaded_data = json.loads(data)
+        self.options = loaded_data['options']
+        self._set_workflow(loaded_data['workflow'])
 
     def _set_workflow(self, workflow_name: str) -> None:
         available_workflows = job.available_workflows()
