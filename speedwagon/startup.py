@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import sys
+import typing
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
 import pathlib
 import yaml
@@ -562,12 +563,12 @@ class SingleWorkflowLauncher(AbsStarter):
 class SingleWorkflowJSON(AbsStarter):
 
     def __init__(self, logger=None) -> None:
-        self.options = None
+        self.options: typing.Optional[typing.Dict[str, typing.Any]] = None
         self.workflow = None
         self.logger = logger or logging.getLogger(__name__)
 
     def load_json_string(self, data: str) -> None:
-        data = json.loads(data)
+        data = typing.cast(typing.Dict[str, typing.Any], json.loads(data))
         self.options = data['options']
         self._set_workflow(data['workflow'])
 
