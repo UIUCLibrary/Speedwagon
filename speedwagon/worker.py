@@ -17,6 +17,13 @@ from PyQt5 import QtWidgets  # type: ignore
 
 from .dialog.dialogs import WorkProgressBar
 from .tasks import AbsSubtask, QueueAdapter, Result
+
+__all__ = [
+    "WorkRunnerExternal3",
+    "ToolJobManager",
+    "SubtaskJobAdapter"
+]
+
 if typing.TYPE_CHECKING:
     import speedwagon.config
 

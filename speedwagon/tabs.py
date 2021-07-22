@@ -15,10 +15,20 @@ from PyQt5 import QtWidgets, QtCore  # type: ignore
 import speedwagon
 from . import runner_strategies
 from . import models
-from . import worker
+from . import worker  # pylint: disable=unused-import
 from .exceptions import MissingConfiguration
 from .workflows import shared_custom_widgets as options
 from .job import AbsWorkflow, NullWorkflow, Workflow
+
+
+__all__ = [
+    "ItemSelectionTab",
+    "WorkflowsTab",
+    "TabData",
+    "read_tabs_yaml",
+    "write_tabs_yaml",
+    "extract_tab_information"
+]
 
 SELECTOR_VIEW_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.MinimumExpanding,
@@ -52,7 +62,7 @@ class Tab:
 
     def __init__(self,
                  parent: QtWidgets.QWidget,
-                 work_manager: worker.ToolJobManager
+                 work_manager: "worker.ToolJobManager"
                  ) -> None:
         """Create a new tab."""
         self.parent = parent
@@ -139,7 +149,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             name: str,
             parent: QtWidgets.QWidget,
             item_model: "models.WorkflowListModel",
-            work_manager: worker.ToolJobManager,
+            work_manager: "worker.ToolJobManager",
             log_manager: logging.Logger
     ) -> None:
         """Create a new item selection tab."""

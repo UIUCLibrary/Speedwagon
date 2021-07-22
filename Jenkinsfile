@@ -613,6 +613,7 @@ pipeline {
                                                         args: '--mount source=sonar-cache-speedwagon,target=/opt/sonar/.sonar/cache',
                                                     ]
                                                 ]
+                                    milestone label: 'sonarcloud'
                                     if (env.CHANGE_ID){
                                         sonarqube.submitToSonarcloud(
                                             agent: agent,

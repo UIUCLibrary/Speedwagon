@@ -1,7 +1,7 @@
 from behave import *
 from behave import runner
 from PyQt5 import QtCore
-import speedwagon.models
+import speedwagon
 from speedwagon.workflows.shared_custom_widgets import  UserOptionCustomDataType
 
 # use_step_matcher("re")

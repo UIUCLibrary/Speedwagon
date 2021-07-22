@@ -15,7 +15,15 @@ import platform
 from PyQt5.QtCore import QAbstractItemModel
 
 from speedwagon.job import all_required_workflow_keys
-from speedwagon.models import SettingsModel
+import speedwagon.models
+
+__all__ = [
+    "ConfigManager",
+    "generate_default",
+    "get_platform_settings",
+    "build_setting_model",
+    "serialize_settings_model"
+]
 
 
 class AbsConfig(collections.abc.Mapping):
@@ -190,7 +198,7 @@ def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
     return configuration
 
 
-def build_setting_model(config_file: str) -> SettingsModel:
+def build_setting_model(config_file: str) -> "speedwagon.models.SettingsModel":
     """Read a configuration file and generate a SettingsModel."""
     if not os.path.exists(config_file):
         raise FileNotFoundError(f"No existing Configuration in ${config_file}")
@@ -198,7 +206,7 @@ def build_setting_model(config_file: str) -> SettingsModel:
     config = configparser.ConfigParser()
     config.read(config_file)
     global_settings = config["GLOBAL"]
-    my_model = SettingsModel()
+    my_model = speedwagon.models.SettingsModel()
     for key, value in global_settings.items():
         my_model.add_setting(key, value)
     return my_model

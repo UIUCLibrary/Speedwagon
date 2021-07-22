@@ -12,6 +12,16 @@ from speedwagon import tabs, Workflow
 from .job import AbsWorkflow
 from .workflows import shared_custom_widgets
 
+__all__ = [
+    "ItemListModel",
+    "WorkflowListModel",
+    "WorkflowListModel2",
+    "ToolOptionsPairsModel",
+    "ToolOptionsModel3",
+    "SettingsModel",
+    "TabsModel"
+]
+
 QtConstant = int
 
 # Qt has non-pythonic names for it's methods

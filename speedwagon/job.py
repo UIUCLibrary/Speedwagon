@@ -10,6 +10,14 @@ from typing import Type, Optional, Iterable, Dict, List, Any, Tuple, Set
 
 from PyQt5 import QtWidgets  # type: ignore
 from . import tasks
+__all__ = [
+    "JobCancelled",
+    "AbsWorkflow",
+    "Workflow",
+    "NullWorkflow",
+    "available_workflows",
+    "all_required_workflow_keys"
+]
 
 
 class JobCancelled(Exception):
