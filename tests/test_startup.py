@@ -562,3 +562,24 @@ class TestSingleWorkflowJSON:
         assert startup.options["Source"] == "dummy_source" and \
                startup.options["Output"] == "dummy_out" and \
                startup.workflow.name == 'Zip Packages'
+
+    def test_runner_strategies_called(self, monkeypatch):
+        startup = speedwagon.startup.SingleWorkflowJSON()
+
+        startup.load_json_string(
+            json.dumps(
+                {
+                    "workflow": "Zip Packages",
+                    "options": {
+                        "Source": "dummy_source",
+                        "Output": "dummy_out"
+                    }
+                }
+            )
+        )
+        monkeypatch.setattr(speedwagon.startup, "MainWindow", MagicMock())
+        run = MagicMock()
+        monkeypatch.setattr(speedwagon.startup.runner_strategies.UsingExternalManagerForAdapter, "run", run)
+        startup.workflow.validate_user_options = MagicMock()
+        startup.run()
+        assert run.called is True
