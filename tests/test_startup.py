@@ -566,6 +566,12 @@ class TestSingleWorkflowJSON:
             startup.initialize()
         assert "no data" in str(error.value).lower()
 
+    def test_initialize_success(self):
+        startup = speedwagon.startup.SingleWorkflowJSON()
+        startup.options = Mock()
+        startup.workflow = Mock()
+        startup.initialize()
+
     def test_load_json(self):
         startup = speedwagon.startup.SingleWorkflowJSON()
 
