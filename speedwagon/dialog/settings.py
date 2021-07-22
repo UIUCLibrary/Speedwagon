@@ -14,7 +14,6 @@ from typing import Optional, Dict, cast, Type
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 from PyQt5 import uic
 from speedwagon import config, models, tabs, job
-from speedwagon.config import build_setting_model
 
 
 __all__ = ['GlobalSettingsTab', 'TabsConfigurationTab', 'TabEditor']
@@ -181,7 +180,10 @@ class GlobalSettingsTab(QtWidgets.QWidget):
         if not os.path.exists(self.config_file):
             raise FileNotFoundError("Invalid Configuration file set")
 
-        self.settings_table.setModel(build_setting_model(self.config_file))
+        self.settings_table.setModel(
+            config.build_setting_model(self.config_file)
+        )
+
         self.settings_table.model().dataChanged.connect(self.on_modified)
 
     def on_modified(self) -> None:

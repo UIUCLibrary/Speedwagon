@@ -7,8 +7,9 @@ from typing import List, Any, Dict
 
 from PyQt5 import QtWidgets
 
+import speedwagon
+from speedwagon import worker
 from . import tasks
-from . import worker
 from .job import AbsWorkflow, Workflow, JobCancelled
 
 USER_ABORTED_MESSAGE = "User Aborted"
@@ -50,7 +51,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
 
     @staticmethod
     def _update_progress(
-            runner: worker.WorkRunnerExternal3,
+            runner: "worker.WorkRunnerExternal3",
             current: int,
             total: int) -> None:
         if runner.dialog is not None:
@@ -192,7 +193,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                     for subtask in new_task.subtasks:
                         i += 1
 
-                        adapted_tool = worker.SubtaskJobAdapter(
+                        adapted_tool = speedwagon.worker.SubtaskJobAdapter(
                             subtask
                         )
 
@@ -244,7 +245,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
 
                 task = finalization_task_builder.build_task()
                 for subtask in task.main_subtasks:
-                    adapted_tool = worker.SubtaskJobAdapter(subtask)
+                    adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
                     self._manager.add_job(adapted_tool, adapted_tool.settings)
                 self._manager.start()
 
@@ -273,8 +274,10 @@ class UsingExternalManagerForAdapter(AbsRunner):
             logger: logging.Logger
     ) -> List[Any]:
 
-        with self._manager.open(parent=parent,
-                                runner=worker.WorkRunnerExternal3) as runner:
+        with self._manager.open(
+                parent=parent,
+                runner=worker.WorkRunnerExternal3
+        ) as runner:
 
             runner.dialog.setRange(0, 0)
             logger.addHandler(runner.progress_dialog_box_handler)
@@ -291,7 +294,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
 
                 task = task_builder.build_task()
                 for subtask in task.main_subtasks:
-                    adapted_tool = worker.SubtaskJobAdapter(subtask)
+                    adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
                     self._manager.add_job(adapted_tool, adapted_tool.settings)
 
                 self._manager.start()

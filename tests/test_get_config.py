@@ -92,7 +92,7 @@ def test_serialize_settings_model():
     cfg_parser = configparser.ConfigParser()
     original_settings = cfg_parser["GLOBAL"] = original_settings
 
-    my_model = speedwagon.config.SettingsModel()
+    my_model = speedwagon.models.SettingsModel()
     for k, v in original_settings.items():
         my_model.add_setting(k, v)
 
