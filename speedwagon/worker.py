@@ -233,20 +233,6 @@ class AbsSubject(metaclass=abc.ABCMeta):
                     observer.emit(value)
 
 
-class GuiLogHandler(logging.Handler):
-    def __init__(
-            self,
-            callback: typing.Callable[[str], None],
-            level: int = logging.NOTSET
-    ) -> None:
-        """Create a gui log handler."""
-        super().__init__(level)
-        self.callback = callback
-
-    def emit(self, record: logging.LogRecord) -> None:
-        self.callback(logging.Formatter().format(record))
-
-
 class WorkRunnerExternal3(contextlib.AbstractContextManager):
     """Work runner that uses external manager."""
 

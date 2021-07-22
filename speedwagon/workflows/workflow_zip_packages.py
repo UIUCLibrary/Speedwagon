@@ -10,7 +10,7 @@ import hathizip.process
 import hathizip
 from speedwagon import tasks, reports
 from speedwagon.job import AbsWorkflow
-from speedwagon.worker import GuiLogHandler
+from speedwagon.logging import GuiLogHandler
 from . import shared_custom_widgets as options
 
 __all__ = ['ZipPackagesWorkflow']

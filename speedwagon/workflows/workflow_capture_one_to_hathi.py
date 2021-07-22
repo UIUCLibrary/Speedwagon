@@ -9,7 +9,7 @@ from uiucprescon.packager.packages.collection_builder import Metadata
 
 from speedwagon import tasks
 from speedwagon.job import AbsWorkflow
-from speedwagon.worker import GuiLogHandler
+from speedwagon.logging import GuiLogHandler
 from . import shared_custom_widgets as options
 
 __all__ = ['CaptureOneToHathiTiffPackageWorkflow']
