@@ -592,33 +592,45 @@ class SingleWorkflowJSON(AbsStarter):
         """Launch Speedwagon."""
         if self.options is None:
             raise ValueError("no data loaded")
+        if self.workflow is None:
+            raise ValueError("no workflow loaded")
+
         with worker.ToolJobManager() as work_manager:
             work_manager.logger = self.logger
-            self._run(work_manager)
+
+            self._run(work_manager, self.workflow, self.options)
         return 0
 
     def initialize(self) -> None:
         """Initialize environment."""
         if self.options is None:
             raise ValueError("no data loaded")
+        if self.workflow is None:
+            raise ValueError("no workflow loaded")
 
-    def _run(self, work_manager):
-        window = MainWindow(
-            work_manager=work_manager,
-            debug=False)
+    @staticmethod
+    def _run(work_manager: worker.ToolJobManager, workflow, options: Dict[str, typing.Any]) -> None:
 
+        window = SingleWorkflowJSON._load_window(work_manager, workflow.name)
         window.show()
-        window.setWindowTitle(self.workflow.name)
         runner_strategy = \
             runner_strategies.UsingExternalManagerForAdapter(work_manager)
 
-        self.workflow.validate_user_options(**self.options)
+        workflow.validate_user_options(**options)
 
         runner_strategy.run(window,
-                            self.workflow,
-                            self.options,
+                            workflow,
+                            options,
                             window.log_manager)
         window.log_manager.handlers.clear()
+
+    @staticmethod
+    def _load_window(work_manager, title: str):
+        window = MainWindow(
+            work_manager=work_manager,
+            debug=False)
+        window.setWindowTitle(title)
+        return window
 
 
 class TabsEditorApp(QtWidgets.QDialog):
