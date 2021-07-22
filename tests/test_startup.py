@@ -537,12 +537,34 @@ class TestSingleWorkflowJSON:
     def test_run_without_json_raises_exception(self):
         with pytest.raises(ValueError) as error:
             startup = speedwagon.startup.SingleWorkflowJSON()
+            startup.options = Mock()
+            startup.workflow = None
             startup.run()
+        assert "workflow" in str(error.value).lower()
 
-    def test_initialize_without_json_raises_exception(self):
+    def test_run_without_options_raises_exception(self):
         with pytest.raises(ValueError) as error:
             startup = speedwagon.startup.SingleWorkflowJSON()
+            startup.options = None
+            startup.workflow = Mock()
+            startup.run()
+        assert "no data" in str(error.value).lower()
+
+    def test_initialize_without_workflow_raises_exception(self):
+        with pytest.raises(ValueError) as error:
+            startup = speedwagon.startup.SingleWorkflowJSON()
+            startup.options = Mock()
+            startup.workflow = None
             startup.initialize()
+        assert "workflow" in str(error.value).lower()
+
+    def test_initialize_without_options_raises_exception(self):
+        with pytest.raises(ValueError) as error:
+            startup = speedwagon.startup.SingleWorkflowJSON()
+            startup.options = None
+            startup.workflow = Mock()
+            startup.initialize()
+        assert "no data" in str(error.value).lower()
 
     def test_load_json(self):
         startup = speedwagon.startup.SingleWorkflowJSON()
