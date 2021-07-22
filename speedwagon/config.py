@@ -17,6 +17,14 @@ from PyQt5.QtCore import QAbstractItemModel
 from speedwagon.job import all_required_workflow_keys
 import speedwagon.models
 
+__all__ = [
+    "ConfigManager",
+    "generate_default",
+    "get_platform_settings",
+    "build_setting_model",
+    "serialize_settings_model"
+]
+
 
 class AbsConfig(collections.abc.Mapping):
     """Abstract class for defining where speedwagon should find data files."""

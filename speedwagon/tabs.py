@@ -20,6 +20,16 @@ from .exceptions import MissingConfiguration
 from .workflows import shared_custom_widgets as options
 from .job import AbsWorkflow, NullWorkflow, Workflow
 
+
+__all__ = [
+    "ItemSelectionTab",
+    "WorkflowsTab",
+    "TabData",
+    "read_tabs_yaml",
+    "write_tabs_yaml",
+    "extract_tab_information"
+]
+
 SELECTOR_VIEW_SIZE_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.MinimumExpanding,
     QtWidgets.QSizePolicy.Maximum)

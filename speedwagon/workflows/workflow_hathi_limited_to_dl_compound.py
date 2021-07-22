@@ -8,7 +8,7 @@ from typing import List, Any, Optional
 from uiucprescon import packager
 from speedwagon.job import Workflow
 from speedwagon import tasks, reports
-from speedwagon.worker import GuiLogHandler
+from speedwagon.logging import GuiLogHandler
 from . import shared_custom_widgets as options
 __all__ = ['HathiLimitedToDLWorkflow']
 

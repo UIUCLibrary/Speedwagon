@@ -17,6 +17,13 @@ from PyQt5 import QtWidgets  # type: ignore
 
 from .dialog.dialogs import WorkProgressBar
 from .tasks import AbsSubtask, QueueAdapter, Result
+
+__all__ = [
+    "WorkRunnerExternal3",
+    "ToolJobManager",
+    "SubtaskJobAdapter"
+]
+
 if typing.TYPE_CHECKING:
     import speedwagon.config
 
@@ -224,20 +231,6 @@ class AbsSubject(metaclass=abc.ABCMeta):
                     observer.emit()
                 else:
                     observer.emit(value)
-
-
-class GuiLogHandler(logging.Handler):
-    def __init__(
-            self,
-            callback: typing.Callable[[str], None],
-            level: int = logging.NOTSET
-    ) -> None:
-        """Create a gui log handler."""
-        super().__init__(level)
-        self.callback = callback
-
-    def emit(self, record: logging.LogRecord) -> None:
-        self.callback(logging.Formatter().format(record))
 
 
 class WorkRunnerExternal3(contextlib.AbstractContextManager):

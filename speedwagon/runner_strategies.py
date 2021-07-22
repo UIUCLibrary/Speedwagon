@@ -12,6 +12,11 @@ from speedwagon import worker
 from . import tasks
 from .job import AbsWorkflow, Workflow, JobCancelled
 
+__all__ = [
+    "RunRunner",
+    "UsingExternalManagerForAdapter"
+]
+
 USER_ABORTED_MESSAGE = "User Aborted"
 
 

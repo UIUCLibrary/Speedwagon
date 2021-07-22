@@ -19,7 +19,7 @@ from uiucprescon.packager.packages.collection import AbsPackageComponent
 from speedwagon import tasks, validators
 from speedwagon.job import AbsWorkflow
 from speedwagon.workflows import shared_custom_widgets as options
-from speedwagon.worker import GuiLogHandler
+from speedwagon.logging import GuiLogHandler
 import speedwagon.exceptions
 
 __all__ = ['CaptureOneToDlCompoundAndDLWorkflow']
