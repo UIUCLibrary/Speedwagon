@@ -570,7 +570,7 @@ class SingleWorkflowJSON(AbsStarter):
             logger: Optional Logger, defaults to default logger for __name__.
         """
         self.options: typing.Optional[typing.Dict[str, typing.Any]] = None
-        self.workflow = None
+        self.workflow: typing.Optional[job.AbsWorkflow] = None
         self.logger = logger or logging.getLogger(__name__)
 
     def load_json_string(self, data: str) -> None:
@@ -609,8 +609,9 @@ class SingleWorkflowJSON(AbsStarter):
             raise ValueError("no workflow loaded")
 
     @staticmethod
-    def _run(work_manager: worker.ToolJobManager, workflow, options: Dict[str, typing.Any]) -> None:
-
+    def _run(work_manager: worker.ToolJobManager,
+             workflow: job.AbsWorkflow,
+             options: Dict[str, typing.Any]) -> None:
         window = SingleWorkflowJSON._load_window(work_manager, workflow.name)
         window.show()
         runner_strategy = \
@@ -625,11 +626,15 @@ class SingleWorkflowJSON(AbsStarter):
         window.log_manager.handlers.clear()
 
     @staticmethod
-    def _load_window(work_manager, title: str):
+    def _load_window(work_manager: worker.ToolJobManager,
+                     title: Optional[str]) -> MainWindow:
         window = MainWindow(
             work_manager=work_manager,
             debug=False)
-        window.setWindowTitle(title)
+
+        if title is not None:
+            window.setWindowTitle(title)
+
         return window
 
 
