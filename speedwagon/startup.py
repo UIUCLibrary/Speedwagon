@@ -14,9 +14,11 @@ import argparse
 import collections
 import contextlib
 import io
+import json
 import logging
 import os
 import sys
+import typing
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
 import pathlib
 import yaml
@@ -38,6 +40,14 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
     import importlib_resources as resources  # type: ignore
+
+__all__ = [
+    "ApplicationLauncher",
+    "FileFormatError",
+    "SingleWorkflowLauncher",
+    "SingleWorkflowJSON",
+    "standalone_tab_editor",
+]
 
 
 class FileFormatError(Exception):
@@ -556,6 +566,89 @@ class SingleWorkflowLauncher(AbsStarter):
     def set_workflow(self, workflow: job.AbsWorkflow):
         """Set the current workflow."""
         self._active_workflow = workflow
+
+
+class SingleWorkflowJSON(AbsStarter):
+    """Start up class for loading instructions from a JSON file.
+
+    .. versionadded:: 0.2.0
+        SingleWorkflowJSON class added
+
+    """
+
+    def __init__(self, logger: Optional[logging.Logger] = None) -> None:
+        """Create a environment where the workflow is loaded from a json file.
+
+        Args:
+            logger: Optional Logger, defaults to default logger for __name__.
+        """
+        self.options: typing.Optional[typing.Dict[str, typing.Any]] = None
+        self.workflow: typing.Optional[job.AbsWorkflow] = None
+        self.logger = logger or logging.getLogger(__name__)
+
+    def load_json_string(self, data: str) -> None:
+        """Load json data containing options and workflow info.
+
+        Args:
+            data: JSON data as a string.
+
+        """
+        loaded_data = json.loads(data)
+        self.options = loaded_data['options']
+        self._set_workflow(loaded_data['workflow'])
+
+    def _set_workflow(self, workflow_name: str) -> None:
+        available_workflows = job.available_workflows()
+        self.workflow = available_workflows[workflow_name]()
+
+    def run(self) -> int:
+        """Launch Speedwagon."""
+        if self.options is None:
+            raise ValueError("no data loaded")
+        if self.workflow is None:
+            raise ValueError("no workflow loaded")
+
+        with worker.ToolJobManager() as work_manager:
+            work_manager.logger = self.logger
+
+            self._run(work_manager, self.workflow, self.options)
+        return 0
+
+    def initialize(self) -> None:
+        """Initialize environment."""
+        if self.options is None:
+            raise ValueError("no data loaded")
+        if self.workflow is None:
+            raise ValueError("no workflow loaded")
+
+    @staticmethod
+    def _run(work_manager: worker.ToolJobManager,
+             workflow: job.AbsWorkflow,
+             options: Dict[str, typing.Any]) -> None:
+        window = SingleWorkflowJSON._load_window(work_manager, workflow.name)
+        window.show()
+        runner_strategy = \
+            runner_strategies.UsingExternalManagerForAdapter(work_manager)
+
+        workflow.validate_user_options(**options)
+
+        runner_strategy.run(window,
+                            workflow,
+                            options,
+                            window.log_manager)
+        window.log_manager.handlers.clear()
+
+    @staticmethod
+    def _load_window(work_manager: worker.ToolJobManager,
+                     title: Optional[str]) -> MainWindow:
+        window = MainWindow(
+            work_manager=work_manager,
+            debug=False)
+
+        if title is not None:
+            window.setWindowTitle(title)
+
+        return window
 
 
 class TabsEditorApp(QtWidgets.QDialog):
