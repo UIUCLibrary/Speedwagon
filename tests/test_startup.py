@@ -534,6 +534,11 @@ class TestStartupDefault:
 
 
 class TestSingleWorkflowJSON:
+    def test_run_without_json_raises_exception(self):
+        with pytest.raises(ValueError) as error:
+            startup = speedwagon.startup.SingleWorkflowJSON()
+            startup.run()
+
     def test_load_json(self):
         startup = speedwagon.startup.SingleWorkflowJSON()
 
