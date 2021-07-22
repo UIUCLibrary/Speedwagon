@@ -561,7 +561,12 @@ class SingleWorkflowLauncher(AbsStarter):
 
 
 class SingleWorkflowJSON(AbsStarter):
-    """Start up class for loading instructions from a JSON file."""
+    """Start up class for loading instructions from a JSON file.
+
+    .. versionadded:: 0.2.0
+        SingleWorkflowJSON class added
+
+    """
 
     def __init__(self, logger: Optional[logging.Logger] = None) -> None:
         """Create a environment where the workflow is loaded from a json file.
