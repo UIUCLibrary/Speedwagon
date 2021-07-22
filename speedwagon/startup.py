@@ -561,13 +561,25 @@ class SingleWorkflowLauncher(AbsStarter):
 
 
 class SingleWorkflowJSON(AbsStarter):
+    """Start up class for loading instructions from a JSON file."""
 
     def __init__(self, logger=None) -> None:
+        """Create a environment where the workflow is loaded from a json file.
+
+        Args:
+            logger: Optional Logger, defaults to default logger for __name__.
+        """
         self.options: typing.Optional[typing.Dict[str, typing.Any]] = None
         self.workflow = None
         self.logger = logger or logging.getLogger(__name__)
 
     def load_json_string(self, data: str) -> None:
+        """Load json data containing options and workflow info.
+
+        Args:
+            data: JSON data as a string.
+
+        """
         loaded_data = json.loads(data)
         self.options = loaded_data['options']
         self._set_workflow(loaded_data['workflow'])
@@ -577,6 +589,7 @@ class SingleWorkflowJSON(AbsStarter):
         self.workflow = available_workflows[workflow_name]()
 
     def run(self) -> int:
+        """Launch Speedwagon."""
         if self.options is None:
             raise ValueError("no data loaded")
         with worker.ToolJobManager() as work_manager:
@@ -585,6 +598,7 @@ class SingleWorkflowJSON(AbsStarter):
         return 0
 
     def initialize(self) -> None:
+        """Initialize environment."""
         if self.options is None:
             raise ValueError("no data loaded")
 
