@@ -999,7 +999,8 @@ pipeline {
                                         timeout(15){
                                             unstash 'STANDALONE_INSTALLERS'
                                             script{
-                                                load('ci/jenkins/scripts/standalone.groovy').testInstall('dist/*.msi')
+                                                def standalone = load('ci/jenkins/scripts/standalone.groovy')
+                                                standalone.testInstall('dist/*.msi')
                                             }
                                         }
                                     }
