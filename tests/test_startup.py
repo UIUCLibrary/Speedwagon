@@ -560,5 +560,5 @@ class TestSingleWorkflowJSON:
         )
 
         assert startup.options["Source"] == "dummy_source" and \
-               startup.options["Output"] == "dummy_out"
-        # assert startup.workflow.name == 'Zip Packages'
+               startup.options["Output"] == "dummy_out" and \
+               startup.workflow.name == 'Zip Packages'
