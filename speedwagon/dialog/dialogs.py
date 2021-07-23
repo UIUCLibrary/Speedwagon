@@ -10,6 +10,12 @@ except ImportError:  # pragma: no cover
 
 import speedwagon
 
+__all__ = [
+    "SystemInfoDialog",
+    "WorkProgressBar",
+    "about_dialog_box"
+]
+
 
 class ErrorDialogBox(QtWidgets.QMessageBox):
     """Dialog box for Error Messages causes while running a job."""
