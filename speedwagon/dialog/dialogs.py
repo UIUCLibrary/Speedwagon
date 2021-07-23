@@ -1,6 +1,6 @@
 """Dialog boxes."""
-
-from typing import Collection
+import typing
+from typing import Collection, Union
 
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 try:  # pragma: no cover
@@ -10,13 +10,19 @@ except ImportError:  # pragma: no cover
 
 import speedwagon
 
+__all__ = [
+    "SystemInfoDialog",
+    "WorkProgressBar",
+    "about_dialog_box"
+]
+
 
 class ErrorDialogBox(QtWidgets.QMessageBox):
     """Dialog box for Error Messages causes while running a job."""
 
-    def __init__(self, *__args) -> None:
+    def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         """Create a error dialog box."""
-        super().__init__(*__args)
+        super().__init__(parent)
         self.setIcon(QtWidgets.QMessageBox.Critical)
         self.setStandardButtons(QtWidgets.QMessageBox.Abort)
         self.setSizeGripEnabled(True)
@@ -68,7 +74,7 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
         self.setMinimumHeight(self._label.sizeHint().height() + 75)
 
 
-def about_dialog_box(parent) -> None:
+def about_dialog_box(parent: typing.Optional[QtWidgets.QWidget]) -> None:
     """Launch the about speedwagon dialog box."""
     try:
         pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
@@ -88,10 +94,16 @@ def about_dialog_box(parent) -> None:
 
 class SystemInfoDialog(QtWidgets.QDialog):
     """System information dialog window."""
-
-    def __init__(self, parent: QtWidgets.QWidget, *args, **kwargs) -> None:
+    # parent: QWidget = None, flags: Union[
+    #     Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags()
+    def __init__(
+            self,
+            parent: QtWidgets.QWidget,
+            flags: Union[QtCore.Qt.WindowFlags,
+                         QtCore.Qt.WindowType] = QtCore.Qt.WindowFlags()
+    ) -> None:
         """Display System information."""
-        super().__init__(parent, *args, **kwargs)
+        super().__init__(parent, flags)
 
         self.setWindowTitle("System Information")
         layout = QtWidgets.QVBoxLayout(self)
@@ -115,7 +127,8 @@ class SystemInfoDialog(QtWidgets.QDialog):
         layout.addWidget(self._button_box)
 
     @staticmethod
-    def get_installed_packages() -> Collection:
+    def get_installed_packages() -> Collection[str]:
+        """Get list of strings of installed packages."""
         pkgs = sorted(
             metadata.distributions(),
             key=lambda x: x.metadata['Name'].upper()
