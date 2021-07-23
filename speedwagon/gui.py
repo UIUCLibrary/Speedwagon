@@ -35,6 +35,10 @@ import speedwagon
 import speedwagon.startup
 import speedwagon.config
 
+__all__ = [
+    "MainWindow",
+    "SplashScreenLogHandler"
+]
 
 DEBUG_LOGGING_FORMAT = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
