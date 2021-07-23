@@ -154,7 +154,7 @@ def createNewChocolateyPackage(args=[:]){
     bat(
         label: 'Creating new Chocolatey package workspace',
         script: """
-               choco new ${chocoPackageName} packageversion=${sanitizedPackageVersion} PythonSummary="${packageSummery}" InstallerFile=${applicationWheel} MaintainerName="${packageMaintainer}" -t pythonscript --outputdirectory packages
+                choco new ${chocoPackageName} packageversion=${sanitizedPackageVersion} PythonSummary="${packageSummery}" InstallerFile=${applicationWheel} MaintainerName="${packageMaintainer}" -t pythonscript --outputdirectory packages
                """
         )
 
@@ -168,9 +168,19 @@ def createNewChocolateyPackage(args=[:]){
                Copy-Item -Path "${docsDir}"  -Destination ".\\packages\\${chocoPackageName}\\docs\\" -Force -Recurse
                """
         )
+    findFiles(glob: 'packages/**/*.nuspec').each{
+        def nuspec = readFile(file: it.path)
+        echo "nuspec = ${nuspec}"
+    }
+
     bat(
         label: 'Packaging Chocolatey package',
         script: "choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages"
+    )
+
+    bat(
+        label: 'Checking chocolatey package metadata',
+        script: 'choco info --pre -s .\\packages\\ speedwagon'
     )
 }
 
