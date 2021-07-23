@@ -122,6 +122,7 @@ class SystemInfoDialog(QtWidgets.QDialog):
 
     @staticmethod
     def get_installed_packages() -> Collection:
+        """Get list of strings of installed packages."""
         pkgs = sorted(
             metadata.distributions(),
             key=lambda x: x.metadata['Name'].upper()
