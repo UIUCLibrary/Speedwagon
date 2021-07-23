@@ -9,7 +9,7 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     import importlib_resources as resources  # type: ignore
 
-from typing import Optional, Dict, cast, Type
+from typing import Optional, Dict, cast, Type, Union
 
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 from PyQt5 import uic
@@ -84,12 +84,11 @@ class SettingsDialog(QtWidgets.QDialog):
 
     def __init__(
             self,
-            *args,
             parent: QtWidgets.QWidget = None,
-            **kwargs
+            flags: Union[QtCore.Qt.WindowFlags,
+                         QtCore.Qt.WindowType] = QtCore.Qt.WindowFlags()
     ) -> None:
-
-        super().__init__(parent, *args, **kwargs)
+        super().__init__(parent, flags)
         self.settings_location: Optional[str] = None
 
         self.setWindowTitle("Settings")
@@ -155,10 +154,11 @@ class GlobalSettingsTab(QtWidgets.QWidget):
     def __init__(
             self,
             parent: QtWidgets.QWidget = None,
-            *args, **kwargs
+            flags: Union[QtCore.Qt.WindowFlags,
+                         QtCore.Qt.WindowType] = QtCore.Qt.WindowFlags()
     ) -> None:
         """Create a global settings tab widget."""
-        super().__init__(parent, *args, **kwargs)
+        super().__init__(parent, flags)
         self.config_file: Optional[str] = None
         self._modified = False
 
@@ -211,12 +211,14 @@ class GlobalSettingsTab(QtWidgets.QWidget):
 
 
 class TabsConfigurationTab(QtWidgets.QWidget):
-    def __init__(self,
-                 parent: QtWidgets.QWidget = None,
-                 *args,
-                 **kwargs) -> None:
+    def __init__(
+            self,
+            parent: QtWidgets.QWidget = None,
+            flags: Union[QtCore.Qt.WindowFlags,
+                         QtCore.Qt.WindowType] = QtCore.Qt.WindowFlags()
+    ) -> None:
         """Create a tab configuration widget."""
-        super().__init__(parent, *args, **kwargs)
+        super().__init__(parent, flags)
         self.settings_location: Optional[str] = None
         self._modified = False
         layout = QtWidgets.QVBoxLayout(self)
@@ -254,9 +256,14 @@ class TabsConfigurationTab(QtWidgets.QWidget):
 
 
 class TabEditor(QtWidgets.QWidget):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(
+            self,
+            parent: QtWidgets.QWidget = None,
+            flags: Union[QtCore.Qt.WindowFlags,
+                         QtCore.Qt.WindowType] = QtCore.Qt.WindowFlags()
+    ) -> None:
         """Create a tab editor widget."""
-        super().__init__(*args, **kwargs)
+        super().__init__(parent, flags)
         with resources.path("speedwagon.ui", "tab_editor.ui") as ui_file:
             uic.loadUi(ui_file, self)
 
