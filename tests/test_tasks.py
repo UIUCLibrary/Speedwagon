@@ -285,6 +285,7 @@ def test_adapter_results_with_pretask(tmpdir):
         os.unlink(shortcut)
 
 
+@pytest.mark.slow
 @pytest.mark.adapter
 def test_adapter_results_with_posttask(tmpdir):
     temp_path = tmpdir.mkdir("test")

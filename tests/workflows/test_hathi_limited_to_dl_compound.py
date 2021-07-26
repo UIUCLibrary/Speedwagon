@@ -1,10 +1,14 @@
 import logging
 import os
+import pathlib
 import shutil
+from typing import Dict, Any
+from unittest.mock import Mock, ANY, MagicMock
 from zipfile import ZipFile
 
 import pykdu_compress
 import pytest
+from PyQt5 import QtWidgets
 from uiucprescon import packager
 from uiucprescon.packager import transformations
 from uiucprescon.packager.packages import DigitalLibraryCompound
@@ -12,8 +16,10 @@ from uiucprescon.packager.packages.collection import Package
 from uiucprescon.packager.packages.digital_library_compound import Transform
 from uiucprescon.packager.transformations import AbsTransformation
 
+from speedwagon.job import AbsWorkflow
 from speedwagon.workflows.workflow_hathi_limited_to_dl_compound import \
     HathiLimitedToDLWorkflow, PackageConverter
+import speedwagon.startup
 
 @pytest.fixture(scope="module")
 def hathi_limited_view_package_dirs(tmpdir_factory):
@@ -130,68 +136,13 @@ def test_input_must_exist(tmpdir):
     assert "Input does not exist" in str(e.value)
 
 
-class MockHathiLimitedToDLWorkflow(HathiLimitedToDLWorkflow):
-
-    def create_new_task(self, task_builder, **job_args):
-        task_builder.add_subtask(
-            MockPackageConverter(src=job_args['package'],
-                                 dst=job_args['destination'])
-        )
-
-
-class MockPackageConverter(PackageConverter):
-
-    def __init__(self, src, dst) -> None:
-        super().__init__(src, dst)
-        self.output_packager = MockDigitalLibraryCompound()
-
-
-class MockDigitalLibraryCompound(DigitalLibraryCompound):
-
-    @staticmethod
-    def _get_transformer(logger, package_builder, destination_root):
-        transformer = \
-            DigitalLibraryCompound._get_transformer(logger, package_builder,
-                                                    destination_root)
-        transformer._strategies['ConvertJp2Standard'] = transformations.CopyFile()
-        transformer._strategies['ConvertTiff'] = transformations.CopyFile()
-        return transformer
-    @staticmethod
-    def mock_transform(i, source: str, destination: str, logger: logging.Logger) -> str:
-        pass
-
-
-def test_hathi_limited_to_dl_compound_run(tool_job_manager_spy,
-                                          hathi_limited_view_package_dirs,
-                                          monkeypatch,
-                                          caplog,
-                                          tmpdir):
-    output_dir = tmpdir / "output"
-    output_dir.mkdir()
-    my_logger = logging.getLogger(__file__)
-
-    def mock_transform(*args, **kwargs):
-        if len(args) == 3:
-            source = args[1]
-            destination = args[2]
-        else:
-            source = kwargs['source']
-            destination = kwargs['destination']
-        shutil.copyfile(source, destination)
-
-    from uiucprescon.packager.transformations import Transformers
-    monkeypatch.setattr(Transformers, "transform", mock_transform)
-
-    tool_job_manager_spy.run(None,
-               MockHathiLimitedToDLWorkflow(),
-               options={
-                   "Input": str(hathi_limited_view_package_dirs),
-                   "Output": str(output_dir.realpath())
-               },
-               logger=my_logger)
-
-    exp_res = output_dir / "40"
-    assert os.path.exists(exp_res.realpath()), f"Missing expected directory '{exp_res.relto(tmpdir)}'"
+class TestPackageConverter:
+    def test_transform_is_called(self):
+        source = Package("some_source")
+        task = PackageConverter(source, "out")
+        task.output_packager.transform = Mock()
+        task.work()
+        task.output_packager.transform.assert_called_with(source, "out")
 
 
 options = [
@@ -205,3 +156,49 @@ def test_hathi_limited_to_dl_compound_has_options(index, label):
     assert len(user_options) > 0
     assert user_options[index].label_text == label
 
+
+class TestHathiLimitedToDLWorkflow:
+    def test_report(self):
+        results = [
+            Mock(),
+            Mock(),
+        ]
+        report = HathiLimitedToDLWorkflow.generate_report(
+            results=results,
+            Output="dummy"
+        )
+        assert "All done. Converted 2 packages." in report
+
+    def test_create_new_task(self):
+        workflow = HathiLimitedToDLWorkflow()
+        task_builder = Mock()
+        args = {
+            "task_builder": task_builder,
+            "package": Mock(),
+            "destination": Mock()
+        }
+        workflow.create_new_task(**args)
+        assert task_builder.add_subtask.called is True
+
+    def test_discover_task_metadata(self, monkeypatch):
+        workflow = HathiLimitedToDLWorkflow()
+        user_args = {
+            "Input": "source",
+            "Output": "dest"
+        }
+
+        def locate_packages(_, path):
+            return [
+                Mock()
+            ]
+        monkeypatch.setattr(
+            packager.packages.HathiLimitedView,
+            "locate_packages", locate_packages
+        )
+        task_metadata = workflow.discover_task_metadata(
+            initial_results=[],
+            additional_data=[],
+            **user_args
+        )
+        assert task_metadata[0]["destination"] == user_args['Output'] and \
+               'package' in task_metadata[0]
