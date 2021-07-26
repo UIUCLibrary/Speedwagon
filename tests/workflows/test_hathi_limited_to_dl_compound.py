@@ -212,7 +212,14 @@ class MockDigitalLibraryCompound(DigitalLibraryCompound):
 #
 #     exp_res = output_dir / "40"
 #     assert os.path.exists(exp_res.realpath()), f"Missing expected directory '{exp_res.relto(tmpdir)}'"
-#
+
+class TestPackageConverter:
+    def test_transform_is_called(self):
+        source = Package("some_source")
+        task = PackageConverter(source, "out")
+        task.output_packager.transform = Mock()
+        task.work()
+        task.output_packager.transform.assert_called_with(source, "out")
 
 options = [
     (0, "Input"),
