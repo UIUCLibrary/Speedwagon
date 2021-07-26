@@ -161,6 +161,7 @@ class MockDigitalLibraryCompound(DigitalLibraryCompound):
         pass
 
 
+@pytest.mark.slow
 def test_hathi_limited_to_dl_compound_run(tool_job_manager_spy,
                                           hathi_limited_view_package_dirs,
                                           monkeypatch,

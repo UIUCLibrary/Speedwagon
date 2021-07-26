@@ -6,6 +6,7 @@ from speedwagon import startup, job
 
 
 class TestSingleWorkflowLauncher:
+    @pytest.mark.slow
     @pytest.mark.parametrize("times_run_in_a_row", [1,2, 5])
     def test_commands_called(self, qtbot, monkeypatch, times_run_in_a_row):
 
