@@ -3,7 +3,7 @@ import os
 import pathlib
 import shutil
 from typing import Dict, Any
-from unittest.mock import Mock, ANY
+from unittest.mock import Mock, ANY, MagicMock
 from zipfile import ZipFile
 
 import pykdu_compress
@@ -256,4 +256,26 @@ class TestHathiLimitedToDLWorkflow:
         }
         workflow.create_new_task(**args)
         assert task_builder.add_subtask.called is True
-#
+
+    def test_discover_task_metadata(self, monkeypatch):
+        workflow = HathiLimitedToDLWorkflow()
+        user_args = {
+            "Input": "source",
+            "Output": "dest"
+        }
+
+        def locate_packages(_, path):
+            return [
+                Mock()
+            ]
+        monkeypatch.setattr(
+            packager.packages.HathiLimitedView,
+            "locate_packages", locate_packages
+        )
+        task_metadata = workflow.discover_task_metadata(
+            initial_results=[],
+            additional_data=[],
+            **user_args
+        )
+        assert task_metadata[0]["destination"] == user_args['Output'] and \
+               'package' in task_metadata[0]
