@@ -2,16 +2,16 @@ from unittest.mock import Mock, MagicMock
 import pytest
 
 
-from speedwagon import startup, job
+from speedwagon import startup, job, dialog
 
 
 class TestSingleWorkflowLauncher:
-    @pytest.mark.slow
     @pytest.mark.parametrize("times_run_in_a_row", [1,2, 5])
     def test_commands_called(self, qtbot, monkeypatch, times_run_in_a_row):
-
         for _ in range(times_run_in_a_row):
             single_item_launcher = startup.SingleWorkflowLauncher()
+            monkeypatch.setattr(startup.MainWindow, "show", Mock())
+            monkeypatch.setattr(dialog.WorkProgressBar, "show", Mock())
             workflow = MagicMock()
             workflow.name = "job"
             workflow.__class__ = job.AbsWorkflow
@@ -34,6 +34,7 @@ class TestSingleWorkflowLauncher:
         single_item_launcher = startup.SingleWorkflowLauncher()
         with pytest.raises(AttributeError):
             single_item_launcher.run()
+
 
 class TestApplicationLauncher:
     def test_application_launcher_startup(self):
