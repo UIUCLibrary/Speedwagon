@@ -1,10 +1,14 @@
 import logging
 import os
+import pathlib
 import shutil
+from typing import Dict, Any
+from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pykdu_compress
 import pytest
+from PyQt5 import QtWidgets
 from uiucprescon import packager
 from uiucprescon.packager import transformations
 from uiucprescon.packager.packages import DigitalLibraryCompound
@@ -12,8 +16,10 @@ from uiucprescon.packager.packages.collection import Package
 from uiucprescon.packager.packages.digital_library_compound import Transform
 from uiucprescon.packager.transformations import AbsTransformation
 
+from speedwagon.job import AbsWorkflow
 from speedwagon.workflows.workflow_hathi_limited_to_dl_compound import \
     HathiLimitedToDLWorkflow, PackageConverter
+import speedwagon.startup
 
 @pytest.fixture(scope="module")
 def hathi_limited_view_package_dirs(tmpdir_factory):
@@ -144,10 +150,19 @@ class MockPackageConverter(PackageConverter):
     def __init__(self, src, dst) -> None:
         super().__init__(src, dst)
         self.output_packager = MockDigitalLibraryCompound()
+        # self.output_packager = MockDigitalLibraryCompound()
 
+    # def work(self) -> bool:
+        # setattr(self.output_packager,
+        #         "transform",
+        #         self._mock_transform)
+        # return super().work()
+    #
+    # def _mock_transform(self, package, dest: str) -> None:
+    #     print("")
+    #     pass
 
 class MockDigitalLibraryCompound(DigitalLibraryCompound):
-
     @staticmethod
     def _get_transformer(logger, package_builder, destination_root):
         transformer = \
@@ -160,40 +175,44 @@ class MockDigitalLibraryCompound(DigitalLibraryCompound):
     def mock_transform(i, source: str, destination: str, logger: logging.Logger) -> str:
         pass
 
+    # def transform(self, package: Package, dest: str) -> None:
+        # super().transform(package, dest)
+        # self.transformations(package, dest)
 
-@pytest.mark.slow
-def test_hathi_limited_to_dl_compound_run(tool_job_manager_spy,
-                                          hathi_limited_view_package_dirs,
-                                          monkeypatch,
-                                          caplog,
-                                          tmpdir):
-    output_dir = tmpdir / "output"
-    output_dir.mkdir()
-    my_logger = logging.getLogger(__file__)
 
-    def mock_transform(*args, **kwargs):
-        if len(args) == 3:
-            source = args[1]
-            destination = args[2]
-        else:
-            source = kwargs['source']
-            destination = kwargs['destination']
-        shutil.copyfile(source, destination)
-
-    from uiucprescon.packager.transformations import Transformers
-    monkeypatch.setattr(Transformers, "transform", mock_transform)
-
-    tool_job_manager_spy.run(None,
-               MockHathiLimitedToDLWorkflow(),
-               options={
-                   "Input": str(hathi_limited_view_package_dirs),
-                   "Output": str(output_dir.realpath())
-               },
-               logger=my_logger)
-
-    exp_res = output_dir / "40"
-    assert os.path.exists(exp_res.realpath()), f"Missing expected directory '{exp_res.relto(tmpdir)}'"
-
+# @pytest.mark.replacement
+# @pytest.mark.slow
+# def test_hathi_limited_to_dl_compound_run(tool_job_manager_spy,
+#                                           hathi_limited_view_package_dirs,
+#                                           monkeypatch,
+#                                           tmpdir):
+#     output_dir = tmpdir / "output"
+#     output_dir.mkdir()
+#     # my_logger = logging.getLogger(__file__)
+#
+#     def mock_transform(*args, **kwargs):
+#         if len(args) == 3:
+#             source = args[1]
+#             destination = args[2]
+#         else:
+#             source = kwargs['source']
+#             destination = kwargs['destination']
+#         shutil.copyfile(source, destination)
+#
+#     from uiucprescon.packager.transformations import Transformers
+#     monkeypatch.setattr(Transformers, "transform", mock_transform)
+#
+#     tool_job_manager_spy.run(None,
+#                MockHathiLimitedToDLWorkflow(),
+#                options={
+#                    "Input": str(hathi_limited_view_package_dirs),
+#                    "Output": str(output_dir.realpath())
+#                },
+#                logger=Mock())
+#
+#     exp_res = output_dir / "40"
+#     assert os.path.exists(exp_res.realpath()), f"Missing expected directory '{exp_res.relto(tmpdir)}'"
+#
 
 options = [
     (0, "Input"),
