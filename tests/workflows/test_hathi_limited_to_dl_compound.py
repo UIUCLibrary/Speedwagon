@@ -221,6 +221,7 @@ class TestPackageConverter:
         task.work()
         task.output_packager.transform.assert_called_with(source, "out")
 
+
 options = [
     (0, "Input"),
     (1, "Output")
@@ -231,4 +232,18 @@ def test_hathi_limited_to_dl_compound_has_options(index, label):
     user_options = workflow.user_options()
     assert len(user_options) > 0
     assert user_options[index].label_text == label
+
+
+class TestHathiLimitedToDLWorkflow:
+    def test_report(self):
+        results = [
+            Mock(),
+            Mock(),
+        ]
+        report = HathiLimitedToDLWorkflow.generate_report(
+            results=results,
+            Output="dummy"
+        )
+        assert "All done. Converted 2 packages." in report
+
 
