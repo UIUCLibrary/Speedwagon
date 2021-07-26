@@ -3,7 +3,7 @@ import os
 import pathlib
 import shutil
 from typing import Dict, Any
-from unittest.mock import Mock
+from unittest.mock import Mock, ANY
 from zipfile import ZipFile
 
 import pykdu_compress
@@ -246,4 +246,14 @@ class TestHathiLimitedToDLWorkflow:
         )
         assert "All done. Converted 2 packages." in report
 
-
+    def test_create_new_task(self):
+        workflow = HathiLimitedToDLWorkflow()
+        task_builder = Mock()
+        args = {
+            "task_builder": task_builder,
+            "package": Mock(),
+            "destination": Mock()
+        }
+        workflow.create_new_task(**args)
+        assert task_builder.add_subtask.called is True
+#
