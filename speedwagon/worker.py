@@ -452,7 +452,8 @@ class JobProcessor:
             if not completed_futures.cancel() and \
                     completed_futures.done():
                 self.completed += 1
-                self._parent.futures.remove(completed_futures)
+                if completed_futures in self._parent.futures:
+                    self._parent.futures.remove(completed_futures)
                 if self.timeout_callback:
                     self.timeout_callback(self.completed, self._total_jobs)
                 yield from self.report_results_from_future(futures)
