@@ -346,7 +346,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
         return job.get_additional_info(parent, options, pretask_results)
 
 
-def task(callback):
+def runner_managed_task(callback):
 
     def run(self, runner, *args, **kwargs):
         runner.abort_callback = self.manager.abort
@@ -396,7 +396,7 @@ class TaskRunner:
                 typing.Callable[[worker.WorkRunnerExternal3, int, int], None]
             ] = None
 
-    @task
+    @runner_managed_task
     def run_pre_tasks(
             self,
             options: Dict[str, Any],
@@ -442,7 +442,7 @@ class TaskRunner:
         if callable(self.update_progress_callback) and runner is not None:
             self.update_progress_callback(runner, current, total)
 
-    @task
+    @runner_managed_task
     def run_main_tasks(self,
                        options: Dict[str, Any],
                        pretask_results,
@@ -479,7 +479,7 @@ class TaskRunner:
 
         return [result for result in main_results if result is not None]
 
-    @task
+    @runner_managed_task
     def run_post_tasks(
             self,
             options: Dict[str, Any],
