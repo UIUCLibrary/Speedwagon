@@ -368,12 +368,11 @@ def runner_managed_task(callback):
     def dialog_window(self, *args, **kwargs):
         if 'runner' in kwargs and kwargs['runner'] is not None:
             return run(self, kwargs['runner'], *args, **kwargs)
-        else:
-            with self.manager.open(
-                    parent=self.parent_widget,
-                    runner=worker.WorkRunnerExternal3
-            ) as runner:
-                return run(self, runner, *args, **kwargs)
+        with self.manager.open(
+                parent=self.parent_widget,
+                runner=worker.WorkRunnerExternal3
+        ) as runner:
+            return run(self, runner, *args, **kwargs)
     return dialog_window
 
 
