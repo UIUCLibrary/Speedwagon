@@ -696,7 +696,7 @@ class MultiWorkflowLauncher(AbsStarter):
         window.log_manager.handlers.clear()
 
     def initialize(self) -> None:
-        pass
+        """No need to initialize."""
 
     def add_job(self, workflow, args):
         self._pending_tasks.put((workflow, args))
