@@ -31,7 +31,6 @@ import speedwagon.models
 import speedwagon.tabs
 from speedwagon import worker, job, runner_strategies
 from speedwagon.dialog.settings import TabEditor
-# from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.tabs import extract_tab_information
 import speedwagon.gui
 
