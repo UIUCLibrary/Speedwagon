@@ -611,3 +611,34 @@ class TestSingleWorkflowJSON:
         startup.workflow.validate_user_options = MagicMock()
         startup.run()
         assert run.called is True
+
+
+class TestMultiWorkflowLauncher:
+    def test_all_workflows_validate_user_options(self, qtbot):
+        startup_launcher = speedwagon.startup.MultiWorkflowLauncher()
+        workflow_tasks =[
+
+            (
+                'Verify Checksum Batch [Single]',
+                {
+                    "Input": os.path.join("somepath", "checksum.md5")
+                }
+
+            ),
+            (
+                "Convert CaptureOne TIFF to Hathi TIFF package",
+                {
+                    "Input": os.path.join("some", "valid", "input", "path"),
+                    "Output": os.path.join("some", "valid", "output", "path")
+                }
+            ),
+        ]
+
+        jobs = []
+        for workflow_name, workflow_args in workflow_tasks:
+            mock_workflow = Mock()
+            mock_workflow.name = workflow_name
+            jobs.append(mock_workflow)
+            startup_launcher.add_job(mock_workflow, workflow_args)
+        startup_launcher.run()
+        assert all(job.validate_user_options.called is True for job in jobs)
