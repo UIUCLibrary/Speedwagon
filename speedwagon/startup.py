@@ -552,8 +552,8 @@ class SingleWorkflowLauncher(AbsStarter):
         window.show()
         window.setWindowTitle(self._active_workflow.name)
         runner_strategy = \
-            runner_strategies.UsingExternalManagerForAdapter2(work_manager, window)
-            # runner_strategies.UsingExternalManagerForAdapter(work_manager)
+            runner_strategies.UsingExternalManagerForAdapter2(work_manager,
+                                                              window)
 
         self._active_workflow.validate_user_options(**self.options)
 

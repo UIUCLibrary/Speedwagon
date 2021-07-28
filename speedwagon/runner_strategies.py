@@ -65,7 +65,10 @@ class UsingExternalManagerForAdapter(AbsRunner):
 
     def __init__(self, manager: "worker.ToolJobManager") -> None:
         """Create a new runner."""
-        warnings.warn("Use UsingExternalManagerForAdapter instead", DeprecationWarning)
+        warnings.warn(
+            "Use UsingExternalManagerForAdapter instead",
+            DeprecationWarning
+        )
         self._manager = manager
 
     @staticmethod
@@ -397,7 +400,7 @@ class TaskRunner:
     def run_pre_tasks(
             self,
             options: Dict[str, Any],
-            runner: "worker.WorkRunnerExternal3"=None
+            runner: "worker.WorkRunnerExternal3" = None
     ) -> List[Any]:
 
         self._add_jobs_tasks(
@@ -554,7 +557,7 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
                                      parent_widget=self.parent,
                                      working_directory=build_dir
                                      )
-            task_runner.logger=logger
+            task_runner.logger = logger
             task_runner.update_progress_callback = self._update_progress
             if isinstance(job, AbsWorkflow):
                 try:
