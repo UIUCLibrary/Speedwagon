@@ -32,7 +32,6 @@ import speedwagon.dialog.dialogs
 import speedwagon.dialog.settings
 from speedwagon import tabs, worker
 import speedwagon
-# import speedwagon.startup
 import speedwagon.config
 
 __all__ = [
