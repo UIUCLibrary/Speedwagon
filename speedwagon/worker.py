@@ -322,7 +322,8 @@ class JobExecutor:
         self.active = True
         while not self._pending_jobs.empty():
             job_, settings = self._pending_jobs.get()
-            job_.set_message_queue(self._message_queue)
+            if self._message_queue is not None:
+                job_.set_message_queue(self._message_queue)
             fut = self._executor.submit(job_.execute, **settings)
 
             fut.add_done_callback(fn=lambda x: self._pending_jobs.task_done())
