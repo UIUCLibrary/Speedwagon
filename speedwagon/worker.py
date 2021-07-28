@@ -1,4 +1,6 @@
 """Consumer of tasks."""
+from __future__ import annotations
+
 import abc
 import concurrent.futures
 import contextlib
