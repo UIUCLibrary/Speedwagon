@@ -303,8 +303,8 @@ class AbsJobManager(metaclass=abc.ABCMeta):
 class JobExecutor:
     def __init__(self) -> None:
         self.manager = multiprocessing.Manager()
-        self._pending_jobs: queue.Queue[JobPair] = queue.Queue()
-        self._message_queue: Optional[queue.Queue[Any]] = None
+        self._pending_jobs: "queue.Queue[JobPair]" = queue.Queue()
+        self._message_queue: "Optional[queue.Queue[Any]]" = None
         self._executor: Optional[concurrent.futures.ProcessPoolExecutor] = None
         self.futures: typing.List[concurrent.futures.Future] = []
         self.active = False
