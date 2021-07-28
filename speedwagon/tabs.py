@@ -393,14 +393,13 @@ class WorkflowsTab(ItemSelectionTab):
         try:
             workflow.validate_user_options(**options)
 
-            manager_strat = runner_strategies.UsingExternalManagerForAdapter(
-                manager=self.work_manager)
+            manager_strat = runner_strategies.UsingExternalManagerForAdapter2(
+                manager=self.work_manager, parent=self.parent)
             runner = runner_strategies.RunRunner(manager_strat)
 
             print("starting")
 
-            runner.run(self.parent, workflow, options,
-                       self.work_manager.logger)
+            runner.run(workflow, options, self.work_manager.logger)
 
         except ValueError as exc:
             msg = QtWidgets.QMessageBox(self.parent)

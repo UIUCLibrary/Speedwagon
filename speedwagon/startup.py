@@ -17,6 +17,7 @@ import io
 import json
 import logging
 import os
+import queue
 import sys
 import typing
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
@@ -30,8 +31,9 @@ import speedwagon.models
 import speedwagon.tabs
 from speedwagon import worker, job, runner_strategies
 from speedwagon.dialog.settings import TabEditor
-from speedwagon.gui import SplashScreenLogHandler, MainWindow
+# from speedwagon.gui import SplashScreenLogHandler, MainWindow
 from speedwagon.tabs import extract_tab_information
+import speedwagon.gui
 
 
 try:  # pragma: no cover
@@ -317,7 +319,7 @@ class StartupDefault(AbsStarter):
                 QtCore.Qt.FramelessWindowHint
              )
         )
-        splash_message_handler = SplashScreenLogHandler(splash)
+        splash_message_handler = speedwagon.gui.SplashScreenLogHandler(splash)
 
         # If debug mode, print the log messages directly on the splash screen
         if self._debug:
@@ -335,7 +337,7 @@ class StartupDefault(AbsStarter):
             work_manager.settings_path = \
                 self.platform_settings.get_app_data_directory()
 
-            windows = MainWindow(
+            windows = speedwagon.gui.MainWindow(
                 work_manager=work_manager,
                 debug=cast(bool, self.startup_settings['debug'])
             )
@@ -376,13 +378,13 @@ class StartupDefault(AbsStarter):
             return self.app.exec_()
 
     def _load_configurations(self,
-                             work_manager: worker.ToolJobManager) -> None:
+                             work_manager: "worker.ToolJobManager") -> None:
 
         self._logger.debug("Applying settings to Speedwagon")
         work_manager.user_settings = self.platform_settings
         work_manager.configuration_file = self.config_file
 
-    def _load_workflows(self, application: MainWindow) -> None:
+    def _load_workflows(self, application: speedwagon.gui.MainWindow) -> None:
         self._logger.debug("Loading Workflows")
         loading_workflows_stream = io.StringIO()
         with contextlib.redirect_stderr(loading_workflows_stream):
@@ -527,7 +529,7 @@ class SingleWorkflowLauncher(AbsStarter):
     def __init__(self, logger=None) -> None:
         """Set up window for running a single workflow."""
         super().__init__()
-        self.window: Optional[MainWindow] = None
+        self.window: Optional[speedwagon.gui.MainWindow] = None
         self._active_workflow: Optional[job.AbsWorkflow] = None
         self.options: Dict[str, Union[str, bool]] = {}
         self.logger = logger or logging.getLogger(__name__)
@@ -543,19 +545,19 @@ class SingleWorkflowLauncher(AbsStarter):
         return 0
 
     def _run(self, work_manager):
-        window = MainWindow(
+        window = speedwagon.gui.MainWindow(
             work_manager=work_manager,
             debug=False)
 
         window.show()
         window.setWindowTitle(self._active_workflow.name)
         runner_strategy = \
-            runner_strategies.UsingExternalManagerForAdapter(work_manager)
+            runner_strategies.UsingExternalManagerForAdapter2(work_manager, window)
+            # runner_strategies.UsingExternalManagerForAdapter(work_manager)
 
         self._active_workflow.validate_user_options(**self.options)
 
-        runner_strategy.run(window,
-                            self._active_workflow,
+        runner_strategy.run(self._active_workflow,
                             self.options,
                             window.log_manager)
         window.log_manager.handlers.clear()
@@ -622,26 +624,28 @@ class SingleWorkflowJSON(AbsStarter):
             raise ValueError("no workflow loaded")
 
     @staticmethod
-    def _run(work_manager: worker.ToolJobManager,
+    def _run(work_manager: "worker.ToolJobManager",
              workflow: job.AbsWorkflow,
              options: Dict[str, typing.Any]) -> None:
         window = SingleWorkflowJSON._load_window(work_manager, workflow.name)
         window.show()
         runner_strategy = \
-            runner_strategies.UsingExternalManagerForAdapter(work_manager)
+            runner_strategies.UsingExternalManagerForAdapter2(
+                work_manager,
+                window
+            )
 
         workflow.validate_user_options(**options)
 
-        runner_strategy.run(window,
-                            workflow,
+        runner_strategy.run(workflow,
                             options,
                             window.log_manager)
         window.log_manager.handlers.clear()
 
     @staticmethod
-    def _load_window(work_manager: worker.ToolJobManager,
-                     title: Optional[str]) -> MainWindow:
-        window = MainWindow(
+    def _load_window(work_manager: "worker.ToolJobManager",
+                     title: Optional[str]) -> speedwagon.gui.MainWindow:
+        window = speedwagon.gui.MainWindow(
             work_manager=work_manager,
             debug=False)
 
@@ -649,6 +653,53 @@ class SingleWorkflowJSON(AbsStarter):
             window.setWindowTitle(title)
 
         return window
+
+
+class MultiWorkflowLauncher(AbsStarter):
+
+    def __init__(self, logger=None) -> None:
+        super().__init__()
+        self.logger = logger or logging.getLogger(__name__)
+        self._pending_tasks: queue.Queue[
+            typing.Tuple[job.Workflow, typing.Dict[str, typing.Any]]
+        ] = queue.Queue()
+
+    def run(self) -> int:
+        with worker.ToolJobManager() as work_manager:
+            work_manager.logger = self.logger
+            self._run(work_manager)
+        return 0
+
+    def _run(self, work_manager):
+        window = speedwagon.gui.MainWindow(
+            work_manager=work_manager,
+            debug=False)
+
+        window.show()
+        while not self._pending_tasks.empty():
+            active_workflow, options = self._pending_tasks.get()
+            window.setWindowTitle(active_workflow.name)
+            runner_strategy = \
+                runner_strategies.UsingExternalManagerForAdapter2(
+                    work_manager,
+                    window
+                )
+
+            active_workflow.validate_user_options(**options)
+
+            runner_strategy.run(
+                                active_workflow,
+                                options,
+                                window.log_manager)
+            self._pending_tasks.task_done()
+
+        window.log_manager.handlers.clear()
+
+    def initialize(self) -> None:
+        pass
+
+    def add_job(self, workflow, args):
+        self._pending_tasks.put((workflow, args))
 
 
 class TabsEditorApp(QtWidgets.QDialog):

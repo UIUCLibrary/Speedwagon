@@ -93,7 +93,7 @@ class TestWorkflowsTab:
         mock_runner = Mock()
         monkeypatch.setattr(RunRunner, "run", mock_runner)
         selection_tab.start(workflows["Spam"])
-        assert isinstance(mock_runner.call_args_list[0][0][1], MockWorkflow)
+        assert isinstance(mock_runner.call_args_list[0][0][0], MockWorkflow)
 
     @pytest.mark.parametrize(
         "exception_type",
@@ -131,7 +131,7 @@ class TestWorkflowsTab:
             mp.setattr(QMessageBox, "exec", mock_message_box_exec)
             mp.setattr(QMessageBox, "exec_", mock_message_box_exec)
             selection_tab.start(workflows["Spam"])
-            assert isinstance(mock_runner.call_args_list[0][0][1], MockWorkflow)
+            assert isinstance(mock_runner.call_args_list[0][0][0], MockWorkflow)
 
         assert mock_message_box_exec.called is True
 

@@ -32,7 +32,7 @@ import speedwagon.dialog.dialogs
 import speedwagon.dialog.settings
 from speedwagon import tabs, worker
 import speedwagon
-import speedwagon.startup
+# import speedwagon.startup
 import speedwagon.config
 
 __all__ = [
@@ -120,7 +120,7 @@ class ItemTabsWidget(QtWidgets.QWidget):
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(
             self,
-            work_manager: worker.ToolJobManager,
+            work_manager: "worker.ToolJobManager",
             debug: bool = False
     ) -> None:
 

@@ -51,7 +51,7 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
     standard_startup.tabs_file = tabs_file
 
     monkeypatch.setattr(QtWidgets, "QSplashScreen", MagicMock())
-    monkeypatch.setattr(speedwagon.startup, "MainWindow", MagicMock())
+    monkeypatch.setattr(speedwagon.startup.speedwagon.gui, "MainWindow", MagicMock())
     standard_startup._logger = Mock()
     standard_startup.run()
     assert app.exec_.called is True
@@ -605,9 +605,9 @@ class TestSingleWorkflowJSON:
                 }
             )
         )
-        monkeypatch.setattr(speedwagon.startup, "MainWindow", MagicMock())
+        monkeypatch.setattr(speedwagon.startup.speedwagon.gui, "MainWindow", MagicMock())
         run = MagicMock()
-        monkeypatch.setattr(speedwagon.startup.runner_strategies.UsingExternalManagerForAdapter, "run", run)
+        monkeypatch.setattr(speedwagon.startup.runner_strategies.UsingExternalManagerForAdapter2, "run", run)
         startup.workflow.validate_user_options = MagicMock()
         startup.run()
         assert run.called is True
