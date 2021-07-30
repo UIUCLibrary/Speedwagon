@@ -34,6 +34,7 @@ class JobModelData(enum.Enum):
 
 
 class ItemListModel(QtCore.QAbstractTableModel):
+    """List model for items."""
 
     def __init__(self, data: Dict["str", Type[AbsWorkflow]]) -> None:
         """Create a new ItemListModel qt list model for workflows."""
@@ -41,13 +42,17 @@ class ItemListModel(QtCore.QAbstractTableModel):
         self.jobs: List[Type[AbsWorkflow]] = list(data.values())
 
     def columnCount(self, *args, parent=QtCore.QModelIndex(), **kwargs) -> int:
+        """Return 2.
+
+        One for the label and one of the idem.
+        """
         return 2
 
     def rowCount(self,
                  *args,
                  parent: QtCore.QModelIndex = None,
                  **kwargs) -> int:
-
+        """Get the number of jobs in the model."""
         return len(self.jobs)
 
     @staticmethod
@@ -66,12 +71,14 @@ OptionPair = namedtuple("OptionPair", ("label", "data"))
 
 
 class WorkflowListModel(ItemListModel):
+    """Model for listing workflows."""
+
     def data(
             self,
             index: QtCore.QModelIndex,
             role: Optional[QtConstant] = None
     ) -> Union[str, Type[AbsWorkflow], QtCore.QSize, QtCore.QVariant]:
-
+        """Get data at a specific index."""
         if index.isValid():
             data = self.jobs[index.row()]
             if role in [QtCore.Qt.DisplayRole, QtCore.Qt.EditRole]:
@@ -88,6 +95,10 @@ class WorkflowListModel(ItemListModel):
         return QtCore.QVariant()
 
     def sort(self, key=None, order=None):
+        """Sort workflows.
+
+        Defaults alphabetically by title.
+        """
         self.layoutAboutToBeChanged.emit()
 
         self.jobs.sort(key=key or (lambda i: i.name))
@@ -116,7 +127,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
                  *args,
                  parent: QtCore.QModelIndex = None,
                  **kwargs) -> int:
-
+        """Get the number of workflows loaded in the model."""
         return len(self.workflows)
 
     def data(
@@ -124,6 +135,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
             index: QtCore.QModelIndex,
             role: Optional[QtConstant] = None
     ) -> Union[str, Type[Workflow], QtCore.QVariant]:
+        """Get data at specific index."""
         if not index.isValid():
             return QtCore.QVariant()
         row = index.row()
@@ -142,6 +154,10 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         return QtCore.QVariant()
 
     def sort(self, key=None, order=None) -> None:
+        """Sort workflows.
+
+        Defaults alphabetically by title.
+        """
         cast(QtCore.pyqtBoundSignal, self.layoutAboutToBeChanged).emit()
 
         self.workflows.sort(key=key or (lambda i: i.name))
@@ -164,7 +180,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
                 index: QtCore.QModelIndex,
                 workflow: Type[Workflow],
                 role: Optional[QtConstant] = None) -> bool:
-
+        """Get data at a given index."""
         if not index.isValid():
             return False
 
@@ -181,6 +197,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         return True
 
     def remove_workflow(self, workflow: Type[Workflow]) -> None:
+        """Remove workflow from the model."""
         if workflow in self.workflows:
             index = QtCore.QModelIndex()
             self.beginRemoveRows(index, 0, self.rowCount())
@@ -244,6 +261,7 @@ class ToolOptionsPairsModel(ToolOptionsModel):
     def data(self,
              index: QtCore.QModelIndex,
              role: Optional[QtConstant] = None):
+        """Get data at a certain index."""
         if index.isValid():
             if role == QtCore.Qt.DisplayRole:
                 return self._data[index.row()].data
@@ -257,6 +275,7 @@ class ToolOptionsPairsModel(ToolOptionsModel):
             data,
             role=None
     ) -> bool:
+        """Set data at a certain index."""
         if not index.isValid():
             return False
         existing_data = self._data[index.row()]
@@ -269,6 +288,7 @@ class ToolOptionsPairsModel(ToolOptionsModel):
             orientation: QtConstant,
             role: Optional[QtConstant] = None
     ) -> Union[str, QtCore.QVariant]:
+        """Get header information."""
         if orientation == QtCore.Qt.Vertical \
                 and role == QtCore.Qt.DisplayRole:
             title = self._data[index].label
@@ -276,6 +296,7 @@ class ToolOptionsPairsModel(ToolOptionsModel):
         return QtCore.QVariant()
 
     def get(self) -> dict:
+        """Access all underlining data."""
         options = dict()
         for data in self._data:
             options[data.label] = data.data
@@ -295,6 +316,7 @@ def _lookup_constant(value: int) -> List[str]:
 
 
 class ToolOptionsModel3(ToolOptionsModel):
+    """Model for tool options."""
 
     def __init__(
             self,
@@ -317,6 +339,7 @@ class ToolOptionsModel3(ToolOptionsModel):
                QtCore.QSize,
                shared_custom_widgets.UserOption2,
                str]:
+        """Get data at an index in the model."""
         if index.isValid():
             if role == QtCore.Qt.DisplayRole:
                 data = self._data[index.row()].data
@@ -333,6 +356,7 @@ class ToolOptionsModel3(ToolOptionsModel):
         return QtCore.QVariant()
 
     def get(self) -> Dict[str, Any]:
+        """Access the key value settings for all options."""
         options: Dict[str, Any] = {}
         for data in self._data:
             options[data.label_text] = data.data
@@ -343,7 +367,7 @@ class ToolOptionsModel3(ToolOptionsModel):
             index: int,
             orientation: int,
             role: Optional[QtConstant] = None) -> Union[QtCore.QVariant, str]:
-
+        """Get header data for a given index."""
         if orientation == QtCore.Qt.Vertical and \
                 role == QtCore.Qt.DisplayRole:
 
@@ -357,7 +381,7 @@ class ToolOptionsModel3(ToolOptionsModel):
             data,
             role: Optional[QtConstant] = None
     ) -> bool:
-
+        """Set tool option data in the model."""
         if not index.isValid():
             return False
         self._data[index.row()].data = data
@@ -394,12 +418,18 @@ class SettingsModel(QtCore.QAbstractTableModel):
         return QtCore.QVariant()
 
     def rowCount(self,  *args, parent=None, **kwargs) -> int:
+        """Return the number of settings loaded in the model."""
         return len(self._data)
 
     def add_setting(self, name: str, value: str) -> None:
+        """Add setting key value to the settings."""
         self._data.append((name, value))
 
     def columnCount(self, *args, parent=None, **kwargs) -> int:
+        """Return number of columns.
+
+        One for the heading and one for the content.
+        """
         return 2
 
     def headerData(
@@ -408,7 +438,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
             orientation: int,
             role: Optional[QtConstant] = None
     ) -> Union[str, QtCore.QVariant]:
-
+        """Get header data from settings."""
         if orientation == QtCore.Qt.Horizontal and \
                 role == QtCore.Qt.DisplayRole:
             return self._headers.get(index, "")
@@ -471,7 +501,7 @@ class TabsModel(QtCore.QAbstractListModel):
              index: QtCore.QModelIndex,
              role: Optional[QtConstant] = None
              ) -> Union[QtCore.QVariant, str, "tabs.TabData"]:
-
+        """Get data about a tab for an index."""
         if not index.isValid():
             return QtCore.QVariant()
 
@@ -488,9 +518,11 @@ class TabsModel(QtCore.QAbstractListModel):
         return QtCore.QVariant()
 
     def rowCount(self, *args, parent=None, **kwargs) -> int:
+        """Get the number of tabs loaded in the model."""
         return len(self.tabs)
 
     def add_tab(self, tab: "tabs.TabData") -> None:
+        """Add a new tab to the model."""
         row = len(self.tabs)
         index = self.createIndex(row, 0)
         self.beginInsertRows(index, 0, self.rowCount())
@@ -499,6 +531,7 @@ class TabsModel(QtCore.QAbstractListModel):
         self.endInsertRows()
 
     def remove_tab(self, tab: "tabs.TabData") -> None:
+        """Remove a tab from the model."""
         index = QtCore.QModelIndex()
         if tab in self.tabs:
             self.beginRemoveRows(index, 0, self.rowCount())
@@ -512,7 +545,7 @@ class TabsModel(QtCore.QAbstractListModel):
             tab: "tabs.TabData",
             role: Optional[QtConstant] = None
     ) -> bool:
-
+        """Set tab data."""
         if not index.isValid():
             return False
 

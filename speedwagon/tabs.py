@@ -144,6 +144,8 @@ class Tab:
 
 
 class ItemSelectionTab(Tab, metaclass=ABCMeta):
+    """Tab for selection of item."""
+
     def __init__(
             self,
             name: str,
@@ -183,7 +185,10 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         self.init_selection()
 
     def init_selection(self) -> None:
-        # Set the first item
+        """Initialize selection.
+
+        Set the first item.
+        """
         index = self.item_selection_model.index(0, 0)
         self.item_selector_view.setCurrentIndex(index)
 
@@ -228,6 +233,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             config_widgets: Dict[TabWidgets, QtWidgets.QWidget],
             model: "models.WorkflowListModel"
     ) -> QtWidgets.QDataWidgetMapper:
+        """Generate form for the selected item."""
         tool_mapper = QtWidgets.QDataWidgetMapper(parent)
         tool_mapper.setModel(model)
         tool_mapper.addMapping(config_widgets[TabWidgets.NAME], 0)
@@ -242,15 +248,15 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
     @abc.abstractmethod
     def start(self, item) -> None:
-        pass
+        """Start item."""
 
     @abc.abstractmethod
     def get_item_options_model(self, item):
-        pass
+        """Get item options model."""
 
     def create_actions(self) -> Tuple[Dict[str, QtWidgets.QWidget],
                                       QtWidgets.QLayout]:
-
+        """Create actions."""
         tool_actions_layout = QtWidgets.QHBoxLayout()
 
         start_button = QtWidgets.QPushButton()
@@ -287,7 +293,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
     @abc.abstractmethod
     def is_ready_to_start(self) -> bool:
-        pass
+        """Check if the workflow is ready to start."""
 
     def _update_tool_selected(
             self,
@@ -308,7 +314,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
                 self.item_selector_view.setCurrentIndex(previous)
 
     def item_selected(self, index: QtCore.QModelIndex) -> None:
-
+        """Set the current selection based on the index."""
         item = self.item_selection_model.data(index, QtCore.Qt.UserRole)
         item_settings = self.workspace_widgets[TabWidgets.SETTINGS]
         #################
@@ -351,6 +357,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             raise
 
     def compose_tab_layout(self) -> None:
+        """Build the tab widgets."""
         self.tab_layout.setAlignment(QtCore.Qt.AlignTop)
         self.tab_layout.addWidget(self.item_selector_view)
         self.tab_layout.addWidget(self.workspace)
@@ -358,6 +365,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
 
 class WorkflowsTab(ItemSelectionTab):
+    """Workflow tab."""
 
     def __init__(
             self,
@@ -389,7 +397,7 @@ class WorkflowsTab(ItemSelectionTab):
         return True
 
     def run(self, workflow: AbsWorkflow, options: Dict[str, Any]) -> None:
-
+        """Run a workflow with a given set of options."""
         try:
             workflow.validate_user_options(**options)
 
@@ -424,7 +432,7 @@ class WorkflowsTab(ItemSelectionTab):
             return
 
     def start(self, item):
-
+        """Start a workflow."""
         new_workflow = item(dict(self.work_manager.user_settings))
 
         # Add global settings to workflow
@@ -438,6 +446,7 @@ class WorkflowsTab(ItemSelectionTab):
         self.run(new_workflow, user_options)
 
     def get_item_options_model(self, workflow):
+        """Get item options model."""
         new_workflow = workflow(
             global_settings=dict(self.work_manager.user_settings)
         )
@@ -503,6 +512,8 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
 
 
 class TabData(NamedTuple):
+    """Tab data."""
+
     tab_name: str
     workflows_model: "models.WorkflowListModel2"
 

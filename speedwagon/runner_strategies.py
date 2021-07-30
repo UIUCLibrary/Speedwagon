@@ -93,7 +93,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
             logger: logging.Logger,
             completion_callback=None
             ) -> None:
-
+        """Run adapted."""
         results: List[Any] = []
 
         temp_dir = tempfile.TemporaryDirectory()

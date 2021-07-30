@@ -317,7 +317,6 @@ class JobExecutor:
 
     def start(self) -> None:
         """Start jobs."""
-
         if self._pending_jobs is None or self._executor is None:
             return
 
@@ -370,6 +369,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
     @property
     def active(self):
+        """Check if a job is active."""
         return self._job_runtime.active
 
     @active.setter
@@ -379,6 +379,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
     @property
     def futures(self):
+        """Get the futures."""
         return self._job_runtime.futures
 
     def __enter__(self) -> "ToolJobManager":
@@ -398,21 +399,21 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         self._job_runtime.shutdown()
 
     def open(self, parent, runner, *args, **kwargs):
+        """Open a runner with the a given job arguments."""
         return runner(*args, **kwargs, parent=parent)
 
     def add_job(self,
                 new_job: ProcessJobWorker,
                 settings: Dict[str, Any]) -> None:
+        """Add job to the run queue."""
         self._job_runtime.add_job(new_job, settings)
 
     def start(self) -> None:
         """Start jobs."""
-
         self._job_runtime.start()
 
     def abort(self) -> None:
         """Abort jobs."""
-
         still_running: typing.List[concurrent.futures.Future] = []
 
         dialog_box = WorkProgressBar("Canceling", None, 0, 0)
@@ -446,11 +447,13 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
     def get_results(self,
                     timeout_callback: Callable[[int, int], None] = None
                     ) -> typing.Generator[typing.Any, None, None]:
+        """Process jobs and return results."""
         processor = JobProcessor(self)
         processor.timeout_callback = timeout_callback
         yield from processor.process()
 
     def flush_message_buffer(self) -> None:
+        """Flush any messages in the buffer to the logger."""
         self._job_runtime.flush_message_buffer(self.logger)
 
     def _cleanup(self) -> None:
@@ -545,6 +548,7 @@ class AbsJobAdapter(metaclass=abc.ABCMeta):
 
 class SubtaskJobAdapter(AbsJobAdapter,
                         ProcessJobWorker):
+    """Adapter class for jobs."""
 
     def __init__(self, adaptee: AbsSubtask) -> None:
         """Create a sub-task job adapter."""
@@ -554,9 +558,11 @@ class SubtaskJobAdapter(AbsJobAdapter,
 
     @property
     def queue_adapter(self) -> QueueAdapter:
+        """Get the Queue adapter."""
         return QueueAdapter()
 
     def process(self, *args, **kwargs) -> None:
+        """Process the jobs."""
         self.adaptee.exec()
         self.result = self.adaptee.task_result
 
@@ -574,4 +580,5 @@ class SubtaskJobAdapter(AbsJobAdapter,
 
     @property
     def name(self) -> str:  # type: ignore
+        """Get name of adaptee."""
         return self.adaptee.name
