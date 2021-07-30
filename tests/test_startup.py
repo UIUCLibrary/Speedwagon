@@ -51,7 +51,11 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
     standard_startup.tabs_file = tabs_file
 
     monkeypatch.setattr(QtWidgets, "QSplashScreen", MagicMock())
-    monkeypatch.setattr(speedwagon.startup.speedwagon.gui, "MainWindow", MagicMock())
+    monkeypatch.setattr(
+        speedwagon.startup.speedwagon.gui,
+        "MainWindow",
+        MagicMock()
+    )
     standard_startup._logger = Mock()
     standard_startup.run()
     assert app.exec_.called is True
@@ -123,12 +127,12 @@ def test_get_custom_tabs_bad_data_raises_exception(monkeypatch):
     monkeypatch.setattr(os.path, "exists", lambda x: x == test_file)
     with pytest.raises(speedwagon.startup.FileFormatError):
         with patch('speedwagon.startup.open', mock_open(
-                read_data='not valid yml data')) as m:
+                read_data='not valid yml data')):
             list(
                 speedwagon.startup.get_custom_tabs(
                     {
                         "my workflow": Mock()
-                    }, 
+                    },
                     test_file
                 )
             )
@@ -137,7 +141,6 @@ def test_get_custom_tabs_bad_data_raises_exception(monkeypatch):
 def test_missing_workflow(monkeypatch, capsys):
     test_file = "test.yml"
     monkeypatch.setattr(os.path, "exists", lambda x: x == test_file)
-
 
     # These workflow are not valid
     tabs_config_data = {
@@ -150,7 +153,7 @@ def test_missing_workflow(monkeypatch, capsys):
     load = Mock(name="load", return_value=tabs_config_data)
     load.__class__ = dict
     monkeypatch.setattr(yaml, "load", load)
-    with patch('speedwagon.startup.open', mock_open()) as m:
+    with patch('speedwagon.startup.open', mock_open()):
         list(
             speedwagon.startup.get_custom_tabs(
                 {
@@ -177,7 +180,7 @@ def test_get_custom_tabs_loads_workflows_from_file(monkeypatch):
     load = Mock(name="load", return_value=tabs_config_data)
     load.__class__ = dict
     monkeypatch.setattr(yaml, "load", load)
-    with patch('speedwagon.startup.open', mock_open()) as m:
+    with patch('speedwagon.startup.open', mock_open()):
         tab_name, workflows = next(
             speedwagon.startup.get_custom_tabs(all_workflows, test_file)
         )
@@ -605,9 +608,21 @@ class TestSingleWorkflowJSON:
                 }
             )
         )
-        monkeypatch.setattr(speedwagon.startup.speedwagon.gui, "MainWindow", MagicMock())
+
+        monkeypatch.setattr(
+            speedwagon.startup.speedwagon.gui,
+            "MainWindow",
+            MagicMock()
+        )
+
         run = MagicMock()
-        monkeypatch.setattr(speedwagon.startup.runner_strategies.UsingExternalManagerForAdapter2, "run", run)
+
+        monkeypatch.setattr(
+            speedwagon.startup.runner_strategies.UsingExternalManagerForAdapter2,
+            "run",
+            run
+        )
+
         startup.workflow.validate_user_options = MagicMock()
         startup.run()
         assert run.called is True
@@ -616,7 +631,7 @@ class TestSingleWorkflowJSON:
 class TestMultiWorkflowLauncher:
     def test_all_workflows_validate_user_options(self, qtbot):
         startup_launcher = speedwagon.startup.MultiWorkflowLauncher()
-        workflow_tasks =[
+        workflow_tasks = [
 
             (
                 'Verify Checksum Batch [Single]',

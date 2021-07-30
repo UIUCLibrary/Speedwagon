@@ -212,7 +212,11 @@ class TestUsingExternalManagerForAdapter2:
         job.__class__ = speedwagon.job.AbsWorkflow
 
         task_runner = MagicMock()
-        task_runner.run_pre_tasks = Mock(side_effect=runner_strategies.TaskFailed())
+
+        task_runner.run_pre_tasks = Mock(
+            side_effect=runner_strategies.TaskFailed()
+        )
+
         runner.run_abs_workflow(
             task_runner=task_runner,
             job=job,
@@ -227,7 +231,11 @@ class TestUsingExternalManagerForAdapter2:
         job.__class__ = speedwagon.job.AbsWorkflow
 
         task_runner = MagicMock()
-        task_runner.run_main_tasks = Mock(side_effect=runner_strategies.TaskFailed("dddd"))
+
+        task_runner.run_main_tasks = Mock(
+            side_effect=runner_strategies.TaskFailed()
+        )
+
         runner.run_abs_workflow(
             task_runner=task_runner,
             job=job,
