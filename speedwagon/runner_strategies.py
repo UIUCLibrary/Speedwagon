@@ -517,15 +517,17 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
             current: int,
             total: int) -> None:
 
-        if runner.dialog is not None:
-            dialog_box = runner.dialog
-            if total != dialog_box.maximum():
-                dialog_box.setMaximum(total)
-            if current != dialog_box.value():
-                dialog_box.setValue(current)
+        if runner.dialog is None:
+            return
 
-            if current == total:
-                dialog_box.accept()
+        dialog_box = runner.dialog
+        if total != dialog_box.maximum():
+            dialog_box.setMaximum(total)
+        if current != dialog_box.value():
+            dialog_box.setValue(current)
+
+        if current == total:
+            dialog_box.accept()
 
     @staticmethod
     def _get_additional_options(parent,
@@ -546,75 +548,90 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
 
         return {}
 
+    def run_abs_workflow(self,
+                         task_runner: TaskRunner,
+                         job: AbsWorkflow,
+                         options,
+                         logger: logging.Logger = None):
+        logger = logger or logging.getLogger(__name__)
+        results: List[Any] = []
+        try:
+            pre_results = task_runner.run_pre_tasks(options=options)
+
+            results += pre_results
+
+            additional_data = \
+                self._get_additional_data(job,
+                                          options,
+                                          self.parent,
+                                          pre_results)
+            if additional_data:
+                options = {**options, **additional_data}
+
+        except JobCancelled:
+            return
+
+        except TaskFailed as error:
+
+            logger.error(
+                "Job stopped during pre-task phase. "
+                "Reason: {}".format(error)
+            )
+
+            return
+
+        try:
+            results += task_runner.run_main_tasks(
+                options,
+                pre_results,
+                additional_data=additional_data
+            )
+
+        except TaskFailed as error:
+
+            logger.error(
+                "Job stopped during main tasks phase. "
+                "Reason: {}".format(error)
+            )
+
+            return
+
+        try:
+            results += task_runner.run_post_tasks(
+                options=options,
+                results=results
+            )
+        except TaskFailed as error:
+
+            logger.error(
+                "Job stopped during post-task phase. "
+                "Reason: {}".format(error)
+            )
+
+            return
+
+        logger.debug("Generating report")
+        report = job.generate_report(results, **options)
+        if report:
+            logger.info(report)
+
     def run(self,
             job: AbsWorkflow, options: dict,
-            logger: logging.Logger, completion_callback=None) -> None:
-        results: List[Any] = []
+            logger: logging.Logger = None,
+            completion_callback=None
+            ) -> None:
         with tempfile.TemporaryDirectory() as build_dir:
             task_runner = TaskRunner(job=job,
                                      manager=self._manager,
                                      parent_widget=self.parent,
                                      working_directory=build_dir
                                      )
-            task_runner.logger = logger
+            task_runner.logger = logger or logging.getLogger(__name__)
             task_runner.update_progress_callback = self._update_progress
             if isinstance(job, AbsWorkflow):
-                try:
-                    pre_results = task_runner.run_pre_tasks(options=options)
-
-                    results += pre_results
-
-                    additional_data = \
-                        self._get_additional_data(job,
-                                                  options,
-                                                  self.parent,
-                                                  pre_results)
-                    if additional_data:
-                        options = {**options, **additional_data}
-
-                except JobCancelled:
-                    return
-
-                except TaskFailed as error:
-
-                    logger.error(
-                        "Job stopped during pre-task phase. "
-                        "Reason: {}".format(error)
-                    )
-
-                    return
-
-                try:
-                    results += task_runner.run_main_tasks(
-                        options,
-                        pre_results,
-                        additional_data=additional_data
-                    )
-
-                except TaskFailed as error:
-
-                    logger.error(
-                        "Job stopped during main tasks phase. "
-                        "Reason: {}".format(error)
-                    )
-
-                    return
-
-                try:
-                    results += task_runner.run_post_tasks(
-                        options=options,
-                        results=results
-                    )
-                except TaskFailed as error:
-
-                    logger.error(
-                        "Job stopped during post-task phase. "
-                        "Reason: {}".format(error)
-                    )
-
-                    return
-
-                logger.debug("Generating report")
-                report = job.generate_report(results, **options)
-                if report:
-                    logger.info(report)
+                self.run_abs_workflow(
+                    task_runner=task_runner,
+                    job=job,
+                    options=options,
+                    logger=logger
+                )

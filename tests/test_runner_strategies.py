@@ -156,3 +156,51 @@ def test_task_aborted(caplog, step, monkeypatch):
 
         assert caplog.messages, "No logs recorded"
         assert "Reason: User Aborted" in caplog.text
+
+# todo: make tests for UsingExternalManagerForAdapter2
+
+
+class TestUsingExternalManagerForAdapter2:
+    def test_run_abstract_workflow_calls_run_abs_workflow(self):
+        manager = Mock()
+        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
+        job = Mock()
+        job.__class__ = speedwagon.job.AbsWorkflow
+        runner.run_abs_workflow = Mock()
+        runner.run(
+            job=job,
+            options={}
+        )
+
+        assert runner.run_abs_workflow.called is True
+
+    def test_run_non_abstract_workflow_doesnt_call_run_abs_workflow(self):
+        manager = Mock()
+        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
+        job = Mock()
+        # NOTE: job.__class__ != speedwagon.job.AbsWorkflow
+        runner.run_abs_workflow = Mock()
+        runner.run(
+            job=job,
+            options={}
+        )
+
+        assert runner.run_abs_workflow.called is False
+
+    def test_run_abs_workflow_calls_task_runner(self):
+        manager = Mock()
+        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
+        job = Mock()
+        job.__class__ = speedwagon.job.AbsWorkflow
+
+        task_runner = MagicMock()
+
+        runner.run_abs_workflow(
+            task_runner=task_runner,
+            job=job,
+            options={}
+        )
+
+        assert task_runner.run_pre_tasks.called is True and \
+               task_runner.run_main_tasks.called is True and \
+               task_runner.run_post_tasks.called is True
