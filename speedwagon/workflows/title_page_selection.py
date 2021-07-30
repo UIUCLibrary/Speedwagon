@@ -10,12 +10,16 @@ from uiucprescon.packager.packages import collection
 
 
 class ModelField(NamedTuple):
+    """Model field."""
+
     column_header: str
     data_entry: Any
     editable: bool
 
 
 class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
+    """File selection delegate widget."""
+
     def __init__(self, parent):
         """Create a file selection item delegate widget."""
         super().__init__(parent)
@@ -25,7 +29,7 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
             parent: QtWidgets.QWidget,
             item: QtWidgets.QStyleOptionViewItem,
             index: QtCore.QModelIndex) -> QtWidgets.QWidget:
-
+        """Create editor widget."""
         selection = QtWidgets.QComboBox(parent)
 
         return selection
@@ -35,7 +39,7 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
             editor: QtCore.QObject,
             index: QtCore.QModelIndex
     ) -> None:
-
+        """Set editor data."""
         object_record = index.data(role=Qt.UserRole)
 
         try:
@@ -61,6 +65,7 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
             model: QtCore.QAbstractItemModel,
             index: QtCore.QModelIndex
     ) -> None:
+        """Set model data."""
         record: collection.PackageObject = model.data(index, role=Qt.UserRole)
         record.component_metadata[
             collection.Metadata.TITLE_PAGE] = widget.currentText()
@@ -69,6 +74,8 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
 
 
 class PackagesModel(QtCore.QAbstractTableModel):
+    """Model for holding title page information."""
+
     fields = [
 
         ModelField(column_header="Object",
@@ -94,9 +101,11 @@ class PackagesModel(QtCore.QAbstractTableModel):
         self._packages = packages
 
     def columnCount(self, parent=None, *args, **kwargs) -> int:
+        """Get the number of fields in model."""
         return len(self.fields)
 
     def rowCount(self, parent=None, *args, **kwargs) -> int:
+        """Get the number of packages in model."""
         return len(self._packages)
 
     def headerData(
@@ -105,7 +114,7 @@ class PackagesModel(QtCore.QAbstractTableModel):
             orientation: Qt.Orientation,
             role: int = QtCore.Qt.DisplayRole
     ) -> typing.Union[str, QtCore.QVariant]:
-
+        """Get model header information."""
         if role == QtCore.Qt.DisplayRole and \
                 orientation == QtCore.Qt.Horizontal:
             try:
@@ -116,6 +125,7 @@ class PackagesModel(QtCore.QAbstractTableModel):
             return super().headerData(index, orientation, role)
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
+        """Get data at index."""
         row = index.row()
         column = index.column()
 
@@ -132,9 +142,11 @@ class PackagesModel(QtCore.QAbstractTableModel):
         return QtCore.QVariant()
 
     def results(self) -> typing.List[collection.Package]:
+        """Get results."""
         return self._packages
 
     def flags(self, index: QtCore.QModelIndex) -> Qt.ItemFlags:
+        """Set flags for index."""
         column = index.column()
         if self.fields[column].editable:
             return typing.cast(
@@ -145,6 +157,8 @@ class PackagesModel(QtCore.QAbstractTableModel):
 
 
 class PackageBrowser(QtWidgets.QDialog):
+    """Browser dialog for selecting title page."""
+
     def __init__(
             self,
             packages: typing.List[collection.AbsPackageComponent],
@@ -190,4 +204,5 @@ class PackageBrowser(QtWidgets.QDialog):
         self.setMinimumHeight(240)
 
     def data(self) -> typing.List[collection.Package]:
+        """Get the results."""
         return self._model.results()
