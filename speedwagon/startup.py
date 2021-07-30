@@ -37,7 +37,7 @@ import speedwagon.gui
 
 try:  # pragma: no cover
     from importlib import metadata
-    import importlib.resources as resources  # type: ignore
+    from importlib import resources  # type: ignore
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
     import importlib_resources as resources  # type: ignore
