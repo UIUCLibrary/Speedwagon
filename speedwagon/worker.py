@@ -447,6 +447,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
     def get_results(self,
                     timeout_callback: Callable[[int, int], None] = None
                     ) -> typing.Generator[typing.Any, None, None]:
+        """Process jobs and return results."""
         processor = JobProcessor(self)
         processor.timeout_callback = timeout_callback
         yield from processor.process()
@@ -547,6 +548,7 @@ class AbsJobAdapter(metaclass=abc.ABCMeta):
 
 class SubtaskJobAdapter(AbsJobAdapter,
                         ProcessJobWorker):
+    """Adapter class for jobs."""
 
     def __init__(self, adaptee: AbsSubtask) -> None:
         """Create a sub-task job adapter."""
@@ -556,9 +558,11 @@ class SubtaskJobAdapter(AbsJobAdapter,
 
     @property
     def queue_adapter(self) -> QueueAdapter:
+        """Get the Queue adapter."""
         return QueueAdapter()
 
     def process(self, *args, **kwargs) -> None:
+        """Process the jobs."""
         self.adaptee.exec()
         self.result = self.adaptee.task_result
 
@@ -576,4 +580,5 @@ class SubtaskJobAdapter(AbsJobAdapter,
 
     @property
     def name(self) -> str:  # type: ignore
+        """Get name of adaptee."""
         return self.adaptee.name
