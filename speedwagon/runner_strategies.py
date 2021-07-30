@@ -66,7 +66,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
     def __init__(self, manager: "worker.ToolJobManager") -> None:
         """Create a new runner."""
         warnings.warn(
-            "Use UsingExternalManagerForAdapter instead",
+            "Use UsingExternalManagerForAdapter2 instead",
             DeprecationWarning
         )
         self._manager = manager
