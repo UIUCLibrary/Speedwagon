@@ -1,4 +1,6 @@
 """Consumer of tasks."""
+from __future__ import annotations
+
 import abc
 import concurrent.futures
 import contextlib
@@ -8,6 +10,7 @@ import queue
 import sys
 import traceback
 import typing
+import warnings
 from abc import ABC
 from typing import Callable, Optional, Any, Dict, Type
 from types import TracebackType
@@ -236,7 +239,10 @@ class AbsSubject(metaclass=abc.ABCMeta):
 class WorkRunnerExternal3(contextlib.AbstractContextManager):
     """Work runner that uses external manager."""
 
-    def __init__(self, parent: QtWidgets.QWidget) -> None:
+    def __init__(
+            self,
+            parent: typing.Optional[QtWidgets.QWidget] = None
+    ) -> None:
         """Create a work runner."""
         self.results: typing.List[Result] = []
         self._parent = parent
@@ -294,41 +300,14 @@ class AbsJobManager(metaclass=abc.ABCMeta):
         pass
 
 
-class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
-    """Tool job manager."""
-
-    def __init__(self, max_workers: int = 1) -> None:
-        """Create a tool job manager."""
-        self.settings_path: Optional[str] = None
+class JobExecutor:
+    def __init__(self) -> None:
         self.manager = multiprocessing.Manager()
-        self._max_workers = max_workers
-        self.active = False
-        self._pending_jobs: queue.Queue[JobPair] = queue.Queue()
+        self._pending_jobs: "queue.Queue[JobPair]" = queue.Queue()
+        self._message_queue: "Optional[queue.Queue[Any]]" = None
+        self._executor: Optional[concurrent.futures.ProcessPoolExecutor] = None
         self.futures: typing.List[concurrent.futures.Future] = []
-        self.logger = logging.getLogger(__name__)
-        self.user_settings: Optional["speedwagon.config.AbsConfig"] = None
-        self.configuration_file: Optional[str] = None
-
-    def __enter__(self) -> "ToolJobManager":
-        """Startup job management and load a worker pool."""
-        self._message_queue = self.manager.Queue()
-
-        self._executor = concurrent.futures.ProcessPoolExecutor(
-            self._max_workers
-        )
-
-        return self
-
-    def __exit__(self,
-                 exc_type: Optional[Type[BaseException]],
-                 exc_value: Optional[BaseException],
-                 exc_tb: Optional[TracebackType]):
-        """Clean up manager and show down the executor."""
-        self._cleanup()
-        self._executor.shutdown()
-
-    def open(self, parent, runner, *args, **kwargs):
-        return runner(*args, **kwargs, parent=parent)
+        self.active = False
 
     def add_job(self,
                 new_job: ProcessJobWorker,
@@ -338,10 +317,15 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
 
     def start(self) -> None:
         """Start jobs."""
+
+        if self._pending_jobs is None or self._executor is None:
+            return
+
         self.active = True
         while not self._pending_jobs.empty():
             job_, settings = self._pending_jobs.get()
-            job_.set_message_queue(self._message_queue)
+            if self._message_queue is not None:
+                job_.set_message_queue(self._message_queue)
             fut = self._executor.submit(job_.execute, **settings)
 
             fut.add_done_callback(fn=lambda x: self._pending_jobs.task_done())
@@ -352,12 +336,87 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         self.active = False
         still_running: typing.List[concurrent.futures.Future] = []
 
-        dialog_box = WorkProgressBar("Canceling", None, 0, 0)
-
         for future in reversed(self.futures):
             if not future.cancel and future.running():
                 still_running.append(future)
             self.futures.remove(future)
+
+    def flush_message_buffer(self, logger) -> None:
+        if self._message_queue is None:
+            return
+        while not self._message_queue.empty():
+            logger.info(self._message_queue.get())
+            self._message_queue.task_done()
+
+    def cleanup(self, logger) -> None:
+        if self._pending_jobs.unfinished_tasks > 0:
+            logger.warning("Pending jobs has unfinished tasks")
+        self._pending_jobs.join()
+
+    def shutdown(self):
+        self._executor.shutdown()
+
+
+class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
+    """Tool job manager."""
+
+    def __init__(self) -> None:
+        """Create a tool job manager."""
+        self.settings_path: Optional[str] = None
+        self._job_runtime = JobExecutor()
+        self.logger = logging.getLogger(__name__)
+        self.user_settings: Optional["speedwagon.config.AbsConfig"] = None
+        self.configuration_file: Optional[str] = None
+
+    @property
+    def active(self):
+        return self._job_runtime.active
+
+    @active.setter
+    def active(self, value):
+        warnings.warn("don't use directly", DeprecationWarning)
+        self._job_runtime.active = value
+
+    @property
+    def futures(self):
+        return self._job_runtime.futures
+
+    def __enter__(self) -> "ToolJobManager":
+        """Startup job management and load a worker pool."""
+        self._job_runtime._message_queue = self._job_runtime.manager.Queue()
+
+        self._job_runtime._executor = concurrent.futures.ProcessPoolExecutor(1)
+
+        return self
+
+    def __exit__(self,
+                 exc_type: Optional[Type[BaseException]],
+                 exc_value: Optional[BaseException],
+                 exc_tb: Optional[TracebackType]):
+        """Clean up manager and show down the executor."""
+        self._job_runtime.cleanup(self.logger)
+        self._job_runtime.shutdown()
+
+    def open(self, parent, runner, *args, **kwargs):
+        return runner(*args, **kwargs, parent=parent)
+
+    def add_job(self,
+                new_job: ProcessJobWorker,
+                settings: Dict[str, Any]) -> None:
+        self._job_runtime.add_job(new_job, settings)
+
+    def start(self) -> None:
+        """Start jobs."""
+
+        self._job_runtime.start()
+
+    def abort(self) -> None:
+        """Abort jobs."""
+
+        still_running: typing.List[concurrent.futures.Future] = []
+
+        dialog_box = WorkProgressBar("Canceling", None, 0, 0)
+        self._job_runtime.abort()
 
         dialog_box.setRange(0, len(still_running))
         dialog_box.setLabelText("Please wait")
@@ -392,18 +451,14 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         yield from processor.process()
 
     def flush_message_buffer(self) -> None:
-        while not self._message_queue.empty():
-            self.logger.info(self._message_queue.get())
-            self._message_queue.task_done()
+        self._job_runtime.flush_message_buffer(self.logger)
 
     def _cleanup(self) -> None:
-        if self._pending_jobs.unfinished_tasks > 0:
-            self.logger.warning("Pending jobs has unfinished tasks")
-        self._pending_jobs.join()
+        self._job_runtime.cleanup(self.logger)
 
 
 class JobProcessor:
-    def __init__(self, parent: ToolJobManager):
+    def __init__(self, parent: "ToolJobManager"):
         self._parent = parent
         self.completed = 0
         self._total_jobs = None
@@ -452,7 +507,8 @@ class JobProcessor:
             if not completed_futures.cancel() and \
                     completed_futures.done():
                 self.completed += 1
-                self._parent.futures.remove(completed_futures)
+                if completed_futures in self._parent.futures:
+                    self._parent.futures.remove(completed_futures)
                 if self.timeout_callback:
                     self.timeout_callback(self.completed, self._total_jobs)
                 yield from self.report_results_from_future(futures)

@@ -118,7 +118,6 @@ def test_runs(tool_job_manager_spy, tmpdir):
 
     (image_path / "00000001.jp2").ensure()
     tool_job_manager_spy.run(
-        None,
         MockOCRWorkflow(global_settings={
             "tessdata": tessdata_dir.strpath
         }),

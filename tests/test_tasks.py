@@ -304,7 +304,7 @@ def test_adapter_results_with_posttask(tmpdir):
             adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
             manager.add_job(adapted_tool, adapted_tool.settings)
 
-        for message in manager._pending_jobs.queue:
+        for message in manager._job_runtime._pending_jobs.queue:
             print(message)
             queued_order.append(message.args['message'])
 

@@ -13,7 +13,7 @@ def test_singleChecksum(tool_job_manager_spy, tmpdir):
     sample_file = sample_pkg_dir / "dummy.txt"
     sample_file.write_text("", encoding="utf8")
     my_logger = logging.getLogger()
-    tool_job_manager_spy.run(None,
+    tool_job_manager_spy.run(
                MakeChecksumBatchSingleWorkflow(),
                options={
                    "Input": sample_pkg_dir.realpath()},
@@ -38,8 +38,7 @@ def test_mutipleChecksum(tool_job_manager_spy, tmpdir):
             sample_file = sample_pkg_dir / f"dummy_{f_i+1}.txt"
             sample_file.write_text("", encoding="utf8")
     d = tmpdir.realpath()
-    tool_job_manager_spy.run(None,
-                             MakeChecksumBatchMultipleWorkflow(),
+    tool_job_manager_spy.run(MakeChecksumBatchMultipleWorkflow(),
                              options={
                                  "Input": tmpdir.realpath()},
                              logger=logging.getLogger()
