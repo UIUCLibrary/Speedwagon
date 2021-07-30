@@ -270,3 +270,33 @@ class TestUsingExternalManagerForAdapter2:
             options={},
         )
         assert task_runner.run_main_tasks.called is False
+
+    def test_update_progress(self):
+        runner = Mock()
+
+        runner_strategies.UsingExternalManagerForAdapter2.update_progress(
+            runner=runner,
+            current=3,
+            total=10
+        )
+        runner.dialog.setMaximum.assert_called_with(10)
+        runner.dialog.setValue.assert_called_with(3)
+
+    def test_update_progress_accepted_on_finish(self):
+        runner = Mock()
+
+        runner_strategies.UsingExternalManagerForAdapter2.update_progress(
+            runner=runner,
+            current=10,
+            total=10
+        )
+        assert runner.dialog.accept.called is True
+
+    def test_update_progress_no_dialog(self):
+        runner = Mock()
+        runner.dialog = None
+        runner_strategies.UsingExternalManagerForAdapter2.update_progress(
+            runner=runner,
+            current=3,
+            total=10
+        )

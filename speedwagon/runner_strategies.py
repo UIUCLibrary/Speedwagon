@@ -512,7 +512,7 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
         self.parent = parent
 
     @staticmethod
-    def _update_progress(
+    def update_progress(
             runner: "worker.WorkRunnerExternal3",
             current: int,
             total: int) -> None:
@@ -548,6 +548,21 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
 
         return {}
 
+    def _run_stage(self, callback, logger, phase_name: str):
+        try:
+            callback()
+        except JobCancelled:
+            return
+
+        except TaskFailed as error:
+
+            logger.error(
+                "Job stopped during pre-task phase. "
+                "Reason: {}".format(error)
+            )
+
+            return
+
     def run_abs_workflow(self,
                          task_runner: TaskRunner,
                          job: AbsWorkflow,
@@ -555,6 +570,7 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
                          logger: logging.Logger = None):
         logger = logger or logging.getLogger(__name__)
         results: List[Any] = []
+
         try:
             pre_results = task_runner.run_pre_tasks(options=options)
 
@@ -627,7 +643,7 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
                                      working_directory=build_dir
                                      )
             task_runner.logger = logger or logging.getLogger(__name__)
-            task_runner.update_progress_callback = self._update_progress
+            task_runner.update_progress_callback = self.update_progress
             if isinstance(job, AbsWorkflow):
                 self.run_abs_workflow(
                     task_runner=task_runner,
