@@ -27,11 +27,13 @@ class TaskStatus(enum.IntEnum):
 
 
 class AbsSubtask(metaclass=abc.ABCMeta):
+    """Abstract subclass for subtasks."""
+
     name: Optional[str] = None
 
     @abc.abstractmethod
     def work(self) -> bool:
-        pass
+        """Perform work."""
 
     @abc.abstractmethod
     def log(self, message: str) -> None:
@@ -39,16 +41,18 @@ class AbsSubtask(metaclass=abc.ABCMeta):
 
     @property
     def task_result(self) -> Optional['Result']:
+        """Get the results of the subtask."""
         return None
 
     @property
     def results(self) -> Optional[Any]:
+        """Get the results of the subtask."""
         return None
 
     @property  # type: ignore
     @abc.abstractmethod
     def status(self) -> TaskStatus:
-        pass
+        """Get that status of the subtask."""
 
     @status.setter  # type: ignore
     @abc.abstractmethod
@@ -57,10 +61,11 @@ class AbsSubtask(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def exec(self) -> None:
-        pass
+        """Execute subtask."""
 
     @property
     def settings(self):
+        """Get the settings for the subtask."""
         return {}
 
     @property  # type: ignore
@@ -75,6 +80,8 @@ class AbsSubtask(metaclass=abc.ABCMeta):
 
 
 class Result(NamedTuple):
+    """Subtask result."""
+
     source: Type[AbsSubtask]
     data: Any
 
@@ -97,6 +104,12 @@ class Subtask(AbsSubtask):
 
     @property
     def subtask_working_dir(self) -> str:
+        """Get the subtask working directory.
+
+        Notes:
+            This has the side effect of creating the working directory if it
+            does not already exist.
+        """
         if not os.path.exists(self._working_dir):
             os.makedirs(self._working_dir)
         return self._working_dir
@@ -117,10 +130,12 @@ class Subtask(AbsSubtask):
 
     @property
     def task_result(self) -> Optional[Result]:
+        """Get the result of the subtask."""
         return self._result
 
     @property
     def status(self) -> TaskStatus:
+        """Get the status of the subtask."""
         return self._status
 
     @status.setter
@@ -142,16 +157,20 @@ class Subtask(AbsSubtask):
 
     @property
     def results(self):
+        """Get the results of the subtask."""
         return self._result.data
 
     def set_results(self, results) -> None:
+        """Set the results of the subtask."""
         self._result = Result(self.__class__, results)
 
     def log(self, message: str) -> None:
+        """Generate text message for the subtask."""
         if self._parent_task_log_q is not None:
             self._parent_task_log_q.append(message)
 
     def exec(self) -> None:
+        """Execute subtask."""
         self.status = TaskStatus.WORKING
 
         self.status = \
@@ -446,6 +465,8 @@ class BaseTaskBuilder(AbsTaskBuilder):
 
 
 class TaskBuilder:
+    """Task builder."""
+
     # The director
     _task_counter = 0
 
@@ -500,7 +521,7 @@ class TaskBuilder:
         return os.path.join(temp_path, task_id)
 
     def set_pretask(self, subtask: Subtask) -> None:
-
+        """Set the pre-subtask for the task."""
         self._subtask_counter += 1
 
         if subtask.name is not None:
@@ -523,6 +544,7 @@ class TaskBuilder:
         self._builder.set_pretask(subtask)
 
     def set_posttask(self, subtask: Subtask) -> None:
+        """Set the post-subtask for the task."""
         self._subtask_counter += 1
 
         if subtask.name is not None:
@@ -547,11 +569,13 @@ class TaskBuilder:
 
     @staticmethod
     def save(task_obj):
+        """Pickle data."""
         task_serialized = TaskBuilder._serialize_task(task_obj)
         return pickle.dumps(task_serialized)
 
     @staticmethod
     def load(data):
+        """Load pickled data."""
         task_cls, attributes = pickle.loads(data)
         return TaskBuilder._deserialize_task(task_cls, attributes)
 
@@ -575,9 +599,11 @@ class QueueAdapter:
         self._queue: Optional[queue.Queue] = None
 
     def append(self, item):
+        """Append item to the queue."""
         self._queue.put(item)
 
     def set_message_queue(self, value: queue.Queue) -> None:
+        """Set message queue."""
         self._queue = value
 
 
