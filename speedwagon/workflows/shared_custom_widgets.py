@@ -8,22 +8,26 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 
 
 class AbsCustomData2(metaclass=abc.ABCMeta):
+    """Base class for custom data types."""
+
     @classmethod
     @abc.abstractmethod
     def is_valid(cls, value) -> bool:
-        pass
+        """Check user selection is valid."""
 
     @classmethod
     @abc.abstractmethod
     def edit_widget(cls) -> QtWidgets.QWidget:
-        pass
+        """Get widget for editing data type."""
 
 
 class WidgetMeta(abc.ABCMeta, type(QtCore.QObject)):  # type: ignore
-    pass
+    """Widget meta class."""
 
 
 class CustomItemWidget(QtWidgets.QWidget):
+    """Custom item Widget."""
+
     editingFinished = QtCore.pyqtSignal()
 
     def __init__(self, parent=None, *args, **kwargs) -> None:
@@ -37,6 +41,7 @@ class CustomItemWidget(QtWidgets.QWidget):
 
     @property
     def data(self) -> str:
+        """Access the data from the widget."""
         return self._data
 
     @data.setter
@@ -70,10 +75,11 @@ class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
 
     @abc.abstractmethod
     def browse_clicked(self) -> None:
-        pass
+        """Execute action when browse selected."""
 
     @property
     def data(self):
+        """Access the data from the widget."""
         return super().data
 
     @data.setter
@@ -86,24 +92,29 @@ class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
 
 
 class AbsCustomData3(metaclass=abc.ABCMeta):
+    """Abstract data type creating custom data."""
+
     @classmethod
     @abc.abstractmethod
     def is_valid(cls, value) -> bool:
-        pass
+        """Check user selection is valid."""
 
     @classmethod
     @abc.abstractmethod
     def edit_widget(cls) -> QtWidgets.QWidget:
-        pass
+        """Get widget for editing the data."""
 
 
 class ChecksumFile(AbsBrowseableWidget):
+    """Widget for checksum md5 files."""
 
     def get_browse_icon(self) -> QtGui.QIcon:
+        """Get the os-specific browse icon for files."""
         return QtWidgets.QApplication.style().standardIcon(
             QtWidgets.QStyle.SP_FileIcon)
 
     def browse_clicked(self) -> None:
+        """Launch file browser to locate an .md5 file."""
         selection = QtWidgets.QFileDialog.getOpenFileName(
             filter="Checksum files (*.md5)")
 
@@ -113,9 +124,11 @@ class ChecksumFile(AbsBrowseableWidget):
 
 
 class ChecksumData(AbsCustomData3):
+    """Checksum data format."""
 
     @classmethod
     def is_valid(cls, value: str) -> bool:
+        """Check user selection is valid."""
         if not os.path.exists(value):
             return False
         if os.path.basename(value) == "checksum":
@@ -125,16 +138,20 @@ class ChecksumData(AbsCustomData3):
 
     @classmethod
     def edit_widget(cls) -> QtWidgets.QWidget:
+        """Get a file select dialog box."""
         return ChecksumFile()
 
 
 class FolderBrowseWidget(AbsBrowseableWidget):
+    """Widget for browsing for folders on the hard drive."""
 
     def get_browse_icon(self) -> QtGui.QIcon:
+        """Get the os-specific browse icon for folders."""
         return QtWidgets.QApplication.style().standardIcon(
             QtWidgets.QStyle.SP_DirOpenIcon)
 
     def browse_clicked(self) -> None:
+        """Browse hard drive to select an existing directory."""
         selection = QtWidgets.QFileDialog.getExistingDirectory()
         if selection:
             self.data = selection
@@ -142,15 +159,18 @@ class FolderBrowseWidget(AbsBrowseableWidget):
 
 
 class FolderData(AbsCustomData3, metaclass=abc.ABCMeta):
+    """Select a folder as a data type."""
 
     @classmethod
     def is_valid(cls, value: str) -> bool:
+        """Check user selection is valid."""
         if not os.path.isdir(value):
             return False
         return True
 
     @classmethod
     def edit_widget(cls) -> QtWidgets.QWidget:
+        """Get Folder browser widget."""
         return FolderBrowseWidget()
 
 
@@ -164,7 +184,7 @@ class UserOption3(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def is_valid(self) -> bool:
-        pass
+        """Check user selection is valid."""
 
     def edit_widget(self) -> QtWidgets.QWidget:
         """Get widget for editing."""
@@ -184,9 +204,11 @@ class UserOptionCustomDataType(UserOption3):
         self.data = None
 
     def is_valid(self) -> bool:
+        """Check user selection is valid."""
         return self.data_type.is_valid(self.data)
 
     def edit_widget(self) -> QtWidgets.QWidget:
+        """Return a new widget for editing the value."""
         return self.data_type.edit_widget()
 
 
@@ -200,10 +222,10 @@ class UserOption2(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def is_valid(self) -> bool:
-        pass
+        """Check user selection is valid."""
 
     def edit_widget(self) -> QtWidgets.QWidget:
-        pass
+        """Return a new widget for editing the value."""
 
 
 class UserOptionPythonDataType2(UserOption2):
@@ -218,6 +240,7 @@ class UserOptionPythonDataType2(UserOption2):
         self.data = None
 
     def is_valid(self) -> bool:
+        """Check user selection is valid."""
         return isinstance(self.data, self.data_type)
 
 
@@ -250,12 +273,15 @@ class ListSelection(UserOption2):
         self._selections: List[str] = []
 
     def is_valid(self) -> bool:
+        """Check if list selection is valid."""
         return True
 
     def edit_widget(self) -> QtWidgets.QWidget:
+        """Get a drop down widget with the selections prepopulated."""
         return ListSelectionWidget(self._selections)
 
     def add_selection(self, text: str) -> "ListSelection":
+        """Add text to the list selection."""
         self._selections.append(text)
         self.data = self._selections[0]
         return self
