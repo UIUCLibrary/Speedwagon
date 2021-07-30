@@ -548,21 +548,6 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
 
         return {}
 
-    def _run_stage(self, callback, logger, phase_name: str):
-        try:
-            callback()
-        except JobCancelled:
-            return
-
-        except TaskFailed as error:
-
-            logger.error(
-                "Job stopped during pre-task phase. "
-                "Reason: {}".format(error)
-            )
-
-            return
-
     def run_abs_workflow(self,
                          task_runner: TaskRunner,
                          job: AbsWorkflow,
