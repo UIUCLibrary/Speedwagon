@@ -150,6 +150,7 @@ class SettingsDialog(QtWidgets.QDialog):
 
 
 class GlobalSettingsTab(QtWidgets.QWidget):
+    """Widget for editing global settings."""
 
     def __init__(
             self,
@@ -175,6 +176,7 @@ class GlobalSettingsTab(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def read_config_data(self) -> None:
+        """Read configuration file."""
         if self.config_file is None:
             raise FileNotFoundError("No Configuration file set")
         if not os.path.exists(self.config_file):
@@ -187,9 +189,11 @@ class GlobalSettingsTab(QtWidgets.QWidget):
         self.settings_table.model().dataChanged.connect(self.on_modified)
 
     def on_modified(self) -> None:
+        """Set modified to true."""
         self._modified = True
 
     def on_okay(self) -> None:
+        """Execute when a user selects okay."""
         if not self._modified:
             return
         if self.config_file is None:
@@ -211,6 +215,8 @@ class GlobalSettingsTab(QtWidgets.QWidget):
 
 
 class TabsConfigurationTab(QtWidgets.QWidget):
+    """Tabs configuration widget."""
+
     def __init__(
             self,
             parent: QtWidgets.QWidget = None,
@@ -228,6 +234,7 @@ class TabsConfigurationTab(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def on_okay(self) -> None:
+        """Execute when a user selects okay."""
         if self.editor.modified is False:
             return
         if self.settings_location is None:
@@ -249,6 +256,7 @@ class TabsConfigurationTab(QtWidgets.QWidget):
         msg_box.exec()
 
     def load(self) -> None:
+        """Load configuration settings."""
         print(f"loading {self.settings_location}")
         self.editor.tabs_file = self.settings_location
         workflows = job.available_workflows()
@@ -256,6 +264,8 @@ class TabsConfigurationTab(QtWidgets.QWidget):
 
 
 class TabEditor(QtWidgets.QWidget):
+    """Widget for editing tabs."""
+
     def __init__(
             self,
             parent: QtWidgets.QWidget = None,
@@ -293,10 +303,12 @@ class TabEditor(QtWidgets.QWidget):
         self.splitter.setChildrenCollapsible(False)
 
     def on_modified(self) -> None:
+        """Set modified to true."""
         self.modified = True
 
     @property
     def tabs_file(self) -> Optional[str]:
+        """Get tabs file used."""
         return self._tabs_file
 
     @tabs_file.setter
@@ -372,7 +384,7 @@ class TabEditor(QtWidgets.QWidget):
             self,
             workflows: Dict[str, Type[job.Workflow]]
     ) -> None:
-
+        """Set up all workflows."""
         for values in workflows.values():
             self._all_workflows_model.add_workflow(values)
 
@@ -381,4 +393,5 @@ class TabEditor(QtWidgets.QWidget):
 
     @property
     def current_tab(self) -> QtWidgets.QWidget:
+        """Get current tab widget."""
         return self.selectedTabComboBox.currentData()
