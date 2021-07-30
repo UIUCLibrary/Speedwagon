@@ -423,7 +423,8 @@ class TaskRunner:
     @staticmethod
     def _add_jobs_tasks(manager: "worker.ToolJobManager",
                         working_directory: str,
-                        callback: typing.Callable[[tasks.TaskBuilder], None]):
+                        callback: typing.Callable[[tasks.TaskBuilder], None]
+                        ) -> None:
         task_builder = tasks.TaskBuilder(
             tasks.MultiStageTaskBuilder(working_directory),
             working_directory
@@ -447,7 +448,7 @@ class TaskRunner:
                        pretask_results,
                        additional_data: Dict[str, Any],
                        runner: "worker.WorkRunnerExternal3" = None,
-                       ) -> list:
+                       ) -> List[Any]:
 
         i = -1
 
