@@ -25,7 +25,13 @@ class TestWorkflowsTab:
         selection_tab.item_selection_model = Mock()
 
         mock_message_box_exec = MagicMock()
-        monkeypatch.setattr(QtWidgets.QMessageBox, "exec", mock_message_box_exec)
+
+        monkeypatch.setattr(
+            QtWidgets.QMessageBox,
+            "exec",
+            mock_message_box_exec
+        )
+
         with pytest.raises(exceptions.SpeedwagonException) as e:
             selection_tab.item_selected(index)
         assert str(e.value) == "something wrong happened" and \
@@ -39,7 +45,12 @@ class TestWorkflowsTab:
             (2, False),
         ]
     )
-    def test_is_ready_to_start(self, qtbot, number_of_indexes_selected, is_validate):
+    def test_is_ready_to_start(
+            self,
+            qtbot,
+            number_of_indexes_selected,
+            is_validate
+    ):
         log_manager = Mock()
         work_manager = Mock()
         selection_tab = tabs.WorkflowsTab(
@@ -49,7 +60,11 @@ class TestWorkflowsTab:
             work_manager=work_manager
         )
         selection_tab.item_selector_view.selectedIndexes = \
-            Mock(return_value=[Mock() for _ in range(number_of_indexes_selected)])
+            Mock(
+                return_value=[
+                    Mock() for _ in range(number_of_indexes_selected)
+                ]
+            )
         assert selection_tab.is_ready_to_start() is is_validate
 
     def test_init_selects_first_workflow(self, qtbot):
@@ -75,7 +90,8 @@ class TestWorkflowsTab:
         workflows = OrderedDict()
 
         class MockWorkflow(job.AbsWorkflow):
-            def discover_task_metadata(self, initial_results, additional_data, **user_args):
+            def discover_task_metadata(
+                    self, initial_results, additional_data, **user_args):
                 pass
 
             def user_options(self):
@@ -102,13 +118,19 @@ class TestWorkflowsTab:
             Exception
         ]
     )
-    def test_start_creates_a_messagebox_on_value_error(self, qtbot, monkeypatch, exception_type):
+    def test_start_creates_a_messagebox_on_value_error(
+            self, qtbot, monkeypatch, exception_type):
+
         log_manager = Mock()
         work_manager = MagicMock(user_settings={})
         workflows = OrderedDict()
 
         class MockWorkflow(job.AbsWorkflow):
-            def discover_task_metadata(self, initial_results, additional_data, **user_args):
+            def discover_task_metadata(
+                    self,
+                    initial_results,
+                    additional_data,
+                    **user_args):
                 pass
 
             def user_options(self):
@@ -131,7 +153,11 @@ class TestWorkflowsTab:
             mp.setattr(QMessageBox, "exec", mock_message_box_exec)
             mp.setattr(QMessageBox, "exec_", mock_message_box_exec)
             selection_tab.start(workflows["Spam"])
-            assert isinstance(mock_runner.call_args_list[0][0][0], MockWorkflow)
+
+            assert isinstance(
+                mock_runner.call_args_list[0][0][0],
+                MockWorkflow
+            )
 
         assert mock_message_box_exec.called is True
 
