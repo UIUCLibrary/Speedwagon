@@ -109,6 +109,8 @@ class WindowsConfig(AbsConfig):
 
 
 class ConfigManager(contextlib.AbstractContextManager):
+    """Manager for configurations."""
+
     BOOLEAN_SETTINGS = [
             "debug",
         ]
@@ -132,7 +134,7 @@ class ConfigManager(contextlib.AbstractContextManager):
 
     @property
     def global_settings(self) -> Dict[str, Union[str, bool]]:
-
+        """Global settings."""
         if self.cfg_parser is None:
             return {}
 
