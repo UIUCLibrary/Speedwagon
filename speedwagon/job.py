@@ -21,10 +21,12 @@ __all__ = [
 
 
 class JobCancelled(Exception):
-    pass
+    """Job cancelled exception."""
 
 
 class AbsWorkflow(metaclass=abc.ABCMeta):
+    """Base class for workflows."""
+
     active = True
     description: Optional[str] = None
     name: Optional[str] = None
@@ -159,12 +161,18 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
 
 
 class NullWorkflow(Workflow):
+    """Null Workflow.
+
+    Does nothing.
+    """
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
+        """Discover task metadata."""
         return []
 
     def user_options(self):
+        """User options."""
         return []
 
 
