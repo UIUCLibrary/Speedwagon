@@ -659,7 +659,9 @@ class MultiWorkflowLauncher(AbsStarter):
     def __init__(self, logger=None) -> None:
         super().__init__()
         self.logger = logger or logging.getLogger(__name__)
-        self._pending_tasks = queue.Queue()
+        self._pending_tasks: \
+            "queue.Queue[Tuple[job.AbsWorkflow, Dict[str, typing.Any]]]" \
+            = queue.Queue()
 
     def run(self) -> int:
         with worker.ToolJobManager() as work_manager:
