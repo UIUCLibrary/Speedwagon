@@ -94,6 +94,7 @@ def about_dialog_box(parent: typing.Optional[QtWidgets.QWidget]) -> None:
 
 class SystemInfoDialog(QtWidgets.QDialog):
     """System information dialog window."""
+
     # parent: QWidget = None, flags: Union[
     #     Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags()
     def __init__(
