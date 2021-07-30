@@ -116,65 +116,54 @@ class ItemTabsWidget(QtWidgets.QWidget):
         self.tabs.addTab(tab, name)
 
 
-class MainWindow(QtWidgets.QMainWindow):
+class MainProgram(QtWidgets.QMainWindow):
+    def __init__(
+            self,
+            work_manager: "worker.ToolJobManager",
+            debug: bool = False
+    ) -> None:
+        super().__init__()
+
+        self._debug = debug
+        self.user_settings = None
+
+        self.work_manager = work_manager
+
+        self.log_manager = self.work_manager.logger
+        self.log_manager.setLevel(logging.DEBUG)
+
+    def debug_mode(self, debug: bool) -> None:
+        self._debug = debug
+
+
+class MainWindow(MainProgram):
     def __init__(
             self,
             work_manager: "worker.ToolJobManager",
             debug: bool = False
     ) -> None:
 
-        super().__init__()
-
-        self._debug = debug
-        self.user_settings = None
-
-        self._work_manager = work_manager
-
-        self.log_manager = self._work_manager.logger
-        self.log_manager.setLevel(logging.DEBUG)
+        super().__init__(work_manager, debug)
 
         with resources.path("speedwagon.ui",
                             "main_window2.ui") as ui_file:
             uic.loadUi(ui_file, self)
 
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
-
         self.mainLayout.addWidget(self.main_splitter)
 
         ###########################################################
         # Tabs
         ###########################################################
-        self.tab_widget = ItemTabsWidget(self.main_splitter)
-        self.tab_widget.setVisible(False)
-
-        self._tabs: List[speedwagon.tabs.ItemSelectionTab] = []
-
-        # Add the tabs widget as the first widget
-        self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
-        self.main_splitter.addWidget(self.tab_widget)
-        self.main_splitter.setStretchFactor(0, 0)
-        self.main_splitter.setStretchFactor(1, 2)
+        self._create_tabs_widget()
 
         ###########################################################
         #  Console
         ###########################################################
-        self.console = ToolConsole(self.main_splitter)
-        self.console.setMinimumHeight(75)
-        self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
-        self.main_splitter.addWidget(self.console)
-
-        self.console_log_handler = ConsoleLogger(self.console)
-
-        self._log_data = io.StringIO()
-        self.log_data_handler = logging.StreamHandler(self._log_data)
-        self.log_data_handler.setFormatter(DEBUG_LOGGING_FORMAT)
-
-        self.log_manager.addHandler(self.console_log_handler)
-        self.log_manager.addHandler(self.log_data_handler)
-
-        self.debug_mode(debug)
+        self._create_console()
 
         ###########################################################
+        self.debug_mode(debug)
 
         # Add menu bar
         menu_bar = self.menuBar()
@@ -249,8 +238,31 @@ class MainWindow(QtWidgets.QMainWindow):
         # ##################
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
+    def _create_console(self):
+        self.console = ToolConsole(self.main_splitter)
+        self.console.setMinimumHeight(75)
+        self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
+        self.main_splitter.addWidget(self.console)
+        self.console_log_handler = ConsoleLogger(self.console)
+        self._log_data = io.StringIO()
+        self.log_data_handler = logging.StreamHandler(self._log_data)
+        self.log_data_handler.setFormatter(DEBUG_LOGGING_FORMAT)
+        self.log_manager.addHandler(self.console_log_handler)
+        self.log_manager.addHandler(self.log_data_handler)
+
+    def _create_tabs_widget(self):
+        self.tab_widget = ItemTabsWidget(self.main_splitter)
+        self.tab_widget.setVisible(False)
+        self._tabs: List[speedwagon.tabs.ItemSelectionTab] = []
+        # Add the tabs widget as the first widget
+        self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
+        self.main_splitter.addWidget(self.tab_widget)
+        self.main_splitter.setStretchFactor(0, 0)
+        self.main_splitter.setStretchFactor(1, 2)
+
     def debug_mode(self, debug: bool) -> None:
-        self._debug = debug
+        """Set debug mode on or off."""
+        super().debug_mode(debug)
         if debug:
             self._set_logging_level(logging.DEBUG)
             self.console_log_handler.setFormatter(DEBUG_LOGGING_FORMAT)
@@ -277,7 +289,7 @@ class MainWindow(QtWidgets.QMainWindow):
         workflows_tab = tabs.WorkflowsTab(
             parent=self,
             workflows=workflows,
-            work_manager=self._work_manager,
+            work_manager=self.work_manager,
             log_manager=self.log_manager
         )
         workflows_tab.parent = self
@@ -311,15 +323,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
         config_dialog = speedwagon.dialog.settings.SettingsDialog(parent=self)
 
-        if self._work_manager.settings_path is not None:
-            config_dialog.settings_location = self._work_manager.settings_path
+        if self.work_manager.settings_path is not None:
+            config_dialog.settings_location = self.work_manager.settings_path
 
         global_settings_tab = speedwagon.dialog.settings.GlobalSettingsTab()
 
-        if self._work_manager.settings_path is not None:
+        if self.work_manager.settings_path is not None:
             global_settings_tab.config_file = \
                 os.path.join(
-                    self._work_manager.settings_path, "config.ini")
+                    self.work_manager.settings_path, "config.ini")
 
             global_settings_tab.read_config_data()
 
@@ -328,9 +340,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         tabs_tab = speedwagon.dialog.settings.TabsConfigurationTab()
 
-        if self._work_manager.settings_path is not None:
+        if self.work_manager.settings_path is not None:
             tabs_tab.settings_location = \
-                os.path.join(self._work_manager.settings_path, "tabs.yml")
+                os.path.join(self.work_manager.settings_path, "tabs.yml")
             tabs_tab.load()
 
         config_dialog.add_tab(tabs_tab, "Tabs")
