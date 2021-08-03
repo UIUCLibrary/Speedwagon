@@ -524,7 +524,7 @@ class TaskGenerator:
 
     def tasks(self,
               additional_info_callback=None
-              ) -> typing.Iterable[tasks.AbsSubtask]:
+              ) -> typing.Iterable[tasks.Subtask]:
         pretask_results = []
 
         results = []
