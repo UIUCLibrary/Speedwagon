@@ -511,7 +511,7 @@ class TaskGenerator:
             self,
             workflow,
             options: typing.Mapping[str, Any],
-            working_directory
+            working_directory: str
     ) -> None:
         self.workflow = workflow
         self.options = options
@@ -685,6 +685,13 @@ class TaskRunner2(TaskRunner):
         if report is not None:
             self.logger.info(task_generator.generate_report(results))
 
+    def _flush_message_buffer(self, message_queue):
+        message = []
+        while not message_queue.empty():
+            message.append(message_queue.get())
+            message_queue.task_done()
+        self.logger.info("\n".join(message))
+
     def run(self, options):
         with self.manager.open(
                 parent=self.parent_widget,
@@ -697,6 +704,7 @@ class TaskRunner2(TaskRunner):
 
                 runner.dialog.setLabelText(subtask.name or 'Working')
                 if runner.was_aborted is True:
+                    self._flush_message_buffer(report_queue)
                     message = []
                     while not report_queue.empty():
                         message.append(report_queue.get())
@@ -707,24 +715,16 @@ class TaskRunner2(TaskRunner):
                 subtask.log = report_queue.put
                 subtask.exec()
                 if report_queue.qsize() > max_size:
-                    message = []
-                    while not report_queue.empty():
-                        message.append(report_queue.get())
-                        report_queue.task_done()
-                    self.logger.info("\n".join(message))
+                    self._flush_message_buffer(report_queue)
 
                 if self.current_task is not None and \
                         self.total_tasks is not None:
                     self.update_progress(runner,
                                          self.current_task,
                                          self.total_tasks)
-            message = []
-            while not report_queue.empty():
-                message.append(report_queue.get())
-                report_queue.task_done()
 
+            self._flush_message_buffer(report_queue)
             report_queue.join()
-            self.logger.info("\n".join(message))
 
     def run_pre_tasks(self, options: Dict[str, Any],
                       runner: "worker.WorkRunnerExternal3" = None
