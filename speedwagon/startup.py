@@ -691,11 +691,11 @@ class MultiWorkflowLauncher(AbsStarter):
                                     options,
                                     window.log_manager)
                 self._pending_tasks.task_done()
-        except runner_strategies.TaskFailed as e:
+        except runner_strategies.TaskFailed as task_error:
             while not self._pending_tasks.empty():
                 self._pending_tasks.get()
                 self._pending_tasks.task_done()
-            raise job.JobCancelled(e) from e
+            raise job.JobCancelled(task_error) from task_error
 
         finally:
             window.log_manager.handlers.clear()
