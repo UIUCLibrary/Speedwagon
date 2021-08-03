@@ -675,24 +675,30 @@ class MultiWorkflowLauncher(AbsStarter):
             debug=False)
 
         window.show()
-        while not self._pending_tasks.empty():
-            active_workflow, options = self._pending_tasks.get()
-            window.setWindowTitle(active_workflow.name)
-            runner_strategy = \
-                runner_strategies.UsingExternalManagerForAdapter2(
-                    work_manager,
-                    window
-                )
+        try:
+            while not self._pending_tasks.empty():
+                active_workflow, options = self._pending_tasks.get()
+                window.setWindowTitle(active_workflow.name)
+                runner_strategy = \
+                    runner_strategies.UsingExternalManagerForAdapter3(
+                        work_manager,
+                        window
+                    )
 
-            active_workflow.validate_user_options(**options)
+                active_workflow.validate_user_options(**options)
+                runner_strategy.run(
+                                    active_workflow,
+                                    options,
+                                    window.log_manager)
+                self._pending_tasks.task_done()
+        except runner_strategies.TaskFailed as e:
+            while not self._pending_tasks.empty():
+                self._pending_tasks.get()
+                self._pending_tasks.task_done()
+            raise job.JobCancelled(e) from e
 
-            runner_strategy.run(
-                                active_workflow,
-                                options,
-                                window.log_manager)
-            self._pending_tasks.task_done()
-
-        window.log_manager.handlers.clear()
+        finally:
+            window.log_manager.handlers.clear()
 
     def initialize(self) -> None:
         """No need to initialize."""

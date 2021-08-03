@@ -1,9 +1,12 @@
 import logging
+import os
+import tempfile
+from typing import List, Any, Dict
 
 import pytest
 from unittest.mock import Mock, MagicMock
 
-from speedwagon import runner_strategies
+from speedwagon import runner_strategies, tasks
 import speedwagon
 
 
@@ -308,3 +311,75 @@ class TestUsingExternalManagerForAdapter2:
             current=3,
             total=10
         )
+
+
+class TestTaskGenerator:
+
+    @pytest.fixture()
+    def workflow(self):
+        workflow = MagicMock()
+        workflow.__class__ = speedwagon.job.AbsWorkflow
+        workflow.discover_task_metadata = Mock(
+            return_value=[
+                {"Input": "fakedata"}
+            ]
+        )
+        return workflow
+
+    def test_tasks_call_init_task(self, workflow):
+        task_generator = runner_strategies.TaskGenerator(
+            workflow=workflow,
+            options={},
+            working_directory=os.path.join("some", "real", "directory")
+        )
+
+        for subtask in task_generator.tasks():
+            assert isinstance(subtask, speedwagon.tasks.Subtask)
+
+        assert workflow.initial_task.called is True
+
+    def test_tasks_runs_discover_metadata(self, workflow):
+        task_generator = runner_strategies.TaskGenerator(
+            workflow=workflow,
+            options={},
+            working_directory=os.path.join("some", "real", "directory")
+        )
+
+        for subtask in task_generator.tasks():
+            assert isinstance(subtask, speedwagon.tasks.Subtask)
+        assert workflow.discover_task_metadata.called is True
+
+    def test_tasks_runs_create_new_task(self, workflow):
+        task_generator = runner_strategies.TaskGenerator(
+            workflow=workflow,
+            options={},
+            working_directory=os.path.join("some", "real", "directory")
+        )
+
+        for subtask in task_generator.tasks():
+            assert isinstance(subtask, speedwagon.tasks.Subtask)
+        assert workflow.create_new_task.called is True
+
+    def test_tasks_runs_completion_task(self, workflow):
+        task_generator = runner_strategies.TaskGenerator(
+            workflow=workflow,
+            options={},
+            working_directory=os.path.join("some", "real", "directory")
+        )
+
+        for subtask in task_generator.tasks():
+            assert isinstance(subtask, speedwagon.tasks.Subtask)
+        assert workflow.completion_task.called is True
+
+    def test_tasks_runs_get_additional_info(self, workflow):
+        task_generator = runner_strategies.TaskGenerator(
+            workflow=workflow,
+            options={},
+            working_directory=os.path.join("some", "real", "directory")
+        )
+
+        for subtask in task_generator.tasks(
+                additional_info_callback=workflow.get_additional_info
+        ):
+            assert isinstance(subtask, speedwagon.tasks.Subtask)
+        assert workflow.get_additional_info.called is True
