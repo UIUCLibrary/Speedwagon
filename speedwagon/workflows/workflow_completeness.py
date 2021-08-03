@@ -265,6 +265,7 @@ class HathiCheckMissingPackageFilesTask(CompletenessSubTask):
 
 
 class HathiCheckMissingComponentsTask(CompletenessSubTask):
+    name = "Checking for missing components"
 
     def __init__(self, check_ocr: bool, package_path: str) -> None:
         super().__init__()
@@ -325,6 +326,8 @@ class HathiCheckMissingComponentsTask(CompletenessSubTask):
 
 
 class ValidateExtraSubdirectoriesTask(CompletenessSubTask):
+    name = "Validating for Extra Subdirectories"
+
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
@@ -369,6 +372,8 @@ class ValidateExtraSubdirectoriesTask(CompletenessSubTask):
 
 
 class ValidateChecksumsTask(CompletenessSubTask):
+    name = "Validate Checksums"
+
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
@@ -436,6 +441,7 @@ class ValidateChecksumsTask(CompletenessSubTask):
 
 
 class ValidateMarcTask(CompletenessSubTask):
+    name = "Validating Marc"
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
@@ -494,6 +500,8 @@ class ValidateMarcTask(CompletenessSubTask):
 
 
 class ValidateOCRFilesTask(CompletenessSubTask):
+    name = "Validating OCR Files"
+
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
@@ -539,6 +547,8 @@ class ValidateOCRFilesTask(CompletenessSubTask):
 
 
 class ValidateYMLTask(CompletenessSubTask):
+    name = "Validating YML"
+
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
@@ -590,6 +600,8 @@ class ValidateYMLTask(CompletenessSubTask):
 
 
 class ValidateOCFilesUTF8Task(CompletenessSubTask):
+    name = "Validate OCR Files UTF8 Encoding"
+
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
@@ -618,8 +630,8 @@ class ValidateOCFilesUTF8Task(CompletenessSubTask):
             ocr_file: 'os.DirEntry[str]'
             for ocr_file in filter(filter_ocr_only,
                                    os.scandir(self.package_path)):
-                self.log("Looking for invalid characters in {}".format(
-                    ocr_file.path)
+                self.log(
+                    "Looking for invalid characters in {}".format(ocr_file.path)
                 )
 
                 invalid_ocr_character: List[hathi_result.Result] =\
@@ -635,6 +647,8 @@ class ValidateOCFilesUTF8Task(CompletenessSubTask):
 
 
 class HathiManifestGenerationTask(CompletenessSubTask):
+    name = 'Hathi Manifest Generation'
+
     def __init__(self, batch_root: str) -> None:
         super().__init__()
         self.batch_root = batch_root
@@ -673,6 +687,7 @@ class HathiManifestGenerationTask(CompletenessSubTask):
 
 
 class PackageNamingConventionTask(CompletenessSubTask):
+    name = "Package Naming Convention"
     FILE_NAMING_CONVENTION_REGEX = \
         "^[0-9]*([m|v|i][0-9]{2,})?(_[1-9])?([m|v|i][0-9])?$"
 

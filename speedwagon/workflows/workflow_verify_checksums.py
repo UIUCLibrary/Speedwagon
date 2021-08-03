@@ -316,8 +316,9 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
         checksum_report_file = os.path.abspath(user_args[UserArgs.INPUT.value])
 
         for report_md5_hash, filename in \
-                hathi_validate.process.extracts_checksums(
-                    checksum_report_file
+                sorted(hathi_validate.process.extracts_checksums(
+                    checksum_report_file),
+                    key=lambda x: x[1]
                 ):
 
             new_job: Dict[str, str] = {
@@ -430,6 +431,7 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
 
 
 class ChecksumTask(tasks.Subtask):
+    name = "Calculating file checksum"
 
     def __init__(self, *_: None, **kwargs: Union[str, bool]) -> None:
         super().__init__()
