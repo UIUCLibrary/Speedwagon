@@ -442,6 +442,7 @@ class ValidateChecksumsTask(CompletenessSubTask):
 
 class ValidateMarcTask(CompletenessSubTask):
     name = "Validating Marc"
+
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
@@ -630,9 +631,7 @@ class ValidateOCFilesUTF8Task(CompletenessSubTask):
             ocr_file: 'os.DirEntry[str]'
             for ocr_file in filter(filter_ocr_only,
                                    os.scandir(self.package_path)):
-                self.log(
-                    "Looking for invalid characters in {}".format(ocr_file.path)
-                )
+                self.log(f"Looking for invalid characters in {ocr_file.path}")
 
                 invalid_ocr_character: List[hathi_result.Result] =\
                     validate_process.run_validation(

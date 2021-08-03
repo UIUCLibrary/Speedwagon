@@ -504,9 +504,15 @@ class TaskRunner:
             if post_result is not None
         ]
 
+
 class TaskGenerator:
 
-    def __init__(self, workflow, options: typing.Mapping[str, Any], working_directory) -> None:
+    def __init__(
+            self,
+            workflow,
+            options: typing.Mapping[str, Any],
+            working_directory
+    ) -> None:
         self.workflow = workflow
         self.options = options
         self.working_directory = working_directory
@@ -516,7 +522,9 @@ class TaskGenerator:
     def generate_report(self, results: typing.Iterable[Any]) -> str:
         return self.workflow.generate_report(results, **self.options)
 
-    def tasks(self, additional_info_callback=None) -> typing.Iterable[tasks.AbsSubtask]:
+    def tasks(self,
+              additional_info_callback=None
+              ) -> typing.Iterable[tasks.AbsSubtask]:
         pretask_results = []
 
         results = []
@@ -559,7 +567,8 @@ class TaskGenerator:
         self.workflow.initial_task(task_builder, **options)
         yield from task_builder.build_task().main_subtasks
 
-    def get_task_metadata_tasks(self, pretask_results, additional_data, **options):
+    def get_task_metadata_tasks(self, pretask_results,
+                                additional_data, **options):
         metadata_tasks = \
             self.workflow.discover_task_metadata(
                 pretask_results,
@@ -583,8 +592,8 @@ class TaskGenerator:
             adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
             yield adapted_tool, adapted_tool.settings
 
-
-    def get_main_tasks(self, working_directory, pretask_results, additional_data, **options):
+    def get_main_tasks(self, working_directory, pretask_results,
+                       additional_data, **options):
         metadata_tasks = \
             self.workflow.discover_task_metadata(
                 pretask_results,
@@ -703,8 +712,12 @@ class TaskRunner2(TaskRunner):
                         message.append(report_queue.get())
                         report_queue.task_done()
                     self.logger.info("\n".join(message))
-                if self.current_task is not None and self.total_tasks is not None:
-                    self.update_progress(runner, self.current_task, self.total_tasks)
+
+                if self.current_task is not None and \
+                        self.total_tasks is not None:
+                    self.update_progress(runner,
+                                         self.current_task,
+                                         self.total_tasks)
             message = []
             while not report_queue.empty():
                 message.append(report_queue.get())
@@ -714,7 +727,8 @@ class TaskRunner2(TaskRunner):
             self.logger.info("\n".join(message))
 
     def run_pre_tasks(self, options: Dict[str, Any],
-                      runner: "worker.WorkRunnerExternal3" = None) -> List[Any]:
+                      runner: "worker.WorkRunnerExternal3" = None
+                      ) -> List[Any]:
 
         for subtask in self._task_generator.get_pre_tasks(
                 self.working_directory, **options):
