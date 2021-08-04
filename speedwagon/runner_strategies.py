@@ -377,133 +377,6 @@ def runner_managed_task(callback):
     return dialog_window
 
 
-class TaskRunner:
-
-    def __init__(self,
-                 manager,
-                 parent_widget: typing.Optional[QtWidgets.QWidget],
-                 working_directory: str,
-                 ) -> None:
-        super().__init__()
-        self.manager = manager
-        self.parent_widget = parent_widget
-        self.logger = logging.getLogger(__name__)
-        # self.job = job
-        self.working_directory = working_directory
-        self.update_progress_callback: typing.Callable[
-            [worker.WorkRunnerExternal3, int, int], None
-        ] = lambda runner, current, total: None
-
-    @runner_managed_task
-    def run_pre_tasks(
-            self,
-            options: Dict[str, Any],
-            runner: "worker.WorkRunnerExternal3" = None
-    ) -> List[Any]:
-
-        self._add_jobs_tasks(
-            self.manager,
-            self.working_directory,
-            lambda task_builder: self.job.initial_task(task_builder, **options)
-        )
-
-        self.manager.start()
-
-        post_results = self.manager.get_results(
-            lambda x, y: self.update_progress(runner, x, y)
-        )
-
-        return [
-            post_result for post_result
-            in post_results
-            if post_result is not None
-        ]
-
-    @staticmethod
-    def _add_jobs_tasks(manager: "worker.ToolJobManager",
-                        working_directory: str,
-                        callback: typing.Callable[[tasks.TaskBuilder], None]
-                        ) -> None:
-        task_builder = tasks.TaskBuilder(
-            tasks.MultiStageTaskBuilder(working_directory),
-            working_directory
-        )
-        callback(task_builder)
-
-        for subtask in task_builder.build_task().main_subtasks:
-            adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
-            manager.add_job(adapted_tool, adapted_tool.settings)
-
-    def update_progress(self,
-                        runner: "typing.Optional[worker.WorkRunnerExternal3]",
-                        current: int,
-                        total: int) -> None:
-        if callable(self.update_progress_callback) and runner is not None:
-            self.update_progress_callback(runner, current, total)
-
-    @runner_managed_task
-    def run_main_tasks(self,
-                       options: Dict[str, Any],
-                       pretask_results,
-                       additional_data: Dict[str, Any],
-                       runner: "worker.WorkRunnerExternal3" = None,
-                       ) -> List[Any]:
-
-        i = -1
-
-        metadata_tasks = \
-            self.job.discover_task_metadata(
-                pretask_results,
-                additional_data,
-                **options
-            ) or []
-
-        for task_metadata in metadata_tasks:
-            self._add_jobs_tasks(
-                manager=self.manager,
-                working_directory=self.working_directory,
-                callback=lambda task_builder, metadata=task_metadata:
-                self.job.create_new_task(task_builder, **metadata)
-            )
-            i += 1
-
-        self.logger.info("Found %d jobs", i + 1)
-        if runner is not None and runner.dialog is not None:
-            runner.dialog.setMaximum(i)
-        self.manager.start()
-
-        main_results = self.manager.get_results(
-            lambda x, y: self.update_progress(runner, x, y)
-        )
-
-        return [result for result in main_results if result is not None]
-
-    @runner_managed_task
-    def run_post_tasks(
-            self,
-            job,
-            options: Dict[str, Any],
-            results,
-            runner: "worker.WorkRunnerExternal3" = None,
-    ) -> list:
-        self._add_jobs_tasks(
-            self.manager,
-            self.working_directory,
-            lambda task_builder: job.completion_task(
-                task_builder, results, **options
-            )
-        )
-        self.manager.start()
-
-        post_results = self.manager.get_results(
-            lambda x, y: self.update_progress(runner, x, y)
-        )
-        return [
-            post_result for post_result in post_results
-            if post_result is not None
-        ]
-
-
 class TaskGenerator:
 
     def __init__(
@@ -639,15 +512,19 @@ class TaskGenerator:
                 yield result
 
 
-class TaskRunner2(TaskRunner):
+class TaskRunner:
 
-    def __init__(self, job, manager,
+    def __init__(self, manager,
                  parent_widget: typing.Optional[QtWidgets.QWidget],
                  working_directory: str) -> None:
-        super().__init__(
-            # job,
-                         manager, parent_widget, working_directory)
-        # self.job = job
+        self.manager = manager
+        self.parent_widget = parent_widget
+        self.logger = logging.getLogger(__name__)
+        self.working_directory = working_directory
+        self.update_progress_callback: typing.Callable[
+            [worker.WorkRunnerExternal3, int, int], None
+        ] = lambda runner, current, total: None
+
         self.current_task_progress: typing.Optional[int] = None
         self.total_tasks: typing.Optional[int] = None
 
@@ -691,6 +568,13 @@ class TaskRunner2(TaskRunner):
             message.append(message_queue.get())
             message_queue.task_done()
         self.logger.info("\n".join(message))
+
+    def update_progress(self,
+                        runner: "typing.Optional[worker.WorkRunnerExternal3]",
+                        current: int,
+                        total: int) -> None:
+        if callable(self.update_progress_callback) and runner is not None:
+            self.update_progress_callback(runner, current, total)
 
     def run(self, job, options):
         with self.manager.open(
@@ -759,8 +643,7 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
             completion_callback=None
             ) -> None:
         with tempfile.TemporaryDirectory() as build_dir:
-            task_runner = TaskRunner2(
-                job=job,
+            task_runner = TaskRunner(
                 manager=self._manager,
                 parent_widget=self.parent,
                 working_directory=build_dir
@@ -776,7 +659,7 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
                     logger=logger
                 )
 
-    def run_abs_workflow(self, task_runner: TaskRunner2, job: AbsWorkflow,
+    def run_abs_workflow(self, task_runner: TaskRunner, job: AbsWorkflow,
                          options, logger: logging.Logger = None):
         logger = logger or logging.getLogger(__name__)
         task_runner.logger = logger
