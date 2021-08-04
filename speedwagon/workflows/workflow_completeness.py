@@ -378,6 +378,9 @@ class ValidateChecksumsTask(CompletenessSubTask):
         super().__init__()
         self.package_path = package_path
 
+    def task_description(self) -> Optional[str]:
+        return f"Validating Checksums from {self.package_path}"
+
     def work(self) -> bool:
         errors: List[hathi_result.Result] = []
 
@@ -447,6 +450,9 @@ class ValidateMarcTask(CompletenessSubTask):
         super().__init__()
         self.package_path = package_path
 
+    def task_description(self) -> Optional[str]:
+        return f"Validating Marc in {self.package_path}"
+
     def work(self) -> bool:
         marc_file = os.path.join(self.package_path, "marc.xml")
         result_builder = hathi_result.SummaryDirector(source=marc_file)
@@ -507,6 +513,9 @@ class ValidateOCRFilesTask(CompletenessSubTask):
         super().__init__()
         self.package_path = package_path
 
+    def task_description(self) -> Optional[str]:
+        return f"Validating OCR Files in {self.package_path}"
+
     def work(self) -> bool:
         errors: List[hathi_result.Result] = []
         my_logger = logging.getLogger(hathi_validate.__name__)
@@ -553,6 +562,9 @@ class ValidateYMLTask(CompletenessSubTask):
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Validating YML in {self.package_path}"
 
     def work(self) -> bool:
         yml_file = os.path.join(self.package_path, "meta.yml")
@@ -607,6 +619,9 @@ class ValidateOCFilesUTF8Task(CompletenessSubTask):
         super().__init__()
         self.package_path = package_path
 
+    def task_description(self) -> Optional[str]:
+        return f"Validate OCR Files have UTF8 Encoding in {self.package_path}"
+
     def work(self) -> bool:
         def filter_ocr_only(entry: 'os.DirEntry[str]') -> bool:
             if not entry.is_file():
@@ -652,6 +667,9 @@ class HathiManifestGenerationTask(CompletenessSubTask):
         super().__init__()
         self.batch_root = batch_root
 
+    def task_description(self) -> Optional[str]:
+        return f"Generating HathiTrust Manifest for {self.batch_root}"
+
     def work(self) -> bool:
         batch_root = self.batch_root
         my_logger = logging.getLogger(hathi_validate.__name__)
@@ -696,6 +714,9 @@ class PackageNamingConventionTask(CompletenessSubTask):
 
         self._validator = re.compile(
             PackageNamingConventionTask.FILE_NAMING_CONVENTION_REGEX)
+
+    def task_description(self) -> Optional[str]:
+        return f"Checking Package Naming Convention for {self.package_path}"
 
     def work(self) -> bool:
         if not os.path.isdir(self.package_path):

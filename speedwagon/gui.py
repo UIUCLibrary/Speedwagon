@@ -77,11 +77,12 @@ class ToolConsole(QtWidgets.QWidget):
     def add_message(self, message: str) -> None:
         cursor = QtGui.QTextCursor(self._log)
         cursor.movePosition(cursor.End)
-        cursor.insertText(message)
         self._console.setTextCursor(cursor)
+        cursor.insertText(message)
 
         # To get the new line character
         self._console.append(None)
+
 
     @property
     def text(self) -> str:
@@ -97,6 +98,7 @@ class ConsoleLogger(logging.Handler):
         try:
             msg = self.format(record)
             self.console.add_message(msg)
+            QtWidgets.QApplication.processEvents()
         except RuntimeError as error:
             print("Error: {}".format(error), file=sys.stderr)
             traceback.print_tb(error.__traceback__)

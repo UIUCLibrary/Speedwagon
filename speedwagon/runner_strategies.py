@@ -6,6 +6,7 @@ import functools
 import logging
 import queue
 import tempfile
+import time
 import typing
 import warnings
 from typing import List, Any, Dict
@@ -513,6 +514,48 @@ class TaskGenerator:
                 yield result
 
 
+class MessageBuffer:
+    def __init__(self, max_size: int):
+        self.max_size = max_size
+        self._message_queue: 'queue.Queue[str]' = queue.Queue()
+        self.callback = lambda message, *args, **kwargs: None
+        self.max_refresh_interval_time: float = 0.1
+        self._last_flushed = None
+
+    def append(self, value):
+        self.log(value)
+
+    def _should_be_flushed(self) -> bool:
+        if self._last_flushed is None:
+            return True
+
+        if time.time() - self._last_flushed > self.max_refresh_interval_time:
+            print("timeout")
+            return True
+
+        if self._message_queue.qsize() >= self.max_size:
+            return True
+
+        return False
+
+    def log(self, message):
+        self._message_queue.put(message)
+        if self._should_be_flushed():
+            self.flush()
+
+    def flush(self):
+        messages = []
+        while not self._message_queue.empty():
+            messages.append(self._message_queue.get())
+            self._message_queue.task_done()
+        message = "\n".join(messages)
+        self._send(message)
+        self._last_flushed = time.time()
+
+    def _send(self, message: str):
+        self.callback(message=message)
+
+
 class TaskRunner:
 
     def __init__(self, manager,
@@ -582,28 +625,36 @@ class TaskRunner:
                 runner=worker.WorkRunnerExternal3) as runner:
             runner.dialog.setLabelText("Please wait")
             runner.dialog.setWindowTitle(job.name)
-            log_message_queue: 'collections.deque' = collections.deque()
-            max_size = 5
+
+            message_buffer = MessageBuffer(5)
+            message_buffer.callback = \
+                lambda message: self.logger.info(msg=message)
+
             for subtask in self.iter_tasks(job, options):
+                try:
+                    subtask.parent_task_log_q = message_buffer
 
-                runner.dialog.setLabelText(subtask.name or 'Working')
-                if runner.was_aborted is True:
-                    self._flush_message_buffer(log_message_queue)
-                    raise TaskFailed(USER_ABORTED_MESSAGE)
+                    description = \
+                        subtask.task_description() or \
+                        subtask.name or \
+                        'Working'
+                    self.logger.info(description)
+                    runner.dialog.setLabelText(description)
+                    if runner.was_aborted is True:
 
-                subtask.parent_task_log_q = log_message_queue
-                subtask.exec()
-                if len(log_message_queue) > max_size:
-                    self._flush_message_buffer(log_message_queue)
+                        raise TaskFailed(USER_ABORTED_MESSAGE)
+                    subtask.exec()
 
-                if self.current_task_progress is not None and \
-                        self.total_tasks is not None:
-                    self.update_progress(runner,
-                                         self.current_task_progress,
-                                         self.total_tasks)
-
-            self._flush_message_buffer(log_message_queue)
-            log_message_queue.clear()
+                    if self.current_task_progress is not None and \
+                            self.total_tasks is not None:
+                        self.update_progress(runner,
+                                             self.current_task_progress,
+                                             self.total_tasks)
+                finally:
+                    message_buffer.flush()
+                    for x in self.logger.handlers:
+                        x.flush()
+            message_buffer.flush()
 
 
 class UsingExternalManagerForAdapter2(AbsRunner2):

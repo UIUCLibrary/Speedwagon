@@ -92,6 +92,10 @@ class Subtask(AbsSubtask):
     Subclass this generate a new task
     """
 
+    def task_description(self) -> Optional[str]:
+        """Get user readable information about what the subtask is doing."""
+        return None
+
     def __init__(self) -> None:
         """Create a new sub-task."""
         self._result: Optional[Result] = None
