@@ -1,6 +1,7 @@
 """Defining execution of a given workflow steps and processes."""
 
 import abc
+import collections
 import functools
 import logging
 import queue
@@ -564,9 +565,8 @@ class TaskRunner:
 
     def _flush_message_buffer(self, message_queue):
         message = []
-        while not message_queue.empty():
-            message.append(message_queue.get())
-            message_queue.task_done()
+        while len(message_queue) > 0:
+            message.append(message_queue.pop())
         self.logger.info("\n".join(message))
 
     def update_progress(self,
@@ -576,30 +576,25 @@ class TaskRunner:
         if callable(self.update_progress_callback) and runner is not None:
             self.update_progress_callback(runner, current, total)
 
-    def run(self, job, options):
+    def run(self, job: AbsWorkflow, options) -> None:
         with self.manager.open(
                 parent=self.parent_widget,
                 runner=worker.WorkRunnerExternal3) as runner:
             runner.dialog.setLabelText("Please wait")
             runner.dialog.setWindowTitle(job.name)
-            report_queue = queue.Queue()
+            log_message_queue: 'collections.deque' = collections.deque()
             max_size = 5
             for subtask in self.iter_tasks(job, options):
 
                 runner.dialog.setLabelText(subtask.name or 'Working')
                 if runner.was_aborted is True:
-                    self._flush_message_buffer(report_queue)
-                    message = []
-                    while not report_queue.empty():
-                        message.append(report_queue.get())
-                        report_queue.task_done()
-                    self.logger.info("\n".join(message))
+                    self._flush_message_buffer(log_message_queue)
                     raise TaskFailed(USER_ABORTED_MESSAGE)
 
-                subtask.log = report_queue.put
+                subtask.parent_task_log_q = log_message_queue
                 subtask.exec()
-                if report_queue.qsize() > max_size:
-                    self._flush_message_buffer(report_queue)
+                if len(log_message_queue) > max_size:
+                    self._flush_message_buffer(log_message_queue)
 
                 if self.current_task_progress is not None and \
                         self.total_tasks is not None:
@@ -607,8 +602,8 @@ class TaskRunner:
                                          self.current_task_progress,
                                          self.total_tasks)
 
-            self._flush_message_buffer(report_queue)
-            report_queue.join()
+            self._flush_message_buffer(log_message_queue)
+            log_message_queue.clear()
 
 
 class UsingExternalManagerForAdapter2(AbsRunner2):
@@ -662,7 +657,7 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
     @staticmethod
     def run_abs_workflow(task_runner: TaskRunner,
                          job: AbsWorkflow,
-                         options, logger: logging.Logger = None):
+                         options, logger: logging.Logger = None) -> None:
         logger = logger or logging.getLogger(__name__)
         task_runner.logger = logger
         task_runner.run(job, options)
