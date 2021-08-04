@@ -380,7 +380,6 @@ def runner_managed_task(callback):
 class TaskRunner:
 
     def __init__(self,
-                 job,
                  manager,
                  parent_widget: typing.Optional[QtWidgets.QWidget],
                  working_directory: str,
@@ -389,7 +388,7 @@ class TaskRunner:
         self.manager = manager
         self.parent_widget = parent_widget
         self.logger = logging.getLogger(__name__)
-        self.job = job
+        # self.job = job
         self.working_directory = working_directory
         self.update_progress_callback: typing.Callable[
             [worker.WorkRunnerExternal3, int, int], None
@@ -482,6 +481,7 @@ class TaskRunner:
     @runner_managed_task
     def run_post_tasks(
             self,
+            job,
             options: Dict[str, Any],
             results,
             runner: "worker.WorkRunnerExternal3" = None,
@@ -489,7 +489,7 @@ class TaskRunner:
         self._add_jobs_tasks(
             self.manager,
             self.working_directory,
-            lambda task_builder: self.job.completion_task(
+            lambda task_builder: job.completion_task(
                 task_builder, results, **options
             )
         )
@@ -644,7 +644,10 @@ class TaskRunner2(TaskRunner):
     def __init__(self, job, manager,
                  parent_widget: typing.Optional[QtWidgets.QWidget],
                  working_directory: str) -> None:
-        super().__init__(job, manager, parent_widget, working_directory)
+        super().__init__(
+            # job,
+                         manager, parent_widget, working_directory)
+        # self.job = job
         self.current_task_progress: typing.Optional[int] = None
         self.total_tasks: typing.Optional[int] = None
 
@@ -654,7 +657,7 @@ class TaskRunner2(TaskRunner):
             return job.get_additional_info(parent, options, pre_results.copy())
         return {}
 
-    def iter_tasks(self, options) -> typing.Iterable[tasks.Subtask]:
+    def iter_tasks(self, job, options) -> typing.Iterable[tasks.Subtask]:
         """
         NOTE:
             this yields noop closures (lambda *args: None) to indicate the
@@ -670,7 +673,7 @@ class TaskRunner2(TaskRunner):
         results: List[Any] = []
 
         task_generator = TaskGenerator(
-            self.job,
+            job,
             working_directory=self.working_directory,
             options=options
         )
@@ -691,15 +694,15 @@ class TaskRunner2(TaskRunner):
             message_queue.task_done()
         self.logger.info("\n".join(message))
 
-    def run(self, options):
+    def run(self, job, options):
         with self.manager.open(
                 parent=self.parent_widget,
                 runner=worker.WorkRunnerExternal3) as runner:
             runner.dialog.setLabelText("Please wait")
-            runner.dialog.setWindowTitle(self.job.name)
+            runner.dialog.setWindowTitle(job.name)
             report_queue = queue.Queue()
             max_size = 5
-            for subtask in self.iter_tasks(options):
+            for subtask in self.iter_tasks(job, options):
 
                 runner.dialog.setLabelText(subtask.name or 'Working')
                 if runner.was_aborted is True:
@@ -779,4 +782,4 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
                          options, logger: logging.Logger = None):
         logger = logger or logging.getLogger(__name__)
         task_runner.logger = logger
-        task_runner.run(options)
+        task_runner.run(job, options)
