@@ -646,8 +646,8 @@ class TaskRunner2(TaskRunner):
                  parent_widget: typing.Optional[QtWidgets.QWidget],
                  working_directory: str) -> None:
         super().__init__(job, manager, parent_widget, working_directory)
-        self.current_task = None
-        self.total_tasks = None
+        self.current_task_progress: typing.Optional[int] = None
+        self.total_tasks: typing.Optional[int] = None
 
     @staticmethod
     def _get_additional_data(job, options, parent, pre_results):
@@ -680,7 +680,7 @@ class TaskRunner2(TaskRunner):
             yield task
             if task.task_result:
                 results.append(task.task_result)
-            self.current_task = task_generator.current_task
+            self.current_task_progress = task_generator.current_task
         report = task_generator.generate_report(results)
         if report is not None:
             self.logger.info(task_generator.generate_report(results))
@@ -717,10 +717,10 @@ class TaskRunner2(TaskRunner):
                 if report_queue.qsize() > max_size:
                     self._flush_message_buffer(report_queue)
 
-                if self.current_task is not None and \
+                if self.current_task_progress is not None and \
                         self.total_tasks is not None:
                     self.update_progress(runner,
-                                         self.current_task,
+                                         self.current_task_progress,
                                          self.total_tasks)
 
             self._flush_message_buffer(report_queue)
