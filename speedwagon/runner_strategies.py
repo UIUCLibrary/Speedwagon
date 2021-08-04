@@ -657,23 +657,21 @@ class TaskRunner2(TaskRunner):
             return job.get_additional_info(parent, options, pre_results.copy())
         return {}
 
-    def iter_tasks(self, job, options) -> typing.Iterable[tasks.Subtask]:
-        """
-        NOTE:
-            this yields noop closures (lambda *args: None) to indicate the
-            passing of a step. This really needs more work.
+    def iter_tasks(self, workflow, options) -> typing.Iterable[tasks.Subtask]:
+        """Get sub tasks for a workflow.
 
         Args:
-            runner:
+            workflow: Workflow to run
             options:
 
-        Returns:
+        Yields:
+            Yields subtasks for a workflow.
 
         """
         results: List[Any] = []
 
         task_generator = TaskGenerator(
-            job,
+            workflow,
             working_directory=self.working_directory,
             options=options
         )
