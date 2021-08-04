@@ -659,7 +659,9 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
                     logger=logger
                 )
 
-    def run_abs_workflow(self, task_runner: TaskRunner, job: AbsWorkflow,
+    @staticmethod
+    def run_abs_workflow(task_runner: TaskRunner,
+                         job: AbsWorkflow,
                          options, logger: logging.Logger = None):
         logger = logger or logging.getLogger(__name__)
         task_runner.logger = logger
