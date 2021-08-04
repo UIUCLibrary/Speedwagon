@@ -680,7 +680,7 @@ class MultiWorkflowLauncher(AbsStarter):
                 active_workflow, options = self._pending_tasks.get()
                 window.setWindowTitle(active_workflow.name)
                 runner_strategy = \
-                    runner_strategies.UsingExternalManagerForAdapter3(
+                    runner_strategies.UsingExternalManagerForAdapter2(
                         work_manager,
                         window
                     )

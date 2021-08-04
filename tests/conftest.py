@@ -23,6 +23,9 @@ class SpyDialogBox:
     def setWindowTitle(self, x):
         pass
 
+    def setLabelText(self, x):
+        pass
+
     def setMaximum(self, value, *args, **kwargs):
         self._maxiumum = value
 

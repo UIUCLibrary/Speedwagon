@@ -203,12 +203,9 @@ class TestUsingExternalManagerForAdapter2:
             job=job,
             options={}
         )
+        assert task_runner.run.called is True
 
-        assert task_runner.run_pre_tasks.called is True and \
-               task_runner.run_main_tasks.called is True and \
-               task_runner.run_post_tasks.called is True
-
-    def test_run_abs_workflow_pretask_failed(self, caplog):
+    def test_run_abs_workflow_fails_with_task_failed_exception(self):
         manager = Mock()
         runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
         job = Mock()
@@ -216,71 +213,17 @@ class TestUsingExternalManagerForAdapter2:
 
         task_runner = MagicMock()
 
-        task_runner.run_pre_tasks = Mock(
-            side_effect=runner_strategies.TaskFailed()
+        task_runner.run = Mock(
+            side_effect=runner_strategies.TaskFailed("my bad")
         )
+        with pytest.raises(runner_strategies.TaskFailed) as error:
+            runner.run_abs_workflow(
+                task_runner=task_runner,
+                job=job,
+                options={},
+            )
 
-        runner.run_abs_workflow(
-            task_runner=task_runner,
-            job=job,
-            options={},
-        )
-        assert "Job stopped during pre-task phase" in caplog.text
-
-    def test_run_abs_workflow_run_main_tasks_failed(self, caplog):
-        manager = Mock()
-        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
-        job = Mock()
-        job.__class__ = speedwagon.job.AbsWorkflow
-
-        task_runner = MagicMock()
-
-        task_runner.run_main_tasks = Mock(
-            side_effect=runner_strategies.TaskFailed()
-        )
-
-        runner.run_abs_workflow(
-            task_runner=task_runner,
-            job=job,
-            options={},
-        )
-        assert "Job stopped during main tasks phase" in caplog.text
-
-    def test_run_abs_workflow_run_post_tasks_failed(self, caplog):
-        manager = Mock()
-        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
-        job = Mock()
-        job.__class__ = speedwagon.job.AbsWorkflow
-
-        task_runner = MagicMock()
-
-        task_runner.run_post_tasks = Mock(
-            side_effect=runner_strategies.TaskFailed()
-        )
-
-        runner.run_abs_workflow(
-            task_runner=task_runner,
-            job=job,
-            options={},
-        )
-        assert "Job stopped during post-task phase" in caplog.text
-
-    def test_run_abs_workflow_pre_task_canceled(self):
-        manager = Mock()
-        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
-        job = Mock()
-        job.__class__ = speedwagon.job.AbsWorkflow
-
-        task_runner = MagicMock()
-        task_runner.run_pre_tasks = Mock(
-            side_effect=runner_strategies.JobCancelled()
-        )
-        runner.run_abs_workflow(
-            task_runner=task_runner,
-            job=job,
-            options={},
-        )
-        assert task_runner.run_main_tasks.called is False
+        assert "my bad" in str(error.value)
 
     def test_update_progress(self):
         runner = Mock()
