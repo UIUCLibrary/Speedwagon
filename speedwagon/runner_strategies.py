@@ -518,9 +518,9 @@ class MessageBuffer:
     def __init__(self, max_size: int):
         self.max_size = max_size
         self._message_queue: 'queue.Queue[str]' = queue.Queue()
-        self.callback = lambda message, *args, **kwargs: None
+        self.callback: typing.Callable[[str], None] = lambda message: None
         self.max_refresh_interval_time: float = 0.1
-        self._last_flushed = None
+        self._last_flushed: typing.Optional[float] = None
 
     def append(self, value):
         self.log(value)
@@ -530,7 +530,6 @@ class MessageBuffer:
             return True
 
         if time.time() - self._last_flushed > self.max_refresh_interval_time:
-            print("timeout")
             return True
 
         if self._message_queue.qsize() >= self.max_size:
