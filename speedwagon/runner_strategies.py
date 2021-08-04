@@ -391,10 +391,9 @@ class TaskRunner:
         self.logger = logging.getLogger(__name__)
         self.job = job
         self.working_directory = working_directory
-        self.update_progress_callback: \
-            typing.Optional[
-                typing.Callable[[worker.WorkRunnerExternal3, int, int], None]
-            ] = None
+        self.update_progress_callback: typing.Callable[
+            [worker.WorkRunnerExternal3, int, int], None
+        ] = lambda runner, current, total: None
 
     @runner_managed_task
     def run_pre_tasks(
