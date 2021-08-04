@@ -9,7 +9,7 @@ import itertools
 from abc import ABC
 from typing import List, Any, DefaultDict, Optional
 
-from speedwagon.job import AbsWorkflow
+from speedwagon.job import Workflow
 from speedwagon import tasks
 from speedwagon.reports import add_report_borders
 from .checksum_shared import ResultsValues
@@ -25,7 +25,7 @@ __all__ = [
 DEFAULT_CHECKSUM_FILE_NAME = "checksum.md5"
 
 
-class CreateChecksumWorkflow(AbsWorkflow, ABC):
+class CreateChecksumWorkflow(Workflow, ABC):
     @staticmethod
     def locate_files(package_root: str):
         for root, _, files in os.walk(package_root):

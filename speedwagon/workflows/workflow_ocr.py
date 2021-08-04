@@ -269,11 +269,16 @@ class OCRWorkflow(speedwagon.Workflow):
 
 
 class FindImagesTask(speedwagon.tasks.Subtask):
+    name = "Finding Images"
 
     def __init__(self, root: str, file_extension: str) -> None:
         super().__init__()
         self._root = root
         self._extension = file_extension
+
+    def task_description(self) -> Optional[str]:
+        return \
+            f"Finding files in {self._root} with {self._extension} extension"
 
     def work(self) -> bool:
         self.log("Locating {} files in {}".format(self._extension, self._root))
@@ -303,6 +308,7 @@ class FindImagesTask(speedwagon.tasks.Subtask):
 
 class GenerateOCRFileTask(speedwagon.tasks.Subtask):
     engine = ocr.Engine(locate_tessdata())
+    name = "Perform OCR"
 
     def __init__(self,
                  source_image: str,
@@ -317,6 +323,9 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
         self._tesseract_path = tesseract_path
         GenerateOCRFileTask.set_tess_path(tesseract_path or locate_tessdata())
         assert self.engine is not None
+
+    def task_description(self) -> Optional[str]:
+        return f"Scanning for text in {self._source}"
 
     @classmethod
     def set_tess_path(cls, path: str = None) -> None:

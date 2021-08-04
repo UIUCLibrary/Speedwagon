@@ -20,7 +20,7 @@ from hathi_validate import validator
 import speedwagon
 from speedwagon.tasks import Subtask
 from speedwagon.logging import GuiLogHandler
-from speedwagon.job import AbsWorkflow
+from speedwagon.job import Workflow
 from speedwagon import tasks
 from . import shared_custom_widgets as options
 from .shared_custom_widgets import UserOption2, UserOption3
@@ -28,7 +28,7 @@ from .shared_custom_widgets import UserOption2, UserOption3
 __all__ = ['CompletenessWorkflow']
 
 
-class CompletenessWorkflow(AbsWorkflow):
+class CompletenessWorkflow(Workflow):
     name = "Verify HathiTrust Package Completeness"
     description = "This workflow takes as its input a directory of " \
                   "HathiTrust packages. It evaluates each subfolder as a " \
@@ -240,10 +240,14 @@ class CompletenessSubTask(Subtask):
 
 
 class HathiCheckMissingPackageFilesTask(CompletenessSubTask):
+    name = "Check for Missing Package Files"
 
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Checking for missing package files in {self.package_path}"
 
     def work(self) -> bool:
         errors: List[hathi_result.Result] = []
@@ -271,6 +275,9 @@ class HathiCheckMissingComponentsTask(CompletenessSubTask):
         super().__init__()
         self.check_ocr = check_ocr
         self.package_path = package_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Checking for missing components in {self.package_path}"
 
     def work(self) -> bool:
         errors: List[hathi_result.Result] = []
@@ -331,6 +338,9 @@ class ValidateExtraSubdirectoriesTask(CompletenessSubTask):
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Checking for extra directories in {self.package_path}"
 
     def work(self) -> bool:
         errors: List[hathi_result.Result] = []

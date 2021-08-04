@@ -5,12 +5,12 @@ import enum
 import os
 import shutil
 import itertools
-from typing import List, Any
+from typing import List, Any, Optional
 
 import pykdu_compress
 from py3exiv2bind.core import set_dpi
 from speedwagon import tasks
-from speedwagon.job import AbsWorkflow
+from speedwagon.job import Workflow
 from . import shared_custom_widgets as options
 
 __all__ = ['ConvertTiffToHathiJp2Workflow']
@@ -82,7 +82,7 @@ class CopyFile(AbsProcessStrategy):
         self.status = "Copied {} to {}".format(source_file, destination_path)
 
 
-class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
+class ConvertTiffToHathiJp2Workflow(Workflow):
     name = "Convert TIFF to HathiTrust JP2"
     active = True
     description = "Input is a path to a folder containing subfolders which " \
@@ -168,11 +168,15 @@ class ConvertTiffToHathiJp2Workflow(AbsWorkflow):
 
 
 class ImageConvertTask(tasks.Subtask):
+    name = "Convert Images"
 
     def __init__(self, source_file_path: str, output_path: str) -> None:
         super().__init__()
         self._source_file_path = source_file_path
         self._output_path = output_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Converting images in {self._source_file_path}"
 
     def work(self) -> bool:
         try:
@@ -188,11 +192,16 @@ class ImageConvertTask(tasks.Subtask):
 
 
 class CopyTask(tasks.Subtask):
+    name = "Copy Files"
 
     def __init__(self, source_file_path: str, output_path: str) -> None:
         super().__init__()
         self._source_file_path = source_file_path
         self._output_path = output_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Copying files from {self._source_file_path} " \
+               f"to {self._output_path}"
 
     def work(self) -> bool:
         try:

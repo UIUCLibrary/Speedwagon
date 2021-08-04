@@ -17,7 +17,7 @@ from uiucprescon.packager.packages.abs_package_builder import AbsPackageBuilder
 from uiucprescon.packager.packages.collection_builder import Metadata
 from uiucprescon.packager.packages.collection import AbsPackageComponent
 from speedwagon import tasks, validators
-from speedwagon.job import AbsWorkflow
+from speedwagon.job import Workflow
 from speedwagon.workflows import shared_custom_widgets as options
 from speedwagon.logging import GuiLogHandler
 import speedwagon.exceptions
@@ -51,7 +51,7 @@ SUPPORTED_PACKAGE_SOURCES = {
 }
 
 
-class CaptureOneToDlCompoundAndDLWorkflow(AbsWorkflow):
+class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
     """Settings for convert capture one tiff files.
 
     .. versionchanged:: 0.1.5
@@ -348,6 +348,9 @@ class PackageConverter(tasks.Subtask):
             raise ValueError(f"{package_format} is not a known value")
         self.package_format = package_format
         self.source_path = source_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Converting {self.source_path}"
 
     def work(self) -> bool:
         """Convert source package to the new type.

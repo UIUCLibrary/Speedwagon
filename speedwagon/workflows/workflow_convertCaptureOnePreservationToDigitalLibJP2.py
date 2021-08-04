@@ -10,7 +10,7 @@ from typing import List, Dict, Optional
 import pykdu_compress
 
 from speedwagon import tasks, reports
-from speedwagon.job import AbsWorkflow
+from speedwagon.job import Workflow
 from . import shared_custom_widgets as options
 
 __all__ = ['ConvertTiffPreservationToDLJp2Workflow']
@@ -67,7 +67,7 @@ class ConvertFile(AbsProcessStrategy):
         self.status = "Generated {}".format(output_file_path)
 
 
-class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
+class ConvertTiffPreservationToDLJp2Workflow(Workflow):
     name = "Convert CaptureOne Preservation TIFF to Digital Library Access JP2"
     description = 'This tool takes as its input a "preservation" folder of ' \
                   'TIFF files and as its output creates a sibling folder ' \
@@ -193,11 +193,15 @@ class ConvertTiffPreservationToDLJp2Workflow(AbsWorkflow):
 
 
 class PackageImageConverterTask(tasks.Subtask):
+    name = "Package Image Convert"
 
     def __init__(self, source_file_path: str, dest_path: str) -> None:
         super().__init__()
         self._dest_path = dest_path
         self._source_file_path = source_file_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Converting package from {self._source_file_path}"
 
     def work(self) -> bool:
         des_path = self._dest_path

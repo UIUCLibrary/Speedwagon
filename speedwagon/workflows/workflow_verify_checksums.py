@@ -11,7 +11,7 @@ import typing
 import hathi_validate.process
 
 from speedwagon import tasks
-from speedwagon.job import AbsWorkflow
+from speedwagon.job import Workflow
 from speedwagon.reports import add_report_borders
 from . import shared_custom_widgets
 
@@ -38,7 +38,7 @@ class ResultValues(enum.Enum):
     CHECKSUM_REPORT_FILE = "checksum_report_file"
 
 
-class ChecksumWorkflow(AbsWorkflow):
+class ChecksumWorkflow(Workflow):
     name = "Verify Checksum Batch [Multiple]"
     description = "Verify checksum values in checksum batch file, report " \
                   "errors. Verifies every entry in the checksum.md5 files " \
@@ -296,7 +296,7 @@ class CaseInsensitiveComparison(AbsComparisonMethod):
         return a.lower() == b.lower()
 
 
-class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
+class VerifyChecksumBatchSingleWorkflow(Workflow):
     name = "Verify Checksum Batch [Single]"
     description = "Verify checksum values in checksum batch file, report " \
                   "errors. Verifies every entry in the checksum.md5 files " \

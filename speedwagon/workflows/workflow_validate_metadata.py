@@ -9,7 +9,7 @@ import enum
 from uiucprescon import imagevalidate
 
 from speedwagon import tasks
-from speedwagon.job import AbsWorkflow
+from speedwagon.job import Workflow
 from . import shared_custom_widgets
 
 
@@ -32,7 +32,7 @@ class ResultValues(enum.Enum):
     REPORT = "report"
 
 
-class ValidateMetadataWorkflow(AbsWorkflow):
+class ValidateMetadataWorkflow(Workflow):
     name = "Validate Metadata"
     description = "Validates the technical metadata for JP2000 files to " \
                   "include x and why resolution, bit depth and color space " \
@@ -166,11 +166,15 @@ class ValidateMetadataWorkflow(AbsWorkflow):
 
 
 class LocateTiffImageTask(tasks.Subtask):
+    name = "Locate Tiff Images"
 
     def __init__(self, root: str) -> None:
         warnings.warn("Use LocateImagesTask instead", DeprecationWarning)
         super().__init__()
         self._root = root
+
+    def task_description(self) -> Optional[str]:
+        return f"Locating tiff images in {self._root}"
 
     def work(self) -> bool:
         tiff_files = []
@@ -187,6 +191,8 @@ class LocateTiffImageTask(tasks.Subtask):
 
 
 class LocateImagesTask(tasks.Subtask):
+    name = "Locate Image Files"
+
     def __init__(self,
                  root: str,
                  profile_name: str) -> None:
@@ -197,6 +203,9 @@ class LocateImagesTask(tasks.Subtask):
             imagevalidate.profiles.AbsProfile,
             imagevalidate.get_profile(profile_name)
         )
+
+    def task_description(self) -> Optional[str]:
+        return f"Locating images in {self._root}"
 
     def work(self) -> bool:
         image_files = []
@@ -213,6 +222,8 @@ class LocateImagesTask(tasks.Subtask):
 
 
 class ValidateImageMetadataTask(tasks.Subtask):
+    name = "Validate Image Metadata"
+
     def __init__(
             self,
             filename: str,
@@ -225,6 +236,9 @@ class ValidateImageMetadataTask(tasks.Subtask):
             imagevalidate.profiles.AbsProfile,
             imagevalidate.get_profile(profile_name)
         )
+
+    def task_description(self) -> Optional[str]:
+        return f"Validating image metadata for {self._filename}"
 
     def work(self) -> bool:
         self.log(f"Validating {self._filename}")

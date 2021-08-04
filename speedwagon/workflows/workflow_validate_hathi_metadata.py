@@ -1,13 +1,13 @@
 """Workflow for validating image metadata."""
 
 import os
-from typing import List, Any
+from typing import List, Any, Optional
 from uiucprescon import imagevalidate
 
 from PyQt5 import QtWidgets  # type: ignore
 
 from speedwagon import tasks
-from speedwagon.job import AbsWorkflow
+from speedwagon.job import Workflow
 from . import shared_custom_widgets as options
 
 __all__ = ['ValidateImageMetadataWorkflow']
@@ -43,7 +43,7 @@ class TiffFileCheckData(options.AbsCustomData3):
         return ImageFile()
 
 
-class ValidateImageMetadataWorkflow(AbsWorkflow):
+class ValidateImageMetadataWorkflow(Workflow):
     name = "Validate Tiff Image Metadata for HathiTrust"
     description = "Validate the metadata located within a tiff file. " \
                   "Validates the technical metadata to include x and why " \
@@ -100,10 +100,14 @@ class ValidateImageMetadataWorkflow(AbsWorkflow):
 
 
 class MetadataValidatorTask(tasks.Subtask):
+    name = "Metadata Validation"
 
     def __init__(self, source_file: str) -> None:
         super().__init__()
         self._source_file = source_file
+
+    def task_description(self) -> Optional[str]:
+        return f"Validating Metadata for {self._source_file}"
 
     def work(self) -> bool:
         hathi_tiff_profile = imagevalidate.Profile(

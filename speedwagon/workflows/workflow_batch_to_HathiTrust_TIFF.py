@@ -179,13 +179,18 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
             cls.group_results(
                 sorted(results, key=lambda x: x.source.__name__)
             )
+        package_transformed = results_grouped.get(TransformPackageTask, [])
 
-        package_transformed = results_grouped[TransformPackageTask]
-        marc_files_generated = \
-            results_grouped[workflow_get_marc.MarcGeneratorTask]
+        marc_files_generated = results_grouped.get(
+            workflow_get_marc.MarcGeneratorTask,
+            []
+        )
 
-        yaml_results = results_grouped[MakeYamlTask]
-        checksum_files_generated = results_grouped[GenerateChecksumTask]
+        yaml_results = results_grouped.get(MakeYamlTask, [])
+        checksum_files_generated = results_grouped.get(
+            GenerateChecksumTask,
+            []
+        )
 
         package_transformed_message = "{} objects transformed".format(
             len(package_transformed))
@@ -220,6 +225,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
 
 
 class TransformPackageTask(tasks.Subtask):
+    name = "Transform Package"
 
     def __init__(self, package: packager.packages.collection.PackageObject,
                  destination: str) -> None:
@@ -228,6 +234,9 @@ class TransformPackageTask(tasks.Subtask):
         self._destination = destination
         self._bib_id: str = \
             self._package.metadata[Metadata.ID]
+
+    def task_description(self) -> Optional[str]:
+        return f"Transforming CaptureOne package"
 
     def work(self) -> bool:
         package_factory = packager.PackageFactory(
@@ -247,10 +256,14 @@ class TransformPackageTask(tasks.Subtask):
 
 
 class FindPackageTask(tasks.Subtask):
+    name = "Locating Packages"
 
     def __init__(self, root: str) -> None:
         super().__init__()
         self._root = root
+
+    def task_description(self) -> Optional[str]:
+        return f"Locating packages in {self._root}"
 
     def work(self) -> bool:
         self.log("Locating packages in {}".format(self._root))
@@ -267,6 +280,8 @@ class FindPackageTask(tasks.Subtask):
 
 
 class MakeYamlTask(tasks.Subtask):
+    name = "Make meta.yml"
+
     def __init__(self, identifier: str, source: str, title_page: str) -> None:
         super().__init__()
 
@@ -277,6 +292,9 @@ class MakeYamlTask(tasks.Subtask):
             print("Unable to split {} with a _ delimiter".format(title_page))
             self._title_page = title_page
         self.identifier = identifier
+
+    def task_description(self) -> Optional[str]:
+        return f"Generating meta.yml for {self._source}"
 
     def work(self) -> bool:
         meta_filename = "meta.yml"
@@ -306,11 +324,15 @@ class MakeYamlTask(tasks.Subtask):
 
 
 class GenerateChecksumTask(speedwagon.tasks.Subtask):
+    name = "Generate Checksum"
 
     def __init__(self, identifier: str, source: str) -> None:
         super().__init__()
         self._source = source
         self._bib_id = identifier
+
+    def task_description(self) -> Optional[str]:
+        return f"Generating checksums for {self._source}"
 
     def work(self) -> bool:
         checksum_filename = "checksum.md5"
