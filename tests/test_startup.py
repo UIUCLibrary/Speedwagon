@@ -12,6 +12,7 @@ from PyQt5 import QtWidgets
 
 import speedwagon.startup
 import speedwagon.config
+import speedwagon.job
 
 
 def test_version_exits_after_being_called(monkeypatch):
@@ -618,7 +619,7 @@ class TestSingleWorkflowJSON:
         run = MagicMock()
 
         monkeypatch.setattr(
-            speedwagon.startup.runner_strategies.UsingExternalManagerForAdapter2,
+            speedwagon.startup.runner_strategies.QtRunner,
             "run",
             run
         )
@@ -651,8 +652,9 @@ class TestMultiWorkflowLauncher:
 
         jobs = []
         for workflow_name, workflow_args in workflow_tasks:
-            mock_workflow = Mock()
+            mock_workflow = MagicMock()
             mock_workflow.name = workflow_name
+            mock_workflow.__class__ = speedwagon.job.Workflow
             jobs.append(mock_workflow)
             startup_launcher.add_job(mock_workflow, workflow_args)
         startup_launcher.run()

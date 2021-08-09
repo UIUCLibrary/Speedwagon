@@ -551,15 +551,16 @@ class SingleWorkflowLauncher(AbsStarter):
         window.show()
         window.setWindowTitle(self._active_workflow.name)
         runner_strategy = \
-            runner_strategies.UsingExternalManagerForAdapter2(work_manager,
-                                                              window)
+            runner_strategies.QtRunner(work_manager, window)
 
         self._active_workflow.validate_user_options(**self.options)
+        # runner_strategy.additional_info_callback
 
         runner_strategy.run(self._active_workflow,
                             self.options,
                             window.log_manager)
         window.log_manager.handlers.clear()
+        window.close()
 
     def initialize(self) -> None:
         """No initialize is needed."""
@@ -629,7 +630,7 @@ class SingleWorkflowJSON(AbsStarter):
         window = SingleWorkflowJSON._load_window(work_manager, workflow.name)
         window.show()
         runner_strategy = \
-            runner_strategies.UsingExternalManagerForAdapter2(
+            runner_strategies.QtRunner(
                 work_manager,
                 window
             )
@@ -680,16 +681,19 @@ class MultiWorkflowLauncher(AbsStarter):
                 active_workflow, options = self._pending_tasks.get()
                 window.setWindowTitle(active_workflow.name)
                 runner_strategy = \
-                    runner_strategies.UsingExternalManagerForAdapter2(
+                    runner_strategies.QtRunner(
                         work_manager,
                         window
                     )
 
                 active_workflow.validate_user_options(**options)
+
                 runner_strategy.run(
-                                    active_workflow,
-                                    options,
-                                    window.log_manager)
+                    active_workflow,
+                    options,
+                    window.log_manager
+                )
+
                 self._pending_tasks.task_done()
         except runner_strategies.TaskFailed as task_error:
             while not self._pending_tasks.empty():

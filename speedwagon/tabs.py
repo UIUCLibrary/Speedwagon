@@ -401,7 +401,7 @@ class WorkflowsTab(ItemSelectionTab):
         try:
             workflow.validate_user_options(**options)
 
-            manager_strat = runner_strategies.UsingExternalManagerForAdapter2(
+            manager_strat = runner_strategies.QtRunner(
                 manager=self.work_manager, parent=self.parent)
             runner = runner_strategies.RunRunner(manager_strat)
 

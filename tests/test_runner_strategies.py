@@ -163,12 +163,12 @@ def test_task_aborted(caplog, step, monkeypatch):
 # todo: make tests for UsingExternalManagerForAdapter2
 
 
-class TestUsingExternalManagerForAdapter2:
+class TestQtRunner:
     def test_run_abstract_workflow_calls_run_abs_workflow(self):
         manager = Mock()
-        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
+        runner = runner_strategies.QtRunner(manager)
         job = Mock()
-        job.__class__ = speedwagon.job.AbsWorkflow
+        job.__class__ = speedwagon.job.Workflow
         runner.run_abs_workflow = Mock()
         runner.run(
             job=job,
@@ -179,7 +179,7 @@ class TestUsingExternalManagerForAdapter2:
 
     def test_run_non_abstract_workflow_doesnt_call_run_abs_workflow(self):
         manager = Mock()
-        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
+        runner = runner_strategies.QtRunner(manager)
         job = Mock()
         # NOTE: job.__class__ != speedwagon.job.AbsWorkflow
         runner.run_abs_workflow = Mock()
@@ -192,7 +192,7 @@ class TestUsingExternalManagerForAdapter2:
 
     def test_run_abs_workflow_calls_task_runner(self):
         manager = Mock()
-        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
+        runner = runner_strategies.QtRunner(manager)
         job = Mock()
         job.__class__ = speedwagon.job.AbsWorkflow
 
@@ -207,7 +207,7 @@ class TestUsingExternalManagerForAdapter2:
 
     def test_run_abs_workflow_fails_with_task_failed_exception(self):
         manager = Mock()
-        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
+        runner = runner_strategies.QtRunner(manager)
         job = Mock()
         job.__class__ = speedwagon.job.AbsWorkflow
 
@@ -228,7 +228,7 @@ class TestUsingExternalManagerForAdapter2:
     def test_update_progress(self):
         runner = Mock()
 
-        runner_strategies.UsingExternalManagerForAdapter2.update_progress(
+        runner_strategies.QtRunner.update_progress(
             runner=runner,
             current=3,
             total=10
@@ -239,7 +239,7 @@ class TestUsingExternalManagerForAdapter2:
     def test_update_progress_accepted_on_finish(self):
         runner = Mock()
 
-        runner_strategies.UsingExternalManagerForAdapter2.update_progress(
+        runner_strategies.QtRunner.update_progress(
             runner=runner,
             current=10,
             total=10
@@ -249,7 +249,7 @@ class TestUsingExternalManagerForAdapter2:
     def test_update_progress_no_dialog(self):
         runner = Mock()
         runner.dialog = None
-        runner_strategies.UsingExternalManagerForAdapter2.update_progress(
+        runner_strategies.QtRunner.update_progress(
             runner=runner,
             current=3,
             total=10
@@ -320,9 +320,7 @@ class TestTaskGenerator:
             options={},
             working_directory=os.path.join("some", "real", "directory")
         )
-
-        for subtask in task_generator.tasks(
-                additional_info_callback=workflow.get_additional_info
-        ):
+        task_generator.parent = Mock()
+        for subtask in task_generator.tasks():
             assert isinstance(subtask, speedwagon.tasks.Subtask)
         assert workflow.get_additional_info.called is True

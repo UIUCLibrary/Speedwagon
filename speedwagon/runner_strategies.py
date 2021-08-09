@@ -2,18 +2,23 @@
 
 import abc
 import collections
+import contextlib
 import functools
+
 import logging
 import queue
 import tempfile
+import threading
 import time
 import typing
 import warnings
-from typing import List, Any, Dict
+from types import TracebackType
+from typing import List, Any, Dict, Optional, Type
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore, QtGui
 
 import speedwagon
+import speedwagon.dialog
 from speedwagon import worker
 from . import tasks
 from .job import AbsWorkflow, Workflow, JobCancelled
@@ -349,41 +354,11 @@ class UsingExternalManagerForAdapter(AbsRunner):
         return job.get_additional_info(parent, options, pretask_results)
 
 
-def runner_managed_task(callback):
-
-    def run(self, runner, *args, **kwargs):
-        runner.abort_callback = self.manager.abort
-        runner.dialog.setRange(0, 0)
-        try:
-            runner.dialog.setWindowTitle(self.job.name)
-            self.logger.addHandler(runner.progress_dialog_box_handler)
-            results = callback(self, *args, runner=runner, **kwargs)
-            if runner.was_aborted:
-                raise TaskFailed(USER_ABORTED_MESSAGE)
-            return results
-        finally:
-            runner.dialog.accept()
-            runner.dialog.close()
-            self.logger.removeHandler(
-                runner.progress_dialog_box_handler)
-
-    @functools.wraps(callback)
-    def dialog_window(self, *args, **kwargs):
-        if 'runner' in kwargs and kwargs['runner'] is not None:
-            return run(self, kwargs['runner'], *args, **kwargs)
-        with self.manager.open(
-                parent=self.parent_widget,
-                runner=worker.WorkRunnerExternal3
-        ) as runner:
-            return run(self, runner, *args, **kwargs)
-    return dialog_window
-
-
 class TaskGenerator:
 
     def __init__(
             self,
-            workflow,
+            workflow: Workflow,
             options: typing.Mapping[str, Any],
             working_directory: str
     ) -> None:
@@ -392,13 +367,21 @@ class TaskGenerator:
         self.working_directory = working_directory
         self.current_task: typing.Optional[int] = None
         self.total_task: typing.Optional[int] = None
+        self.parent = None
 
-    def generate_report(self, results: typing.Iterable[Any]) -> str:
+    def generate_report(
+            self, results: List[tasks.Result]
+    ) -> typing.Optional[str]:
         return self.workflow.generate_report(results, **self.options)
 
-    def tasks(self,
-              additional_info_callback=None
-              ) -> typing.Iterable[tasks.Subtask]:
+    def request_more_info(self, options, pretask_results):
+        if self.parent is not None and hasattr(self.workflow, "get_additional_info"):
+            return self.workflow.get_additional_info(
+                self.parent, options, pretask_results.copy()
+            )
+        return {}
+
+    def tasks(self) -> typing.Iterable[tasks.Subtask]:
         pretask_results = []
 
         results = []
@@ -410,13 +393,7 @@ class TaskGenerator:
             pretask_results.append(pre_task.task_result)
             results.append(pre_task.task_result)
 
-        if callable(additional_info_callback):
-            additional_data = additional_info_callback(
-                self.options,
-                pretask_results
-            )
-        else:
-            additional_data = None
+        additional_data = self.request_more_info(self.options, pretask_results)
 
         for task in self.get_main_tasks(
             self.working_directory,
@@ -433,7 +410,11 @@ class TaskGenerator:
             **self.options
         )
 
-    def get_pre_tasks(self, working_directory, **options):
+    def get_pre_tasks(
+            self,
+            working_directory: str,
+            **options) -> typing.Iterable[speedwagon.tasks.Subtask]:
+
         task_builder = tasks.TaskBuilder(
             tasks.MultiStageTaskBuilder(working_directory),
             working_directory
@@ -441,18 +422,8 @@ class TaskGenerator:
         self.workflow.initial_task(task_builder, **options)
         yield from task_builder.build_task().main_subtasks
 
-    def get_task_metadata_tasks(self, pretask_results,
-                                additional_data, **options):
-        metadata_tasks = \
-            self.workflow.discover_task_metadata(
-                pretask_results,
-                additional_data,
-                **options
-            ) or []
-        yield from metadata_tasks
-
     def add_main_tasks(self,
-                       working_directory,
+                       working_directory: str,
                        pretask_results,
                        additional_data,
                        **options):
@@ -466,8 +437,12 @@ class TaskGenerator:
             adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
             yield adapted_tool, adapted_tool.settings
 
-    def get_main_tasks(self, working_directory, pretask_results,
-                       additional_data, **options):
+    def get_main_tasks(
+            self,
+            working_directory: str,
+            pretask_results,
+            additional_data,
+            **options) -> typing.Iterable[speedwagon.tasks.Subtask]:
         metadata_tasks = \
             self.workflow.discover_task_metadata(
                 pretask_results,
@@ -491,7 +466,11 @@ class TaskGenerator:
             self.current_task += 1
             yield task
 
-    def get_post_tasks(self, working_directory, results, **options):
+    def get_post_tasks(
+            self,
+            working_directory: str,
+            results,
+            **options) -> typing.Iterable[speedwagon.tasks.Subtask]:
         task_builder = tasks.TaskBuilder(
             tasks.MultiStageTaskBuilder(working_directory),
             working_directory
@@ -515,14 +494,18 @@ class TaskGenerator:
 
 
 class MessageBuffer:
+    _message_lock = threading.Lock()
+
     def __init__(self, max_size: int):
         self.max_size = max_size
         self._message_queue: 'queue.Queue[str]' = queue.Queue()
         self.callback: typing.Callable[[str], None] = lambda message: None
-        self.max_refresh_interval_time: float = 0.1
+        self.max_refresh_interval_time: float = .1
         self._last_flushed: typing.Optional[float] = None
+        # self._message_lock = threading.Lock()
+        self.t = None
 
-    def append(self, value):
+    def append(self, value: str) -> None:
         self.log(value)
 
     def _should_be_flushed(self) -> bool:
@@ -537,22 +520,186 @@ class MessageBuffer:
 
         return False
 
-    def log(self, message):
-        self._message_queue.put(message)
-        if self._should_be_flushed():
-            self.flush()
-
-    def flush(self):
-        messages = []
-        while not self._message_queue.empty():
-            messages.append(self._message_queue.get())
-            self._message_queue.task_done()
-        message = "\n".join(messages)
+    def log(self, message: str) -> None:
         self._send(message)
         self._last_flushed = time.time()
+        times_since_last_flush = time.time() - self._last_flushed
+        if times_since_last_flush > self.max_refresh_interval_time:
+            self.flush()
+        return
 
-    def _send(self, message: str):
-        self.callback(message=message)
+        # print(f"message = {message}")
+        # return
+        # MessageBuffer._message_lock.acquire()
+        with MessageBuffer._message_lock:
+            self._message_queue.put(message)
+            if self.t is not None:
+                return
+
+        if self._last_flushed is None:
+            self.flush()
+            return
+
+        times_since_last_flush = time.time() - self._last_flushed
+        if times_since_last_flush > self.max_refresh_interval_time or \
+                self._message_queue.qsize() >= self.max_size:
+            self.flush()
+            return
+
+        wait_time = self.max_refresh_interval_time - times_since_last_flush
+
+        if self.t is None:
+            self.t = threading.Timer(interval=wait_time, function=self.flush)
+            self.t.start()
+
+    def flush(self) -> None:
+        QtWidgets.QApplication.processEvents()
+        return
+
+        messages = []
+        with MessageBuffer._message_lock:
+            while not self._message_queue.empty():
+                messages.append(self._message_queue.get())
+                self._message_queue.task_done()
+        message = "\n".join(messages)
+        self._send(message)
+        if self.t is not None and self.t.is_alive() is True:
+            self.t.cancel()
+        if self.t is not None:
+            self.t = None
+        self._last_flushed = time.time()
+
+    def _send(self, message: str) -> None:
+        self.callback(message)
+
+
+class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
+
+    @abc.abstractmethod
+    def refresh(self) -> None:
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, __exc_type: Optional[Type[BaseException]],
+                 __exc_value: Optional[BaseException],
+                 __traceback: Optional[TracebackType]) -> Optional[bool]:
+        return None
+
+
+class QtDialogProgress(RunnerDisplay):
+
+    def __init__(self, parent: typing.Optional[QtWidgets.QWidget]) -> None:
+        super().__init__()
+        self.parent = parent
+
+        self._total_tasks_amount: typing.Optional[int] = None
+        self._current_task_progress: typing.Optional[int] = None
+
+        self.dialog = speedwagon.dialog.WorkProgressBar(parent=self.parent)
+        self.dialog.setMaximum(0)
+        self.dialog.setValue(0)
+        self.dialog.setAutoClose(False)
+
+        # self._details = None
+        # self._details_last_flushed_time = None
+        # self._refresh_rate = 0.2
+        # self._update_thread: typing.Optional[threading.Timer] = None
+        # self._data_lock = threading.Lock()
+
+    @property
+    def details(self):
+        return self.dialog.labelText()
+
+    @details.setter
+    def details(self, value):
+        self.dialog.setLabelText(value)
+        self.refresh()
+        # with self._data_lock:
+        #     self._details = value
+        # flush_wait_time = self._get_flush_time()
+        # if flush_wait_time is None:
+        #     self.dialog.setLabelText(value)
+        #     self._details_last_flushed_time = time.time()
+        #     return
+        # if self._update_thread is None:
+        #     self._update_thread = \
+        #         threading.Timer(
+        #             interval=flush_wait_time,
+        #             function=self._flush_details,
+        #         )
+        #     self._update_thread.start()
+
+    # def _flush_details(self):
+    #
+    #     with self._data_lock:
+    #         self.dialog._label.setText(self._details)
+    #     self._details_last_flushed_time = time.time()
+    #     self._update_thread = None
+    #
+    # def _get_flush_time(self) -> Optional[float]:
+    #     if self._details_last_flushed_time is None:
+    #         return None
+    #     return \
+    #         self._refresh_rate - \
+    #         (time.time() - self._details_last_flushed_time)
+
+    @property
+    def user_canceled(self):
+        return self.dialog.wasCanceled()
+
+    @property
+    def current_task_progress(self):
+        return self._current_task_progress
+
+    @current_task_progress.setter
+    def current_task_progress(self, value):
+        self._current_task_progress = value
+        if value is None:
+            self.dialog.setValue(0)
+            return
+        self.dialog.setValue(value + 1)
+
+    @property
+    def total_tasks_amount(self):
+        return self._total_tasks_amount
+
+    @total_tasks_amount.setter
+    def total_tasks_amount(self, value):
+        self._total_tasks_amount = value
+        if value is None:
+            self.dialog.setMaximum(0)
+            return
+
+        self.dialog.setMaximum(value)
+
+    @property
+    def title(self):
+        return self.dialog.windowTitle()
+
+    @title.setter
+    def title(self, value):
+        self.dialog.setWindowTitle(value)
+
+    def refresh(self) -> None:
+        QtWidgets.QApplication.processEvents()
+
+    def __enter__(self):
+
+        self.dialog.show()
+        return super().__enter__()
+
+    def __exit__(self, __exc_type: Optional[Type[BaseException]],
+                 __exc_value: Optional[BaseException],
+                 __traceback: Optional[TracebackType]) -> Optional[bool]:
+        # if self._update_thread is not None:
+        #     self._update_thread.cancel()
+        #     self._update_thread.join()
+        #     self._flush_details()
+        self.dialog.accept()
+        # self.dialog.close()
+        return None
 
 
 class TaskRunner:
@@ -570,6 +717,8 @@ class TaskRunner:
 
         self.current_task_progress: typing.Optional[int] = None
         self.total_tasks: typing.Optional[int] = None
+        self._viewer = QtDialogProgress(parent=self.parent_widget)
+        self.console_message_buffer = MessageBuffer(5)
 
     @staticmethod
     def _get_additional_data(job, options, parent, pre_results):
@@ -577,7 +726,10 @@ class TaskRunner:
             return job.get_additional_info(parent, options, pre_results.copy())
         return {}
 
-    def iter_tasks(self, workflow, options) -> typing.Iterable[tasks.Subtask]:
+    def iter_tasks(self,
+                   workflow: Workflow,
+                   options: Dict[str, Any]
+                   ) -> typing.Iterable[tasks.Subtask]:
         """Get sub tasks for a workflow.
 
         Args:
@@ -595,6 +747,7 @@ class TaskRunner:
             working_directory=self.working_directory,
             options=options
         )
+        task_generator.parent = self.parent_widget
         for task in task_generator.tasks():
             self.total_tasks = task_generator.total_task
             yield task
@@ -605,12 +758,6 @@ class TaskRunner:
         if report is not None:
             self.logger.info(task_generator.generate_report(results))
 
-    def _flush_message_buffer(self, message_queue):
-        message = []
-        while len(message_queue) > 0:
-            message.append(message_queue.pop())
-        self.logger.info("\n".join(message))
-
     def update_progress(self,
                         runner: "typing.Optional[worker.WorkRunnerExternal3]",
                         current: int,
@@ -618,45 +765,56 @@ class TaskRunner:
         if callable(self.update_progress_callback) and runner is not None:
             self.update_progress_callback(runner, current, total)
 
-    def run(self, job: AbsWorkflow, options) -> None:
-        with self.manager.open(
-                parent=self.parent_widget,
-                runner=worker.WorkRunnerExternal3) as runner:
-            runner.dialog.setLabelText("Please wait")
-            runner.dialog.setWindowTitle(job.name)
+    def run(self, job: Workflow, options: Dict[str, Any]) -> None:
 
-            message_buffer = MessageBuffer(5)
-            message_buffer.callback = \
+        with self.manager.open(parent=self.parent_widget,
+                               runner=worker.WorkRunnerExternal3) as runner:
+            # message_buffer = MessageBuffer(5)
+            # message_buffer.callback = \
+            #     lambda message: self.logger.info(msg=message)
+            self.console_message_buffer.callback = \
                 lambda message: self.logger.info(msg=message)
 
-            for subtask in self.iter_tasks(job, options):
-                try:
-                    subtask.parent_task_log_q = message_buffer
+            with self._viewer as viewer:
+                viewer.title = job.name
+                for subtask in self.\
+                        iter_tasks(job, options):
+                    try:
+                        if viewer.user_canceled is True:
+                            raise JobCancelled(USER_ABORTED_MESSAGE)
+                        if runner.was_aborted is True:
+                            raise TaskFailed(USER_ABORTED_MESSAGE)
+                        subtask.parent_task_log_q = self.console_message_buffer
 
-                    description = \
-                        subtask.task_description() or \
-                        subtask.name or \
-                        'Working'
-                    self.logger.info(description)
-                    runner.dialog.setLabelText(description)
-                    if runner.was_aborted is True:
+                        viewer.total_tasks_amount = self.total_tasks
+                        viewer.current_task_progress = \
+                            self.current_task_progress
 
-                        raise TaskFailed(USER_ABORTED_MESSAGE)
-                    subtask.exec()
+                        description = \
+                            subtask.task_description() or \
+                            subtask.name or \
+                            'Working'
+                        viewer.details = description
+                        self.console_message_buffer.log(description)
+                        viewer.refresh()
+                        subtask.exec()
+                        viewer.refresh()
+                        # for s in subtask.parent_task_log_q:
+                        #     print(s)
+                    finally:
+                        pass
+                        # self.console_message_buffer.flush()
+                        # message_buffer.flush()
 
-                    if self.current_task_progress is not None and \
-                            self.total_tasks is not None:
-                        self.update_progress(runner,
-                                             self.current_task_progress,
-                                             self.total_tasks)
-                finally:
-                    message_buffer.flush()
-                    for x in self.logger.handlers:
-                        x.flush()
-            message_buffer.flush()
+            # message_buffer.flush()
+            # self.console_message_buffer.flush()
 
 
 class UsingExternalManagerForAdapter2(AbsRunner2):
+    pass
+
+
+class QtRunner(UsingExternalManagerForAdapter2):
     def __init__(self,
                  manager: "worker.ToolJobManager",
                  parent: QtWidgets.QWidget = None) -> None:
@@ -669,6 +827,7 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
             runner: "worker.WorkRunnerExternal3",
             current: int,
             total: int) -> None:
+
 
         if runner.dialog is None:
             return
@@ -687,6 +846,7 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
             logger: logging.Logger = None,
             completion_callback=None
             ) -> None:
+
         with tempfile.TemporaryDirectory() as build_dir:
             task_runner = TaskRunner(
                 manager=self._manager,
@@ -695,8 +855,8 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
             )
 
             task_runner.logger = logger or logging.getLogger(__name__)
-            task_runner.update_progress_callback = self.update_progress
-            if isinstance(job, AbsWorkflow):
+
+            if isinstance(job, Workflow):
                 self.run_abs_workflow(
                     task_runner=task_runner,
                     job=job,
@@ -706,7 +866,7 @@ class UsingExternalManagerForAdapter2(AbsRunner2):
 
     @staticmethod
     def run_abs_workflow(task_runner: TaskRunner,
-                         job: AbsWorkflow,
+                         job: Workflow,
                          options, logger: logging.Logger = None) -> None:
         logger = logger or logging.getLogger(__name__)
         task_runner.logger = logger

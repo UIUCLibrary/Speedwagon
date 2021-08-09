@@ -8,6 +8,8 @@ import logging
 import multiprocessing
 import queue
 import sys
+import threading
+import time
 import traceback
 import typing
 import warnings
@@ -191,18 +193,69 @@ class ProcessWorker(UIWorker):
 class ProgressMessageBoxLogHandler(logging.Handler):
     """Log handler for progress dialog box."""
 
-    def __init__(self, dialog_box: QtWidgets.QProgressDialog,
-                 level: int = logging.NOTSET) -> None:
+    # def __init__(self, dialog_box: QtWidgets.QProgressDialog,
+    def __init__(self, level: int = logging.NOTSET) -> None:
         """Create a log handler for progress message box."""
         super().__init__(level)
-        self.dialog_box = dialog_box
+        self._last_message = None
+        self.callback = lambda mesesage: None
+        self._last_flushed_time = None
+        self._refresh_rate = 0.1
+        self._update_thread: typing.Optional[threading.Timer] = None
+        self._message_lock = threading.Lock()
+
+    def _flush_message_queue(self):
+        if self._last_message is None:
+            return
+        with self._message_lock:
+            if self._last_message is not None:
+                self.callback(self._last_message)
+                # QtWidgets.QApplication.processEvents()
+        self._last_flushed_time = time.time()
+        # QtWidgets.QApplication.processEvents()
 
     def emit(self, record: logging.LogRecord) -> None:
         try:
-            self.dialog_box.setLabelText(self.format(record))
+            message = self.format(record)
+            with self._message_lock:
+                self._last_message = message
+            if self.ready_to_flush() is True:
+                self._flush_message_queue()
+                return
+
+            # if there is already is a thread waiting,
+            if self._update_thread is None:
+                wait_time = time.time() - self._last_flushed_time
+                self._update_thread = \
+                    threading.Timer(wait_time, self._flush_message_queue)
+
         except RuntimeError as error:
             print(self.format(record), file=sys.stderr)
             traceback.print_tb(error.__traceback__)
+            raise
+
+    def ready_to_flush(self) -> bool:
+        if self._last_flushed_time is None:
+            return True
+
+        time_delta = time.time() - self._last_flushed_time
+        if time_delta > self._refresh_rate:
+            return True
+        if self._update_thread is not None:
+            return False
+        return False
+
+    def flush(self) -> None:
+        self._flush_message_queue()
+        super().flush()
+
+    def close(self) -> None:
+        super().close()
+        if self._update_thread is not None and \
+                self._update_thread.is_alive() is True:
+            self._update_thread.cancel()
+            self._update_thread.join()
+            self._update_thread = None
 
 
 # pylint: disable=too-few-public-methods
@@ -248,29 +301,41 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         self._parent = parent
         self.abort_callback: Optional[Callable[[], None]] = None
         self.was_aborted = False
-        self.dialog: Optional[WorkProgressBar] = None
+        self._dialog: Optional[WorkProgressBar] = None
         self.progress_dialog_box_handler: \
             Optional[ProgressMessageBoxLogHandler] = None
 
+    @property
+    def dialog(self):
+        warnings.warn("Don't use the dialog", DeprecationWarning)
+        return self._dialog
+
+    @dialog.setter
+    def dialog(self, value):
+        self._dialog = value
+
     def __enter__(self) -> "WorkRunnerExternal3":
         """Start worker."""
+
         self.dialog = WorkProgressBar(self._parent)
-        self.dialog.setLabelText("Initializing")
-        self.dialog.setMinimumDuration(100)
+        # self.dialog.hide()
+        self.dialog.close()
+        # self.dialog.setLabelText("Initializing")
+        # self.dialog.setMinimumDuration(100)
 
-        self.progress_dialog_box_handler = \
-            ProgressMessageBoxLogHandler(self.dialog)
+        # self.progress_dialog_box_handler = \
+        #     ProgressMessageBoxLogHandler(self.dialog)
 
-        self.dialog.canceled.connect(self.abort)
+        # self.dialog.canceled.connect(self.abort)
         return self
 
     def abort(self) -> None:
         """Abort on any running tasks."""
-        if self.dialog is not None and \
-                self.dialog.result() == QtWidgets.QProgressDialog.Rejected:
-            self.was_aborted = True
-            if callable(self.abort_callback):
-                self.abort_callback()  # pylint: disable=not-callable
+        # if self.dialog is not None and \
+        #         self.dialog.result() == QtWidgets.QProgressDialog.Rejected:
+        self.was_aborted = True
+        if callable(self.abort_callback):
+            self.abort_callback()  # pylint: disable=not-callable
 
     def __exit__(self,
                  exc_type: Optional[Type[BaseException]],
@@ -279,6 +344,8 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         """Close runner."""
         if self.dialog is None:
             raise AttributeError("dialog was set to None before closing")
+            return
+
         self.dialog.close()
 
 
@@ -351,10 +418,11 @@ class JobExecutor:
         if self._pending_jobs.unfinished_tasks > 0:
             logger.warning("Pending jobs has unfinished tasks")
         self._pending_jobs.join()
+        # self.manager.shutdown()
 
     def shutdown(self):
         self._executor.shutdown()
-
+        # self.manager.shutdown()
 
 class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
     """Tool job manager."""

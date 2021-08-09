@@ -67,7 +67,7 @@ class SpyToolJobManager(ToolJobManager):
 def tool_job_manager_spy():
 
     with SpyToolJobManager() as e:
-        manager_strat = runner_strategies.UsingExternalManagerForAdapter2(
+        manager_strat = runner_strategies.QtRunner(
             manager=e,
             parent=None
         )

@@ -138,6 +138,9 @@ class TestWorkflow:
             for i_number in range(20):
                 file_mock = Mock()
                 file_mock.name = f"99423682912205899-{str(i_number).zfill(8)}.tif"
+                file_mock.path = path
+
+                # file_mock.is_file = Mock()
                 yield file_mock
 
         initial_results = []
