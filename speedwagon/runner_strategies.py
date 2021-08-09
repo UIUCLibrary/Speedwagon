@@ -524,7 +524,7 @@ class MessageBuffer:
         times_since_last_flush = time.time() - self._last_flushed
         if times_since_last_flush > self.max_refresh_interval_time:
             self.flush()
-        return
+        # return
 
         with MessageBuffer._message_lock:
             self._message_queue.put(message)
