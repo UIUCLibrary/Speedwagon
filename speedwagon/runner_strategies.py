@@ -373,7 +373,8 @@ class TaskGenerator:
         return self.workflow.generate_report(results, **self.options)
 
     def request_more_info(self, options, pretask_results):
-        if self.parent is not None and hasattr(self.workflow, "get_additional_info"):
+        if self.parent is not None and \
+                hasattr(self.workflow, "get_additional_info"):
             return self.workflow.get_additional_info(
                 self.parent, options, pretask_results.copy()
             )
@@ -768,7 +769,6 @@ class QtRunner(UsingExternalManagerForAdapter2):
             runner: "worker.WorkRunnerExternal3",
             current: int,
             total: int) -> None:
-
 
         if runner.dialog is None:
             return

@@ -422,7 +422,7 @@ class JobExecutor:
 
     def shutdown(self):
         self._executor.shutdown()
-        # self.manager.shutdown()
+
 
 class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
     """Tool job manager."""
