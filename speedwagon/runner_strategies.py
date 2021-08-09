@@ -604,34 +604,6 @@ class QtDialogProgress(RunnerDisplay):
     def details(self, value):
         self.dialog.setLabelText(value)
         self.refresh()
-        # with self._data_lock:
-        #     self._details = value
-        # flush_wait_time = self._get_flush_time()
-        # if flush_wait_time is None:
-        #     self.dialog.setLabelText(value)
-        #     self._details_last_flushed_time = time.time()
-        #     return
-        # if self._update_thread is None:
-        #     self._update_thread = \
-        #         threading.Timer(
-        #             interval=flush_wait_time,
-        #             function=self._flush_details,
-        #         )
-        #     self._update_thread.start()
-
-    # def _flush_details(self):
-    #
-    #     with self._data_lock:
-    #         self.dialog._label.setText(self._details)
-    #     self._details_last_flushed_time = time.time()
-    #     self._update_thread = None
-    #
-    # def _get_flush_time(self) -> Optional[float]:
-    #     if self._details_last_flushed_time is None:
-    #         return None
-    #     return \
-    #         self._refresh_rate - \
-    #         (time.time() - self._details_last_flushed_time)
 
     @property
     def user_canceled(self):
@@ -681,12 +653,7 @@ class QtDialogProgress(RunnerDisplay):
     def __exit__(self, __exc_type: Optional[Type[BaseException]],
                  __exc_value: Optional[BaseException],
                  __traceback: Optional[TracebackType]) -> Optional[bool]:
-        # if self._update_thread is not None:
-        #     self._update_thread.cancel()
-        #     self._update_thread.join()
-        #     self._flush_details()
         self.dialog.accept()
-        # self.dialog.close()
         return None
 
 
