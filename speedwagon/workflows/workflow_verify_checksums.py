@@ -438,7 +438,8 @@ class ChecksumTask(tasks.Subtask):
         self._kwarg = kwargs
 
     def task_description(self) -> Optional[str]:
-        return f"Calculating file checksum for {self._kwarg[JobValues.ITEM_FILENAME.value]}"
+        return f"Calculating file checksum for " \
+               f"{self._kwarg[JobValues.ITEM_FILENAME.value]}"
 
     def work(self) -> bool:
         filename = typing.cast(str, self._kwarg[JobValues.ITEM_FILENAME.value])

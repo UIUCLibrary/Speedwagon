@@ -236,7 +236,7 @@ class TransformPackageTask(tasks.Subtask):
             self._package.metadata[Metadata.ID]
 
     def task_description(self) -> Optional[str]:
-        return f"Transforming CaptureOne package"
+        return "Transforming CaptureOne package"
 
     def work(self) -> bool:
         package_factory = packager.PackageFactory(
