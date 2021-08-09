@@ -501,7 +501,7 @@ class MessageBuffer:
         self.callback: typing.Callable[[str], None] = lambda message: None
         self.max_refresh_interval_time: float = .1
         self._last_flushed: typing.Optional[float] = None
-        self._thread = None
+        self._delay_thread: typing.Optional[threading.Timer] = None
 
     def append(self, value: str) -> None:
         self.log(value)
@@ -528,7 +528,7 @@ class MessageBuffer:
 
         with MessageBuffer._message_lock:
             self._message_queue.put(message)
-            if self._thread is not None:
+            if self._delay_thread is not None:
                 return
 
         if self._last_flushed is None:
@@ -543,11 +543,11 @@ class MessageBuffer:
 
         wait_time = self.max_refresh_interval_time - times_since_last_flush
 
-        if self._thread is None:
+        if self._delay_thread is None:
             new_thread = threading.Timer(interval=wait_time,
                                          function=self.flush)
             new_thread.start()
-            self._thread = new_thread
+            self._delay_thread = new_thread
 
     def flush(self) -> None:
         QtWidgets.QApplication.processEvents()
@@ -560,10 +560,10 @@ class MessageBuffer:
                 self._message_queue.task_done()
         message = "\n".join(messages)
         self._send(message)
-        if self._thread is not None and self._thread.is_alive() is True:
-            self._thread.cancel()
-        if self._thread is not None:
-            self._thread = None
+        if self._delay_thread is not None and self._delay_thread.is_alive() is True:
+            self._delay_thread.cancel()
+        if self._delay_thread is not None:
+            self._delay_thread = None
         self._last_flushed = time.time()
 
     def _send(self, message: str) -> None:
@@ -655,7 +655,7 @@ class QtDialogProgress(RunnerDisplay):
 
     def __exit__(self, __exc_type: Optional[Type[BaseException]],
                  __exc_value: Optional[BaseException],
-                 __traceback: Optional[TracebackType]) -> Optional[bool]:
+                 __traceback: Optional[TracebackType]):
         self.dialog.accept()
 
 

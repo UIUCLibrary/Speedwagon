@@ -197,7 +197,7 @@ class ProgressMessageBoxLogHandler(logging.Handler):
     def __init__(self, level: int = logging.NOTSET) -> None:
         """Create a log handler for progress message box."""
         super().__init__(level)
-        self._last_message = None
+        self._last_message: typing.Optional[str] = None
         self.callback = lambda mesesage: None
         self._last_flushed_time = None
         self._refresh_rate = 0.1
@@ -224,7 +224,8 @@ class ProgressMessageBoxLogHandler(logging.Handler):
                 return
 
             # if there is already is a thread waiting,
-            if self._update_thread is None:
+            if self._update_thread is None and \
+                    self._last_flushed_time is not None:
                 wait_time = time.time() - self._last_flushed_time
                 self._update_thread = \
                     threading.Timer(wait_time, self._flush_message_queue)
