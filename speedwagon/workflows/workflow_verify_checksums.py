@@ -452,7 +452,6 @@ class ChecksumTask(tasks.Subtask):
             typing.cast(str, self._kwarg[JobValues.ROOT_PATH.value])
 
         full_path = os.path.join(checksum_path, filename)
-        self.log("Calculating MD5 for {}".format(filename))
         actual_md5: str = hathi_validate.process.calculate_md5(full_path)
 
         result: Dict[ResultValues, Union[str, bool]] = {

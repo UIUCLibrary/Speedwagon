@@ -2,6 +2,7 @@
 
 import os
 import typing
+from typing import Optional
 
 from pyhathiprep import checksum
 
@@ -11,6 +12,7 @@ from .checksum_shared import ResultsValues
 
 
 class MakeChecksumTask(tasks.Subtask):
+    name = "Create Checksum"
 
     def __init__(
             self,
@@ -23,6 +25,9 @@ class MakeChecksumTask(tasks.Subtask):
         self._source_path = source_path
         self._filename = filename
         self._checksum_report = checksum_report
+
+    def task_description(self) -> Optional[str]:
+        return f"Calculating checksum for {self._filename}"
 
     def work(self) -> bool:
         item_path = self._source_path
@@ -44,6 +49,7 @@ class MakeChecksumTask(tasks.Subtask):
 
 
 class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
+    name = "Checksum Report Creation"
 
     def __init__(
             self,
@@ -56,6 +62,9 @@ class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
         super().__init__()
         self._output_filename = output_filename
         self._checksum_calculations = checksum_calculations
+
+    def task_description(self) -> Optional[str]:
+        return f"Writing checksum report: {self._output_filename}"
 
     def work(self) -> bool:
 
