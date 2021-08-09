@@ -1,9 +1,7 @@
 """Defining execution of a given workflow steps and processes."""
 
 import abc
-import collections
 import contextlib
-import functools
 
 import logging
 import queue
@@ -15,7 +13,7 @@ import warnings
 from types import TracebackType
 from typing import List, Any, Dict, Optional, Type
 
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets
 
 import speedwagon
 import speedwagon.dialog
