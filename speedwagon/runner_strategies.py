@@ -500,7 +500,6 @@ class MessageBuffer:
         self.callback: typing.Callable[[str], None] = lambda message: None
         self.max_refresh_interval_time: float = .1
         self._last_flushed: typing.Optional[float] = None
-        # self._message_lock = threading.Lock()
         self.t = None
 
     def append(self, value: str) -> None:
@@ -526,9 +525,6 @@ class MessageBuffer:
             self.flush()
         return
 
-        # print(f"message = {message}")
-        # return
-        # MessageBuffer._message_lock.acquire()
         with MessageBuffer._message_lock:
             self._message_queue.put(message)
             if self.t is not None:
@@ -599,12 +595,6 @@ class QtDialogProgress(RunnerDisplay):
         self.dialog.setMaximum(0)
         self.dialog.setValue(0)
         self.dialog.setAutoClose(False)
-
-        # self._details = None
-        # self._details_last_flushed_time = None
-        # self._refresh_rate = 0.2
-        # self._update_thread: typing.Optional[threading.Timer] = None
-        # self._data_lock = threading.Lock()
 
     @property
     def details(self):
@@ -767,45 +757,31 @@ class TaskRunner:
 
         with self.manager.open(parent=self.parent_widget,
                                runner=worker.WorkRunnerExternal3) as runner:
-            # message_buffer = MessageBuffer(5)
-            # message_buffer.callback = \
-            #     lambda message: self.logger.info(msg=message)
             self.console_message_buffer.callback = \
                 lambda message: self.logger.info(msg=message)
 
             with self._viewer as viewer:
                 viewer.title = job.name
-                for subtask in self.\
-                        iter_tasks(job, options):
-                    try:
-                        if viewer.user_canceled is True:
-                            raise JobCancelled(USER_ABORTED_MESSAGE)
-                        if runner.was_aborted is True:
-                            raise TaskFailed(USER_ABORTED_MESSAGE)
-                        subtask.parent_task_log_q = self.console_message_buffer
+                for subtask in self.iter_tasks(job, options):
+                    if viewer.user_canceled is True:
+                        raise JobCancelled(USER_ABORTED_MESSAGE)
+                    if runner.was_aborted is True:
+                        raise TaskFailed(USER_ABORTED_MESSAGE)
+                    subtask.parent_task_log_q = self.console_message_buffer
 
-                        viewer.total_tasks_amount = self.total_tasks
-                        viewer.current_task_progress = \
-                            self.current_task_progress
+                    viewer.total_tasks_amount = self.total_tasks
+                    viewer.current_task_progress = \
+                        self.current_task_progress
 
-                        description = \
-                            subtask.task_description() or \
-                            subtask.name or \
-                            'Working'
-                        viewer.details = description
-                        self.console_message_buffer.log(description)
-                        viewer.refresh()
-                        subtask.exec()
-                        viewer.refresh()
-                        # for s in subtask.parent_task_log_q:
-                        #     print(s)
-                    finally:
-                        pass
-                        # self.console_message_buffer.flush()
-                        # message_buffer.flush()
-
-            # message_buffer.flush()
-            # self.console_message_buffer.flush()
+                    description = \
+                        subtask.task_description() or \
+                        subtask.name or \
+                        'Working'
+                    viewer.details = description
+                    self.console_message_buffer.log(description)
+                    viewer.refresh()
+                    subtask.exec()
+                    viewer.refresh()
 
 
 class UsingExternalManagerForAdapter2(AbsRunner2):
