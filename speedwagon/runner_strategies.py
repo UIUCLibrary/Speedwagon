@@ -544,9 +544,10 @@ class MessageBuffer:
         wait_time = self.max_refresh_interval_time - times_since_last_flush
 
         if self._thread is None:
-            self._thread = threading.Timer(interval=wait_time,
-                                           function=self.flush)
-            self._thread.start()
+            new_thread = threading.Timer(interval=wait_time,
+                                         function=self.flush)
+            new_thread.start()
+            self._thread = new_thread
 
     def flush(self) -> None:
         QtWidgets.QApplication.processEvents()
