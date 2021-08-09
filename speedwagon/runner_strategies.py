@@ -656,7 +656,6 @@ class QtDialogProgress(RunnerDisplay):
                  __exc_value: Optional[BaseException],
                  __traceback: Optional[TracebackType]) -> Optional[bool]:
         self.dialog.accept()
-        return None
 
 
 class TaskRunner:
