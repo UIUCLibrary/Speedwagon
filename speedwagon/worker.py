@@ -345,7 +345,6 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         """Close runner."""
         if self.dialog is None:
             raise AttributeError("dialog was set to None before closing")
-            return
 
         self.dialog.close()
 

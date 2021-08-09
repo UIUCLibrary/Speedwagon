@@ -551,21 +551,6 @@ class MessageBuffer:
 
     def flush(self) -> None:
         QtWidgets.QApplication.processEvents()
-        return
-
-        messages = []
-        with MessageBuffer._message_lock:
-            while not self._message_queue.empty():
-                messages.append(self._message_queue.get())
-                self._message_queue.task_done()
-        message = "\n".join(messages)
-        self._send(message)
-        if self._delay_thread is not None and \
-                self._delay_thread.is_alive() is True:
-            self._delay_thread.cancel()
-        if self._delay_thread is not None:
-            self._delay_thread = None
-        self._last_flushed = time.time()
 
     def _send(self, message: str) -> None:
         self.callback(message)
