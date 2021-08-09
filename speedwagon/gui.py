@@ -83,7 +83,6 @@ class ToolConsole(QtWidgets.QWidget):
         # To get the new line character
         self._console.append(None)
 
-
     @property
     def text(self) -> str:
         return self._log.toPlainText()
