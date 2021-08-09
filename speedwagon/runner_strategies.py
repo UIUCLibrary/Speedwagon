@@ -560,7 +560,8 @@ class MessageBuffer:
                 self._message_queue.task_done()
         message = "\n".join(messages)
         self._send(message)
-        if self._delay_thread is not None and self._delay_thread.is_alive() is True:
+        if self._delay_thread is not None and \
+                self._delay_thread.is_alive() is True:
             self._delay_thread.cancel()
         if self._delay_thread is not None:
             self._delay_thread = None
