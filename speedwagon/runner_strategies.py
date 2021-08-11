@@ -818,6 +818,7 @@ class QtRunner(AbsRunner2):
             return workflow.get_additional_info(
                 self.parent, options, pretask_results.copy()
             )
+        return {}
 
     def run(self,
             job: AbsWorkflow, options: dict,
