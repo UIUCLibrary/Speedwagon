@@ -366,7 +366,8 @@ class TaskGenerator:
         self.current_task: typing.Optional[int] = None
         self.total_task: typing.Optional[int] = None
         self.caller = caller
-        self.request_more_info = lambda _workflow, _options, _pretask_results: {}
+        self.request_more_info = \
+            lambda _workflow, _options, _pretask_results: {}
 
     def generate_report(
             self, results: List[tasks.Result]
@@ -709,7 +710,11 @@ class TaskScheduler:
         self.current_task_progress: typing.Optional[int] = None
         self.total_tasks: typing.Optional[int] = None
         self.task_queue: "queue.Queue[tasks.Subtask]" = queue.Queue(maxsize=1)
-        self.request_more_info = lambda *args, **kwargs: print(f"request_more_info args={args} kargs={kwargs}")
+
+        self.request_more_info = \
+            lambda *args, **kwargs: print(
+                f"request_more_info args={args} kargs={kwargs}"
+            )
 
     def iter_tasks(self,
                    workflow: Workflow,
