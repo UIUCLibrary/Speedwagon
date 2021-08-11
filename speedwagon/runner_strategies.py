@@ -648,10 +648,7 @@ class ProcessingTaskRunner:
         if self._thread is None:
             return
         self._stop.set()
-
-        # self.job_queue.join()
         self._thread.join()
-        # self.loggerlogger = logging.getLogger(__name__)
         self.logger.debug("Processing thread has stopped")
 
     def _start(
@@ -660,7 +657,6 @@ class ProcessingTaskRunner:
             job_finished_event: threading.Event
     ):
         logger = self.logger
-        # logger = logging.getLogger(__name__)
         logger.debug("Processing thread is available")
         while not stop_event.is_set():
             if self.job_queue.empty():
@@ -708,9 +704,6 @@ class TaskScheduler:
         self.manager = manager
         self.logger = logging.getLogger(__name__)
         self.working_directory = working_directory
-        # self.update_progress_callback: typing.Callable[
-        #     [worker.WorkRunnerExternal3, int, int], None
-        # ] = lambda runner, current, total: None
         self.reporter: Optional[RunnerDisplay] = None
 
         self.current_task_progress: typing.Optional[int] = None
