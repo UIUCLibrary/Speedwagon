@@ -322,7 +322,39 @@ class TestTaskGenerator:
             working_directory=os.path.join("some", "real", "directory"),
             caller=caller
         )
-        task_generator.parent = Mock()
         for subtask in task_generator.tasks():
             assert isinstance(subtask, speedwagon.tasks.Subtask)
         assert caller.request_more_info.called is True
+
+    def test_pretask_calls_initial_task(self, workflow):
+        caller = Mock()
+        task_generator = runner_strategies.TaskGenerator(
+            workflow=workflow,
+            options={},
+            working_directory=os.path.join("some", "real", "directory"),
+            caller=caller
+        )
+        list(task_generator.get_pre_tasks("dummy"))
+        assert workflow.initial_task.called is True
+
+    def test_main_task(self, workflow):
+        caller = Mock()
+        task_generator = runner_strategies.TaskGenerator(
+            workflow=workflow,
+            options={},
+            working_directory=os.path.join("some", "real", "directory"),
+            caller=caller
+        )
+        list(task_generator.get_main_tasks("dummy", [], {}))
+        assert workflow.create_new_task.called is True
+
+    def test_get_post_tasks(self, workflow):
+        caller = Mock()
+        task_generator = runner_strategies.TaskGenerator(
+            workflow=workflow,
+            options={},
+            working_directory=os.path.join("some", "real", "directory"),
+            caller=caller
+        )
+        list(task_generator.get_post_tasks("dummy", []))
+        assert workflow.completion_task.called is True
