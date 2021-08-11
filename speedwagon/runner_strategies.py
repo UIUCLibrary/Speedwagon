@@ -366,19 +366,12 @@ class TaskGenerator:
         self.total_task: typing.Optional[int] = None
         self.parent = None
 
+        self.request_more_info = lambda _workflow, _options, _pretask_results: {}
+
     def generate_report(
             self, results: List[tasks.Result]
     ) -> typing.Optional[str]:
         return self.workflow.generate_report(results, **self.options)
-
-    def request_more_info(self, workflow, options, pretask_results):
-        # TODO: Fix this so no parent is required
-        if self.parent is not None and \
-                hasattr(self.workflow, "get_additional_info"):
-            return self.workflow.get_additional_info(
-                self.parent, options, pretask_results.copy()
-            )
-        return {}
 
     def tasks(self) -> typing.Iterable[tasks.Subtask]:
         pretask_results = []
