@@ -366,8 +366,6 @@ class TaskGenerator:
         self.current_task: typing.Optional[int] = None
         self.total_task: typing.Optional[int] = None
         self.caller = caller
-        self.request_more_info = \
-            lambda _workflow, _options, _pretask_results: {}
 
     def generate_report(
             self, results: List[tasks.Result]
@@ -711,7 +709,7 @@ class TaskScheduler:
         self.total_tasks: typing.Optional[int] = None
         self.task_queue: "queue.Queue[tasks.Subtask]" = queue.Queue(maxsize=1)
 
-        self.request_more_info = \
+        self.request_more_info: typing.Callable[[Workflow, Any, Any], Any] = \
             lambda *args, **kwargs: print(
                 f"request_more_info args={args} kargs={kwargs}"
             )
@@ -739,8 +737,6 @@ class TaskScheduler:
             caller=self
         )
 
-        task_generator.parent = None
-        task_generator.request_more_info = self.request_more_info
         for task in task_generator.tasks():
             self.total_tasks = task_generator.total_task
             yield task
@@ -837,7 +833,7 @@ class QtRunner(AbsRunner2):
             task_runner.reporter = QtDialogProgress(parent=self.parent)
 
             task_runner.logger = logger or logging.getLogger(__name__)
-            task_runner.request_more_info = self.request_more_info
+
             if isinstance(job, Workflow):
                 self.run_abs_workflow(
                     task_scheduler=task_runner,
@@ -846,10 +842,10 @@ class QtRunner(AbsRunner2):
                     logger=logger
                 )
 
-    @staticmethod
-    def run_abs_workflow(task_scheduler: TaskScheduler,
+    def run_abs_workflow(self, task_scheduler: TaskScheduler,
                          job: Workflow,
                          options, logger: logging.Logger = None) -> None:
 
         task_scheduler.logger = logger or logging.getLogger(__name__)
+        task_scheduler.request_more_info = self.request_more_info
         task_scheduler.run(job, options)
