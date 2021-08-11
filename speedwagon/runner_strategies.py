@@ -364,8 +364,6 @@ class TaskGenerator:
         self.working_directory = working_directory
         self.current_task: typing.Optional[int] = None
         self.total_task: typing.Optional[int] = None
-        self.parent = None
-
         self.request_more_info = lambda _workflow, _options, _pretask_results: {}
 
     def generate_report(
