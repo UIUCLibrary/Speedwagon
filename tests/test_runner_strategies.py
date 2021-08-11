@@ -314,13 +314,15 @@ class TestTaskGenerator:
             assert isinstance(subtask, speedwagon.tasks.Subtask)
         assert workflow.completion_task.called is True
 
-    def test_tasks_runs_get_additional_info(self, workflow):
+    def test_tasks_request_more_info(self, workflow):
+        caller = Mock()
         task_generator = runner_strategies.TaskGenerator(
             workflow=workflow,
             options={},
-            working_directory=os.path.join("some", "real", "directory")
+            working_directory=os.path.join("some", "real", "directory"),
+            caller=caller
         )
         task_generator.parent = Mock()
         for subtask in task_generator.tasks():
             assert isinstance(subtask, speedwagon.tasks.Subtask)
-        assert workflow.get_additional_info.called is True
+        assert caller.request_more_info.called is True

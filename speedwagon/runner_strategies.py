@@ -357,13 +357,15 @@ class TaskGenerator:
             self,
             workflow: Workflow,
             options: typing.Mapping[str, Any],
-            working_directory: str
+            working_directory: str,
+            caller=None
     ) -> None:
         self.workflow = workflow
         self.options = options
         self.working_directory = working_directory
         self.current_task: typing.Optional[int] = None
         self.total_task: typing.Optional[int] = None
+        self.caller = caller
         self.request_more_info = lambda _workflow, _options, _pretask_results: {}
 
     def generate_report(
@@ -382,8 +384,15 @@ class TaskGenerator:
             yield pre_task
             pretask_results.append(pre_task.task_result)
             results.append(pre_task.task_result)
-
-        additional_data = self.request_more_info(self.workflow, self.options, pretask_results)
+        if self.caller is not None:
+            additional_data = self.caller.request_more_info(
+                self.workflow,
+                self.options,
+                pretask_results
+            )
+        else:
+            warnings.warn("No way to request info from user")
+            additional_data = {}
 
         for task in self.get_main_tasks(
             self.working_directory,
@@ -701,14 +710,6 @@ class TaskScheduler:
         self.total_tasks: typing.Optional[int] = None
         self.task_queue: "queue.Queue[tasks.Subtask]" = queue.Queue(maxsize=1)
         self.request_more_info = lambda *args, **kwargs: print(f"request_more_info args={args} kargs={kwargs}")
-        # self.request_more_info = lambda *args, **kwargs: None
-
-
-    @staticmethod
-    def _get_additional_data(job, options, parent, pre_results):
-        if isinstance(job, Workflow):
-            return job.get_additional_info(parent, options, pre_results.copy())
-        return {}
 
     def iter_tasks(self,
                    workflow: Workflow,
@@ -729,7 +730,8 @@ class TaskScheduler:
         task_generator = TaskGenerator(
             workflow,
             working_directory=self.working_directory,
-            options=options
+            options=options,
+            caller=self
         )
 
         task_generator.parent = None
