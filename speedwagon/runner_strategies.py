@@ -498,10 +498,29 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
         super().__init__()
         self.task_runner: typing.Optional[ProcessingTaskRunner] = None
         self.task_scheduler: typing.Optional[TaskScheduler] = None
+        self._total_tasks_amount: typing.Optional[int] = None
+        self._current_task_progress: typing.Optional[int] = None
+        self._details = None
+
+    @property
+    def total_tasks_amount(self) -> typing.Optional[int]:
+        return self._total_tasks_amount
+
+    @total_tasks_amount.setter
+    def total_tasks_amount(self, value):
+        self._total_tasks_amount = value
 
     @abc.abstractmethod
     def refresh(self) -> None:
         pass
+
+    @property
+    def current_task_progress(self):
+        return self._current_task_progress
+
+    @current_task_progress.setter
+    def current_task_progress(self, value):
+        self._current_task_progress = value
 
     @property
     @abc.abstractmethod
@@ -520,17 +539,10 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
 class QtDialogProgress(RunnerDisplay):
 
     def __init__(self, parent: typing.Optional[QtWidgets.QWidget]) -> None:
-        self.parent = parent
-        self._total_tasks_amount: typing.Optional[int] = None
-        self._current_task_progress: typing.Optional[int] = None
-        self._lock = threading.Lock()
-        self.dialog = speedwagon.dialog.WorkProgressBar(parent=self.parent)
+        super().__init__()
+        self.dialog = speedwagon.dialog.WorkProgressBar(parent=parent)
         self.dialog.setMaximum(0)
         self.dialog.setValue(0)
-
-        self._message = None
-        self._details = None
-        super().__init__()
 
     @property
     def details(self):
@@ -549,25 +561,15 @@ class QtDialogProgress(RunnerDisplay):
     def user_canceled(self):
         return self.dialog.wasCanceled()
 
-    @property
-    def current_task_progress(self):
-        return self._current_task_progress
-
-    @current_task_progress.setter
+    @RunnerDisplay.current_task_progress.setter
     def current_task_progress(self, value):
-        with self._lock:
-            self._current_task_progress = value
-            dialog_value = value or 0
-            if self.dialog:
-                self.dialog.setValue(dialog_value)
+        self._current_task_progress = value
+        dialog_value = value or 0
+        if self.dialog:
+            self.dialog.setValue(dialog_value)
 
-    @property
-    def total_tasks_amount(self) -> typing.Optional[int]:
-        return self._total_tasks_amount
-
-    @total_tasks_amount.setter
+    @RunnerDisplay.total_tasks_amount.setter
     def total_tasks_amount(self, value):
-        # with self._lock:
         self._total_tasks_amount = value
         if value is None:
             self.dialog.setMaximum(0)
