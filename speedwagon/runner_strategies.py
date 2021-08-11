@@ -496,7 +496,7 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
 
     @abc.abstractmethod
     def refresh(self) -> None:
-        pass
+        """Refresh the display info."""
 
     @property
     def current_task_progress(self):
@@ -509,7 +509,7 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
     @property
     @abc.abstractmethod
     def user_canceled(self) -> bool:
-        pass
+        """Check if the user has signaled a canceled."""
 
     def __enter__(self):
         return self
