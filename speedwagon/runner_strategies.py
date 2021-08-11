@@ -601,6 +601,7 @@ class QtDialogProgress(RunnerDisplay):
                  __traceback: Optional[TracebackType]):
         self.dialog.accept()
         self.close()
+        return super().__exit__(__exc_type, __exc_value, __traceback)
 
     def close(self):
         self.dialog.close()
