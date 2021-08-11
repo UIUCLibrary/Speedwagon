@@ -193,7 +193,6 @@ class ProcessWorker(UIWorker):
 class ProgressMessageBoxLogHandler(logging.Handler):
     """Log handler for progress dialog box."""
 
-    # def __init__(self, dialog_box: QtWidgets.QProgressDialog,
     def __init__(self, level: int = logging.NOTSET) -> None:
         """Create a log handler for progress message box."""
         super().__init__(level)
@@ -210,9 +209,7 @@ class ProgressMessageBoxLogHandler(logging.Handler):
         with self._message_lock:
             if self._last_message is not None:
                 self.callback(self._last_message)
-                # QtWidgets.QApplication.processEvents()
         self._last_flushed_time = time.time()
-        # QtWidgets.QApplication.processEvents()
 
     def emit(self, record: logging.LogRecord) -> None:
         try:
@@ -319,21 +316,11 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         """Start worker."""
 
         self.dialog = WorkProgressBar(self._parent)
-        # self.dialog.hide()
         self.dialog.close()
-        # self.dialog.setLabelText("Initializing")
-        # self.dialog.setMinimumDuration(100)
-
-        # self.progress_dialog_box_handler = \
-        #     ProgressMessageBoxLogHandler(self.dialog)
-
-        # self.dialog.canceled.connect(self.abort)
         return self
 
     def abort(self) -> None:
         """Abort on any running tasks."""
-        # if self.dialog is not None and \
-        #         self.dialog.result() == QtWidgets.QProgressDialog.Rejected:
         self.was_aborted = True
         if callable(self.abort_callback):
             self.abort_callback()  # pylint: disable=not-callable
@@ -418,7 +405,6 @@ class JobExecutor:
         if self._pending_jobs.unfinished_tasks > 0:
             logger.warning("Pending jobs has unfinished tasks")
         self._pending_jobs.join()
-        # self.manager.shutdown()
 
     def shutdown(self):
         self._executor.shutdown()
