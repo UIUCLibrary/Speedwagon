@@ -404,8 +404,6 @@ class WorkflowsTab(ItemSelectionTab):
             manager_strat = runner_strategies.QtRunner(
                 parent=self.parent)
             runner = runner_strategies.RunRunner(manager_strat)
-
-            print("starting")
             runner.run(workflow, options, self.work_manager.logger)
 
         except ValueError as exc:
@@ -423,7 +421,7 @@ class WorkflowsTab(ItemSelectionTab):
                 msg.setIcon(QtWidgets.QMessageBox.Warning)
                 traceback.print_tb(job_cancel_exception.__traceback__)
                 print(job_cancel_exception, file=sys.stderr)
-            msg.exec_()
+            msg.exec()
             return
 
         except Exception as exc:
@@ -435,7 +433,7 @@ class WorkflowsTab(ItemSelectionTab):
                                                    exc,
                                                    tb=exc.__traceback__))
             )
-            msg.exec_()
+            msg.exec()
             return
 
     def _create_error_message_box_from_exception(

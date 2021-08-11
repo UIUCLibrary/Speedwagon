@@ -162,6 +162,39 @@ class TestWorkflowsTab:
 
         assert mock_message_box_exec.called is True
 
+    @pytest.mark.parametrize("exception_type", [
+        job.JobCancelled,
+        ValueError,
+        TypeError
+    ])
+    def test_run_dialog_catch_exception(
+            self, qtbot, monkeypatch, exception_type):
+
+        workflows = {
+            "spam": MagicMock(name="spam")
+        }
+        workflows['spam'].__class__ = job.AbsWorkflow
+        workflows['spam'].name = "Spam"
+
+        log_manager = Mock()
+        work_manager = Mock()
+        work_manager.user_settings = {}
+
+        def cause_chaos(self, tools, options, logger, completion_callback):
+            raise exception_type
+
+        monkeypatch.setattr(tabs.runner_strategies.QtRunner, "run", cause_chaos)
+        exec_ = Mock()
+        monkeypatch.setattr(tabs.QtWidgets.QMessageBox, "exec", exec_)
+        selection_tab = tabs.WorkflowsTab(
+            parent=None,
+            workflows=workflows,
+            log_manager=log_manager,
+            work_manager=work_manager
+        )
+        selection_tab.run(workflows['spam'], {})
+        assert exec_.called is True
+
 
 class TestTabsYaml:
     # @pytest.mark.skip
@@ -196,7 +229,8 @@ class TestTabsYaml:
             tab_data = list(tabs.read_tabs_yaml('tabs.yml'))
             assert len(tab_data) == 1 and \
                    len(tab_data[0][1].workflows) == 4
-    def test_write_tabs_yaml(self, ):
+
+    def test_write_tabs_yaml(self):
         sample_tab_data = [
             tabs.TabData("dummy_tab", MagicMock())
         ]
@@ -205,3 +239,4 @@ class TestTabsYaml:
             assert m.called is True
         handle = m()
         handle.write.assert_has_calls([call('dummy_tab')])
+
