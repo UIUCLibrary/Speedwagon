@@ -420,21 +420,6 @@ class TaskGenerator:
         self.workflow.initial_task(task_builder, **options)
         yield from task_builder.build_task().main_subtasks
 
-    def add_main_tasks(self,
-                       working_directory: str,
-                       pretask_results,
-                       additional_data,
-                       **options):
-
-        for subtask in self.get_main_tasks(
-                working_directory,
-                pretask_results=pretask_results,
-                additional_data=additional_data,
-                **options
-        ):
-            adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
-            yield adapted_tool, adapted_tool.settings
-
     def get_main_tasks(
             self,
             working_directory: str,
