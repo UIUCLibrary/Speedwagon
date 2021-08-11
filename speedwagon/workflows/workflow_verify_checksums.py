@@ -231,6 +231,7 @@ class ReadChecksumReportTask(tasks.Subtask):
 
 
 class ValidateChecksumTask(tasks.Subtask):
+    name = "Validating File Checksum"
 
     def __init__(self,
                  file_name: str,

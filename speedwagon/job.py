@@ -23,6 +23,10 @@ __all__ = [
 class JobCancelled(Exception):
     """Job cancelled exception."""
 
+    def __init__(self, *args: object, expected=False) -> None:
+        super().__init__(*args)
+        self.expected = expected
+
 
 class AbsWorkflow(metaclass=abc.ABCMeta):
     """Base class for workflows."""

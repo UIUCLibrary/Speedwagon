@@ -666,7 +666,9 @@ class ProcessingTaskRunner:
             if self.job_queue.empty():
                 continue
             task = self.job_queue.get()
-            logger.info(task.task_description())
+            task_description = task.task_description()
+            if task_description is not None:
+                logger.info(task_description)
             logger.debug(
                 "Threaded worker received task: [%s](%s)",
                 task.name,
@@ -781,7 +783,10 @@ class TaskScheduler:
                             while self.task_queue.unfinished_tasks > 0:
                                 reporter.refresh()
                                 if reporter.user_canceled is True:
-                                    raise JobCancelled(USER_ABORTED_MESSAGE)
+                                    raise JobCancelled(
+                                        USER_ABORTED_MESSAGE,
+                                        expected=True
+                                    )
                         reporter.refresh()
             finally:
                 reporter.refresh()
