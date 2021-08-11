@@ -522,7 +522,8 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
 
 class QtDialogProgress(RunnerDisplay):
 
-    def __init__(self, parent: typing.Optional[QtWidgets.QWidget]) -> None:
+    def __init__(self,
+                 parent: typing.Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__()
         self.dialog = speedwagon.dialog.WorkProgressBar(parent=parent)
         self.dialog.setMaximum(0)

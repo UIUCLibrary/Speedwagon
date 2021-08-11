@@ -358,3 +358,11 @@ class TestTaskGenerator:
         )
         list(task_generator.get_post_tasks("dummy", []))
         assert workflow.completion_task.called is True
+
+
+class TestQtDialogProgress:
+    def test_initialized(self, qtbot):
+        dialog_box = runner_strategies.QtDialogProgress()
+
+        assert dialog_box.dialog.value() == 0 and \
+               dialog_box.dialog.maximum() == 0
