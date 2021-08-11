@@ -164,9 +164,8 @@ def test_task_aborted(caplog, step, monkeypatch):
 
 
 class TestQtRunner:
-    def test_run_abstract_workflow_calls_run_abs_workflow(self):
-        manager = Mock()
-        runner = runner_strategies.QtRunner(manager)
+    def test_run_abstract_workflow_calls_run_abs_workflow(self, qtbot):
+        runner = runner_strategies.QtRunner(None)
         job = Mock()
         job.__class__ = speedwagon.job.Workflow
         runner.run_abs_workflow = Mock()
@@ -177,9 +176,10 @@ class TestQtRunner:
 
         assert runner.run_abs_workflow.called is True
 
-    def test_run_non_abstract_workflow_doesnt_call_run_abs_workflow(self):
-        manager = Mock()
-        runner = runner_strategies.QtRunner(manager)
+    def test_run_non_abstract_workflow_doesnt_call_run_abs_workflow(
+            self, qtbot):
+
+        runner = runner_strategies.QtRunner(None)
         job = Mock()
         # NOTE: job.__class__ != speedwagon.job.AbsWorkflow
         runner.run_abs_workflow = Mock()

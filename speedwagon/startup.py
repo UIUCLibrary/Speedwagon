@@ -551,7 +551,7 @@ class SingleWorkflowLauncher(AbsStarter):
         window.show()
         window.setWindowTitle(self._active_workflow.name)
         runner_strategy = \
-            runner_strategies.QtRunner(work_manager, window)
+            runner_strategies.QtRunner(window)
 
         self._active_workflow.validate_user_options(**self.options)
         # runner_strategy.additional_info_callback
@@ -629,11 +629,7 @@ class SingleWorkflowJSON(AbsStarter):
              options: Dict[str, typing.Any]) -> None:
         window = SingleWorkflowJSON._load_window(work_manager, workflow.name)
         window.show()
-        runner_strategy = \
-            runner_strategies.QtRunner(
-                work_manager,
-                window
-            )
+        runner_strategy = runner_strategies.QtRunner(window)
 
         workflow.validate_user_options(**options)
 
@@ -681,10 +677,7 @@ class MultiWorkflowLauncher(AbsStarter):
                 active_workflow, options = self._pending_tasks.get()
                 window.setWindowTitle(active_workflow.name)
                 runner_strategy = \
-                    runner_strategies.QtRunner(
-                        work_manager,
-                        window
-                    )
+                    runner_strategies.QtRunner(window)
 
                 active_workflow.validate_user_options(**options)
 

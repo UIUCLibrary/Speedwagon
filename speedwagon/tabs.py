@@ -402,7 +402,7 @@ class WorkflowsTab(ItemSelectionTab):
             workflow.validate_user_options(**options)
 
             manager_strat = runner_strategies.QtRunner(
-                manager=self.work_manager, parent=self.parent)
+                parent=self.parent)
             runner = runner_strategies.RunRunner(manager_strat)
 
             print("starting")

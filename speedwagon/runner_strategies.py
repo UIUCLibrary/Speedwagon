@@ -698,16 +698,14 @@ class ProcessingTaskRunner:
 
 class TaskScheduler:
 
-    def __init__(self, manager,
-                 working_directory: str) -> None:
-        self.manager = manager
+    def __init__(self, working_directory: str) -> None:
         self.logger = logging.getLogger(__name__)
         self.working_directory = working_directory
         self.reporter: Optional[RunnerDisplay] = None
 
         self.current_task_progress: typing.Optional[int] = None
         self.total_tasks: typing.Optional[int] = None
-        self.task_queue: "queue.Queue[tasks.Subtask]" = queue.Queue(maxsize=1)
+        self._task_queue: "queue.Queue[tasks.Subtask]" = queue.Queue(maxsize=1)
 
         self.request_more_info: typing.Callable[[Workflow, Any, Any], Any] = \
             lambda *args, **kwargs: print(
@@ -749,49 +747,45 @@ class TaskScheduler:
 
     def run(self, job: Workflow, options: Dict[str, Any]) -> None:
 
-        with self.manager.open(parent=None,
-                               runner=worker.WorkRunnerExternal3):
-            task_runner_strategy = ProcessingTaskRunner(
-                self.task_queue,
-                self.logger
-            )
-            try:
-                task_runner_strategy.start()
-                if self.reporter is not None:
-                    self.reporter.task_runner = task_runner_strategy
-                    self.reporter.task_scheduler = self
-                    with self.reporter as reporter:
-                        reporter.current_task_progress = 0
-                        reporter.title = job.name
+        task_runner_strategy = ProcessingTaskRunner(
+            self._task_queue,
+            self.logger
+        )
+        try:
+            task_runner_strategy.start()
+            if self.reporter is not None:
+                self.reporter.task_runner = task_runner_strategy
+                self.reporter.task_scheduler = self
+                with self.reporter as reporter:
+                    reporter.current_task_progress = 0
+                    reporter.title = job.name
 
-                        for subtask in self.iter_tasks(job, options):
-                            self.task_queue.put(subtask)
-                            self.logger.debug(
-                                "Task added to queue: [%s]",
-                                subtask.name
-                            )
+                    for subtask in self.iter_tasks(job, options):
+                        self._task_queue.put(subtask)
+                        self.logger.debug(
+                            "Task added to queue: [%s]",
+                            subtask.name
+                        )
 
-                            while self.task_queue.unfinished_tasks > 0:
-                                reporter.refresh()
-                                if reporter.user_canceled is True:
-                                    raise JobCancelled(
-                                        USER_ABORTED_MESSAGE,
-                                        expected=True
-                                    )
-                        reporter.refresh()
-            finally:
-                reporter.refresh()
-                self.task_queue.join()
-                task_runner_strategy.stop()
-                reporter.close()
+                        while self._task_queue.unfinished_tasks > 0:
+                            reporter.refresh()
+                            if reporter.user_canceled is True:
+                                raise JobCancelled(
+                                    USER_ABORTED_MESSAGE,
+                                    expected=True
+                                )
+                    reporter.refresh()
+        finally:
+            reporter.refresh()
+            self._task_queue.join()
+            task_runner_strategy.stop()
+            reporter.close()
 
 
 class QtRunner(AbsRunner2):
     def __init__(self,
-                 manager: "worker.ToolJobManager",
                  parent: QtWidgets.QWidget = None) -> None:
         """Create a new runner."""
-        self._manager = manager
         self.parent = parent
 
     @staticmethod
@@ -827,17 +821,14 @@ class QtRunner(AbsRunner2):
             ) -> None:
 
         with tempfile.TemporaryDirectory() as build_dir:
-            task_runner = TaskScheduler(
-                manager=self._manager,
-                working_directory=build_dir
-            )
-            task_runner.reporter = QtDialogProgress(parent=self.parent)
+            task_scheduler = TaskScheduler(working_directory=build_dir)
+            task_scheduler.reporter = QtDialogProgress(parent=self.parent)
 
-            task_runner.logger = logger or logging.getLogger(__name__)
+            task_scheduler.logger = logger or logging.getLogger(__name__)
 
             if isinstance(job, Workflow):
                 self.run_abs_workflow(
-                    task_scheduler=task_runner,
+                    task_scheduler=task_scheduler,
                     job=job,
                     options=options,
                     logger=logger
