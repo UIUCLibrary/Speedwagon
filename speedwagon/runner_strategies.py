@@ -561,14 +561,22 @@ class QtDialogProgress(RunnerDisplay):
     def user_canceled(self):
         return self.dialog.wasCanceled()
 
-    @RunnerDisplay.current_task_progress.setter
+    @property
+    def current_task_progress(self):
+        return super().current_task_progress
+
+    @current_task_progress.setter
     def current_task_progress(self, value):
         self._current_task_progress = value
         dialog_value = value or 0
         if self.dialog:
             self.dialog.setValue(dialog_value)
 
-    @RunnerDisplay.total_tasks_amount.setter
+    @property
+    def total_tasks_amount(self):
+        return super().total_tasks_amount
+
+    @total_tasks_amount.setter
     def total_tasks_amount(self, value):
         self._total_tasks_amount = value
         if value is None:
