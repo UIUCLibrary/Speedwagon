@@ -190,6 +190,59 @@ class ProcessWorker(UIWorker):
         """Run the subtask designed to be run after main task."""
 
 
+class FlushChecker(abc.ABC):
+
+    def __init__(self, logging_handler: ProgressMessageBoxLogHandler) -> None:
+        super().__init__()
+        self.logging_handler = logging_handler
+
+    @abc.abstractmethod
+    def should_be_flush(self) -> Optional[bool]:
+        """Check if the log handler should be flushed.
+
+        Returns:
+            Returns True is the handler should be flushed, False if it should
+            not be flushed, None is unable to determine.
+        """
+
+
+class NeverBeenFlushed(FlushChecker):
+
+    @staticmethod
+    def handler_has_been_flushed(logging_handler) -> bool:
+        return logging_handler.last_flushed_time is None
+
+    def should_be_flush(self) -> Optional[bool]:
+        if self.handler_has_been_flushed(self.logging_handler):
+            return True
+        return None
+
+
+class FlushWaitedLongEnough(FlushChecker):
+    def waited_long_enough(self, time_waited) -> bool:
+        return self.logging_handler.refresh_rate < time_waited
+
+    def should_be_flush(self) -> Optional[bool]:
+        if self.logging_handler.last_flushed_time is None:
+            return None
+        time_delta = time.time() - self.logging_handler.last_flushed_time
+        if self.waited_long_enough(time_waited=time_delta) is True:
+            return True
+        return None
+
+
+class TimerThreadAlreadyRunning(FlushChecker):
+    @staticmethod
+    def thread_already_running(update_thread) -> bool:
+        return update_thread is not None
+
+    def should_be_flush(self) -> Optional[bool]:
+        if self.thread_already_running(
+                self.logging_handler.update_thread):
+            return False
+        return None
+
+
 class ProgressMessageBoxLogHandler(logging.Handler):
     """Log handler for progress dialog box."""
 
@@ -198,10 +251,15 @@ class ProgressMessageBoxLogHandler(logging.Handler):
         super().__init__(level)
         self._last_message: typing.Optional[str] = None
         self.callback = lambda mesesage: None
-        self._last_flushed_time = None
-        self._refresh_rate = 0.1
-        self._update_thread: typing.Optional[threading.Timer] = None
+        self.last_flushed_time = None
+        self.refresh_rate = 0.1
+        self.update_thread: typing.Optional[threading.Timer] = None
         self._message_lock = threading.Lock()
+        self._flush_checks = [
+            NeverBeenFlushed(self),
+            FlushWaitedLongEnough(self),
+            TimerThreadAlreadyRunning(self)
+        ]
 
     def _flush_message_queue(self):
         if self._last_message is None:
@@ -209,7 +267,7 @@ class ProgressMessageBoxLogHandler(logging.Handler):
         with self._message_lock:
             if self._last_message is not None:
                 self.callback(self._last_message)
-        self._last_flushed_time = time.time()
+        self.last_flushed_time = time.time()
 
     def emit(self, record: logging.LogRecord) -> None:
         try:
@@ -221,10 +279,10 @@ class ProgressMessageBoxLogHandler(logging.Handler):
                 return
 
             # if there is already is a thread waiting,
-            if self._update_thread is None and \
-                    self._last_flushed_time is not None:
-                wait_time = time.time() - self._last_flushed_time
-                self._update_thread = \
+            if self.update_thread is None and \
+                    self.last_flushed_time is not None:
+                wait_time = time.time() - self.last_flushed_time
+                self.update_thread = \
                     threading.Timer(wait_time, self._flush_message_queue)
 
         except RuntimeError as error:
@@ -232,15 +290,16 @@ class ProgressMessageBoxLogHandler(logging.Handler):
             traceback.print_tb(error.__traceback__)
             raise
 
-    def ready_to_flush(self) -> bool:
-        if self._last_flushed_time is None:
-            return True
+    def ready_to_flush(
+            self,
+            checks: Optional[typing.List[FlushChecker]] = None
+    ) -> bool:
 
-        time_delta = time.time() - self._last_flushed_time
-        if time_delta > self._refresh_rate:
-            return True
-        if self._update_thread is not None:
-            return False
+        for check in checks or self._flush_checks:
+            result = check.should_be_flush()
+            if result is None:
+                continue
+            return result
         return False
 
     def flush(self) -> None:
@@ -249,11 +308,11 @@ class ProgressMessageBoxLogHandler(logging.Handler):
 
     def close(self) -> None:
         super().close()
-        if self._update_thread is not None and \
-                self._update_thread.is_alive() is True:
-            self._update_thread.cancel()
-            self._update_thread.join()
-            self._update_thread = None
+        if self.update_thread is not None and \
+                self.update_thread.is_alive() is True:
+            self.update_thread.cancel()
+            self.update_thread.join()
+            self.update_thread = None
 
 
 # pylint: disable=too-few-public-methods
@@ -300,8 +359,8 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         self.abort_callback: Optional[Callable[[], None]] = None
         self.was_aborted = False
         self._dialog: Optional[WorkProgressBar] = None
-        self.progress_dialog_box_handler: \
-            Optional[ProgressMessageBoxLogHandler] = None
+        # self.progress_dialog_box_handler: \
+        #     Optional[ProgressMessageBoxLogHandler] = None
 
     @property
     def dialog(self):

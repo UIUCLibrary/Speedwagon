@@ -431,7 +431,7 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
 
 
 class ChecksumTask(tasks.Subtask):
-    name = "Calculating file checksum"
+    name = "Verifying file checksum"
 
     def __init__(self, *_: None, **kwargs: Union[str, bool]) -> None:
         super().__init__()

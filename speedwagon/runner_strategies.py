@@ -615,6 +615,9 @@ class QtDialogProgress(RunnerDisplay):
                  __exc_value: Optional[BaseException],
                  __traceback: Optional[TracebackType]):
         self.dialog.accept()
+        self.close()
+
+    def close(self):
         self.dialog.close()
 
     def _update_window_task_info(self, current_task: tasks.Subtask):
@@ -627,7 +630,7 @@ class QtDialogProgress(RunnerDisplay):
 
 class ProcessingTaskRunner:
 
-    def __init__(self, job_queue: queue.Queue) -> None:
+    def __init__(self, job_queue: queue.Queue, logger=None) -> None:
         super().__init__()
         self.job_queue = job_queue
         self._stop = threading.Event()
@@ -635,6 +638,7 @@ class ProcessingTaskRunner:
         self.finish_event = threading.Event()
         self.progress_callback = lambda: None
         self.current_task: Optional[tasks.Subtask] = None
+        self.logger = logger or logging.getLogger(__name__)
 
     def timeout_refresh(self):
         self.progress_callback()
@@ -647,16 +651,16 @@ class ProcessingTaskRunner:
 
         # self.job_queue.join()
         self._thread.join()
-        logger = logging.getLogger(__name__)
-        logger.debug("Processing thread has stopped")
+        # self.loggerlogger = logging.getLogger(__name__)
+        self.logger.debug("Processing thread has stopped")
 
     def _start(
             self,
             stop_event: threading.Event,
             job_finished_event: threading.Event
     ):
-
-        logger = logging.getLogger(__name__)
+        logger = self.logger
+        # logger = logging.getLogger(__name__)
         logger.debug("Processing thread is available")
         while not stop_event.is_set():
             if self.job_queue.empty():
@@ -751,11 +755,13 @@ class TaskScheduler:
             self.logger.info(task_generator.generate_report(results))
 
     def run(self, job: Workflow, options: Dict[str, Any]) -> None:
-        logger = logging.getLogger(__name__)
 
         with self.manager.open(parent=None,
                                runner=worker.WorkRunnerExternal3):
-            task_runner_strategy = ProcessingTaskRunner(self.task_queue)
+            task_runner_strategy = ProcessingTaskRunner(
+                self.task_queue,
+                self.logger
+            )
             try:
                 task_runner_strategy.start()
                 if self.reporter is not None:
@@ -767,7 +773,7 @@ class TaskScheduler:
 
                         for subtask in self.iter_tasks(job, options):
                             self.task_queue.put(subtask)
-                            logger.debug(
+                            self.logger.debug(
                                 "Task added to queue: [%s]",
                                 subtask.name
                             )
@@ -781,6 +787,7 @@ class TaskScheduler:
                 reporter.refresh()
                 self.task_queue.join()
                 task_runner_strategy.stop()
+                reporter.close()
 
 
 class QtRunner(AbsRunner2):
@@ -837,8 +844,7 @@ class QtRunner(AbsRunner2):
                          job: Workflow,
                          options, logger: logging.Logger = None) -> None:
 
-        logger = logger or logging.getLogger(__name__)
-        task_scheduler.logger = logger
+        task_scheduler.logger = logger or logging.getLogger(__name__)
         task_scheduler.run(job, options)
 
         # task_scheduler.reporter
