@@ -371,7 +371,7 @@ class TaskGenerator:
     ) -> typing.Optional[str]:
         return self.workflow.generate_report(results, **self.options)
 
-    def request_more_info(self, options, pretask_results):
+    def request_more_info(self, workflow, options, pretask_results):
         # TODO: Fix this so no parent is required
         if self.parent is not None and \
                 hasattr(self.workflow, "get_additional_info"):
@@ -392,7 +392,7 @@ class TaskGenerator:
             pretask_results.append(pre_task.task_result)
             results.append(pre_task.task_result)
 
-        additional_data = self.request_more_info(self.options, pretask_results)
+        additional_data = self.request_more_info(self.workflow, self.options, pretask_results)
 
         for task in self.get_main_tasks(
             self.working_directory,
@@ -709,6 +709,9 @@ class TaskScheduler:
         self.current_task_progress: typing.Optional[int] = None
         self.total_tasks: typing.Optional[int] = None
         self.task_queue: "queue.Queue[tasks.Subtask]" = queue.Queue(maxsize=1)
+        self.request_more_info = lambda *args, **kwargs: print(f"request_more_info args={args} kargs={kwargs}")
+        # self.request_more_info = lambda *args, **kwargs: None
+
 
     @staticmethod
     def _get_additional_data(job, options, parent, pre_results):
@@ -739,6 +742,7 @@ class TaskScheduler:
         )
 
         task_generator.parent = None
+        task_generator.request_more_info = self.request_more_info
         for task in task_generator.tasks():
             self.total_tasks = task_generator.total_task
             yield task
@@ -814,6 +818,13 @@ class QtRunner(AbsRunner2):
         if current == total:
             dialog_box.accept()
 
+    def request_more_info(self, workflow: Workflow, options, pretask_results):
+        if self.parent is not None and \
+                hasattr(workflow, "get_additional_info"):
+            return workflow.get_additional_info(
+                self.parent, options, pretask_results.copy()
+            )
+
     def run(self,
             job: AbsWorkflow, options: dict,
             logger: logging.Logger = None,
@@ -828,7 +839,7 @@ class QtRunner(AbsRunner2):
             task_runner.reporter = QtDialogProgress(parent=self.parent)
 
             task_runner.logger = logger or logging.getLogger(__name__)
-
+            task_runner.request_more_info = self.request_more_info
             if isinstance(job, Workflow):
                 self.run_abs_workflow(
                     task_scheduler=task_runner,
@@ -844,5 +855,6 @@ class QtRunner(AbsRunner2):
 
         task_scheduler.logger = logger or logging.getLogger(__name__)
         task_scheduler.run(job, options)
+        task_scheduler
 
         # task_scheduler.reporter
