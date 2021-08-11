@@ -308,7 +308,7 @@ class FindImagesTask(speedwagon.tasks.Subtask):
 
 class GenerateOCRFileTask(speedwagon.tasks.Subtask):
     engine = ocr.Engine(locate_tessdata())
-    name = "Perform OCR"
+    name = "Optical character recognition"
 
     def __init__(self,
                  source_image: str,

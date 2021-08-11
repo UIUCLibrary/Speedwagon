@@ -55,9 +55,6 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
 class WorkProgressBar(QtWidgets.QProgressDialog):
     """Use this for showing progress."""
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
-        super().closeEvent(event)
-
     def __init__(self, *args, **kwargs) -> None:
         """Create a work progress dialog window."""
         super().__init__(*args, **kwargs)
@@ -67,7 +64,6 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
         self._label = QtWidgets.QLabel(parent=self)
         self._label.setWordWrap(True)
         self.setLabel(self._label)
-        # self.setAutoClose(False)
 
     def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
         super().resizeEvent(event)

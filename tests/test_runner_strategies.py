@@ -199,7 +199,7 @@ class TestQtRunner:
         task_runner = MagicMock()
 
         runner.run_abs_workflow(
-            task_runner=task_runner,
+            task_scheduler=task_runner,
             job=job,
             options={}
         )
@@ -218,7 +218,7 @@ class TestQtRunner:
         )
         with pytest.raises(runner_strategies.TaskFailed) as error:
             runner.run_abs_workflow(
-                task_runner=task_runner,
+                task_scheduler=task_runner,
                 job=job,
                 options={},
             )

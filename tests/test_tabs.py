@@ -3,7 +3,6 @@ from unittest import mock
 from unittest.mock import Mock, MagicMock, patch, call
 
 import pytest
-import yaml
 from speedwagon import tabs, exceptions, job
 
 
@@ -67,15 +66,17 @@ class TestWorkflowsTab:
             )
         assert selection_tab.is_ready_to_start() is is_validate
 
+
     def test_init_selects_first_workflow(self, qtbot):
         log_manager = Mock()
         work_manager = Mock(user_settings={})
         workflows = OrderedDict()
         workflows["Spam"] = MagicMock()
         workflows["Bacon"] = MagicMock()
-
+        from PyQt5 import QtWidgets
+        base_widget = QtWidgets.QWidget()
         selection_tab = tabs.WorkflowsTab(
-            parent=None,
+            parent=base_widget,
             workflows=workflows,
             log_manager=log_manager,
             work_manager=work_manager
@@ -121,7 +122,7 @@ class TestWorkflowsTab:
     def test_start_creates_a_messagebox_on_value_error(
             self, qtbot, monkeypatch, exception_type):
 
-        log_manager = Mock()
+        # log_manager = Mock()
         work_manager = MagicMock(user_settings={})
         workflows = OrderedDict()
 
@@ -141,7 +142,7 @@ class TestWorkflowsTab:
         selection_tab = tabs.WorkflowsTab(
             parent=None,
             workflows=workflows,
-            log_manager=log_manager,
+            # log_manager=log_manager,
             work_manager=work_manager
         )
         from speedwagon.runner_strategies import RunRunner
