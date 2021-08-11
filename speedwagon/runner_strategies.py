@@ -622,7 +622,6 @@ class ProcessingTaskRunner:
     def __init__(self, job_queue: queue.Queue) -> None:
         super().__init__()
         self.job_queue = job_queue
-        # self.task_log_stream = lambda message: None
         self._stop = threading.Event()
         self._thread: typing.Optional[threading.Thread] = None
         self.finish_event = threading.Event()
@@ -663,11 +662,8 @@ class ProcessingTaskRunner:
             )
 
             self.current_task = task
-            # task.log_q
             task.log = logger.info
-            # task.log = self.task_log_stream
             task.exec()
-            # self.timeout_refresh()
             logger.debug(
                 "Threaded worker completed task: [%s]",
                 task.name
