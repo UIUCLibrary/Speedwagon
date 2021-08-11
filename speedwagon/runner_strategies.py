@@ -480,7 +480,7 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
 
     def __init__(self) -> None:
         super().__init__()
-        self.task_runner: typing.Optional[ProcessingTaskRunner] = None
+        self.task_runner: typing.Optional[TaskDispatcher] = None
         self.task_scheduler: typing.Optional[TaskScheduler] = None
         self._total_tasks_amount: typing.Optional[int] = None
         self._current_task_progress: typing.Optional[int] = None
@@ -614,7 +614,7 @@ class QtDialogProgress(RunnerDisplay):
         self.current_task_progress = task_scheduler.current_task_progress
 
 
-class ProcessingTaskRunner:
+class TaskDispatcher:
 
     def __init__(self, job_queue: queue.Queue, logger=None) -> None:
         super().__init__()
@@ -625,10 +625,6 @@ class ProcessingTaskRunner:
         self.progress_callback = lambda: None
         self.current_task: Optional[tasks.Subtask] = None
         self.logger = logger or logging.getLogger(__name__)
-
-    def timeout_refresh(self):
-        self.progress_callback()
-        # QtWidgets.QApplication.processEvents()
 
     def stop(self):
         if self._thread is None:
@@ -734,14 +730,14 @@ class TaskScheduler:
 
     def run(self, job: Workflow, options: Dict[str, Any]) -> None:
 
-        task_runner_strategy = ProcessingTaskRunner(
+        task_dispatcher = TaskDispatcher(
             self._task_queue,
             self.logger
         )
         try:
-            task_runner_strategy.start()
+            task_dispatcher.start()
             if self.reporter is not None:
-                self.reporter.task_runner = task_runner_strategy
+                self.reporter.task_runner = task_dispatcher
                 self.reporter.task_scheduler = self
                 with self.reporter as reporter:
                     reporter.current_task_progress = 0
@@ -765,7 +761,7 @@ class TaskScheduler:
         finally:
             reporter.refresh()
             self._task_queue.join()
-            task_runner_strategy.stop()
+            task_dispatcher.stop()
             reporter.close()
 
 
