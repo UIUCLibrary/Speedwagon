@@ -530,9 +530,7 @@ class QtDialogProgress(RunnerDisplay):
 
         self._message = None
         self._details = None
-        # self.dialog.setAutoClose(False)
         super().__init__()
-
 
     @property
     def details(self):
