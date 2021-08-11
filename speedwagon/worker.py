@@ -8,8 +8,6 @@ import logging
 import multiprocessing
 import queue
 import sys
-import threading
-import time
 import traceback
 import typing
 import warnings
