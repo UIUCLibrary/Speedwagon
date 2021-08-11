@@ -855,6 +855,3 @@ class QtRunner(AbsRunner2):
 
         task_scheduler.logger = logger or logging.getLogger(__name__)
         task_scheduler.run(job, options)
-        task_scheduler
-
-        # task_scheduler.reporter
