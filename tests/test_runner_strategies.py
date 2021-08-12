@@ -255,7 +255,6 @@ class TestQtRunner:
             total=10
         )
 
-
 class TestTaskGenerator:
 
     @pytest.fixture()
@@ -358,6 +357,37 @@ class TestTaskGenerator:
         )
         list(task_generator.get_post_tasks("dummy", []))
         assert workflow.completion_task.called is True
+
+
+class TestRunnerDisplay:
+
+    @pytest.fixture()
+    def dummy_runner(self):
+        class DummyRunner(runner_strategies.RunnerDisplay):
+            def refresh(self):
+                pass
+
+            def user_canceled(self):
+                return False
+        return DummyRunner()
+
+    def test_basic_setters_and_getters_progress(self, dummy_runner):
+
+        dummy_runner.total_tasks_amount = 10
+        dummy_runner.current_task_progress = 5
+        assert dummy_runner.total_tasks_amount == 10
+        assert dummy_runner.current_task_progress == 5
+
+    def test_basic_setters_and_getters_details(self, dummy_runner):
+        dummy_runner.details = "some detail"
+        assert dummy_runner.details == "some detail"
+
+    def test_details_defaults_to_none(self, dummy_runner):
+        assert dummy_runner.details is None
+
+    def test_context_manager(self, dummy_runner):
+        with dummy_runner as runner:
+            assert dummy_runner == runner
 
 
 class TestQtDialogProgress:

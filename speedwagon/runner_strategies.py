@@ -472,7 +472,7 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
         self.task_scheduler: typing.Optional[TaskScheduler] = None
         self._total_tasks_amount: typing.Optional[int] = None
         self._current_task_progress: typing.Optional[int] = None
-        self._details = None
+        self._details: typing.Optional[str] = None
 
     @property
     def total_tasks_amount(self) -> typing.Optional[int]:
@@ -498,6 +498,13 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
     @abc.abstractmethod
     def user_canceled(self) -> bool:
         """Check if the user has signaled a canceled."""
+    @property
+    def details(self) -> typing.Optional[str]:
+        return self._details
+
+    @details.setter
+    def details(self, value: str) -> None:
+        self._details = value
 
     def __enter__(self):
         return self
