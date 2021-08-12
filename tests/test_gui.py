@@ -92,7 +92,6 @@ class TestToolConsole:
         assert "I'm a message" in console.text
 
 
-
 def test_window_save_log(qtbot, monkeypatch):
     mock_work_manager = MagicMock(settings_path="some-path")
     main_window = speedwagon.gui.MainWindow(mock_work_manager)
@@ -153,7 +152,11 @@ class TestMainWindow:
         window.show_system_info()
         assert exec_.called is True
 
-    def test_show_configuration_opens_settings_dialog(self, qtbot, monkeypatch):
+    def test_show_configuration_opens_settings_dialog(
+            self,
+            qtbot,
+            monkeypatch
+    ):
         work_manager = Mock()
         work_manager.settings_path = None
         window = speedwagon.gui.MainWindow(work_manager)

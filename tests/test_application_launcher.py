@@ -6,7 +6,7 @@ from speedwagon import startup, job, dialog
 
 
 class TestSingleWorkflowLauncher:
-    @pytest.mark.parametrize("times_run_in_a_row", [1, 2,5])
+    @pytest.mark.parametrize("times_run_in_a_row", [1, 2, 5])
     def test_commands_called(self, qtbot, monkeypatch, times_run_in_a_row):
         for _ in range(times_run_in_a_row):
             single_item_launcher = startup.SingleWorkflowLauncher()
