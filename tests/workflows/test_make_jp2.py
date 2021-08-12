@@ -192,3 +192,20 @@ def test_create_jp2(monkeypatch, profile_name):
         [os.path.basename(created_file) for created_file in created_files]
         for source_file in files_in_package
     )
+
+
+@pytest.mark.parametrize(
+    "task",
+    [
+        workflow_make_jp2.EnsurePathTask(path="path"),
+        workflow_make_jp2.ConvertFileTask(
+            source_file="source_file",
+            destination_file="destination_file",
+            image_factory_name="image_factory_name"
+
+
+        )
+    ]
+)
+def test_tasks_have_description(task):
+    assert task.task_description() is not None
