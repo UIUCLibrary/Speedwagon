@@ -13,6 +13,7 @@ from PyQt5 import QtWidgets
 import speedwagon.startup
 import speedwagon.config
 import speedwagon.job
+import speedwagon.runner_strategies
 
 
 def test_version_exits_after_being_called(monkeypatch):
@@ -659,3 +660,20 @@ class TestMultiWorkflowLauncher:
             startup_launcher.add_job(mock_workflow, workflow_args)
         startup_launcher.run()
         assert all(job.validate_user_options.called is True for job in jobs)
+
+    def test_task_failing(self, qtbot):
+        startup_launcher = speedwagon.startup.MultiWorkflowLauncher()
+        mock_workflow = MagicMock()
+        mock_workflow.name = 'Verify Checksum Batch [Single]'
+        mock_workflow.__class__ = speedwagon.job.Workflow
+        mock_workflow.validate_user_options = \
+            Mock(side_effect=speedwagon.runner_strategies.TaskFailed())
+
+        startup_launcher.add_job(
+            mock_workflow,
+            {
+                    "Input": os.path.join("somepath", "checksum.md5")
+                }
+         )
+        with pytest.raises(speedwagon.job.JobCancelled):
+            startup_launcher.run()
