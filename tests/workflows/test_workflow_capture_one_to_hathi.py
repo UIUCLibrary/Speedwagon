@@ -2,7 +2,7 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 from speedwagon.workflows import workflow_capture_one_to_hathi
-from speedwagon import models
+from speedwagon import models, tasks
 
 
 class TestCaptureOneToHathiTiffPackageWorkflow:
@@ -98,3 +98,13 @@ class TestPackageConverter:
 
         assert task.work() is True
         assert transform.called is True
+
+
+def test_tasks_have_description():
+    task = workflow_capture_one_to_hathi.PackageConverter(
+        source_path="some_source_path",
+        packaging_id="123",
+        existing_package=Mock(),
+        new_package_root="some_root",
+    )
+    assert task.task_description() is not None

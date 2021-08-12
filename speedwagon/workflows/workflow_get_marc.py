@@ -625,6 +625,9 @@ class EnhancementTask(tasks.Subtask):
         super().__init__()
         self.xml_file = xml_file
 
+    def task_description(self) -> Optional[str]:
+        return f"Enhancing {self.xml_file}"
+
     @staticmethod
     def to_pretty_string(root: ET.Element) -> str:
         """Convert lxml Element into a pretty formatted string."""

@@ -382,3 +382,22 @@ class TestGenerateOCRFileTask:
         )
         task.read_image(source_image, "eng")
         assert reader.read.called is True
+
+
+@pytest.mark.parametrize(
+    "task",
+    [
+        workflow_ocr.GenerateOCRFileTask(
+            source_image="source_image",
+            out_text_file="out_text_file",
+            lang="lang",
+            tesseract_path="tesseract_path"
+        ),
+        workflow_ocr.FindImagesTask(
+            root="root",
+            file_extension=".tif"
+        )
+    ]
+)
+def test_tasks_have_description(task):
+    assert task.task_description() is not None

@@ -1,4 +1,3 @@
-import sys
 from unittest.mock import Mock, MagicMock
 
 import pytest
@@ -345,3 +344,21 @@ def test_transform_package_task(monkeypatch):
                    mock_transform)
         assert task.work() is True and \
                mock_transform.called is True
+
+
+@pytest.mark.parametrize(
+    "task",
+    [
+        wf.TransformPackageTask(package=MagicMock(),
+                                destination="some_destination"),
+        wf.FindPackageTask(root="some_root"),
+        wf.GenerateChecksumTask(identifier="123", source="file.txt"),
+        wf.MakeYamlTask(
+            identifier="123",
+            source="file.txt",
+            title_page="0001_00001.jp2"
+        )
+    ]
+)
+def test_tasks_have_description(task):
+    assert task.task_description() is not None

@@ -198,3 +198,13 @@ def test_package_converter(tmpdir):
         mock_source_package,
         dest=options['new_package_root']
     )
+
+
+def test_tasks_have_description():
+    task = ht_wf.PackageConverter(
+        source_path="some_source_path",
+        packaging_id="123",
+        existing_package=Mock(),
+        new_package_root="some_root"
+    )
+    assert task.task_description() is not None

@@ -219,3 +219,20 @@ class TestValidateImageMetadataTask:
                 ResultValues.VALID: True,
                 ResultValues.REPORT: "* "
             }
+
+
+@pytest.mark.parametrize(
+    "task",
+    [
+        workflow_validate_metadata.ValidateImageMetadataTask(
+            filename="filename",
+            profile_name='HathiTrust JPEG 2000'
+        ),
+        workflow_validate_metadata.LocateImagesTask(
+            root="root",
+            profile_name='HathiTrust JPEG 2000'
+        )
+    ]
+)
+def test_tasks_have_description(task):
+    assert task.task_description() is not None

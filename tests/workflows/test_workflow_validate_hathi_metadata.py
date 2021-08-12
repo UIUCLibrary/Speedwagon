@@ -129,3 +129,10 @@ class TestMetadataValidatorTask:
         )
         assert task.work() is True
         validate.assert_called_with(source_file)
+
+
+def test_tasks_have_description():
+    task = workflow_validate_hathi_metadata.MetadataValidatorTask(
+        source_file="source_file"
+    )
+    assert task.task_description() is not None

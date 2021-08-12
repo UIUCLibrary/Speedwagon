@@ -441,3 +441,32 @@ class TestChecksumTask:
         assert task.work() is True
         assert task.results[ResultValues.FILENAME] == "file.txt" and \
                task.results[ResultValues.VALID] is False
+
+@pytest.mark.parametrize(
+    "task",
+    [
+        workflow_verify_checksums.ChecksumTask(
+            **{
+                workflow_verify_checksums.JobValues.ITEM_FILENAME.value:
+                    "file.txt",
+                workflow_verify_checksums.JobValues.SOURCE_REPORT.value:
+                    "checksum.md5",
+                workflow_verify_checksums.JobValues.EXPECTED_HASH.value:
+                    "42312efb063c44844cd96e47a19e3441",
+                workflow_verify_checksums.JobValues.ROOT_PATH.value:
+                    os.path.join("some", "path"),
+        }),
+        workflow_verify_checksums.ValidateChecksumTask(
+            file_name="file_name",
+            file_path="file_path",
+            expected_hash="42312efb063c44844cd96e47a19e3441",
+            source_report="source_report"
+
+        ),
+        workflow_verify_checksums.ReadChecksumReportTask(
+            checksum_file="checksum_file"
+        )
+    ]
+)
+def test_tasks_have_description(task):
+    assert task.task_description() is not None

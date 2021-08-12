@@ -871,3 +871,24 @@ def test_catching_unicode_error(monkeypatch):
     with patch('builtins.open', Mock(side_effect=UnicodeError)) as m:
         with pytest.raises(speedwagon.exceptions.SpeedwagonException):
             task.work()
+
+
+@pytest.mark.parametrize(
+    "task",
+    [
+        workflow_get_marc.MarcGeneratorTask(
+            identifier="identifier",
+            identifier_type="identifier_type",
+            output_name="output_name",
+            server_url="server_url"
+        ),
+        workflow_get_marc.EnhancementTask(xml_file="xml_file"),
+        workflow_get_marc.MarcEnhancement035Task(xml_file="xml_file"),
+        workflow_get_marc.MarcEnhancement955Task(
+            added_value="added_value",
+            xml_file="xml_file"
+        )
+    ]
+)
+def test_tasks_have_description(task):
+    assert task.task_description() is not None

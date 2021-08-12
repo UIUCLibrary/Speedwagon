@@ -161,3 +161,11 @@ class TestZipTask:
             path=source_path,
             dst=destination_path
         )
+
+
+def test_tasks_have_description():
+    task = workflow_zip_packages.ZipTask(
+            source_path="source_path",
+            destination_path="destination_path"
+        )
+    assert task.task_description() is not None
