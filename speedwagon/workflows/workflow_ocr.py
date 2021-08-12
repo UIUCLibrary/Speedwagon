@@ -332,7 +332,6 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
         if path is None:
             path = locate_tessdata()
         assert path is not None
-        assert os.path.exists(path)
         cls.engine = ocr.Engine(path)
         assert cls.engine is not None
 
