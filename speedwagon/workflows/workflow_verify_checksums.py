@@ -208,6 +208,9 @@ class ReadChecksumReportTask(tasks.Subtask):
         super().__init__()
         self._checksum_file = checksum_file
 
+    def task_description(self) -> Optional[str]:
+        return f"Reading {self._checksum_file}"
+
     def work(self) -> bool:
         results = []
 
@@ -243,6 +246,9 @@ class ValidateChecksumTask(tasks.Subtask):
         self._file_path = file_path
         self._expected_hash = expected_hash
         self._source_report = source_report
+
+    def task_description(self) -> Optional[str]:
+        return f"Validating checksum for {self._file_name}"
 
     def work(self) -> bool:
         self.log(f"Validating {self._file_name}")
