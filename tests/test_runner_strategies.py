@@ -441,3 +441,32 @@ class TestTaskScheduler:
         captured = capsys.readouterr()
         assert "dummy" not in captured.out
 
+    @pytest.mark.parametrize(
+        "reporter",
+        [
+            None,
+            MagicMock()
+        ]
+    )
+    def test_run(self, monkeypatch, reporter):
+        scheduler = runner_strategies.TaskScheduler(
+            working_directory="some_dir")
+        workflow = Mock()
+        scheduler.reporter = reporter
+        workflow.discover_task_metadata = Mock(return_value=[])
+        options = {
+
+        }
+        subtask = speedwagon.tasks.Subtask()
+        subtask.exec = Mock()
+
+        monkeypatch.setattr(
+            runner_strategies.TaskGenerator,
+            "get_main_tasks",
+            lambda *args, **kwargs: [subtask]
+        )
+        scheduler.run(
+            workflow,
+            options
+        )
+        assert subtask.exec.called is True

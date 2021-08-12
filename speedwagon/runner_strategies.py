@@ -728,6 +728,33 @@ class TaskScheduler:
         if report is not None:
             self.logger.info(task_generator.generate_report(results))
 
+    def push_job_to_queue(
+            self,
+            workflow: Workflow,
+            options: typing.Dict[str, Any],
+            reporter: Optional[RunnerDisplay] = None
+    ) -> None:
+        """Add job tasks to queue.
+
+        This blocks until the task finished is called.
+        """
+
+        for subtask in self.iter_tasks(workflow, options):
+            self._task_queue.put(subtask)
+            self.logger.debug(
+                "Task added to queue: [%s]",
+                subtask.name
+            )
+
+            while self._task_queue.unfinished_tasks > 0:
+                if reporter is not None:
+                    reporter.refresh()
+                    if reporter.user_canceled is True:
+                        raise JobCancelled(
+                            USER_ABORTED_MESSAGE,
+                            expected=True
+                        )
+
     def run(self, job: Workflow, options: Dict[str, Any]) -> None:
 
         task_dispatcher = TaskDispatcher(
@@ -739,26 +766,13 @@ class TaskScheduler:
             if self.reporter is not None:
                 self.reporter.task_runner = task_dispatcher
                 self.reporter.task_scheduler = self
-                with self.reporter as reporter:
-                    reporter.current_task_progress = 0
-                    reporter.title = job.name
-
-                    for subtask in self.iter_tasks(job, options):
-                        self._task_queue.put(subtask)
-                        self.logger.debug(
-                            "Task added to queue: [%s]",
-                            subtask.name
-                        )
-
-                        while self._task_queue.unfinished_tasks > 0:
-                            reporter.refresh()
-                            if reporter.user_canceled is True:
-                                raise JobCancelled(
-                                    USER_ABORTED_MESSAGE,
-                                    expected=True
-                                )
-                    reporter.refresh()
-                reporter.refresh()
+                with self.reporter as active_reporter:
+                    active_reporter.current_task_progress = 0
+                    active_reporter.title = job.name
+                    self.push_job_to_queue(job, options, active_reporter)
+                active_reporter.refresh()
+            else:
+                self.push_job_to_queue(job, options)
         finally:
             self._task_queue.join()
             task_dispatcher.stop()
