@@ -422,6 +422,26 @@ class TestQtDialogProgress:
         assert dialog_box.dialog.labelText() == "spam" and \
                dialog_box.details == "spam"
 
+    @pytest.mark.parametrize(
+        "task_scheduler",
+        [
+            None,
+            Mock(
+                total_tasks=2,
+                current_task_progress=1
+            )
+        ]
+    )
+    def test_refresh_calls_process_events(self, qtbot, task_scheduler, monkeypatch):
+        dialog_box = runner_strategies.QtDialogProgress()
+        dialog_box.task_scheduler = task_scheduler
+        processEvents = Mock()
+        with monkeypatch.context() as mp:
+            mp.setattr(runner_strategies.QtWidgets.QApplication, "processEvents", processEvents)
+            dialog_box.refresh()
+        assert processEvents.called is True
+
+
 
 class TestTaskDispatcher:
     def test_stop_is_noop_if_not_started(self):
