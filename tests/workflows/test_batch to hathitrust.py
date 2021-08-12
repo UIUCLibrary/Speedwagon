@@ -349,7 +349,8 @@ def test_transform_package_task(monkeypatch):
 @pytest.mark.parametrize(
     "task",
     [
-        wf.TransformPackageTask(package=MagicMock(), destination="some_destination"),
+        wf.TransformPackageTask(package=MagicMock(),
+                                destination="some_destination"),
         wf.FindPackageTask(root="some_root"),
         wf.GenerateChecksumTask(identifier="123", source="file.txt"),
         wf.MakeYamlTask(
