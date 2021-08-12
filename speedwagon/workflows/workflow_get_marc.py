@@ -505,6 +505,7 @@ SUPPORTED_IDENTIFIERS = {
 
 class MarcGeneratorTask(tasks.Subtask):
     """Task for generating the MARC xml file."""
+
     name = "Generate MARC File"
 
     def __init__(self,

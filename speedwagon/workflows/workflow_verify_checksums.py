@@ -298,6 +298,8 @@ class CaseInsensitiveComparison(AbsComparisonMethod):
 
 
 class VerifyChecksumBatchSingleWorkflow(Workflow):
+    """Verify Checksum Batch."""
+
     name = "Verify Checksum Batch [Single]"
     description = "Verify checksum values in checksum batch file, report " \
                   "errors. Verifies every entry in the checksum.md5 files " \

@@ -134,6 +134,7 @@ class CaptureOneToDlCompoundWorkflow(Workflow):
 
 class PackageConverter(tasks.Subtask):
     """Convert packages formats."""
+
     name = "Package Conversion"
 
     @contextmanager
