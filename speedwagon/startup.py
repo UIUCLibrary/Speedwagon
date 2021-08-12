@@ -696,7 +696,7 @@ class MultiWorkflowLauncher(AbsStarter):
 
         finally:
             window.log_manager.handlers.clear()
-        window.close()
+            window.close()
 
     def initialize(self) -> None:
         """No need to initialize."""
