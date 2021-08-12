@@ -98,7 +98,6 @@ class ConsoleLogger(logging.Handler):
         self.console = console
 
     def emit(self, record) -> None:
-
         try:
             self.console.add_log_message.emit(
                 self.format(record)
