@@ -538,3 +538,14 @@ class TestOutputsValidValuesValidator:
             lambda entry: entry == user_options['Output HathiTrust']
 
         assert validator.is_valid(**user_options) is True
+
+
+def test_tasks_have_description():
+    task = ht_wf.PackageConverter(
+        source_path="some_source_path",
+        packaging_id="123",
+        existing_package=Mock(),
+        new_package_root="some_root",
+        package_format="HathiTrust jp2"
+    )
+    assert task.task_description() is not None
