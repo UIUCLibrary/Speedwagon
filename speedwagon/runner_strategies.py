@@ -461,20 +461,6 @@ class TaskGenerator:
         self.workflow.completion_task(task_builder, results, **options)
         yield from task_builder.build_task().main_subtasks
 
-    @staticmethod
-    def iter_tasks(
-            runner: "worker.WorkRunnerExternal3",
-            manager: "worker.ToolJobManager",
-            update_progress_callback: typing.Callable[
-                ["worker.WorkRunnerExternal3", int, int], None
-            ]
-    ):
-        for result in manager.get_results(
-                lambda x, y: update_progress_callback(runner, x, y)
-        ):
-            if result is not None:
-                yield result
-
 
 class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
 
