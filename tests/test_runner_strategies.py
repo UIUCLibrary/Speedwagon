@@ -487,9 +487,7 @@ class TestTaskScheduler:
         workflow = Mock()
         scheduler.reporter = reporter
         workflow.discover_task_metadata = Mock(return_value=[])
-        options = {
-
-        }
+        options = {}
         subtask = speedwagon.tasks.Subtask()
         subtask.exec = Mock()
 
@@ -503,3 +501,20 @@ class TestTaskScheduler:
             options
         )
         assert subtask.exec.called is True
+
+    def test_task_canceled(self):
+        scheduler = runner_strategies.TaskScheduler(
+            working_directory="some_dir")
+        scheduler.reporter = Mock(user_canceled=True)
+        scheduler.iter_tasks = Mock(return_value=[Mock()])
+
+        workflow = Mock()
+        workflow.discover_task_metadata = Mock(return_value=[])
+
+        options = {}
+
+        subtask = speedwagon.tasks.Subtask()
+        subtask.exec = Mock()
+        subtask._task_queue = Mock(unfinished_tasks=1)
+        with pytest.raises(speedwagon.job.JobCancelled):
+            scheduler.push_job_to_queue(workflow, options, scheduler.reporter)
