@@ -25,4 +25,3 @@ class TestWorkRunnerExternal3:
             with work_runner as r:
                 r.dialog = None
         assert "dialog" in str(e.value)
-
