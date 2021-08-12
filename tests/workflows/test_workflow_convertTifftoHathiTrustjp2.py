@@ -171,3 +171,20 @@ class TestCopyTask:
                process.called is True
         process.assert_called_with(
             'source_file.tif', ANY)
+
+
+@pytest.mark.parametrize(
+    "task",
+    [
+        workflow_convertTifftoHathiTrustJP2.CopyTask(
+            source_file_path="source_file_path",
+            output_path="output_path"
+        ),
+        workflow_convertTifftoHathiTrustJP2.ImageConvertTask(
+            source_file_path="source_file_path",
+            output_path="output_path"
+        )
+    ]
+)
+def test_tasks_have_description(task):
+    assert task.task_description() is not None
