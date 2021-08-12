@@ -255,6 +255,7 @@ class TestQtRunner:
             total=10
         )
 
+
 class TestTaskGenerator:
 
     @pytest.fixture()
@@ -432,13 +433,23 @@ class TestQtDialogProgress:
             )
         ]
     )
-    def test_refresh_calls_process_events(self, qtbot, task_scheduler, monkeypatch):
+    def test_refresh_calls_process_events(
+            self, qtbot, task_scheduler, monkeypatch):
+
         dialog_box = runner_strategies.QtDialogProgress()
         dialog_box.task_scheduler = task_scheduler
         processEvents = Mock()
+
         with monkeypatch.context() as mp:
-            mp.setattr(runner_strategies.QtWidgets.QApplication, "processEvents", processEvents)
+
+            mp.setattr(
+                runner_strategies.QtWidgets.QApplication,
+                "processEvents",
+                processEvents
+            )
+
             dialog_box.refresh()
+
         assert processEvents.called is True
 
 
