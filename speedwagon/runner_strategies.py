@@ -616,7 +616,6 @@ class TaskDispatcher:
         self._stop = threading.Event()
         self._thread: typing.Optional[threading.Thread] = None
         self.finish_event = threading.Event()
-        self.progress_callback = lambda: None
         self.current_task: Optional[tasks.Subtask] = None
         self.logger = logger or logging.getLogger(__name__)
 
