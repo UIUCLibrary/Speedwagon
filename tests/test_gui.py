@@ -122,3 +122,18 @@ def test_set_current_tab(qtbot):
 
     main_window.set_current_tab("spam")
     assert main_window.tab_widget.tabs.setCurrentIndex.called
+
+
+class TestMainWindow:
+    def test_show_configuration_opens_settings_dialog(self, qtbot, monkeypatch):
+        work_manager = Mock()
+        work_manager.settings_path = None
+        mw = speedwagon.gui.MainWindow(work_manager)
+        exec_ = Mock()
+        monkeypatch.setattr(
+            speedwagon.dialog.settings.SettingsDialog,
+            "exec",
+            exec_
+        )
+        mw.show_configuration()
+        assert exec_.called is True
