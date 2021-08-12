@@ -422,3 +422,12 @@ class TestQtDialogProgress:
         assert dialog_box.dialog.labelText() == "spam" and \
                dialog_box.details == "spam"
 
+
+class TestTaskDispatcher:
+    def test_stop_is_noop_if_not_started(self):
+        queue = Mock()
+        dispatcher = runner_strategies.TaskDispatcher(
+            job_queue=queue
+        )
+        assert dispatcher.active is False and \
+               dispatcher.stop() is None

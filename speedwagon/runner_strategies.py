@@ -621,6 +621,13 @@ class TaskDispatcher:
         self.current_task: Optional[tasks.Subtask] = None
         self.logger = logger or logging.getLogger(__name__)
 
+    @property
+    def active(self) -> bool:
+        if self._thread is None:
+            return False
+
+        return self._thread.is_alive()
+
     def stop(self):
         if self._thread is None:
             return
