@@ -442,15 +442,28 @@ class TestQtDialogProgress:
         assert processEvents.called is True
 
 
-
 class TestTaskDispatcher:
     def test_stop_is_noop_if_not_started(self):
-        queue = Mock()
         dispatcher = runner_strategies.TaskDispatcher(
-            job_queue=queue
+            job_queue=Mock()
         )
         assert dispatcher.active is False and \
                dispatcher.stop() is None
+
+    @pytest.mark.parametrize(
+        "thread_status, expected_active",
+        [
+            (None, False),
+            (Mock(is_alive=Mock(return_value=False)), False),
+            (Mock(is_alive=Mock(return_value=True)), True)
+        ]
+    )
+    def test_active(self, thread_status, expected_active):
+        dispatcher = runner_strategies.TaskDispatcher(
+            job_queue=Mock()
+        )
+        dispatcher._thread = thread_status
+        assert dispatcher.active is expected_active
 
 
 class TestTaskScheduler:
