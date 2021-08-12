@@ -12,6 +12,8 @@ from .checksum_shared import ResultsValues
 
 
 class MakeChecksumTask(tasks.Subtask):
+    """Create a make checksum task."""
+
     name = "Create Checksum"
 
     def __init__(
@@ -27,9 +29,11 @@ class MakeChecksumTask(tasks.Subtask):
         self._checksum_report = checksum_report
 
     def task_description(self) -> Optional[str]:
+        """Get user readable information about what the subtask is doing."""
         return f"Calculating checksum for {self._filename}"
 
     def work(self) -> bool:
+        """Calculate file checksum."""
         item_path = self._source_path
         item_file_name = self._filename
         report_path_to_save_to = self._checksum_report
@@ -49,6 +53,11 @@ class MakeChecksumTask(tasks.Subtask):
 
 
 class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
+    """Generate a checksum report.
+
+    This normally an .md5 file.
+    """
+
     name = "Checksum Report Creation"
 
     def __init__(
@@ -64,10 +73,11 @@ class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
         self._checksum_calculations = checksum_calculations
 
     def task_description(self) -> Optional[str]:
+        """Get user readable information about what the subtask is doing."""
         return f"Writing checksum report: {self._output_filename}"
 
     def work(self) -> bool:
-
+        """Generate the report file."""
         report_builder = checksum.HathiChecksumReport()
         for item in self._checksum_calculations:
             filename = item[ResultsValues.SOURCE_FILE]

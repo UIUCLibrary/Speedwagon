@@ -52,7 +52,7 @@ __all__ = [
 
 
 class FileFormatError(Exception):
-    pass
+    """Exception is thrown when Something wrong with the contents of a file."""
 
 
 def parse_args() -> argparse.ArgumentParser:
