@@ -549,8 +549,7 @@ class QtDialogProgress(RunnerDisplay):
     def current_task_progress(self, value):
         self._current_task_progress = value
         dialog_value = value or 0
-        if self.dialog:
-            self.dialog.setValue(dialog_value)
+        self.dialog.setValue(dialog_value)
 
     @property
     def total_tasks_amount(self):
