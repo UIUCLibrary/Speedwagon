@@ -329,3 +329,42 @@ def test_extra_subdirectory_permission_issues(monkeypatch, caplog):
     assert any(
         "Permission issues" in result.message for result in task.results
     )
+
+
+@pytest.mark.parametrize(
+    "task",
+    [
+        workflow_completeness.ValidateExtraSubdirectoriesTask(
+            package_path="some_path"),
+        workflow_completeness.PackageNamingConventionTask(
+            package_path="some_path"
+        ),
+        workflow_completeness.ValidateOCFilesUTF8Task(
+            package_path="some_path"
+        ),
+        workflow_completeness.ValidateYMLTask(
+            package_path="some_path"
+        ),
+        workflow_completeness.ValidateOCRFilesTask(
+            package_path="some_path"
+        ),
+        workflow_completeness.ValidateMarcTask(
+            package_path="some_path"
+        ),
+        workflow_completeness.HathiCheckMissingPackageFilesTask(
+            package_path="some_path"
+        ),
+        workflow_completeness.HathiCheckMissingComponentsTask(
+            package_path="some_path",
+            check_ocr=False
+        ),
+        workflow_completeness.ValidateChecksumsTask(
+            package_path="some_path"
+        ),
+        workflow_completeness.HathiManifestGenerationTask(
+            batch_root="some_path"
+        )
+    ]
+)
+def test_tasks_have_description(task):
+    assert task.task_description() is not None
