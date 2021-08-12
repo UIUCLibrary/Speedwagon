@@ -54,8 +54,7 @@ def test_get_additional_info_opens_dialog_box(monkeypatch):
     package_browser.result = Mock(return_value=PackageBrowser.Accepted)
     package_browser.Accepted = PackageBrowser.Accepted
 
-
-    def mock_package_browser(packages, parent):
+    def mock_package_browser(_, __):
         return package_browser
     with monkeypatch.context() as mp:
         mp.setattr(os, "scandir", mock_scandir)

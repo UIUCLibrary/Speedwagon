@@ -8,6 +8,7 @@ import os.path
 
 import uiucprescon.packager.packages
 
+
 def test_option_validate_output_false(monkeypatch):
     user_data = {
         "Input": "dummy",
@@ -137,8 +138,12 @@ def test_discover_task_metadata(monkeypatch):
 
     with monkeypatch.context() as mp:
         mp.setattr(os.path, "exists", mock_exists)
-        # mp.setattr(os, "scandir", mock_scandir)
-        mp.setattr(uiucprescon.packager.packages.capture_one_package.os, "scandir", mock_scandir)
+
+        mp.setattr(
+            uiucprescon.packager.packages.capture_one_package.os,
+            "scandir",
+            mock_scandir
+        )
 
         new_task_metadata = workflow.discover_task_metadata(
             initial_results=initial_results,

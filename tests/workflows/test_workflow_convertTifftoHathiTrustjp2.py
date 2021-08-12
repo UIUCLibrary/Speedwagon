@@ -1,4 +1,4 @@
-from unittest.mock import Mock, MagicMock, ANY, call
+from unittest.mock import Mock, ANY
 
 import pytest
 from speedwagon.workflows import workflow_convertTifftoHathiTrustJP2
