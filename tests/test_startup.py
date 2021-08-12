@@ -666,7 +666,7 @@ class TestMultiWorkflowLauncher:
         mock_workflow = MagicMock()
         mock_workflow.name = 'Verify Checksum Batch [Single]'
         mock_workflow.__class__ = speedwagon.job.Workflow
-        mock_workflow.validate_user_options = \
+        mock_workflow.initial_task = \
             Mock(side_effect=speedwagon.runner_strategies.TaskFailed())
 
         startup_launcher.add_job(
