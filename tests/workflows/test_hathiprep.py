@@ -220,3 +220,29 @@ def test_prep_task_task_calls_generate_package(monkeypatch):
         mp.setattr(package_creater, "InplacePackage", mock_inplace_package)
         assert task.work() is True
     assert mock_package_builder.generate_package.called is True
+
+
+@pytest.mark.parametrize(
+    "task",
+    [
+        workflow_hathiprep.PrepTask(source="source", title_page="title_page"),
+        workflow_hathiprep.FindPackagesTask(root="root"),
+        workflow_hathiprep.MakeYamlTask(
+            package_id="package_id",
+            source="source",
+            title_page="title_page"
+        ),
+        workflow_hathiprep.GenerateChecksumTask(
+            package_id="package_id",
+            source="source"
+        )
+        # workflow_get_marc.EnhancementTask(xml_file="xml_file"),
+        # workflow_get_marc.MarcEnhancement035Task(xml_file="xml_file"),
+        # workflow_get_marc.MarcEnhancement955Task(
+        #     added_value="added_value",
+        #     xml_file="xml_file"
+        # )
+    ]
+)
+def test_tasks_have_description(task):
+    assert task.task_description() is not None
