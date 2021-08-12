@@ -689,9 +689,6 @@ class MultiWorkflowLauncher(AbsStarter):
 
                 self._pending_tasks.task_done()
         except runner_strategies.TaskFailed as task_error:
-            while not self._pending_tasks.empty():
-                self._pending_tasks.get()
-                self._pending_tasks.task_done()
             raise job.JobCancelled(task_error) from task_error
 
         finally:
