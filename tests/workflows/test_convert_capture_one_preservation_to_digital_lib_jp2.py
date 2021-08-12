@@ -278,3 +278,12 @@ def test_kdu_success(monkeypatch):
     )
     process.process("dummy", "out.jp2")
     assert "Generated out.jp2" in process.status
+
+
+def test_tasks_have_description():
+    task = capture_one_workflow.PackageImageConverterTask(
+        source_file_path="some_source_path",
+        dest_path="some_dest_path"
+    )
+
+    assert task.task_description() is not None
