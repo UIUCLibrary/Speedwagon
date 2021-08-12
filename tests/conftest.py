@@ -23,6 +23,9 @@ class SpyDialogBox:
     def setWindowTitle(self, x):
         pass
 
+    def setLabelText(self, x):
+        pass
+
     def setMaximum(self, value, *args, **kwargs):
         self._maxiumum = value
 
@@ -64,10 +67,7 @@ class SpyToolJobManager(ToolJobManager):
 def tool_job_manager_spy():
 
     with SpyToolJobManager() as e:
-        manager_strat = runner_strategies.UsingExternalManagerForAdapter2(
-            manager=e,
-            parent=None
-        )
+        manager_strat = runner_strategies.QtRunner(parent=None)
 
         runner = runner_strategies.RunRunner(manager_strat)
 

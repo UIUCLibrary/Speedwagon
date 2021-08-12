@@ -196,10 +196,14 @@ class HathiPrepWorkflow(speedwagon.Workflow):
 
 
 class FindPackagesTask(speedwagon.tasks.Subtask):
+    name = "Locate Packages"
 
     def __init__(self, root: str) -> None:
         super().__init__()
         self._root = root
+
+    def task_description(self) -> Optional[str]:
+        return f"Locating packages in {self._root}"
 
     def work(self) -> bool:
         self.log("Locating packages in {}".format(self._root))
@@ -221,12 +225,17 @@ class FindPackagesTask(speedwagon.tasks.Subtask):
 
 
 class MakeYamlTask(speedwagon.tasks.Subtask):
+    name = "Create meta.yml"
+
     def __init__(self, package_id: str, source: str, title_page: str) -> None:
         super().__init__()
 
         self._source = source
         self._title_page = title_page
         self._package_id = package_id
+
+    def task_description(self) -> Optional[str]:
+        return f"Creating meta.yml in {self._source}"
 
     def work(self) -> bool:
         meta_filename = "meta.yml"
@@ -256,11 +265,15 @@ class MakeYamlTask(speedwagon.tasks.Subtask):
 
 
 class GenerateChecksumTask(speedwagon.tasks.Subtask):
+    name = "Generate Checksum"
 
     def __init__(self, package_id: str, source: str) -> None:
         super().__init__()
         self._source = source
         self._package_id = package_id
+
+    def task_description(self) -> Optional[str]:
+        return f"Generating checksums for files in {self._source}"
 
     def work(self) -> bool:
         checksum_filename = "checksum.md5"
@@ -291,12 +304,16 @@ class GenerateChecksumTask(speedwagon.tasks.Subtask):
 
 
 class PrepTask(speedwagon.tasks.Subtask):
+    name = "Prep"
 
     def __init__(self, source: str, title_page: str) -> None:
         super().__init__()
 
         self._source = source
         self._title_page = title_page
+
+    def task_description(self) -> Optional[str]:
+        return f"Prepping {self._source}"
 
     def work(self) -> bool:
         self.log("Prepping on {}".format(self._source))

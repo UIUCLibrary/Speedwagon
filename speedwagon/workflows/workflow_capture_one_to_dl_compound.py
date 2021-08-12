@@ -2,7 +2,7 @@
 from __future__ import annotations
 import logging
 
-from typing import Any, Dict, Iterator, List, Union
+from typing import Any, Dict, Iterator, List, Union, Optional
 
 from contextlib import contextmanager
 
@@ -11,14 +11,14 @@ from uiucprescon.packager.packages.collection import Package
 from uiucprescon.packager.packages.collection_builder import Metadata
 
 from speedwagon import tasks, validators
-from speedwagon.job import AbsWorkflow
+from speedwagon.job import Workflow
 from speedwagon.logging import GuiLogHandler
 from . import shared_custom_widgets as options
 
 __all__ = ['CaptureOneToDlCompoundWorkflow']
 
 
-class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
+class CaptureOneToDlCompoundWorkflow(Workflow):
     """Settings for convert capture one tiff files to DL compound."""
 
     name = "Convert CaptureOne TIFF to Digital Library Compound Object"
@@ -135,6 +135,8 @@ class CaptureOneToDlCompoundWorkflow(AbsWorkflow):
 class PackageConverter(tasks.Subtask):
     """Convert packages formats."""
 
+    name = "Package Conversion"
+
     @contextmanager
     def log_config(self, logger: logging.Logger) -> Iterator[None]:
         """Configure logs so they get forwarded to the speedwagon console.
@@ -169,6 +171,10 @@ class PackageConverter(tasks.Subtask):
         self.new_package_root = new_package_root
         self.source_path = source_path
         self.package_factory = None
+
+    def task_description(self) -> Optional[str]:
+        return \
+            f"Creating a new Digital Library package from {self.source_path}"
 
     def work(self) -> bool:
         """Convert source package to the new type.

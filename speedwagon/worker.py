@@ -188,23 +188,6 @@ class ProcessWorker(UIWorker):
         """Run the subtask designed to be run after main task."""
 
 
-class ProgressMessageBoxLogHandler(logging.Handler):
-    """Log handler for progress dialog box."""
-
-    def __init__(self, dialog_box: QtWidgets.QProgressDialog,
-                 level: int = logging.NOTSET) -> None:
-        """Create a log handler for progress message box."""
-        super().__init__(level)
-        self.dialog_box = dialog_box
-
-    def emit(self, record: logging.LogRecord) -> None:
-        try:
-            self.dialog_box.setLabelText(self.format(record))
-        except RuntimeError as error:
-            print(self.format(record), file=sys.stderr)
-            traceback.print_tb(error.__traceback__)
-
-
 # pylint: disable=too-few-public-methods
 class AbsObserver(metaclass=abc.ABCMeta):
     @abc.abstractmethod
@@ -248,29 +231,30 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         self._parent = parent
         self.abort_callback: Optional[Callable[[], None]] = None
         self.was_aborted = False
-        self.dialog: Optional[WorkProgressBar] = None
-        self.progress_dialog_box_handler: \
-            Optional[ProgressMessageBoxLogHandler] = None
+        self._dialog: Optional[WorkProgressBar] = None
+        # self.progress_dialog_box_handler: \
+        #     Optional[ProgressMessageBoxLogHandler] = None
+
+    @property
+    def dialog(self):
+        warnings.warn("Don't use the dialog", DeprecationWarning)
+        return self._dialog
+
+    @dialog.setter
+    def dialog(self, value):
+        self._dialog = value
 
     def __enter__(self) -> "WorkRunnerExternal3":
         """Start worker."""
         self.dialog = WorkProgressBar(self._parent)
-        self.dialog.setLabelText("Initializing")
-        self.dialog.setMinimumDuration(100)
-
-        self.progress_dialog_box_handler = \
-            ProgressMessageBoxLogHandler(self.dialog)
-
-        self.dialog.canceled.connect(self.abort)
+        self.dialog.close()
         return self
 
     def abort(self) -> None:
         """Abort on any running tasks."""
-        if self.dialog is not None and \
-                self.dialog.result() == QtWidgets.QProgressDialog.Rejected:
-            self.was_aborted = True
-            if callable(self.abort_callback):
-                self.abort_callback()  # pylint: disable=not-callable
+        self.was_aborted = True
+        if callable(self.abort_callback):
+            self.abort_callback()  # pylint: disable=not-callable
 
     def __exit__(self,
                  exc_type: Optional[Type[BaseException]],
@@ -279,6 +263,7 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         """Close runner."""
         if self.dialog is None:
             raise AttributeError("dialog was set to None before closing")
+
         self.dialog.close()
 
 

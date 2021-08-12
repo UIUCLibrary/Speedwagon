@@ -18,7 +18,7 @@ from . import models
 from . import worker  # pylint: disable=unused-import
 from .exceptions import MissingConfiguration
 from .workflows import shared_custom_widgets as options
-from .job import AbsWorkflow, NullWorkflow, Workflow
+from .job import AbsWorkflow, NullWorkflow, Workflow, JobCancelled
 
 
 __all__ = [
@@ -401,35 +401,55 @@ class WorkflowsTab(ItemSelectionTab):
         try:
             workflow.validate_user_options(**options)
 
-            manager_strat = runner_strategies.UsingExternalManagerForAdapter2(
-                manager=self.work_manager, parent=self.parent)
+            manager_strat = runner_strategies.QtRunner(
+                parent=self.parent)
             runner = runner_strategies.RunRunner(manager_strat)
-
-            print("starting")
-
             runner.run(workflow, options, self.work_manager.logger)
 
         except ValueError as exc:
-            msg = QtWidgets.QMessageBox(self.parent)
-            msg.setIcon(QtWidgets.QMessageBox.Warning)
-            msg.setWindowTitle(exc.__class__.__name__)
-            msg.setText(str(exc))
+            msg = self._create_error_message_box_from_exception(exc)
             msg.exec()
+
+        except JobCancelled as job_cancel_exception:
+            msg = self._create_error_message_box_from_exception(
+                job_cancel_exception,
+                window_title="Job Cancelled"
+            )
+            if job_cancel_exception.expected is True:
+                msg.setIcon(QtWidgets.QMessageBox.Information)
+            else:
+                msg.setIcon(QtWidgets.QMessageBox.Warning)
+                traceback.print_tb(job_cancel_exception.__traceback__)
+                print(job_cancel_exception, file=sys.stderr)
+            msg.exec()
+            return
 
         except Exception as exc:
             traceback.print_tb(exc.__traceback__)
             print(exc, file=sys.stderr)
-            msg = QtWidgets.QMessageBox(self.parent)
-            msg.setIcon(QtWidgets.QMessageBox.Warning)
-            msg.setWindowTitle(exc.__class__.__name__)
-            msg.setText(str(exc))
+            msg = self._create_error_message_box_from_exception(exc)
             msg.setDetailedText(
                 "".join(traceback.format_exception(type(exc),
                                                    exc,
                                                    tb=exc.__traceback__))
             )
-            msg.exec_()
+            msg.exec()
             return
+
+    def _create_error_message_box_from_exception(
+            self,
+            exc,
+            window_title: Optional[str] = None,
+            message: Optional[str] = None
+    ) -> QtWidgets.QMessageBox:
+
+        message_box = QtWidgets.QMessageBox(self.parent)
+        message_box.setIcon(QtWidgets.QMessageBox.Warning)
+        window_title = window_title or exc.__class__.__name__
+        message_box.setWindowTitle(window_title)
+        message = message or str(exc)
+        message_box.setText(message)
+        return message_box
 
     def start(self, item):
         """Start a workflow."""

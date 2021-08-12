@@ -37,7 +37,6 @@ def test_mutipleChecksum(tool_job_manager_spy, tmpdir):
         for f_i in range(4):
             sample_file = sample_pkg_dir / f"dummy_{f_i+1}.txt"
             sample_file.write_text("", encoding="utf8")
-    d = tmpdir.realpath()
     tool_job_manager_spy.run(MakeChecksumBatchMultipleWorkflow(),
                              options={
                                  "Input": tmpdir.realpath()},
@@ -47,7 +46,6 @@ def test_mutipleChecksum(tool_job_manager_spy, tmpdir):
         sample_pkg_dir = tmpdir / f"sample_{p_i + 1}"
         exp_res = os.path.join(sample_pkg_dir, "checksum.md5")
         assert os.path.exists(exp_res)
-
 
 
 def test_multipleChecksum_has_options():

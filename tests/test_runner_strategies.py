@@ -1,9 +1,12 @@
 import logging
+import os
+import tempfile
+from typing import List, Any, Dict
 
 import pytest
 from unittest.mock import Mock, MagicMock
 
-from speedwagon import runner_strategies
+from speedwagon import runner_strategies, tasks
 import speedwagon
 
 
@@ -160,12 +163,11 @@ def test_task_aborted(caplog, step, monkeypatch):
 # todo: make tests for UsingExternalManagerForAdapter2
 
 
-class TestUsingExternalManagerForAdapter2:
-    def test_run_abstract_workflow_calls_run_abs_workflow(self):
-        manager = Mock()
-        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
+class TestQtRunner:
+    def test_run_abstract_workflow_calls_run_abs_workflow(self, qtbot):
+        runner = runner_strategies.QtRunner(None)
         job = Mock()
-        job.__class__ = speedwagon.job.AbsWorkflow
+        job.__class__ = speedwagon.job.Workflow
         runner.run_abs_workflow = Mock()
         runner.run(
             job=job,
@@ -174,9 +176,10 @@ class TestUsingExternalManagerForAdapter2:
 
         assert runner.run_abs_workflow.called is True
 
-    def test_run_non_abstract_workflow_doesnt_call_run_abs_workflow(self):
-        manager = Mock()
-        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
+    def test_run_non_abstract_workflow_doesnt_call_run_abs_workflow(
+            self, qtbot):
+
+        runner = runner_strategies.QtRunner(None)
         job = Mock()
         # NOTE: job.__class__ != speedwagon.job.AbsWorkflow
         runner.run_abs_workflow = Mock()
@@ -189,100 +192,43 @@ class TestUsingExternalManagerForAdapter2:
 
     def test_run_abs_workflow_calls_task_runner(self):
         manager = Mock()
-        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
+        runner = runner_strategies.QtRunner(manager)
         job = Mock()
         job.__class__ = speedwagon.job.AbsWorkflow
 
         task_runner = MagicMock()
 
         runner.run_abs_workflow(
-            task_runner=task_runner,
+            task_scheduler=task_runner,
             job=job,
             options={}
         )
+        assert task_runner.run.called is True
 
-        assert task_runner.run_pre_tasks.called is True and \
-               task_runner.run_main_tasks.called is True and \
-               task_runner.run_post_tasks.called is True
-
-    def test_run_abs_workflow_pretask_failed(self, caplog):
+    def test_run_abs_workflow_fails_with_task_failed_exception(self):
         manager = Mock()
-        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
+        runner = runner_strategies.QtRunner(manager)
         job = Mock()
         job.__class__ = speedwagon.job.AbsWorkflow
 
         task_runner = MagicMock()
 
-        task_runner.run_pre_tasks = Mock(
-            side_effect=runner_strategies.TaskFailed()
+        task_runner.run = Mock(
+            side_effect=runner_strategies.TaskFailed("my bad")
         )
+        with pytest.raises(runner_strategies.TaskFailed) as error:
+            runner.run_abs_workflow(
+                task_scheduler=task_runner,
+                job=job,
+                options={},
+            )
 
-        runner.run_abs_workflow(
-            task_runner=task_runner,
-            job=job,
-            options={},
-        )
-        assert "Job stopped during pre-task phase" in caplog.text
-
-    def test_run_abs_workflow_run_main_tasks_failed(self, caplog):
-        manager = Mock()
-        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
-        job = Mock()
-        job.__class__ = speedwagon.job.AbsWorkflow
-
-        task_runner = MagicMock()
-
-        task_runner.run_main_tasks = Mock(
-            side_effect=runner_strategies.TaskFailed()
-        )
-
-        runner.run_abs_workflow(
-            task_runner=task_runner,
-            job=job,
-            options={},
-        )
-        assert "Job stopped during main tasks phase" in caplog.text
-
-    def test_run_abs_workflow_run_post_tasks_failed(self, caplog):
-        manager = Mock()
-        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
-        job = Mock()
-        job.__class__ = speedwagon.job.AbsWorkflow
-
-        task_runner = MagicMock()
-
-        task_runner.run_post_tasks = Mock(
-            side_effect=runner_strategies.TaskFailed()
-        )
-
-        runner.run_abs_workflow(
-            task_runner=task_runner,
-            job=job,
-            options={},
-        )
-        assert "Job stopped during post-task phase" in caplog.text
-
-    def test_run_abs_workflow_pre_task_canceled(self):
-        manager = Mock()
-        runner = runner_strategies.UsingExternalManagerForAdapter2(manager)
-        job = Mock()
-        job.__class__ = speedwagon.job.AbsWorkflow
-
-        task_runner = MagicMock()
-        task_runner.run_pre_tasks = Mock(
-            side_effect=runner_strategies.JobCancelled()
-        )
-        runner.run_abs_workflow(
-            task_runner=task_runner,
-            job=job,
-            options={},
-        )
-        assert task_runner.run_main_tasks.called is False
+        assert "my bad" in str(error.value)
 
     def test_update_progress(self):
         runner = Mock()
 
-        runner_strategies.UsingExternalManagerForAdapter2.update_progress(
+        runner_strategies.QtRunner.update_progress(
             runner=runner,
             current=3,
             total=10
@@ -293,7 +239,7 @@ class TestUsingExternalManagerForAdapter2:
     def test_update_progress_accepted_on_finish(self):
         runner = Mock()
 
-        runner_strategies.UsingExternalManagerForAdapter2.update_progress(
+        runner_strategies.QtRunner.update_progress(
             runner=runner,
             current=10,
             total=10
@@ -303,8 +249,283 @@ class TestUsingExternalManagerForAdapter2:
     def test_update_progress_no_dialog(self):
         runner = Mock()
         runner.dialog = None
-        runner_strategies.UsingExternalManagerForAdapter2.update_progress(
+        runner_strategies.QtRunner.update_progress(
             runner=runner,
             current=3,
             total=10
         )
+
+
+class TestTaskGenerator:
+
+    @pytest.fixture()
+    def workflow(self):
+        workflow = MagicMock()
+        workflow.__class__ = speedwagon.job.AbsWorkflow
+        workflow.discover_task_metadata = Mock(
+            return_value=[
+                {"Input": "fakedata"}
+            ]
+        )
+        return workflow
+
+    def test_tasks_call_init_task(self, workflow):
+        task_generator = runner_strategies.TaskGenerator(
+            workflow=workflow,
+            options={},
+            working_directory=os.path.join("some", "real", "directory")
+        )
+
+        for subtask in task_generator.tasks():
+            assert isinstance(subtask, speedwagon.tasks.Subtask)
+
+        assert workflow.initial_task.called is True
+
+    def test_tasks_runs_discover_metadata(self, workflow):
+        task_generator = runner_strategies.TaskGenerator(
+            workflow=workflow,
+            options={},
+            working_directory=os.path.join("some", "real", "directory")
+        )
+
+        for subtask in task_generator.tasks():
+            assert isinstance(subtask, speedwagon.tasks.Subtask)
+        assert workflow.discover_task_metadata.called is True
+
+    def test_tasks_runs_create_new_task(self, workflow):
+        task_generator = runner_strategies.TaskGenerator(
+            workflow=workflow,
+            options={},
+            working_directory=os.path.join("some", "real", "directory")
+        )
+
+        for subtask in task_generator.tasks():
+            assert isinstance(subtask, speedwagon.tasks.Subtask)
+        assert workflow.create_new_task.called is True
+
+    def test_tasks_runs_completion_task(self, workflow):
+        task_generator = runner_strategies.TaskGenerator(
+            workflow=workflow,
+            options={},
+            working_directory=os.path.join("some", "real", "directory")
+        )
+
+        for subtask in task_generator.tasks():
+            assert isinstance(subtask, speedwagon.tasks.Subtask)
+        assert workflow.completion_task.called is True
+
+    def test_tasks_request_more_info(self, workflow):
+        caller = Mock()
+        task_generator = runner_strategies.TaskGenerator(
+            workflow=workflow,
+            options={},
+            working_directory=os.path.join("some", "real", "directory"),
+            caller=caller
+        )
+        for subtask in task_generator.tasks():
+            assert isinstance(subtask, speedwagon.tasks.Subtask)
+        assert caller.request_more_info.called is True
+
+    def test_pretask_calls_initial_task(self, workflow):
+        caller = Mock()
+        task_generator = runner_strategies.TaskGenerator(
+            workflow=workflow,
+            options={},
+            working_directory=os.path.join("some", "real", "directory"),
+            caller=caller
+        )
+        list(task_generator.get_pre_tasks("dummy"))
+        assert workflow.initial_task.called is True
+
+    def test_main_task(self, workflow):
+        caller = Mock()
+        task_generator = runner_strategies.TaskGenerator(
+            workflow=workflow,
+            options={},
+            working_directory=os.path.join("some", "real", "directory"),
+            caller=caller
+        )
+        list(task_generator.get_main_tasks("dummy", [], {}))
+        assert workflow.create_new_task.called is True
+
+    def test_get_post_tasks(self, workflow):
+        caller = Mock()
+        task_generator = runner_strategies.TaskGenerator(
+            workflow=workflow,
+            options={},
+            working_directory=os.path.join("some", "real", "directory"),
+            caller=caller
+        )
+        list(task_generator.get_post_tasks("dummy", []))
+        assert workflow.completion_task.called is True
+
+
+class TestRunnerDisplay:
+
+    @pytest.fixture()
+    def dummy_runner(self):
+        class DummyRunner(runner_strategies.RunnerDisplay):
+            def refresh(self):
+                pass
+
+            def user_canceled(self):
+                return False
+        return DummyRunner()
+
+    def test_basic_setters_and_getters_progress(self, dummy_runner):
+
+        dummy_runner.total_tasks_amount = 10
+        dummy_runner.current_task_progress = 5
+        assert dummy_runner.total_tasks_amount == 10
+        assert dummy_runner.current_task_progress == 5
+
+    def test_basic_setters_and_getters_details(self, dummy_runner):
+        dummy_runner.details = "some detail"
+        assert dummy_runner.details == "some detail"
+
+    def test_details_defaults_to_none(self, dummy_runner):
+        assert dummy_runner.details is None
+
+    def test_context_manager(self, dummy_runner):
+        with dummy_runner as runner:
+            assert dummy_runner == runner
+
+
+class TestQtDialogProgress:
+    def test_initialized(self, qtbot):
+        dialog_box = runner_strategies.QtDialogProgress()
+
+        assert dialog_box.dialog.value() == 0 and \
+               dialog_box.dialog.maximum() == 0
+
+    def test_total_tasks_amount_affects_dialog(self, qtbot):
+        dialog_box = runner_strategies.QtDialogProgress()
+        dialog_box.total_tasks_amount = 10
+        assert dialog_box.dialog.maximum() == 10 and \
+               dialog_box.total_tasks_amount == 10
+
+    def test_current_tasks_progress_affects_dialog(self, qtbot):
+        dialog_box = runner_strategies.QtDialogProgress()
+        dialog_box.total_tasks_amount = 10
+        dialog_box.current_task_progress = 5
+        assert dialog_box.dialog.value() == 5 and \
+               dialog_box.current_task_progress == 5
+
+    def test_title_affects_dialog(self, qtbot):
+        dialog_box = runner_strategies.QtDialogProgress()
+        dialog_box.title = "spam"
+        assert dialog_box.dialog.windowTitle() == "spam" and \
+               dialog_box.title == "spam"
+
+    def test_details_affects_dialog(self, qtbot):
+        dialog_box = runner_strategies.QtDialogProgress()
+        dialog_box.details = "spam"
+        assert dialog_box.dialog.labelText() == "spam" and \
+               dialog_box.details == "spam"
+
+    @pytest.mark.parametrize(
+        "task_scheduler",
+        [
+            None,
+            Mock(
+                total_tasks=2,
+                current_task_progress=1
+            )
+        ]
+    )
+    def test_refresh_calls_process_events(
+            self, qtbot, task_scheduler, monkeypatch):
+
+        dialog_box = runner_strategies.QtDialogProgress()
+        dialog_box.task_scheduler = task_scheduler
+        processEvents = Mock()
+
+        with monkeypatch.context() as mp:
+
+            mp.setattr(
+                runner_strategies.QtWidgets.QApplication,
+                "processEvents",
+                processEvents
+            )
+
+            dialog_box.refresh()
+
+        assert processEvents.called is True
+
+
+class TestTaskDispatcher:
+    def test_stop_is_noop_if_not_started(self):
+        dispatcher = runner_strategies.TaskDispatcher(
+            job_queue=Mock()
+        )
+        assert dispatcher.active is False and \
+               dispatcher.stop() is None
+
+    @pytest.mark.parametrize(
+        "thread_status, expected_active",
+        [
+            (None, False),
+            (Mock(is_alive=Mock(return_value=False)), False),
+            (Mock(is_alive=Mock(return_value=True)), True)
+        ]
+    )
+    def test_active(self, thread_status, expected_active):
+        dispatcher = runner_strategies.TaskDispatcher(
+            job_queue=Mock()
+        )
+        dispatcher._thread = thread_status
+        assert dispatcher.active is expected_active
+
+
+class TestTaskScheduler:
+    def test_default_request_more_info_noop(self, capsys):
+        scheduler = runner_strategies.TaskScheduler(
+            working_directory="some_dir")
+        assert scheduler.request_more_info(Mock(), "dummy", "dummy") is None
+        captured = capsys.readouterr()
+        assert "dummy" not in captured.out
+
+    @pytest.mark.parametrize(
+        "reporter",
+        [
+            None,
+            MagicMock()
+        ]
+    )
+    def test_run(self, monkeypatch, reporter):
+        scheduler = runner_strategies.TaskScheduler(
+            working_directory="some_dir")
+        workflow = Mock()
+        scheduler.reporter = reporter
+        workflow.discover_task_metadata = Mock(return_value=[])
+        options = {}
+        subtask = speedwagon.tasks.Subtask()
+        subtask.exec = Mock()
+
+        monkeypatch.setattr(
+            runner_strategies.TaskGenerator,
+            "get_main_tasks",
+            lambda *args, **kwargs: [subtask]
+        )
+        scheduler.run(
+            workflow,
+            options
+        )
+        assert subtask.exec.called is True
+
+    def test_task_canceled(self):
+        scheduler = runner_strategies.TaskScheduler(
+            working_directory="some_dir")
+        scheduler.reporter = Mock(user_canceled=True)
+        scheduler.iter_tasks = Mock(return_value=[Mock()])
+
+        workflow = Mock()
+        workflow.discover_task_metadata = Mock(return_value=[])
+
+        options = {}
+
+        subtask = speedwagon.tasks.Subtask()
+        subtask.exec = Mock()
+        subtask._task_queue = Mock(unfinished_tasks=1)
+        with pytest.raises(speedwagon.job.JobCancelled):
+            scheduler.push_job_to_queue(workflow, options, scheduler.reporter)

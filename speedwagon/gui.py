@@ -57,6 +57,7 @@ Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 
 class ToolConsole(QtWidgets.QWidget):
     """Logging console."""
+    add_log_message = QtCore.pyqtSignal(str)
 
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
@@ -73,15 +74,18 @@ class ToolConsole(QtWidgets.QWidget):
 
         self._console.setDocument(self._log)
         self._console.setFont(monospaced_font)
+        self.add_log_message.connect(self.add_message)
 
     def add_message(self, message: str) -> None:
         cursor = QtGui.QTextCursor(self._log)
         cursor.movePosition(cursor.End)
-        cursor.insertText(message)
+        cursor.beginEditBlock()
         self._console.setTextCursor(cursor)
+        cursor.insertText(message)
 
         # To get the new line character
         self._console.append(None)
+        cursor.endEditBlock()
 
     @property
     def text(self) -> str:
@@ -95,8 +99,10 @@ class ConsoleLogger(logging.Handler):
 
     def emit(self, record) -> None:
         try:
-            msg = self.format(record)
-            self.console.add_message(msg)
+            self.console.add_log_message.emit(
+                self.format(record)
+            )
+            QtWidgets.QApplication.processEvents()
         except RuntimeError as error:
             print("Error: {}".format(error), file=sys.stderr)
             traceback.print_tb(error.__traceback__)
@@ -239,6 +245,7 @@ class MainWindow(MainProgram):
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
     def _create_console(self):
+
         self.console = ToolConsole(self.main_splitter)
         self.console.setMinimumHeight(75)
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)

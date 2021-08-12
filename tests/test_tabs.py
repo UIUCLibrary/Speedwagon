@@ -1,9 +1,8 @@
 from collections import OrderedDict
 from unittest import mock
 from unittest.mock import Mock, MagicMock, patch, call
-
-import pytest
 import yaml
+import pytest
 from speedwagon import tabs, exceptions, job
 
 
@@ -73,9 +72,10 @@ class TestWorkflowsTab:
         workflows = OrderedDict()
         workflows["Spam"] = MagicMock()
         workflows["Bacon"] = MagicMock()
-
+        from PyQt5 import QtWidgets
+        base_widget = QtWidgets.QWidget()
         selection_tab = tabs.WorkflowsTab(
-            parent=None,
+            parent=base_widget,
             workflows=workflows,
             log_manager=log_manager,
             work_manager=work_manager
@@ -121,7 +121,7 @@ class TestWorkflowsTab:
     def test_start_creates_a_messagebox_on_value_error(
             self, qtbot, monkeypatch, exception_type):
 
-        log_manager = Mock()
+        # log_manager = Mock()
         work_manager = MagicMock(user_settings={})
         workflows = OrderedDict()
 
@@ -141,7 +141,7 @@ class TestWorkflowsTab:
         selection_tab = tabs.WorkflowsTab(
             parent=None,
             workflows=workflows,
-            log_manager=log_manager,
+            # log_manager=log_manager,
             work_manager=work_manager
         )
         from speedwagon.runner_strategies import RunRunner
@@ -161,6 +161,44 @@ class TestWorkflowsTab:
 
         assert mock_message_box_exec.called is True
 
+    @pytest.mark.parametrize("exception_type", [
+        job.JobCancelled,
+        ValueError,
+        TypeError
+    ])
+    def test_run_dialog_catch_exception(
+            self, qtbot, monkeypatch, exception_type):
+
+        workflows = {
+            "spam": MagicMock(name="spam")
+        }
+        workflows['spam'].__class__ = job.AbsWorkflow
+        workflows['spam'].name = "Spam"
+
+        log_manager = Mock()
+        work_manager = Mock()
+        work_manager.user_settings = {}
+
+        def cause_chaos(self, tools, options, logger, completion_callback):
+            raise exception_type
+
+        monkeypatch.setattr(
+            tabs.runner_strategies.QtRunner,
+            "run",
+            cause_chaos
+        )
+
+        exec_ = Mock()
+        monkeypatch.setattr(tabs.QtWidgets.QMessageBox, "exec", exec_)
+        selection_tab = tabs.WorkflowsTab(
+            parent=None,
+            workflows=workflows,
+            log_manager=log_manager,
+            work_manager=work_manager
+        )
+        selection_tab.run(workflows['spam'], {})
+        assert exec_.called is True
+
 
 class TestTabsYaml:
     @pytest.mark.parametrize("exception_type", [
@@ -172,7 +210,6 @@ class TestTabsYaml:
                                    exception_type):
         import os.path
         with patch('speedwagon.tabs.open', mock.mock_open()):
-            import yaml
             monkeypatch.setattr(os.path, "getsize", lambda x: 1)
             monkeypatch.setattr(yaml, "load", Mock(side_effect=exception_type))
             with pytest.raises(exception_type) as e:
@@ -195,7 +232,7 @@ class TestTabsYaml:
             assert len(tab_data) == 1 and \
                    len(tab_data[0][1].workflows) == 4
 
-    def test_write_tabs_yaml(self, ):
+    def test_write_tabs_yaml(self):
         sample_tab_data = [
             tabs.TabData("dummy_tab", MagicMock())
         ]

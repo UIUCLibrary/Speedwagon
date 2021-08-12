@@ -20,7 +20,7 @@ from hathi_validate import validator
 import speedwagon
 from speedwagon.tasks import Subtask
 from speedwagon.logging import GuiLogHandler
-from speedwagon.job import AbsWorkflow
+from speedwagon.job import Workflow
 from speedwagon import tasks
 from . import shared_custom_widgets as options
 from .shared_custom_widgets import UserOption2, UserOption3
@@ -28,7 +28,7 @@ from .shared_custom_widgets import UserOption2, UserOption3
 __all__ = ['CompletenessWorkflow']
 
 
-class CompletenessWorkflow(AbsWorkflow):
+class CompletenessWorkflow(Workflow):
     name = "Verify HathiTrust Package Completeness"
     description = "This workflow takes as its input a directory of " \
                   "HathiTrust packages. It evaluates each subfolder as a " \
@@ -240,10 +240,14 @@ class CompletenessSubTask(Subtask):
 
 
 class HathiCheckMissingPackageFilesTask(CompletenessSubTask):
+    name = "Check for Missing Package Files"
 
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Checking for missing package files in {self.package_path}"
 
     def work(self) -> bool:
         errors: List[hathi_result.Result] = []
@@ -265,11 +269,15 @@ class HathiCheckMissingPackageFilesTask(CompletenessSubTask):
 
 
 class HathiCheckMissingComponentsTask(CompletenessSubTask):
+    name = "Checking for missing components"
 
     def __init__(self, check_ocr: bool, package_path: str) -> None:
         super().__init__()
         self.check_ocr = check_ocr
         self.package_path = package_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Checking for missing components in {self.package_path}"
 
     def work(self) -> bool:
         errors: List[hathi_result.Result] = []
@@ -325,9 +333,14 @@ class HathiCheckMissingComponentsTask(CompletenessSubTask):
 
 
 class ValidateExtraSubdirectoriesTask(CompletenessSubTask):
+    name = "Validating for Extra Subdirectories"
+
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Checking for extra directories in {self.package_path}"
 
     def work(self) -> bool:
         errors: List[hathi_result.Result] = []
@@ -369,9 +382,14 @@ class ValidateExtraSubdirectoriesTask(CompletenessSubTask):
 
 
 class ValidateChecksumsTask(CompletenessSubTask):
+    name = "Validate Checksums"
+
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Validating Checksums from {self.package_path}"
 
     def work(self) -> bool:
         errors: List[hathi_result.Result] = []
@@ -436,9 +454,14 @@ class ValidateChecksumsTask(CompletenessSubTask):
 
 
 class ValidateMarcTask(CompletenessSubTask):
+    name = "Validating Marc"
+
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Validating Marc in {self.package_path}"
 
     def work(self) -> bool:
         marc_file = os.path.join(self.package_path, "marc.xml")
@@ -494,9 +517,14 @@ class ValidateMarcTask(CompletenessSubTask):
 
 
 class ValidateOCRFilesTask(CompletenessSubTask):
+    name = "Validating OCR Files"
+
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Validating OCR Files in {self.package_path}"
 
     def work(self) -> bool:
         errors: List[hathi_result.Result] = []
@@ -539,9 +567,14 @@ class ValidateOCRFilesTask(CompletenessSubTask):
 
 
 class ValidateYMLTask(CompletenessSubTask):
+    name = "Validating YML"
+
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Validating YML in {self.package_path}"
 
     def work(self) -> bool:
         yml_file = os.path.join(self.package_path, "meta.yml")
@@ -590,9 +623,14 @@ class ValidateYMLTask(CompletenessSubTask):
 
 
 class ValidateOCFilesUTF8Task(CompletenessSubTask):
+    name = "Validate OCR Files UTF8 Encoding"
+
     def __init__(self, package_path: str) -> None:
         super().__init__()
         self.package_path = package_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Validate OCR Files have UTF8 Encoding in {self.package_path}"
 
     def work(self) -> bool:
         def filter_ocr_only(entry: 'os.DirEntry[str]') -> bool:
@@ -618,9 +656,7 @@ class ValidateOCFilesUTF8Task(CompletenessSubTask):
             ocr_file: 'os.DirEntry[str]'
             for ocr_file in filter(filter_ocr_only,
                                    os.scandir(self.package_path)):
-                self.log("Looking for invalid characters in {}".format(
-                    ocr_file.path)
-                )
+                self.log(f"Looking for invalid characters in {ocr_file.path}")
 
                 invalid_ocr_character: List[hathi_result.Result] =\
                     validate_process.run_validation(
@@ -635,9 +671,14 @@ class ValidateOCFilesUTF8Task(CompletenessSubTask):
 
 
 class HathiManifestGenerationTask(CompletenessSubTask):
+    name = 'Hathi Manifest Generation'
+
     def __init__(self, batch_root: str) -> None:
         super().__init__()
         self.batch_root = batch_root
+
+    def task_description(self) -> Optional[str]:
+        return f"Generating HathiTrust Manifest for {self.batch_root}"
 
     def work(self) -> bool:
         batch_root = self.batch_root
@@ -673,6 +714,7 @@ class HathiManifestGenerationTask(CompletenessSubTask):
 
 
 class PackageNamingConventionTask(CompletenessSubTask):
+    name = "Package Naming Convention"
     FILE_NAMING_CONVENTION_REGEX = \
         "^[0-9]*([m|v|i][0-9]{2,})?(_[1-9])?([m|v|i][0-9])?$"
 
@@ -682,6 +724,9 @@ class PackageNamingConventionTask(CompletenessSubTask):
 
         self._validator = re.compile(
             PackageNamingConventionTask.FILE_NAMING_CONVENTION_REGEX)
+
+    def task_description(self) -> Optional[str]:
+        return f"Checking Package Naming Convention for {self.package_path}"
 
     def work(self) -> bool:
         if not os.path.isdir(self.package_path):

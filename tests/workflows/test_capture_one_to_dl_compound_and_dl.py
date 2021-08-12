@@ -36,7 +36,7 @@ def test_discover_task_metadata(monkeypatch, user_options):
     initial_results = []
     user_options["Input"] = "some_real_source_folder"
     user_options["Output Digital Library"] = "./some_real_dl_folder/"
-    user_options["Output HathiTrust"]= "./some_real_ht_folder/"
+    user_options["Output HathiTrust"] = "./some_real_ht_folder/"
     # }
     workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
 
@@ -137,7 +137,11 @@ class TestWorkflow:
         def mock_scandir(path):
             for i_number in range(20):
                 file_mock = Mock()
-                file_mock.name = f"99423682912205899-{str(i_number).zfill(8)}.tif"
+                file_mock.name = \
+                    f"99423682912205899-{str(i_number).zfill(8)}.tif"
+
+                file_mock.path = path
+
                 yield file_mock
 
         initial_results = []
@@ -187,6 +191,7 @@ class TestWorkflow:
             )
 
             package_factory.transform.assert_has_calls(calls, any_order=True)
+
 
 @pytest.fixture()
 def user_options():
@@ -305,7 +310,12 @@ def test_output_validator_success_is_ok(user_options, monkeypatch):
         ("Cataloged collections/Non EAS", packager.packages.CatalogedNonEAS),
     ]
 )
-def test_discover_task_metadata_gets_right_package(user_options, user_selected_package_type, expected_package_type, monkeypatch):
+def test_discover_task_metadata_gets_right_package(
+        user_options,
+        user_selected_package_type,
+        expected_package_type,
+        monkeypatch
+):
     additional_data = {}
     initial_results = []
     user_args = {
@@ -328,7 +338,6 @@ def test_discover_task_metadata_gets_right_package(user_options, user_selected_p
         user_args["Output Digital Library"],
         user_args["Output HathiTrust"],
     ]
-
 
     def PackageFactory(package_type):
         assert isinstance(package_type, expected_package_type)

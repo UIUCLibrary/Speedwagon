@@ -92,6 +92,10 @@ class Subtask(AbsSubtask):
     Subclass this generate a new task
     """
 
+    def task_description(self) -> Optional[str]:
+        """Get user readable information about what the subtask is doing."""
+        return None
+
     def __init__(self) -> None:
         """Create a new sub-task."""
         self._result: Optional[Result] = None
@@ -100,7 +104,7 @@ class Subtask(AbsSubtask):
         self._working_dir = ""
         self.task_working_dir = ""
 
-        self._parent_task_log_q: Optional[Deque[str]] = None
+        self._parent_task_log_q = None
 
     @property
     def subtask_working_dir(self) -> str:
@@ -119,13 +123,13 @@ class Subtask(AbsSubtask):
         self._working_dir = value
 
     @property
-    def parent_task_log_q(self) -> Deque[str]:
+    def parent_task_log_q(self):
         if self._parent_task_log_q is None:
             raise RuntimeError("Property parent_task_log_q has not be set")
         return self._parent_task_log_q
 
     @parent_task_log_q.setter
-    def parent_task_log_q(self, value: Deque[str]) -> None:
+    def parent_task_log_q(self, value) -> None:
         self._parent_task_log_q = value
 
     @property

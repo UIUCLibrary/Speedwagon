@@ -2,13 +2,13 @@
 
 import logging
 import typing
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Optional
 from contextlib import contextmanager
 from uiucprescon import packager
 from uiucprescon.packager.packages.collection_builder import Metadata
 
 from speedwagon import tasks
-from speedwagon.job import AbsWorkflow
+from speedwagon.job import Workflow
 from speedwagon.logging import GuiLogHandler
 from . import shared_custom_widgets as options
 
@@ -17,7 +17,7 @@ __all__ = ['CaptureOneToHathiTiffPackageWorkflow']
 from .shared_custom_widgets import UserOption3
 
 
-class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
+class CaptureOneToHathiTiffPackageWorkflow(Workflow):
     name = "Convert CaptureOne TIFF to Hathi TIFF package"
     description = "This workflow chains together a number of tools to take " \
                   "a batch of CaptureOne files and structure them as " \
@@ -80,6 +80,8 @@ class CaptureOneToHathiTiffPackageWorkflow(AbsWorkflow):
 
 
 class PackageConverter(tasks.Subtask):
+    name = "Convert Package"
+
     @contextmanager
     def log_config(self, logger: logging.Logger):
         gui_logger = GuiLogHandler(self.log)
@@ -102,6 +104,9 @@ class PackageConverter(tasks.Subtask):
         self.existing_package = existing_package
         self.new_package_root = new_package_root
         self.source_path = source_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Converting package from {self.source_path}"
 
     def work(self) -> bool:
         my_logger = logging.getLogger(packager.__name__)

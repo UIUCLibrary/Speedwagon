@@ -52,7 +52,7 @@ __all__ = [
 
 
 class FileFormatError(Exception):
-    pass
+    """Exception is thrown when Something wrong with the contents of a file."""
 
 
 def parse_args() -> argparse.ArgumentParser:
@@ -551,15 +551,16 @@ class SingleWorkflowLauncher(AbsStarter):
         window.show()
         window.setWindowTitle(self._active_workflow.name)
         runner_strategy = \
-            runner_strategies.UsingExternalManagerForAdapter2(work_manager,
-                                                              window)
+            runner_strategies.QtRunner(window)
 
         self._active_workflow.validate_user_options(**self.options)
+        # runner_strategy.additional_info_callback
 
         runner_strategy.run(self._active_workflow,
                             self.options,
                             window.log_manager)
         window.log_manager.handlers.clear()
+        window.close()
 
     def initialize(self) -> None:
         """No initialize is needed."""
@@ -628,11 +629,7 @@ class SingleWorkflowJSON(AbsStarter):
              options: Dict[str, typing.Any]) -> None:
         window = SingleWorkflowJSON._load_window(work_manager, workflow.name)
         window.show()
-        runner_strategy = \
-            runner_strategies.UsingExternalManagerForAdapter2(
-                work_manager,
-                window
-            )
+        runner_strategy = runner_strategies.QtRunner(window)
 
         workflow.validate_user_options(**options)
 
@@ -675,24 +672,28 @@ class MultiWorkflowLauncher(AbsStarter):
             debug=False)
 
         window.show()
-        while not self._pending_tasks.empty():
-            active_workflow, options = self._pending_tasks.get()
-            window.setWindowTitle(active_workflow.name)
-            runner_strategy = \
-                runner_strategies.UsingExternalManagerForAdapter2(
-                    work_manager,
-                    window
+        try:
+            while not self._pending_tasks.empty():
+                active_workflow, options = self._pending_tasks.get()
+                window.setWindowTitle(active_workflow.name)
+                runner_strategy = \
+                    runner_strategies.QtRunner(window)
+
+                active_workflow.validate_user_options(**options)
+
+                runner_strategy.run(
+                    active_workflow,
+                    options,
+                    window.log_manager
                 )
 
-            active_workflow.validate_user_options(**options)
+                self._pending_tasks.task_done()
+        except runner_strategies.TaskFailed as task_error:
+            raise job.JobCancelled(task_error) from task_error
 
-            runner_strategy.run(
-                                active_workflow,
-                                options,
-                                window.log_manager)
-            self._pending_tasks.task_done()
-
-        window.log_manager.handlers.clear()
+        finally:
+            window.log_manager.handlers.clear()
+            window.close()
 
     def initialize(self) -> None:
         """No need to initialize."""

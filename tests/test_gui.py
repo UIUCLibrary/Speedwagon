@@ -92,7 +92,6 @@ class TestToolConsole:
         assert "I'm a message" in console.text
 
 
-
 def test_window_save_log(qtbot, monkeypatch):
     mock_work_manager = MagicMock(settings_path="some-path")
     main_window = speedwagon.gui.MainWindow(mock_work_manager)
@@ -122,3 +121,51 @@ def test_set_current_tab(qtbot):
 
     main_window.set_current_tab("spam")
     assert main_window.tab_widget.tabs.setCurrentIndex.called
+
+
+class TestMainWindow:
+    def test_about_dialog_box(self, qtbot, monkeypatch):
+        work_manager = Mock()
+        work_manager.settings_path = None
+        window = speedwagon.gui.MainWindow(work_manager)
+        qtbot.add_widget(window)
+        about_dialog_box = Mock()
+        monkeypatch.setattr(
+            speedwagon.dialog.dialogs,
+            "about_dialog_box",
+            about_dialog_box
+        )
+        window.show_about_window()
+        assert about_dialog_box.called is True
+
+    def test_show_system_info(self, qtbot, monkeypatch):
+        work_manager = Mock()
+        work_manager.settings_path = None
+        window = speedwagon.gui.MainWindow(work_manager)
+        qtbot.add_widget(window)
+        exec_ = Mock()
+        monkeypatch.setattr(
+            speedwagon.dialog.dialogs.SystemInfoDialog,
+            "exec",
+            exec_
+        )
+        window.show_system_info()
+        assert exec_.called is True
+
+    def test_show_configuration_opens_settings_dialog(
+            self,
+            qtbot,
+            monkeypatch
+    ):
+        work_manager = Mock()
+        work_manager.settings_path = None
+        window = speedwagon.gui.MainWindow(work_manager)
+        qtbot.add_widget(window)
+        exec_ = Mock()
+        monkeypatch.setattr(
+            speedwagon.dialog.settings.SettingsDialog,
+            "exec",
+            exec_
+        )
+        window.show_configuration()
+        assert exec_.called is True

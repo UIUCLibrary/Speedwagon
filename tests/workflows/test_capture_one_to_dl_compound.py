@@ -6,6 +6,8 @@ import speedwagon.validators
 from speedwagon.workflows import workflow_capture_one_to_dl_compound as ht_wf
 import os.path
 
+import uiucprescon.packager.packages
+
 
 def test_option_validate_output_false(monkeypatch):
     user_data = {
@@ -127,13 +129,22 @@ def test_discover_task_metadata(monkeypatch):
 
     def mock_scandir(path):
         for i_number in range(20):
-            file_mock = Mock()
+            file_mock = MagicMock()
+            # file_mock = Mock()
             file_mock.name = f"99423682912205899-{str(i_number).zfill(8)}.tif"
+            file_mock.path = path
+            # file_mock.is_file.return_value=True
             yield file_mock
 
     with monkeypatch.context() as mp:
         mp.setattr(os.path, "exists", mock_exists)
-        mp.setattr(os, "scandir", mock_scandir)
+
+        mp.setattr(
+            uiucprescon.packager.packages.capture_one_package.os,
+            "scandir",
+            mock_scandir
+        )
+
         new_task_metadata = workflow.discover_task_metadata(
             initial_results=initial_results,
             additional_data=additional_data,

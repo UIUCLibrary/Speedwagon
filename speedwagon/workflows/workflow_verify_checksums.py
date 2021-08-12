@@ -11,7 +11,7 @@ import typing
 import hathi_validate.process
 
 from speedwagon import tasks
-from speedwagon.job import AbsWorkflow
+from speedwagon.job import Workflow
 from speedwagon.reports import add_report_borders
 from . import shared_custom_widgets
 
@@ -38,7 +38,7 @@ class ResultValues(enum.Enum):
     CHECKSUM_REPORT_FILE = "checksum_report_file"
 
 
-class ChecksumWorkflow(AbsWorkflow):
+class ChecksumWorkflow(Workflow):
     name = "Verify Checksum Batch [Multiple]"
     description = "Verify checksum values in checksum batch file, report " \
                   "errors. Verifies every entry in the checksum.md5 files " \
@@ -231,6 +231,7 @@ class ReadChecksumReportTask(tasks.Subtask):
 
 
 class ValidateChecksumTask(tasks.Subtask):
+    name = "Validating File Checksum"
 
     def __init__(self,
                  file_name: str,
@@ -296,7 +297,9 @@ class CaseInsensitiveComparison(AbsComparisonMethod):
         return a.lower() == b.lower()
 
 
-class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
+class VerifyChecksumBatchSingleWorkflow(Workflow):
+    """Verify Checksum Batch."""
+
     name = "Verify Checksum Batch [Single]"
     description = "Verify checksum values in checksum batch file, report " \
                   "errors. Verifies every entry in the checksum.md5 files " \
@@ -316,8 +319,9 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
         checksum_report_file = os.path.abspath(user_args[UserArgs.INPUT.value])
 
         for report_md5_hash, filename in \
-                hathi_validate.process.extracts_checksums(
-                    checksum_report_file
+                sorted(hathi_validate.process.extracts_checksums(
+                    checksum_report_file),
+                    key=lambda x: x[1]
                 ):
 
             new_job: Dict[str, str] = {
@@ -430,10 +434,15 @@ class VerifyChecksumBatchSingleWorkflow(AbsWorkflow):
 
 
 class ChecksumTask(tasks.Subtask):
+    name = "Verifying file checksum"
 
     def __init__(self, *_: None, **kwargs: Union[str, bool]) -> None:
         super().__init__()
         self._kwarg = kwargs
+
+    def task_description(self) -> Optional[str]:
+        return f"Calculating file checksum for " \
+               f"{self._kwarg[JobValues.ITEM_FILENAME.value]}"
 
     def work(self) -> bool:
         filename = typing.cast(str, self._kwarg[JobValues.ITEM_FILENAME.value])
@@ -447,7 +456,6 @@ class ChecksumTask(tasks.Subtask):
             typing.cast(str, self._kwarg[JobValues.ROOT_PATH.value])
 
         full_path = os.path.join(checksum_path, filename)
-        self.log("Calculating MD5 for {}".format(filename))
         actual_md5: str = hathi_validate.process.calculate_md5(full_path)
 
         result: Dict[ResultValues, Union[str, bool]] = {

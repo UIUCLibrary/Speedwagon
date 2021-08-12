@@ -20,7 +20,7 @@ class TestSingleWorkflowLauncher:
             monkeypatch.setattr(dialog.WorkProgressBar, "show", Mock())
             workflow = MagicMock()
             workflow.name = "job"
-            workflow.__class__ = job.AbsWorkflow
+            workflow.__class__ = job.Workflow
             workflow.validate_user_options = Mock(return_value=True)
 
             monkeypatch.setattr(workflow, "create_new_task", Mock())

@@ -14,7 +14,7 @@ import requests
 
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from speedwagon import tasks, reports, validators
-from speedwagon.job import AbsWorkflow
+from speedwagon.job import Workflow
 from . import shared_custom_widgets as options
 
 
@@ -32,7 +32,7 @@ MMSID_PATTERN = \
 BIBID_PATTERN = re.compile(r"^(?P<identifier>[0-9]*)")
 
 
-class GenerateMarcXMLFilesWorkflow(AbsWorkflow):
+class GenerateMarcXMLFilesWorkflow(Workflow):
     """Generate Marc XML files.
 
     .. versionchanged:: 0.1.5
@@ -506,6 +506,8 @@ SUPPORTED_IDENTIFIERS = {
 class MarcGeneratorTask(tasks.Subtask):
     """Task for generating the MARC xml file."""
 
+    name = "Generate MARC File"
+
     def __init__(self,
                  identifier: str,
                  identifier_type: str,
@@ -524,6 +526,9 @@ class MarcGeneratorTask(tasks.Subtask):
         self._identifier_type = identifier_type
         self._output_name = output_name
         self._server_url = server_url
+
+    def task_description(self) -> Optional[str]:
+        return f"Retrieving MARC record for {self._identifier}"
 
     @property
     def identifier_type(self) -> str:

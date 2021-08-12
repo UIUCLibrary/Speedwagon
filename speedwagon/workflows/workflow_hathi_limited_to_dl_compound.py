@@ -76,6 +76,7 @@ class HathiLimitedToDLWorkflow(Workflow):
 
 
 class PackageConverter(tasks.Subtask):
+    name = "Convert Package"
 
     @contextmanager
     def log_config(self, logger: logging.Logger):
@@ -92,6 +93,9 @@ class PackageConverter(tasks.Subtask):
         self.dst = dst
         self.output_packager = packager.PackageFactory(
             packager.packages.DigitalLibraryCompound())
+
+    def task_description(self) -> Optional[str]:
+        return f"Converting package {self.src}"
 
     def work(self) -> bool:
 

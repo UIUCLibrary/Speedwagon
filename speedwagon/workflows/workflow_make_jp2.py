@@ -87,7 +87,7 @@ class ProfileFactory:
         return cls.profiles.keys()
 
 
-class MakeJp2Workflow(job.AbsWorkflow):
+class MakeJp2Workflow(job.Workflow):
     """Workflow for creating Jpeg 2000 files from TIFF."""
 
     name = "Make JP2"
@@ -271,10 +271,14 @@ class MakeJp2Workflow(job.AbsWorkflow):
 
 
 class EnsurePathTask(tasks.Subtask):
+    name = "Ensure Path"
 
     def __init__(self, path: str) -> None:
         super().__init__()
         self._path = path
+
+    def task_description(self) -> Optional[str]:
+        return f"Verifying directory {self._path}"
 
     def work(self) -> bool:
         if not os.path.exists(self._path):
@@ -284,6 +288,7 @@ class EnsurePathTask(tasks.Subtask):
 
 
 class ConvertFileTask(tasks.Subtask):
+    name = "Convert File"
 
     def __init__(self, source_file: str, destination_file: str,
                  image_factory_name: str) -> None:
@@ -292,6 +297,9 @@ class ConvertFileTask(tasks.Subtask):
         self._source_file = source_file
         self._destination_file = destination_file
         self._image_factory_name = image_factory_name
+
+    def task_description(self) -> Optional[str]:
+        return f"Converting {self._source_file}"
 
     def work(self) -> bool:
         self.log(f"Converting {os.path.basename(self._source_file)} "

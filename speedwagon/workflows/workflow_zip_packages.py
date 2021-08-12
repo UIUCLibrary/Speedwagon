@@ -9,14 +9,14 @@ from typing import List, Any, Optional
 import hathizip.process
 import hathizip
 from speedwagon import tasks, reports
-from speedwagon.job import AbsWorkflow
+from speedwagon.job import Workflow
 from speedwagon.logging import GuiLogHandler
 from . import shared_custom_widgets as options
 
 __all__ = ['ZipPackagesWorkflow']
 
 
-class ZipPackagesWorkflow(AbsWorkflow):
+class ZipPackagesWorkflow(Workflow):
     name = "Zip Packages"
 
     description = "This tool takes a folder, usually of HathiTrust " \
@@ -89,6 +89,8 @@ class ZipPackagesWorkflow(AbsWorkflow):
 
 
 class ZipTask(tasks.Subtask):
+    name = "Zip Files"
+
     def __init__(
             self,
             source_path: str,
@@ -100,6 +102,9 @@ class ZipTask(tasks.Subtask):
         super().__init__()
         self._source_path = source_path
         self._destination_path = destination_path
+
+    def task_description(self) -> Optional[str]:
+        return f"Zipping files in {self._source_path}"
 
     def work(self) -> bool:
         my_logger = logging.getLogger(hathizip.__name__)
