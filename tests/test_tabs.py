@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from unittest import mock
 from unittest.mock import Mock, MagicMock, patch, call
-
+import yaml
 import pytest
 from speedwagon import tabs, exceptions, job
 
@@ -65,7 +65,6 @@ class TestWorkflowsTab:
                 ]
             )
         assert selection_tab.is_ready_to_start() is is_validate
-
 
     def test_init_selects_first_workflow(self, qtbot):
         log_manager = Mock()
@@ -183,7 +182,12 @@ class TestWorkflowsTab:
         def cause_chaos(self, tools, options, logger, completion_callback):
             raise exception_type
 
-        monkeypatch.setattr(tabs.runner_strategies.QtRunner, "run", cause_chaos)
+        monkeypatch.setattr(
+            tabs.runner_strategies.QtRunner,
+            "run",
+            cause_chaos
+        )
+
         exec_ = Mock()
         monkeypatch.setattr(tabs.QtWidgets.QMessageBox, "exec", exec_)
         selection_tab = tabs.WorkflowsTab(
@@ -197,22 +201,20 @@ class TestWorkflowsTab:
 
 
 class TestTabsYaml:
-    # @pytest.mark.skip
-    # @pytest.mark.parametrize("exception_type", [
-    #     FileNotFoundError,
-    #     AttributeError,
-    #     yaml.YAMLError,
-    # ])
-    # def test_read_tabs_yaml_errors(self, monkeypatch,
-    #                                exception_type):
-    #     import os.path
-    #     with patch('speedwagon.tabs.open', mock.mock_open()):
-    #         import yaml
-    #         monkeypatch.setattr(os.path, "getsize", lambda x: 1)
-    #         monkeypatch.setattr(yaml, "load", Mock(side_effect=exception_type))
-    #         with pytest.raises(exception_type) as e:
-    #             list(tabs.read_tabs_yaml('tabs.yml'))
-    #         assert e.type == exception_type
+    @pytest.mark.parametrize("exception_type", [
+        FileNotFoundError,
+        AttributeError,
+        yaml.YAMLError,
+    ])
+    def test_read_tabs_yaml_errors(self, monkeypatch,
+                                   exception_type):
+        import os.path
+        with patch('speedwagon.tabs.open', mock.mock_open()):
+            monkeypatch.setattr(os.path, "getsize", lambda x: 1)
+            monkeypatch.setattr(yaml, "load", Mock(side_effect=exception_type))
+            with pytest.raises(exception_type) as e:
+                list(tabs.read_tabs_yaml('tabs.yml'))
+            assert e.type == exception_type
 
     def test_read_tabs_yaml(self, monkeypatch):
         sample_text = """my stuff:
@@ -239,4 +241,3 @@ class TestTabsYaml:
             assert m.called is True
         handle = m()
         handle.write.assert_has_calls([call('dummy_tab')])
-
