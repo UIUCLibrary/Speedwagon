@@ -736,7 +736,6 @@ class TaskScheduler:
 
         This blocks until the task finished is called.
         """
-
         for subtask in self.iter_tasks(workflow, options):
             self._task_queue.put(subtask)
             self.logger.debug(
