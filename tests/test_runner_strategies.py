@@ -431,3 +431,13 @@ class TestTaskDispatcher:
         )
         assert dispatcher.active is False and \
                dispatcher.stop() is None
+
+
+class TestTaskScheduler:
+    def test_default_request_more_info_noop(self, capsys):
+        scheduler = runner_strategies.TaskScheduler(
+            working_directory="some_dir")
+        assert scheduler.request_more_info(Mock(), "dummy", "dummy") is None
+        captured = capsys.readouterr()
+        assert "dummy" not in captured.out
+

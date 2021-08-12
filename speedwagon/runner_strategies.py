@@ -693,9 +693,7 @@ class TaskScheduler:
         self._task_queue: "queue.Queue[tasks.Subtask]" = queue.Queue(maxsize=1)
 
         self.request_more_info: typing.Callable[[Workflow, Any, Any], Any] = \
-            lambda *args, **kwargs: print(
-                f"request_more_info args={args} kargs={kwargs}"
-            )
+            lambda *args, **kwargs: None
 
     def iter_tasks(self,
                    workflow: Workflow,
@@ -760,11 +758,10 @@ class TaskScheduler:
                                     expected=True
                                 )
                     reporter.refresh()
+                reporter.refresh()
         finally:
-            reporter.refresh()
             self._task_queue.join()
             task_dispatcher.stop()
-            reporter.close()
 
 
 class QtRunner(AbsRunner2):
