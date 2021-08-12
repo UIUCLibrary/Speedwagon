@@ -246,7 +246,6 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
 
     def __enter__(self) -> "WorkRunnerExternal3":
         """Start worker."""
-
         self.dialog = WorkProgressBar(self._parent)
         self.dialog.close()
         return self
