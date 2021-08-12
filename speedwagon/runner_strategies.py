@@ -52,6 +52,8 @@ class AbsRunner2(metaclass=abc.ABCMeta):
 
 
 class RunRunner:
+    """Context for running AbsRunner2 strategies."""
+
     def __init__(self, strategy: AbsRunner2) -> None:
         """Create a new runner executor."""
         self._strategy = strategy

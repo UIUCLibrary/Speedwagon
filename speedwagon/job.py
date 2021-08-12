@@ -23,7 +23,14 @@ __all__ = [
 class JobCancelled(Exception):
     """Job cancelled exception."""
 
-    def __init__(self, *args: object, expected=False) -> None:
+    def __init__(self, *args: object, expected: bool = False) -> None:
+        """Indicate a job was cancelled.
+
+        Args:
+            *args:
+            expected: If the job was cancelled on purpose or not, such as a
+                failure.
+        """
         super().__init__(*args)
         self.expected = expected
 
