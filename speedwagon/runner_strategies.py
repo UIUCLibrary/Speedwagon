@@ -60,7 +60,7 @@ class RunRunner:
 
     def run(self,
             tool: AbsWorkflow,
-            options: dict,
+            options: typing.Dict[str, Any],
             logger: logging.Logger,
             completion_callback=None) -> None:
         """Execute runner job."""
@@ -169,7 +169,13 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 if report:
                     logger.info(report)
 
-    def _get_additional_data(self, job, options, parent, pre_results):
+    def _get_additional_data(
+            self,
+            job: AbsWorkflow,
+            options: Dict[str, Any],
+            parent: QtWidgets.QWidget,
+            pre_results
+    ) -> Dict[str, Any]:
         if isinstance(job, Workflow):
             return self._get_additional_options(
                 parent,
@@ -360,7 +366,7 @@ class TaskGenerator:
             workflow: Workflow,
             options: typing.Mapping[str, Any],
             working_directory: str,
-            caller=None
+            caller: typing.Optional["TaskScheduler"] = None
     ) -> None:
         self.workflow = workflow
         self.options = options
@@ -479,7 +485,7 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
         return self._total_tasks_amount
 
     @total_tasks_amount.setter
-    def total_tasks_amount(self, value):
+    def total_tasks_amount(self, value: typing.Optional[int]) -> None:
         self._total_tasks_amount = value
 
     @abc.abstractmethod
@@ -487,17 +493,18 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
         """Refresh the display info."""
 
     @property
-    def current_task_progress(self):
+    def current_task_progress(self) -> typing.Optional[int]:
         return self._current_task_progress
 
     @current_task_progress.setter
-    def current_task_progress(self, value):
+    def current_task_progress(self, value: typing.Optional[int]) -> None:
         self._current_task_progress = value
 
     @property
     @abc.abstractmethod
     def user_canceled(self) -> bool:
         """Check if the user has signaled a canceled."""
+
     @property
     def details(self) -> typing.Optional[str]:
         return self._details
@@ -506,7 +513,7 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
     def details(self, value: str) -> None:
         self._details = value
 
-    def __enter__(self):
+    def __enter__(self) -> "RunnerDisplay":
         return self
 
     def __exit__(self, __exc_type: Optional[Type[BaseException]],
@@ -517,19 +524,21 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
 
 class QtDialogProgress(RunnerDisplay):
 
-    def __init__(self,
-                 parent: typing.Optional[QtWidgets.QWidget] = None) -> None:
+    def __init__(
+            self,
+            parent: typing.Optional[QtWidgets.QWidget] = None
+    ) -> None:
         super().__init__()
         self.dialog = speedwagon.dialog.WorkProgressBar(parent=parent)
         self.dialog.setMaximum(0)
         self.dialog.setValue(0)
 
     @property
-    def details(self):
+    def details(self) -> str:
         return self.dialog.labelText()
 
     @details.setter
-    def details(self, value):
+    def details(self, value: str) -> None:
         if self._details == value:
             return
 
@@ -538,25 +547,25 @@ class QtDialogProgress(RunnerDisplay):
         QtWidgets.QApplication.processEvents()
 
     @property
-    def user_canceled(self):
+    def user_canceled(self) -> bool:
         return self.dialog.wasCanceled()
 
     @property
-    def current_task_progress(self):
+    def current_task_progress(self) -> typing.Optional[int]:
         return super().current_task_progress
 
     @current_task_progress.setter
-    def current_task_progress(self, value):
+    def current_task_progress(self, value: typing.Optional[int]) -> None:
         self._current_task_progress = value
         dialog_value = value or 0
         self.dialog.setValue(dialog_value)
 
     @property
-    def total_tasks_amount(self):
+    def total_tasks_amount(self) -> typing.Optional[int]:
         return super().total_tasks_amount
 
     @total_tasks_amount.setter
-    def total_tasks_amount(self, value):
+    def total_tasks_amount(self, value: typing.Optional[int]) -> None:
         self._total_tasks_amount = value
         if value is None:
             self.dialog.setMaximum(0)
@@ -565,11 +574,11 @@ class QtDialogProgress(RunnerDisplay):
         self.dialog.setMaximum(value)
 
     @property
-    def title(self):
+    def title(self) -> str:
         return self.dialog.windowTitle()
 
     @title.setter
-    def title(self, value):
+    def title(self, value: str) -> None:
         self.dialog.setWindowTitle(value)
 
     def refresh(self) -> None:
@@ -597,20 +606,22 @@ class QtDialogProgress(RunnerDisplay):
         self.close()
         return super().__exit__(__exc_type, __exc_value, __traceback)
 
-    def close(self):
+    def close(self) -> None:
         self.dialog.close()
 
-    def _update_window_task_info(self, current_task: tasks.Subtask):
+    def _update_window_task_info(self, current_task: tasks.Subtask) -> None:
         self.details = current_task.name
 
-    def _update_progress(self, task_scheduler):
+    def _update_progress(self, task_scheduler: "TaskScheduler") -> None:
         self.total_tasks_amount = task_scheduler.total_tasks
         self.current_task_progress = task_scheduler.current_task_progress
 
 
 class TaskDispatcher:
 
-    def __init__(self, job_queue: queue.Queue, logger=None) -> None:
+    def __init__(self,
+                 job_queue: queue.Queue,
+                 logger: typing.Optional[logging.Logger] = None) -> None:
         super().__init__()
         self.job_queue = job_queue
         self._stop = threading.Event()
@@ -626,7 +637,7 @@ class TaskDispatcher:
 
         return self._thread.is_alive()
 
-    def stop(self):
+    def stop(self) -> None:
         if self._thread is None:
             return
         self._stop.set()
@@ -637,7 +648,7 @@ class TaskDispatcher:
             self,
             stop_event: threading.Event,
             job_finished_event: threading.Event
-    ):
+    ) -> None:
         logger = self.logger
         logger.debug("Processing thread is available")
         while not stop_event.is_set():
@@ -664,7 +675,7 @@ class TaskDispatcher:
             self.job_queue.task_done()
         job_finished_event.set()
 
-    def start(self):
+    def start(self) -> None:
         logger = logging.getLogger(__name__)
 
         logger.debug("Starting processing thread")
@@ -799,7 +810,12 @@ class QtRunner(AbsRunner2):
         if current == total:
             dialog_box.accept()
 
-    def request_more_info(self, workflow: Workflow, options, pretask_results):
+    def request_more_info(
+            self,
+            workflow: Workflow,
+            options: Dict[str, Any],
+            pretask_results
+    ) -> Dict[str, Any]:
         if self.parent is not None and \
                 hasattr(workflow, "get_additional_info"):
             return workflow.get_additional_info(
@@ -808,7 +824,8 @@ class QtRunner(AbsRunner2):
         return {}
 
     def run(self,
-            job: AbsWorkflow, options: dict,
+            job: AbsWorkflow,
+            options: typing.Dict[str, Any],
             logger: logging.Logger = None,
             completion_callback=None
             ) -> None:
@@ -827,9 +844,11 @@ class QtRunner(AbsRunner2):
                     logger=logger
                 )
 
-    def run_abs_workflow(self, task_scheduler: TaskScheduler,
+    def run_abs_workflow(self,
+                         task_scheduler: TaskScheduler,
                          job: Workflow,
-                         options, logger: logging.Logger = None) -> None:
+                         options: typing.Dict[str, Any],
+                         logger: logging.Logger = None) -> None:
 
         task_scheduler.logger = logger or logging.getLogger(__name__)
         task_scheduler.request_more_info = self.request_more_info
