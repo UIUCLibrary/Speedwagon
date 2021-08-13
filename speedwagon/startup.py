@@ -525,7 +525,7 @@ class SingleWorkflowLauncher(AbsStarter):
 
     """
 
-    def __init__(self, logger=None) -> None:
+    def __init__(self, logger: typing.Optional[logging.Logger] = None) -> None:
         """Set up window for running a single workflow."""
         super().__init__()
         self.window: Optional[speedwagon.gui.MainWindow] = None
@@ -565,7 +565,7 @@ class SingleWorkflowLauncher(AbsStarter):
     def initialize(self) -> None:
         """No initialize is needed."""
 
-    def set_workflow(self, workflow: job.AbsWorkflow):
+    def set_workflow(self, workflow: job.AbsWorkflow) -> None:
         """Set the current workflow."""
         self._active_workflow = workflow
 
@@ -653,7 +653,7 @@ class SingleWorkflowJSON(AbsStarter):
 
 class MultiWorkflowLauncher(AbsStarter):
 
-    def __init__(self, logger=None) -> None:
+    def __init__(self, logger:  Optional[logging.Logger] = None) -> None:
         super().__init__()
         self.logger = logger or logging.getLogger(__name__)
         self._pending_tasks: \
