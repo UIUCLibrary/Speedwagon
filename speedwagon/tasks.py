@@ -236,7 +236,7 @@ class AbsTask(metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def status(self) -> TaskStatus:
-        pass
+        """Get the status of the subtask."""
 
 
 class AbsTaskComponents(metaclass=abc.ABCMeta):
@@ -244,22 +244,22 @@ class AbsTaskComponents(metaclass=abc.ABCMeta):
     @property  # type: ignore
     @abc.abstractmethod
     def pretask(self) -> Optional[AbsSubtask]:
-        pass
+        """Get the subtask that run prior to the main task."""
 
     @pretask.setter  # type: ignore
     @abc.abstractmethod
     def pretask(self, value: AbsSubtask) -> None:
-        pass
+        """set the subtask that run prior to the main task."""
 
     @property  # type: ignore
     @abc.abstractmethod
     def posttask(self) -> Optional[AbsSubtask]:
-        pass
+        """Get the subtask that run after the main tasks."""
 
     @posttask.setter  # type: ignore
     @abc.abstractmethod
     def posttask(self, value: AbsSubtask) -> None:
-        pass
+        """Set the subtask that run after the main tasks."""
 
 
 class Task(AbsTask, AbsTaskComponents):
