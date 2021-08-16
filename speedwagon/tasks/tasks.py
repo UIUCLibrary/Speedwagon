@@ -1,3 +1,5 @@
+"""Tasks."""
+
 import abc
 import collections
 import enum
@@ -6,6 +8,14 @@ import sys
 import queue
 import pickle
 from typing import Optional, Any, Deque, NamedTuple, Type, List
+
+__all__ = [
+    "QueueAdapter",
+    "MultiStageTaskBuilder",
+    "TaskBuilder",
+    "Result",
+    "Subtask"
+]
 
 
 class TaskStatus(enum.IntEnum):
@@ -113,6 +123,7 @@ class Subtask(AbsSubtask):
 
     @property
     def parent_task_log_q(self):
+        """Log queue of the parent."""
         if self._parent_task_log_q is None:
             raise RuntimeError("Property parent_task_log_q has not be set")
         return self._parent_task_log_q
