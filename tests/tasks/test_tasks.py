@@ -45,7 +45,7 @@ class SimplePreTask(speedwagon.tasks.Subtask):
         return {"r": "ad"}
 
 
-class SimpleMultistage(speedwagon.tasks.MultiStageTask):
+class SimpleMultistage(speedwagon.tasks.tasks.MultiStageTask):
     def process_subtask_results(self,
                                 subtask_results: typing.List[typing.Any])\
             -> typing.Any:
@@ -53,7 +53,7 @@ class SimpleMultistage(speedwagon.tasks.MultiStageTask):
         return "\n".join(subtask_results)
 
 
-class SimpleTaskBuilder(speedwagon.tasks.BaseTaskBuilder):
+class SimpleTaskBuilder(speedwagon.tasks.tasks.BaseTaskBuilder):
 
     @property
     def task(self) -> SimpleMultistage:
@@ -73,7 +73,7 @@ def simple_task_builder(tmpdir_factory):
 def test_task_builder(simple_task_builder):
     task = simple_task_builder.build_task()
 
-    assert isinstance(task, speedwagon.tasks.MultiStageTask)
+    assert isinstance(task, speedwagon.tasks.tasks.MultiStageTask)
 
     assert len(task.main_subtasks) == 1
 
@@ -256,7 +256,7 @@ def test_adapter_results_with_pretask(tmpdir):
     temp_path = tmpdir.mkdir("test")
     pretask = SimplePreTask("Starting")
 
-    builder = TaskBuilder(SimpleTaskBuilder(), temp_path)
+    builder = speedwagon.tasks.TaskBuilder(SimpleTaskBuilder(), temp_path)
     builder.set_pretask(subtask=pretask)
     builder.add_subtask(subtask=SimpleSubtask("First"))
     builder.add_subtask(subtask=SimpleSubtask("Second"))
