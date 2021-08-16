@@ -4,7 +4,6 @@ from unittest.mock import Mock, MagicMock
 import pytest
 
 import speedwagon.tasks.tasks
-from speedwagon import tasks
 from speedwagon.workflows import workflow_hathiprep
 
 

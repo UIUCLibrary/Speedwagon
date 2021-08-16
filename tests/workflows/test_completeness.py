@@ -3,8 +3,7 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 
-import speedwagon.tasks.tasks
-from speedwagon import tasks
+import speedwagon
 from speedwagon.workflows import workflow_completeness
 
 
@@ -93,19 +92,38 @@ def test_generate_report_creates_a_report(unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
     job_args = {}
     results = [
-        speedwagon.tasks.tasks.Result(workflow_completeness.HathiCheckMissingPackageFilesTask,
-                                      data=[]),
-        speedwagon.tasks.tasks.Result(workflow_completeness.HathiManifestGenerationTask,
-                                      data="Manifest"),
-        speedwagon.tasks.tasks.Result(workflow_completeness.HathiCheckMissingComponentsTask,
-                                      data=[]),
-        speedwagon.tasks.tasks.Result(workflow_completeness.ValidateChecksumsTask, data=[]),
-        speedwagon.tasks.tasks.Result(workflow_completeness.ValidateMarcTask, data=[]),
-        speedwagon.tasks.tasks.Result(workflow_completeness.ValidateYMLTask, data=[]),
-        speedwagon.tasks.tasks.Result(workflow_completeness.ValidateExtraSubdirectoriesTask,
-                                      data=[]),
-        speedwagon.tasks.tasks.Result(workflow_completeness.PackageNamingConventionTask,
-                                      data=[]),
+        speedwagon.tasks.Result(
+            workflow_completeness.HathiCheckMissingPackageFilesTask,
+            data=[]
+        ),
+        speedwagon.tasks.Result(
+            workflow_completeness.HathiManifestGenerationTask,
+            data="Manifest"
+        ),
+        speedwagon.tasks.Result(
+            workflow_completeness.HathiCheckMissingComponentsTask,
+            data=[]
+        ),
+        speedwagon.tasks.Result(
+            workflow_completeness.ValidateChecksumsTask,
+            data=[]
+        ),
+        speedwagon.tasks.Result(
+            workflow_completeness.ValidateMarcTask,
+            data=[]
+        ),
+        speedwagon.tasks.Result(
+            workflow_completeness.ValidateYMLTask,
+            data=[]
+        ),
+        speedwagon.tasks.Result(
+            workflow_completeness.ValidateExtraSubdirectoriesTask,
+            data=[]
+        ),
+        speedwagon.tasks.Result(
+            workflow_completeness.PackageNamingConventionTask,
+            data=[]
+        ),
     ]
     message = workflow.generate_report(results, **job_args)
     assert "Report" in message

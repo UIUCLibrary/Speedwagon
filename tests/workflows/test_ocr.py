@@ -4,12 +4,12 @@ from unittest.mock import MagicMock, Mock, ANY, mock_open, patch
 import pytest
 import os.path
 
-import speedwagon.tasks.tasks
+import speedwagon
 from speedwagon.workflows import workflow_ocr
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from speedwagon.tasks.tasks import Result
 from uiucprescon.ocr import reader, tesseractwrap
-from speedwagon import models, tasks
+from speedwagon import models
 
 
 def test_no_config():
@@ -257,8 +257,8 @@ class TestOCRWorkflow:
     def test_generate_report(self, workflow, default_options):
         user_args = default_options.copy()
         results = [
-            speedwagon.tasks.tasks.Result(workflow_ocr.GenerateOCRFileTask, {}),
-            speedwagon.tasks.tasks.Result(workflow_ocr.GenerateOCRFileTask, {}),
+            speedwagon.tasks.Result(workflow_ocr.GenerateOCRFileTask, {}),
+            speedwagon.tasks.Result(workflow_ocr.GenerateOCRFileTask, {}),
         ]
         report = workflow.generate_report(results=results, **user_args)
         assert "Completed generating OCR 2 files" in report
