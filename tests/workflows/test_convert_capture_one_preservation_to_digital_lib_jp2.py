@@ -1,6 +1,5 @@
 from unittest.mock import Mock
 import speedwagon
-import pykdu_compress
 import pytest
 
 

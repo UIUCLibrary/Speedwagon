@@ -443,6 +443,7 @@ class TestChecksumTask:
         assert task.results[ResultValues.FILENAME] == "file.txt" and \
                task.results[ResultValues.VALID] is False
 
+
 @pytest.mark.parametrize(
     "task",
     [
