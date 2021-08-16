@@ -21,7 +21,6 @@ import speedwagon
 import speedwagon.tasks.tasks
 from speedwagon.logging import GuiLogHandler
 from speedwagon.job import Workflow
-from speedwagon import tasks, Subtask
 from . import shared_custom_widgets as options
 from .shared_custom_widgets import UserOption2, UserOption3
 
@@ -226,7 +225,7 @@ class CompletenessWorkflow(Workflow):
         return True
 
 
-class CompletenessSubTask(Subtask):
+class CompletenessSubTask(speedwagon.tasks.Subtask):
     @contextmanager
     def log_config(self,
                    logger: logging.Logger
