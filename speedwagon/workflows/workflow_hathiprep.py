@@ -206,4 +206,3 @@ class HathiPrepWorkflow(speedwagon.Workflow):
                f"\nTotal files generated: " \
                f"\n  {num_checksum_files} checksum.md5 files" \
                f"\n  {num_yaml_files} meta.yml files"
-

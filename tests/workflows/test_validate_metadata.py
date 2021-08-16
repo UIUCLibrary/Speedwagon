@@ -3,6 +3,7 @@ from unittest.mock import Mock
 import pytest
 
 import speedwagon
+import speedwagon.tasks.validation
 from speedwagon.workflows import workflow_validate_metadata
 from speedwagon import models
 import os
@@ -127,7 +128,7 @@ class TestValidateMetadataWorkflow:
         task_builder = Mock()
         ValidateImageMetadataTask = Mock()
         monkeypatch.setattr(
-            workflow_validate_metadata,
+            speedwagon.tasks.validation,
             "ValidateImageMetadataTask",
             ValidateImageMetadataTask
         )
@@ -144,10 +145,13 @@ class TestValidateMetadataWorkflow:
         user_options = default_options.copy()
         user_options["Input"] = os.path.join("some", "valid", "path")
         user_options['Profile'] = 'HathiTrust JPEG 2000'
-        ResultValues = workflow_validate_metadata.ResultValues
+
+        ResultValues = \
+            speedwagon.tasks.validation.ValidateImageMetadataTask.ResultValues
+
         results = [
             speedwagon.tasks.Result(
-                workflow_validate_metadata.ValidateImageMetadataTask,
+                speedwagon.tasks.validation.ValidateImageMetadataTask,
                 {
                     ResultValues.VALID: True
                 }
@@ -161,10 +165,11 @@ class TestValidateMetadataWorkflow:
         user_options = default_options.copy()
         user_options["Input"] = os.path.join("some", "valid", "path")
         user_options['Profile'] = 'HathiTrust JPEG 2000'
-        ResultValues = workflow_validate_metadata.ResultValues
+        ResultValues = \
+            speedwagon.tasks.validation.ValidateImageMetadataTask.ResultValues
         results = [
             speedwagon.tasks.Result(
-                workflow_validate_metadata.ValidateImageMetadataTask,
+                speedwagon.tasks.validation.ValidateImageMetadataTask,
                 {
                     ResultValues.VALID: False,
                     ResultValues.FILENAME: "MyFailingFile.jp2",
@@ -201,11 +206,13 @@ class TestLocateImagesTask:
 class TestValidateImageMetadataTask:
     def test_work(self, monkeypatch):
         from uiucprescon import imagevalidate
-        ResultValues = workflow_validate_metadata.ResultValues
+
+        ResultValues = \
+            speedwagon.tasks.validation.ValidateImageMetadataTask.ResultValues
 
         filename = "asdasd"
         profile_name = "HathiTrust JPEG 2000"
-        task = workflow_validate_metadata.ValidateImageMetadataTask(
+        task = speedwagon.tasks.validation.ValidateImageMetadataTask(
             filename=filename,
             profile_name=profile_name
         )
@@ -228,7 +235,7 @@ class TestValidateImageMetadataTask:
 @pytest.mark.parametrize(
     "task",
     [
-        workflow_validate_metadata.ValidateImageMetadataTask(
+        speedwagon.tasks.validation.ValidateImageMetadataTask(
             filename="filename",
             profile_name='HathiTrust JPEG 2000'
         ),

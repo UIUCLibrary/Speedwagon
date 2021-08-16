@@ -11,7 +11,7 @@ from uiucprescon import imagevalidate
 import speedwagon
 from speedwagon.job import Workflow
 from . import shared_custom_widgets
-
+import speedwagon.tasks.validation
 
 __all__ = ['ValidateMetadataWorkflow']
 
@@ -24,12 +24,6 @@ class JobValues(enum.Enum):
     ITEM_FILENAME = "filename"
     ROOT_PATH = "path"
     PROFILE_NAME = "profile_name"
-
-
-class ResultValues(enum.Enum):
-    VALID = "valid"
-    FILENAME = "filename"
-    REPORT = "report"
 
 
 class ValidateMetadataWorkflow(Workflow):
@@ -63,8 +57,10 @@ class ValidateMetadataWorkflow(Workflow):
     ) -> None:
 
         task_builder.add_subtask(
-            LocateImagesTask(user_args[UserArgs.INPUT.value],
-                             user_args["Profile"])
+            LocateImagesTask(
+                user_args[UserArgs.INPUT.value],
+                user_args["Profile"]
+            )
         )
 
     def user_options(self) -> List[
@@ -110,8 +106,10 @@ class ValidateMetadataWorkflow(Workflow):
         filename = job_args[JobValues.ITEM_FILENAME.value]
 
         subtask = \
-            ValidateImageMetadataTask(filename,
-                                      job_args[JobValues.PROFILE_NAME.value])
+            speedwagon.tasks.validation.ValidateImageMetadataTask(
+                filename,
+                job_args[JobValues.PROFILE_NAME.value]
+            )
 
         task_builder.add_subtask(subtask)
 
@@ -119,21 +117,27 @@ class ValidateMetadataWorkflow(Workflow):
     def generate_report(cls,
                         results: List[speedwagon.tasks.Result],
                         **user_args) -> Optional[str]:
+        result_keys = \
+            speedwagon.tasks.validation.ValidateImageMetadataTask.ResultValues
 
         def validation_result_filter(
-                task_result: speedwagon.tasks.Result) -> bool:
-            if task_result.source != ValidateImageMetadataTask:
+                task_result: speedwagon.tasks.Result
+        ) -> bool:
+            if task_result.source != \
+                    speedwagon.tasks.validation.ValidateImageMetadataTask:
                 return False
             return True
 
         def filter_only_invalid(task_result) -> bool:
-            if task_result[ResultValues.VALID]:
+            if task_result[result_keys.VALID]:
                 return False
             return True
 
         def invalid_messages(task_result) -> str:
-            source = task_result[ResultValues.FILENAME]
-            messages = task_result[ResultValues.REPORT]
+            source = task_result[result_keys.FILENAME]
+
+            messages = task_result[result_keys.REPORT]
+
             message = "\n".join([
                 f"{source}",
                 messages
@@ -221,47 +225,4 @@ class LocateImagesTask(speedwagon.tasks.Subtask):
                 self.log(f"Found {image_file}")
                 image_files.append(image_file)
         self.set_results(image_files)
-        return True
-
-
-class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
-    name = "Validate Image Metadata"
-
-    def __init__(
-            self,
-            filename: str,
-            profile_name: str
-    ) -> None:
-
-        super().__init__()
-        self._filename = filename
-        self._profile = typing.cast(
-            imagevalidate.profiles.AbsProfile,
-            imagevalidate.get_profile(profile_name)
-        )
-
-    def task_description(self) -> Optional[str]:
-        return f"Validating image metadata for {self._filename}"
-
-    def work(self) -> bool:
-        self.log(f"Validating {self._filename}")
-
-        profile_validator = imagevalidate.Profile(self._profile)
-
-        try:
-            report = profile_validator.validate(self._filename)
-            is_valid = report.valid
-            report_text = "\n* ".join(report.issues())
-        except RuntimeError as e:
-            is_valid = False
-            report_text = str(e)
-        self.log(f"Validating {self._filename} -- {is_valid}")
-
-        result = {
-            ResultValues.FILENAME: self._filename,
-            ResultValues.VALID: is_valid,
-            ResultValues.REPORT: f"* {report_text}"
-        }
-
-        self.set_results(result)
         return True
