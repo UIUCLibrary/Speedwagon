@@ -9,7 +9,7 @@ from pyhathiprep import checksum
 import speedwagon
 import speedwagon.tasks.tasks
 from speedwagon import tasks
-from .checksum_shared import ResultsValues
+from speedwagon.workflows.checksum_shared import ResultsValues
 
 
 class MakeChecksumTask(speedwagon.tasks.tasks.Subtask):

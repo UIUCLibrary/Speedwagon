@@ -4,7 +4,7 @@ import pytest
 
 import speedwagon.tasks.tasks
 from speedwagon.workflows import workflow_make_checksum
-from speedwagon import models, tasks
+from speedwagon import models
 
 
 class TestZipPackagesWorkflow:
@@ -81,7 +81,7 @@ class TestZipPackagesWorkflow:
         MakeChecksumTask = Mock()
         MakeChecksumTask.name = "MakeChecksumTask"
         monkeypatch.setattr(
-            workflow_make_checksum.checksum_tasks,
+            speedwagon.tasks.checksum_tasks,
             "MakeChecksumTask",
             MakeChecksumTask
         )
@@ -102,7 +102,7 @@ class TestZipPackagesWorkflow:
         user_args = default_options.copy()
         results = [
             speedwagon.tasks.tasks.Result(
-                workflow_make_checksum.checksum_tasks.MakeChecksumTask,
+                speedwagon.tasks.checksum_tasks.MakeChecksumTask,
                 {
                     ResultsValues.CHECKSUM_FILE: "checksum.md5"
                 }
@@ -117,7 +117,7 @@ class TestZipPackagesWorkflow:
         ResultsValues = workflow_make_checksum.ResultsValues
         results = [
             speedwagon.tasks.tasks.Result(
-                workflow_make_checksum.checksum_tasks.MakeChecksumTask,
+                speedwagon.tasks.checksum_tasks.MakeChecksumTask,
                 {
                     ResultsValues.CHECKSUM_FILE: "checksum.md5"
                 }
@@ -204,7 +204,7 @@ class TestRegenerateChecksumBatchSingleWorkflow:
         MakeChecksumTask = Mock()
         MakeChecksumTask.name = "MakeChecksumTask"
         monkeypatch.setattr(
-            workflow_make_checksum.checksum_tasks,
+            speedwagon.tasks.checksum_tasks,
             "MakeChecksumTask",
             MakeChecksumTask
         )
@@ -225,7 +225,7 @@ class TestRegenerateChecksumBatchSingleWorkflow:
         user_args = default_options.copy()
         results = [
             speedwagon.tasks.tasks.Result(
-                workflow_make_checksum.checksum_tasks.MakeChecksumTask,
+                speedwagon.tasks.checksum_tasks.MakeChecksumTask,
                 {
                     ResultsValues.CHECKSUM_FILE: "checksum.md5"
                 }
@@ -240,7 +240,7 @@ class TestRegenerateChecksumBatchSingleWorkflow:
         ResultsValues = workflow_make_checksum.ResultsValues
         results = [
             speedwagon.tasks.tasks.Result(
-                workflow_make_checksum.checksum_tasks.MakeChecksumTask,
+                speedwagon.tasks.checksum_tasks.MakeChecksumTask,
                 {
                     ResultsValues.CHECKSUM_FILE: "checksum.md5"
                 }
@@ -250,7 +250,7 @@ class TestRegenerateChecksumBatchSingleWorkflow:
         MakeCheckSumReportTask = Mock()
 
         monkeypatch.setattr(
-            workflow_make_checksum.checksum_tasks,
+            speedwagon.tasks.checksum_tasks,
             "MakeCheckSumReportTask",
             MakeCheckSumReportTask
         )
@@ -340,7 +340,7 @@ class TestRegenerateChecksumBatchMultipleWorkflow:
         MakeChecksumTask = Mock()
         MakeChecksumTask.name = "MakeChecksumTask"
         monkeypatch.setattr(
-            workflow_make_checksum.checksum_tasks,
+            speedwagon.tasks.checksum_tasks,
             "MakeChecksumTask",
             MakeChecksumTask
         )
@@ -361,7 +361,7 @@ class TestRegenerateChecksumBatchMultipleWorkflow:
         user_args = default_options.copy()
         results = [
             speedwagon.tasks.tasks.Result(
-                workflow_make_checksum.checksum_tasks.MakeChecksumTask,
+                speedwagon.tasks.checksum_tasks.MakeChecksumTask,
                 {
                     ResultsValues.CHECKSUM_FILE: "checksum.md5"
                 }
@@ -376,7 +376,7 @@ class TestRegenerateChecksumBatchMultipleWorkflow:
         ResultsValues = workflow_make_checksum.ResultsValues
         results = [
             speedwagon.tasks.tasks.Result(
-                workflow_make_checksum.checksum_tasks.MakeChecksumTask,
+                speedwagon.tasks.checksum_tasks.MakeChecksumTask,
                 {
                     ResultsValues.CHECKSUM_FILE: "checksum.md5"
                 }
@@ -386,7 +386,7 @@ class TestRegenerateChecksumBatchMultipleWorkflow:
         MakeCheckSumReportTask = Mock()
 
         monkeypatch.setattr(
-            workflow_make_checksum.checksum_tasks,
+            speedwagon.tasks.checksum_tasks,
             "MakeCheckSumReportTask",
             MakeCheckSumReportTask
         )

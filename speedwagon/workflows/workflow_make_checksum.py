@@ -14,7 +14,8 @@ from speedwagon.job import Workflow
 from speedwagon import tasks
 from speedwagon.reports import add_report_borders
 from .checksum_shared import ResultsValues
-from . import checksum_tasks, shared_custom_widgets
+from . import shared_custom_widgets
+from ..tasks import checksum_tasks
 from . import shared_custom_widgets as options
 
 
