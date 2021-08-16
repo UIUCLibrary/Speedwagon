@@ -717,12 +717,12 @@ class TaskScheduler:
         self._task_queue: "queue.Queue[tasks.Subtask]" = queue.Queue(maxsize=1)
 
         self._request_more_info: typing.Callable[
-            [Workflow, Any, Any], Dict[str, Any]
-        ] = lambda *args, **kwargs: {}
+            [Workflow, Any, Any], typing.Optional[Dict[str, Any]]
+        ] = lambda *args, **kwargs: None
 
     @property
     def request_more_info(self) -> typing.Callable[
-        [Workflow, Any, Any], Dict[str, Any]
+        [Workflow, Any, Any], typing.Optional[Dict[str, Any]]
     ]:
         return self._request_more_info
 
@@ -730,7 +730,7 @@ class TaskScheduler:
     def request_more_info(
             self,
             value: typing.Callable[
-                [Workflow, Any, Any], Dict[str, Any]
+                [Workflow, Any, Any], typing.Optional[Dict[str, Any]]
             ]
     ) -> None:
         self._request_more_info = value
