@@ -450,13 +450,6 @@ pipeline {
                     stages{
                         stage('Test') {
                             stages{
-                                stage('Building Python Library'){
-                                    steps {
-                                        sh '''mkdir -p logs
-                                              python setup.py build -b build
-                                              '''
-                                    }
-                                }
                                 stage('Run Tests'){
                                     parallel {
                                         stage('Run Behave BDD Tests') {
@@ -493,7 +486,9 @@ pipeline {
                                             steps {
                                                 sh(
                                                     label: 'Running Doctest Tests',
-                                                    script: 'coverage run --parallel-mode --source=speedwagon -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt'
+                                                    script: '''mkdir -p logs
+                                                               coverage run --parallel-mode --source=speedwagon -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt
+                                                               '''
                                                     )
                                             }
                                             post{

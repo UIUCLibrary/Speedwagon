@@ -32,6 +32,7 @@ import speedwagon.dialog.dialogs
 import speedwagon.dialog.settings
 from speedwagon import tabs, worker
 import speedwagon
+import speedwagon.ui
 import speedwagon.config
 
 __all__ = [
@@ -61,8 +62,7 @@ class ToolConsole(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
-        with resources.path("speedwagon.ui",
-                            "console.ui") as ui_file:
+        with resources.path(speedwagon.ui, "console.ui") as ui_file:
             uic.loadUi(ui_file, self)
 
         #  Use a monospaced font based on what's on system running
@@ -112,8 +112,7 @@ class ItemTabsWidget(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
-        with resources.path("speedwagon.ui",
-                            "setup_job.ui") as ui_file:
+        with resources.path(speedwagon.ui, "setup_job.ui") as ui_file:
             uic.loadUi(ui_file, self)
 
         self.layout().addWidget(self.tabs)
@@ -151,8 +150,7 @@ class MainWindow(MainProgram):
 
         super().__init__(work_manager, debug)
 
-        with resources.path("speedwagon.ui",
-                            "main_window2.ui") as ui_file:
+        with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
             uic.loadUi(ui_file, self)
 
         self.mainLayout.setContentsMargins(0, 0, 0, 0)

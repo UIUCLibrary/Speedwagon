@@ -1,23 +1,4 @@
-import glob
-import os
-import sys
 from setuptools import setup
-sys.path.insert(0, os.path.dirname(__file__))
-import extra_commands
-
-cmdclass = {
-    # "build_ui": build_ui,
-    "build_py": extra_commands.CustomBuildPy,
-    "clean": extra_commands.Clean,
-    # "build_py": extra_commands.build_py,
-}
-# try:
-#     from pyqt_distutils.build_ui import build_ui
-#     cmdclass["build_ui"] = build_ui
-# except ModuleNotFoundError:
-#     pass
-
-cmdclass['dl_tessdata'] = extra_commands.TesseractData
 
 if __name__ == "__main__":
     setup(
@@ -51,7 +32,6 @@ if __name__ == "__main__":
         setup_requires=['pytest-runner'],
         tests_require=['pytest', "behave", "pytest-qt"],
         python_requires=">=3.6",
-
         entry_points={
             "gui_scripts": [
                 'speedwagon = speedwagon.__main__:main',
@@ -60,11 +40,6 @@ if __name__ == "__main__":
         },
         include_package_data=True,
         package_data={
-            'speedwagon.workflows.tessdata': [
-                'speedwagon/workflows/tessdata/*.*',
-                "speedwagon/workflows/tessdata/eng.traineddata",
-                "speedwagon/workflows/tessdata/osd.traineddata",
-            ],
             'speedwagon': ["favicon.ico", "logo.png"],
             'speedwagon.ui': [
                 "tab_editor.ui",
@@ -74,5 +49,4 @@ if __name__ == "__main__":
                 'setup_job.ui'
             ],
         },
-        cmdclass=cmdclass
     )

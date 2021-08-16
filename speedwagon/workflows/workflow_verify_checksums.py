@@ -350,7 +350,7 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
             task_builder: tasks.TaskBuilder,
             **job_args: str
     ) -> None:
-
+        """Generate a new checksum task."""
         new_task = ChecksumTask(**job_args)
         task_builder.add_subtask(new_task)
 
