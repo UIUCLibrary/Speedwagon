@@ -174,7 +174,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
             job: AbsWorkflow,
             options: Dict[str, Any],
             parent: QtWidgets.QWidget,
-            pre_results
+            pre_results: typing.List[tasks.Result]
     ) -> Dict[str, Any]:
         if isinstance(job, Workflow):
             return self._get_additional_options(
@@ -258,7 +258,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                         parent: QtWidgets.QWidget,
                         job: AbsWorkflow,
                         options: Dict[str, Any],
-                        results,
+                        results: typing.List[tasks.Result],
                         working_dir: str,
                         logger: logging.Logger) -> list:
         _results = []
@@ -351,10 +351,11 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 logger.removeHandler(runner.progress_dialog_box_handler)
 
     @staticmethod
-    def _get_additional_options(parent,
+    def _get_additional_options(parent: QtWidgets.QWidget,
                                 job: Workflow,
                                 options: Dict[str, Any],
-                                pretask_results) -> Dict[str, Any]:
+                                pretask_results: typing.List[tasks.Result]
+                                ) -> Dict[str, Any]:
 
         return job.get_additional_info(parent, options, pretask_results)
 
@@ -419,7 +420,8 @@ class TaskGenerator:
     def get_pre_tasks(
             self,
             working_directory: str,
-            **options) -> typing.Iterable[speedwagon.tasks.Subtask]:
+            **options: typing.Any
+    ) -> typing.Iterable[speedwagon.tasks.Subtask]:
 
         task_builder = tasks.TaskBuilder(
             tasks.MultiStageTaskBuilder(working_directory),
@@ -433,7 +435,8 @@ class TaskGenerator:
             working_directory: str,
             pretask_results,
             additional_data,
-            **options) -> typing.Iterable[speedwagon.tasks.Subtask]:
+            **options: typing.Any
+    ) -> typing.Iterable[speedwagon.tasks.Subtask]:
         metadata_tasks = \
             self.workflow.discover_task_metadata(
                 pretask_results,
@@ -460,8 +463,9 @@ class TaskGenerator:
     def get_post_tasks(
             self,
             working_directory: str,
-            results,
-            **options) -> typing.Iterable[speedwagon.tasks.Subtask]:
+            results: typing.Iterable[typing.Optional[speedwagon.tasks.Result]],
+            **options: typing.Any
+    ) -> typing.Iterable[speedwagon.tasks.Subtask]:
         task_builder = tasks.TaskBuilder(
             tasks.MultiStageTaskBuilder(working_directory),
             working_directory
@@ -479,6 +483,15 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
         self._total_tasks_amount: typing.Optional[int] = None
         self._current_task_progress: typing.Optional[int] = None
         self._details: typing.Optional[str] = None
+        self._title: typing.Optional[str] = None
+
+    @property
+    def title(self) -> typing.Optional[str]:
+        return self._title
+
+    @title.setter
+    def title(self, value: typing.Optional[str]) -> None:
+        self._title = value
 
     @property
     def total_tasks_amount(self) -> typing.Optional[int]:
@@ -594,10 +607,10 @@ class QtDialogProgress(RunnerDisplay):
             self._update_progress(self.task_scheduler)
         QtWidgets.QApplication.processEvents()
 
-    def __enter__(self):
+    def __enter__(self) -> "QtDialogProgress":
 
         self.dialog.show()
-        return super().__enter__()
+        return self
 
     def __exit__(self, __exc_type: Optional[Type[BaseException]],
                  __exc_value: Optional[BaseException],
@@ -610,7 +623,9 @@ class QtDialogProgress(RunnerDisplay):
         self.dialog.close()
 
     def _update_window_task_info(self, current_task: tasks.Subtask) -> None:
-        self.details = current_task.name
+        self.details = "Processing" \
+            if current_task.name is None \
+            else current_task.name
 
     def _update_progress(self, task_scheduler: "TaskScheduler") -> None:
         self.total_tasks_amount = task_scheduler.total_tasks
@@ -654,7 +669,7 @@ class TaskDispatcher:
         while not stop_event.is_set():
             if self.job_queue.empty():
                 continue
-            task = self.job_queue.get()
+            task = typing.cast(tasks.Subtask, self.job_queue.get())
             task_description = task.task_description()
             if task_description is not None:
                 logger.info(task_description)
@@ -665,7 +680,7 @@ class TaskDispatcher:
             )
 
             self.current_task = task
-            task.log = logger.info
+            task.log = lambda message: logger.info(msg=message)
             task.exec()
             logger.debug(
                 "Threaded worker completed task: [%s]",
@@ -701,8 +716,24 @@ class TaskScheduler:
         self.total_tasks: typing.Optional[int] = None
         self._task_queue: "queue.Queue[tasks.Subtask]" = queue.Queue(maxsize=1)
 
-        self.request_more_info: typing.Callable[[Workflow, Any, Any], Any] = \
-            lambda *args, **kwargs: None
+        self._request_more_info: typing.Callable[
+            [Workflow, Any, Any], Dict[str, Any]
+        ] = lambda *args, **kwargs: {}
+
+    @property
+    def request_more_info(self) -> typing.Callable[
+        [Workflow, Any, Any], Dict[str, Any]
+    ]:
+        return self._request_more_info
+
+    @request_more_info.setter
+    def request_more_info(
+            self,
+            value: typing.Callable[
+                [Workflow, Any, Any], Dict[str, Any]
+            ]
+    ) -> None:
+        self._request_more_info = value
 
     def iter_tasks(self,
                    workflow: Workflow,
@@ -814,7 +845,7 @@ class QtRunner(AbsRunner2):
             self,
             workflow: Workflow,
             options: Dict[str, Any],
-            pretask_results
+            pretask_results: typing.List[tasks.Result]
     ) -> Dict[str, Any]:
         if self.parent is not None and \
                 hasattr(workflow, "get_additional_info"):
