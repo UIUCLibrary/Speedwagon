@@ -1,3 +1,5 @@
+"""Tasks relating to preparing a workspace."""
+
 import os
 import shutil
 from typing import Optional
