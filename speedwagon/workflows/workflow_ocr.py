@@ -149,7 +149,7 @@ class OCRWorkflow(speedwagon.Workflow):
         task_builder.add_subtask(ocr_generation_task)
 
     def initial_task(self,
-                     task_builder: "tasks.TaskBuilder",
+                     task_builder: "speedwagon.tasks.TaskBuilder",
                      **user_args: str) -> None:
 
         root = user_args['Path']
