@@ -238,6 +238,9 @@ class CompletenessSubTask(speedwagon.tasks.Subtask):
         finally:
             logger.removeHandler(gui_logger)
 
+    def work(self) -> bool:
+        raise NotImplementedError()
+
 
 class HathiCheckMissingPackageFilesTask(CompletenessSubTask):
     name = "Check for Missing Package Files"

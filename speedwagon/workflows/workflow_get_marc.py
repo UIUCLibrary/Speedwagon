@@ -626,6 +626,9 @@ class EnhancementTask(speedwagon.tasks.Subtask):
         super().__init__()
         self.xml_file = xml_file
 
+    def work(self) -> bool:
+        raise NotImplementedError()
+
     def task_description(self) -> Optional[str]:
         return f"Enhancing {self.xml_file}"
 
