@@ -4,8 +4,6 @@ import logging
 import os
 import typing
 
-import speedwagon.tasks.tasks
-
 try:  # pragma: no cover
     from typing import TypedDict
 except ImportError:  # pragma: no cover
@@ -18,7 +16,8 @@ from uiucprescon import packager
 from uiucprescon.packager.packages.abs_package_builder import AbsPackageBuilder
 from uiucprescon.packager.packages.collection_builder import Metadata
 from uiucprescon.packager.packages.collection import AbsPackageComponent
-from speedwagon import tasks, validators
+import speedwagon
+from speedwagon import validators
 from speedwagon.job import Workflow
 from speedwagon.workflows import shared_custom_widgets as options
 from speedwagon.logging import GuiLogHandler
@@ -200,7 +199,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
         return True
 
     def create_new_task(self,
-                        task_builder: speedwagon.tasks.tasks.TaskBuilder,
+                        task_builder: speedwagon.tasks.TaskBuilder,
                         **job_args: Union[str, AbsPackageComponent]
                         ) -> None:
         """Generate a new task.
@@ -299,7 +298,7 @@ class MinimumOutputsValidator(validators.AbsOptionValidator):
         return "ok"
 
 
-class PackageConverter(speedwagon.tasks.tasks.Subtask):
+class PackageConverter(speedwagon.tasks.Subtask):
     """Convert packages formats."""
 
     name = "Package Conversion"
