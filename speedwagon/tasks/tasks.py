@@ -146,7 +146,7 @@ class Subtask(AbsSubtask):
             Currently expects to return a boolean value to indicate if the task
             has succeeded or failed. However, this is likely to change.
         """
-        return super().work()
+        raise NotImplementedError()
 
     @property
     def results(self):
@@ -199,6 +199,9 @@ class PreTask(AbsSubtask):
 
     def log(self, message):
         self._parent_task_log_q.append(message)
+
+    def work(self) -> bool:
+        raise NotImplementedError()
 
     @property
     def task_result(self):
@@ -285,7 +288,7 @@ class Task(AbsTask, AbsTaskComponents):
 
     def exec(self, *args, **kwargs):
         """Execute task."""
-        return super().exec(*args, **kwargs)
+        raise NotImplementedError()
 
     @property
     def status(self) -> TaskStatus:
