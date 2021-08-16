@@ -105,7 +105,7 @@ class ValidateMetadataWorkflow(Workflow):
         return True
 
     def create_new_task(self,
-                        task_builder: "tasks.TaskBuilder",
+                        task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args: str):
         filename = job_args[JobValues.ITEM_FILENAME.value]
 

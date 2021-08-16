@@ -76,7 +76,7 @@ class ValidateImageMetadataWorkflow(Workflow):
 
     def create_new_task(
             self,
-            task_builder: "tasks.TaskBuilder",
+            task_builder: "speedwagon.tasks.TaskBuilder",
             **job_args: str
     ) -> None:
 
