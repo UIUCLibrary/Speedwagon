@@ -8,7 +8,6 @@ from uiucprescon import packager
 from uiucprescon.packager.packages.collection_builder import Metadata
 
 import speedwagon.tasks.tasks
-from speedwagon import tasks
 from speedwagon.job import Workflow
 from speedwagon.logging import GuiLogHandler
 from . import shared_custom_widgets as options
