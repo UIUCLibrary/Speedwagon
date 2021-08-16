@@ -279,8 +279,10 @@ class Task(AbsTask, AbsTaskComponents):
         self._post_task = value
 
     def on_completion(self, *args, **kwargs):
-        """Run task for after main task is completed."""
-        return super().on_completion(*args, **kwargs)
+        """Run task for after main task is completed.
+
+        Default is a Noop.
+        """
 
     def exec(self, *args, **kwargs):
         """Execute task."""
@@ -384,9 +386,6 @@ class MultiStageTask(Task):
         except Exception as error:
             print("Failed {}".format(error), file=sys.stderr)
             raise
-
-    def on_completion(self, *args, **kwargs):
-        pass
 
     def process_subtask_results(self, subtask_results: List[Any]) -> Any:
         return subtask_results
