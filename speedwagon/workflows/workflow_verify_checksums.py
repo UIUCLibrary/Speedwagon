@@ -95,7 +95,7 @@ class ChecksumWorkflow(Workflow):
             raise ValueError("Invalid user arguments")
         return True
 
-    def initial_task(self, task_builder: "tasksTaskBuilder",
+    def initial_task(self, task_builder: "speedwagon.tasks.TaskBuilder",
                      **user_args: str) -> None:
         root = user_args['Input']
         for checksum_report_file in self._locate_checksum_files(root):
@@ -104,7 +104,7 @@ class ChecksumWorkflow(Workflow):
 
     def create_new_task(
             self,
-            task_builder: "tasksTaskBuilder",
+            task_builder: "speedwagon.tasks.TaskBuilder",
             **job_args: str
     ) -> None:
 
