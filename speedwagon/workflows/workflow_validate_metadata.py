@@ -9,9 +9,9 @@ import enum
 from uiucprescon import imagevalidate
 
 import speedwagon
+import speedwagon.tasks.validation
 from speedwagon.job import Workflow
 from . import shared_custom_widgets
-import speedwagon.tasks.validation
 
 __all__ = ['ValidateMetadataWorkflow']
 
