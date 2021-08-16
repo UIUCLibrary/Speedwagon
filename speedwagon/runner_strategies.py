@@ -421,9 +421,9 @@ class TaskGenerator:
             self,
             working_directory: str,
             **options: typing.Any
-    ) -> typing.Iterable[speedwagon.tasks.tasks.Subtask]:
+    ) -> typing.Iterable[speedwagon.tasks.Subtask]:
 
-        task_builder = speedwagon.tasks.tasks.TaskBuilder(
+        task_builder = speedwagon.tasks.TaskBuilder(
             speedwagon.tasks.MultiStageTaskBuilder(working_directory),
             working_directory
         )
@@ -436,7 +436,7 @@ class TaskGenerator:
             pretask_results,
             additional_data,
             **options: typing.Any
-    ) -> typing.Iterable[speedwagon.tasks.tasks.Subtask]:
+    ) -> typing.Iterable[speedwagon.tasks.Subtask]:
         metadata_tasks = \
             self.workflow.discover_task_metadata(
                 pretask_results,
@@ -464,10 +464,10 @@ class TaskGenerator:
             self,
             working_directory: str,
             results: typing.Iterable[typing.Optional[
-                speedwagon.tasks.tasks.Result]],
+                speedwagon.tasks.Result]],
             **options: typing.Any
-    ) -> typing.Iterable[speedwagon.tasks.tasks.Subtask]:
-        task_builder = speedwagon.tasks.tasks.TaskBuilder(
+    ) -> typing.Iterable[speedwagon.tasks.Subtask]:
+        task_builder = speedwagon.tasks.TaskBuilder(
             speedwagon.tasks.MultiStageTaskBuilder(working_directory),
             working_directory
         )
@@ -623,7 +623,10 @@ class QtDialogProgress(RunnerDisplay):
     def close(self) -> None:
         self.dialog.close()
 
-    def _update_window_task_info(self, current_task: speedwagon.tasks.tasks.Subtask) -> None:
+    def _update_window_task_info(
+            self,
+            current_task: speedwagon.tasks.Subtask
+    ) -> None:
         self.details = "Processing" \
             if current_task.name is None \
             else current_task.name
@@ -643,7 +646,7 @@ class TaskDispatcher:
         self._stop = threading.Event()
         self._thread: typing.Optional[threading.Thread] = None
         self.finish_event = threading.Event()
-        self.current_task: Optional[speedwagon.tasks.tasks.Subtask] = None
+        self.current_task: Optional[speedwagon.tasks.Subtask] = None
         self.logger = logger or logging.getLogger(__name__)
 
     @property
@@ -670,7 +673,7 @@ class TaskDispatcher:
         while not stop_event.is_set():
             if self.job_queue.empty():
                 continue
-            task = typing.cast(speedwagon.tasks.tasks.Subtask, self.job_queue.get())
+            task = typing.cast(speedwagon.tasks.Subtask, self.job_queue.get())
             task_description = task.task_description()
             if task_description is not None:
                 logger.info(task_description)
@@ -739,7 +742,7 @@ class TaskScheduler:
     def iter_tasks(self,
                    workflow: Workflow,
                    options: Dict[str, Any]
-                   ) -> typing.Iterable[speedwagon.tasks.tasks.Subtask]:
+                   ) -> typing.Iterable[speedwagon.tasks.Subtask]:
         """Get sub tasks for a workflow.
 
         Args:
@@ -846,7 +849,7 @@ class QtRunner(AbsRunner2):
             self,
             workflow: Workflow,
             options: Dict[str, Any],
-            pretask_results: typing.List[speedwagon.tasks.tasks.Result]
+            pretask_results: typing.List[speedwagon.tasks.Result]
     ) -> Dict[str, Any]:
         if self.parent is not None and \
                 hasattr(workflow, "get_additional_info"):
