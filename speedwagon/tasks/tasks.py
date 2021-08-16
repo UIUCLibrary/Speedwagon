@@ -356,7 +356,7 @@ class MultiStageTask(Task):
         if not started:
             return TaskStatus.IDLE
 
-        raise Exception("Not all statuses are are taken into account")
+        raise RuntimeError("Not all statuses are are taken into account")
 
     @property
     def progress(self) -> float:
