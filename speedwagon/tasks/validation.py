@@ -125,9 +125,9 @@ class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
             report = profile_validator.validate(self._filename)
             is_valid = report.valid
             report_text = "\n* ".join(report.issues())
-        except RuntimeError as e:
+        except RuntimeError as error:
             is_valid = False
-            report_text = str(e)
+            report_text = str(error)
         self.log(f"Validating {self._filename} -- {is_valid}")
 
         result = {
