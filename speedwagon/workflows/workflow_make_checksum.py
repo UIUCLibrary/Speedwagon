@@ -12,8 +12,8 @@ from typing import List, Any, DefaultDict, Optional
 import speedwagon
 from speedwagon.job import Workflow
 from speedwagon.reports import add_report_borders
-from .checksum_shared import ResultsValues
 from speedwagon.tasks import validation
+from .checksum_shared import ResultsValues
 from . import shared_custom_widgets
 from . import shared_custom_widgets as options
 
