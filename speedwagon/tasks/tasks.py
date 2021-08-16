@@ -1,22 +1,11 @@
-"""Define a single step in the workflow."""
 import abc
-import os
-
 import collections
 import enum
-import pickle
-import queue
+import os
 import sys
-from typing import NamedTuple, Type, Optional, List, Deque, Any
-
-__all__ = [
-    "AbsSubtask",
-    "Result",
-    "Subtask",
-    "TaskBuilder",
-    "QueueAdapter",
-    "MultiStageTaskBuilder"
-]
+import queue
+import pickle
+from typing import Optional, Any, Deque, NamedTuple, Type, List
 
 
 class TaskStatus(enum.IntEnum):
@@ -466,6 +455,132 @@ class BaseTaskBuilder(AbsTaskBuilder):
 
     def set_posttask(self, subtask: AbsSubtask) -> None:
         self._posttask = subtask
+
+
+class TaskBuilder:
+    """Task builder."""
+
+    # The director
+    _task_counter = 0
+
+    def __init__(self, builder: BaseTaskBuilder, working_dir) -> None:
+        """Create a new task builder."""
+        self._builder = builder
+        self._working_dir = working_dir
+        self._subtask_counter = 0
+        TaskBuilder._task_counter += 1
+        self.task_id = TaskBuilder._task_counter
+
+    def build_task(self) -> MultiStageTask:
+        """Build Multi stage task."""
+        return self._builder.build_task()
+
+    def add_subtask(self, subtask: Subtask) -> None:
+        """Add subtask to builder."""
+        self._subtask_counter += 1
+
+        if subtask.name is not None:
+            task_type = subtask.name
+        else:
+            task_type = str(subtask.__class__.__name__)
+
+        task_id = str(self.task_id).zfill(3)
+        subtask_id = str(self._subtask_counter).zfill(3)
+
+        task_working_dir = self._build_task_working_path(self._working_dir,
+                                                         task_id)
+
+        subtask_working_dir = self._build_working_path2(task_working_dir,
+                                                        task_type,
+                                                        subtask_id)
+
+        subtask.subtask_working_dir = subtask_working_dir
+        subtask.task_working_dir = task_working_dir
+        self._builder.add_subtask(subtask)
+
+    @staticmethod
+    def _build_working_path2(
+            task_working_path: str,
+            task_type: str,
+            subtask_id: str
+    ) -> str:
+
+        return os.path.join(task_working_path,
+                            task_type,
+                            str(subtask_id))
+
+    @staticmethod
+    def _build_task_working_path(temp_path: str, task_id: str) -> str:
+        return os.path.join(temp_path, task_id)
+
+    def set_pretask(self, subtask: Subtask) -> None:
+        """Set the pre-subtask for the task."""
+        self._subtask_counter += 1
+
+        if subtask.name is not None:
+            task_type = subtask.name
+        else:
+            task_type = str(subtask.__class__.__name__)
+
+        task_id = str(self.task_id).zfill(3)
+        subtask_id = str(self._subtask_counter).zfill(3)
+
+        task_working_dir = self._build_task_working_path(self._working_dir,
+                                                         task_id)
+
+        subtask_working_dir = self._build_working_path2(task_working_dir,
+                                                        task_type,
+                                                        subtask_id)
+
+        subtask.subtask_working_dir = subtask_working_dir
+        subtask.task_working_dir = task_working_dir
+        self._builder.set_pretask(subtask)
+
+    def set_posttask(self, subtask: Subtask) -> None:
+        """Set the post-subtask for the task."""
+        self._subtask_counter += 1
+
+        if subtask.name is not None:
+            task_type = subtask.name
+        else:
+            task_type = str(subtask.__class__.__name__)
+
+        task_id = str(self.task_id).zfill(3)
+        subtask_id = str(self._subtask_counter).zfill(3)
+
+        task_working_dir = self._build_task_working_path(self._working_dir,
+                                                         task_id)
+
+        subtask_working_dir = self._build_working_path2(task_working_dir,
+                                                        task_type,
+                                                        subtask_id)
+
+        subtask.subtask_working_dir = subtask_working_dir
+        subtask.task_working_dir = task_working_dir
+
+        self._builder.set_posttask(subtask)
+
+    @staticmethod
+    def save(task_obj):
+        """Pickle data."""
+        task_serialized = TaskBuilder._serialize_task(task_obj)
+        return pickle.dumps(task_serialized)
+
+    @staticmethod
+    def load(data):
+        """Load pickled data."""
+        task_cls, attributes = pickle.loads(data)
+        return TaskBuilder._deserialize_task(task_cls, attributes)
+
+    @staticmethod
+    def _serialize_task(task_obj: MultiStageTask):
+        return task_obj.__class__, task_obj.__dict__
+
+    @staticmethod
+    def _deserialize_task(task_cls, attributes):
+        obj = task_cls.__new__(task_cls)
+        obj.__dict__.update(attributes)
+        return obj
 
 
 class TaskBuilder:

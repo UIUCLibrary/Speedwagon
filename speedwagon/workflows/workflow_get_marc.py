@@ -12,6 +12,7 @@ import traceback
 import sys
 import requests
 
+import speedwagon.tasks.tasks
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from speedwagon import tasks, reports, validators
 from speedwagon.job import Workflow
@@ -197,7 +198,7 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
 
     def create_new_task(
             self,
-            task_builder: tasks.TaskBuilder,
+            task_builder: "tasks.tasks.TaskBuilder",
             **job_args: Union[str, Dict[str, Union[str, bool]]]
     ) -> None:
         """Create the task to be run.
@@ -248,7 +249,7 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
 
     @classmethod
     @reports.add_report_borders
-    def generate_report(cls, results: List[tasks.Result],
+    def generate_report(cls, results: List[speedwagon.tasks.tasks.Result],
                         **user_args) -> Optional[str]:
         """Generate a simple home-readable report from the job results.
 
@@ -503,7 +504,7 @@ SUPPORTED_IDENTIFIERS = {
 }
 
 
-class MarcGeneratorTask(tasks.Subtask):
+class MarcGeneratorTask(speedwagon.tasks.tasks.Subtask):
     """Task for generating the MARC xml file."""
 
     name = "Generate MARC File"
@@ -612,7 +613,7 @@ class MarcGeneratorTask(tasks.Subtask):
             raise SpeedwagonException from error
 
 
-class EnhancementTask(tasks.Subtask):
+class EnhancementTask(speedwagon.tasks.tasks.Subtask):
     """Base class for enhancing xml file."""
 
     def __init__(self, xml_file: str) -> None:

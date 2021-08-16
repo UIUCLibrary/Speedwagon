@@ -12,6 +12,7 @@ from uiucprescon.packager.packages import collection
 
 import speedwagon.tasks
 import speedwagon
+import speedwagon.tasks.tasks
 from speedwagon.workflows.title_page_selection import PackageBrowser
 from . import shared_custom_widgets
 
@@ -52,7 +53,7 @@ class HathiPrepWorkflow(speedwagon.Workflow):
         return options
 
     def initial_task(self,
-                     task_builder: speedwagon.tasks.TaskBuilder,
+                     task_builder: "speedwagon.tasks.tasks.TaskBuilder",
                      **user_args: str
                      ) -> None:
         """Look for any packages located in the input argument directory.
@@ -156,7 +157,7 @@ class HathiPrepWorkflow(speedwagon.Workflow):
         }
 
     @classmethod
-    def generate_report(cls, results: List[speedwagon.tasks.Result],
+    def generate_report(cls, results: List[speedwagon.tasks.tasks.Result],
                         **user_args) -> Optional[str]:
         """Generate a report about prepping work.
 
@@ -195,7 +196,7 @@ class HathiPrepWorkflow(speedwagon.Workflow):
                f"\n  {num_yaml_files} meta.yml files"
 
 
-class FindPackagesTask(speedwagon.tasks.Subtask):
+class FindPackagesTask(speedwagon.tasks.tasks.Subtask):
     name = "Locate Packages"
 
     def __init__(self, root: str) -> None:
@@ -224,7 +225,7 @@ class FindPackagesTask(speedwagon.tasks.Subtask):
         return True
 
 
-class MakeYamlTask(speedwagon.tasks.Subtask):
+class MakeYamlTask(speedwagon.tasks.tasks.Subtask):
     name = "Create meta.yml"
 
     def __init__(self, package_id: str, source: str, title_page: str) -> None:
@@ -264,7 +265,7 @@ class MakeYamlTask(speedwagon.tasks.Subtask):
         return successful
 
 
-class GenerateChecksumTask(speedwagon.tasks.Subtask):
+class GenerateChecksumTask(speedwagon.tasks.tasks.Subtask):
     name = "Generate Checksum"
 
     def __init__(self, package_id: str, source: str) -> None:
@@ -303,7 +304,7 @@ class GenerateChecksumTask(speedwagon.tasks.Subtask):
         return success
 
 
-class PrepTask(speedwagon.tasks.Subtask):
+class PrepTask(speedwagon.tasks.tasks.Subtask):
     name = "Prep"
 
     def __init__(self, source: str, title_page: str) -> None:

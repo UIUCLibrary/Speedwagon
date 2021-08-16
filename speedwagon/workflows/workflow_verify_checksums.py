@@ -10,6 +10,7 @@ import typing
 
 import hathi_validate.process
 
+import speedwagon.tasks.tasks
 from speedwagon import tasks
 from speedwagon.job import Workflow
 from speedwagon.reports import add_report_borders
@@ -59,7 +60,8 @@ class ChecksumWorkflow(Workflow):
                 yield os.path.join(root, file_)
 
     def discover_task_metadata(self,
-                               initial_results: List[tasks.Result],
+                               initial_results: List[
+                                   speedwagon.tasks.tasks.Result],
                                additional_data: Dict[str, None],
                                **user_args: str) -> List[Dict[str, str]]:
         jobs: List[Dict[str, str]] = []
@@ -94,7 +96,7 @@ class ChecksumWorkflow(Workflow):
             raise ValueError("Invalid user arguments")
         return True
 
-    def initial_task(self, task_builder: tasks.TaskBuilder,
+    def initial_task(self, task_builder: "tasks.tasks.TaskBuilder",
                      **user_args: str) -> None:
         root = user_args['Input']
         for checksum_report_file in self._locate_checksum_files(root):
@@ -103,7 +105,7 @@ class ChecksumWorkflow(Workflow):
 
     def create_new_task(
             self,
-            task_builder: tasks.TaskBuilder,
+            task_builder: "tasks.tasks.TaskBuilder",
             **job_args: str
     ) -> None:
 
@@ -119,11 +121,11 @@ class ChecksumWorkflow(Workflow):
 
     @classmethod
     def generate_report(cls,
-                        results: List[tasks.Result],
+                        results: List[speedwagon.tasks.tasks.Result],
                         **user_args: str) -> Optional[str]:
 
         def validation_result_filter(
-                task_result: tasks.Result) -> bool:
+                task_result: speedwagon.tasks.tasks.Result) -> bool:
             if task_result.source != ValidateChecksumTask:
                 return False
             return True
@@ -202,7 +204,7 @@ class ChecksumWorkflow(Workflow):
         return dict(new_results)
 
 
-class ReadChecksumReportTask(tasks.Subtask):
+class ReadChecksumReportTask(speedwagon.tasks.tasks.Subtask):
 
     def __init__(self, checksum_file: str) -> None:
         super().__init__()
@@ -233,7 +235,7 @@ class ReadChecksumReportTask(tasks.Subtask):
         return True
 
 
-class ValidateChecksumTask(tasks.Subtask):
+class ValidateChecksumTask(speedwagon.tasks.tasks.Subtask):
     name = "Validating File Checksum"
 
     def __init__(self,
@@ -317,7 +319,8 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
                   "be siblings to the checksum file."
 
     def discover_task_metadata(self,
-                               initial_results: List[tasks.Result],
+                               initial_results: List[
+                                   speedwagon.tasks.tasks.Result],
                                additional_data: Dict[str, None],
                                **user_args: str) -> List[dict]:
         jobs: List[Dict[str, str]] = []
@@ -347,7 +350,7 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
 
     def create_new_task(
             self,
-            task_builder: tasks.TaskBuilder,
+            task_builder: "tasks.tasks.TaskBuilder",
             **job_args: str
     ) -> None:
         """Generate a new checksum task."""
@@ -358,7 +361,7 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
     @add_report_borders
     def generate_report(
             cls,
-            results: List[tasks.Result],
+            results: List[speedwagon.tasks.tasks.Result],
             **user_args: str
     ) -> Optional[str]:
 
@@ -439,7 +442,7 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
         return dict(failed)
 
 
-class ChecksumTask(tasks.Subtask):
+class ChecksumTask(speedwagon.tasks.tasks.Subtask):
     name = "Verifying file checksum"
 
     def __init__(self, *_: None, **kwargs: Union[str, bool]) -> None:

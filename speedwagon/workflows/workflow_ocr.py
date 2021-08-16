@@ -8,6 +8,7 @@ from typing import List, Any, Optional, Iterator, Dict, Union
 import contextlib
 from uiucprescon import ocr
 import speedwagon
+import speedwagon.tasks.tasks
 
 from speedwagon.workflows import shared_custom_widgets
 from speedwagon import tasks
@@ -100,7 +101,8 @@ class OCRWorkflow(speedwagon.Workflow):
         cls.description = text
 
     def discover_task_metadata(self,
-                               initial_results: List[tasks.Result],
+                               initial_results: List[
+                                   speedwagon.tasks.tasks.Result],
                                additional_data: Dict[str, Any],
                                **user_args: str) -> List[dict]:
 
@@ -132,7 +134,7 @@ class OCRWorkflow(speedwagon.Workflow):
         return new_tasks
 
     def create_new_task(self,
-                        task_builder: tasks.TaskBuilder,
+                        task_builder: "tasks.tasks.TaskBuilder",
                         **job_args: str) -> None:
 
         image_file = job_args["source_file_path"]
@@ -149,7 +151,7 @@ class OCRWorkflow(speedwagon.Workflow):
         task_builder.add_subtask(ocr_generation_task)
 
     def initial_task(self,
-                     task_builder: tasks.TaskBuilder,
+                     task_builder: "tasks.tasks.TaskBuilder",
                      **user_args: str) -> None:
 
         root = user_args['Path']
@@ -245,7 +247,7 @@ class OCRWorkflow(speedwagon.Workflow):
         return True
 
     @classmethod
-    def generate_report(cls, results: List[tasks.Result],
+    def generate_report(cls, results: List[speedwagon.tasks.tasks.Result],
                         **user_args) -> Optional[str]:
         amount = len(cls._get_ocr_tasks(results))
 
@@ -258,9 +260,10 @@ class OCRWorkflow(speedwagon.Workflow):
             "Done\n".format(amount)
 
     @staticmethod
-    def _get_ocr_tasks(results: List[tasks.Result]) -> List[tasks.Result]:
+    def _get_ocr_tasks(results: List[speedwagon.tasks.tasks.Result]) -> List[
+        speedwagon.tasks.tasks.Result]:
 
-        def filter_ocr_gen_tasks(result: tasks.Result) -> bool:
+        def filter_ocr_gen_tasks(result: speedwagon.tasks.tasks.Result) -> bool:
             if result.source != GenerateOCRFileTask:
                 return False
             return True
@@ -268,7 +271,7 @@ class OCRWorkflow(speedwagon.Workflow):
         return list(filter(filter_ocr_gen_tasks, results))
 
 
-class FindImagesTask(speedwagon.tasks.Subtask):
+class FindImagesTask(speedwagon.tasks.tasks.Subtask):
     name = "Finding Images"
 
     def __init__(self, root: str, file_extension: str) -> None:
@@ -306,7 +309,7 @@ class FindImagesTask(speedwagon.tasks.Subtask):
         return True
 
 
-class GenerateOCRFileTask(speedwagon.tasks.Subtask):
+class GenerateOCRFileTask(speedwagon.tasks.tasks.Subtask):
     engine = ocr.Engine(locate_tessdata())
     name = "Optical character recognition"
 

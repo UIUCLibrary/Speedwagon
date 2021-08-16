@@ -1,4 +1,6 @@
 from unittest.mock import MagicMock, Mock
+
+import speedwagon.tasks.tasks
 from speedwagon import tasks
 import pytest
 
@@ -159,7 +161,7 @@ def test_discover_task_metadata(monkeypatch):
 
 
 def test_create_new_task_dl(monkeypatch):
-    task_builder = tasks.TaskBuilder(
+    task_builder = speedwagon.tasks.tasks.TaskBuilder(
         tasks.MultiStageTaskBuilder("."),
         "."
     )

@@ -6,6 +6,7 @@ from typing import List, Any, Dict
 import pytest
 from unittest.mock import Mock, MagicMock
 
+import speedwagon.tasks.tasks
 from speedwagon import runner_strategies, tasks
 import speedwagon
 
@@ -145,7 +146,7 @@ def test_task_aborted(caplog, step, monkeypatch):
 
     with monkeypatch.context() as mp:
         mp.setattr(
-            runner_strategies.tasks.TaskBuilder,
+            speedwagon.tasks.tasks.TaskBuilder,
             "build_task",
             build_task
         )
@@ -277,7 +278,7 @@ class TestTaskGenerator:
         )
 
         for subtask in task_generator.tasks():
-            assert isinstance(subtask, speedwagon.tasks.Subtask)
+            assert isinstance(subtask, speedwagon.tasks.tasks.Subtask)
 
         assert workflow.initial_task.called is True
 
@@ -289,7 +290,7 @@ class TestTaskGenerator:
         )
 
         for subtask in task_generator.tasks():
-            assert isinstance(subtask, speedwagon.tasks.Subtask)
+            assert isinstance(subtask, speedwagon.tasks.tasks.Subtask)
         assert workflow.discover_task_metadata.called is True
 
     def test_tasks_runs_create_new_task(self, workflow):
@@ -300,7 +301,7 @@ class TestTaskGenerator:
         )
 
         for subtask in task_generator.tasks():
-            assert isinstance(subtask, speedwagon.tasks.Subtask)
+            assert isinstance(subtask, speedwagon.tasks.tasks.Subtask)
         assert workflow.create_new_task.called is True
 
     def test_tasks_runs_completion_task(self, workflow):
@@ -311,7 +312,7 @@ class TestTaskGenerator:
         )
 
         for subtask in task_generator.tasks():
-            assert isinstance(subtask, speedwagon.tasks.Subtask)
+            assert isinstance(subtask, speedwagon.tasks.tasks.Subtask)
         assert workflow.completion_task.called is True
 
     def test_tasks_request_more_info(self, workflow):
@@ -323,7 +324,7 @@ class TestTaskGenerator:
             caller=caller
         )
         for subtask in task_generator.tasks():
-            assert isinstance(subtask, speedwagon.tasks.Subtask)
+            assert isinstance(subtask, speedwagon.tasks.tasks.Subtask)
         assert caller.request_more_info.called is True
 
     def test_pretask_calls_initial_task(self, workflow):
@@ -499,7 +500,7 @@ class TestTaskScheduler:
         scheduler.reporter = reporter
         workflow.discover_task_metadata = Mock(return_value=[])
         options = {}
-        subtask = speedwagon.tasks.Subtask()
+        subtask = speedwagon.tasks.tasks.Subtask()
         subtask.exec = Mock()
 
         monkeypatch.setattr(
@@ -524,7 +525,7 @@ class TestTaskScheduler:
 
         options = {}
 
-        subtask = speedwagon.tasks.Subtask()
+        subtask = speedwagon.tasks.tasks.Subtask()
         subtask.exec = Mock()
         subtask._task_queue = Mock(unfinished_tasks=1)
         with pytest.raises(speedwagon.job.JobCancelled):

@@ -3,6 +3,7 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 
+import speedwagon.tasks.tasks
 from speedwagon import tasks
 from speedwagon.workflows import workflow_hathiprep
 
@@ -119,11 +120,11 @@ def test_generate_report_creates_a_report(unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
     job_args = {}
     results = [
-        tasks.Result(
+        speedwagon.tasks.tasks.Result(
             workflow_hathiprep.GenerateChecksumTask,
             data={"package_id": "123"}
         ),
-        tasks.Result(
+        speedwagon.tasks.tasks.Result(
             workflow_hathiprep.MakeYamlTask,
             data={"package_id": "123"}
         ),

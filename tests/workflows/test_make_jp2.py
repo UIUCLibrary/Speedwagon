@@ -2,6 +2,7 @@ import os
 from unittest.mock import Mock
 import pytest
 
+import speedwagon.tasks.tasks
 from speedwagon import tasks
 from speedwagon.workflows import workflow_make_jp2
 
@@ -95,7 +96,7 @@ def test_generate_report_creates_a_report(unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
     job_args = {}
     results = [
-        tasks.Result(
+        speedwagon.tasks.tasks.Result(
             source=workflow_make_jp2.ConvertFileTask,
             data={'file_created': "123.jp2"}
         )
@@ -165,7 +166,7 @@ def test_create_jp2(monkeypatch, profile_name):
         )
     assert len(tasks_md) > 0
     working_dir = 'some_working_path'
-    task_builder = tasks.TaskBuilder(
+    task_builder = speedwagon.tasks.tasks.TaskBuilder(
         tasks.MultiStageTaskBuilder(working_dir),
         working_dir=working_dir
     )

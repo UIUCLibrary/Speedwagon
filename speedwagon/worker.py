@@ -19,7 +19,8 @@ from collections import namedtuple
 from PyQt5 import QtWidgets  # type: ignore
 
 from .dialog.dialogs import WorkProgressBar
-from .tasks import AbsSubtask, QueueAdapter, Result
+from .tasks import QueueAdapter
+from .tasks.tasks import AbsSubtask, Result
 
 __all__ = [
     "WorkRunnerExternal3",

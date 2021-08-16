@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 
 import requests
 
+import speedwagon.tasks.tasks
 from speedwagon.workflows import workflow_get_marc
 from speedwagon import tasks
 import pytest
@@ -182,7 +183,7 @@ def test_generate_report_success(unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
     report = workflow.generate_report(
         results=[
-            tasks.Result(None, data={
+            speedwagon.tasks.tasks.Result(None, data={
                 "success": True,
                 "identifier": "097"
             })
@@ -196,7 +197,7 @@ def test_generate_report_failure(unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
     report = workflow.generate_report(
         results=[
-            tasks.Result(None, data={
+            speedwagon.tasks.tasks.Result(None, data={
                 "success": False,
                 "identifier": "097",
                 "output": "Something bad happened"

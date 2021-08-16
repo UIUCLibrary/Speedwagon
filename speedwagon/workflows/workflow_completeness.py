@@ -18,10 +18,10 @@ from hathi_validate import process as validate_process
 from hathi_validate import validator
 
 import speedwagon
-from speedwagon.tasks import Subtask
+import speedwagon.tasks.tasks
 from speedwagon.logging import GuiLogHandler
 from speedwagon.job import Workflow
-from speedwagon import tasks
+from speedwagon import tasks, Subtask
 from . import shared_custom_widgets as options
 from .shared_custom_widgets import UserOption2, UserOption3
 
@@ -60,7 +60,8 @@ class CompletenessWorkflow(Workflow):
             check_ocr_utf8_option
         ]
 
-    def discover_task_metadata(self, initial_results: List[tasks.Result],
+    def discover_task_metadata(self, initial_results: List[
+        speedwagon.tasks.tasks.Result],
                                additional_data: Mapping[str, str],
                                **user_args: Union[str, bool]
                                ) -> List[Dict[str, Union[str, bool]]]:
@@ -95,7 +96,7 @@ class CompletenessWorkflow(Workflow):
         return jobs
 
     def create_new_task(self,
-                        task_builder: "speedwagon.tasks.TaskBuilder",
+                        task_builder: "speedwagon.tasks.tasks.TaskBuilder",
                         **job_args: Union[str, bool]) -> None:
 
         package_path = \
@@ -132,12 +133,12 @@ class CompletenessWorkflow(Workflow):
                 subtask=ValidateOCFilesUTF8Task(package_path))
 
     @classmethod
-    def generate_report(cls, results: List[speedwagon.tasks.Result],
+    def generate_report(cls, results: List[speedwagon.tasks.tasks.Result],
                         **user_args: Union[str, bool]) -> Optional[str]:
 
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
         _result_grouped: Iterator[
-            Tuple[Any, Iterator[speedwagon.tasks.Result]]
+            Tuple[Any, Iterator[speedwagon.tasks.tasks.Result]]
         ] = itertools.groupby(results_sorted, lambda x: x.source)
         results_grouped = {
             key: [i.data for i in group] for key, group in _result_grouped
@@ -192,7 +193,7 @@ class CompletenessWorkflow(Workflow):
                      f"{warning_report}\n"
         return report
 
-    def initial_task(self, task_builder: speedwagon.tasks.TaskBuilder,
+    def initial_task(self, task_builder: "speedwagon.tasks.tasks.TaskBuilder",
                      **user_args: str) -> None:
 
         new_task = HathiManifestGenerationTask(batch_root=user_args['Source'])

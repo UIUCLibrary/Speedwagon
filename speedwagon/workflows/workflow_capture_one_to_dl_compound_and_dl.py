@@ -4,6 +4,8 @@ import logging
 import os
 import typing
 
+import speedwagon.tasks.tasks
+
 try:  # pragma: no cover
     from typing import TypedDict
 except ImportError:  # pragma: no cover
@@ -198,7 +200,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
         return True
 
     def create_new_task(self,
-                        task_builder: tasks.TaskBuilder,
+                        task_builder: speedwagon.tasks.tasks.TaskBuilder,
                         **job_args: Union[str, AbsPackageComponent]
                         ) -> None:
         """Generate a new task.
@@ -297,7 +299,7 @@ class MinimumOutputsValidator(validators.AbsOptionValidator):
         return "ok"
 
 
-class PackageConverter(tasks.Subtask):
+class PackageConverter(speedwagon.tasks.tasks.Subtask):
     """Convert packages formats."""
 
     name = "Package Conversion"

@@ -6,6 +6,8 @@ from contextlib import contextmanager
 from typing import List, Any, Optional
 
 from uiucprescon import packager
+
+import speedwagon.tasks.tasks
 from speedwagon.job import Workflow
 from speedwagon import tasks, reports
 from speedwagon.logging import GuiLogHandler
@@ -35,7 +37,11 @@ class HathiLimitedToDLWorkflow(Workflow):
         } for package in hathi_limited_view_packager.locate_packages(
             user_args['Input'])]
 
-    def create_new_task(self, task_builder: tasks.TaskBuilder, **job_args):
+    def create_new_task(
+            self,
+            task_builder: "tasks.tasks.TaskBuilder",
+            **job_args
+    ):
         task_builder.add_subtask(
             PackageConverter(src=job_args['package'],
                              dst=job_args['destination'])
@@ -49,7 +55,7 @@ class HathiLimitedToDLWorkflow(Workflow):
 
     @classmethod
     @reports.add_report_borders
-    def generate_report(cls, results: List[tasks.Result],
+    def generate_report(cls, results: List[speedwagon.tasks.tasks.Result],
                         **user_args) -> Optional[str]:
         total = len(results)
 
@@ -75,7 +81,7 @@ class HathiLimitedToDLWorkflow(Workflow):
         return True
 
 
-class PackageConverter(tasks.Subtask):
+class PackageConverter(speedwagon.tasks.tasks.Subtask):
     name = "Convert Package"
 
     @contextmanager

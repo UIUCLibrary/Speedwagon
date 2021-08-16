@@ -8,6 +8,8 @@ from typing import List, Any, Optional
 
 import hathizip.process
 import hathizip
+
+import speedwagon.tasks.tasks
 from speedwagon import tasks, reports
 from speedwagon.job import Workflow
 from speedwagon.logging import GuiLogHandler
@@ -69,7 +71,7 @@ class ZipPackagesWorkflow(Workflow):
 
     def create_new_task(
             self,
-            task_builder: tasks.TaskBuilder,
+            task_builder: "tasks.tasks.TaskBuilder",
             **job_args
     ) -> None:
         new_task = ZipTask(**job_args)
@@ -77,7 +79,7 @@ class ZipPackagesWorkflow(Workflow):
 
     @classmethod
     @reports.add_report_borders
-    def generate_report(cls, results: List[tasks.Result],
+    def generate_report(cls, results: List[speedwagon.tasks.tasks.Result],
                         **user_args: str) -> Optional[str]:
 
         output = user_args.get("Output")
@@ -88,7 +90,7 @@ class ZipPackagesWorkflow(Workflow):
         return "Zipping complete. All files written to output location"
 
 
-class ZipTask(tasks.Subtask):
+class ZipTask(speedwagon.tasks.tasks.Subtask):
     name = "Zip Files"
 
     def __init__(

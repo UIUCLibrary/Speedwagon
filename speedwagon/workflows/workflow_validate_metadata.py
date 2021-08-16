@@ -8,6 +8,7 @@ import enum
 
 from uiucprescon import imagevalidate
 
+import speedwagon.tasks.tasks
 from speedwagon import tasks
 from speedwagon.job import Workflow
 from . import shared_custom_widgets
@@ -57,7 +58,10 @@ class ValidateMetadataWorkflow(Workflow):
         return new_tasks
 
     def initial_task(
-            self, task_builder: tasks.TaskBuilder, **user_args) -> None:
+            self,
+            task_builder: "tasks.tasks.TaskBuilder",
+            **user_args
+    ) -> None:
 
         task_builder.add_subtask(
             LocateImagesTask(user_args[UserArgs.INPUT.value],
@@ -114,11 +118,11 @@ class ValidateMetadataWorkflow(Workflow):
 
     @classmethod
     def generate_report(cls,
-                        results: List[tasks.Result],
+                        results: List[speedwagon.tasks.tasks.Result],
                         **user_args) -> Optional[str]:
 
         def validation_result_filter(
-                task_result: tasks.Result) -> bool:
+                task_result: speedwagon.tasks.tasks.Result) -> bool:
             if task_result.source != ValidateImageMetadataTask:
                 return False
             return True
@@ -165,7 +169,7 @@ class ValidateMetadataWorkflow(Workflow):
         return report
 
 
-class LocateTiffImageTask(tasks.Subtask):
+class LocateTiffImageTask(speedwagon.tasks.tasks.Subtask):
     name = "Locate Tiff Images"
 
     def __init__(self, root: str) -> None:
@@ -190,7 +194,7 @@ class LocateTiffImageTask(tasks.Subtask):
         return True
 
 
-class LocateImagesTask(tasks.Subtask):
+class LocateImagesTask(speedwagon.tasks.tasks.Subtask):
     name = "Locate Image Files"
 
     def __init__(self,
@@ -221,7 +225,7 @@ class LocateImagesTask(tasks.Subtask):
         return True
 
 
-class ValidateImageMetadataTask(tasks.Subtask):
+class ValidateImageMetadataTask(speedwagon.tasks.tasks.Subtask):
     name = "Validate Image Metadata"
 
     def __init__(

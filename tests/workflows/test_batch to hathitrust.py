@@ -3,6 +3,7 @@ from unittest.mock import Mock, MagicMock
 import pytest
 import shutil
 
+import speedwagon.tasks.tasks
 from speedwagon import tasks
 from speedwagon.workflows import workflow_batch_to_HathiTrust_TIFF as wf
 from speedwagon.workflows import workflow_get_marc
@@ -114,7 +115,7 @@ def test_get_additional_info(qtbot, monkeypatch):
     mock_package.metadata.__getitem__ = mock_get_item
     mock_package.__len__ = lambda x: 1
 
-    pretask_result = tasks.Result(
+    pretask_result = speedwagon.tasks.tasks.Result(
         source=wf.FindPackageTask,
         data=[mock_package]
     )
@@ -171,7 +172,7 @@ def test_discover_task_metadata(monkeypatch, unconfigured_workflow):
         }
     }
     initial_results = [
-        tasks.Result(
+        speedwagon.tasks.tasks.Result(
             wf.FindPackageTask,
             data=[
                 Mock(
@@ -263,10 +264,10 @@ def test_generate_report(unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
     job_args = {}
     results = [
-        tasks.Result(wf.TransformPackageTask, data=[]),
-        tasks.Result(workflow_get_marc.MarcGeneratorTask, data=[]),
-        tasks.Result(wf.MakeYamlTask, data=[]),
-        tasks.Result(wf.GenerateChecksumTask, data=[]),
+        speedwagon.tasks.tasks.Result(wf.TransformPackageTask, data=[]),
+        speedwagon.tasks.tasks.Result(workflow_get_marc.MarcGeneratorTask, data=[]),
+        speedwagon.tasks.tasks.Result(wf.MakeYamlTask, data=[]),
+        speedwagon.tasks.tasks.Result(wf.GenerateChecksumTask, data=[]),
     ]
     message = workflow.generate_report(results, **job_args)
     assert isinstance(message, str)

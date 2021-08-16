@@ -1,6 +1,8 @@
 from unittest.mock import Mock
 
 import pytest
+
+import speedwagon.tasks.tasks
 from speedwagon.workflows import workflow_validate_metadata
 from speedwagon import models, tasks
 import os
@@ -98,7 +100,7 @@ class TestValidateMetadataWorkflow:
         user_options['Profile'] = 'HathiTrust JPEG 2000'
 
         initial_results = [
-            tasks.Result(workflow_validate_metadata.LocateImagesTask, [
+            speedwagon.tasks.tasks.Result(workflow_validate_metadata.LocateImagesTask, [
                 "spam.jp2"
             ])
         ]
@@ -142,7 +144,7 @@ class TestValidateMetadataWorkflow:
         user_options['Profile'] = 'HathiTrust JPEG 2000'
         ResultValues = workflow_validate_metadata.ResultValues
         results = [
-            tasks.Result(
+            speedwagon.tasks.tasks.Result(
                 workflow_validate_metadata.ValidateImageMetadataTask,
                 {
                     ResultValues.VALID: True
@@ -159,7 +161,7 @@ class TestValidateMetadataWorkflow:
         user_options['Profile'] = 'HathiTrust JPEG 2000'
         ResultValues = workflow_validate_metadata.ResultValues
         results = [
-            tasks.Result(
+            speedwagon.tasks.tasks.Result(
                 workflow_validate_metadata.ValidateImageMetadataTask,
                 {
                     ResultValues.VALID: False,

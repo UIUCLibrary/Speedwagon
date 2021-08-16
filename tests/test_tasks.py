@@ -6,12 +6,13 @@ import typing
 import concurrent.futures
 import pytest
 import speedwagon.tasks
+import speedwagon.tasks.tasks
 import speedwagon.worker
 from speedwagon import worker
-from speedwagon.tasks import TaskBuilder
+from speedwagon.tasks.tasks import TaskBuilder
 
 
-class SimpleSubtask(speedwagon.tasks.Subtask):
+class SimpleSubtask(speedwagon.tasks.tasks.Subtask):
 
     def __init__(self, message):
         super().__init__()
@@ -30,7 +31,7 @@ class SimpleSubtask(speedwagon.tasks.Subtask):
         return {"message": self.message}
 
 
-class SimplePreTask(speedwagon.tasks.Subtask):
+class SimplePreTask(speedwagon.tasks.tasks.Subtask):
 
     def __init__(self, message):
         super().__init__()
@@ -46,7 +47,7 @@ class SimplePreTask(speedwagon.tasks.Subtask):
         return {"r": "ad"}
 
 
-class SimpleMultistage(speedwagon.tasks.MultiStageTask):
+class SimpleMultistage(speedwagon.tasks.tasks.MultiStageTask):
     def process_subtask_results(self,
                                 subtask_results: typing.List[typing.Any])\
             -> typing.Any:
@@ -54,7 +55,7 @@ class SimpleMultistage(speedwagon.tasks.MultiStageTask):
         return "\n".join(subtask_results)
 
 
-class SimpleTaskBuilder(speedwagon.tasks.BaseTaskBuilder):
+class SimpleTaskBuilder(speedwagon.tasks.tasks.BaseTaskBuilder):
 
     @property
     def task(self) -> SimpleMultistage:
@@ -74,7 +75,7 @@ def simple_task_builder(tmpdir_factory):
 def test_task_builder(simple_task_builder):
     task = simple_task_builder.build_task()
 
-    assert isinstance(task, speedwagon.tasks.MultiStageTask)
+    assert isinstance(task, speedwagon.tasks.tasks.MultiStageTask)
 
     assert len(task.main_subtasks) == 1
 
