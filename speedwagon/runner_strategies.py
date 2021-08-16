@@ -16,9 +16,7 @@ from PyQt5 import QtWidgets
 
 import speedwagon
 import speedwagon.dialog
-import speedwagon.tasks.tasks
 from speedwagon import worker
-from . import tasks
 from .job import AbsWorkflow, Workflow, JobCancelled
 
 __all__ = [
@@ -175,7 +173,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
             job: AbsWorkflow,
             options: Dict[str, Any],
             parent: QtWidgets.QWidget,
-            pre_results: typing.List[speedwagon.tasks.tasks.Result]
+            pre_results: typing.List[speedwagon.tasks.Result]
     ) -> Dict[str, Any]:
         if isinstance(job, Workflow):
             return self._get_additional_options(
@@ -218,8 +216,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
 
                 for new_task_metadata in metadata_tasks:
 
-                    main_task_builder = speedwagon.tasks.tasks.TaskBuilder(
-                        tasks.MultiStageTaskBuilder(working_dir),
+                    main_task_builder = speedwagon.tasks.TaskBuilder(
+                        speedwagon.tasks.MultiStageTaskBuilder(working_dir),
                         working_dir
                     )
 
@@ -259,7 +257,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                         parent: QtWidgets.QWidget,
                         job: AbsWorkflow,
                         options: Dict[str, Any],
-                        results: typing.List[speedwagon.tasks.tasks.Result],
+                        results: typing.List[speedwagon.tasks.Result],
                         working_dir: str,
                         logger: logging.Logger) -> list:
         _results = []
@@ -270,8 +268,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
             try:
                 logger.addHandler(runner.progress_dialog_box_handler)
 
-                finalization_task_builder = speedwagon.tasks.tasks.TaskBuilder(
-                    tasks.MultiStageTaskBuilder(working_dir),
+                finalization_task_builder = speedwagon.tasks.TaskBuilder(
+                    speedwagon.tasks.MultiStageTaskBuilder(working_dir),
                     working_dir
                 )
 
@@ -321,8 +319,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
             results = []
 
             try:
-                task_builder = speedwagon.tasks.tasks.TaskBuilder(
-                    tasks.MultiStageTaskBuilder(working_dir),
+                task_builder = speedwagon.tasks.TaskBuilder(
+                    speedwagon.tasks.MultiStageTaskBuilder(working_dir),
                     working_dir
                 )
 
@@ -352,12 +350,12 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 logger.removeHandler(runner.progress_dialog_box_handler)
 
     @staticmethod
-    def _get_additional_options(parent: QtWidgets.QWidget,
-                                job: Workflow,
-                                options: Dict[str, Any],
-                                pretask_results: typing.List[
-                                    speedwagon.tasks.tasks.Result]
-                                ) -> Dict[str, Any]:
+    def _get_additional_options(
+            parent: QtWidgets.QWidget,
+            job: Workflow,
+            options: Dict[str, Any],
+            pretask_results: typing.List[speedwagon.tasks.Result]
+    ) -> Dict[str, Any]:
 
         return job.get_additional_info(parent, options, pretask_results)
 
@@ -379,11 +377,11 @@ class TaskGenerator:
         self.caller = caller
 
     def generate_report(
-            self, results: List[speedwagon.tasks.tasks.Result]
+            self, results: List[speedwagon.tasks.Result]
     ) -> typing.Optional[str]:
         return self.workflow.generate_report(results, **self.options)
 
-    def tasks(self) -> typing.Iterable[speedwagon.tasks.tasks.Subtask]:
+    def tasks(self) -> typing.Iterable[speedwagon.tasks.Subtask]:
         pretask_results = []
 
         results = []
@@ -426,7 +424,7 @@ class TaskGenerator:
     ) -> typing.Iterable[speedwagon.tasks.tasks.Subtask]:
 
         task_builder = speedwagon.tasks.tasks.TaskBuilder(
-            tasks.MultiStageTaskBuilder(working_directory),
+            speedwagon.tasks.MultiStageTaskBuilder(working_directory),
             working_directory
         )
         self.workflow.initial_task(task_builder, **options)
@@ -448,8 +446,8 @@ class TaskGenerator:
 
         subtasks_generated = []
         for task_metadata in metadata_tasks:
-            task_builder = speedwagon.tasks.tasks.TaskBuilder(
-                tasks.MultiStageTaskBuilder(working_directory),
+            task_builder = speedwagon.tasks.TaskBuilder(
+                speedwagon.tasks.MultiStageTaskBuilder(working_directory),
                 working_directory
             )
             self.workflow.create_new_task(task_builder, **task_metadata)
@@ -470,7 +468,7 @@ class TaskGenerator:
             **options: typing.Any
     ) -> typing.Iterable[speedwagon.tasks.tasks.Subtask]:
         task_builder = speedwagon.tasks.tasks.TaskBuilder(
-            tasks.MultiStageTaskBuilder(working_directory),
+            speedwagon.tasks.MultiStageTaskBuilder(working_directory),
             working_directory
         )
         self.workflow.completion_task(task_builder, results, **options)
@@ -717,7 +715,7 @@ class TaskScheduler:
 
         self.current_task_progress: typing.Optional[int] = None
         self.total_tasks: typing.Optional[int] = None
-        self._task_queue: "" = queue.Queue(maxsize=1)
+        self._task_queue: "queue.Queue" = queue.Queue(maxsize=1)
 
         self._request_more_info: typing.Callable[
             [Workflow, Any, Any], typing.Optional[Dict[str, Any]]
