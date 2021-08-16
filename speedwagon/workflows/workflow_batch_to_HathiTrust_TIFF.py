@@ -11,8 +11,6 @@ from uiucprescon import packager
 
 from pyhathiprep import package_creater
 import speedwagon
-import speedwagon.tasks.tasks
-from speedwagon import tasks
 from speedwagon.workflows import shared_custom_widgets, workflow_get_marc
 from . title_page_selection import PackageBrowser
 from .workflow_get_marc import UserOptions
@@ -52,7 +50,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
             self.global_settings = global_settings
 
     def discover_task_metadata(self, initial_results: List[
-        speedwagon.tasks.tasks.Result],
+        speedwagon.tasks.Result],
                                additional_data: Dict[str, Any],
                                **user_args: str) -> List[Dict[str, str]]:
         server_url = self.global_settings.get("getmarc_server_url")
@@ -99,7 +97,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         workflow_options.append(id_type_option)
         return workflow_options
 
-    def initial_task(self, task_builder: speedwagon.tasks.tasks.TaskBuilder,
+    def initial_task(self, task_builder: speedwagon.tasks.TaskBuilder,
                      **user_args: str) -> None:
         super().initial_task(task_builder, **user_args)
         root = user_args['Source']
@@ -107,7 +105,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
 
     def create_new_task(
             self,
-            task_builder: speedwagon.tasks.tasks.TaskBuilder,
+            task_builder: speedwagon.tasks.TaskBuilder,
             **job_args
     ) -> None:
 
@@ -150,7 +148,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
     def get_additional_info(self,
                             parent: QtWidgets.QWidget,
                             options: Mapping[Any, Any],
-                            pretask_results: List[speedwagon.tasks.tasks.Result]
+                            pretask_results: List[speedwagon.tasks.Result]
                             ) -> Dict[str, Any]:
         extra_data: Dict[str, Dict[str, str]] = {}
         if len(pretask_results) == 1:
@@ -174,10 +172,10 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         return extra_data
 
     @classmethod
-    def generate_report(cls, results: List[speedwagon.tasks.tasks.Result],
+    def generate_report(cls, results: List[speedwagon.tasks.Result],
                         **user_args: str) -> Optional[str]:
-
-        results_grouped: Mapping[Type[speedwagon.tasks.tasks.AbsSubtask], Sized] = \
+        subtask_type = Type[speedwagon.tasks.tasks.AbsSubtask]
+        results_grouped: Mapping[subtask_type, Sized] = \
             cls.group_results(
                 sorted(results, key=lambda x: x.source.__name__)
             )
@@ -216,17 +214,17 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         return message
 
     @classmethod
-    def group_results(cls,
-                      results_sorted: List[speedwagon.tasks.tasks.Result]
-                      ) -> Dict[Type[speedwagon.tasks.tasks.AbsSubtask], List[Any]]:
-        _result_grouped = itertools.groupby(results_sorted, lambda x: x.source)
-        results_grouped = dict()
-        for key, value in _result_grouped:
-            results_grouped[key] = [i.data for i in value]
-        return results_grouped
+    def group_results(
+            cls,
+            results_sorted: List[speedwagon.tasks.Result]
+    ) -> Dict[Type[speedwagon.tasks.tasks.AbsSubtask], List[Any]]:
+        result_grouped = itertools.groupby(results_sorted, lambda x: x.source)
+        return {
+            key: [i.data for i in value] for key, value in result_grouped
+        }
 
 
-class TransformPackageTask(speedwagon.tasks.tasks.Subtask):
+class TransformPackageTask(speedwagon.tasks.Subtask):
     name = "Transform Package"
 
     def __init__(self, package: packager.packages.collection.PackageObject,
@@ -257,7 +255,7 @@ class TransformPackageTask(speedwagon.tasks.tasks.Subtask):
         return True
 
 
-class FindPackageTask(speedwagon.tasks.tasks.Subtask):
+class FindPackageTask(speedwagon.tasks.Subtask):
     name = "Locating Packages"
 
     def __init__(self, root: str) -> None:
@@ -281,7 +279,7 @@ class FindPackageTask(speedwagon.tasks.tasks.Subtask):
         return True
 
 
-class MakeYamlTask(speedwagon.tasks.tasks.Subtask):
+class MakeYamlTask(speedwagon.tasks.Subtask):
     name = "Make meta.yml"
 
     def __init__(self, identifier: str, source: str, title_page: str) -> None:
@@ -325,7 +323,7 @@ class MakeYamlTask(speedwagon.tasks.tasks.Subtask):
         return successful
 
 
-class GenerateChecksumTask(speedwagon.tasks.tasks.Subtask):
+class GenerateChecksumTask(speedwagon.tasks.Subtask):
     name = "Generate Checksum"
 
     def __init__(self, identifier: str, source: str) -> None:
