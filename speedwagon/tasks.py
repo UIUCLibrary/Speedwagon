@@ -249,7 +249,7 @@ class AbsTaskComponents(metaclass=abc.ABCMeta):
     @pretask.setter  # type: ignore
     @abc.abstractmethod
     def pretask(self, value: AbsSubtask) -> None:
-        """set the subtask that run prior to the main task."""
+        """Set the subtask that run prior to the main task."""
 
     @property  # type: ignore
     @abc.abstractmethod
