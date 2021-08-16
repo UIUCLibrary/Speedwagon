@@ -236,12 +236,12 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
         #     Optional[ProgressMessageBoxLogHandler] = None
 
     @property
-    def dialog(self):
+    def dialog(self) -> Optional[WorkProgressBar]:
         warnings.warn("Don't use the dialog", DeprecationWarning)
         return self._dialog
 
     @dialog.setter
-    def dialog(self, value):
+    def dialog(self, value: Optional[WorkProgressBar]) -> None:
         self._dialog = value
 
     def __enter__(self) -> "WorkRunnerExternal3":
@@ -259,7 +259,7 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
     def __exit__(self,
                  exc_type: Optional[Type[BaseException]],
                  exc_value: Optional[BaseException],
-                 exc_tb: Optional[TracebackType]):
+                 exc_tb: Optional[TracebackType]) -> None:
         """Close runner."""
         if self.dialog is None:
             raise AttributeError("dialog was set to None before closing")
@@ -269,20 +269,22 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
 
 class AbsJobManager(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def add_job(self, new_job, settings) -> None:
-        pass
+    def add_job(self,
+                new_job: ProcessJobWorker,
+                settings: Dict[str, Any]) -> None:
+        """Add job to pending queue."""
 
     @abc.abstractmethod
     def start(self) -> None:
-        pass
+        """Start job manager."""
 
     @abc.abstractmethod
     def flush_message_buffer(self) -> None:
-        pass
+        """Flush message buffer."""
 
     @abc.abstractmethod
     def abort(self) -> None:
-        pass
+        """Abort jobs."""
 
 
 class JobExecutor:
@@ -325,20 +327,21 @@ class JobExecutor:
                 still_running.append(future)
             self.futures.remove(future)
 
-    def flush_message_buffer(self, logger) -> None:
+    def flush_message_buffer(self, logger: logging.Logger) -> None:
         if self._message_queue is None:
             return
         while not self._message_queue.empty():
             logger.info(self._message_queue.get())
             self._message_queue.task_done()
 
-    def cleanup(self, logger) -> None:
+    def cleanup(self, logger: logging.Logger) -> None:
         if self._pending_jobs.unfinished_tasks > 0:
             logger.warning("Pending jobs has unfinished tasks")
         self._pending_jobs.join()
 
-    def shutdown(self):
-        self._executor.shutdown()
+    def shutdown(self) -> None:
+        if self._executor is not None:
+            self._executor.shutdown()
 
 
 class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
@@ -353,17 +356,17 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         self.configuration_file: Optional[str] = None
 
     @property
-    def active(self):
+    def active(self) -> bool:
         """Check if a job is active."""
         return self._job_runtime.active
 
     @active.setter
-    def active(self, value):
+    def active(self, value: bool) -> None:
         warnings.warn("don't use directly", DeprecationWarning)
         self._job_runtime.active = value
 
     @property
-    def futures(self):
+    def futures(self) -> typing.List[concurrent.futures.Future]:
         """Get the futures."""
         return self._job_runtime.futures
 
@@ -378,7 +381,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
     def __exit__(self,
                  exc_type: Optional[Type[BaseException]],
                  exc_value: Optional[BaseException],
-                 exc_tb: Optional[TracebackType]):
+                 exc_tb: Optional[TracebackType]) -> None:
         """Clean up manager and show down the executor."""
         self._job_runtime.cleanup(self.logger)
         self._job_runtime.shutdown()
