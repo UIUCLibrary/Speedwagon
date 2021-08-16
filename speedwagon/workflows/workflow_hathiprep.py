@@ -1,5 +1,6 @@
 """Hathi Prep Workflow."""
 import itertools
+import os
 from typing import Mapping, List, Any, Sequence, Dict, Union, Optional
 from PyQt5 import QtWidgets  # type: ignore
 
@@ -60,7 +61,7 @@ class HathiPrepWorkflow(speedwagon.Workflow):
 
         """
         root = user_args['input']
-        task_builder.add_subtask(speedwagon.tasks.prep.FindPackagesTask(root))
+        task_builder.add_subtask(FindPackagesTask(root))
 
     def discover_task_metadata(self,
                                initial_results: List[Any],
@@ -206,3 +207,35 @@ class HathiPrepWorkflow(speedwagon.Workflow):
                f"\nTotal files generated: " \
                f"\n  {num_checksum_files} checksum.md5 files" \
                f"\n  {num_yaml_files} meta.yml files"
+
+
+class FindPackagesTask(speedwagon.tasks.Subtask):
+    name = "Locate Packages"
+
+    def __init__(self, root: str) -> None:
+        super().__init__()
+        self._root = root
+
+    def task_description(self) -> Optional[str]:
+        """Get user readable information about what the subtask is doing."""
+        return f"Locating packages in {self._root}"
+
+    def work(self) -> bool:
+        """Perform the job."""
+        self.log("Locating packages in {}".format(self._root))
+
+        def find_dirs(item: os.DirEntry) -> bool:
+
+            if not item.is_dir():
+                return False
+            return True
+
+        directories = []
+
+        for directory in filter(find_dirs, os.scandir(self._root)):
+            directories.append(directory.path)
+            self.log(f"Located {directory.name}")
+        self.set_results(directories)
+
+        return True
+

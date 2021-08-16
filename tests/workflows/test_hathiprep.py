@@ -132,3 +132,21 @@ def test_generate_report_creates_a_report(unconfigured_workflow):
     ]
     message = workflow.generate_report(results, **job_args)
     assert "Report" in message
+
+
+def test_find_packages_task(monkeypatch):
+    root_path = "some/sample/root"
+
+    task = workflow_hathiprep.FindPackagesTask(root=root_path)
+
+    task.log = Mock()
+
+    def mock_scandir(path):
+        for i_number in range(20):
+            file_mock = Mock()
+            file_mock.name = f"99423682912205899-{str(i_number).zfill(8)}.xml"
+            yield file_mock
+    with monkeypatch.context() as mp:
+        mp.setattr(os, "scandir", mock_scandir)
+        assert task.work() is True
+    assert len(task.results) == 20

@@ -93,9 +93,13 @@ class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
 
 
 class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
+    """Validate the metadata of a image file."""
+
     name = "Validate Image Metadata"
 
     class ResultValues(enum.Enum):
+        """Result keys used in validation results."""
+
         VALID = "valid"
         FILENAME = "filename"
         REPORT = "report"
@@ -105,7 +109,12 @@ class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
             filename: str,
             profile_name: str
     ) -> None:
+        """Create an image validation subtask.
 
+        Args:
+            filename: path to file
+            profile_name: Name of the validation profile to use.
+        """
         super().__init__()
         self._filename = filename
         self._profile = typing.cast(
@@ -114,9 +123,11 @@ class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
         )
 
     def task_description(self) -> Optional[str]:
+        """Get user readable information about what the subtask is doing."""
         return f"Validating image metadata for {self._filename}"
 
     def work(self) -> bool:
+        """Validate file."""
         self.log(f"Validating {self._filename}")
 
         profile_validator = imagevalidate.Profile(self._profile)

@@ -5,24 +5,6 @@ import os
 import speedwagon.tasks.prep
 
 
-def test_find_packages_task(monkeypatch):
-    root_path = "some/sample/root"
-
-    task = speedwagon.tasks.prep.FindPackagesTask(root=root_path)
-
-    task.log = Mock()
-
-    def mock_scandir(path):
-        for i_number in range(20):
-            file_mock = Mock()
-            file_mock.name = f"99423682912205899-{str(i_number).zfill(8)}.xml"
-            yield file_mock
-    with monkeypatch.context() as mp:
-        mp.setattr(os, "scandir", mock_scandir)
-        assert task.work() is True
-    assert len(task.results) == 20
-
-
 def test_make_yaml_task_calls_make_yaml(monkeypatch):
     root_path = "some/sample/root"
 
@@ -99,7 +81,6 @@ def test_prep_task_task_calls_generate_package(monkeypatch):
     "task",
     [
         speedwagon.tasks.prep.PrepTask(source="source", title_page="title_page"),
-        speedwagon.tasks.prep.FindPackagesTask(root="root"),
         speedwagon.tasks.prep.MakeYamlTask(
             package_id="package_id",
             source="source",

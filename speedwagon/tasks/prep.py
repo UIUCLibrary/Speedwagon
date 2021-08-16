@@ -7,39 +7,13 @@ from pyhathiprep import package_creater
 import speedwagon
 
 
-class FindPackagesTask(speedwagon.tasks.Subtask):
-    name = "Locate Packages"
-
-    def __init__(self, root: str) -> None:
-        super().__init__()
-        self._root = root
-
-    def task_description(self) -> Optional[str]:
-        return f"Locating packages in {self._root}"
-
-    def work(self) -> bool:
-        self.log("Locating packages in {}".format(self._root))
-
-        def find_dirs(item: os.DirEntry) -> bool:
-
-            if not item.is_dir():
-                return False
-            return True
-
-        directories = []
-
-        for directory in filter(find_dirs, os.scandir(self._root)):
-            directories.append(directory.path)
-            self.log(f"Located {directory.name}")
-        self.set_results(directories)
-
-        return True
-
-
 class MakeYamlTask(speedwagon.tasks.Subtask):
+    """HathiTrust YAML creation task."""
+
     name = "Create meta.yml"
 
     def __init__(self, package_id: str, source: str, title_page: str) -> None:
+        """Create a YAML creation task."""
         super().__init__()
 
         self._source = source
@@ -47,9 +21,11 @@ class MakeYamlTask(speedwagon.tasks.Subtask):
         self._package_id = package_id
 
     def task_description(self) -> Optional[str]:
+        """Get user readable information about what the subtask is doing."""
         return f"Creating meta.yml in {self._source}"
 
     def work(self) -> bool:
+        """Perform the job."""
         meta_filename = "meta.yml"
         self.log("Generating meta.yml for {}".format(self._package_id))
         package_builder = package_creater.InplacePackage(self._source)
@@ -77,17 +53,22 @@ class MakeYamlTask(speedwagon.tasks.Subtask):
 
 
 class GenerateChecksumTask(speedwagon.tasks.Subtask):
+    """Checksum generation task."""
+
     name = "Generate Checksum"
 
     def __init__(self, package_id: str, source: str) -> None:
+        """Create a checksum generation task."""
         super().__init__()
         self._source = source
         self._package_id = package_id
 
     def task_description(self) -> Optional[str]:
+        """Get user readable information about what the subtask is doing."""
         return f"Generating checksums for files in {self._source}"
 
     def work(self) -> bool:
+        """Generate the checksum."""
         checksum_filename = "checksum.md5"
         self.log("Generating checksums for {}".format(self._package_id))
         package_builder = package_creater.InplacePackage(self._source)
@@ -116,18 +97,23 @@ class GenerateChecksumTask(speedwagon.tasks.Subtask):
 
 
 class PrepTask(speedwagon.tasks.Subtask):
+    """Prep package file structure."""
+
     name = "Prep"
 
     def __init__(self, source: str, title_page: str) -> None:
+        """Create a new prep task."""
         super().__init__()
 
         self._source = source
         self._title_page = title_page
 
     def task_description(self) -> Optional[str]:
+        """Get user readable information about what the subtask is doing."""
         return f"Prepping {self._source}"
 
     def work(self) -> bool:
+        """Run the prep task."""
         self.log("Prepping on {}".format(self._source))
         package_builder = package_creater.InplacePackage(self._source)
         package_builder.generate_package(destination=self._source,
