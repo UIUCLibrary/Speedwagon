@@ -7,12 +7,10 @@ from typing import Optional
 from pyhathiprep import checksum
 
 import speedwagon
-import speedwagon.tasks.tasks
-from speedwagon import tasks
 from speedwagon.workflows.checksum_shared import ResultsValues
 
 
-class MakeChecksumTask(speedwagon.tasks.tasks.Subtask):
+class MakeChecksumTask(speedwagon.tasks.Subtask):
     """Create a make checksum task."""
 
     name = "Create Checksum"
@@ -53,7 +51,7 @@ class MakeChecksumTask(speedwagon.tasks.tasks.Subtask):
         return True
 
 
-class MakeCheckSumReportTask(speedwagon.tasks.tasks.Subtask):
+class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
     """Generate a checksum report.
 
     This normally an .md5 file.
