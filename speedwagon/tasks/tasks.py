@@ -210,10 +210,6 @@ class PreTask(AbsSubtask):
         Defaults to none.
         """
 
-    def work(self) -> bool:
-        """Perform the task."""
-        return super().work()
-
 
 class AbsTask(metaclass=abc.ABCMeta):
 
