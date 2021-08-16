@@ -1,10 +1,10 @@
 import os
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 
 import pytest
 
-import speedwagon.tasks.tasks
-from speedwagon import models, tasks
+import speedwagon
+from speedwagon import models
 from speedwagon.workflows import workflow_verify_checksums
 
 
@@ -71,8 +71,9 @@ class TestChecksumWorkflowValidArgs:
         options = default_options.copy()
         options['Input'] = "some/valid/path/dummy.txt"
         import os
+        input_arg = options['Input']
         with monkeypatch.context() as mp:
-            mp.setattr(os.path, "exists", lambda path: path == options['Input'])
+            mp.setattr(os.path, "exists", lambda path: path == input_arg)
             mp.setattr(os.path, "isdir", lambda path: False)
             with pytest.raises(ValueError):
                 workflow.validate_user_options(**options)
@@ -84,8 +85,9 @@ class TestChecksumWorkflowValidArgs:
         options = default_options.copy()
         options['Input'] = "some/valid/path/"
         import os
+        input_arg = options['Input']
         with monkeypatch.context() as mp:
-            mp.setattr(os.path, "exists", lambda path: path == options['Input'])
+            mp.setattr(os.path, "exists", lambda path: path == input_arg)
             mp.setattr(os.path, "isdir", lambda path: True)
             assert workflow.validate_user_options(**options) is True
 
@@ -177,7 +179,7 @@ class TestChecksumWorkflow:
 
     def test_discover_task_metadata(self, workflow, default_options):
         initial_results = [
-            speedwagon.tasks.tasks.Result(
+            speedwagon.tasks.Result(
                 source=workflow_verify_checksums.ReadChecksumReportTask,
                 data=[
                     {
@@ -203,14 +205,14 @@ class TestChecksumWorkflow:
     def test_generator_report_failure(self, workflow, default_options):
         result_enums = workflow_verify_checksums.ResultValues
         results = [
-            speedwagon.tasks.tasks.Result(workflow_verify_checksums.ValidateChecksumTask,
-                                          {
+            speedwagon.tasks.Result(
+                workflow_verify_checksums.ValidateChecksumTask,
+                {
                     result_enums.VALID: False,
                     result_enums.CHECKSUM_REPORT_FILE: "SomeFile.md5",
                     result_enums.FILENAME: "somefile.txt"
-
                 }
-                                          )
+            )
         ]
         report = workflow.generate_report(results=results)
         assert isinstance(report, str)
@@ -219,7 +221,7 @@ class TestChecksumWorkflow:
     def test_generator_report_success(self, workflow, default_options):
         result_enums = workflow_verify_checksums.ResultValues
         results = [
-            speedwagon.tasks.tasks.Result(
+            speedwagon.tasks.Result(
                 workflow_verify_checksums.ValidateChecksumTask,
                 {
                     result_enums.VALID: True,
@@ -363,12 +365,12 @@ class TestVerifyChecksumBatchSingleWorkflow:
         user_args = default_options.copy()
         ResultValues = workflow_verify_checksums.ResultValues
         results = [
-            speedwagon.tasks.tasks.Result(workflow_verify_checksums.ChecksumTask, {
+            speedwagon.tasks.Result(workflow_verify_checksums.ChecksumTask, {
                 ResultValues.CHECKSUM_REPORT_FILE: "checksum.md5",
                 ResultValues.FILENAME: "file1.jp2",
                 ResultValues.VALID: True,
             }),
-            speedwagon.tasks.tasks.Result(workflow_verify_checksums.ChecksumTask, {
+            speedwagon.tasks.Result(workflow_verify_checksums.ChecksumTask, {
                 ResultValues.CHECKSUM_REPORT_FILE: "checksum.md5",
                 ResultValues.FILENAME: "file2.jp2",
                 ResultValues.VALID: True,
@@ -381,12 +383,12 @@ class TestVerifyChecksumBatchSingleWorkflow:
         user_args = default_options.copy()
         ResultValues = workflow_verify_checksums.ResultValues
         results = [
-            speedwagon.tasks.tasks.Result(workflow_verify_checksums.ChecksumTask, {
+            speedwagon.tasks.Result(workflow_verify_checksums.ChecksumTask, {
                 ResultValues.CHECKSUM_REPORT_FILE: "checksum.md5",
                 ResultValues.FILENAME: "file1.jp2",
                 ResultValues.VALID: False,
             }),
-            speedwagon.tasks.tasks.Result(workflow_verify_checksums.ChecksumTask, {
+            speedwagon.tasks.Result(workflow_verify_checksums.ChecksumTask, {
                 ResultValues.CHECKSUM_REPORT_FILE: "checksum.md5",
                 ResultValues.FILENAME: "file2.jp2",
                 ResultValues.VALID: False,
@@ -457,7 +459,8 @@ class TestChecksumTask:
                     "42312efb063c44844cd96e47a19e3441",
                 workflow_verify_checksums.JobValues.ROOT_PATH.value:
                     os.path.join("some", "path"),
-        }),
+            }
+        ),
         workflow_verify_checksums.ValidateChecksumTask(
             file_name="file_name",
             file_path="file_path",

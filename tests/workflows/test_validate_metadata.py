@@ -100,9 +100,11 @@ class TestValidateMetadataWorkflow:
         user_options['Profile'] = 'HathiTrust JPEG 2000'
 
         initial_results = [
-            speedwagon.tasks.tasks.Result(workflow_validate_metadata.LocateImagesTask, [
-                "spam.jp2"
-            ])
+            speedwagon.tasks.tasks.Result(
+                workflow_validate_metadata.LocateImagesTask, [
+                    "spam.jp2"
+                ]
+            )
         ]
         additional_data = {}
         tasks_generated = workflow.discover_task_metadata(
