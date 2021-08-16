@@ -450,13 +450,13 @@ pipeline {
                     stages{
                         stage('Test') {
                             stages{
-                                stage('Building Python Library'){
-                                    steps {
-                                        sh '''mkdir -p logs
-                                              python setup.py build -b build
-                                              '''
-                                    }
-                                }
+//                                 stage('Building Python Library'){
+//                                     steps {
+//                                         sh '''mkdir -p logs
+//                                               python setup.py build -b build
+//                                               '''
+//                                     }
+//                                 }
                                 stage('Run Tests'){
                                     parallel {
                                         stage('Run Behave BDD Tests') {
