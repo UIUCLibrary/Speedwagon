@@ -117,7 +117,7 @@ class ConvertTiffPreservationToDLJp2Workflow(Workflow):
             ]
 
     def create_new_task(self,
-                        task_builder: "tasks.TaskBuilder",
+                        task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args: str) -> None:
 
         source_file = job_args['source_file']
