@@ -238,4 +238,3 @@ class FindPackagesTask(speedwagon.tasks.Subtask):
         self.set_results(directories)
 
         return True
-
