@@ -60,7 +60,7 @@ class ChecksumWorkflow(Workflow):
 
     def discover_task_metadata(self,
                                initial_results: List[
-                                   speedwagon.tasksResult],
+                                   speedwagon.tasks.Result],
                                additional_data: Dict[str, None],
                                **user_args: str) -> List[Dict[str, str]]:
         jobs: List[Dict[str, str]] = []
