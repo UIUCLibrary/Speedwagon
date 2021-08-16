@@ -30,9 +30,11 @@ def test_initial_task_creates_task():
         task_builder=mock_builder,
         **user_args
     )
+
+    input_arg = user_args['input']
     assert \
         mock_builder.add_subtask.called is True and \
-        mock_builder.add_subtask.call_args_list[0][0][0]._root == user_args['input']
+        mock_builder.add_subtask.call_args_list[0][0][0]._root == input_arg
 
 
 def test_get_additional_info_opens_dialog_box(monkeypatch):

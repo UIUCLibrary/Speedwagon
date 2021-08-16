@@ -1,25 +1,13 @@
-import logging
 import os
-import pathlib
-import shutil
-from typing import Dict, Any
-from unittest.mock import Mock, ANY, MagicMock
+from unittest.mock import Mock
 from zipfile import ZipFile
 
-import pykdu_compress
 import pytest
-from PyQt5 import QtWidgets
 from uiucprescon import packager
-from uiucprescon.packager import transformations
-from uiucprescon.packager.packages import DigitalLibraryCompound
 from uiucprescon.packager.packages.collection import Package
-from uiucprescon.packager.packages.digital_library_compound import Transform
-from uiucprescon.packager.transformations import AbsTransformation
-
-from speedwagon.job import AbsWorkflow
 from speedwagon.workflows.workflow_hathi_limited_to_dl_compound import \
     HathiLimitedToDLWorkflow, PackageConverter
-import speedwagon.startup
+
 
 @pytest.fixture(scope="module")
 def hathi_limited_view_package_dirs(tmpdir_factory):

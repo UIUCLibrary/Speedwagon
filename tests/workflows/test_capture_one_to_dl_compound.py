@@ -109,9 +109,10 @@ def test_input_and_out_invalid_produces_errors_with_both(monkeypatch):
         with pytest.raises(ValueError) as e:
             workflow = ht_wf.CaptureOneToDlCompoundWorkflow()
             workflow.validate_user_options(**options)
+        message = str(e.value)
         assert \
-            'Directory "./invalid_folder/" does not exist' in str(e.value) and \
-            'Directory "./Other_folder/" does not exist' in str(e.value)
+            'Directory "./invalid_folder/" does not exist' in message and \
+            'Directory "./Other_folder/" does not exist' in message
 
 
 def test_discover_task_metadata(monkeypatch):

@@ -5,6 +5,7 @@ import pytest
 
 import speedwagon
 from speedwagon.workflows import workflow_completeness
+from hathi_validate import process, validator
 
 
 @pytest.mark.parametrize("index,label", [
@@ -34,9 +35,10 @@ def test_initial_task_creates_task():
         task_builder=mock_builder,
         **user_args
     )
+    source = user_args['Source']
     assert \
         mock_builder.add_subtask.called is True and \
-        mock_builder.add_subtask.call_args[1]['subtask'].batch_root == user_args['Source']
+        mock_builder.add_subtask.call_args[1]['subtask'].batch_root == source
 
 
 @pytest.fixture
@@ -166,7 +168,6 @@ def test_hathi_missing_checksum_task_calls_validator(
     assert all([a == b for a, b in zip(errors_found, task.results)])
 
 
-from hathi_validate import process, validator
 validation_tasks = [
     (workflow_completeness.HathiCheckMissingPackageFilesTask,
      validator.ValidateMissingFiles),
