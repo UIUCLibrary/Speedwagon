@@ -269,7 +269,9 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
 
 class AbsJobManager(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def add_job(self, new_job, settings) -> None:
+    def add_job(self,
+                new_job: ProcessJobWorker,
+                settings: Dict[str, Any]) -> None:
         """Add job to pending queue."""
 
     @abc.abstractmethod
