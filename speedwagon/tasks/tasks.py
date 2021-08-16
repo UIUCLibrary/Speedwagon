@@ -381,8 +381,8 @@ class MultiStageTask(Task):
             if subtask_results:
                 self.result = self.process_subtask_results(subtask_results)
             return self.result
-        except Exception as e:
-            print("Failed {}".format(e), file=sys.stderr)
+        except Exception as error:
+            print("Failed {}".format(error), file=sys.stderr)
             raise
 
     def on_completion(self, *args, **kwargs):
