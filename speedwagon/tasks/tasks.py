@@ -205,7 +205,10 @@ class PreTask(AbsSubtask):
         return self._result
 
     def pretask_result(self):
-        pass
+        """Get pretask results.
+
+        Defaults to none.
+        """
 
     def work(self) -> bool:
         """Perform the task."""
