@@ -2,9 +2,9 @@ from unittest.mock import Mock, MagicMock, call
 
 import pytest
 from uiucprescon import packager
+import speedwagon
 import speedwagon.exceptions
-import speedwagon.tasks.tasks
-from speedwagon import tasks, models
+from speedwagon import models
 from speedwagon.workflows \
     import workflow_capture_one_to_dl_compound_and_dl as ht_wf
 
@@ -71,8 +71,8 @@ def test_discover_task_metadata(monkeypatch, user_options):
 
 
 def test_create_new_task_hathi_and_dl(monkeypatch):
-    task_builder = speedwagon.tasks.tasks.TaskBuilder(
-        tasks.MultiStageTaskBuilder("."),
+    task_builder = speedwagon.tasks.TaskBuilder(
+        speedwagon.tasks.MultiStageTaskBuilder("."),
         "."
     )
     mock_package = MagicMock()
@@ -163,8 +163,8 @@ class TestWorkflow:
             )
             package_factory = Mock()
             for task_metadata in new_task_metadata:
-                task_builder = speedwagon.tasks.tasks.TaskBuilder(
-                    tasks.MultiStageTaskBuilder("."),
+                task_builder = speedwagon.tasks.TaskBuilder(
+                    speedwagon.tasks.MultiStageTaskBuilder("."),
                     "."
                 )
                 workflow.create_new_task(task_builder, **task_metadata)
