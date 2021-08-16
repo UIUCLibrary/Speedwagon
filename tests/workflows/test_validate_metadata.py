@@ -67,7 +67,7 @@ class TestValidateMetadataWorkflow:
         with monkeypatch.context() as mp:
             mp.setattr(os.path, "exists", lambda x: exists)
             mp.setattr(os.path, "isdir", lambda x: is_dir)
-            with pytest.raises(ValueError) as e:
+            with pytest.raises(ValueError):
                 assert workflow.validate_user_options(**user_options) is True
 
     def test_initial_task(self, monkeypatch, workflow, default_options):

@@ -2,7 +2,7 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 from speedwagon.workflows import workflow_capture_one_to_hathi
-from speedwagon import models, tasks
+from speedwagon import models
 
 
 class TestCaptureOneToHathiTiffPackageWorkflow:

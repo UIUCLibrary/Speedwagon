@@ -867,7 +867,7 @@ def test_catching_unicode_error(monkeypatch):
         return sample_requests
 
     monkeypatch.setattr(requests, "get", mock_get)
-    with patch('builtins.open', Mock(side_effect=UnicodeError)) as m:
+    with patch('builtins.open', Mock(side_effect=UnicodeError)):
         with pytest.raises(speedwagon.exceptions.SpeedwagonException):
             task.work()
 
