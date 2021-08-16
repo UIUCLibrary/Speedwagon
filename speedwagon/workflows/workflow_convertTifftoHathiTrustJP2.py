@@ -9,7 +9,7 @@ from typing import List, Any, Optional
 
 import pykdu_compress
 from py3exiv2bind.core import set_dpi
-from speedwagon import tasks
+import speedwagon
 from speedwagon.job import Workflow
 from . import shared_custom_widgets as options
 
@@ -143,7 +143,7 @@ class ConvertTiffToHathiJp2Workflow(Workflow):
         ]
 
     def create_new_task(self,
-                        task_builder: tasks.TaskBuilder,
+                        task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args: str) -> None:
 
         output_root = job_args['output_root']
@@ -167,7 +167,7 @@ class ConvertTiffToHathiJp2Workflow(Workflow):
             raise RuntimeError(f"Don't know what to do for {task_type}")
 
 
-class ImageConvertTask(tasks.Subtask):
+class ImageConvertTask(speedwagon.tasks.Subtask):
     name = "Convert Images"
 
     def __init__(self, source_file_path: str, output_path: str) -> None:
@@ -191,7 +191,7 @@ class ImageConvertTask(tasks.Subtask):
         return True
 
 
-class CopyTask(tasks.Subtask):
+class CopyTask(speedwagon.tasks.Subtask):
     name = "Copy Files"
 
     def __init__(self, source_file_path: str, output_path: str) -> None:

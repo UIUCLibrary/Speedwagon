@@ -1,21 +1,20 @@
-"""Define a single step in the workflow."""
-import abc
-import os
+"""Tasks."""
 
+import abc
 import collections
 import enum
-import pickle
-import queue
+import os
 import sys
-from typing import NamedTuple, Type, Optional, List, Deque, Any
+import queue
+import pickle
+from typing import Optional, Any, Deque, NamedTuple, Type, List
 
 __all__ = [
-    "AbsSubtask",
-    "Result",
-    "Subtask",
-    "TaskBuilder",
     "QueueAdapter",
-    "MultiStageTaskBuilder"
+    "MultiStageTaskBuilder",
+    "TaskBuilder",
+    "Result",
+    "Subtask"
 ]
 
 
@@ -124,6 +123,7 @@ class Subtask(AbsSubtask):
 
     @property
     def parent_task_log_q(self):
+        """Log queue of the parent."""
         if self._parent_task_log_q is None:
             raise RuntimeError("Property parent_task_log_q has not be set")
         return self._parent_task_log_q
@@ -157,7 +157,7 @@ class Subtask(AbsSubtask):
             Currently expects to return a boolean value to indicate if the task
             has succeeded or failed. However, this is likely to change.
         """
-        return super().work()
+        raise NotImplementedError()
 
     @property
     def results(self):
@@ -211,16 +211,18 @@ class PreTask(AbsSubtask):
     def log(self, message):
         self._parent_task_log_q.append(message)
 
+    def work(self) -> bool:
+        raise NotImplementedError()
+
     @property
     def task_result(self):
         return self._result
 
     def pretask_result(self):
-        pass
+        """Get pretask results.
 
-    def work(self) -> bool:
-        """Perform the task."""
-        return super().work()
+        Defaults to none.
+        """
 
 
 class AbsTask(metaclass=abc.ABCMeta):
@@ -290,12 +292,14 @@ class Task(AbsTask, AbsTaskComponents):
         self._post_task = value
 
     def on_completion(self, *args, **kwargs):
-        """Run task for after main task is completed."""
-        return super().on_completion(*args, **kwargs)
+        """Run task for after main task is completed.
+
+        Default is a Noop.
+        """
 
     def exec(self, *args, **kwargs):
         """Execute task."""
-        return super().exec(*args, **kwargs)
+        raise NotImplementedError()
 
     @property
     def status(self) -> TaskStatus:
@@ -363,7 +367,7 @@ class MultiStageTask(Task):
         if not started:
             return TaskStatus.IDLE
 
-        raise Exception("Not all statuses are are taken into account")
+        raise RuntimeError("Not all statuses are are taken into account")
 
     @property
     def progress(self) -> float:
@@ -392,12 +396,9 @@ class MultiStageTask(Task):
             if subtask_results:
                 self.result = self.process_subtask_results(subtask_results)
             return self.result
-        except Exception as e:
-            print("Failed {}".format(e), file=sys.stderr)
+        except Exception as error:
+            print("Failed {}".format(error), file=sys.stderr)
             raise
-
-    def on_completion(self, *args, **kwargs):
-        pass
 
     def process_subtask_results(self, subtask_results: List[Any]) -> Any:
         return subtask_results

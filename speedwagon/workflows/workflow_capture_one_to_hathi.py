@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from uiucprescon import packager
 from uiucprescon.packager.packages.collection_builder import Metadata
 
-from speedwagon import tasks
+import speedwagon.tasks.tasks
 from speedwagon.job import Workflow
 from speedwagon.logging import GuiLogHandler
 from . import shared_custom_widgets as options
@@ -60,7 +60,7 @@ class CaptureOneToHathiTiffPackageWorkflow(Workflow):
 
     def create_new_task(
             self,
-            task_builder: tasks.TaskBuilder,
+            task_builder: speedwagon.tasks.tasks.TaskBuilder,
             **job_args
     ) -> None:
 
@@ -79,7 +79,7 @@ class CaptureOneToHathiTiffPackageWorkflow(Workflow):
         task_builder.add_subtask(packaging_task)
 
 
-class PackageConverter(tasks.Subtask):
+class PackageConverter(speedwagon.tasks.tasks.Subtask):
     name = "Convert Package"
 
     @contextmanager

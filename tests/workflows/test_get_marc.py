@@ -1,12 +1,11 @@
 import os
-import shutil
 from io import StringIO
 from unittest.mock import MagicMock, Mock, mock_open, patch
 
 import requests
 
+import speedwagon
 from speedwagon.workflows import workflow_get_marc
-from speedwagon import tasks
 import pytest
 import speedwagon.exceptions
 from speedwagon.workflows.workflow_get_marc import MarcGeneratorTask
@@ -182,7 +181,7 @@ def test_generate_report_success(unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
     report = workflow.generate_report(
         results=[
-            tasks.Result(None, data={
+            speedwagon.tasks.Result(None, data={
                 "success": True,
                 "identifier": "097"
             })
@@ -196,7 +195,7 @@ def test_generate_report_failure(unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
     report = workflow.generate_report(
         results=[
-            tasks.Result(None, data={
+            speedwagon.tasks.Result(None, data={
                 "success": False,
                 "identifier": "097",
                 "output": "Something bad happened"
@@ -868,7 +867,7 @@ def test_catching_unicode_error(monkeypatch):
         return sample_requests
 
     monkeypatch.setattr(requests, "get", mock_get)
-    with patch('builtins.open', Mock(side_effect=UnicodeError)) as m:
+    with patch('builtins.open', Mock(side_effect=UnicodeError)):
         with pytest.raises(speedwagon.exceptions.SpeedwagonException):
             task.work()
 

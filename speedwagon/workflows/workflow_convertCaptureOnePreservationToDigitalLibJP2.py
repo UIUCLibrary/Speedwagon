@@ -9,7 +9,8 @@ from typing import List, Dict, Optional
 
 import pykdu_compress
 
-from speedwagon import tasks, reports
+import speedwagon
+from speedwagon import reports
 from speedwagon.job import Workflow
 from . import shared_custom_widgets as options
 
@@ -76,7 +77,8 @@ class ConvertTiffPreservationToDLJp2Workflow(Workflow):
     active = True
 
     def discover_task_metadata(self,
-                               initial_results: List[tasks.Result],
+                               initial_results: List[
+                                   speedwagon.tasks.Result],
                                additional_data: Dict[str, str],
                                **user_args: str
                                ) -> List[Dict[str, str]]:
@@ -115,7 +117,7 @@ class ConvertTiffPreservationToDLJp2Workflow(Workflow):
             ]
 
     def create_new_task(self,
-                        task_builder: tasks.TaskBuilder,
+                        task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args: str) -> None:
 
         source_file = job_args['source_file']
@@ -147,7 +149,7 @@ class ConvertTiffPreservationToDLJp2Workflow(Workflow):
     @classmethod
     @reports.add_report_borders
     def generate_report(cls,
-                        results: List[tasks.Result],
+                        results: List[speedwagon.tasks.Result],
                         **user_args: str) -> str:
 
         failure = False
@@ -180,7 +182,7 @@ class ConvertTiffPreservationToDLJp2Workflow(Workflow):
         return report
 
     @classmethod
-    def _partition_results(cls, results: List[tasks.Result]):
+    def _partition_results(cls, results: List[speedwagon.tasks.Result]):
         def successful(res) -> bool:
             if not res.data["success"]:
                 return False
@@ -192,7 +194,7 @@ class ConvertTiffPreservationToDLJp2Workflow(Workflow):
             filter(successful, iterator_2)
 
 
-class PackageImageConverterTask(tasks.Subtask):
+class PackageImageConverterTask(speedwagon.tasks.Subtask):
     name = "Package Image Convert"
 
     def __init__(self, source_file_path: str, dest_path: str) -> None:

@@ -1,17 +1,17 @@
 """Shared checksum tasks."""
-
+import enum
 import os
 import typing
 from typing import Optional
 
 from pyhathiprep import checksum
+from uiucprescon import imagevalidate
 
 import speedwagon
-from speedwagon import tasks
-from .checksum_shared import ResultsValues
+from speedwagon.workflows.checksum_shared import ResultsValues
 
 
-class MakeChecksumTask(tasks.Subtask):
+class MakeChecksumTask(speedwagon.tasks.Subtask):
     """Create a make checksum task."""
 
     name = "Create Checksum"
@@ -89,4 +89,63 @@ class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
             write_file.write(report)
         self.log("Wrote {}".format(self._output_filename))
 
+        return True
+
+
+class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
+    """Validate the metadata of a image file."""
+
+    name = "Validate Image Metadata"
+
+    class ResultValues(enum.Enum):
+        """Result keys used in validation results."""
+
+        VALID = "valid"
+        FILENAME = "filename"
+        REPORT = "report"
+
+    def __init__(
+            self,
+            filename: str,
+            profile_name: str
+    ) -> None:
+        """Create an image validation subtask.
+
+        Args:
+            filename: path to file
+            profile_name: Name of the validation profile to use.
+        """
+        super().__init__()
+        self._filename = filename
+        self._profile = typing.cast(
+            imagevalidate.profiles.AbsProfile,
+            imagevalidate.get_profile(profile_name)
+        )
+
+    def task_description(self) -> Optional[str]:
+        """Get user readable information about what the subtask is doing."""
+        return f"Validating image metadata for {self._filename}"
+
+    def work(self) -> bool:
+        """Validate file."""
+        self.log(f"Validating {self._filename}")
+
+        profile_validator = imagevalidate.Profile(self._profile)
+
+        try:
+            report = profile_validator.validate(self._filename)
+            is_valid = report.valid
+            report_text = "\n* ".join(report.issues())
+        except RuntimeError as error:
+            is_valid = False
+            report_text = str(error)
+        self.log(f"Validating {self._filename} -- {is_valid}")
+
+        result = {
+            ValidateImageMetadataTask.ResultValues.FILENAME: self._filename,
+            ValidateImageMetadataTask.ResultValues.VALID: is_valid,
+            ValidateImageMetadataTask.ResultValues.REPORT: f"* {report_text}"
+        }
+
+        self.set_results(result)
         return True

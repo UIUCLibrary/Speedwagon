@@ -6,7 +6,7 @@ from uiucprescon import imagevalidate
 
 from PyQt5 import QtWidgets  # type: ignore
 
-from speedwagon import tasks
+import speedwagon
 from speedwagon.job import Workflow
 from . import shared_custom_widgets as options
 
@@ -76,7 +76,7 @@ class ValidateImageMetadataWorkflow(Workflow):
 
     def create_new_task(
             self,
-            task_builder: tasks.TaskBuilder,
+            task_builder: "speedwagon.tasks.TaskBuilder",
             **job_args: str
     ) -> None:
 
@@ -99,7 +99,7 @@ class ValidateImageMetadataWorkflow(Workflow):
         return True
 
 
-class MetadataValidatorTask(tasks.Subtask):
+class MetadataValidatorTask(speedwagon.tasks.Subtask):
     name = "Metadata Validation"
 
     def __init__(self, source_file: str) -> None:

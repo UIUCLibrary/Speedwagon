@@ -3,8 +3,9 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 
-from speedwagon import tasks
+import speedwagon
 from speedwagon.workflows import workflow_completeness
+from hathi_validate import process, validator
 
 
 @pytest.mark.parametrize("index,label", [
@@ -34,9 +35,10 @@ def test_initial_task_creates_task():
         task_builder=mock_builder,
         **user_args
     )
+    source = user_args['Source']
     assert \
         mock_builder.add_subtask.called is True and \
-        mock_builder.add_subtask.call_args[1]['subtask'].batch_root == user_args['Source']
+        mock_builder.add_subtask.call_args[1]['subtask'].batch_root == source
 
 
 @pytest.fixture
@@ -92,19 +94,38 @@ def test_generate_report_creates_a_report(unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
     job_args = {}
     results = [
-        tasks.Result(workflow_completeness.HathiCheckMissingPackageFilesTask,
-                     data=[]),
-        tasks.Result(workflow_completeness.HathiManifestGenerationTask,
-                     data="Manifest"),
-        tasks.Result(workflow_completeness.HathiCheckMissingComponentsTask,
-                     data=[]),
-        tasks.Result(workflow_completeness.ValidateChecksumsTask, data=[]),
-        tasks.Result(workflow_completeness.ValidateMarcTask, data=[]),
-        tasks.Result(workflow_completeness.ValidateYMLTask, data=[]),
-        tasks.Result(workflow_completeness.ValidateExtraSubdirectoriesTask,
-                     data=[]),
-        tasks.Result(workflow_completeness.PackageNamingConventionTask,
-                     data=[]),
+        speedwagon.tasks.Result(
+            workflow_completeness.HathiCheckMissingPackageFilesTask,
+            data=[]
+        ),
+        speedwagon.tasks.Result(
+            workflow_completeness.HathiManifestGenerationTask,
+            data="Manifest"
+        ),
+        speedwagon.tasks.Result(
+            workflow_completeness.HathiCheckMissingComponentsTask,
+            data=[]
+        ),
+        speedwagon.tasks.Result(
+            workflow_completeness.ValidateChecksumsTask,
+            data=[]
+        ),
+        speedwagon.tasks.Result(
+            workflow_completeness.ValidateMarcTask,
+            data=[]
+        ),
+        speedwagon.tasks.Result(
+            workflow_completeness.ValidateYMLTask,
+            data=[]
+        ),
+        speedwagon.tasks.Result(
+            workflow_completeness.ValidateExtraSubdirectoriesTask,
+            data=[]
+        ),
+        speedwagon.tasks.Result(
+            workflow_completeness.PackageNamingConventionTask,
+            data=[]
+        ),
     ]
     message = workflow.generate_report(results, **job_args)
     assert "Report" in message
@@ -147,7 +168,6 @@ def test_hathi_missing_checksum_task_calls_validator(
     assert all([a == b for a, b in zip(errors_found, task.results)])
 
 
-from hathi_validate import process, validator
 validation_tasks = [
     (workflow_completeness.HathiCheckMissingPackageFilesTask,
      validator.ValidateMissingFiles),

@@ -9,7 +9,8 @@ import sys
 from typing import Type, Optional, Iterable, Dict, List, Any, Tuple, Set
 
 from PyQt5 import QtWidgets  # type: ignore
-from . import tasks
+
+from speedwagon import tasks
 __all__ = [
     "JobCancelled",
     "AbsWorkflow",

@@ -1,12 +1,10 @@
 import logging
 import os
-import tempfile
-from typing import List, Any, Dict
 
 import pytest
 from unittest.mock import Mock, MagicMock
 
-from speedwagon import runner_strategies, tasks
+from speedwagon import runner_strategies
 import speedwagon
 
 
@@ -145,7 +143,7 @@ def test_task_aborted(caplog, step, monkeypatch):
 
     with monkeypatch.context() as mp:
         mp.setattr(
-            runner_strategies.tasks.TaskBuilder,
+            speedwagon.tasks.TaskBuilder,
             "build_task",
             build_task
         )

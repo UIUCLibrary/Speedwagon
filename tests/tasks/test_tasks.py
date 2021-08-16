@@ -5,10 +5,9 @@ import time
 import typing
 import concurrent.futures
 import pytest
-import speedwagon.tasks
+import speedwagon
 import speedwagon.worker
 from speedwagon import worker
-from speedwagon.tasks import TaskBuilder
 
 
 class SimpleSubtask(speedwagon.tasks.Subtask):
@@ -46,7 +45,7 @@ class SimplePreTask(speedwagon.tasks.Subtask):
         return {"r": "ad"}
 
 
-class SimpleMultistage(speedwagon.tasks.MultiStageTask):
+class SimpleMultistage(speedwagon.tasks.tasks.MultiStageTask):
     def process_subtask_results(self,
                                 subtask_results: typing.List[typing.Any])\
             -> typing.Any:
@@ -54,7 +53,7 @@ class SimpleMultistage(speedwagon.tasks.MultiStageTask):
         return "\n".join(subtask_results)
 
 
-class SimpleTaskBuilder(speedwagon.tasks.BaseTaskBuilder):
+class SimpleTaskBuilder(speedwagon.tasks.tasks.BaseTaskBuilder):
 
     @property
     def task(self) -> SimpleMultistage:
@@ -65,7 +64,7 @@ class SimpleTaskBuilder(speedwagon.tasks.BaseTaskBuilder):
 def simple_task_builder(tmpdir_factory):
     temp_path = os.path.join(tmpdir_factory.getbasetemp(), "test")
     os.makedirs(temp_path)
-    builder = TaskBuilder(SimpleTaskBuilder(), str(temp_path))
+    builder = speedwagon.tasks.TaskBuilder(SimpleTaskBuilder(), str(temp_path))
     builder.add_subtask(subtask=SimpleSubtask("got it"))
     yield builder
     shutil.rmtree(temp_path)
@@ -74,7 +73,7 @@ def simple_task_builder(tmpdir_factory):
 def test_task_builder(simple_task_builder):
     task = simple_task_builder.build_task()
 
-    assert isinstance(task, speedwagon.tasks.MultiStageTask)
+    assert isinstance(task, speedwagon.tasks.tasks.MultiStageTask)
 
     assert len(task.main_subtasks) == 1
 
@@ -119,13 +118,13 @@ def test_task_log_with_2_subtask(simple_task_builder):
 
 def test_task_can_be_picked(tmpdir):
     temp_path = tmpdir.mkdir("test")
-    builder = TaskBuilder(SimpleTaskBuilder(), temp_path)
+    builder = speedwagon.tasks.TaskBuilder(SimpleTaskBuilder(), temp_path)
     builder.add_subtask(subtask=SimpleSubtask(message="got it"))
 
     task_original = builder.build_task()
-    serialized = TaskBuilder.save(task_original)
+    serialized = speedwagon.tasks.TaskBuilder.save(task_original)
 
-    task_unserialized = TaskBuilder.load(serialized)
+    task_unserialized = speedwagon.tasks.TaskBuilder.load(serialized)
     assert task_original.name == task_unserialized.name
 
     shutil.rmtree(tmpdir)
@@ -153,7 +152,7 @@ def test_task_as_concurrent_future(simple_task_builder):
 @pytest.fixture
 def simple_task_builder_with_2_subtasks(tmpdir_factory):
     temp_path = tmpdir_factory.mktemp("task_builder")
-    builder = TaskBuilder(SimpleTaskBuilder(), temp_path)
+    builder = speedwagon.tasks.TaskBuilder(SimpleTaskBuilder(), temp_path)
     builder.add_subtask(subtask=SimpleSubtask("First"))
     builder.add_subtask(subtask=SimpleSubtask("Second"))
     yield builder
@@ -222,7 +221,7 @@ def test_pretask_builder(tmpdir):
 
     pretask = SimplePreTask("Starting")
 
-    builder = TaskBuilder(SimpleTaskBuilder(), temp_path)
+    builder = speedwagon.tasks.TaskBuilder(SimpleTaskBuilder(), temp_path)
     builder.set_pretask(subtask=pretask)
     builder.add_subtask(subtask=SimpleSubtask("First"))
     builder.add_subtask(subtask=SimpleSubtask("Second"))
@@ -240,7 +239,7 @@ def test_posttask_builder(tmpdir):
 
     posttask = SimpleSubtask("ending")
 
-    builder = TaskBuilder(SimpleTaskBuilder(), temp_path)
+    builder = speedwagon.tasks.TaskBuilder(SimpleTaskBuilder(), temp_path)
     builder.add_subtask(subtask=SimpleSubtask("First"))
     builder.add_subtask(subtask=SimpleSubtask("Second"))
     builder.set_posttask(posttask)
@@ -257,7 +256,7 @@ def test_adapter_results_with_pretask(tmpdir):
     temp_path = tmpdir.mkdir("test")
     pretask = SimplePreTask("Starting")
 
-    builder = TaskBuilder(SimpleTaskBuilder(), temp_path)
+    builder = speedwagon.tasks.TaskBuilder(SimpleTaskBuilder(), temp_path)
     builder.set_pretask(subtask=pretask)
     builder.add_subtask(subtask=SimpleSubtask("First"))
     builder.add_subtask(subtask=SimpleSubtask("Second"))
@@ -291,7 +290,7 @@ def test_adapter_results_with_posttask(tmpdir):
     temp_path = tmpdir.mkdir("test")
     post_task = SimpleSubtask("Ending")
 
-    builder = TaskBuilder(SimpleTaskBuilder(), temp_path)
+    builder = speedwagon.tasks.TaskBuilder(SimpleTaskBuilder(), temp_path)
     builder.set_posttask(subtask=post_task)
     builder.add_subtask(subtask=SimpleSubtask("First"))
     builder.add_subtask(subtask=SimpleSubtask("Second"))

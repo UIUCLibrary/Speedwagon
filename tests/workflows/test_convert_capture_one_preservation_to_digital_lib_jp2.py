@@ -1,13 +1,13 @@
 from unittest.mock import Mock
-
-import pykdu_compress
+import speedwagon
 import pytest
+
 
 from speedwagon.workflows import \
     workflow_convertCaptureOnePreservationToDigitalLibJP2 as \
     capture_one_workflow
 
-from speedwagon import models, tasks
+from speedwagon import models
 
 
 def test_package_image_task_success(monkeypatch):
@@ -207,7 +207,7 @@ class TestConvertTiffPreservationToDLJp2Workflow:
     def test_generate_report_success(self, workflow, default_options):
         user_args = default_options.copy()
         results = [
-            tasks.Result(
+            speedwagon.tasks.Result(
                 capture_one_workflow.PackageImageConverterTask,
                 {
                     "success": True,
@@ -222,7 +222,7 @@ class TestConvertTiffPreservationToDLJp2Workflow:
     def test_generate_report_failure(self, workflow, default_options):
         user_args = default_options.copy()
         results = [
-            tasks.Result(
+            speedwagon.tasks.Result(
                 capture_one_workflow.PackageImageConverterTask,
                 {
                     "success": False,

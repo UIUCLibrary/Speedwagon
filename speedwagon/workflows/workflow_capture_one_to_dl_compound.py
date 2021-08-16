@@ -10,7 +10,8 @@ from uiucprescon import packager
 from uiucprescon.packager.packages.collection import Package
 from uiucprescon.packager.packages.collection_builder import Metadata
 
-from speedwagon import tasks, validators
+import speedwagon
+from speedwagon import validators
 from speedwagon.job import Workflow
 from speedwagon.logging import GuiLogHandler
 from . import shared_custom_widgets as options
@@ -76,7 +77,7 @@ class CaptureOneToDlCompoundWorkflow(Workflow):
 
     def create_new_task(
             self,
-            task_builder: tasks.TaskBuilder,
+            task_builder: speedwagon.tasks.TaskBuilder,
             **job_args: Union[str, Package]
     ) -> None:
         """Generate a new task.
@@ -132,7 +133,7 @@ class CaptureOneToDlCompoundWorkflow(Workflow):
         return True
 
 
-class PackageConverter(tasks.Subtask):
+class PackageConverter(speedwagon.tasks.Subtask):
     """Convert packages formats."""
 
     name = "Package Conversion"
