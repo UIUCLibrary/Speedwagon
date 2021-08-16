@@ -6,8 +6,8 @@ from typing import List, Any, Optional, Iterable, Union
 
 from uiucprescon import images
 
-import speedwagon.tasks.tasks
-from speedwagon import job, tasks
+import speedwagon
+from speedwagon import job
 from . import shared_custom_widgets as widgets
 
 __all__ = ['MakeJp2Workflow']
@@ -207,7 +207,7 @@ class MakeJp2Workflow(job.Workflow):
         return True
 
     def create_new_task(self,
-                        task_builder: "tasks.tasks.TaskBuilder",
+                        task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args: str) -> None:
         """Add a new task to be accomplished when the workflow is started.
 
@@ -247,7 +247,7 @@ class MakeJp2Workflow(job.Workflow):
 
     @classmethod
     def generate_report(cls,
-                        results: List[speedwagon.tasks.tasks.Result],
+                        results: List[speedwagon.tasks.Result],
                         **user_args: str
                         ) -> Optional[str]:
         """Generate a text report for the results of the workflow.
@@ -272,7 +272,7 @@ class MakeJp2Workflow(job.Workflow):
                f"\n{files_generated_list}"
 
 
-class EnsurePathTask(speedwagon.tasks.tasks.Subtask):
+class EnsurePathTask(speedwagon.tasks.Subtask):
     name = "Ensure Path"
 
     def __init__(self, path: str) -> None:
@@ -289,7 +289,7 @@ class EnsurePathTask(speedwagon.tasks.tasks.Subtask):
         return True
 
 
-class ConvertFileTask(speedwagon.tasks.tasks.Subtask):
+class ConvertFileTask(speedwagon.tasks.Subtask):
     name = "Convert File"
 
     def __init__(self, source_file: str, destination_file: str,
