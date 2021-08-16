@@ -1,9 +1,8 @@
 from unittest.mock import MagicMock, Mock
 
-import speedwagon.tasks.tasks
-from speedwagon import tasks
 import pytest
 
+import speedwagon
 import speedwagon.validators
 from speedwagon.workflows import workflow_capture_one_to_dl_compound as ht_wf
 import os.path
@@ -162,8 +161,8 @@ def test_discover_task_metadata(monkeypatch):
 
 
 def test_create_new_task_dl(monkeypatch):
-    task_builder = speedwagon.tasks.tasks.TaskBuilder(
-        tasks.MultiStageTaskBuilder("."),
+    task_builder = speedwagon.tasks.TaskBuilder(
+        speedwagon.tasks.MultiStageTaskBuilder("."),
         "."
     )
     mock_package = MagicMock()

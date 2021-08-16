@@ -7,7 +7,6 @@ import os.path
 import speedwagon
 from speedwagon.workflows import workflow_ocr
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
-from speedwagon.tasks.tasks import Result
 from uiucprescon.ocr import reader, tesseractwrap
 from speedwagon import models
 
@@ -42,7 +41,7 @@ def test_discover_task_metadata(monkeypatch, tmpdir):
         'Path':  image_dir.strpath
     }
     initial_results = [
-        Result(
+        speedwagon.tasks.Result(
             source=workflow_ocr.FindImagesTask,
             data=[(image_dir / "dummy.jp2").strpath]
         )
@@ -211,7 +210,7 @@ class TestOCRWorkflow:
         user_options["Path"] = os.path.join("some", "path")
 
         initial_results = [
-            speedwagon.tasks.tasks.Result(workflow_ocr.FindImagesTask, [
+            speedwagon.tasks.Result(workflow_ocr.FindImagesTask, [
                 "spam.jp2"
             ])
         ]

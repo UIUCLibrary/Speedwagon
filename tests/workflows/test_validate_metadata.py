@@ -2,9 +2,9 @@ from unittest.mock import Mock
 
 import pytest
 
-import speedwagon.tasks.tasks
+import speedwagon
 from speedwagon.workflows import workflow_validate_metadata
-from speedwagon import models, tasks
+from speedwagon import models
 import os
 
 options = [
@@ -47,7 +47,7 @@ class TestValidateMetadataWorkflow:
             mp.setattr(os.path, "isdir", lambda x: x == user_options['Input'])
             assert workflow.validate_user_options(**user_options) is True
 
-    @pytest.mark.parametrize("input_data,exists,is_dir",[
+    @pytest.mark.parametrize("input_data,exists,is_dir", [
         (os.path.join("some", "valid", "path"), False, False),
         (os.path.join("some", "valid", "path"), True, False),
         (os.path.join("some", "valid", "path"), False, True),
@@ -100,7 +100,7 @@ class TestValidateMetadataWorkflow:
         user_options['Profile'] = 'HathiTrust JPEG 2000'
 
         initial_results = [
-            speedwagon.tasks.tasks.Result(
+            speedwagon.tasks.Result(
                 workflow_validate_metadata.LocateImagesTask, [
                     "spam.jp2"
                 ]
@@ -146,7 +146,7 @@ class TestValidateMetadataWorkflow:
         user_options['Profile'] = 'HathiTrust JPEG 2000'
         ResultValues = workflow_validate_metadata.ResultValues
         results = [
-            speedwagon.tasks.tasks.Result(
+            speedwagon.tasks.Result(
                 workflow_validate_metadata.ValidateImageMetadataTask,
                 {
                     ResultValues.VALID: True
@@ -163,7 +163,7 @@ class TestValidateMetadataWorkflow:
         user_options['Profile'] = 'HathiTrust JPEG 2000'
         ResultValues = workflow_validate_metadata.ResultValues
         results = [
-            speedwagon.tasks.tasks.Result(
+            speedwagon.tasks.Result(
                 workflow_validate_metadata.ValidateImageMetadataTask,
                 {
                     ResultValues.VALID: False,
