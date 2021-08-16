@@ -28,4 +28,5 @@ API Reference
     speedwagon/speedwagon.models
     speedwagon/speedwagon.reports
     speedwagon/speedwagon.startup
+    speedwagon/speedwagon.tasks
     speedwagon/speedwagon.workflows

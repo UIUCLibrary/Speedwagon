@@ -12,7 +12,3 @@ speedwagon
 .. autoclass:: Workflow
     :members:
     :inherited-members:
-
-.. autoclass:: Subtask
-    :members:
-    :inherited-members:
