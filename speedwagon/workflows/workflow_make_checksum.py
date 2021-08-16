@@ -13,8 +13,8 @@ import speedwagon
 from speedwagon.job import Workflow
 from speedwagon.reports import add_report_borders
 from .checksum_shared import ResultsValues
+from speedwagon.tasks import validation
 from . import shared_custom_widgets
-from ..tasks import checksum_tasks
 from . import shared_custom_widgets as options
 
 
@@ -95,7 +95,7 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
         filename = job_args['filename']
         report_name = job_args['save_to_filename']
 
-        new_task = checksum_tasks.MakeChecksumTask(
+        new_task = validation.MakeChecksumTask(
             source_path, filename, report_name)
 
         task_builder.add_subtask(new_task)
@@ -109,7 +109,7 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
 
         for checksum_report, checksums in sorted_results.items():
 
-            process = checksum_tasks.MakeCheckSumReportTask(
+            process = validation.MakeCheckSumReportTask(
                 checksum_report, checksums)
 
             task_builder.add_subtask(process)
@@ -197,7 +197,7 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
         source_path = job_args['source_path']
 
         task_builder.add_subtask(
-            checksum_tasks.MakeChecksumTask(
+            validation.MakeChecksumTask(
                 source_path,
                 filename,
                 report_name
@@ -213,7 +213,7 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
 
         for checksum_report, checksums in sorted_results.items():
 
-            process = checksum_tasks.MakeCheckSumReportTask(
+            process = validation.MakeCheckSumReportTask(
                 checksum_report, checksums)
 
             task_builder.add_subtask(process)
@@ -271,7 +271,7 @@ class RegenerateChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
         filename = job_args['filename']
         report_name = job_args['save_to_filename']
 
-        new_task = checksum_tasks.MakeChecksumTask(
+        new_task = validation.MakeChecksumTask(
             source_path, filename, report_name)
 
         task_builder.add_subtask(new_task)
@@ -285,7 +285,7 @@ class RegenerateChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
 
         for checksum_report, checksums in sorted_results.items():
 
-            process = checksum_tasks.MakeCheckSumReportTask(
+            process = validation.MakeCheckSumReportTask(
                 checksum_report, checksums)
 
             task_builder.add_subtask(process)
@@ -367,7 +367,7 @@ class RegenerateChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
         report_name = job_args['save_to_filename']
 
         new_task = \
-            checksum_tasks.MakeChecksumTask(source_path, filename, report_name)
+            validation.MakeChecksumTask(source_path, filename, report_name)
 
         task_builder.add_subtask(new_task)
 
@@ -380,7 +380,7 @@ class RegenerateChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
 
         for checksum_report, checksums in sorted_results.items():
             task_builder.add_subtask(
-                checksum_tasks.MakeCheckSumReportTask(
+                validation.MakeCheckSumReportTask(
                     checksum_report,
                     checksums
                 )

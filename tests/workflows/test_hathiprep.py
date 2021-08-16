@@ -132,4 +132,3 @@ def test_generate_report_creates_a_report(unconfigured_workflow):
     ]
     message = workflow.generate_report(results, **job_args)
     assert "Report" in message
-
