@@ -9,9 +9,8 @@ import itertools
 from abc import ABC
 from typing import List, Any, DefaultDict, Optional
 
-import speedwagon.tasks.tasks
+import speedwagon
 from speedwagon.job import Workflow
-from speedwagon import tasks
 from speedwagon.reports import add_report_borders
 from .checksum_shared import ResultsValues
 from . import shared_custom_widgets
@@ -70,7 +69,7 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
 
     def discover_task_metadata(self,
                                initial_results: List[
-                                   speedwagon.tasks.tasks.Result],
+                                   speedwagon.tasks.Result],
                                additional_data,
                                **user_args: str) -> List[dict]:
         jobs = []
@@ -89,7 +88,7 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
         return jobs
 
     def create_new_task(self,
-                        task_builder: "tasks.tasks.TaskBuilder",
+                        task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args: str) -> None:
 
         source_path = job_args['source_path']
@@ -102,8 +101,8 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
         task_builder.add_subtask(new_task)
 
     def completion_task(self,
-                        task_builder: "tasks.tasks.TaskBuilder",
-                        results: List[speedwagon.tasks.tasks.Result],
+                        task_builder: "speedwagon.tasks.TaskBuilder",
+                        results: List[speedwagon.tasks.Result],
                         **user_args: str) -> None:
 
         sorted_results = self.sort_results([i.data for i in results])
@@ -118,7 +117,7 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
     @classmethod
     @add_report_borders
     def generate_report(cls,
-                        results: List[speedwagon.tasks.tasks.Result],
+                        results: List[speedwagon.tasks.Result],
                         **user_args: str) -> Optional[str]:
 
         report_lines = [
@@ -189,7 +188,7 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
 
     def create_new_task(
             self,
-            task_builder: "tasks.tasks.TaskBuilder",
+            task_builder: "speedwagon.tasks.TaskBuilder",
             **job_args: str
     ) -> None:
 
@@ -206,8 +205,8 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
         )
 
     def completion_task(self,
-                        task_builder: "tasks.tasks.TaskBuilder",
-                        results: List[speedwagon.tasks.tasks.Result],
+                        task_builder: "speedwagon.tasks.TaskBuilder",
+                        results: List[speedwagon.tasks.Result],
                         **user_args: str) -> None:
 
         sorted_results = self.sort_results([i.data for i in results])
@@ -222,7 +221,7 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
     @classmethod
     @add_report_borders
     def generate_report(cls,
-                        results: List[speedwagon.tasks.tasks.Result],
+                        results: List[speedwagon.tasks.Result],
                         **user_args: str) -> Optional[str]:
 
         report_lines = [
@@ -245,7 +244,7 @@ class RegenerateChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
 
     def discover_task_metadata(self,
                                initial_results: List[
-                                   speedwagon.tasks.tasks.Result],
+                                   speedwagon.tasks.Result],
                                additional_data,
                                **user_args: str) -> List[dict]:
         jobs = []
@@ -265,7 +264,7 @@ class RegenerateChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
         return jobs
 
     def create_new_task(self,
-                        task_builder: "tasks.tasks.TaskBuilder",
+                        task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args: str) -> None:
 
         source_path = job_args['source_path']
@@ -278,8 +277,8 @@ class RegenerateChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
         task_builder.add_subtask(new_task)
 
     def completion_task(self,
-                        task_builder: "tasks.tasks.TaskBuilder",
-                        results: List[speedwagon.tasks.tasks.Result],
+                        task_builder: "speedwagon.tasks.TaskBuilder",
+                        results: List[speedwagon.tasks.Result],
                         **user_args: str) -> None:
 
         sorted_results = self.sort_results([i.data for i in results])
@@ -293,7 +292,7 @@ class RegenerateChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
 
     @classmethod
     @add_report_borders
-    def generate_report(cls, results: List[speedwagon.tasks.tasks.Result],
+    def generate_report(cls, results: List[speedwagon.tasks.Result],
                         **user_args: str) -> Optional[str]:
 
         report_lines = [
@@ -360,7 +359,7 @@ class RegenerateChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
         ]
 
     def create_new_task(self,
-                        task_builder: "tasks.tasks.TaskBuilder",
+                        task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args: str) -> None:
 
         filename = job_args['filename']
@@ -373,8 +372,8 @@ class RegenerateChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
         task_builder.add_subtask(new_task)
 
     def completion_task(self,
-                        task_builder: "tasks.tasks.TaskBuilder",
-                        results: List[speedwagon.tasks.tasks.Result],
+                        task_builder: "speedwagon.tasks.TaskBuilder",
+                        results: List[speedwagon.tasks.Result],
                         **user_args: str) -> None:
 
         sorted_results = self.sort_results([i.data for i in results])
@@ -390,7 +389,7 @@ class RegenerateChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
     @classmethod
     @add_report_borders
     def generate_report(cls,
-                        results: List[speedwagon.tasks.tasks.Result],
+                        results: List[speedwagon.tasks.Result],
                         **user_args: str) -> Optional[str]:
         report_lines = [
             f"Checksum values for {len(items_written)} "
