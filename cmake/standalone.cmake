@@ -230,6 +230,10 @@ if(WIN32)
     #   TODO: Make this dynamic by calling python -m pytest --collect-only and
     #         parsing the data
 
+    execute_process(COMMAND ${VENV_PYTHON} python -B -m pytest ${PROJECT_SOURCE_DIR}/tests/ -qqq --collect-only
+            OUTPUT_VARIABLE PYTHON_TESTS
+            )
+    message(INFO "FOUND ${PYTHON_TESTS}")
     set(pytests
             test_pkg_metadata.py
             test_models.py
