@@ -75,8 +75,9 @@ def build_standalone(args=[:]){
                 bat(label: "Building with CMake",
                     script: "cmake --build ${buildDir}"
                 )
-            } finally{
-                archiveArtifacts( allowEmptyArchive: true, artifacts: "${buildDir}/CMakeFiles/*.log")
+            } catch(c){
+                archiveArtifacts(artifacts: "${buildDir}/CMakeFiles/*.log")
+                throw e
             }
         }
     }
