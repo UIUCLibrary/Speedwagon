@@ -233,7 +233,9 @@ if(WIN32)
             NAMES
                 pytest
                 pytest.exe
-            PATHS ${PROJECT_BINARY_DIR}/venv/Scripts
+            PATHS
+                ${SPEEDWAGON_VENV_PATH}/Scripts
+                ${PROJECT_BINARY_DIR}/venv/Scripts
             REQUIRED
             )
 
@@ -241,7 +243,8 @@ if(WIN32)
             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
             OUTPUT_VARIABLE PYTHON_TESTS
             )
-    message(STATUS = "PYTHON_TESTS = ${PYTHON_TESTS}")
+    message(STATUS "PYTEST = ${PYTEST}")
+    message(STATUS "PYTHON_TESTS = ${PYTHON_TESTS}")
 
     string(REGEX REPLACE ": [0-9]*" "" PYTHON_TESTS "${PYTHON_TESTS}")
     string(REPLACE "\n" ";" PYTHON_TESTS ${PYTHON_TESTS})
