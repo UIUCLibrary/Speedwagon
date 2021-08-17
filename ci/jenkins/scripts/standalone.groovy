@@ -45,34 +45,39 @@ def build_standalone(args=[:]){
                        """
            )
         script{
-            def cmakeArgs = "--trace-expand -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf -Wdev"
-            if(args['package']){
-                cmakeArgs = cmakeArgs + " -DSpeedwagon_VERSION:STRING=${args.package['version']}"
-                def packageVersion = args.package['version'] =~ /(?:a|b|rc|dev)?\d+/
-                def package_version  = args.package['version'].split("\\.")
-                if(package_version.size() >= 1){
-                    cmakeArgs = cmakeArgs + " -DCMAKE_PROJECT_VERSION_MAJOR=${packageVersion[0]}"
-                    cmakeArgs = cmakeArgs + " -DCPACK_PACKAGE_VERSION_MAJOR=${packageVersion[0]}"
+            try{
+
+                def cmakeArgs = "--trace-expand -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf -Wdev"
+                if(args['package']){
+                    cmakeArgs = cmakeArgs + " -DSpeedwagon_VERSION:STRING=${args.package['version']}"
+                    def packageVersion = args.package['version'] =~ /(?:a|b|rc|dev)?\d+/
+                    def package_version  = args.package['version'].split("\\.")
+                    if(package_version.size() >= 1){
+                        cmakeArgs = cmakeArgs + " -DCMAKE_PROJECT_VERSION_MAJOR=${packageVersion[0]}"
+                        cmakeArgs = cmakeArgs + " -DCPACK_PACKAGE_VERSION_MAJOR=${packageVersion[0]}"
+                    }
+                    if(package_version.size() >= 2){
+                        cmakeArgs = cmakeArgs + " -DCMAKE_PROJECT_VERSION_MINOR=${packageVersion[1]}"
+                        cmakeArgs = cmakeArgs + " -DCPACK_PACKAGE_VERSION_MINOR=${packageVersion[1]}"
+                    }
+                    if(package_version.size() >= 3){
+                        cmakeArgs = cmakeArgs + " -DCMAKE_PROJECT_VERSION_PATCH=${packageVersion[2]}"
+                        cmakeArgs = cmakeArgs + " -DCPACK_PACKAGE_VERSION_PATCH=${packageVersion[2]}"
+                    }
+                    if(package_version.size() >= 4){
+                        cmakeArgs = cmakeArgs + " -DCMAKE_PROJECT_VERSION_TWEAK=${packageVersion[3]}"
+                        cmakeArgs = cmakeArgs + " -DCPACK_PACKAGE_VERSION_TWEAK=${packageVersion[3]}"
+                    }
                 }
-                if(package_version.size() >= 2){
-                    cmakeArgs = cmakeArgs + " -DCMAKE_PROJECT_VERSION_MINOR=${packageVersion[1]}"
-                    cmakeArgs = cmakeArgs + " -DCPACK_PACKAGE_VERSION_MINOR=${packageVersion[1]}"
-                }
-                if(package_version.size() >= 3){
-                    cmakeArgs = cmakeArgs + " -DCMAKE_PROJECT_VERSION_PATCH=${packageVersion[2]}"
-                    cmakeArgs = cmakeArgs + " -DCPACK_PACKAGE_VERSION_PATCH=${packageVersion[2]}"
-                }
-                if(package_version.size() >= 4){
-                    cmakeArgs = cmakeArgs + " -DCMAKE_PROJECT_VERSION_TWEAK=${packageVersion[3]}"
-                    cmakeArgs = cmakeArgs + " -DCPACK_PACKAGE_VERSION_TWEAK=${packageVersion[3]}"
-                }
+                bat(label: "Configuring CMake",
+                    script: "cmake -S ${WORKSPACE} -B ${buildDir} -G Ninja ${cmakeArgs}"
+                )
+                bat(label: "Building with CMake",
+                    script: "cmake --build ${buildDir}"
+                )
+            } finally{
+                archiveArtifacts( allowEmptyArchive: true, artifacts: "${buildDir}/CMakeFiles/*.log")
             }
-            bat(label: "Configuring CMake",
-                script: "cmake -S ${WORKSPACE} -B ${buildDir} -G Ninja ${cmakeArgs}"
-            )
-            bat(label: "Building with CMake",
-                script: "cmake --build ${buildDir}"
-            )
         }
     }
     stage("Testing standalone"){
