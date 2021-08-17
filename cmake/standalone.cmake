@@ -232,7 +232,6 @@ if(WIN32)
 
     set(pytests
             test_pkg_metadata.py
-            test_tasks.py
             test_models.py
             test_get_config.py
             )
