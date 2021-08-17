@@ -191,8 +191,8 @@ endif(SPEEDWAGON_EXTRA_REQUIREMENTS_FILE)
 
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
         DEPENDS wheel
-        COMMAND ${VENV_PYTHON} -m pip install pytest -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
-        COMMENT "Adding pytest to standalone virtual environment"
+        COMMAND ${VENV_PYTHON} -m pip install pytest pytest-qt -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
+        COMMENT "Adding pytest and pytest-qt to standalone virtual environment"
         )
 set(SPEEDWAGON_PYTHON_INTERP python.exe)
 
@@ -228,25 +228,13 @@ if(WIN32)
     ###########################################
     enable_testing()
     #   TODO: Make this dynamic by calling python -m pytest --collect-only and
-    #         parsing the data
-    find_program(PYTEST
-            NAMES
-                pytest
-                pytest.exe
-            PATHS
-                ${SPEEDWAGON_VENV_PATH}/Scripts
-                ${PROJECT_BINARY_DIR}/venv/Scripts
-            REQUIRED
-            )
+    execute_process(COMMAND ${VENV_PYTHON} -m pytest --version)
 
     execute_process(
-            COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${PROJECT_SOURCE_DIR} ${PYTEST} ${PROJECT_SOURCE_DIR}/tests/ -qqq --collect-only
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
+            COMMAND ${VENV_PYTHON} -m pytest ${PROJECT_SOURCE_DIR}/tests/ -qqq --collect-only
             OUTPUT_VARIABLE PYTHON_TESTS
-            )
-    message(STATUS "PYTEST = ${PYTEST}")
-    message(STATUS "PYTHON_TESTS = ${PYTHON_TESTS}")
-
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
     string(REGEX REPLACE ": [0-9]*" "" PYTHON_TESTS "${PYTHON_TESTS}")
     string(REPLACE "\n" ";" PYTHON_TESTS ${PYTHON_TESTS})
 
@@ -254,35 +242,46 @@ if(WIN32)
         message(STATUS "Found ${pytest_file}")
 
 
-        execute_process(COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} -qq --collect-only
+        execute_process(COMMAND ${VENV_PYTHON} -m pytest ${PROJECT_SOURCE_DIR}/${pytest_file} -qq --collect-only
                 OUTPUT_VARIABLE PYTEST_COLLECTION
                 ERROR_VARIABLE pytest_std
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ENCODING AUTO
                 )
+        message(STATUS "PYTEST_COLLECTION= ${PYTEST_COLLECTION}")
         if(PYTEST_COLLECTION)
             string(REPLACE "\n" ";" PYTEST_COLLECTION ${PYTEST_COLLECTION})
 
             foreach(test_name ${PYTEST_COLLECTION})
-                string(REGEX MATCH "::test_.*" test_name ${test_name})
+#                string(REGEX MATCH "::test_.*" test_name ${test_name})
                 if(test_name)
-                    string(REPLACE "::" "" test_name ${test_name})
+                    if(test_name MATCHES "tests collected" )
+                        continue()
+                    endif()
+                    if(test_name MATCHES "^1" )
+                        continue()
+                    endif()
                     string(STRIP ${test_name} test_name)
-                    add_test(NAME ${PROJECT_NAME}.pytest.${pytest_file}.${test_name}
+                    set(FULL_TEST_NAME "${PROJECT_NAME}.pytest${test_name}")
+                    string(REPLACE " " "_" FULL_TEST_NAME ${FULL_TEST_NAME})
+                    add_test(NAME ${FULL_TEST_NAME}
                             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
-                            COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file}::${test_name} --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
+                            COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest "../../${test_name}" -v --full-trace -raP -c ${PROJECT_SOURCE_DIR}/pyproject.toml
                             )
-                    set_tests_properties(${PROJECT_NAME}.pytest.${pytest_file}.${test_name} PROPERTIES
+#                            COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ../../${test_name} -v --full-trace --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
+                    set_tests_properties(${FULL_TEST_NAME} PROPERTIES
                             RESOURCE_LOCK ${pytest_file}
                             ENVIRONMENT "PYTHONDONTWRITEBYTECODE=x"
                             )
-                    message(STATUS "Added ${PROJECT_NAME}.pytest.${pytest_file}.${test_name} to CTest")
                 endif()
             endforeach()
         else()
             message(STATUS "Added ${PROJECT_NAME}.pytest.${pytest_file} to CTest")
             add_test(NAME ${PROJECT_NAME}.pytest.${pytest_file}
                     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
-                    COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
+                    COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest "${PROJECT_SOURCE_DIR}/${pytest_file}" -c ${PROJECT_SOURCE_DIR}/pyproject.toml -raP
                     )
+#                    COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/${pytest_file} --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
             set_tests_properties(${PROJECT_NAME}.pytest.${pytest_file} PROPERTIES
                     ENVIRONMENT "PYTHONDONTWRITEBYTECODE=x"
                     )

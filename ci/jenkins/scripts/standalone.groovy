@@ -47,7 +47,7 @@ def build_standalone(args=[:]){
         script{
             try{
 
-                def cmakeArgs = "--trace-expand -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf -Wdev"
+                def cmakeArgs = "-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf -Wdev"
                 if(args['package']){
                     cmakeArgs = cmakeArgs + " -DSpeedwagon_VERSION:STRING=${args.package['version']}"
                     def packageVersion = args.package['version'] =~ /(?:a|b|rc|dev)?\d+/
@@ -75,16 +75,21 @@ def build_standalone(args=[:]){
                 bat(label: "Building with CMake",
                     script: "cmake --build ${buildDir}"
                 )
-            } catch(c){
-                archiveArtifacts(artifacts: "${buildDir}/CMakeFiles/*.log")
+            } catch(e){
+                if(!isUnix()){
+                    bat "tree ${buildDir} /A /F"
+                }
+                archiveArtifacts(allowEmptyArchive: true, artifacts: "${buildDir}/CMakeCache.txt")
+                archiveArtifacts(artifacts: "${buildDir}/CMakeFiles/**")
+//                 archiveArtifacts(artifacts: "${buildDir}/CMakeFiles/*.log")
                 throw e
             }
         }
     }
     stage("Testing standalone"){
         dir(buildDir){
-            withEnv(['CTEST_OUTPUT_ON_FAILURE=1']) {
-                bat "ctest -T test -C Release -j ${NUMBER_OF_PROCESSORS}"
+            withEnv(['QT_QPA_PLATFORM=offscreen']) {
+                bat "ctest --output-on-failure --no-compress-output -T test -C Release -j ${NUMBER_OF_PROCESSORS}"
             }
         }
     }

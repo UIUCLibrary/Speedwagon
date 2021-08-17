@@ -7,7 +7,7 @@ from speedwagon.workflows.workflow_make_checksum import \
     MakeChecksumBatchSingleWorkflow, MakeChecksumBatchMultipleWorkflow
 
 
-def test_singleChecksum(tool_job_manager_spy, tmpdir):
+def test_singleChecksum(qtbot, tool_job_manager_spy, tmpdir):
     sample_pkg_dir = tmpdir / "sample"
     sample_pkg_dir.mkdir()
     sample_file = sample_pkg_dir / "dummy.txt"
@@ -29,7 +29,7 @@ def test_singleChecksum_has_options():
     assert len(user_options) > 0
 
 
-def test_mutipleChecksum(tool_job_manager_spy, tmpdir):
+def test_mutipleChecksum(qtbot, tool_job_manager_spy, tmpdir):
     number_of_test_packages = 2
     for p_i in range(number_of_test_packages):
         sample_pkg_dir = tmpdir / f"sample_{p_i+1}"

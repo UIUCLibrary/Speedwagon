@@ -99,13 +99,12 @@ RUN $ErrorActionPreference = 'Stop'; `
 ENV PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
 ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"
 
-RUN python -m pip install --upgrade pip ; `
-    pip install wheel ; `
-    pip install --upgrade setuptools
-
 
 ADD requirements.txt requirements-dev.txt c:\temp\
-RUN python -m pip wheel -r c:\temp\requirements.txt -r c:\temp\requirements-dev.txt --wheel-dir c:\wheels
+RUN python -m pip install --upgrade pip ; `
+    pip install wheel ; `
+    pip install --upgrade setuptools ;`
+    python -m pip wheel -r c:\temp\requirements.txt -r c:\temp\requirements-dev.txt --wheel-dir c:\wheels
 
 RUN pip install --no-index --find-links=c:\wheels\ `
         --trusted-host devpi.library.illinois.edu `
