@@ -245,7 +245,7 @@ if(WIN32)
         message(STATUS "Found ${pytest_file}")
 
 
-        execute_process(COMMAND ${VENV_PYTHON} python -B -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} -qq --collect-only
+        execute_process(COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} -qq --collect-only
                 OUTPUT_VARIABLE PYTEST_COLLECTION
                 ERROR_VARIABLE pytest_std
                 )
