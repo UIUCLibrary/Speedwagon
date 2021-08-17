@@ -45,7 +45,7 @@ def build_standalone(args=[:]){
                        """
            )
         script{
-            def cmakeArgs = "-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf -Wdev"
+            def cmakeArgs = "--trace-expand -DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf -Wdev"
             if(args['package']){
                 cmakeArgs = cmakeArgs + " -DSpeedwagon_VERSION:STRING=${args.package['version']}"
                 def packageVersion = args.package['version'] =~ /(?:a|b|rc|dev)?\d+/
