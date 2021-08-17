@@ -239,7 +239,8 @@ if(WIN32)
             REQUIRED
             )
 
-    execute_process(COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${PROJECT_SOURCE_DIR} ${PYTEST} ${PROJECT_SOURCE_DIR}/tests/ -qqq --collect-only
+    execute_process(
+            COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${PROJECT_SOURCE_DIR} ${PYTEST} ${PROJECT_SOURCE_DIR}/tests/ -qqq --collect-only
             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
             OUTPUT_VARIABLE PYTHON_TESTS
             )
