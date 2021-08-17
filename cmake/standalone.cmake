@@ -229,19 +229,20 @@ if(WIN32)
     enable_testing()
     #   TODO: Make this dynamic by calling python -m pytest --collect-only and
     #         parsing the data
-
-    execute_process(COMMAND ${VENV_PYTHON} python -B -m pytest ${PROJECT_SOURCE_DIR}/tests/ -qqq --collect-only
+    find_program(PYTEST
+            NAMES
+                pytest
+                pytest.exe
+            PATHS ${PROJECT_BINARY_DIR}/venv/Scripts
+            )
+    execute_process(COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${PROJECT_SOURCE_DIR} ${PYTEST} ${PROJECT_SOURCE_DIR}/tests/ -qqq --collect-only
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
             OUTPUT_VARIABLE PYTHON_TESTS
             )
-    message(INFO "FOUND ${PYTHON_TESTS}")
-    set(pytests
-            test_pkg_metadata.py
-            test_models.py
-            test_get_config.py
-            )
-    #file(GLOB pytests RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/tests tests/test_*.py)
+    string(REGEX REPLACE ": [0-9]*" "" PYTHON_TESTS ${PYTHON_TESTS})
+    string(REPLACE "\n" ";" PYTHON_TESTS ${PYTHON_TESTS})
 
-    foreach(pytest_file ${pytests})
+    foreach(pytest_file ${PYTHON_TESTS})
         message(STATUS "Found ${pytest_file}")
 
 
