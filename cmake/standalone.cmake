@@ -234,12 +234,13 @@ if(WIN32)
                 pytest
                 pytest.exe
             PATHS ${PROJECT_BINARY_DIR}/venv/Scripts
+            REQUIRED
             )
     execute_process(COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${PROJECT_SOURCE_DIR} ${PYTEST} ${PROJECT_SOURCE_DIR}/tests/ -qqq --collect-only
             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
             OUTPUT_VARIABLE PYTHON_TESTS
             )
-    string(REGEX REPLACE ": [0-9]*" "" PYTHON_TESTS ${PYTHON_TESTS})
+    string(REGEX REPLACE ": [0-9]*" "" PYTHON_TESTS "${PYTHON_TESTS}")
     string(REPLACE "\n" ";" PYTHON_TESTS ${PYTHON_TESTS})
 
     foreach(pytest_file ${PYTHON_TESTS})
