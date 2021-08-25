@@ -27,7 +27,7 @@ class TestOpenSettings:
         assert system.called is True and \
                settings_directory in system.call_args_list[0][0][0]
 
-    def test_open_unsupported_settings(self, monkeypatch):
+    def test_open_unsupported_settings(self, qtbot, monkeypatch):
         from PyQt5 import QtWidgets
         settings_directory = "some/settings/path"
         opening_strategy = settings.UnsupportedOpenSettings(settings_directory)

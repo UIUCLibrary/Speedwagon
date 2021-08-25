@@ -97,7 +97,7 @@ class MockGenerateOCRFileTask(workflow_ocr.GenerateOCRFileTask):
     engine = Mock(get_reader=mock_reader)
 
 
-def test_runs(tool_job_manager_spy, tmpdir):
+def test_runs(qtbot, tool_job_manager_spy, tmpdir):
     class MockOCRWorkflow(workflow_ocr.OCRWorkflow):
         def create_new_task(self, task_builder, **job_args):
             image_file = job_args["source_file_path"]
