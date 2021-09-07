@@ -374,15 +374,18 @@ class ValidateChecksumsTask(CompletenessSubTask):
                 else:
                     for error in checksum_report_errors:
                         errors.append(error)
-            except FileNotFoundError as e:
+            except FileNotFoundError as file_missing_error:
                 report_builder.add_error(
-                    "Unable to validate checksums. Reason: {}".format(e)
+                    "Unable to validate checksums. "
+                    f"Reason: {file_missing_error}"
                 )
-            except PermissionError as e:
+            except PermissionError as permission_error:
                 report_builder = hathi_result.SummaryDirector(
                    source=self.package_path
                 )
-                report_builder.add_error("Permission issues. \"{}\"".format(e))
+                report_builder.add_error(
+                    f'Permission issues. "{permission_error}"'
+                )
                 self.set_results(report_builder.construct())
                 return False
 
