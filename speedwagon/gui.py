@@ -376,7 +376,7 @@ class MainWindow(MainProgram):
 
         if not log_file_name:
             return
-        with open(log_file_name, "w") as file_handle:
+        with open(log_file_name, "w", encoding="utf-8") as file_handle:
             file_handle.write(data)
 
         self.log_manager.info("Saved log to {}".format(log_file_name))
