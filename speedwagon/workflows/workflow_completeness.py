@@ -132,85 +132,24 @@ class CompletenessWorkflow(Workflow):
                 subtask=ValidateOCFilesUTF8Task(package_path))
 
     @classmethod
-    def _generate_error_report(
-            cls,
-            results_grouped: Dict[Type['CompletenessSubTask'], List[Any]]
-    ) -> str:
-        tasks: List[Type[CompletenessSubTask]] = [
-            HathiCheckMissingPackageFilesTask,
-            HathiCheckMissingComponentsTask,
-            ValidateExtraSubdirectoriesTask,
-            ValidateMarcTask,
-            ValidateYMLTask
-        ]
-        error_results: List[hathi_result.Result] = []
-        for task in tasks:
-            error_results += cls._get_result(results_grouped, task)
-        return hathi_reporter.get_report_as_str(error_results, 70)
-
-    @classmethod
     def generate_report(cls, results: List[speedwagon.tasks.tasks.Result],
                         **user_args: Union[str, bool]) -> Optional[str]:
+        report_builder = CompletenessReportGenerator()
 
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
         _result_grouped: Iterator[
             Tuple[Any, Iterator[speedwagon.tasks.tasks.Result]]
         ] = itertools.groupby(results_sorted, lambda x: x.source)
-        results_grouped = {
+        report_builder.results = {
             key: [i.data for i in group] for key, group in _result_grouped
         }
-
-        manifest_report = results_grouped[HathiManifestGenerationTask][0]
-
-        error_report = cls._generate_error_report(results_grouped)
-        # ########################### Warnings ###########################
-        warning_results: List[hathi_result.Result] = []
-
-        warning_results += cls._get_result(results_grouped,
-                                           PackageNamingConventionTask)
-
-        warning_report = hathi_reporter.get_report_as_str(warning_results, 70)
-
-        report = f"\n" \
-                 f"Report:\n" \
-                 f"{manifest_report}\n" \
-                 f"\n"
-
-        if error_report:
-            report = f"{report}\n" \
-                     f"\n" \
-                     f"Errors:\n" \
-                     f"{error_report}\n"
-
-        if warning_results:
-            report = f"{report}\n" \
-                     f"\n" \
-                     f"Warnings:\n" \
-                     f"{warning_report}\n"
-        return report
+        return report_builder.build_report()
 
     def initial_task(self, task_builder: "speedwagon.tasks.tasks.TaskBuilder",
                      **user_args: str) -> None:
 
         new_task = HathiManifestGenerationTask(batch_root=user_args['Source'])
         task_builder.add_subtask(subtask=new_task)
-
-    @classmethod
-    def _get_result(cls,
-                    results_grouped: Dict[Type["CompletenessSubTask"],
-                                          List[List[Any]]],
-                    key: Type["CompletenessSubTask"]
-                    ) -> List[hathi_result.Result]:
-
-        results: List[hathi_result.Result] = []
-
-        try:
-            for result_group in results_grouped[key]:
-                for result in result_group:
-                    results.append(result)
-        except KeyError as error:
-            print("KeyError: {}".format(error), file=sys.stderr)
-        return results
 
     @staticmethod
     def validate_user_options(*args: str, **kwargs: str) -> bool:
@@ -752,3 +691,91 @@ class PackageNamingConventionTask(CompletenessSubTask):
         if warnings:
             self.set_results(warnings)
         return True
+
+
+class CompletenessReportGenerator:
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.line_length = 70
+
+        self.results: Dict[
+            Type['CompletenessSubTask'], List[hathi_result.Result]
+        ] = {}
+
+        self._tasks_performed: List[Type[CompletenessSubTask]] = [
+            HathiCheckMissingPackageFilesTask,
+            HathiCheckMissingComponentsTask,
+            ValidateExtraSubdirectoriesTask,
+            ValidateMarcTask,
+            ValidateYMLTask
+        ]
+
+    def generate_error_report(self,) -> str:
+        error_results: List[hathi_result.Result] = []
+        for task in self._tasks_performed:
+            error_results += self._get_result(self.results, task)
+
+        return hathi_reporter.get_report_as_str(error_results,
+                                                self.line_length)
+
+    @classmethod
+    def _get_result(cls,
+                    results_grouped: Dict[Type["CompletenessSubTask"],
+                                          List[speedwagon.tasks.tasks.Result]],
+                    key: Type["CompletenessSubTask"]
+                    ) -> List[hathi_result.Result]:
+
+        results: List[hathi_result.Result] = []
+
+        try:
+            for result_group in results_grouped[key]:
+                for result in result_group:
+                    results.append(result)
+        except KeyError as error:
+            print("KeyError: {}".format(error), file=sys.stderr)
+        return results
+
+    def build_report(self) -> str:
+
+        # ############################ Errors ############################
+        error_report = self.generate_error_report()
+
+        # ########################### Warnings ###########################
+        warning_results: List[hathi_result.Result] = []
+
+        warning_results += self._get_result(
+            self.results,
+            PackageNamingConventionTask
+        )
+
+        warning_report = hathi_reporter.get_report_as_str(
+            warning_results,
+            self.line_length
+        )
+
+        report_lines: List[str] = [
+            "",
+            "Report:",
+            typing.cast(str, self.results[HathiManifestGenerationTask][0]),
+            ""
+        ]
+
+        if error_report:
+            report_lines += [
+                "",
+                "Errors:",
+                error_report,
+                ""
+            ]
+        report: str = "\n".join(report_lines)
+
+        if warning_results:
+            report_lines += [
+                report,
+                "",
+                "Warnings:",
+                warning_report,
+                ""
+            ]
+        return "\n".join(report_lines)
