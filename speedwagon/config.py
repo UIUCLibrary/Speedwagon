@@ -32,7 +32,7 @@ class AbsConfig(collections.abc.Mapping):
     def __init__(self) -> None:
         """Populate the base structure of a config class."""
         super().__init__()
-        self._data: Dict[str,  Union[str, bool]] = dict()
+        self._data: Dict[str,  Union[str, bool]] = {}
 
     @abc.abstractmethod
     def get_user_data_directory(self) -> str:
@@ -138,7 +138,7 @@ class ConfigManager(contextlib.AbstractContextManager):
         if self.cfg_parser is None:
             return {}
 
-        global_settings: Dict[str, Union[str, bool]] = dict()
+        global_settings: Dict[str, Union[str, bool]] = {}
         try:
             global_section = self.cfg_parser["GLOBAL"]
             for setting in ConfigManager.BOOLEAN_SETTINGS:
@@ -176,7 +176,7 @@ def generate_default(config_file: str) -> None:
         "debug": "False"
     }
 
-    with open(config_file, "w") as file:
+    with open(config_file, "w", encoding="utf-8") as file:
         config.write(file)
     ensure_keys(config_file, all_required_workflow_keys())
 
@@ -288,7 +288,7 @@ def ensure_keys(config_file: str, keys: Iterable[str]) -> Optional[Set[str]]:
             config_data['GLOBAL'][k] = ""
             added.add(k)
 
-    with open(config_file, "w") as file_pointer:
+    with open(config_file, "w", encoding="utf-8") as file_pointer:
         config_data.write(file_pointer)
 
     return added if len(added) > 0 else None

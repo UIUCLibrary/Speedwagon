@@ -543,7 +543,7 @@ def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
     tabs_file_size = os.path.getsize(yaml_file)
     if tabs_file_size > 0:
         try:
-            with open(yaml_file) as file:
+            with open(yaml_file, encoding="utf-8") as file:
                 tabs_config_data = \
                     yaml.load(file.read(), Loader=yaml.SafeLoader)
             if not isinstance(tabs_config_data, dict):
@@ -584,14 +584,14 @@ def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
 
 def write_tabs_yaml(yaml_file: str, tabs: List[TabData]) -> None:
     """Write out tab custom information to a yaml file."""
-    tabs_data = dict()
+    tabs_data = {}
     for tab in tabs:
         tab_model = tab.workflows_model
 
         tabs_data[tab.tab_name] = \
             [workflow.name for workflow in tab_model.workflows]
 
-    with open(yaml_file, "w") as file_handle:
+    with open(yaml_file, "w", encoding="utf-8") as file_handle:
         yaml.dump(tabs_data, file_handle, default_flow_style=False)
 
 

@@ -152,7 +152,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                             ) -> Dict[str, Any]:
         extra_data: Dict[str, Dict[str, str]] = {}
         if len(pretask_results) == 1:
-            title_pages: Dict[str, str] = dict()
+            title_pages: Dict[str, str] = {}
             results = pretask_results.pop()
             packages = results.data
             browser = PackageBrowser(packages, parent)

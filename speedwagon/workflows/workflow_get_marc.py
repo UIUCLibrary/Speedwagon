@@ -220,7 +220,7 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
         """
         if 'directory' not in job_args.keys():
             raise KeyError("Missing directory")
-        directory = job_args.get('directory', dict())
+        directory = job_args.get('directory', {})
         if not isinstance(directory, dict):
             raise TypeError()
         identifier_type = str(directory["type"])
@@ -237,7 +237,7 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
                 server_url=str(job_args['api_server'])
             )
         )
-        enhancements = job_args.get('enhancements', dict())
+        enhancements = job_args.get('enhancements', {})
         if not isinstance(enhancements, dict):
             raise TypeError()
 
