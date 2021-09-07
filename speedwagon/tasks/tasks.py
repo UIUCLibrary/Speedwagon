@@ -7,6 +7,7 @@ import os
 import sys
 import queue
 import pickle
+import typing
 from typing import Optional, Any, Deque, NamedTuple, Type, List
 
 __all__ = [
@@ -63,7 +64,7 @@ class AbsSubtask(metaclass=abc.ABCMeta):
         """Execute subtask."""
 
     @property
-    def settings(self):
+    def settings(self) -> typing.Dict[str, str]:
         """Get the settings for the subtask."""
         return {}
 
@@ -103,7 +104,7 @@ class Subtask(AbsSubtask):
         self._working_dir = ""
         self.task_working_dir = ""
 
-        self._parent_task_log_q = None
+        self._parent_task_log_q: Optional[Deque[str]] = None
 
     @property
     def subtask_working_dir(self) -> str:
@@ -122,14 +123,14 @@ class Subtask(AbsSubtask):
         self._working_dir = value
 
     @property
-    def parent_task_log_q(self):
+    def parent_task_log_q(self) -> Deque[str]:
         """Log queue of the parent."""
         if self._parent_task_log_q is None:
             raise RuntimeError("Property parent_task_log_q has not be set")
         return self._parent_task_log_q
 
     @parent_task_log_q.setter
-    def parent_task_log_q(self, value) -> None:
+    def parent_task_log_q(self, value: Deque[str]) -> None:
         self._parent_task_log_q = value
 
     @property
@@ -201,15 +202,16 @@ class PreTask(AbsSubtask):
         return self._parent_task_log_q
 
     @parent_task_log_q.setter
-    def parent_task_log_q(self, value) -> None:
+    def parent_task_log_q(self, value: Deque[str]) -> None:
         self._parent_task_log_q = value
 
     def exec(self) -> None:
         self._status = \
             TaskStatus.FAILED if not self.work() else TaskStatus.SUCCESS
 
-    def log(self, message):
-        self._parent_task_log_q.append(message)
+    def log(self, message: str) -> None:
+        if self._parent_task_log_q is not None:
+            self._parent_task_log_q.append(message)
 
     def work(self) -> bool:
         raise NotImplementedError()
@@ -228,7 +230,7 @@ class PreTask(AbsSubtask):
 class AbsTask(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def on_completion(self, *args, **kwargs):
+    def on_completion(self, *args, **kwargs) -> None:
         """Call when task is finished."""
 
     @abc.abstractmethod
@@ -291,7 +293,7 @@ class Task(AbsTask, AbsTaskComponents):
         """Set the post-task sub-task."""
         self._post_task = value
 
-    def on_completion(self, *args, **kwargs):
+    def on_completion(self, *args, **kwargs) -> None:
         """Run task for after main task is completed.
 
         Default is a Noop.
@@ -314,15 +316,15 @@ class MultiStageTask(Task):
         """Create a new multi-stage task."""
         super().__init__()
         # Todo: use the results builder from validate
-        self._main_subtasks: List[AbsSubtask] = []
+        self._main_subtasks: List[Subtask] = []
         self.working_dir = ""
 
     @property
-    def main_subtasks(self):
+    def main_subtasks(self) -> List[Subtask]:
         return self._main_subtasks
 
     @property
-    def subtasks(self):
+    def subtasks(self) -> List[AbsSubtask]:
         """Get all subtasks."""
         all_subtasks = []
 
@@ -411,7 +413,7 @@ class AbsTaskBuilder(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def add_subtask(self, task):
+    def add_subtask(self, task) -> None:
         """Add subtask to builder."""
 
     @abc.abstractmethod
@@ -419,11 +421,11 @@ class AbsTaskBuilder(metaclass=abc.ABCMeta):
         """Build task."""
 
     @abc.abstractmethod
-    def set_pretask(self, subtask: AbsSubtask):
+    def set_pretask(self, subtask: AbsSubtask) -> None:
         """Set pre-task subtask."""
 
     @abc.abstractmethod
-    def set_posttask(self, subtask: AbsSubtask):
+    def set_posttask(self, subtask: AbsSubtask) -> None:
         """Set the post-task task."""
 
 
@@ -432,7 +434,7 @@ class BaseTaskBuilder(AbsTaskBuilder):
 
     def __init__(self) -> None:
         """Create base structure of a task builder class."""
-        self._main_subtasks: List[AbsSubtask] = []
+        self._main_subtasks: List[Subtask] = []
         self._pretask: Optional[AbsSubtask] = None
         self._posttask: Optional[AbsSubtask] = None
 
@@ -475,7 +477,7 @@ class TaskBuilder:
     # The director
     _task_counter = 0
 
-    def __init__(self, builder: BaseTaskBuilder, working_dir) -> None:
+    def __init__(self, builder: BaseTaskBuilder, working_dir: str) -> None:
         """Create a new task builder."""
         self._builder = builder
         self._working_dir = working_dir
@@ -573,23 +575,28 @@ class TaskBuilder:
         self._builder.set_posttask(subtask)
 
     @staticmethod
-    def save(task_obj):
+    def save(task_obj: AbsTaskBuilder) -> bytes:
         """Pickle data."""
         task_serialized = TaskBuilder._serialize_task(task_obj)
         return pickle.dumps(task_serialized)
 
     @staticmethod
-    def load(data):
+    def load(data: bytes) -> AbsTaskBuilder:
         """Load pickled data."""
         task_cls, attributes = pickle.loads(data)
         return TaskBuilder._deserialize_task(task_cls, attributes)
 
     @staticmethod
-    def _serialize_task(task_obj: MultiStageTask):
+    def _serialize_task(
+            task_obj: AbsTaskBuilder
+    ) -> typing.Tuple[typing.Type, typing.Dict[str, Any]]:
         return task_obj.__class__, task_obj.__dict__
 
     @staticmethod
-    def _deserialize_task(task_cls, attributes):
+    def _deserialize_task(
+            task_cls: typing.Type[AbsTaskBuilder],
+            attributes: typing.Dict[str, Any]
+    ) -> AbsTaskBuilder:
         obj = task_cls.__new__(task_cls)
         obj.__dict__.update(attributes)
         return obj
@@ -601,13 +608,13 @@ class QueueAdapter:
     def __init__(self) -> None:
         """Create a new queue adapter."""
         super().__init__()
-        self._queue: Optional[queue.Queue] = None
+        self._queue: "Optional[queue.Queue[str]]" = None
 
     def append(self, item):
         """Append item to the queue."""
         self._queue.put(item)
 
-    def set_message_queue(self, value: queue.Queue) -> None:
+    def set_message_queue(self, value: "queue.Queue[str]") -> None:
         """Set message queue."""
         self._queue = value
 

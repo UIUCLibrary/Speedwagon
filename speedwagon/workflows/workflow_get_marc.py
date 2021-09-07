@@ -5,7 +5,7 @@ import os
 import re
 from copy import deepcopy
 from typing import List, Any, Optional, Union, Sequence, Dict, Set, Tuple, \
-    Iterator, Collection
+    Iterator, Collection, Final
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 import traceback
@@ -20,6 +20,15 @@ from . import shared_custom_widgets as options
 
 
 __all__ = ['GenerateMarcXMLFilesWorkflow']
+
+
+# =========================== USER OPTIONS CONSTANTS ======================== #
+OPTION_955_FIELD: Final[str] = "Add 955 field"
+OPTION_035_FIELD: Final[str] = "Add 035 field"
+OPTION_USER_INPUT: Final[str] = "Input"
+IDENTIFIER_TYPE: Final[str] = 'Identifier type'
+# =========================================================================== #
+
 
 UserOptions = Union[
     options.UserOptionCustomDataType,
@@ -80,17 +89,18 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
     def user_options(self) -> List[UserOptions]:
         """Get the settings presented to the user."""
         workflow_options: List[UserOptions] = [
-            options.UserOptionCustomDataType("Input", options.FolderData)
+            options.UserOptionCustomDataType(OPTION_USER_INPUT,
+                                             options.FolderData)
         ]
-        id_type_option = options.ListSelection("Identifier type")
+        id_type_option = options.ListSelection(IDENTIFIER_TYPE)
         for id_type in SUPPORTED_IDENTIFIERS:
             id_type_option.add_selection(id_type)
         workflow_options.append(id_type_option)
 
         # These options will all default to True
         enhancement_field_options = [
-            'Add 955 field',
-            'Add 035 field',
+            OPTION_955_FIELD,
+            OPTION_035_FIELD,
         ]
         for enhancement_field in enhancement_field_options:
             field_option = \
@@ -143,16 +153,16 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
         return [{
             "directory": {
                 "value": folder.name,
-                "type": user_args['Identifier type'],
+                "type": user_args[IDENTIFIER_TYPE],
             },
             "enhancements": {
-                "955": user_args.get("Add 955 field", False),
-                "035": user_args.get("Add 035 field", False)
+                "955": user_args.get(OPTION_955_FIELD, False),
+                "035": user_args.get(OPTION_035_FIELD, False)
             },
             "api_server": server_url,
             "path": folder.path
         } for folder in filter(self.filter_bib_id_folders,
-                               os.scandir(user_args["Input"]))]
+                               os.scandir(user_args[OPTION_USER_INPUT]))]
 
     @staticmethod
     def validate_user_options(**user_args: Dict[str, str]) -> bool:
@@ -164,30 +174,30 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
         """
         option_validators = validators.OptionValidator()
         option_validators.register_validator(
-            key='Input',
-            validator=validators.DirectoryValidation(key="Input")
+            key=OPTION_USER_INPUT,
+            validator=validators.DirectoryValidation(key=OPTION_USER_INPUT)
         )
         option_validators.register_validator(
             key="Input Required",
-            validator=RequiredValueValidation(key="Input")
+            validator=RequiredValueValidation(key=OPTION_USER_INPUT)
         )
         option_validators.register_validator(
             key="Identifier type Required",
-            validator=RequiredValueValidation(key="Identifier type")
+            validator=RequiredValueValidation(key=IDENTIFIER_TYPE)
         )
         option_validators.register_validator(
             key="Match 035 and 955",
             validator=DependentTruthyValueValidation(
-                key='Add 035 field',
+                key=OPTION_035_FIELD,
                 required_true_keys=[
-                    'Add 955 field'
+                    OPTION_955_FIELD
                 ]
             )
         )
 
         invalid_messages = [
             validation.explanation(**user_args) for validation in [
-                option_validators.get("Input"),
+                option_validators.get(OPTION_USER_INPUT),
                 option_validators.get("Input Required"),
                 option_validators.get("Identifier type Required"),
                 option_validators.get('Match 035 and 955')
@@ -371,13 +381,13 @@ class DependentTruthyValueValidation(validators.AbsOptionValidator):
 
     def is_valid(self, **user_data: Union[str, bool]) -> bool:
         """Check if the user data is valid."""
-        for required_key in ['Add 955 field', 'Add 035 field']:
+        for required_key in [OPTION_955_FIELD, OPTION_035_FIELD]:
             if self._has_required_key(user_data, required_key):
                 return False
 
         return self._requirement_is_also_true(
-            bool(user_data['Add 035 field']),
-            [bool(user_data['Add 955 field'])]
+            bool(user_data[OPTION_035_FIELD]),
+            [bool(user_data[OPTION_955_FIELD])]
         ) is not False
 
     def explanation(self, **user_data: Union[str, bool]) -> str:
@@ -391,9 +401,9 @@ class DependentTruthyValueValidation(validators.AbsOptionValidator):
                 produce the message "ok"
         """
         if self._requirement_is_also_true(
-                bool(user_data['Add 035 field']),
+                bool(user_data[OPTION_035_FIELD]),
                 [
-                    bool(user_data['Add 955 field'])
+                    bool(user_data[OPTION_955_FIELD])
                 ]
         ) is False:
             return "Add 035 field requires Add 955 field"

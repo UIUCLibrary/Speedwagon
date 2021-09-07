@@ -499,6 +499,7 @@ pipeline {
                                         }
                                         stage('Run MyPy Static Analysis') {
                                             steps{
+                                                sh 'mypy --version'
                                                 catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: "UNSTABLE") {
                                                     tee('logs/mypy.log'){
                                                         sh(label: 'Running MyPy',

@@ -107,7 +107,7 @@ def test_window_save_log(qtbot, monkeypatch):
     with patch('builtins.open', m):
         main_window.save_log()
 
-    m.assert_called_once_with('spam.log', 'w')
+    m.assert_called_once_with('spam.log', 'w', encoding='utf-8')
 
 
 def test_set_current_tab(qtbot):

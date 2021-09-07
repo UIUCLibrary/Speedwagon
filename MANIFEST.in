@@ -1,4 +1,4 @@
-include LICENSE README.rst requirements.txt requirements-dev.txt tox.ini extra_commands.py pyuic.json
+include LICENSE README.rst requirements.txt requirements-dev.txt tox.ini
 include .pylintrc
 include speedwagon/logo.png
 include speedwagon/favicon.ico

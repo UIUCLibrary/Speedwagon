@@ -1,4 +1,13 @@
-"""Workflow for converting Capture One tiff file into two formats."""
+"""Workflow for converting Capture One tiff file into two formats.
+
+Notes:
+    This module has a number of "type: ignore" statements because of the
+    current version of the type-checker (mypy 0.902) at this writing has a
+    problem with using module constants specified as Final for with typedict.
+    If https://github.com/python/mypy/issues/4128 is resolved, please remove
+    these type:ignore statements.
+"""
+
 from __future__ import annotations
 import logging
 import os
@@ -10,7 +19,7 @@ except ImportError:  # pragma: no cover
     from typing_extensions import TypedDict
 
 from typing import List, Any, Dict, Callable, Iterator, Optional, Union, \
-    Iterable
+    Iterable, Final
 from contextlib import contextmanager
 from uiucprescon import packager
 from uiucprescon.packager.packages.abs_package_builder import AbsPackageBuilder
@@ -25,14 +34,22 @@ import speedwagon.exceptions
 
 __all__ = ['CaptureOneToDlCompoundAndDLWorkflow']
 
+# =========================== USER OPTIONS CONSTANTS ======================== #
+OUTPUT_HATHITRUST: Final[str] = "Output HathiTrust"
+OUTPUT_DIGITAL_LIBRARY: Final[str] = "Output Digital Library"
+USER_INPUT_PATH: Final[str] = "Input"
+PACKAGE_TYPE: Final[str] = "Package Type"
+# =========================================================================== #
 
+# If https://github.com/python/mypy/issues/4128 is ever resolved, remove the
+# mypy linter ignore
 UserArgs = TypedDict(
     'UserArgs',
     {
-        "Input": str,
-        "Package Type": str,
-        "Output Digital Library": str,
-        "Output HathiTrust": str
+        USER_INPUT_PATH: str,  # type: ignore
+        PACKAGE_TYPE: str,
+        OUTPUT_DIGITAL_LIBRARY: str,
+        OUTPUT_HATHITRUST: str
     },
 )
 
@@ -44,12 +61,13 @@ class JobArguments(TypedDict):
     source_path: str
 
 
-SUPPORTED_PACKAGE_SOURCES = {
-    "Capture One": packager.packages.CaptureOnePackage(delimiter="-"),
-    "Archival collections/Non EAS": packager.packages.ArchivalNonEAS(),
-    "Cataloged collections/Non EAS": packager.packages.CatalogedNonEAS(),
-    "EAS": packager.packages.Eas()
-}
+SUPPORTED_PACKAGE_SOURCES: \
+    Dict[str,  packager.packages.abs_package_builder.AbsPackageBuilder] = {
+        "Capture One": packager.packages.CaptureOnePackage(delimiter="-"),
+        "Archival collections/Non EAS": packager.packages.ArchivalNonEAS(),
+        "Cataloged collections/Non EAS": packager.packages.CatalogedNonEAS(),
+        "EAS": packager.packages.Eas()
+    }
 
 
 class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
@@ -83,18 +101,19 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
 
         """
         user_options: List[Union[options.UserOption2, options.UserOption3]] = [
-            options.UserOptionCustomDataType("Input", options.FolderData),
+            options.UserOptionCustomDataType(USER_INPUT_PATH,
+                                             options.FolderData),
             ]
         package_type_selection = options.ListSelection(
-            "Package Type")
+            PACKAGE_TYPE)
         for package_type_name in SUPPORTED_PACKAGE_SOURCES:
             package_type_selection.add_selection(package_type_name)
         user_options.append(package_type_selection)
         user_options += [
             options.UserOptionCustomDataType(
-                "Output Digital Library", options.FolderData),
+                OUTPUT_DIGITAL_LIBRARY, options.FolderData),
             options.UserOptionCustomDataType(
-                "Output HathiTrust", options.FolderData),
+                OUTPUT_HATHITRUST, options.FolderData),
                 ]
         return user_options
 
@@ -116,15 +135,16 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
 
         """
         user_arguments: UserArgs = typing.cast(UserArgs, user_args)
-        source_input = user_arguments["Input"]
-        dest_dl = user_arguments["Output Digital Library"]
-        dest_ht = user_arguments["Output HathiTrust"]
+        source_input = user_arguments[USER_INPUT_PATH]  # type: ignore
+        dest_dl = user_arguments[OUTPUT_DIGITAL_LIBRARY]  # type: ignore
+        dest_ht = user_arguments[OUTPUT_HATHITRUST]  # type: ignore
         package_type = SUPPORTED_PACKAGE_SOURCES.get(
-            user_arguments['Package Type']
+            user_arguments["Package Type"]  # type: ignore
         )
         if package_type is None:
             raise ValueError(
-                f"Unknown package type {user_arguments['Package Type']}"
+                f"Unknown package type "
+                f"{user_arguments['Package Type']}"  # type: ignore
             )
         package_factory = packager.PackageFactory(package_type)
 
@@ -163,8 +183,8 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
             'At least one output',
             MinimumOutputsValidator(
                 at_least_one_of=[
-                    "Output Digital Library",
-                    "Output HathiTrust"
+                    OUTPUT_DIGITAL_LIBRARY,
+                    OUTPUT_HATHITRUST
                 ]
             )
         )
@@ -172,26 +192,26 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
             'At least one output exists',
             OutputsValidValuesValidator(
                 keys_to_check=[
-                    'Output Digital Library',
-                    'Output HathiTrust'
+                    OUTPUT_DIGITAL_LIBRARY,
+                    OUTPUT_HATHITRUST
                 ]
             )
         )
 
         option_validators.register_validator(
-            'Input',
-            validators.DirectoryValidation(key="Input")
+            USER_INPUT_PATH,
+            validators.DirectoryValidation(key=USER_INPUT_PATH)
         )
         invalid_messages: List[str] = []
         for validation in [
             option_validators.get('At least one output'),
             option_validators.get('At least one output exists'),
-            option_validators.get("Input")
+            option_validators.get(USER_INPUT_PATH)
 
         ]:
-            if not validation.is_valid(**user_arguments):
+            if not validation.is_valid(**user_arguments):  # type: ignore
                 invalid_messages.append(
-                    validation.explanation(**user_arguments)
+                    validation.explanation(**user_arguments)  # type: ignore
                 )
 
         if len(invalid_messages) > 0:
