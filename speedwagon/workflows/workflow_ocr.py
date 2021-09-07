@@ -199,8 +199,7 @@ class OCRWorkflow(speedwagon.Workflow):
             fullname = ocr.LANGUAGE_CODES.get(lang)
             if fullname is None:
                 continue
-            else:
-                language_type.add_selection(fullname)
+            language_type.add_selection(fullname)
         options.append(language_type)
 
         package_root_option = \
