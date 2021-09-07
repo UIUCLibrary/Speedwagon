@@ -74,8 +74,7 @@ class AbsSetting(metaclass=abc.ABCMeta):
     ) -> Dict["str", Union[str, bool]]:
         if settings is None:
             return {}
-        else:
-            return settings
+        return settings
 
 
 class DefaultsSetter(AbsSetting):
