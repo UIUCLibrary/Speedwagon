@@ -584,7 +584,7 @@ def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
 
 def write_tabs_yaml(yaml_file: str, tabs: List[TabData]) -> None:
     """Write out tab custom information to a yaml file."""
-    tabs_data = dict()
+    tabs_data = {}
     for tab in tabs:
         tab_model = tab.workflows_model
 

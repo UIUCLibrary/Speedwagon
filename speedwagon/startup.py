@@ -73,7 +73,7 @@ class AbsSetting(metaclass=abc.ABCMeta):
             settings: Dict[str, Union[str, bool]] = None
     ) -> Dict["str", Union[str, bool]]:
         if settings is None:
-            return dict()
+            return {}
         else:
             return settings
 
@@ -162,7 +162,7 @@ class ConfigFileSetter(AbsSetting):
 
 def get_selection(all_workflows):
     """Get current selection of workflows."""
-    new_workflow_set = dict()
+    new_workflow_set = {}
     for k, v in all_workflows.items():
         if "Verify" in k:
             new_workflow_set[k] = v
@@ -294,7 +294,7 @@ class StartupDefault(AbsStarter):
 
         # Make sure required directories exists
         self.user_data_dir = self.platform_settings.get("user_data_directory")
-        self.startup_settings: Dict[str, Union[str, bool]] = dict()
+        self.startup_settings: Dict[str, Union[str, bool]] = {}
         self._debug = False
 
         self.app_data_dir = self.platform_settings.get("app_data_directory")

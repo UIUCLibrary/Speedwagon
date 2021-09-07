@@ -43,7 +43,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
     active = True
     description: Optional[str] = None
     name: Optional[str] = None
-    global_settings: Dict[str, str] = dict()
+    global_settings: Dict[str, str] = {}
     required_settings_keys: Set[str] = set()
 
     def __init__(self, *args, **kwargs) -> None:
@@ -170,7 +170,7 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
             Any additional configurations that needs to be added to a job
 
         """
-        return dict()
+        return {}
 
 
 class NullWorkflow(Workflow):

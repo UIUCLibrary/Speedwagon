@@ -297,10 +297,7 @@ class ToolOptionsPairsModel(ToolOptionsModel):
 
     def get(self) -> dict:
         """Access all underlining data."""
-        options = dict()
-        for data in self._data:
-            options[data.label] = data.data
-        return options
+        return {data.label: data.data for data in self._data}
 
 
 def _lookup_constant(value: int) -> List[str]:
