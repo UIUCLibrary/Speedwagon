@@ -134,7 +134,7 @@ class CompletenessWorkflow(Workflow):
     @classmethod
     def generate_report(cls, results: List[speedwagon.tasks.tasks.Result],
                         **user_args: Union[str, bool]) -> Optional[str]:
-        report_builder = CompletenessReportGenerator()
+        report_builder = CompletenessReportBuilder()
 
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
         _result_grouped: Iterator[
@@ -696,7 +696,7 @@ class PackageNamingConventionTask(CompletenessSubTask):
         return True
 
 
-class CompletenessReportGenerator:
+class CompletenessReportBuilder:
 
     def __init__(self) -> None:
         super().__init__()
@@ -760,9 +760,12 @@ class CompletenessReportGenerator:
         report_lines: List[str] = [
             "",
             "Report:",
-            typing.cast(str, self.results[HathiManifestGenerationTask][0]),
-            ""
         ]
+        if HathiManifestGenerationTask in self.results:
+            report_lines += [
+                typing.cast(str, self.results[HathiManifestGenerationTask][0]),
+                ""
+            ]
 
         if error_report:
             report_lines += [
