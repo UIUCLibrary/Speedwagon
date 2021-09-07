@@ -6,6 +6,7 @@ import inspect
 import logging
 import os
 import sys
+import typing
 from typing import Type, Optional, Iterable, Dict, List, Any, Tuple, Set
 
 from PyQt5 import QtWidgets  # type: ignore
@@ -183,7 +184,7 @@ class NullWorkflow(Workflow):
         """Discover task metadata."""
         return []
 
-    def user_options(self):
+    def user_options(self) -> typing.List[Any]:
         """User options."""
         return []
 
@@ -191,14 +192,14 @@ class NullWorkflow(Workflow):
 class AbsDynamicFinder(metaclass=abc.ABCMeta):
     """Dyanmic finder base class."""
 
-    def __init__(self, path) -> None:
+    def __init__(self, path: str) -> None:
         """Populate the base structure of a dynamic finder."""
         self.path = path
         self.logger = logging.getLogger(__name__)
 
     @staticmethod
     @abc.abstractmethod
-    def py_module_filter(item: os.DirEntry) -> bool:
+    def py_module_filter(item: "os.DirEntry[str]") -> bool:
         pass
 
     def locate(self) -> Dict["str", AbsWorkflow]:
@@ -219,7 +220,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
     def load(self, module_file: str) -> \
             Iterable[Tuple[str, Any]]:
         """Load module file."""
-        def class_member_filter(item) -> bool:
+        def class_member_filter(item: type) -> bool:
             return inspect.isclass(item) and not inspect.isabstract(item)
 
         try:
@@ -249,7 +250,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
 class WorkflowFinder(AbsDynamicFinder):
 
     @staticmethod
-    def py_module_filter(item: os.DirEntry) -> bool:
+    def py_module_filter(item: "os.DirEntry[str]") -> bool:
         return bool(str(item.name).startswith("workflow_"))
 
     @property
@@ -257,7 +258,7 @@ class WorkflowFinder(AbsDynamicFinder):
         return "{}.workflows".format(__package__)
 
     @property
-    def base_class(self):
+    def base_class(self) -> typing.Type[AbsWorkflow]:
         """Get base class."""
         return AbsWorkflow
 
@@ -276,7 +277,9 @@ def available_workflows() -> dict:
     return finder.locate()
 
 
-def all_required_workflow_keys(workflows=None) -> Set[str]:
+def all_required_workflow_keys(
+        workflows: Optional[Dict[str, Type[AbsWorkflow]]] = None
+) -> Set[str]:
     """Get all the keys required by the workflows.
 
     Args:

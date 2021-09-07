@@ -61,12 +61,13 @@ class JobArguments(TypedDict):
     source_path: str
 
 
-SUPPORTED_PACKAGE_SOURCES = {
-    "Capture One": packager.packages.CaptureOnePackage(delimiter="-"),
-    "Archival collections/Non EAS": packager.packages.ArchivalNonEAS(),
-    "Cataloged collections/Non EAS": packager.packages.CatalogedNonEAS(),
-    "EAS": packager.packages.Eas()
-}
+SUPPORTED_PACKAGE_SOURCES: \
+    Dict[str,  packager.packages.abs_package_builder.AbsPackageBuilder] = {
+        "Capture One": packager.packages.CaptureOnePackage(delimiter="-"),
+        "Archival collections/Non EAS": packager.packages.ArchivalNonEAS(),
+        "Cataloged collections/Non EAS": packager.packages.CatalogedNonEAS(),
+        "EAS": packager.packages.Eas()
+    }
 
 
 class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
