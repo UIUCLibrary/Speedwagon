@@ -184,7 +184,7 @@ class CustomTabsFileReader:
     @staticmethod
     def read_yml_file(yaml_file: str) -> Dict[str,  List[str]]:
         """Read the contents of the yml file."""
-        with open(yaml_file) as file_handler:
+        with open(yaml_file, encoding="utf-8") as file_handler:
             tabs_config_data = yaml.load(file_handler.read(),
                                          Loader=yaml.SafeLoader)
 
