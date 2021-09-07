@@ -32,7 +32,7 @@ class AbsConfig(collections.abc.Mapping):
     def __init__(self) -> None:
         """Populate the base structure of a config class."""
         super().__init__()
-        self._data: Dict[str,  Union[str, bool]] = dict()
+        self._data: Dict[str,  Union[str, bool]] = {}
 
     @abc.abstractmethod
     def get_user_data_directory(self) -> str:
@@ -138,7 +138,7 @@ class ConfigManager(contextlib.AbstractContextManager):
         if self.cfg_parser is None:
             return {}
 
-        global_settings: Dict[str, Union[str, bool]] = dict()
+        global_settings: Dict[str, Union[str, bool]] = {}
         try:
             global_section = self.cfg_parser["GLOBAL"]
             for setting in ConfigManager.BOOLEAN_SETTINGS:
