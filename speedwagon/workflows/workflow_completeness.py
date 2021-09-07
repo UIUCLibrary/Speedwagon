@@ -132,19 +132,21 @@ class CompletenessWorkflow(Workflow):
                 subtask=ValidateOCFilesUTF8Task(package_path))
 
     @classmethod
-    def _generate_error_report(cls, results_grouped):
-        error_results: List[hathi_result.Result] = []
-        for task in [
+    def _generate_error_report(
+            cls,
+            results_grouped: Dict[Type['CompletenessSubTask'], List[Any]]
+    ) -> str:
+        tasks: List[Type[CompletenessSubTask]] = [
             HathiCheckMissingPackageFilesTask,
             HathiCheckMissingComponentsTask,
             ValidateExtraSubdirectoriesTask,
             ValidateMarcTask,
             ValidateYMLTask
-
-        ]:
+        ]
+        error_results: List[hathi_result.Result] = []
+        for task in tasks:
             error_results += cls._get_result(results_grouped, task)
-        error_report: str = hathi_reporter.get_report_as_str(error_results, 70)
-        return error_report
+        return hathi_reporter.get_report_as_str(error_results, 70)
 
     @classmethod
     def generate_report(cls, results: List[speedwagon.tasks.tasks.Result],
