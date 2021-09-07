@@ -176,7 +176,7 @@ def generate_default(config_file: str) -> None:
         "debug": "False"
     }
 
-    with open(config_file, "w") as file:
+    with open(config_file, "w", encoding="utf-8") as file:
         config.write(file)
     ensure_keys(config_file, all_required_workflow_keys())
 
@@ -288,7 +288,7 @@ def ensure_keys(config_file: str, keys: Iterable[str]) -> Optional[Set[str]]:
             config_data['GLOBAL'][k] = ""
             added.add(k)
 
-    with open(config_file, "w") as file_pointer:
+    with open(config_file, "w", encoding="utf-8") as file_pointer:
         config_data.write(file_pointer)
 
     return added if len(added) > 0 else None
