@@ -40,6 +40,7 @@ OUTPUT_DIGITAL_LIBRARY: Final[str] = "Output Digital Library"
 USER_INPUT_PATH: Final[str] = "Input"
 PACKAGE_TYPE: Final[str] = "Package Type"
 # =========================================================================== #
+
 # If https://github.com/python/mypy/issues/4128 is ever resolved, remove the
 # mypy linter ignore
 UserArgs = TypedDict(
