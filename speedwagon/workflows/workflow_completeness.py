@@ -132,6 +132,21 @@ class CompletenessWorkflow(Workflow):
                 subtask=ValidateOCFilesUTF8Task(package_path))
 
     @classmethod
+    def _generate_error_report(cls, results_grouped):
+        error_results: List[hathi_result.Result] = []
+        for task in [
+            HathiCheckMissingPackageFilesTask,
+            HathiCheckMissingComponentsTask,
+            ValidateExtraSubdirectoriesTask,
+            ValidateMarcTask,
+            ValidateYMLTask
+
+        ]:
+            error_results += cls._get_result(results_grouped, task)
+        error_report: str = hathi_reporter.get_report_as_str(error_results, 70)
+        return error_report
+
+    @classmethod
     def generate_report(cls, results: List[speedwagon.tasks.tasks.Result],
                         **user_args: Union[str, bool]) -> Optional[str]:
 
@@ -145,27 +160,7 @@ class CompletenessWorkflow(Workflow):
 
         manifest_report = results_grouped[HathiManifestGenerationTask][0]
 
-        error_results: List[hathi_result.Result] = []
-
-        error_results += cls._get_result(results_grouped,
-                                         HathiCheckMissingPackageFilesTask)
-
-        error_results += cls._get_result(results_grouped,
-                                         HathiCheckMissingComponentsTask)
-
-        error_results += cls._get_result(results_grouped,
-                                         ValidateExtraSubdirectoriesTask)
-
-        error_results += cls._get_result(results_grouped,
-                                         ValidateChecksumsTask)
-
-        error_results += cls._get_result(results_grouped,
-                                         ValidateMarcTask)
-
-        error_results += cls._get_result(results_grouped,
-                                         ValidateYMLTask)
-        error_report: str = hathi_reporter.get_report_as_str(error_results, 70)
-
+        error_report = cls._generate_error_report(results_grouped)
         # ########################### Warnings ###########################
         warning_results: List[hathi_result.Result] = []
 
