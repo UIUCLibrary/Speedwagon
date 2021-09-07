@@ -25,11 +25,17 @@ import speedwagon.exceptions
 
 __all__ = ['CaptureOneToDlCompoundAndDLWorkflow']
 
+# =========================== USER OPTIONS CONSTANTS ======================== #
+OUTPUT_HATHITRUST: typing.Final[str] = "Output HathiTrust"
+OUTPUT_DIGITAL_LIBRARY: typing.Final[str] = "Output Digital Library"
+USER_INPUT_PATH: typing.Final[str] = "Input"
+PACKAGE_TYPE: typing.Final[str] = "Package Type"
+# =========================================================================== #
 
 UserArgs = TypedDict(
     'UserArgs',
     {
-        "Input": str,
+        'Input': str,
         "Package Type": str,
         "Output Digital Library": str,
         "Output HathiTrust": str
@@ -83,18 +89,19 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
 
         """
         user_options: List[Union[options.UserOption2, options.UserOption3]] = [
-            options.UserOptionCustomDataType("Input", options.FolderData),
+            options.UserOptionCustomDataType(USER_INPUT_PATH,
+                                             options.FolderData),
             ]
         package_type_selection = options.ListSelection(
-            "Package Type")
+            PACKAGE_TYPE)
         for package_type_name in SUPPORTED_PACKAGE_SOURCES:
             package_type_selection.add_selection(package_type_name)
         user_options.append(package_type_selection)
         user_options += [
             options.UserOptionCustomDataType(
-                "Output Digital Library", options.FolderData),
+                OUTPUT_DIGITAL_LIBRARY, options.FolderData),
             options.UserOptionCustomDataType(
-                "Output HathiTrust", options.FolderData),
+                OUTPUT_HATHITRUST, options.FolderData),
                 ]
         return user_options
 
@@ -116,11 +123,11 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
 
         """
         user_arguments: UserArgs = typing.cast(UserArgs, user_args)
-        source_input = user_arguments["Input"]
+        source_input = user_arguments['Input']
         dest_dl = user_arguments["Output Digital Library"]
         dest_ht = user_arguments["Output HathiTrust"]
         package_type = SUPPORTED_PACKAGE_SOURCES.get(
-            user_arguments['Package Type']
+            user_arguments["Package Type"]
         )
         if package_type is None:
             raise ValueError(
@@ -163,8 +170,8 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
             'At least one output',
             MinimumOutputsValidator(
                 at_least_one_of=[
-                    "Output Digital Library",
-                    "Output HathiTrust"
+                    OUTPUT_DIGITAL_LIBRARY,
+                    OUTPUT_HATHITRUST
                 ]
             )
         )
@@ -172,21 +179,21 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
             'At least one output exists',
             OutputsValidValuesValidator(
                 keys_to_check=[
-                    'Output Digital Library',
-                    'Output HathiTrust'
+                    OUTPUT_DIGITAL_LIBRARY,
+                    OUTPUT_HATHITRUST
                 ]
             )
         )
 
         option_validators.register_validator(
             'Input',
-            validators.DirectoryValidation(key="Input")
+            validators.DirectoryValidation(key=USER_INPUT_PATH)
         )
         invalid_messages: List[str] = []
         for validation in [
             option_validators.get('At least one output'),
             option_validators.get('At least one output exists'),
-            option_validators.get("Input")
+            option_validators.get(USER_INPUT_PATH)
 
         ]:
             if not validation.is_valid(**user_arguments):
