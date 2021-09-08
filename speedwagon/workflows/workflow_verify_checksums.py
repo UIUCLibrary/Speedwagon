@@ -52,6 +52,11 @@ class ChecksumWorkflow(Workflow):
 
     @staticmethod
     def locate_checksum_files(root: str) -> Iterable[str]:
+        """Locate any checksum.md5 files located inside a directory.
+
+        Notes:
+            This searches a path recursively.
+        """
         for search_root, dirs, files in os.walk(root):
             for file_ in files:
                 if file_ != "checksum.md5":

@@ -68,6 +68,8 @@ class CreateChecksumWorkflow(Workflow, ABC):
 
 
 class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
+    """Workflow for generating a checksum report for single batch of files."""
+
     name = "Make Checksum Batch [Single]"
     description = "The checksum is a signature of a file.  If any data is " \
                   "changed, the checksum will provide a different " \

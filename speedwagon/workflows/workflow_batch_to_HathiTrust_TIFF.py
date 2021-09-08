@@ -109,7 +109,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
             task_builder: speedwagon.tasks.TaskBuilder,
             **job_args
     ) -> None:
-
+        """Create new tasks."""
         package = job_args['package']
         destination_root: str = job_args['destination']
         title_page: str = job_args['title_page']
