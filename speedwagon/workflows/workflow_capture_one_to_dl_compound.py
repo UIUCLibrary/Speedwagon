@@ -1,6 +1,7 @@
 """Workflow for converting Capture One tiff file into DL compound format."""
 from __future__ import annotations
 import logging
+import typing
 
 from typing import Any, Dict, Iterator, List, Union, Optional
 
@@ -87,9 +88,9 @@ class CaptureOneToDlCompoundWorkflow(Workflow):
             **job_args:
 
         """
-        existing_package: Package = job_args['package']
-        new_package_root: str = job_args["output"]
-        source_path: str = job_args["source_path"]
+        existing_package: Package = typing.cast(Package, job_args['package'])
+        new_package_root: str = typing.cast(str, job_args["output"])
+        source_path: str = typing.cast(str, job_args["source_path"])
         package_id: str = existing_package.metadata[Metadata.ID]
 
         packaging_task = PackageConverter(

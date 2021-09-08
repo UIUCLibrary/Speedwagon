@@ -149,7 +149,7 @@ class PackagesModel(QtCore.QAbstractTableModel):
 
         return QtCore.QVariant()
 
-    def results(self) -> typing.List[collection.Package]:
+    def results(self) -> typing.List[collection.AbsPackageComponent]:
         """Get results."""
         return self._packages
 
@@ -211,6 +211,6 @@ class PackageBrowser(QtWidgets.QDialog):
         self.setMinimumWidth(640)
         self.setMinimumHeight(240)
 
-    def data(self) -> typing.List[collection.Package]:
+    def data(self) -> typing.List[collection.AbsPackageComponent]:
         """Get the results."""
         return self._model.results()
