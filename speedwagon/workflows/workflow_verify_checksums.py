@@ -68,6 +68,7 @@ class ChecksumWorkflow(Workflow):
                                    speedwagon.tasks.Result],
                                additional_data: Dict[str, None],
                                **user_args: str) -> List[Dict[str, str]]:
+        """Read the values inside the checksum report."""
         jobs: List[Dict[str, str]] = []
         for result in initial_results:
             for file_to_check in result.data:
@@ -102,6 +103,7 @@ class ChecksumWorkflow(Workflow):
 
     def initial_task(self, task_builder: "speedwagon.tasks.TaskBuilder",
                      **user_args: str) -> None:
+        """Add a task to read the checksum report files."""
         root = user_args['Input']
         for checksum_report_file in self.locate_checksum_files(root):
             task_builder.add_subtask(

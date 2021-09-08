@@ -106,7 +106,7 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
                         task_builder: "speedwagon.tasks.TaskBuilder",
                         results: List[speedwagon.tasks.Result],
                         **user_args: str) -> None:
-
+        """Create checksum report at very end."""
         sorted_results = self.sort_results([i.data for i in results])
 
         for checksum_report, checksums in sorted_results.items():
