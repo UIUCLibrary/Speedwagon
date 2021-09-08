@@ -402,7 +402,8 @@ class TestCompletenessReportGenerator:
         hathi_validate_result = \
             hathi_validate.result.Result(result_type="Spam!")
         hathi_validate_result.message = "spam"
-        report_builder.results[workflow_completeness.HathiCheckMissingPackageFilesTask] = [
+        task = workflow_completeness.HathiCheckMissingPackageFilesTask
+        report_builder.results[task] = [
             speedwagon.tasks.tasks.Result(
                 source=hathi_validate.result.Result("Dddd"),
                 data=hathi_validate_result
