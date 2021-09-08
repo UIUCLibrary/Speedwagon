@@ -94,7 +94,7 @@ class PackagesModel(QtCore.QAbstractTableModel):
         super().__init__(parent)
         self._packages = packages
 
-    def columnCount(
+    def columnCount(  # pylint: disable=C0103
             self,
             *args,
             parent=None,
