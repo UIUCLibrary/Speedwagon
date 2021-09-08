@@ -8,7 +8,7 @@ import speedwagon.tasks.prep
 def test_make_yaml_task_calls_make_yaml(monkeypatch):
     root_path = "some/sample/root"
 
-    task = speedwagon.tasks.prep.MakeYamlTask(
+    task = speedwagon.tasks.prep.MakeMetaYamlTask(
         package_id="1234",
         source=root_path,
         title_page="1234-0001.tif"
@@ -81,7 +81,7 @@ def test_prep_task_task_calls_generate_package(monkeypatch):
     "task",
     [
         speedwagon.tasks.prep.PrepTask(source="source", title_page="title_page"),
-        speedwagon.tasks.prep.MakeYamlTask(
+        speedwagon.tasks.prep.MakeMetaYamlTask(
             package_id="package_id",
             source="source",
             title_page="title_page"

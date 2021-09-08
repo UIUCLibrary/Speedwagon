@@ -2,16 +2,15 @@
 
 import itertools
 import os
-import shutil
 from typing import Dict, Optional, List, Any, Type, Mapping
 from collections.abc import Sized
 from PyQt5 import QtWidgets  # type: ignore
 from uiucprescon.packager.packages.collection import Metadata
 from uiucprescon import packager
 
-from pyhathiprep import package_creater
 import speedwagon
 import speedwagon.tasks.packaging
+import speedwagon.tasks.prep
 from speedwagon.workflows import shared_custom_widgets, workflow_get_marc
 from . title_page_selection import PackageBrowser
 from .workflow_get_marc import UserOptions
@@ -140,17 +139,26 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
 
         # Generate a meta.yml file
         task_builder.add_subtask(
-            subtask=MakeYamlTask(package_id, new_package_location, title_page))
-
+            subtask=speedwagon.tasks.prep.MakeMetaYamlTask(
+                package_id,
+                new_package_location,
+                title_page
+            )
+        )
         # Generate checksum data
         task_builder.add_subtask(
-            subtask=GenerateChecksumTask(package_id, new_package_location))
+            subtask=speedwagon.tasks.prep.GenerateChecksumTask(
+                package_id,
+                new_package_location
+            )
+        )
 
     def get_additional_info(self,
                             parent: QtWidgets.QWidget,
                             options: Mapping[Any, Any],
                             pretask_results: List[speedwagon.tasks.Result]
                             ) -> Dict[str, Any]:
+        """Request the title page information from the user."""
         extra_data: Dict[str, Dict[str, str]] = {}
         if len(pretask_results) == 1:
             title_pages: Dict[str, str] = {}
@@ -187,9 +195,13 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
             []
         )
 
-        yaml_results = results_grouped.get(MakeYamlTask, [])
+        yaml_results = results_grouped.get(
+            speedwagon.tasks.prep.MakeMetaYamlTask,
+            []
+        )
+
         checksum_files_generated = results_grouped.get(
-            GenerateChecksumTask,
+            speedwagon.tasks.prep.GenerateChecksumTask,
             []
         )
 
@@ -264,86 +276,3 @@ class FindCaptureOnePackageTask(speedwagon.tasks.packaging.AbsFindPackageTask):
         )
 
         return list(package_factory.locate_packages(self._root))
-
-
-class MakeYamlTask(speedwagon.tasks.Subtask):
-    name = "Make meta.yml"
-
-    def __init__(self, identifier: str, source: str, title_page: str) -> None:
-        super().__init__()
-
-        self._source = source
-        try:
-            self._title_page = title_page.split("_")[1]
-        except KeyError:
-            print("Unable to split {} with a _ delimiter".format(title_page))
-            self._title_page = title_page
-        self.identifier = identifier
-
-    def task_description(self) -> Optional[str]:
-        return f"Generating meta.yml for {self._source}"
-
-    def work(self) -> bool:
-        meta_filename = "meta.yml"
-        self.log("Generating meta.yml for {}".format(self.identifier))
-        package_builder = package_creater.InplacePackage(self._source)
-        package_builder.make_yaml(build_path=self.subtask_working_dir,
-                                  title_page=self._title_page)
-
-        meta_yml = os.path.join(self.subtask_working_dir, meta_filename)
-        dest = os.path.join(self._source, meta_filename)
-        successful = os.path.exists(meta_yml)
-        assert successful
-
-        shutil.move(meta_yml, dest)
-        assert os.path.exists(dest)
-        self.log("Added meta.yml to {}".format(self._source))
-
-        self.set_results(
-            {
-                "source": self._source,
-                "meta.yml": dest,
-                "package_id": self.identifier
-            }
-        )
-
-        return successful
-
-
-class GenerateChecksumTask(speedwagon.tasks.Subtask):
-    name = "Generate Checksum"
-
-    def __init__(self, identifier: str, source: str) -> None:
-        super().__init__()
-        self._source = source
-        self._bib_id = identifier
-
-    def task_description(self) -> Optional[str]:
-        return f"Generating checksums for {self._source}"
-
-    def work(self) -> bool:
-        checksum_filename = "checksum.md5"
-        self.log("Generating checksums for {}".format(self._bib_id))
-        package_builder = package_creater.InplacePackage(self._source)
-        package_builder.create_checksum_report(self.subtask_working_dir)
-
-        generated_checksum_file = os.path.join(
-            self.subtask_working_dir, checksum_filename)
-
-        dest = os.path.join(self._source, checksum_filename)
-
-        success = os.path.exists(generated_checksum_file)
-        assert success
-
-        shutil.move(generated_checksum_file, dest)
-        assert os.path.exists(dest)
-        self.log("Added checksum.md5 to {}".format(self._source))
-
-        self.set_results(
-            {
-                "source": self._source,
-                "checksum": dest,
-                "package_id": self._bib_id
-            }
-        )
-        return success

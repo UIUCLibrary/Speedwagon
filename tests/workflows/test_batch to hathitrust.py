@@ -5,6 +5,7 @@ import shutil
 
 import speedwagon
 from speedwagon.workflows import workflow_batch_to_HathiTrust_TIFF as wf
+import speedwagon.tasks.prep
 from speedwagon.workflows import workflow_get_marc
 import os
 import speedwagon.workflows.title_page_selection
@@ -226,11 +227,11 @@ def test_create_new_task(unconfigured_workflow):
         ) and \
         isinstance(
             mock_builder.add_subtask.mock_calls[2][2]['subtask'],
-            wf.MakeYamlTask
+            speedwagon.tasks.prep.MakeMetaYamlTask
         ) and \
         isinstance(
             mock_builder.add_subtask.mock_calls[3][2]['subtask'],
-            wf.GenerateChecksumTask
+            speedwagon.tasks.prep.GenerateChecksumTask
         )
 
 
@@ -265,8 +266,12 @@ def test_generate_report(unconfigured_workflow):
     results = [
         speedwagon.tasks.Result(wf.TransformPackageTask, data=[]),
         speedwagon.tasks.Result(workflow_get_marc.MarcGeneratorTask, data=[]),
-        speedwagon.tasks.Result(wf.MakeYamlTask, data=[]),
-        speedwagon.tasks.Result(wf.GenerateChecksumTask, data=[]),
+        speedwagon.tasks.Result(
+            speedwagon.tasks.prep.MakeMetaYamlTask, data=[]
+        ),
+        speedwagon.tasks.Result(
+            speedwagon.tasks.prep.GenerateChecksumTask, data=[]
+        ),
     ]
     message = workflow.generate_report(results, **job_args)
     assert isinstance(message, str)
@@ -279,7 +284,7 @@ def test_generate_checksum_calls_prep_checksum_task(monkeypatch):
     mmsid = "99423682912205899"
     dummy_file = '99423682912205899_0001.tif'
     working_dir = "./sample_path"
-    task = wf.GenerateChecksumTask(mmsid, dummy_file)
+    task = speedwagon.tasks.prep.GenerateChecksumTask(mmsid, dummy_file)
     task.log = Mock()
     task.subtask_working_dir = working_dir
 
@@ -306,9 +311,13 @@ def test_yaml_task(monkeypatch):
     source_directory = "./sample_path"
     working_dir = "./sample_working_path"
 
-    task = wf.MakeYamlTask(mmsid,
-                           source=source_directory,
-                           title_page=title_page)
+    task = \
+        speedwagon.tasks.prep.MakeMetaYamlTask(
+            mmsid,
+            source=source_directory,
+            title_page=title_page
+        )
+
     task.log = Mock()
     task.subtask_working_dir = working_dir
     from pyhathiprep import package_creater
@@ -331,7 +340,9 @@ def test_yaml_task(monkeypatch):
 
 def test_transform_package_task(monkeypatch):
     destination = "./sample_path"
-    mock_package = MagicMock(metadata={PackageMetadata.ID: "99423682912205899"})
+    mock_package = MagicMock(
+        metadata={PackageMetadata.ID: "99423682912205899"}
+    )
     task = wf.TransformPackageTask(
         package=mock_package,
         destination=destination
@@ -352,9 +363,12 @@ def test_transform_package_task(monkeypatch):
         wf.TransformPackageTask(package=MagicMock(),
                                 destination="some_destination"),
         wf.FindCaptureOnePackageTask(root="some_root"),
-        wf.GenerateChecksumTask(identifier="123", source="file.txt"),
-        wf.MakeYamlTask(
-            identifier="123",
+        speedwagon.tasks.prep.GenerateChecksumTask(
+            package_id="123",
+            source="file.txt"
+        ),
+        speedwagon.tasks.prep.MakeMetaYamlTask(
+            package_id="123",
             source="file.txt",
             title_page="0001_00001.jp2"
         )

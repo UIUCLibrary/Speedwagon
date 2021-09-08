@@ -53,6 +53,20 @@ class CreateChecksumWorkflow(Workflow, ABC):
                 new_results[key].append(result_data)
         return dict(new_results)
 
+    def completion_task(self,
+                        task_builder: "speedwagon.tasks.TaskBuilder",
+                        results: List[speedwagon.tasks.Result],
+                        **user_args: str) -> None:
+        """Create checksum report at very end."""
+        sorted_results = self.sort_results([i.data for i in results])
+
+        for checksum_report, checksums in sorted_results.items():
+
+            process = validation.MakeCheckSumReportTask(
+                checksum_report, checksums)
+
+            task_builder.add_subtask(process)
+
     def create_new_task(self,
                         task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args: str) -> None:
@@ -101,20 +115,6 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
             }
             jobs.append(job)
         return jobs
-
-    def completion_task(self,
-                        task_builder: "speedwagon.tasks.TaskBuilder",
-                        results: List[speedwagon.tasks.Result],
-                        **user_args: str) -> None:
-        """Create checksum report at very end."""
-        sorted_results = self.sort_results([i.data for i in results])
-
-        for checksum_report, checksums in sorted_results.items():
-
-            process = validation.MakeCheckSumReportTask(
-                checksum_report, checksums)
-
-            task_builder.add_subtask(process)
 
     @classmethod
     @add_report_borders
@@ -205,20 +205,6 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
                 report_name
             )
         )
-
-    def completion_task(self,
-                        task_builder: "speedwagon.tasks.TaskBuilder",
-                        results: List[speedwagon.tasks.Result],
-                        **user_args: str) -> None:
-
-        sorted_results = self.sort_results([i.data for i in results])
-
-        for checksum_report, checksums in sorted_results.items():
-
-            process = validation.MakeCheckSumReportTask(
-                checksum_report, checksums)
-
-            task_builder.add_subtask(process)
 
     @classmethod
     @add_report_borders

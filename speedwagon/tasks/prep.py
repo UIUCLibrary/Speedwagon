@@ -9,7 +9,7 @@ from pyhathiprep import package_creater
 import speedwagon
 
 
-class MakeYamlTask(speedwagon.tasks.Subtask):
+class MakeMetaYamlTask(speedwagon.tasks.Subtask):
     """HathiTrust YAML creation task."""
 
     name = "Create meta.yml"

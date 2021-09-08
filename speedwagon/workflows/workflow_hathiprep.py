@@ -108,7 +108,7 @@ class HathiPrepWorkflow(speedwagon.Workflow):
         package_id = job_args['package_id']
 
         task_builder.add_subtask(
-            subtask=speedwagon.tasks.prep.MakeYamlTask(
+            subtask=speedwagon.tasks.prep.MakeMetaYamlTask(
                 package_id,
                 source,
                 title_page
@@ -185,7 +185,7 @@ class HathiPrepWorkflow(speedwagon.Workflow):
         )
 
         num_yaml_files = len(
-            results_grouped[speedwagon.tasks.prep.MakeYamlTask]
+            results_grouped[speedwagon.tasks.prep.MakeMetaYamlTask]
         )
 
         objects = {
@@ -195,7 +195,7 @@ class HathiPrepWorkflow(speedwagon.Workflow):
             ]
         }
 
-        for result in results_grouped[speedwagon.tasks.prep.MakeYamlTask]:
+        for result in results_grouped[speedwagon.tasks.prep.MakeMetaYamlTask]:
             objects.add(result['package_id'])
 
         objects_prepped_list = "\n  ".join(objects)

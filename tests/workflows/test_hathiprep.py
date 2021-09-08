@@ -126,7 +126,7 @@ def test_generate_report_creates_a_report(unconfigured_workflow):
             data={"package_id": "123"}
         ),
         speedwagon.tasks.Result(
-            speedwagon.tasks.prep.MakeYamlTask,
+            speedwagon.tasks.prep.MakeMetaYamlTask,
             data={"package_id": "123"}
         ),
     ]
