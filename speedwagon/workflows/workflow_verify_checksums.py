@@ -57,7 +57,7 @@ class ChecksumWorkflow(Workflow):
         Notes:
             This searches a path recursively.
         """
-        for search_root, dirs, files in os.walk(root):
+        for search_root, _, files in os.walk(root):
             for file_ in files:
                 if file_ != "checksum.md5":
                     continue
