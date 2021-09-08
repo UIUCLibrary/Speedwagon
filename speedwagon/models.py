@@ -238,6 +238,7 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
                    | QtCore.Qt.ItemIsSelectable \
                    | QtCore.Qt.ItemIsEditable
         print(column, file=sys.stderr)
+        return QtCore.Qt.NoItemFlags
 
 
 class ToolOptionsPairsModel(ToolOptionsModel):
