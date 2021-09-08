@@ -20,7 +20,7 @@ class ModelField(NamedTuple):
 class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
     """File selection delegate widget."""
 
-    def createEditor(  # pylint: disable=C0103
+    def createEditor(  # pylint: disable=C0103,W0613
             self,
             parent: QtWidgets.QWidget,
             item: QtWidgets.QStyleOptionViewItem,
@@ -28,7 +28,7 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
         """Create editor widget."""
         return QtWidgets.QComboBox(parent)
 
-    def setEditorData(  # pylint: disable=C0103
+    def setEditorData(  # pylint: disable=C0103,W0613
             self,
             editor: QtCore.QObject,
             index: QtCore.QModelIndex
@@ -94,7 +94,7 @@ class PackagesModel(QtCore.QAbstractTableModel):
         super().__init__(parent)
         self._packages = packages
 
-    def columnCount(  # pylint: disable=C0103
+    def columnCount(  # pylint: disable=C0103,W0613
             self,
             *args,
             parent=None,
@@ -103,11 +103,12 @@ class PackagesModel(QtCore.QAbstractTableModel):
         """Get the number of fields in model."""
         return len(self.fields)
 
-    def rowCount(  # pylint: disable=C0103
+    def rowCount(  # pylint: disable=C0103,W0613
             self,
             *args,
             parent=None,
-            **kwargs) -> int:
+            **kwargs
+    ) -> int:
         """Get the number of packages in model."""
         return len(self._packages)
 
