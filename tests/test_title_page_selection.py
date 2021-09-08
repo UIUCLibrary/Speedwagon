@@ -139,3 +139,31 @@ class TestPackagesModel:
             invalid_index, orientation=QtCore.Qt.Horizontal
         ) == ""
 
+    def test_data_user_role(self):
+        packages = [
+            collection.PackageObject()
+        ]
+        model = title_page_selection.PackagesModel(packages)
+        index = model.index(0, 0)
+        data = model.data(index, role=QtCore.Qt.UserRole)
+        assert data == packages[0]
+
+    def test_data_display_role(self):
+        package = collection.PackageObject()
+        package.component_metadata[collection.Metadata.ID] = "page1.jpg"
+        packages = [
+            package
+        ]
+        model = title_page_selection.PackagesModel(packages)
+        index = model.index(0, 0)
+        data = model.data(index, role=QtCore.Qt.DisplayRole)
+        assert data == "page1.jpg"
+
+    def test_data_display_role_empty(self):
+        packages = [
+            collection.PackageObject()
+        ]
+        model = title_page_selection.PackagesModel(packages)
+        index = model.index(0, 0)
+        data = model.data(index, role=QtCore.Qt.DisplayRole)
+        assert data == ""
