@@ -51,7 +51,7 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
         files: typing.List[str] = []
 
         for i in object_record:
-            for instance_type, instance in i.instantiations.items():
+            for instance in i.instantiations.values():
                 files += [os.path.basename(f) for f in instance.files]
 
         for i, file in enumerate(files):
