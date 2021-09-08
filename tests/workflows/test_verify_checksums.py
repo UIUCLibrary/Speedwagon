@@ -115,7 +115,7 @@ class TestChecksumWorkflowTaskGenerators:
         fake_checksum_report_file = \
             os.path.join(user_args["Input"], "checksum.md5")
 
-        workflow._locate_checksum_files = \
+        workflow.locate_checksum_files = \
             Mock(return_value=[fake_checksum_report_file])
 
         task_builder = Mock()
@@ -234,6 +234,16 @@ class TestChecksumWorkflow:
         report = workflow.generate_report(results=results)
         assert isinstance(report, str)
         assert "passed checksum validation" in report
+
+    def test_locate_checksum_files(self, workflow, monkeypatch):
+        def walk(root):
+            return [
+                ("12345", [], ("12345_1.tif", "12345_2.tif", "checksum.md5"))
+            ]
+
+        monkeypatch.setattr(workflow_verify_checksums.os, "walk", walk)
+        results = list(workflow.locate_checksum_files("fakepath"))
+        assert len(results) == 1
 
 
 class TestReadChecksumReportTask:

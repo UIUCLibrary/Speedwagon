@@ -51,12 +51,12 @@ class ChecksumWorkflow(Workflow):
                   "the checksum file."
 
     @staticmethod
-    def _locate_checksum_files(root: str) -> Iterable[str]:
-        for root, dirs, files in os.walk(root):
+    def locate_checksum_files(root: str) -> Iterable[str]:
+        for search_root, dirs, files in os.walk(root):
             for file_ in files:
                 if file_ != "checksum.md5":
                     continue
-                yield os.path.join(root, file_)
+                yield os.path.join(search_root, file_)
 
     def discover_task_metadata(self,
                                initial_results: List[
@@ -98,7 +98,7 @@ class ChecksumWorkflow(Workflow):
     def initial_task(self, task_builder: "speedwagon.tasks.TaskBuilder",
                      **user_args: str) -> None:
         root = user_args['Input']
-        for checksum_report_file in self._locate_checksum_files(root):
+        for checksum_report_file in self.locate_checksum_files(root):
             task_builder.add_subtask(
                 ReadChecksumReportTask(checksum_file=checksum_report_file))
 
