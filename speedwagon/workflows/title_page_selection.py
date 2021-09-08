@@ -94,18 +94,19 @@ class PackagesModel(QtCore.QAbstractTableModel):
         super().__init__(parent)
         self._packages = packages
 
-    def columnCount(  # pylint: disable=C0103
+    def columnCount(
             self,
-            parent=None,
             *args,
-            **kwargs) -> int:
+            parent=None,
+            **kwargs,
+    ) -> int:
         """Get the number of fields in model."""
         return len(self.fields)
 
     def rowCount(  # pylint: disable=C0103
             self,
-            parent=None,
             *args,
+            parent=None,
             **kwargs) -> int:
         """Get the number of packages in model."""
         return len(self._packages)
