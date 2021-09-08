@@ -18,8 +18,16 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     from typing_extensions import TypedDict
 
+try:  # pragma: no cover
+    from typing import Final
+except ImportError:  # pragma: no cover
+    from typing_extensions import Final  # type: ignore
+
+
 from typing import List, Any, Dict, Callable, Iterator, Optional, Union, \
-    Iterable, Final
+    Iterable
+
+
 from contextlib import contextmanager
 from uiucprescon import packager
 from uiucprescon.packager.packages.abs_package_builder import AbsPackageBuilder

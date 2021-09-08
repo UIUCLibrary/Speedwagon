@@ -4,8 +4,16 @@ import functools
 import os
 import re
 from copy import deepcopy
+
+try:  # pragma: no cover
+    from typing import Final
+except ImportError:  # pragma: no cover
+    from typing_extensions import Final  # type: ignore
+
+
 from typing import List, Any, Optional, Union, Sequence, Dict, Set, Tuple, \
-    Iterator, Collection, Final
+    Iterator, Collection
+
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 import traceback
