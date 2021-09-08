@@ -20,19 +20,13 @@ class ModelField(NamedTuple):
 class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
     """File selection delegate widget."""
 
-    def __init__(self, parent):
-        """Create a file selection item delegate widget."""
-        super().__init__(parent)
-
     def createEditor(
             self,
             parent: QtWidgets.QWidget,
             item: QtWidgets.QStyleOptionViewItem,
             index: QtCore.QModelIndex) -> QtWidgets.QWidget:
         """Create editor widget."""
-        selection = QtWidgets.QComboBox(parent)
-
-        return selection
+        return QtWidgets.QComboBox(parent)
 
     def setEditorData(
             self,
