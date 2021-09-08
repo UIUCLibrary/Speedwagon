@@ -167,3 +167,17 @@ class TestPackagesModel:
         index = model.index(0, 0)
         data = model.data(index, role=QtCore.Qt.DisplayRole)
         assert data == ""
+
+    def test_title_page_flags_editable(self):
+        package = collection.PackageObject()
+        package.component_metadata[collection.Metadata.TITLE_PAGE] = \
+            "page1.jpg"
+
+        packages = [
+            package
+        ]
+
+        model = title_page_selection.PackagesModel(packages)
+        index = model.index(0, 1)
+        res = model.flags(index)
+        assert res == QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
