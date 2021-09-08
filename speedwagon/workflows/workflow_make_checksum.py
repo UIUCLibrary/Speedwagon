@@ -53,8 +53,23 @@ class CreateChecksumWorkflow(Workflow, ABC):
                 new_results[key].append(result_data)
         return dict(new_results)
 
+    def create_new_task(self,
+                        task_builder: "speedwagon.tasks.TaskBuilder",
+                        **job_args: str) -> None:
+
+        filename = job_args['filename']
+        source_path = job_args['source_path']
+        report_name = job_args['save_to_filename']
+
+        new_task = \
+            validation.MakeChecksumTask(source_path, filename, report_name)
+
+        task_builder.add_subtask(new_task)
+
 
 class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
+    """Workflow for generating a checksum report for single batch of files."""
+
     name = "Make Checksum Batch [Single]"
     description = "The checksum is a signature of a file.  If any data is " \
                   "changed, the checksum will provide a different " \
@@ -87,24 +102,11 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
             jobs.append(job)
         return jobs
 
-    def create_new_task(self,
-                        task_builder: "speedwagon.tasks.TaskBuilder",
-                        **job_args: str) -> None:
-
-        source_path = job_args['source_path']
-        filename = job_args['filename']
-        report_name = job_args['save_to_filename']
-
-        new_task = validation.MakeChecksumTask(
-            source_path, filename, report_name)
-
-        task_builder.add_subtask(new_task)
-
     def completion_task(self,
                         task_builder: "speedwagon.tasks.TaskBuilder",
                         results: List[speedwagon.tasks.Result],
                         **user_args: str) -> None:
-
+        """Create checksum report at very end."""
         sorted_results = self.sort_results([i.data for i in results])
 
         for checksum_report, checksums in sorted_results.items():
@@ -357,19 +359,6 @@ class RegenerateChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
             options.UserOptionCustomDataType("Input",
                                              options.FolderData),
         ]
-
-    def create_new_task(self,
-                        task_builder: "speedwagon.tasks.TaskBuilder",
-                        **job_args: str) -> None:
-
-        filename = job_args['filename']
-        source_path = job_args['source_path']
-        report_name = job_args['save_to_filename']
-
-        new_task = \
-            validation.MakeChecksumTask(source_path, filename, report_name)
-
-        task_builder.add_subtask(new_task)
 
     def completion_task(self,
                         task_builder: "speedwagon.tasks.TaskBuilder",

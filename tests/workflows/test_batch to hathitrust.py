@@ -115,7 +115,7 @@ def test_get_additional_info(qtbot, monkeypatch):
     mock_package.__len__ = lambda x: 1
 
     pretask_result = speedwagon.tasks.Result(
-        source=wf.FindPackageTask,
+        source=wf.FindCaptureOnePackageTask,
         data=[mock_package]
     )
 
@@ -172,7 +172,7 @@ def test_discover_task_metadata(monkeypatch, unconfigured_workflow):
     }
     initial_results = [
         speedwagon.tasks.Result(
-            wf.FindPackageTask,
+            wf.FindCaptureOnePackageTask,
             data=[
                 Mock(
                     metadata={
@@ -351,7 +351,7 @@ def test_transform_package_task(monkeypatch):
     [
         wf.TransformPackageTask(package=MagicMock(),
                                 destination="some_destination"),
-        wf.FindPackageTask(root="some_root"),
+        wf.FindCaptureOnePackageTask(root="some_root"),
         wf.GenerateChecksumTask(identifier="123", source="file.txt"),
         wf.MakeYamlTask(
             identifier="123",

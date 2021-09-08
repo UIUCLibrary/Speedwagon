@@ -32,6 +32,7 @@ DEVPI_CONFIG = [
 
 def run_pylint(){
     withEnv(['PYLINTHOME=.']) {
+        sh 'pylint --version'
         catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
             tee('reports/pylint_issues.txt'){
                 sh(

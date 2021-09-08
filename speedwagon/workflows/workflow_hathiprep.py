@@ -10,6 +10,7 @@ from uiucprescon.packager.packages import collection
 
 import speedwagon
 import speedwagon.tasks.prep
+import speedwagon.tasks.packaging
 from speedwagon.workflows.title_page_selection import PackageBrowser
 from . import shared_custom_widgets
 
@@ -61,7 +62,7 @@ class HathiPrepWorkflow(speedwagon.Workflow):
 
         """
         root = user_args['input']
-        task_builder.add_subtask(FindPackagesTask(root))
+        task_builder.add_subtask(FindHathiPackagesTask(root))
 
     def discover_task_metadata(self,
                                initial_results: List[Any],
@@ -209,21 +210,9 @@ class HathiPrepWorkflow(speedwagon.Workflow):
                f"\n  {num_yaml_files} meta.yml files"
 
 
-class FindPackagesTask(speedwagon.tasks.Subtask):
-    name = "Locate Packages"
+class FindHathiPackagesTask(speedwagon.tasks.packaging.AbsFindPackageTask):
 
-    def __init__(self, root: str) -> None:
-        super().__init__()
-        self._root = root
-
-    def task_description(self) -> Optional[str]:
-        """Get user readable information about what the subtask is doing."""
-        return f"Locating packages in {self._root}"
-
-    def work(self) -> bool:
-        """Perform the job."""
-        self.log("Locating packages in {}".format(self._root))
-
+    def find_packages(self, search_path: str):
         def find_dirs(item: os.DirEntry) -> bool:
 
             if not item.is_dir():
@@ -232,9 +221,8 @@ class FindPackagesTask(speedwagon.tasks.Subtask):
 
         directories = []
 
-        for directory in filter(find_dirs, os.scandir(self._root)):
+        for directory in filter(find_dirs, os.scandir(search_path)):
             directories.append(directory.path)
             self.log(f"Located {directory.name}")
-        self.set_results(directories)
 
-        return True
+        return directories

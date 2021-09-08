@@ -17,7 +17,7 @@ from . import runner_strategies
 from . import models
 from . import worker  # pylint: disable=unused-import
 from .exceptions import MissingConfiguration
-from .workflows import shared_custom_widgets as options
+from .workflows import shared_custom_widgets as widgets
 from .job import AbsWorkflow, NullWorkflow, Workflow, JobCancelled
 
 
@@ -113,13 +113,13 @@ class Tab:
                                   description_information)
         tool_config_layout.addRow(QtWidgets.QLabel("Settings"), settings)
 
-        widgets = {
+        new_widgets = {
             TabWidgets.NAME: name_line,
             TabWidgets.DESCRIPTION: description_information,
             TabWidgets.SETTINGS: settings,
 
         }
-        return widgets, tool_config_layout
+        return new_widgets, tool_config_layout
 
     @classmethod
     def create_workspace(cls, title: str, parent: QtWidgets.QWidget) -> \
@@ -487,7 +487,7 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
             tool_settings = index.data(QtCore.Qt.UserRole)
             browser_widget = tool_settings.edit_widget()
             if browser_widget:
-                assert isinstance(browser_widget, options.CustomItemWidget)
+                assert isinstance(browser_widget, widgets.CustomItemWidget)
                 browser_widget.editingFinished.connect(self.update_custom_item)
                 browser_widget.setParent(parent)
 
@@ -507,7 +507,7 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
     ) -> None:
         if index.isValid():
             i = index.data(QtCore.Qt.UserRole)
-            if isinstance(editor, options.CustomItemWidget):
+            if isinstance(editor, widgets.CustomItemWidget):
                 editor.data = i.data
         super().setEditorData(editor, index)
 
@@ -518,7 +518,7 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
             index: QtCore.QModelIndex
     ) -> None:
 
-        if isinstance(widget, options.CustomItemWidget):
+        if isinstance(widget, widgets.CustomItemWidget):
             model.setData(index, widget.data)
             return
         super().setModelData(widget, model, index)

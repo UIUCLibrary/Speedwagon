@@ -107,12 +107,8 @@ class ConvertTiffToHathiJp2Workflow(Workflow):
 
         for root, _, files in os.walk(source_input):
             file_iter_1, file_iter_2 = itertools.tee(files)
-            tiff_files = filter(filter_only_tif_files, file_iter_1)
 
-            other_files = filter(lambda x: not filter_only_tif_files(x),
-                                 file_iter_2)
-
-            for file_ in tiff_files:
+            for file_ in filter(filter_only_tif_files, file_iter_1):
 
                 jobs.append({
                     "source_root": source_input,
@@ -123,7 +119,10 @@ class ConvertTiffToHathiJp2Workflow(Workflow):
                     "task_type": TaskType.CONVERT.value
                 })
 
-            for file_ in other_files:
+            for file_ in filter(
+                    lambda x: not filter_only_tif_files(x),
+                    file_iter_2
+            ):
 
                 jobs.append({
                     "source_root": source_input,

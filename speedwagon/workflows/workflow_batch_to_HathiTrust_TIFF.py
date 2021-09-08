@@ -11,6 +11,7 @@ from uiucprescon import packager
 
 from pyhathiprep import package_creater
 import speedwagon
+import speedwagon.tasks.packaging
 from speedwagon.workflows import shared_custom_widgets, workflow_get_marc
 from . title_page_selection import PackageBrowser
 from .workflow_get_marc import UserOptions
@@ -101,14 +102,14 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                      **user_args: str) -> None:
         super().initial_task(task_builder, **user_args)
         root = user_args['Source']
-        task_builder.add_subtask(FindPackageTask(root=root))
+        task_builder.add_subtask(FindCaptureOnePackageTask(root=root))
 
     def create_new_task(
             self,
             task_builder: speedwagon.tasks.TaskBuilder,
             **job_args
     ) -> None:
-
+        """Create new tasks."""
         package = job_args['package']
         destination_root: str = job_args['destination']
         title_page: str = job_args['title_page']
@@ -255,28 +256,14 @@ class TransformPackageTask(speedwagon.tasks.Subtask):
         return True
 
 
-class FindPackageTask(speedwagon.tasks.Subtask):
-    name = "Locating Packages"
+class FindCaptureOnePackageTask(speedwagon.tasks.packaging.AbsFindPackageTask):
 
-    def __init__(self, root: str) -> None:
-        super().__init__()
-        self._root = root
-
-    def task_description(self) -> Optional[str]:
-        return f"Locating packages in {self._root}"
-
-    def work(self) -> bool:
-        self.log("Locating packages in {}".format(self._root))
-
+    def find_packages(self, search_path: str):
         package_factory = packager.PackageFactory(
             packager.packages.CaptureOnePackage()
         )
 
-        packages = list(package_factory.locate_packages(self._root))
-
-        self.set_results(packages)
-
-        return True
+        return list(package_factory.locate_packages(self._root))
 
 
 class MakeYamlTask(speedwagon.tasks.Subtask):

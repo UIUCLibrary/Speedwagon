@@ -137,7 +137,7 @@ def test_generate_report_creates_a_report(unconfigured_workflow):
 def test_find_packages_task(monkeypatch):
     root_path = "some/sample/root"
 
-    task = workflow_hathiprep.FindPackagesTask(root=root_path)
+    task = workflow_hathiprep.FindHathiPackagesTask(root=root_path)
 
     task.log = Mock()
 
