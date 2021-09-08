@@ -20,7 +20,7 @@ class ModelField(NamedTuple):
 class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
     """File selection delegate widget."""
 
-    def createEditor(
+    def createEditor(  # pylint: disable=C0103
             self,
             parent: QtWidgets.QWidget,
             item: QtWidgets.QStyleOptionViewItem,
@@ -28,7 +28,7 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
         """Create editor widget."""
         return QtWidgets.QComboBox(parent)
 
-    def setEditorData(
+    def setEditorData(  # pylint: disable=C0103
             self,
             editor: QtCore.QObject,
             index: QtCore.QModelIndex
@@ -53,7 +53,7 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
             if title_page == file:
                 editor.setCurrentIndex(i)
 
-    def setModelData(
+    def setModelData(  # pylint: disable=C0103
             self,
             widget: QtWidgets.QWidget,
             model: QtCore.QAbstractItemModel,
@@ -94,15 +94,23 @@ class PackagesModel(QtCore.QAbstractTableModel):
         super().__init__(parent)
         self._packages = packages
 
-    def columnCount(self, parent=None, *args, **kwargs) -> int:
+    def columnCount(  # pylint: disable=C0103
+            self,
+            parent=None,
+            *args,
+            **kwargs) -> int:
         """Get the number of fields in model."""
         return len(self.fields)
 
-    def rowCount(self, parent=None, *args, **kwargs) -> int:
+    def rowCount(  # pylint: disable=C0103
+            self,
+            parent=None,
+            *args,
+            **kwargs) -> int:
         """Get the number of packages in model."""
         return len(self._packages)
 
-    def headerData(
+    def headerData(  # pylint: disable=C0103
             self,
             index: int,
             orientation: Qt.Orientation,
