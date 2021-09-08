@@ -95,3 +95,47 @@ class TestFileSelectDelegate:
         assert \
             object_record.metadata[collection.Metadata.TITLE_PAGE] == \
             "file2.jp2"
+
+
+class TestPackagesModel:
+    @pytest.fixture()
+    def model(self, request):
+        marker = request.node.get_closest_marker("model_data")
+        if marker is None:
+            amount = 0
+        else:
+            amount = marker.kwargs.get("amount", 0)
+        packages = []
+        for i in range(amount):
+            object_record = collection.PackageObject()
+            packages.append(object_record)
+
+        model = title_page_selection.PackagesModel(packages)
+        return model
+
+    def test_number_of_columns_match_number_of_fields(self, model):
+        assert model.columnCount() == len(model.fields)
+
+    @pytest.mark.model_data(amount=42)
+    def test_row_count(self, model):
+        assert model.rowCount() == 42
+
+    @pytest.mark.model_data(amount=0)
+    def test_row_count_empty(self, model):
+        assert model.rowCount() == 0
+
+    @pytest.mark.parametrize(
+        "index",
+        [i for i in range(len(title_page_selection.PackagesModel.fields))]
+    )
+    def test_header_data(self, model, index):
+        assert model.fields[index].column_header == \
+               model.headerData(index, orientation=QtCore.Qt.Horizontal)
+
+    def test_header_data_invalid_index_is_empty_string(self, model):
+        invalid_index = len(title_page_selection.PackagesModel.fields) + 1
+
+        assert model.headerData(
+            invalid_index, orientation=QtCore.Qt.Horizontal
+        ) == ""
+
