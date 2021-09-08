@@ -303,7 +303,7 @@ class MainWindow(MainProgram):
         self.tab_widget.add_tab(workflows_tab.tab, workflow_name)
         self.tab_widget.setVisible(True)
 
-    def closeEvent(self, *args, **kwargs) -> None:
+    def closeEvent(self, *args, **kwargs) -> None:  # pylint: disable=C0103
         self.log_manager.removeHandler(self.console_log_handler)
         super().closeEvent(*args, **kwargs)
 

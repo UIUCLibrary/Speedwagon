@@ -20,21 +20,15 @@ class ModelField(NamedTuple):
 class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
     """File selection delegate widget."""
 
-    def __init__(self, parent):
-        """Create a file selection item delegate widget."""
-        super().__init__(parent)
-
-    def createEditor(
+    def createEditor(  # pylint: disable=C0103,W0613,R0201
             self,
             parent: QtWidgets.QWidget,
             item: QtWidgets.QStyleOptionViewItem,
             index: QtCore.QModelIndex) -> QtWidgets.QWidget:
         """Create editor widget."""
-        selection = QtWidgets.QComboBox(parent)
+        return QtWidgets.QComboBox(parent)
 
-        return selection
-
-    def setEditorData(
+    def setEditorData(  # pylint: disable=C0103,W0613,R0201
             self,
             editor: QtCore.QObject,
             index: QtCore.QModelIndex
@@ -51,7 +45,7 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
         files: typing.List[str] = []
 
         for i in object_record:
-            for instance_type, instance in i.instantiations.items():
+            for instance in i.instantiations.values():
                 files += [os.path.basename(f) for f in instance.files]
 
         for i, file in enumerate(files):
@@ -59,7 +53,7 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
             if title_page == file:
                 editor.setCurrentIndex(i)
 
-    def setModelData(
+    def setModelData(  # pylint: disable=C0103,R0201
             self,
             widget: QtWidgets.QWidget,
             model: QtCore.QAbstractItemModel,
@@ -100,15 +94,25 @@ class PackagesModel(QtCore.QAbstractTableModel):
         super().__init__(parent)
         self._packages = packages
 
-    def columnCount(self, parent=None, *args, **kwargs) -> int:
+    def columnCount(  # pylint: disable=C0103,W0613
+            self,
+            *args,
+            parent=None,
+            **kwargs,
+    ) -> int:
         """Get the number of fields in model."""
         return len(self.fields)
 
-    def rowCount(self, parent=None, *args, **kwargs) -> int:
+    def rowCount(  # pylint: disable=C0103,W0613
+            self,
+            *args,
+            parent=None,
+            **kwargs
+    ) -> int:
         """Get the number of packages in model."""
         return len(self._packages)
 
-    def headerData(
+    def headerData(  # pylint: disable=C0103
             self,
             index: int,
             orientation: Qt.Orientation,
