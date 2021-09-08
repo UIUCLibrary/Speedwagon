@@ -53,6 +53,19 @@ class CreateChecksumWorkflow(Workflow, ABC):
                 new_results[key].append(result_data)
         return dict(new_results)
 
+    def create_new_task(self,
+                        task_builder: "speedwagon.tasks.TaskBuilder",
+                        **job_args: str) -> None:
+
+        filename = job_args['filename']
+        source_path = job_args['source_path']
+        report_name = job_args['save_to_filename']
+
+        new_task = \
+            validation.MakeChecksumTask(source_path, filename, report_name)
+
+        task_builder.add_subtask(new_task)
+
 
 class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
     name = "Make Checksum Batch [Single]"
@@ -86,19 +99,6 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
             }
             jobs.append(job)
         return jobs
-
-    def create_new_task(self,
-                        task_builder: "speedwagon.tasks.TaskBuilder",
-                        **job_args: str) -> None:
-
-        source_path = job_args['source_path']
-        filename = job_args['filename']
-        report_name = job_args['save_to_filename']
-
-        new_task = validation.MakeChecksumTask(
-            source_path, filename, report_name)
-
-        task_builder.add_subtask(new_task)
 
     def completion_task(self,
                         task_builder: "speedwagon.tasks.TaskBuilder",
@@ -357,19 +357,6 @@ class RegenerateChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
             options.UserOptionCustomDataType("Input",
                                              options.FolderData),
         ]
-
-    def create_new_task(self,
-                        task_builder: "speedwagon.tasks.TaskBuilder",
-                        **job_args: str) -> None:
-
-        filename = job_args['filename']
-        source_path = job_args['source_path']
-        report_name = job_args['save_to_filename']
-
-        new_task = \
-            validation.MakeChecksumTask(source_path, filename, report_name)
-
-        task_builder.add_subtask(new_task)
 
     def completion_task(self,
                         task_builder: "speedwagon.tasks.TaskBuilder",
