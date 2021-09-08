@@ -388,3 +388,26 @@ def test_extra_subdirectory_permission_issues(monkeypatch, caplog):
 )
 def test_tasks_have_description(task):
     assert task.task_description() is not None
+
+
+class TestCompletenessReportGenerator:
+    def test_empty_report(self):
+        report_builder = workflow_completeness.CompletenessReportBuilder()
+        report = report_builder.build_report()
+        assert "No validation errors detected" in report
+
+    def test_with_error(self):
+        import hathi_validate
+        report_builder = workflow_completeness.CompletenessReportBuilder()
+        hathi_validate_result = \
+            hathi_validate.result.Result(result_type="Spam!")
+        hathi_validate_result.message = "spam"
+        task = workflow_completeness.HathiCheckMissingPackageFilesTask
+        report_builder.results[task] = [
+            speedwagon.tasks.tasks.Result(
+                source=hathi_validate.result.Result("Dddd"),
+                data=hathi_validate_result
+            )
+        ]
+        report = report_builder.build_report()
+        assert "spam" in report
