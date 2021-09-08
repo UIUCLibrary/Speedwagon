@@ -476,7 +476,7 @@ class WorkflowsTab(ItemSelectionTab):
 
 class MyDelegate(QtWidgets.QStyledItemDelegate):
 
-    def createEditor(
+    def createEditor(  # pylint: disable=C0103
             self,
             parent: QtWidgets.QWidget,
             option: QtWidgets.QStyleOptionViewItem,
@@ -500,7 +500,7 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
     def update_custom_item(self) -> None:
         self.commitData.emit(self.sender())
 
-    def setEditorData(
+    def setEditorData(  # pylint: disable=C0103
             self,
             editor: QtWidgets.QWidget,
             index: QtCore.QModelIndex
@@ -511,7 +511,7 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
                 editor.data = i.data
         super().setEditorData(editor, index)
 
-    def setModelData(
+    def setModelData(  # pylint: disable=C0103
             self,
             widget: QtWidgets.QWidget,
             model: QtCore.QAbstractItemModel,
@@ -523,7 +523,7 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
             return
         super().setModelData(widget, model, index)
 
-    def destroyEditor(
+    def destroyEditor(  # pylint: disable=C0103
             self,
             widget: QtWidgets.QWidget,
             index: QtCore.QModelIndex

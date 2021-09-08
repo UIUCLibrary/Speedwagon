@@ -65,7 +65,8 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
         self._label.setWordWrap(True)
         self.setLabel(self._label)
 
-    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
+    def resizeEvent(self,  # pylint: disable=C0103
+                    event: QtGui.QResizeEvent) -> None:
         super().resizeEvent(event)
         self._label.setMaximumWidth(self.width())
         self.setMinimumHeight(self._label.sizeHint().height() + 75)
