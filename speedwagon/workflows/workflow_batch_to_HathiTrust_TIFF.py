@@ -158,6 +158,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                             options: Mapping[Any, Any],
                             pretask_results: List[speedwagon.tasks.Result]
                             ) -> Dict[str, Any]:
+        """Request the title page information from the user."""
         extra_data: Dict[str, Dict[str, str]] = {}
         if len(pretask_results) == 1:
             title_pages: Dict[str, str] = {}
