@@ -64,3 +64,34 @@ class TestFileSelectDelegate:
         index.data = get_data
         delegate.setEditorData(combo_box, index)
         assert combo_box.currentText() == "file1.jp2"
+
+    def test_set_title_page(self, delegate):
+        combo_box = QtWidgets.QComboBox()
+        files = [
+            "file1.jp2",
+            "file2.jp2",
+            "file3.jp2",
+        ]
+        for file_name in files:
+            combo_box.addItem(file_name)
+
+        combo_box.setCurrentText("file2.jp2")
+        model = Mock()
+
+        object_record = collection.PackageObject()
+        item = collection.Item(object_record)
+        instance = collection.Instantiation(
+            parent=item,
+            files=files
+        )
+
+        def get_data(index, role):
+            if role == QtCore.Qt.UserRole:
+                return object_record
+
+        mock_index = MagicMock()
+        model.data = get_data
+        delegate.setModelData(combo_box, model, mock_index)
+        assert \
+            object_record.metadata[collection.Metadata.TITLE_PAGE] == \
+            "file2.jp2"
