@@ -185,9 +185,9 @@ class LocateTiffImageTask(speedwagon.tasks.Subtask):
 
     def work(self) -> bool:
         tiff_files = []
-        for root, dirs, files in os.walk(self._root):
+        for root, _, files in os.walk(self._root):
             for file_name in files:
-                base, ext = os.path.splitext(file_name)
+                __, ext = os.path.splitext(file_name)
                 if not ext.lower() == ".tif":
                     continue
                 tiff_file = os.path.join(root, file_name)

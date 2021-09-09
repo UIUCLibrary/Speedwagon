@@ -421,7 +421,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
                 futures = concurrent.futures.as_completed(still_running,
                                                           timeout=.1)
 
-                for i, future in enumerate(futures):
+                for i, _ in enumerate(futures):
                     dialog_box.setValue(i + 1)
 
                 break
