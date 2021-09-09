@@ -87,7 +87,7 @@ class PackagesModel(QtCore.QAbstractTableModel):
 
     def __init__(
             self,
-            packages: typing.List[collection.AbsPackageComponent],
+            packages: typing.List[collection.Package],
             parent: typing.Optional[QtWidgets.QWidget] = None
     ) -> None:
         """Create a new package model."""
@@ -149,7 +149,7 @@ class PackagesModel(QtCore.QAbstractTableModel):
 
         return QtCore.QVariant()
 
-    def results(self) -> typing.List[collection.AbsPackageComponent]:
+    def results(self) -> typing.List[collection.Package]:
         """Get results."""
         return self._packages
 
@@ -169,7 +169,7 @@ class PackageBrowser(QtWidgets.QDialog):
 
     def __init__(
             self,
-            packages: typing.List[collection.AbsPackageComponent],
+            packages: typing.List[collection.Package],
             parent: QtWidgets.QWidget,
             flags: typing.Union[
                 Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
@@ -211,6 +211,6 @@ class PackageBrowser(QtWidgets.QDialog):
         self.setMinimumWidth(640)
         self.setMinimumHeight(240)
 
-    def data(self) -> typing.List[collection.AbsPackageComponent]:
+    def data(self) -> typing.List[collection.Package]:
         """Get the results."""
         return self._model.results()
