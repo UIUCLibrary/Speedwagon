@@ -32,7 +32,10 @@ from contextlib import contextmanager
 from uiucprescon import packager
 from uiucprescon.packager.packages.abs_package_builder import AbsPackageBuilder
 from uiucprescon.packager.packages.collection_builder import Metadata
-from uiucprescon.packager.packages.collection import AbsPackageComponent, Package
+from uiucprescon.packager.packages.collection import \
+    AbsPackageComponent, \
+    Package
+
 import speedwagon
 from speedwagon import validators
 from speedwagon.job import Workflow
