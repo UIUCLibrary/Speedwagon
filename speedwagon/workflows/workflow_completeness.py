@@ -701,7 +701,7 @@ class CompletenessReportBuilder:
         self.line_length = 70
 
         self.results: Dict[
-            Type['CompletenessSubTask'], List[hathi_result.Result]
+            Type['CompletenessSubTask'], List[List[hathi_result.Result]]
         ] = {}
 
         self._tasks_performed: List[Type[CompletenessSubTask]] = [
@@ -712,7 +712,7 @@ class CompletenessReportBuilder:
             ValidateYMLTask
         ]
 
-    def generate_error_report(self,) -> str:
+    def generate_error_report(self) -> str:
         error_results: List[hathi_result.Result] = []
         for task in self._tasks_performed:
             error_results += self._get_result(self.results, task)
@@ -723,7 +723,7 @@ class CompletenessReportBuilder:
     @classmethod
     def _get_result(cls,
                     results_grouped: Dict[Type["CompletenessSubTask"],
-                                          List[speedwagon.tasks.tasks.Result]],
+                                          List[List[hathi_result.Result]]],
                     key: Type["CompletenessSubTask"]
                     ) -> List[hathi_result.Result]:
 
