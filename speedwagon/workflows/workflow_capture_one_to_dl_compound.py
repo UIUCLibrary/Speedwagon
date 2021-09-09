@@ -91,7 +91,11 @@ class CaptureOneToDlCompoundWorkflow(Workflow):
         existing_package: Package = typing.cast(Package, job_args['package'])
         new_package_root: str = typing.cast(str, job_args["output"])
         source_path: str = typing.cast(str, job_args["source_path"])
-        package_id: str = existing_package.metadata[Metadata.ID]
+
+        package_id: str = typing.cast(
+            str,
+            existing_package.metadata[Metadata.ID]
+        )
 
         packaging_task = PackageConverter(
             source_path=source_path,

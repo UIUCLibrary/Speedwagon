@@ -3,6 +3,7 @@
 import itertools
 import os
 from typing import Dict, Optional, List, Any, Type, Mapping
+import typing
 from collections.abc import Sized
 from PyQt5 import QtWidgets  # type: ignore
 from uiucprescon.packager.packages.collection import Metadata
@@ -171,9 +172,10 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                 raise speedwagon.JobCancelled()
             data = browser.data()
             for package in data:
-                bib_id = package.metadata[Metadata.ID]
+                bib_id = typing.cast(str, package.metadata[Metadata.ID])
 
-                title_page = package.metadata[Metadata.TITLE_PAGE]
+                title_page = \
+                    typing.cast(str, package.metadata[Metadata.TITLE_PAGE])
 
                 title_pages[bib_id] = title_page
             extra_data["title_pages"] = title_pages
@@ -240,13 +242,13 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
 class TransformPackageTask(speedwagon.tasks.Subtask):
     name = "Transform Package"
 
-    def __init__(self, package: packager.packages.collection.PackageObject,
+    def __init__(self, package: packager.packages.collection.Package,
                  destination: str) -> None:
         super().__init__()
         self._package = package
         self._destination = destination
         self._bib_id: str = \
-            self._package.metadata[Metadata.ID]
+            typing.cast(str, self._package.metadata[Metadata.ID])
 
     def task_description(self) -> Optional[str]:
         return "Transforming CaptureOne package"
