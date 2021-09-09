@@ -66,7 +66,11 @@ class AbsJobWorker:
         pass
 
     def on_completion(self, *args, **kwargs) -> None:
-        pass
+        """On completion of main tasks run this.
+
+        Notes:
+            Defaults to a no-op.
+        """
 
     @classmethod
     def new(cls, job, message_queue, *args, **kwargs):
