@@ -554,9 +554,7 @@ class ValidateYMLTask(CompletenessSubTask):
                             errors.append(error)
             except FileNotFoundError as e:
                 report_builder.add_error(
-                    report_builder.add_error(
-                        "Unable to validate YAML. Reason: {}".format(e)
-                    )
+                    "Unable to validate YAML. Reason: {}".format(e)
                 )
             for error in report_builder.construct():
                 errors.append(error)
@@ -685,7 +683,7 @@ class PackageNamingConventionTask(CompletenessSubTask):
             self.log("Warning: {}".format(warning_message))
 
             result = hathi_result.Result(
-                result_type=PackageNamingConventionTask)
+                result_type="PackageNamingConventionTask")
 
             result.source = self.package_path
             result.message = warning_message
