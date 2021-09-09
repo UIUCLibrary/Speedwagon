@@ -242,7 +242,7 @@ class MainWindow(MainProgram):
         # ##################
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
-    def _create_console(self):
+    def _create_console(self) -> None:
 
         self.console = ToolConsole(self.main_splitter)
         self.console.setMinimumHeight(75)
@@ -255,7 +255,7 @@ class MainWindow(MainProgram):
         self.log_manager.addHandler(self.console_log_handler)
         self.log_manager.addHandler(self.log_data_handler)
 
-    def _create_tabs_widget(self):
+    def _create_tabs_widget(self) -> None:
         self.tab_widget = ItemTabsWidget(self.main_splitter)
         self.tab_widget.setVisible(False)
         self._tabs: List[speedwagon.tabs.ItemSelectionTab] = []
@@ -307,7 +307,7 @@ class MainWindow(MainProgram):
         self.log_manager.removeHandler(self.console_log_handler)
         super().closeEvent(*args, **kwargs)
 
-    def show_help(self):
+    def show_help(self) -> None:
         try:
             pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
             webbrowser.open_new(pkg_metadata['Home-page'])
