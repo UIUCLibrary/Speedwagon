@@ -2,7 +2,6 @@
 
 import os
 import typing
-import warnings
 from typing import Optional, List, Any, Union
 import enum
 
@@ -170,31 +169,6 @@ class ValidateMetadataWorkflow(Workflow):
             ]
         )
         return report
-
-
-class LocateTiffImageTask(speedwagon.tasks.Subtask):
-    name = "Locate Tiff Images"
-
-    def __init__(self, root: str) -> None:
-        warnings.warn("Use LocateImagesTask instead", DeprecationWarning)
-        super().__init__()
-        self._root = root
-
-    def task_description(self) -> Optional[str]:
-        return f"Locating tiff images in {self._root}"
-
-    def work(self) -> bool:
-        tiff_files = []
-        for root, dirs, files in os.walk(self._root):
-            for file_name in files:
-                base, ext = os.path.splitext(file_name)
-                if not ext.lower() == ".tif":
-                    continue
-                tiff_file = os.path.join(root, file_name)
-                self.log(f"Found {tiff_file}")
-                tiff_files.append(tiff_file)
-        self.set_results(tiff_files)
-        return True
 
 
 class LocateImagesTask(speedwagon.tasks.Subtask):

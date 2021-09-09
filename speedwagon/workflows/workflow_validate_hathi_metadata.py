@@ -111,7 +111,8 @@ class MetadataValidatorTask(speedwagon.tasks.Subtask):
 
     def work(self) -> bool:
         hathi_tiff_profile = imagevalidate.Profile(
-            imagevalidate.profiles.HathiTiff())
+            imagevalidate.get_profile('HathiTrust Tiff')
+        )
 
         report = hathi_tiff_profile.validate(self._source_file)
         self.log(str(report))

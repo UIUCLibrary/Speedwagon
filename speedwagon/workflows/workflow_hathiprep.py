@@ -2,6 +2,7 @@
 import itertools
 import os
 from typing import Mapping, List, Any, Sequence, Dict, Union, Optional
+import typing
 from PyQt5 import QtWidgets  # type: ignore
 
 import uiucprescon.packager.packages
@@ -84,9 +85,18 @@ class HathiPrepWorkflow(speedwagon.Workflow):
         packages: Sequence[collection.Package] = additional_data["packages"]
         for package in packages:
             job: Dict[str, str] = {
-                "package_id": package.metadata[collection.Metadata.ID],
-                "title_page": package.metadata[collection.Metadata.TITLE_PAGE],
-                "source_path": package.metadata[collection.Metadata.PATH]
+                "package_id":
+                    typing.cast(str, package.metadata[collection.Metadata.ID]),
+                "title_page":
+                    typing.cast(
+                        str,
+                        package.metadata[collection.Metadata.TITLE_PAGE]
+                    ),
+                "source_path":
+                    typing.cast(
+                        str,
+                        package.metadata[collection.Metadata.PATH]
+                    )
             }
             jobs.append(job)
 

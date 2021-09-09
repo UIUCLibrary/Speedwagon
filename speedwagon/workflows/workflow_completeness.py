@@ -554,9 +554,7 @@ class ValidateYMLTask(CompletenessSubTask):
                             errors.append(error)
             except FileNotFoundError as e:
                 report_builder.add_error(
-                    report_builder.add_error(
-                        "Unable to validate YAML. Reason: {}".format(e)
-                    )
+                    "Unable to validate YAML. Reason: {}".format(e)
                 )
             for error in report_builder.construct():
                 errors.append(error)
@@ -685,7 +683,7 @@ class PackageNamingConventionTask(CompletenessSubTask):
             self.log("Warning: {}".format(warning_message))
 
             result = hathi_result.Result(
-                result_type=PackageNamingConventionTask)
+                result_type="PackageNamingConventionTask")
 
             result.source = self.package_path
             result.message = warning_message
@@ -703,7 +701,7 @@ class CompletenessReportBuilder:
         self.line_length = 70
 
         self.results: Dict[
-            Type['CompletenessSubTask'], List[hathi_result.Result]
+            Type['CompletenessSubTask'], List[List[hathi_result.Result]]
         ] = {}
 
         self._tasks_performed: List[Type[CompletenessSubTask]] = [
@@ -714,7 +712,7 @@ class CompletenessReportBuilder:
             ValidateYMLTask
         ]
 
-    def generate_error_report(self,) -> str:
+    def generate_error_report(self) -> str:
         error_results: List[hathi_result.Result] = []
         for task in self._tasks_performed:
             error_results += self._get_result(self.results, task)
@@ -725,7 +723,7 @@ class CompletenessReportBuilder:
     @classmethod
     def _get_result(cls,
                     results_grouped: Dict[Type["CompletenessSubTask"],
-                                          List[speedwagon.tasks.tasks.Result]],
+                                          List[List[hathi_result.Result]]],
                     key: Type["CompletenessSubTask"]
                     ) -> List[hathi_result.Result]:
 

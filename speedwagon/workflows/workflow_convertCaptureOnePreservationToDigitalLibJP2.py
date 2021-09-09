@@ -52,7 +52,7 @@ class ProcessingException(Exception):
 class ConvertFile(AbsProcessStrategy):
 
     def process(self, source_file: str, destination_path: str) -> None:
-        basename, ext = os.path.splitext(os.path.basename(source_file))
+        basename, _ = os.path.splitext(os.path.basename(source_file))
 
         output_file_path = os.path.join(destination_path,
                                         basename + ".jp2"

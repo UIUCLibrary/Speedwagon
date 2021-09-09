@@ -4,8 +4,8 @@ import os
 import typing
 from typing import NamedTuple, Any
 
-from PyQt5 import QtWidgets, QtCore  # type: ignore
-from PyQt5.QtCore import Qt  # type: ignore
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtCore import Qt
 from uiucprescon.packager.packages import collection
 
 
@@ -34,7 +34,7 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
             index: QtCore.QModelIndex
     ) -> None:
         """Set editor data."""
-        object_record = index.data(role=Qt.UserRole)
+        object_record: collection.PackageObject = index.data(role=Qt.UserRole)
 
         try:
             title_page = object_record.component_metadata[
@@ -87,8 +87,8 @@ class PackagesModel(QtCore.QAbstractTableModel):
 
     def __init__(
             self,
-            packages: typing.List[collection.AbsPackageComponent],
-            parent=None
+            packages: typing.List[collection.Package],
+            parent: typing.Optional[QtWidgets.QWidget] = None
     ) -> None:
         """Create a new package model."""
         super().__init__(parent)
@@ -97,7 +97,7 @@ class PackagesModel(QtCore.QAbstractTableModel):
     def columnCount(  # pylint: disable=C0103,W0613
             self,
             *args,
-            parent=None,
+            parent: typing.Optional[QtCore.QModelIndex] = None,
             **kwargs,
     ) -> int:
         """Get the number of fields in model."""
@@ -106,7 +106,7 @@ class PackagesModel(QtCore.QAbstractTableModel):
     def rowCount(  # pylint: disable=C0103,W0613
             self,
             *args,
-            parent=None,
+            parent: typing.Optional[QtCore.QModelIndex] = None,
             **kwargs
     ) -> int:
         """Get the number of packages in model."""
@@ -128,7 +128,11 @@ class PackagesModel(QtCore.QAbstractTableModel):
         else:
             return super().headerData(index, orientation, role)
 
-    def data(self, index, role=QtCore.Qt.DisplayRole):
+    def data(
+            self,
+            index: QtCore.QModelIndex,
+            role=QtCore.Qt.DisplayRole
+    ) -> Any:
         """Get data at index."""
         row = index.row()
         column = index.column()
@@ -165,7 +169,7 @@ class PackageBrowser(QtWidgets.QDialog):
 
     def __init__(
             self,
-            packages: typing.List[collection.AbsPackageComponent],
+            packages: typing.List[collection.Package],
             parent: QtWidgets.QWidget,
             flags: typing.Union[
                 Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),

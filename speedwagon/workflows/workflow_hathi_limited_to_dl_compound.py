@@ -93,7 +93,11 @@ class PackageConverter(speedwagon.tasks.Subtask):
         finally:
             logger.removeHandler(gui_logger)
 
-    def __init__(self, src: str, dst: str) -> None:
+    def __init__(
+            self,
+            src: packager.package.collection.Package,
+            dst: str
+    ) -> None:
         super().__init__()
         self.src = src
         self.dst = dst

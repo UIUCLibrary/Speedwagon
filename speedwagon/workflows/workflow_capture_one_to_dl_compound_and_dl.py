@@ -32,7 +32,10 @@ from contextlib import contextmanager
 from uiucprescon import packager
 from uiucprescon.packager.packages.abs_package_builder import AbsPackageBuilder
 from uiucprescon.packager.packages.collection_builder import Metadata
-from uiucprescon.packager.packages.collection import AbsPackageComponent
+from uiucprescon.packager.packages.collection import \
+    AbsPackageComponent, \
+    Package
+
 import speedwagon
 from speedwagon import validators
 from speedwagon.job import Workflow
@@ -238,10 +241,19 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
 
         """
         job_arguments = typing.cast(JobArguments, job_args)
-        existing_package: AbsPackageComponent = job_arguments['package']
+
+        existing_package: Package = typing.cast(
+            Package,
+            job_arguments['package']
+        )
 
         source_path = job_arguments["source_path"]
-        package_id: str = existing_package.metadata[Metadata.ID]
+
+        package_id: str = typing.cast(
+            str,
+            existing_package.metadata[Metadata.ID]
+        )
+
         new_dl_package_root = job_arguments.get("output_dl")
         if new_dl_package_root is not None:
             dl_packaging_task = PackageConverter(
@@ -353,7 +365,7 @@ class PackageConverter(speedwagon.tasks.Subtask):
     def __init__(self,
                  source_path: str,
                  packaging_id: str,
-                 existing_package: AbsPackageComponent,
+                 existing_package: Package,
                  new_package_root: str,
                  package_format: str) -> None:
         """Create PackageConverter object.
