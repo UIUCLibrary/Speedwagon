@@ -3,6 +3,7 @@
 import io
 import os
 import sys
+import typing
 
 from typing import List, Any, Optional, Iterator, Dict, Union
 import contextlib
@@ -194,8 +195,12 @@ class OCRWorkflow(speedwagon.Workflow):
 
             print("Note: Invalid setting for tessdata. "
                   "Using path {} ".format(tessdata_path), file=sys.stderr)
+        else:
+            tessdata_path = self.tessdata_path
 
-        for lang in self.get_available_languages(path=self.tessdata_path):
+        for lang in self.get_available_languages(
+                path=typing.cast(str, tessdata_path)
+        ):
             fullname = ocr.LANGUAGE_CODES.get(lang)
             if fullname is None:
                 continue
@@ -310,7 +315,7 @@ class FindImagesTask(speedwagon.tasks.Subtask):
 
 
 class GenerateOCRFileTask(speedwagon.tasks.Subtask):
-    engine = ocr.Engine(locate_tessdata())
+    engine: Optional[ocr.Engine] = None
     name = "Optical character recognition"
 
     def __init__(self,
@@ -354,6 +359,8 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
         return True
 
     def read_image(self, file: str, lang: str) -> str:
+        if self.engine is None:
+            raise RuntimeError("OCR Engine not set")
 
         if self.engine.data_set_path is None:
             self.engine.data_set_path = self._tesseract_path
