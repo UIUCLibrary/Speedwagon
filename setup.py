@@ -10,7 +10,7 @@ if __name__ == "__main__":
             "pyhathiprep>=0.1.5",
             "pyyaml",
             "uiucprescon.imagevalidate>=0.1.7",
-            "uiucprescon.ocr>=0.1.2",
+            "uiucprescon.ocr>=0.1.3",
             "uiucprescon.packager[kdu]>=0.2.14",
             "uiucprescon.images",
             "pykdu-compress>=0.1.5",
