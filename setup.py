@@ -6,7 +6,7 @@ if __name__ == "__main__":
         install_requires=[
             "PyQt5>=5.15.4",
             "HathiZip>=0.1.9",
-            "HathiValidate>=0.3.6",
+            "HathiValidate>=0.3.7",
             "pyhathiprep>=0.1.5",
             "pyyaml",
             "uiucprescon.imagevalidate>=0.1.6",
