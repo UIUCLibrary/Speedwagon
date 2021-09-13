@@ -9,7 +9,8 @@ norecursedirs = "thirdparty"
 junit_family="xunit2"
 markers=[
     "adapter",
-    "slow: mark test as slow."
+    "slow: mark test as slow.",
+    "model_data"
 ]
 
 [tool.pydocstyle]
