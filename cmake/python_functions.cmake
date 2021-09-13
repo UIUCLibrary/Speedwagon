@@ -34,7 +34,9 @@ function(get_python_version SETUP_PY)
 endfunction(get_python_version)
 
 macro(create_virtual_env)
+    message(STATUS "Generating Python virtual environment for building")
     execute_process(COMMAND ${PYTHON_EXECUTABLE} -m venv ${SPEEDWAGON_VENV_PATH})
+    message(STATUS "Generating Python virtual environment for building - Done")
     find_program(VENV_PYTHON
         NAMES python
         PATHS
@@ -61,7 +63,7 @@ function(install_venv_deps)
         list(APPEND requirement_file_args "${requirements_file}")
     endforeach()
     execute_process(COMMAND ${VENV_PYTHON_EXE} -m pip install ${requirement_file_args} --upgrade-strategy only-if-needed -f ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE})
-    message(STATUS "Installing Python dependencies to environment done")
+    message(STATUS "Installing Python dependencies to environment - Done")
 endfunction(install_venv_deps)
 
 function(create_pth_configure_file)
