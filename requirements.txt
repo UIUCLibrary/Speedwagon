@@ -11,7 +11,7 @@ typing-extensions;python_version<"3.8"
 lxml>=4.5.1
 pluggy==0.13.1
 py3exiv2bind>=0.1.7
-pyhathiprep>=0.1.5
+pyhathiprep>=0.1.7
 pyqt-distutils>=0.7.3
 PyQt5>=5.15.4
 PyQt5-sip>=12.8.0
