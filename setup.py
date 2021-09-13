@@ -5,7 +5,7 @@ if __name__ == "__main__":
         test_suite="tests",
         install_requires=[
             "PyQt5>=5.15.4",
-            "HathiZip>=0.1.9",
+            "HathiZip>=0.1.10",
             "HathiValidate>=0.3.7",
             "pyhathiprep>=0.1.7",
             "pyyaml",
