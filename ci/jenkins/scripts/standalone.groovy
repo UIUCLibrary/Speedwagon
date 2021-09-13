@@ -86,14 +86,14 @@ def build_standalone(args=[:]){
             }
         }
     }
-    stage("Testing standalone"){
+    stage("Testing Standalone"){
         dir(buildDir){
             withEnv(['QT_QPA_PLATFORM=offscreen']) {
                 bat "ctest --output-on-failure --no-compress-output -T test -C Release -j ${NUMBER_OF_PROCESSORS}"
             }
         }
     }
-    stage("Packaging standalone"){
+    stage("Packaging Standalone"){
         script{
             try{
                 def cpack_generators = generate_cpack_arguments(packaging_msi, packaging_nsis, packaging_zip)
