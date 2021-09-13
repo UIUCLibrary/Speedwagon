@@ -227,14 +227,18 @@ if(WIN32)
     #    add_subdirectory(tests)
     ###########################################
     enable_testing()
-    #   TODO: Make this dynamic by calling python -m pytest --collect-only and
     execute_process(COMMAND ${VENV_PYTHON} -m pytest --version)
 
     execute_process(
             COMMAND ${VENV_PYTHON} -m pytest ${PROJECT_SOURCE_DIR}/tests/ -qqq --collect-only
             OUTPUT_VARIABLE PYTHON_TESTS
             OUTPUT_STRIP_TRAILING_WHITESPACE
+            RESULTS_VARIABLE PYTEST_RESULT
     )
+    if(NOT PYTEST_RESULT EQUAL 0)
+        message(FATAL_ERROR "Using pytest to scan tests resulted in Non-zero return code: ${PYTEST_RESULT}")
+    endif()
+
     string(REGEX REPLACE ": [0-9]*" "" PYTHON_TESTS "${PYTHON_TESTS}")
     string(REPLACE "\n" ";" PYTHON_TESTS ${PYTHON_TESTS})
 
@@ -248,6 +252,7 @@ if(WIN32)
                 OUTPUT_STRIP_TRAILING_WHITESPACE
                 ENCODING AUTO
                 )
+
         message(STATUS "PYTEST_COLLECTION= ${PYTEST_COLLECTION}")
         if(PYTEST_COLLECTION)
             string(REPLACE "\n" ";" PYTEST_COLLECTION ${PYTEST_COLLECTION})
