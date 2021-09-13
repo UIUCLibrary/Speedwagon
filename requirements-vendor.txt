@@ -4,7 +4,7 @@
 HathiValidate==0.3.7
 HathiZip==0.1.9
 py3exiv2bind==0.1.7
-pyhathiprep==0.1.5
+pyhathiprep==0.1.7
 pykdu-compress==0.1.5
 uiucprescon.images==0.0.5
 uiucprescon.imagevalidate==0.1.7
