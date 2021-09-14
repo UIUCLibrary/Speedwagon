@@ -1,9 +1,10 @@
 def sanitize_chocolatey_version(version){
     script{
-        def dot_to_slash_pattern = '(?<=\\d)\\.?(?=(dev|b|a|rc)(\\d)?)'
+        def dot_to_slash_pattern = '(?<=\\d)\\.?(?=(dev|b|a|rc|post)(\\d)?)'
 
 //        def rc_pattern = "(?<=\d(\.?))rc((?=\d)?)"
         def dashed_version = version.replaceFirst(dot_to_slash_pattern, "-")
+        dashed_version = version.replaceFirst('\\.post', ".")
 
         def beta_pattern = "(?<=\\d(\\.?))b((?=\\d)?)"
         if(dashed_version.matches(beta_pattern)){
