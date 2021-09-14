@@ -7,7 +7,7 @@ if __name__ == "__main__":
             "PyQt5>=5.15.4",
             "HathiZip>=0.1.10",
             "HathiValidate>=0.3.8",
-            "pyhathiprep>=0.1.8",
+            "pyhathiprep>=0.1.7",
             "pyyaml",
             "uiucprescon.imagevalidate>=0.1.7",
             "uiucprescon.ocr>=0.1.3",
