@@ -676,21 +676,22 @@ class PackageNamingConventionTask(CompletenessSubTask):
         package_name = os.path.split(self.package_path)[-1]
 
         if not self._validator.match(package_name):
-            warning_message = "{} is an invalid naming scheme".format(
-                self.package_path)
-
-            self.log("Warning: {}".format(warning_message))
-
-            result = hathi_result.Result(
-                result_type="PackageNamingConventionTask")
-
-            result.source = self.package_path
-            result.message = warning_message
-            warnings.append(result)
-
+            warnings.append(self._generate_warning(self.package_path))
         if warnings:
             self.set_results(warnings)
         return True
+
+    def _generate_warning(self, package_path: str):
+        warning_message = f"{package_path} is an invalid naming scheme"
+
+        self.log("Warning: {warning_message}")
+
+        result = hathi_result.Result(
+            result_type="PackageNamingConventionTask")
+
+        result.source = self.package_path
+        result.message = warning_message
+        return result
 
 
 class CompletenessReportBuilder:
