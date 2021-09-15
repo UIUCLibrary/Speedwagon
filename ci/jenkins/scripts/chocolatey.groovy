@@ -6,6 +6,11 @@ def sanitize_chocolatey_version(version){
         def dashed_version = version.replaceFirst(dot_to_slash_pattern, "-")
         dashed_version = version.replaceFirst('\\.post', ".")
 
+        def dev_pattern = "(?<=\\d(\\.?))dev((?=\\d)?)"
+        if(dashed_version.matches(dev_pattern)){
+            return dashed_version.replaceFirst(dev_pattern, "dev")
+        }
+
         def beta_pattern = "(?<=\\d(\\.?))b((?=\\d)?)"
         if(dashed_version.matches(beta_pattern)){
             return dashed_version.replaceFirst(beta_pattern, "beta")
