@@ -23,6 +23,7 @@ def sanitize_chocolatey_version(version){
             echo "Discovered an Alpha version"
             return dashed_version.replaceFirst(alpha_pattern, "alpha")
         }
+        echo "Discovered no special version info"
         return dashed_version
     }
 }
