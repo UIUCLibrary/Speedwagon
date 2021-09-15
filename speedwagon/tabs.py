@@ -308,10 +308,9 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             if previous.isValid():
                 self.item_selected(previous)
                 self.item_form.setCurrentModelIndex(previous)
-                self.item_selector_view.setCurrentIndex(previous)
             else:
                 traceback.print_tb(error.__traceback__)
-                self.item_selector_view.setCurrentIndex(previous)
+            self.item_selector_view.setCurrentIndex(previous)
 
     def item_selected(self, index: QtCore.QModelIndex) -> None:
         """Set the current selection based on the index."""
