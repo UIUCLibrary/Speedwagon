@@ -373,7 +373,7 @@ class TestStartupDefault:
         )
 
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
-        resolution = Mock(FRIENDLY_NAME="dummy")
+        resolution = Mock(friendly_name="dummy")
         resolution.update = lambda _: update()
         startup_worker.resolve_settings()
         assert default_setter.called is True
