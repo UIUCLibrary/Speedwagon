@@ -8,7 +8,7 @@ def sanitize_chocolatey_version(version){
 
         def dev_pattern = "(?<=\\d(\\.?))dev((?=\\d)?)"
         if(dashed_version.matches(dev_pattern)){
-            return dashed_version.replaceFirst(dev_pattern, "dev")
+            return dashed_version.replaceFirst(dev_pattern, "-dev")
         }
 
         def beta_pattern = "(?<=\\d(\\.?))b((?=\\d)?)"
