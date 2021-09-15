@@ -203,12 +203,12 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         selector_view.setUniformItemSizes(True)
         selector_view.setModel(model)
 
-        MIN_ROWS_VIS = 4
+        min_rows_vis = 4
 
-        if model.rowCount() < MIN_ROWS_VIS:
+        if model.rowCount() < min_rows_vis:
             min_rows = model.rowCount()
         else:
-            min_rows = MIN_ROWS_VIS
+            min_rows = min_rows_vis
 
         selector_view.setFixedHeight(
             (selector_view.sizeHintForRow(0) * min_rows) + 4
