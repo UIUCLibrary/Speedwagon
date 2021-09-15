@@ -186,7 +186,7 @@ def test_get_custom_tabs_loads_workflows_from_file(monkeypatch):
         tab_name, workflows = next(
             speedwagon.startup.get_custom_tabs(all_workflows, test_file)
         )
-    assert "my workflow" == tab_name and "spam" in workflows
+    assert tab_name == "my workflow" and "spam" in workflows
 
 
 def test_standalone_tab_editor_loads(qtbot, monkeypatch):
