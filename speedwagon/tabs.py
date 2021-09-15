@@ -251,7 +251,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         """Start item."""
 
     @abc.abstractmethod
-    def get_item_options_model(self, item):
+    def get_item_options_model(self, workflow):
         """Get item options model."""
 
     def create_actions(self) -> Tuple[Dict[str, QtWidgets.QWidget],
