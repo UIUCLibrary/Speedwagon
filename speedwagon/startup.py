@@ -65,7 +65,7 @@ class AbsSetting(metaclass=abc.ABCMeta):
     @property
     @staticmethod
     @abc.abstractmethod
-    def FRIENDLY_NAME():
+    def friendly_name():
         return NotImplementedError
 
     def update(
@@ -78,7 +78,7 @@ class AbsSetting(metaclass=abc.ABCMeta):
 
 
 class DefaultsSetter(AbsSetting):
-    FRIENDLY_NAME = "Setting defaults"
+    friendly_name = "Setting defaults"
 
     def update(
             self,
@@ -91,7 +91,7 @@ class DefaultsSetter(AbsSetting):
 
 class CliArgsSetter(AbsSetting):
 
-    FRIENDLY_NAME = "Command line arguments setting"
+    friendly_name = "Command line arguments setting"
 
     def update(
             self,
@@ -142,7 +142,7 @@ class CliArgsSetter(AbsSetting):
 
 
 class ConfigFileSetter(AbsSetting):
-    FRIENDLY_NAME = "Config file settings"
+    friendly_name = "Config file settings"
 
     def __init__(self, config_file: str):
         """Create a new config file setter."""
@@ -157,15 +157,6 @@ class ConfigFileSetter(AbsSetting):
         with speedwagon.config.ConfigManager(self.config_file) as cfg:
             new_settings.update(cfg.global_settings.items())
         return new_settings
-
-
-def get_selection(all_workflows):
-    """Get current selection of workflows."""
-    new_workflow_set = {}
-    for k, v in all_workflows.items():
-        if "Verify" in k:
-            new_workflow_set[k] = v
-    return new_workflow_set
 
 
 class CustomTabsFileReader:
@@ -438,7 +429,7 @@ class StartupDefault(AbsStarter):
         for settings_strategy in resolution_strategy_order:
 
             self._logger.debug("Loading settings from %s",
-                               settings_strategy.FRIENDLY_NAME)
+                               settings_strategy.friendly_name)
 
             try:
                 self.startup_settings = settings_strategy.update(

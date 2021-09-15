@@ -300,7 +300,7 @@ class MainWindow(MainProgram):
         workflows_tab.parent = self
         workflows_tab.workflows = workflows
         self._tabs.append(workflows_tab)
-        self.tab_widget.add_tab(workflows_tab.tab, workflow_name)
+        self.tab_widget.add_tab(workflows_tab.tab_widget, workflow_name)
         self.tab_widget.setVisible(True)
 
     def closeEvent(self, *args, **kwargs) -> None:  # pylint: disable=C0103

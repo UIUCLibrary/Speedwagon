@@ -244,27 +244,43 @@ def test_validate_marc_task_calls_validator(monkeypatch):
            )
 
 
-def test_validate_yml_task_calls_validator(monkeypatch):
-    package_path = os.path.join("sample_path", "package1")
-    yaml_file = os.path.join(package_path, "meta.yml")
-    from hathi_validate import process, validator
+class TestValidateYMLTask:
+    def test_validate_yml_task_calls_validator(self, monkeypatch):
+        package_path = os.path.join("sample_path", "package1")
+        yaml_file = os.path.join(package_path, "meta.yml")
+        from hathi_validate import process, validator
 
-    task = workflow_completeness.ValidateYMLTask(package_path=package_path)
-    task.log = Mock()
-    mock_run_validation = MagicMock(return_value=[])
+        task = workflow_completeness.ValidateYMLTask(package_path=package_path)
+        task.log = Mock()
+        mock_run_validation = MagicMock(return_value=[])
 
-    with monkeypatch.context() as mp:
-        mp.setattr(process, "run_validation", mock_run_validation)
-        mp.setattr(os.path, "exists", lambda x: x == yaml_file)
-        assert task.work() is True
+        with monkeypatch.context() as mp:
+            mp.setattr(process, "run_validation", mock_run_validation)
+            mp.setattr(os.path, "exists", lambda x: x == yaml_file)
+            assert task.work() is True
 
-    assert mock_run_validation.called is True and \
-           mock_run_validation.call_args[0][0].path == package_path and \
-           mock_run_validation.call_args[0][0].yaml_file == yaml_file and \
-           isinstance(
-               mock_run_validation.call_args[0][0],
-               validator.ValidateMetaYML
-           )
+        assert mock_run_validation.called is True and \
+               mock_run_validation.call_args[0][0].path == package_path and \
+               mock_run_validation.call_args[0][0].yaml_file == yaml_file and \
+               isinstance(
+                   mock_run_validation.call_args[0][0],
+                   validator.ValidateMetaYML
+               )
+
+    def test_yaml_file_not_found_error(self, monkeypatch):
+        package_path = os.path.join("sample_path", "package1")
+        yaml_file = os.path.join(package_path, "meta.yml")
+        task = workflow_completeness.ValidateYMLTask(package_path=package_path)
+        task.log = Mock()
+        mock_run_validation = MagicMock(side_effect=FileNotFoundError("Nope"))
+        with monkeypatch.context() as mp:
+            mp.setattr(process, "run_validation", mock_run_validation)
+            mp.setattr(os.path, "exists", lambda x: x == yaml_file)
+            task.work()
+
+        assert any(
+            "Unable to validate YAML" in res.message for res in task.results
+        ) is True
 
 
 def test_validate_ocr_utf8_task_calls_validator(monkeypatch):

@@ -552,9 +552,9 @@ class ValidateYMLTask(CompletenessSubTask):
                         for error in meta_yml_errors:
                             self.log(error.message)
                             errors.append(error)
-            except FileNotFoundError as e:
+            except FileNotFoundError as file_not_found_error:
                 report_builder.add_error(
-                    "Unable to validate YAML. Reason: {}".format(e)
+                    f"Unable to validate YAML. Reason: {file_not_found_error}"
                 )
             for error in report_builder.construct():
                 errors.append(error)
@@ -650,7 +650,6 @@ class HathiManifestGenerationTask(CompletenessSubTask):
 
             self.set_results(manifest_report)
         return True
-# TODO Check names so that the match the following regular expression
 
 
 class PackageNamingConventionTask(CompletenessSubTask):
@@ -677,21 +676,22 @@ class PackageNamingConventionTask(CompletenessSubTask):
         package_name = os.path.split(self.package_path)[-1]
 
         if not self._validator.match(package_name):
-            warning_message = "{} is an invalid naming scheme".format(
-                self.package_path)
-
-            self.log("Warning: {}".format(warning_message))
-
-            result = hathi_result.Result(
-                result_type="PackageNamingConventionTask")
-
-            result.source = self.package_path
-            result.message = warning_message
-            warnings.append(result)
-
+            warnings.append(self._generate_warning(self.package_path))
         if warnings:
             self.set_results(warnings)
         return True
+
+    def _generate_warning(self, package_path: str) -> hathi_result.Result:
+        warning_message = f"{package_path} is an invalid naming scheme"
+
+        self.log("Warning: {warning_message}")
+
+        result = hathi_result.Result(
+            result_type="PackageNamingConventionTask")
+
+        result.source = self.package_path
+        result.message = warning_message
+        return result
 
 
 class CompletenessReportBuilder:

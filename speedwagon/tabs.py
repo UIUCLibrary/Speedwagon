@@ -67,9 +67,9 @@ class Tab:
         """Create a new tab."""
         self.parent = parent
         self.work_manager = work_manager
-        self.tab, self.tab_layout = self.create_tab()
-        self.tab.setSizePolicy(WORKFLOW_SIZE_POLICY)
-        self.tab.setMinimumHeight(400)
+        self.tab_widget, self.tab_layout = self.create_tab()
+        self.tab_widget.setSizePolicy(WORKFLOW_SIZE_POLICY)
+        self.tab_widget.setMinimumHeight(400)
         self.tab_layout.setSpacing(20)
 
     @staticmethod
@@ -203,12 +203,12 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         selector_view.setUniformItemSizes(True)
         selector_view.setModel(model)
 
-        MIN_ROWS_VIS = 4
+        min_rows_vis = 4
 
-        if model.rowCount() < MIN_ROWS_VIS:
+        if model.rowCount() < min_rows_vis:
             min_rows = model.rowCount()
         else:
-            min_rows = MIN_ROWS_VIS
+            min_rows = min_rows_vis
 
         selector_view.setFixedHeight(
             (selector_view.sizeHintForRow(0) * min_rows) + 4
@@ -251,7 +251,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         """Start item."""
 
     @abc.abstractmethod
-    def get_item_options_model(self, item):
+    def get_item_options_model(self, workflow):
         """Get item options model."""
 
     def create_actions(self) -> Tuple[Dict[str, QtWidgets.QWidget],
@@ -308,10 +308,9 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             if previous.isValid():
                 self.item_selected(previous)
                 self.item_form.setCurrentModelIndex(previous)
-                self.item_selector_view.setCurrentIndex(previous)
             else:
                 traceback.print_tb(error.__traceback__)
-                self.item_selector_view.setCurrentIndex(previous)
+            self.item_selector_view.setCurrentIndex(previous)
 
     def item_selected(self, index: QtCore.QModelIndex) -> None:
         """Set the current selection based on the index."""
