@@ -4,8 +4,8 @@ def sanitize_chocolatey_version(version){
 
 //        def rc_pattern = "(?<=\d(\.?))rc((?=\d)?)"
         def dashed_version = version.replaceFirst(dot_to_slash_pattern, "-")
-        if ( version =~ /devs/ ) {
-            return version.replaceAll(".dev", "-dev")
+        if ( version =~ /dev/ ) {
+            return version.replace('.dev', "-dev")
         }
         dashed_version = version.replaceFirst('\\.post', ".")
         def dev_pattern = '(?<=\\d(\\.?))dev((?=\\d)?)'
