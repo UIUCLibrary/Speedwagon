@@ -4,17 +4,28 @@ def sanitize_chocolatey_version(version){
 
 //        def rc_pattern = "(?<=\d(\.?))rc((?=\d)?)"
         def dashed_version = version.replaceFirst(dot_to_slash_pattern, "-")
+        if ( version =~ /dev/ ) {
+            return version.replace('.dev', "-dev")
+        }
         dashed_version = version.replaceFirst('\\.post', ".")
+        def dev_pattern = '(?<=\\d(\\.?))dev((?=\\d)?)'
+        if(dashed_version.matches(dev_pattern)){
+            echo "Discovered a development version"
+            return dashed_version.replaceFirst(dev_pattern, "-dev")
+        }
 
-        def beta_pattern = "(?<=\\d(\\.?))b((?=\\d)?)"
+        def beta_pattern = '(?<=\\d(\\.?))b((?=\\d)?)'
         if(dashed_version.matches(beta_pattern)){
+            echo "Discovered a beta version"
             return dashed_version.replaceFirst(beta_pattern, "beta")
         }
 
-        def alpha_pattern = "(?<=\\d(\\.?))a((?=\\d)?)"
+        def alpha_pattern = '(?<=\\d(\\.?))a((?=\\d)?)'
         if(dashed_version.matches(alpha_pattern)){
+            echo "Discovered an Alpha version"
             return dashed_version.replaceFirst(alpha_pattern, "alpha")
         }
+        echo "Discovered no special version info"
         return dashed_version
     }
 }
