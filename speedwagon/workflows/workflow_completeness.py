@@ -552,9 +552,9 @@ class ValidateYMLTask(CompletenessSubTask):
                         for error in meta_yml_errors:
                             self.log(error.message)
                             errors.append(error)
-            except FileNotFoundError as e:
+            except FileNotFoundError as file_not_found_error:
                 report_builder.add_error(
-                    "Unable to validate YAML. Reason: {}".format(e)
+                    f"Unable to validate YAML. Reason: {file_not_found_error}"
                 )
             for error in report_builder.construct():
                 errors.append(error)
