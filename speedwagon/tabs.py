@@ -67,9 +67,9 @@ class Tab:
         """Create a new tab."""
         self.parent = parent
         self.work_manager = work_manager
-        self.tab, self.tab_layout = self.create_tab()
-        self.tab.setSizePolicy(WORKFLOW_SIZE_POLICY)
-        self.tab.setMinimumHeight(400)
+        self.tab_widget, self.tab_layout = self.create_tab()
+        self.tab_widget.setSizePolicy(WORKFLOW_SIZE_POLICY)
+        self.tab_widget.setMinimumHeight(400)
         self.tab_layout.setSpacing(20)
 
     @staticmethod

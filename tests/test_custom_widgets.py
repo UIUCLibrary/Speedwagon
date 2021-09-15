@@ -76,7 +76,7 @@ def test_boolean_delegate_is_combobox(qtbot):
 
     workflow_tab = WorkflowsTab(parent=None, workflows={"spam": Spam},
                                 work_manager=mock_work_manager)
-    widget.tabs.addTab(workflow_tab.tab, "Eggs")
+    widget.tabs.addTab(workflow_tab.tab_widget, "Eggs")
     widget.update()
     qtbot.addWidget(widget)
 
@@ -106,7 +106,7 @@ def test_folder_delegate_is_browsable(qtbot):
 
     workflow_tab = WorkflowsTab(parent=None, workflows={"spam": Spam},
                                 work_manager=mock_work_manager)
-    widget.tabs.addTab(workflow_tab.tab, "Eggs")
+    widget.tabs.addTab(workflow_tab.tab_widget, "Eggs")
     widget.update()
     qtbot.addWidget(widget)
 
