@@ -159,15 +159,6 @@ class ConfigFileSetter(AbsSetting):
         return new_settings
 
 
-def get_selection(all_workflows):
-    """Get current selection of workflows."""
-    new_workflow_set = {}
-    for k, v in all_workflows.items():
-        if "Verify" in k:
-            new_workflow_set[k] = v
-    return new_workflow_set
-
-
 class CustomTabsFileReader:
     """Reads the tab file data."""
 
