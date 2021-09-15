@@ -650,7 +650,6 @@ class HathiManifestGenerationTask(CompletenessSubTask):
 
             self.set_results(manifest_report)
         return True
-# TODO Check names so that the match the following regular expression
 
 
 class PackageNamingConventionTask(CompletenessSubTask):
