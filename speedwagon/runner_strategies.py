@@ -636,54 +636,88 @@ class QtDialogProgress(RunnerDisplay):
         self.current_task_progress = task_scheduler.current_task_progress
 
 
-class TaskDispatcher:
+class AbsTaskDispatcherState(abc.ABC):
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if not hasattr(cls, "state_name"):
+            raise NotImplementedError(
+                f"{cls.__name__} requires class property 'state_name' to be "
+                f"implemented"
+            )
 
-    def __init__(self,
-                 job_queue: queue.Queue,
-                 logger: typing.Optional[logging.Logger] = None) -> None:
-        super().__init__()
-        self.job_queue = job_queue
-        self._stop = threading.Event()
-        self._thread: typing.Optional[threading.Thread] = None
-        self.finish_event = threading.Event()
-        self.current_task: Optional[speedwagon.tasks.Subtask] = None
-        self.logger = logger or logging.getLogger(__name__)
+    def __init__(self, context: "TaskDispatcher"):
+        self.parent = context
 
-    @property
+    @abc.abstractmethod
     def active(self) -> bool:
-        if self._thread is None:
-            return False
+        """Get the active status of the task."""
 
-        return self._thread.is_alive()
+    @abc.abstractmethod
+    def stop(self) -> None:
+        """Stop dispatching tasks to run."""
+
+    @abc.abstractmethod
+    def start(self) -> None:
+        """Star dispatching tasks from the queue to run."""
+
+
+class TaskDispatcherIdle(AbsTaskDispatcherState):
+    state_name = "Idle"
+
+    def active(self) -> bool:
+        return False
 
     def stop(self) -> None:
-        if self._thread is None:
-            return
-        self._stop.set()
-        self._thread.join()
-        self.logger.debug("Processing thread has stopped")
+        """Stopping an idle thread is a no-op."""
 
-    def _start(
+    def start(self) -> None:
+        self.parent.current_state = TaskDispatcherRunning(self.parent)
+        self.parent.current_state.run_thread()
+
+
+class TaskDispatcherRunning(AbsTaskDispatcherState):
+    state_name = "Running"
+
+    def run_thread(self):
+        logger = logging.getLogger(__name__)
+
+        logger.debug("Starting processing thread")
+        self.parent.thread = threading.Thread(
+            name="processing_thread",
+            target=self.processing_process,
+            kwargs={
+                "stop_event": self.parent.signals["stop"],
+                "job_finished_event": self.parent.signals['finished']
+            }
+        )
+        self.parent.thread.start()
+
+    def processing_process(
             self,
             stop_event: threading.Event,
             job_finished_event: threading.Event
-    ) -> None:
-        logger = self.logger
+    ):
+        logger = self.parent.logger
         logger.debug("Processing thread is available")
+
         while not stop_event.is_set():
-            if self.job_queue.empty():
+            if self.parent.job_queue.empty():
                 continue
-            task = typing.cast(speedwagon.tasks.Subtask, self.job_queue.get())
+
+            task = typing.cast(speedwagon.tasks.Subtask,
+                               self.parent.job_queue.get())
+
             task_description = task.task_description()
             if task_description is not None:
                 logger.info(task_description)
+
             logger.debug(
                 "Threaded worker received task: [%s](%s)",
                 task.name,
                 task.task_description()
             )
 
-            self.current_task = task
+            self.parent.current_task = task
             task.log = lambda message: logger.info(msg=message)
             task.exec()
             logger.debug(
@@ -691,22 +725,78 @@ class TaskDispatcher:
                 task.name
             )
 
-            self.job_queue.task_done()
+            self.parent.job_queue.task_done()
         job_finished_event.set()
 
-    def start(self) -> None:
-        logger = logging.getLogger(__name__)
+    def active(self) -> bool:
+        if self.parent.thread is None:
+            return False
+        return self.parent.thread.is_alive()
 
-        logger.debug("Starting processing thread")
-        self._thread = threading.Thread(
-            name="processing_thread",
-            target=self._start,
-            kwargs={
-                "stop_event": self._stop,
-                "job_finished_event": self.finish_event
-            }
+    def stop(self) -> None:
+        self.parent.current_state = TaskDispatcherStopping(self.parent)
+        self.parent.current_state.halt_dispatching()
+
+    def start(self) -> None:
+        self.parent.logger.warning(
+            "Processing thread is already started"
         )
-        self._thread.start()
+
+
+class TaskDispatcherStopping(AbsTaskDispatcherState):
+    state_name = "Stopping"
+
+    def halt_dispatching(self):
+        self.parent.logger.debug("Processing thread is stopping")
+        self.parent.signals["stop"].set()
+        self.parent.thread.join()
+        self.parent.logger.debug("Processing thread has stopped")
+        self.parent.current_state = TaskDispatcherIdle(self.parent)
+
+    def active(self) -> bool:
+        return self.parent.thread.is_alive()
+
+    def stop(self) -> None:
+        self.parent.logger.warning("Processing thread is currently stopping")
+
+    def start(self) -> None:
+        self.parent.logger.warning(
+            "Unable to start while processing is stopping"
+        )
+
+
+class TaskDispatcher:
+
+    def __init__(self,
+                 job_queue: queue.Queue,
+                 logger: typing.Optional[logging.Logger] = None) -> None:
+        super().__init__()
+        self.job_queue = job_queue
+        self.signals = {
+            "stop": threading.Event(),
+            "finished": threading.Event()
+        }
+        self.thread: typing.Optional[threading.Thread] = None
+        self.current_task: Optional[speedwagon.tasks.Subtask] = None
+        self.logger = logger or logging.getLogger(__name__)
+        self.current_state: AbsTaskDispatcherState = TaskDispatcherIdle(self)
+
+    @property
+    def active(self) -> bool:
+        return self.current_state.active()
+
+    def stop(self) -> None:
+        self.current_state.stop()
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop()
+
+    def start(self) -> None:
+        self.current_state.start()
 
 
 class TaskScheduler:
@@ -772,7 +862,7 @@ class TaskScheduler:
         if report is not None:
             self.logger.info(task_generator.generate_report(results))
 
-    def push_job_to_queue(
+    def run_workflow_jobs(
             self,
             workflow: Workflow,
             options: typing.Dict[str, Any],
@@ -798,27 +888,28 @@ class TaskScheduler:
                             expected=True
                         )
 
-    def run(self, job: Workflow, options: Dict[str, Any]) -> None:
+    def run(self, workflow: Workflow, options: Dict[str, Any]) -> None:
 
         task_dispatcher = TaskDispatcher(
             self._task_queue,
             self.logger
         )
         try:
-            task_dispatcher.start()
-            if self.reporter is not None:
-                self.reporter.task_runner = task_dispatcher
-                self.reporter.task_scheduler = self
-                with self.reporter as active_reporter:
-                    active_reporter.current_task_progress = 0
-                    active_reporter.title = job.name
-                    self.push_job_to_queue(job, options, active_reporter)
-                active_reporter.refresh()
-            else:
-                self.push_job_to_queue(job, options)
+            with task_dispatcher as task_runner:
+                if self.reporter is not None:
+                    self.reporter.task_runner = task_runner
+                    self.reporter.task_scheduler = self
+                    with self.reporter as active_reporter:
+                        active_reporter.current_task_progress = 0
+                        active_reporter.title = workflow.name
+                        self.run_workflow_jobs(
+                            workflow, options, active_reporter
+                        )
+                    active_reporter.refresh()
+                else:
+                    self.run_workflow_jobs(workflow, options)
         finally:
             self._task_queue.join()
-            task_dispatcher.stop()
 
 
 class QtRunner(AbsRunner2):

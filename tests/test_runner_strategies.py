@@ -460,19 +460,125 @@ class TestTaskDispatcher:
                dispatcher.stop() is None
 
     @pytest.mark.parametrize(
-        "thread_status, expected_active",
+        "thread_status, expected_active, state",
         [
-            (None, False),
-            (Mock(is_alive=Mock(return_value=False)), False),
-            (Mock(is_alive=Mock(return_value=True)), True)
+            (
+                    None,
+                    False,
+                    runner_strategies.TaskDispatcherIdle
+            ),
+            (
+                    Mock(is_alive=Mock(return_value=False)),
+                    False,
+                    runner_strategies.TaskDispatcherIdle
+            ),
+            (
+                    Mock(is_alive=Mock(return_value=True)),
+                    True,
+                    runner_strategies.TaskDispatcherRunning
+            )
         ]
     )
-    def test_active(self, thread_status, expected_active):
+    def test_active(self, thread_status, expected_active, state):
         dispatcher = runner_strategies.TaskDispatcher(
             job_queue=Mock()
         )
-        dispatcher._thread = thread_status
+        dispatcher.current_state = state(dispatcher)
+        dispatcher.thread = thread_status
         assert dispatcher.active is expected_active
+
+    def test_start_set_state_to_running(self):
+        dispatcher = runner_strategies.TaskDispatcher(
+            job_queue=Mock()
+        )
+
+        dispatcher.current_state = \
+            runner_strategies.TaskDispatcherIdle(dispatcher)
+
+        try:
+            dispatcher.start()
+            assert dispatcher.current_state.state_name == "Running"
+        finally:
+            dispatcher.stop()
+
+    def test_stop_set_state(self, monkeypatch):
+        dispatcher = runner_strategies.TaskDispatcher(
+            job_queue=Mock()
+        )
+
+        # ======================================================================
+        # This has to happen before the monkey patching so that the method can
+        # still manage to run.
+        # ======================================================================
+        dispatcher.current_state = \
+            runner_strategies.TaskDispatcherIdle(dispatcher)
+
+        actual_halt_dispatch = \
+            runner_strategies.TaskDispatcherStopping.halt_dispatching
+
+        def halt_dispatching(*args, **kwargs):
+            actual_halt_dispatch(*args, **kwargs)
+
+        halt_dispatching_method = Mock()
+        halt_dispatching_method.side_effect = halt_dispatching
+        # ======================================================================
+
+        with monkeypatch.context() as mp:
+            mp.setattr(runner_strategies.TaskDispatcherStopping,
+                       "halt_dispatching",
+                       lambda caller: halt_dispatching_method(caller)
+                       )
+            try:
+                dispatcher.start()
+                assert dispatcher.current_state.state_name == "Running"
+            finally:
+                dispatcher.stop()
+        assert dispatcher.current_state.state_name == "Idle"
+        assert halt_dispatching_method.called is True
+
+
+class TestTaskDispatcherRunning:
+    def test_running_on_active_is_noop_warning(self, caplog):
+        dispatcher = runner_strategies.TaskDispatcher(
+            job_queue=Mock()
+        )
+        state = runner_strategies.TaskDispatcherRunning(dispatcher)
+        state.start()
+
+        assert any(
+            "Processing thread is already started"
+            in message.message and message.levelname == "WARNING"
+            for message in caplog.records
+        )
+
+
+class TestTaskDispatcherStopping:
+    def test_running_stop_on_stopping_is_noop_warning(self, caplog):
+        dispatcher = runner_strategies.TaskDispatcher(
+            job_queue=Mock()
+        )
+        state = runner_strategies.TaskDispatcherStopping(dispatcher)
+        state.stop()
+
+        assert any(
+            "Processing thread is currently stopping"
+            in message.message and message.levelname == "WARNING"
+            for message in caplog.records
+        )
+
+    def test_running_starting_on_stopping_is_noop_warning(self, caplog):
+        dispatcher = runner_strategies.TaskDispatcher(
+            job_queue=Mock()
+        )
+        state = runner_strategies.TaskDispatcherStopping(dispatcher)
+        state.start()
+
+        assert any(
+            "Unable to start while processing is stopping"
+            in message.message and message.levelname == "WARNING"
+            for message in caplog.records
+        )
+
 
 
 class TestTaskScheduler:
@@ -526,4 +632,4 @@ class TestTaskScheduler:
         subtask.exec = Mock()
         subtask._task_queue = Mock(unfinished_tasks=1)
         with pytest.raises(speedwagon.job.JobCancelled):
-            scheduler.push_job_to_queue(workflow, options, scheduler.reporter)
+            scheduler.run_workflow_jobs(workflow, options, scheduler.reporter)
