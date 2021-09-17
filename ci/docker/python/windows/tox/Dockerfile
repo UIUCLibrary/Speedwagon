@@ -1,9 +1,9 @@
 # escape=`
 
-ARG PYTHON_36_VERSION='[3.6.0, 3.7.0)'
-ARG PYTHON_37_VERSION='[3.7.0, 3.8.0)'
-ARG PYTHON_38_VERSION='[3.8.0, 3.9.0)'
-ARG PYTHON_39_VERSION='[3.9.0, 3.10.0)'
+ARG PYTHON_36_VERSION=3.6.8
+ARG PYTHON_37_VERSION=3.7.9
+ARG PYTHON_38_VERSION=3.8.5
+ARG PYTHON_39_VERSION=3.9.0
 
 ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8
 FROM ${FROM_IMAGE} as certsgen
@@ -14,7 +14,6 @@ FROM ${FROM_IMAGE} as BASE_BUILDER
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 
 ARG CHOCOLATEY_SOURCE=https://chocolatey.org/api/v2
-#ARG chocolateyDownloadUrl=${CHOCOLATEY_SOURCE}
 ARG ChocolateyEnvironmentDebug=false
 COPY ci/docker/shared/chocolatey/install_choco.ps1 choco/install_choco.ps1
 RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
