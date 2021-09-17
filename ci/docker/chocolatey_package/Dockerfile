@@ -5,6 +5,7 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 
 ADD ci/docker/shared/chocolatey/install_choco.ps1 choco/install_choco.ps1
 ARG CHOCOLATEY_SOURCE=https://chocolatey.org/api/v2
+ARG chocolateyDownloadUrl=${CHOCOLATEY_SOURCE}
 ARG ChocolateyEnvironmentDebug=false
 RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
     ./choco/install_choco.ps1 -packageRepo $env:CHOCOLATEY_SOURCE ; `
