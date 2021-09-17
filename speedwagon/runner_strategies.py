@@ -637,8 +637,8 @@ class QtDialogProgress(RunnerDisplay):
 
 
 class AbsTaskDispatcherState(abc.ABC):
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
         if not hasattr(cls, "state_name"):
             raise NotImplementedError(
                 f"{cls.__name__} requires class property 'state_name' to be "
@@ -678,7 +678,7 @@ class TaskDispatcherIdle(AbsTaskDispatcherState):
 class TaskDispatcherRunning(AbsTaskDispatcherState):
     state_name = "Running"
 
-    def run_thread(self):
+    def run_thread(self) -> None:
         logger = logging.getLogger(__name__)
 
         logger.debug("Starting processing thread")
@@ -696,7 +696,7 @@ class TaskDispatcherRunning(AbsTaskDispatcherState):
             self,
             stop_event: threading.Event,
             job_finished_event: threading.Event
-    ):
+    ) -> None:
         logger = self.parent.logger
         logger.debug("Processing thread is available")
 
@@ -746,14 +746,17 @@ class TaskDispatcherRunning(AbsTaskDispatcherState):
 class TaskDispatcherStopping(AbsTaskDispatcherState):
     state_name = "Stopping"
 
-    def halt_dispatching(self):
-        self.parent.logger.debug("Processing thread is stopping")
+    def halt_dispatching(self) -> None:
         self.parent.signals["stop"].set()
-        self.parent.thread.join()
+        if self.parent.thread is not None:
+            self.parent.logger.debug("Processing thread is stopping")
+            self.parent.thread.join()
         self.parent.logger.debug("Processing thread has stopped")
         self.parent.current_state = TaskDispatcherIdle(self.parent)
 
     def active(self) -> bool:
+        if self.parent.thread is None:
+            return False
         return self.parent.thread.is_alive()
 
     def stop(self) -> None:
@@ -772,7 +775,7 @@ class TaskDispatcher:
                  logger: typing.Optional[logging.Logger] = None) -> None:
         super().__init__()
         self.job_queue = job_queue
-        self.signals = {
+        self.signals: typing.Mapping[str, threading.Event] = {
             "stop": threading.Event(),
             "finished": threading.Event()
         }
@@ -788,11 +791,11 @@ class TaskDispatcher:
     def stop(self) -> None:
         self.current_state.stop()
 
-    def __enter__(self):
+    def __enter__(self) -> "TaskDispatcher":
         self.start()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.stop()
 
     def start(self) -> None:
