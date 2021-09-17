@@ -14,10 +14,11 @@ FROM ${FROM_IMAGE} as BASE_BUILDER
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 
 ARG CHOCOLATEY_SOURCE=https://chocolatey.org/api/v2
+ARG chocolateyDownloadUrl=${CHOCOLATEY_SOURCE}
 ARG ChocolateyEnvironmentDebug=false
 COPY ci/docker/shared/chocolatey/install_choco.ps1 choco/install_choco.ps1
 RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
-    ./choco/install_choco.ps1 -packageRepo $env:CHOCOLATEY_SOURCE ; `
+    ./choco/install_choco.ps1 ; `
     if( -not ([string]::IsNullOrEmpty($Env:CHOCOLATEY_SOURCE ))) `
     { `
         Write-Host "Adding $env:CHOCOLATEY_SOURCE to chocolatey sources" ; `
