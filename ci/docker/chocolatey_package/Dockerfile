@@ -7,7 +7,7 @@ ADD ci/docker/shared/chocolatey/install_choco.ps1 choco/install_choco.ps1
 ARG CHOCOLATEY_SOURCE=https://chocolatey.org/api/v2
 ARG ChocolateyEnvironmentDebug=false
 RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
-    ./choco/install_choco.ps1 -packageRepo $env:CHOCOLATEY_SOURCE ; `
+    ./choco/install_choco.ps1 ; `
     if( -not ([string]::IsNullOrEmpty($Env:CHOCOLATEY_SOURCE ))) `
     { `
         Write-Host "Adding $env:CHOCOLATEY_SOURCE to chocolatey sources" ; `
