@@ -1078,6 +1078,7 @@ class TaskSchedulerJoined(AbsTaskSchedulerState):
 class TaskManagementThread(abc.ABC):
     def __init__(self, task_queue: 'queue.Queue[TaskPacket]'):
         self.task_queue = task_queue
+        self.workflow_options = {}
 
     @abc.abstractmethod
     def run(self):
@@ -1093,7 +1094,6 @@ class ThreadedTaskProducer(TaskManagementThread):
             target=self.run,
         )
         self.workflow_class: Optional[Workflow] = None
-        self.workflow_options = {}
         self.working_directory = None
         self.last_task_finished = None
         self.total_tasks = None
