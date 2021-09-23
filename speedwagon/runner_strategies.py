@@ -954,7 +954,7 @@ class AbsTaskSchedulerState(abc.ABC):
 
     @abc.abstractmethod
     def run(self):
-        pass
+        """Start the task scheduling."""
 
 
 class TaskSchedulerInit(AbsTaskSchedulerState):
