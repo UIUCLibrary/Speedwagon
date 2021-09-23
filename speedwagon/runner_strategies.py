@@ -1220,10 +1220,7 @@ class TaskProducer1(TaskManagementThread):
             if task.task_result:
                 results.append(task.task_result)
             self.current_task_progress = task_generator.current_task
-            # self.current_task_progress = task_generator.current_task
         report = task_generator.generate_report(results)
-        # self.last_task_finished = None
-        # report = task_generator.generate_report(results)
         if report is not None:
             logging.info(task_generator.generate_report(results))
 
@@ -1292,8 +1289,6 @@ class TaskScheduler2:
         self.workflow_options = {}
         self.task_queue = queue.Queue(maxsize=1)
         self.status: AbsTaskSchedulerState = TaskSchedulerInit(self)
-        # self.start_condition = threading.Condition()
-
         logging.basicConfig(level=logging.DEBUG,
                             format='(%(threadName)-9s) %(message)s', )
 
@@ -1506,7 +1501,6 @@ class JobManager(contextlib.AbstractContextManager):
         if self.valid_workflows is not None:
             task_scheduler.valid_workflows = self.valid_workflows
         task_scheduler.workflow_name = workflow_name
-        # task_scheduler._workflow_class = workflow_class
         task_scheduler.workflow_options = options
         # TODO add this to a thread
         self._workers.append(task_scheduler)
