@@ -1367,10 +1367,9 @@ class JobManager(contextlib.AbstractContextManager):
     def __exit__(self,
                  exc_type: Optional[Type[BaseException]],
                  exc_value: Optional[BaseException],
-                 traceback: Optional[TracebackType]) -> Optional[bool]:
+                 traceback: Optional[TracebackType]) -> None:
         for task_worker in self._workers:
             task_worker.join()
-        return None
 
     def __contains__(self, item) -> bool:
         return item in self._workers
