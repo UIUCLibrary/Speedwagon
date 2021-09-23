@@ -1287,7 +1287,7 @@ class TaskScheduler2:
         self.current_task_progress: typing.Optional[int] = None
         self.total_tasks: typing.Optional[int] = None
 
-        self.valid_workflows: Optional[dict[str, typing.Type[Workflow]]] = None
+        self.valid_workflows: Optional[Dict[str, typing.Type[Workflow]]] = None
         self._workflow_class: Optional[typing.Type[Workflow]] = None
         self.workflow_options = {}
         self.task_queue = queue.Queue(maxsize=1)
