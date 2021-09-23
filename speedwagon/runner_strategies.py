@@ -937,7 +937,7 @@ class AbsTaskSchedulerState(abc.ABC):
 
     @abc.abstractmethod
     def start(self):
-        """Start task producer and consumer"""
+        """Start task producer and consumer."""
 
     @abc.abstractmethod
     def run_next_task(self):
@@ -1078,7 +1078,7 @@ class TaskManagementThread(abc.ABC):
 
     @abc.abstractmethod
     def run(self):
-        """Run Main"""
+        """Run Main."""
 
 
 class ThreadedTaskProducer(TaskManagementThread):
