@@ -808,3 +808,32 @@ class TestExecuteTaskPacket:
             in message.message and message.levelname == "ERROR"
             for message in caplog.records
         )
+
+
+class TestTaskScheduler2:
+    def test_workflow_name_failure(self):
+        scheduler = runner_strategies.TaskScheduler2(Mock(), "working dir")
+        with pytest.raises(ValueError):
+            scheduler.workflow_name = "Invalid Workflow"
+
+    def test_workflow_name_of_unset_is_none(self):
+        scheduler = runner_strategies.TaskScheduler2(Mock(), "working dir")
+        assert scheduler.workflow_name is None
+
+    def test_workflow_name_comes_from_workflow(self):
+        name_called = Mock()
+        class SpamWorkflow(speedwagon.Workflow):
+            def discover_task_metadata(self, initial_results: List[Any],
+                                       additional_data: Dict[str, Any],
+                                       **user_args) -> List[dict]:
+                return []
+            @property
+            def name(self):
+                name_called()
+                return "spam"
+        scheduler = runner_strategies.TaskScheduler2(Mock(), "working dir")
+        scheduler.valid_workflows = {"spam": SpamWorkflow}
+        scheduler.workflow_name = "spam"
+        assert scheduler.workflow_name == "spam"
+        assert name_called.called is True
+
