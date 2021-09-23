@@ -948,15 +948,7 @@ class AbsTaskSchedulerState(abc.ABC):
             logging.debug("stopping task_producer_thread")
             self.context._task_producer_thread.join()
             logging.debug("task_producer_thread stopped")
-
-        if self.context._task_consumer_thread.is_alive():
-            self.context.task_queue.put(
-                TaskPacket(TaskPacket.PacketType.COMMAND, "done"))
-            logging.debug("stopping task_consumer_thread")
-            self.context._task_consumer_thread.join()
-            logging.debug("task_consumer_thread stopped")
-        else:
-            logging.debug("task_consumer_thread already stopped")
+        self.context.shutdown_consumer_thread()
 
         logging.debug("Task queue joining")
         self.context.task_queue.join()
@@ -1251,8 +1243,17 @@ class TaskScheduler2:
         )
 
     def start_consumer_thread(self):
-        # self.task_consumer.start()
         self._task_consumer_thread.start()
+
+    def shutdown_consumer_thread(self):
+        if self._task_consumer_thread.is_alive():
+            self.task_queue.put(
+                TaskPacket(TaskPacket.PacketType.COMMAND, "done"))
+            logging.debug("stopping task_consumer_thread")
+            self._task_consumer_thread.join()
+            logging.debug("task_consumer_thread stopped")
+        else:
+            logging.debug("task_consumer_thread already stopped")
 
     @property
     def workflow_name(self) -> Optional[str]:
