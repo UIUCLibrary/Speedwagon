@@ -673,7 +673,10 @@ class TaskDispatcherIdle(AbsTaskDispatcherState):
         return False
 
     def stop(self) -> None:
-        """Stopping an idle thread is a no-op."""
+        """Do nothing.
+
+        Stopping an idle thread is a no-op.
+        """
 
     def start(self) -> None:
         self.parent.current_state = TaskDispatcherRunning(self.parent)
