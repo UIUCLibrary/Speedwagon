@@ -943,9 +943,9 @@ class AbsTaskSchedulerState(abc.ABC):
         pass
 
     def join(self):
-        self.context.shutdown_producer_thread()
+        self.context.task_producer.shutdown()
 
-        self.context.shutdown_consumer_thread()
+        self.context.task_consumer.shutdown()
 
         logging.debug("Task queue joining")
         self.context.task_queue.join()
@@ -981,7 +981,7 @@ class TaskSchedulerIdle(AbsTaskSchedulerState):
 
     def run(self):
         self.context.status = TaskSchedulerWorking(self.context)
-        self.context.start_consumer_thread()
+        self.context.task_consumer.start()
         self.context.status.run_all_tasks()
 
     def run_next_task(self):
@@ -1063,8 +1063,9 @@ class TaskSchedulerWorking(AbsTaskSchedulerState):
         assert self.context.task_producer.working_directory is not None
         assert self.context.task_producer.workflow_options is not None
 
-        self.context.start_producer_thread()
-        self.context.start_consumer_thread()
+        # self.context.start_producer_thread()
+        self.context.task_producer.start()
+        self.context.task_consumer.start()
         self.context.status = TaskSchedulerWorking(self.context)
 
     def run(self):
@@ -1095,16 +1096,29 @@ class TaskManagementThread(abc.ABC):
         """Run Main"""
 
 
-class TaskProducer1(TaskManagementThread):
+class ThreadedTaskProducer(TaskManagementThread):
 
     def __init__(self, task_queue: 'queue.Queue[TaskPacket]'):
         super().__init__(task_queue)
+        self._task_producer_thread = threading.Thread(
+            name='producer',
+            target=self.run,
+        )
         self.workflow_class: Optional[Workflow] = None
         self.workflow_options = {}
         self.working_directory = None
         self.last_task_finished = None
         self.total_tasks = None
         self.current_task_progress = None
+
+    def start(self):
+        self._task_producer_thread.start()
+
+    def shutdown(self):
+        if self._task_producer_thread.is_alive():
+            logging.debug("stopping task_producer_thread")
+            self._task_producer_thread.join()
+            logging.debug("task_producer_thread stopped")
 
     def run(self):
         logging.debug('Producer thread started ...')
@@ -1161,7 +1175,20 @@ class TerminateConsumerThread(Exception):
     pass
 
 
-class TaskConsumer3(TaskManagementThread):
+class ThreadedTaskConsumer(TaskManagementThread):
+
+    def __init__(self, task_queue: 'queue.Queue[TaskPacket]'):
+        super().__init__(task_queue)
+        self._task_consumer_thread = threading.Thread(
+            name='consumer',
+            target=self.run,
+        )
+
+    def start(self):
+        # if self.workflow_name is not None:
+        #     self.task_consumer._task_consumer_thread.name = \
+        #         f"Consumer thread: {self.workflow_name}"
+        self._task_consumer_thread.start()
 
     def run(self):
         logging.debug('Consumer thread started ...')
@@ -1196,6 +1223,16 @@ class TaskConsumer3(TaskManagementThread):
         else:
             logging.error("Unknown packet type")
 
+    def shutdown(self):
+        if self._task_consumer_thread.is_alive():
+            self.task_queue.put(
+                TaskPacket(TaskPacket.PacketType.COMMAND, "done"))
+            logging.debug("stopping task_consumer_thread")
+            self._task_consumer_thread.join()
+            logging.debug("task_consumer_thread stopped")
+        else:
+            logging.debug("task_consumer_thread already stopped")
+
 
 @dataclasses.dataclass
 class TaskPacket:
@@ -1224,43 +1261,8 @@ class TaskScheduler2:
         logging.basicConfig(level=logging.DEBUG,
                             format='(%(threadName)-9s) %(message)s', )
 
-        self.task_consumer = TaskConsumer3(self.task_queue)
-        self.task_producer = TaskProducer1(self.task_queue)
-
-        self._task_consumer_thread = threading.Thread(
-            name='consumer',
-            target=self.task_consumer.run,
-        )
-        self._task_producer_thread = threading.Thread(
-            name='producer',
-            target=self.task_producer.run,
-        )
-
-    def start_consumer_thread(self):
-        if self.workflow_name is not None:
-            self._task_consumer_thread.name = \
-                f"Consumer thread: {self.workflow_name}"
-
-        self._task_consumer_thread.start()
-
-    def start_producer_thread(self):
-        self._task_producer_thread.start()
-
-    def shutdown_producer_thread(self):
-        if self._task_producer_thread.is_alive():
-            logging.debug("stopping task_producer_thread")
-            self._task_producer_thread.join()
-            logging.debug("task_producer_thread stopped")
-
-    def shutdown_consumer_thread(self):
-        if self._task_consumer_thread.is_alive():
-            self.task_queue.put(
-                TaskPacket(TaskPacket.PacketType.COMMAND, "done"))
-            logging.debug("stopping task_consumer_thread")
-            self._task_consumer_thread.join()
-            logging.debug("task_consumer_thread stopped")
-        else:
-            logging.debug("task_consumer_thread already stopped")
+        self.task_consumer = ThreadedTaskConsumer(self.task_queue)
+        self.task_producer = ThreadedTaskProducer(self.task_queue)
 
     @property
     def workflow_name(self) -> Optional[str]:
