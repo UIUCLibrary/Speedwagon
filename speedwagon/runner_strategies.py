@@ -1257,8 +1257,10 @@ class TaskConsumer3(TaskManagementThread):
         elif packet.packet_type == packet.PacketType.TASK:
             task = typing.cast(speedwagon.tasks.Subtask, packet.data)
             with packet.finished:
-                task.work()
-                packet.finished.notify()
+                try:
+                    task.work()
+                finally:
+                    packet.finished.notify()
         else:
             logging.error("Unknown packet type")
 
