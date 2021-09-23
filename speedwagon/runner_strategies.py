@@ -1118,6 +1118,7 @@ class TaskProducer1(TaskManagementThread):
         self.working_directory = None
         self.last_task_finished = None
         self.total_tasks = None
+        self.current_task_progress = None
 
     def run(self):
         logging.debug('Producer thread started ...')
