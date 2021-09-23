@@ -3,7 +3,7 @@ import os
 
 import pytest
 from unittest.mock import Mock, MagicMock
-
+from typing import List, Any, Dict
 from speedwagon import runner_strategies
 import speedwagon
 

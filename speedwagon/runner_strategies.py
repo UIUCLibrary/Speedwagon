@@ -1250,7 +1250,7 @@ class TaskSchedulerJoined(AbsTaskSchedulerState):
 
 
 class TaskManagementThread(abc.ABC):
-    def __init__(self, task_queue: queue.Queue['TaskPacket']):
+    def __init__(self, task_queue: 'queue.Queue[TaskPacket]'):
         self.task_queue = task_queue
 
     @abc.abstractmethod
@@ -1260,7 +1260,7 @@ class TaskManagementThread(abc.ABC):
 
 class TaskProducer1(TaskManagementThread):
 
-    def __init__(self, task_queue: queue.Queue['TaskPacket']):
+    def __init__(self, task_queue: 'queue.Queue[TaskPacket]'):
         super().__init__(task_queue)
         self.workflow_class: Optional[Workflow] = None
         self.workflow_options = {}
