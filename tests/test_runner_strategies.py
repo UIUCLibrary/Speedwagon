@@ -111,6 +111,7 @@ def test_task_aborted(caplog, step, monkeypatch):
     manager.get_results = Mock(return_value=[])
     manager.open = MagicMock(name="manager.open")
     runner = Mock(name="runner", was_aborted=False)
+    runner.progress_dialog_box_handler = logging.StreamHandler()
     manager.open.return_value.__enter__.return_value = runner
 
     runner_strategy = runner_strategies.UsingExternalManagerForAdapter(manager)
@@ -120,6 +121,7 @@ def test_task_aborted(caplog, step, monkeypatch):
 
     options = {}
     logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
     job.discover_task_metadata = Mock(
         return_value=[MagicMock(name="new_task_metadata")])
 
@@ -668,8 +670,7 @@ class TestJobManager:
                 workflow_name="spam",
                 working_directory="working_dir",
             )
-            assert new_worker.status.status_name == "initialized"
-            new_worker.start()
+            assert new_worker.status.status_name == "idle"
             new_worker.run()
             new_worker.join()
             assert new_worker.status.status_name == "joined"
@@ -688,7 +689,7 @@ class TestJobManager:
                 workflow_name="spam",
                 working_directory="working_dir",
             )
-            assert new_worker.status.status_name == "initialized"
+            assert new_worker.status.status_name == "idle"
             new_worker.run()
         assert new_worker.status.status_name == "joined"
 
@@ -724,3 +725,47 @@ class TestJobManager:
     #         # assert new_worker.status.status_name == "working"
     #         # new_worker.join()
     #     assert new_worker.status.status_name == "joined"
+
+
+class TestTaskSchedulerStates:
+    def test_starting_init_changes_status_to_idle(self):
+        job_manager = Mock()
+        state = runner_strategies.TaskSchedulerInit(job_manager)
+        state.start()
+        assert job_manager.status.status_name == "idle"
+
+    def test_running_in_idle_changes_to_working(self):
+        job_manager = Mock()
+        state = runner_strategies.TaskSchedulerIdle(job_manager)
+        state.run()
+        assert job_manager.status.status_name == "working"
+
+    def test_joining_in_working_changes_status_to_joining(self):
+        job_manager = Mock()
+        state = runner_strategies.TaskSchedulerWorking(job_manager)
+        state.join()
+        assert job_manager.status.status_name == "joined"
+
+    @pytest.mark.parametrize("state", [
+        runner_strategies.TaskSchedulerIdle,
+        runner_strategies.TaskSchedulerWorking,
+        runner_strategies.TaskSchedulerJoined,
+    ])
+    def test_starting_in_invalid_state_results_in_error(self, state):
+        job_manager = Mock()
+        with pytest.raises(RuntimeError):
+            state(job_manager).start()
+
+    @pytest.mark.parametrize("state", [
+        runner_strategies.TaskSchedulerInit,
+        runner_strategies.TaskSchedulerWorking,
+        runner_strategies.TaskSchedulerJoined,
+    ])
+    def test_running_in_invalid_state_results_in_error(self, state):
+        job_manager = Mock()
+        with pytest.raises(RuntimeError):
+            state(job_manager).run()
+
+    # def test_s(self):
+    #     with runner_strategies.JobManager() as job_manager:
+    #         job_manager.start()

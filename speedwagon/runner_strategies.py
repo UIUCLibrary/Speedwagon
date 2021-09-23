@@ -11,6 +11,7 @@ import tempfile
 import threading
 import typing
 import warnings
+from abc import ABCMeta, abstractmethod
 from types import TracebackType
 from typing import List, Any, Dict, Optional, Type
 
@@ -238,7 +239,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                         self._manager.add_job(adapted_tool,
                                               adapted_tool.settings)
 
-                logger.info("Found {} jobs".format(i + 1))
+                logger.info("Found %d jobs", i + 1)
                 runner.dialog.setMaximum(i)
                 self._manager.start()
 
@@ -945,12 +946,10 @@ class AbsTaskSchedulerState(abc.ABC):
     def join(self):
         self.context.task_producer.shutdown()
 
-        self.context.task_consumer.shutdown()
-
         logging.debug("Task queue joining")
         self.context.task_queue.join()
         logging.debug("Task queue joining - Done")
-
+        self.context.task_consumer.shutdown()
         self.context.status = TaskSchedulerJoined(self.context)
 
     @abc.abstractmethod
@@ -962,26 +961,26 @@ class TaskSchedulerInit(AbsTaskSchedulerState):
     status_name = 'initialized'
 
     def start(self):
-        pass
+        self.context.status = TaskSchedulerIdle(self.context)
+        self.context.task_producer.start()
+        self.context.task_consumer.start()
 
     def run_next_task(self):
         self.context.status = TaskSchedulerWorking(self.context)
         self.context.status.add_next_task_to_queue()
 
     def run(self):
-        self.context.status = TaskSchedulerWorking(self.context)
-        self.context.status.run_all_tasks()
+        raise RuntimeError("Schedule is not running")
 
 
 class TaskSchedulerIdle(AbsTaskSchedulerState):
     status_name = 'idle'
 
     def start(self):
-        self.context.status = TaskSchedulerWorking(self.context)
+        raise RuntimeError("Scheduler already started")
 
     def run(self):
         self.context.status = TaskSchedulerWorking(self.context)
-        self.context.task_consumer.start()
         self.context.status.run_all_tasks()
 
     def run_next_task(self):
@@ -1049,7 +1048,6 @@ class TaskSchedulerWorking(AbsTaskSchedulerState):
             warnings.warn(
                 f"No workflow found for {self.context.workflow_name}"
             )
-            # module_logger.warning()
             return
         self.context.task_producer.workflow_class = workflow_class()
 
@@ -1063,15 +1061,10 @@ class TaskSchedulerWorking(AbsTaskSchedulerState):
         assert self.context.task_producer.working_directory is not None
         assert self.context.task_producer.workflow_options is not None
 
-        # self.context.start_producer_thread()
-        self.context.task_producer.start()
-        self.context.task_consumer.start()
         self.context.status = TaskSchedulerWorking(self.context)
 
     def run(self):
-        pass
-
-        # self.run_next_task()
+        raise RuntimeError("Task scheduling already running")
 
 
 class TaskSchedulerJoined(AbsTaskSchedulerState):
@@ -1110,11 +1103,14 @@ class ThreadedTaskProducer(TaskManagementThread):
         self.last_task_finished = None
         self.total_tasks = None
         self.current_task_progress = None
+        self._active = False
 
     def start(self):
+        self._active = True
         self._task_producer_thread.start()
 
     def shutdown(self):
+        self._active = False
         if self._task_producer_thread.is_alive():
             logging.debug("stopping task_producer_thread")
             self._task_producer_thread.join()
@@ -1122,20 +1118,22 @@ class ThreadedTaskProducer(TaskManagementThread):
 
     def run(self):
         logging.debug('Producer thread started ...')
-        if self.workflow_class is not None:
-            for task in self.iter_tasks():
-                # print(self.task_queue.unfinished_tasks)
-                packet = TaskPacket(
-                    TaskPacket.PacketType.TASK,
-                    data=task,
-                    finished=threading.Condition()
-                )
-                with packet.finished:
-                    self.task_queue.put(
-                        packet
+        while self._active is True:
+            if self.workflow_class is not None:
+                for task in self.iter_tasks():
+                    if task is None:
+                        return
+                    packet = TaskPacket(
+                        TaskPacket.PacketType.TASK,
+                        data=task,
+                        finished=threading.Condition()
                     )
-                    packet.finished.wait()
-                    self.last_task_finished = packet.finished
+                    with packet.finished:
+                        self.task_queue.put(
+                            packet
+                        )
+                        packet.finished.wait()
+                        self.last_task_finished = packet.finished
         logging.debug('Producer thread finished ...')
 
     def request_more_info(self, *args, **kwargs):
@@ -1169,7 +1167,7 @@ class ThreadedTaskProducer(TaskManagementThread):
         report = task_generator.generate_report(results)
         if report is not None:
             logging.info(task_generator.generate_report(results))
-
+        yield None
 
 class TerminateConsumerThread(Exception):
     pass
@@ -1183,19 +1181,25 @@ class ThreadedTaskConsumer(TaskManagementThread):
             name='consumer',
             target=self.run,
         )
+        self._active = False
 
     def start(self):
+
         # if self.workflow_name is not None:
         #     self.task_consumer._task_consumer_thread.name = \
         #         f"Consumer thread: {self.workflow_name}"
+        self._active = True
         self._task_consumer_thread.start()
 
     def run(self):
         logging.debug('Consumer thread started ...')
-        while True:
+        while self._active is True:
             try:
                 task = self.task_queue.get(timeout=1)
+
                 try:
+                    if task is None:
+                        raise TerminateConsumerThread()
                     self.execute_task_packet(task)
                 except TerminateConsumerThread:
                     break
@@ -1244,9 +1248,30 @@ class TaskPacket:
     finished: threading.Condition = threading.Condition()
 
 
-class TaskScheduler2:
-    def __init__(self, working_directory: str) -> None:
+class AbsTaskScheduler(metaclass=ABCMeta):
+
+    def __init__(self, parent, working_directory: str) -> None:
+        super().__init__()
         self.working_directory = working_directory
+        self.parent = parent
+
+    @abstractmethod
+    def start(self):
+        pass
+
+    @abstractmethod
+    def join(self):
+        pass
+
+    @abstractmethod
+    def run(self):
+        pass
+
+
+class TaskScheduler2(AbsTaskScheduler):
+    def __init__(self, parent, working_directory: str) -> None:
+        super().__init__(parent, working_directory)
+        # super(TaskScheduler2, self).__init__()
         # self.reporter: Optional[RunnerDisplay] = None
 
         self.current_task_progress: typing.Optional[int] = None
@@ -1391,7 +1416,7 @@ class JobManager(contextlib.AbstractContextManager):
     ) -> "TaskScheduler2":
 
         options = options or {}
-        task_scheduler = TaskScheduler2(working_directory)
+        task_scheduler = TaskScheduler2(self, working_directory)
 
         if self.valid_workflows is not None:
             workflow_class = self.valid_workflows.get(workflow_name)
@@ -1407,5 +1432,6 @@ class JobManager(contextlib.AbstractContextManager):
         task_scheduler.workflow_name = workflow_name
         task_scheduler.workflow_options = options
         # TODO add this to a thread
+        task_scheduler.start()
         self._workers.append(task_scheduler)
         return task_scheduler
