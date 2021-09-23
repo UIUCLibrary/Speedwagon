@@ -1259,8 +1259,6 @@ class TaskConsumer3(TaskManagementThread):
             with packet.finished:
                 task.work()
                 packet.finished.notify()
-        elif packet.packet_type == packet.PacketType.TEXT:
-            logging.debug(f'Consumer thread got [{packet}]')
         else:
             logging.error("Unknown packet type")
 
@@ -1268,7 +1266,6 @@ class TaskConsumer3(TaskManagementThread):
 @dataclasses.dataclass
 class TaskPacket:
     class PacketType(enum.Enum):
-        TEXT = 1
         COMMAND = 2
         TASK = 3
     packet_type: "PacketType"
@@ -1293,12 +1290,12 @@ class TaskScheduler2:
         logging.basicConfig(level=logging.DEBUG,
                             format='(%(threadName)-9s) %(message)s', )
 
-        c = TaskConsumer3(self.task_queue)
+        self.task_consumer = TaskConsumer3(self.task_queue)
         self.task_producer = TaskProducer1(self.task_queue)
 
         self._task_consumer_thread = threading.Thread(
             name='consumer',
-            target=c.run,
+            target=self.task_consumer.run,
         )
         self._task_producer_thread = threading.Thread(
             name='producer',
