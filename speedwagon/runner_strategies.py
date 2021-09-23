@@ -1172,6 +1172,7 @@ class TaskProducer1(TaskManagementThread):
         self.workflow_options = {}
         self.working_directory = None
         self.last_task_finished = None
+        self.total_tasks = None
 
     def run(self):
         logging.debug('Producer thread started ...')
@@ -1201,7 +1202,7 @@ class TaskProducer1(TaskManagementThread):
                        finished=threading.Condition()
                        )
         )
-        logging.debug(f'Added to queue: {task.task_description()}')
+        logging.debug('Added to queue: %s', task.task_description())
 
     def iter_tasks(self):
 
@@ -1215,10 +1216,6 @@ class TaskProducer1(TaskManagementThread):
 
         for task in task_generator.tasks():
             self.total_tasks = task_generator.total_task
-            # self.total_tasks = task_generator.total_task
-            # if self.last_task_finished is not None:
-            #     with self.last_task_finished:
-            #         self.last_task_finished.wait()
             yield task
             if task.task_result:
                 results.append(task.task_result)
