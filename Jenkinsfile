@@ -483,6 +483,11 @@ pipeline {
                                                 }
                                             }
                                         }
+                                        stage('Task Scanner'){
+                                            steps{
+                                                recordIssues(tools: [taskScanner(highTags: 'FIXME', includePattern: 'speedwagon/**/*.py', normalTags: 'TODO')])
+                                            }
+                                        }
                                         stage('Run Doctest Tests'){
                                             steps {
                                                 sh(
