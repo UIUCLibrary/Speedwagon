@@ -1169,6 +1169,7 @@ class ThreadedTaskProducer(TaskManagementThread):
             logging.info(task_generator.generate_report(results))
         yield None
 
+
 class TerminateConsumerThread(Exception):
     pass
 
@@ -1184,10 +1185,6 @@ class ThreadedTaskConsumer(TaskManagementThread):
         self._active = False
 
     def start(self):
-
-        # if self.workflow_name is not None:
-        #     self.task_consumer._task_consumer_thread.name = \
-        #         f"Consumer thread: {self.workflow_name}"
         self._active = True
         self._task_consumer_thread.start()
 
@@ -1271,7 +1268,6 @@ class AbsTaskScheduler(metaclass=ABCMeta):
 class TaskScheduler2(AbsTaskScheduler):
     def __init__(self, parent, working_directory: str) -> None:
         super().__init__(parent, working_directory)
-        # super(TaskScheduler2, self).__init__()
         # self.reporter: Optional[RunnerDisplay] = None
 
         self.current_task_progress: typing.Optional[int] = None
