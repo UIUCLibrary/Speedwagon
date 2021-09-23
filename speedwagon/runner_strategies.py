@@ -1247,7 +1247,8 @@ class TaskConsumer3(TaskManagementThread):
                 continue
         logging.debug('Consumer thread completed')
 
-    def execute_task_packet(self, packet: "TaskPacket"):
+    @staticmethod
+    def execute_task_packet(packet: "TaskPacket"):
         if packet.packet_type == packet.PacketType.COMMAND:
             if packet.data == "done":
                 logging.debug('Consumer thread got "done" task')
