@@ -1,5 +1,6 @@
 import logging
 import os
+import queue
 
 import pytest
 from unittest.mock import Mock, MagicMock
@@ -769,3 +770,41 @@ class TestTaskSchedulerStates:
     # def test_s(self):
     #     with runner_strategies.JobManager() as job_manager:
     #         job_manager.start()
+
+
+class TestExecuteTaskPacket:
+    def test_done_raises_terminate(self):
+
+        with pytest.raises(runner_strategies.TerminateConsumerThread):
+            runner_strategies.ThreadedTaskConsumer.execute_task_packet(
+                packet=runner_strategies.TaskPacket(
+                    runner_strategies.TaskPacket.PacketType.COMMAND,
+                    "done"
+                )
+            )
+
+    def test_task_calls_work(self):
+
+        task = Mock()
+        runner_strategies.ThreadedTaskConsumer.execute_task_packet(
+            packet=runner_strategies.TaskPacket(
+                runner_strategies.TaskPacket.PacketType.TASK,
+                task
+            )
+        )
+        assert task.work.called is True
+
+    def test_error_fails_only_with_a_log(self, caplog):
+        runner_strategies.ThreadedTaskConsumer.execute_task_packet(
+            packet=runner_strategies.TaskPacket(
+                "something_invalid",
+                1
+            )
+
+        )
+
+        assert any(
+            "Unknown packet type"
+            in message.message and message.levelname == "ERROR"
+            for message in caplog.records
+        )
