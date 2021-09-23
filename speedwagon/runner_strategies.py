@@ -919,55 +919,6 @@ class TaskScheduler:
             self._task_queue.join()
 
 
-class TaskProducer:
-    def __init__(self, task_queue: queue.Queue, stop_event: threading.Event):
-        self.task_queue = task_queue
-        self.stop_event = stop_event
-        self.total_tasks = None
-        self.workflow_class = None
-        self.working_directory = None
-        self.workflow_options = None
-
-    def start(self, start_condition):
-        print("running TaskProducer")
-        with start_condition:
-            print("Running a TaskProducer cycle")
-            start_condition.notify()
-
-        for task in self.iter_tasks():
-
-            print(f"Putting , {task.task_description()}")
-
-            self.task_queue.put(task)
-            print(start_condition)
-            print("Finished a TaskProducer cycle")
-
-        print("running TaskProducer - All done")
-
-    def request_more_info(self, workflow, options, pretask_results):
-        # FIXME!!!!
-        pass
-
-    def iter_tasks(self):
-        task_generator = TaskGenerator(
-            self.workflow_class,
-            working_directory=self.working_directory,
-            options=self.workflow_options,
-            caller=self
-        )
-        results = []
-
-        for task in task_generator.tasks():
-            self.total_tasks = task_generator.total_task
-            yield task
-            if task.task_result:
-                results.append(task.task_result)
-            self.current_task_progress = task_generator.current_task
-        report = task_generator.generate_report(results)
-        if report is not None:
-            module_logger.info(task_generator.generate_report(results))
-
-
 class AbsTaskSchedulerState(abc.ABC):
 
     def __init_subclass__(cls) -> None:
@@ -1037,7 +988,6 @@ class TaskSchedulerIdle(AbsTaskSchedulerState):
     status_name = 'idle'
 
     def start(self):
-        # self.context.iter_tasks()
         self.context.status = TaskSchedulerWorking(self.context)
 
     def run(self):
@@ -1086,8 +1036,6 @@ class TaskSchedulerWorking(AbsTaskSchedulerState):
         self.add_next_task_to_queue()
 
     def add_next_task_to_queue(self):
-
-        # warnings.warn("dont use", DeprecationWarning)
         # FIXME:
 
         if self.generator is None:
@@ -1132,9 +1080,6 @@ class TaskSchedulerWorking(AbsTaskSchedulerState):
         self.context._task_producer_thread.start()
         self.context.start_consumer_thread()
         self.context.status = TaskSchedulerWorking(self.context)
-        # for task in self.context.iter_tasks():
-        #     with self.context.start_condition:
-        #         self.context.task_queue.put(task)
 
     def run(self):
         pass
@@ -1409,55 +1354,6 @@ class QtRunner(AbsRunner2):
         task_scheduler.logger = logger or logging.getLogger(__name__)
         task_scheduler.request_more_info = self.request_more_info
         task_scheduler.run(job, options)
-
-#
-# class JobManager(contextlib.AbstractContextManager):
-#
-# # class JobManager(threading.Thread):
-#
-#     # def __init__(self, *args, **kwargs):
-#     #     super().__init__(*args, **kwargs)
-#     #     self._active = True
-#     #     self.job_queue: Optional["queue.Queue"] = None
-#     #
-#     # def run(self) -> None:
-#     #     if self.job_queue is None:
-#     #         print("nope")
-#     #     while self.job_queue is not None and not self.job_queue.empty():
-#     #         while self._active:
-#     #             print("HERERE")
-#     #             # self.job_queue.task_done()
-#     #             # time.sleep(1)
-#
-#     # def shutdown(self):
-#     #     self._active = False
-#     #
-#     # def join(self, timeout: Optional[float] = None) -> None:
-#     #     print("joining!!")
-#     #     super().join(timeout)
-#     #     print("joined")
-#
-#     # # def __init__(self, group: None = ...,
-#     #              target: Optional[Callable[..., Any]] = ...,
-#     #              name: Optional[str] = ..., args: Iterable[Any] = ...,
-#     #              kwargs: Optional[Mapping[str, Any]] = ..., *,
-#     #              daemon: Optional[bool] = ...) -> None:
-#     #     super().__init__(group, target, name, args, kwargs, daemon=daemon)
-#
-# #         self.thread: Optional[threading.Thread] = None
-# #         self._jobs = []
-# #
-#     def __enter__(self) -> "JobManager":
-#         return self
-#
-#     def __exit__(self,
-#                  exc_type: Optional[Type[BaseException]],
-#                  exc_value: Optional[BaseException],
-#                  traceback: Optional[TracebackType]) -> Optional[bool]:
-#         return None
-#
-#     def get_worker(self, task_queue: "queue.Queue"):
-#         pass
 
 
 class JobManager(contextlib.AbstractContextManager):
