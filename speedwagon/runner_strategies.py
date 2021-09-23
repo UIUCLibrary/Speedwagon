@@ -919,36 +919,6 @@ class TaskScheduler:
             self._task_queue.join()
 
 
-class TaskConsumer2:
-    def __init__(self, task_queue: queue.Queue, stop_event: threading.Event):
-        self.task_queue = task_queue
-        self.stop_event = stop_event
-
-    def start(self, start_condition: threading.Condition):
-        print("TaskConsumer2 ready")
-        with start_condition:
-            print("waiting")
-            print(start_condition)
-            start_condition.wait()
-        print("Waking")
-        while True:
-            if self.task_queue.empty() is True:
-                continue
-
-            print("getting task from queue")
-            t = self.task_queue.get()
-            print(t.task_description())
-            t.work()
-            print(t.status)
-            print(t.results)
-            self.task_queue.task_done()
-            print("TaskConsumer2 cycle done")
-            if self.stop_event.is_set():
-                print("stop_event is set")
-                break
-        print("TaskConsumer2 - All done")
-
-
 class TaskProducer:
     def __init__(self, task_queue: queue.Queue, stop_event: threading.Event):
         self.task_queue = task_queue
