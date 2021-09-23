@@ -1063,9 +1063,6 @@ class TaskSchedulerWorking(AbsTaskSchedulerState):
         assert self.context.task_producer.working_directory is not None
         assert self.context.task_producer.workflow_options is not None
 
-        self.context._task_consumer_thread.name = \
-            f"Consumer thread: {self.context.workflow_name}"
-
         self.context.start_producer_thread()
         self.context.start_consumer_thread()
         self.context.status = TaskSchedulerWorking(self.context)
@@ -1240,6 +1237,10 @@ class TaskScheduler2:
         )
 
     def start_consumer_thread(self):
+        if self.workflow_name is not None:
+            self._task_consumer_thread.name = \
+                f"Consumer thread: {self.workflow_name}"
+
         self._task_consumer_thread.start()
 
     def start_producer_thread(self):
