@@ -1246,9 +1246,8 @@ class TaskPacket:
 
 class TaskScheduler2:
     def __init__(self, working_directory: str) -> None:
-        self.logger = logging.getLogger(__name__)
         self.working_directory = working_directory
-        self.reporter: Optional[RunnerDisplay] = None
+        # self.reporter: Optional[RunnerDisplay] = None
 
         self.current_task_progress: typing.Optional[int] = None
         self.total_tasks: typing.Optional[int] = None
@@ -1256,10 +1255,9 @@ class TaskScheduler2:
         self.valid_workflows: Optional[Dict[str, typing.Type[Workflow]]] = None
         self._workflow_class: Optional[typing.Type[Workflow]] = None
         self.workflow_options = {}
+
         self.task_queue = queue.Queue(maxsize=1)
         self.status: AbsTaskSchedulerState = TaskSchedulerInit(self)
-        logging.basicConfig(level=logging.DEBUG,
-                            format='(%(threadName)-9s) %(message)s', )
 
         self.task_consumer = ThreadedTaskConsumer(self.task_queue)
         self.task_producer = ThreadedTaskProducer(self.task_queue)
