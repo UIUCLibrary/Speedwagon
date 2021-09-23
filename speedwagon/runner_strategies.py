@@ -943,11 +943,8 @@ class AbsTaskSchedulerState(abc.ABC):
         pass
 
     def join(self):
+        self.context.shutdown_producer_thread()
 
-        if self.context._task_producer_thread.is_alive():
-            logging.debug("stopping task_producer_thread")
-            self.context._task_producer_thread.join()
-            logging.debug("task_producer_thread stopped")
         self.context.shutdown_consumer_thread()
 
         logging.debug("Task queue joining")
@@ -984,7 +981,7 @@ class TaskSchedulerIdle(AbsTaskSchedulerState):
 
     def run(self):
         self.context.status = TaskSchedulerWorking(self.context)
-        self.context._task_producer_thread.start()
+        self.context.start_consumer_thread()
         self.context.status.run_all_tasks()
 
     def run_next_task(self):
@@ -1069,7 +1066,7 @@ class TaskSchedulerWorking(AbsTaskSchedulerState):
         self.context._task_consumer_thread.name = \
             f"Consumer thread: {self.context.workflow_name}"
 
-        self.context._task_producer_thread.start()
+        self.context.start_producer_thread()
         self.context.start_consumer_thread()
         self.context.status = TaskSchedulerWorking(self.context)
 
@@ -1244,6 +1241,15 @@ class TaskScheduler2:
 
     def start_consumer_thread(self):
         self._task_consumer_thread.start()
+
+    def start_producer_thread(self):
+        self._task_producer_thread.start()
+
+    def shutdown_producer_thread(self):
+        if self._task_producer_thread.is_alive():
+            logging.debug("stopping task_producer_thread")
+            self._task_producer_thread.join()
+            logging.debug("task_producer_thread stopped")
 
     def shutdown_consumer_thread(self):
         if self._task_consumer_thread.is_alive():
