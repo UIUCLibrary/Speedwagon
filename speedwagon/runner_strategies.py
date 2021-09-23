@@ -1024,16 +1024,8 @@ class TaskSchedulerWorking(AbsTaskSchedulerState):
         self.add_next_task_to_queue()
 
     def add_next_task_to_queue(self):
-        # FIXME:
-
-        if self.generator is None:
-            self.generator = self.context.task_producer.iter_tasks()
-        try:
-            task = next(self.generator)
-            self.context.task_queue.put(task)
-        except StopIteration:
-            self.generator = None
-            module_logger.warning("No task added to queue")
+        pass
+        # todo: add_next_task_to_queue
 
     def run_all_tasks(self):
         if self.context.valid_workflows is not None:
@@ -1207,8 +1199,8 @@ class ThreadedTaskConsumer(TaskManagementThread):
                 continue
         logging.debug('Consumer thread completed')
 
-    @staticmethod
-    def execute_task_packet(packet: "TaskPacket"):
+    @classmethod
+    def execute_task_packet(cls, packet: "TaskPacket"):
         if packet.packet_type == packet.PacketType.COMMAND:
             if packet.data == "done":
                 logging.debug('Consumer thread got "done" task')
