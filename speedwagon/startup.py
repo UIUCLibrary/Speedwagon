@@ -692,6 +692,27 @@ class MultiWorkflowLauncher(AbsStarter):
         self._pending_tasks.put((workflow, args))
 
 
+class MultiWorkflowThreadedLauncher(AbsStarter):
+
+    def run(self) -> int:
+        self.job_manager.job_queue = self._pending_tasks
+        self.job_manager.start()
+
+    def __init__(self, job_manager, logger:  Optional[logging.Logger] = None) -> None:
+        super().__init__()
+        self.logger = logger or logging.getLogger(__name__)
+        self._pending_tasks: \
+            "queue.Queue[Tuple[job.AbsWorkflow, Dict[str, typing.Any]]]" \
+            = queue.Queue()
+        self.job_manager = job_manager
+
+    def add_job(self, workflow, args):
+        self._pending_tasks.put((workflow, args))
+
+    def initialize(self) -> None:
+        pass
+
+
 class TabsEditorApp(QtWidgets.QDialog):
     """Dialog box for editing tabs.yml file."""
 

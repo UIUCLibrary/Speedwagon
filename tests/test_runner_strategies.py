@@ -633,3 +633,94 @@ class TestTaskScheduler:
         subtask._task_queue = Mock(unfinished_tasks=1)
         with pytest.raises(speedwagon.job.JobCancelled):
             scheduler.run_workflow_jobs(workflow, options, scheduler.reporter)
+
+
+class TestJobManager:
+    def test_manages_creations(self):
+        with runner_strategies.JobManager() as job_manager:
+            job_manager.valid_workflows = {"spam": Mock()}
+            new_worker = job_manager.submit_job(
+                workflow_name="spam",
+                working_directory="working_dir",
+            )
+            assert new_worker in job_manager
+
+    def test_current_progress_defaults_to_none(self):
+        with runner_strategies.JobManager() as job_manager:
+            job_manager.valid_workflows = {"spam": Mock()}
+            new_worker = job_manager.submit_job(
+                workflow_name="spam",
+                working_directory="working_dir"
+            )
+            assert new_worker.current_task_progress is None
+
+    def test_join_status_joined(self):
+        class DummyWorkflow(speedwagon.Workflow):
+
+            def discover_task_metadata(self, initial_results: List[Any],
+                                       additional_data: Dict[str, Any],
+                                       **user_args) -> List[dict]:
+                return []
+
+        with runner_strategies.JobManager() as job_manager:
+            job_manager.valid_workflows = {"spam": DummyWorkflow}
+            new_worker = job_manager.submit_job(
+                workflow_name="spam",
+                working_directory="working_dir",
+            )
+            assert new_worker.status.status_name == "initialized"
+            new_worker.start()
+            new_worker.run()
+            new_worker.join()
+            assert new_worker.status.status_name == "joined"
+
+    def test_job_manager_closed_status_joined(self):
+        class DummyWorkflow(speedwagon.Workflow):
+
+            def discover_task_metadata(self, initial_results: List[Any],
+                                       additional_data: Dict[str, Any],
+                                       **user_args) -> List[dict]:
+                return []
+
+        with runner_strategies.JobManager() as job_manager:
+            job_manager.valid_workflows = {"spam": DummyWorkflow}
+            new_worker = job_manager.submit_job(
+                workflow_name="spam",
+                working_directory="working_dir",
+            )
+            assert new_worker.status.status_name == "initialized"
+            new_worker.run()
+        assert new_worker.status.status_name == "joined"
+
+    # def test_join_status_single_step(self):
+    #     class DummyTask(speedwagon.tasks.Subtask):
+    #
+    #         def work(self) -> bool:
+    #             pass
+    #
+    #     class DummyWorkflow(speedwagon.Workflow):
+    #         name = "spam"
+    #         def create_new_task(self, task_builder: tasks.TaskBuilder,
+    #                             **job_args) -> None:
+    #             dummy_task = DummyTask()
+    #             task_builder.add_subtask(dummy_task)
+    #
+    #         def discover_task_metadata(self, initial_results: List[Any],
+    #                                    additional_data: Dict[str, Any],
+    #                                    **user_args) -> List[dict]:
+    #             return [
+    #                 {"dummy": "yes"},
+    #                 {"dummy": "yes"},
+    #             ]
+    #
+    #     with runner_strategies.JobManager() as job_manager:
+    #         job_manager.valid_workflows = {"spam": DummyWorkflow}
+    #         new_worker = job_manager.submit_job(
+    #             workflow_name="spam",
+    #             working_directory="working_dir",
+    #         )
+    #         new_worker.run_next_task()
+    #         # assert new_worker.total_tasks == 2
+    #         # assert new_worker.status.status_name == "working"
+    #         # new_worker.join()
+    #     assert new_worker.status.status_name == "joined"
