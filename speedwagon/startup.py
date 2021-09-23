@@ -698,7 +698,11 @@ class MultiWorkflowThreadedLauncher(AbsStarter):
         self.job_manager.job_queue = self._pending_tasks
         self.job_manager.start()
 
-    def __init__(self, job_manager, logger:  Optional[logging.Logger] = None) -> None:
+    def __init__(
+            self,
+            job_manager,
+            logger:  Optional[logging.Logger] = None
+    ) -> None:
         super().__init__()
         self.logger = logger or logging.getLogger(__name__)
         self._pending_tasks: \

@@ -10,11 +10,10 @@ import queue
 import sys
 import tempfile
 import threading
-import time
 import typing
 import warnings
 from types import TracebackType
-from typing import List, Any, Dict, Optional, Type, Callable, Iterable, Mapping
+from typing import List, Any, Dict, Optional, Type
 
 from PyQt5 import QtWidgets
 
@@ -920,6 +919,7 @@ class TaskScheduler:
         finally:
             self._task_queue.join()
 
+
 class TaskConsumer2:
     def __init__(self, task_queue: queue.Queue, stop_event: threading.Event):
         self.task_queue = task_queue
@@ -933,16 +933,9 @@ class TaskConsumer2:
             start_condition.wait()
         print("Waking")
         while True:
-            # if self.stop_event.is_set():
-            #     print("stop_event is set")
-            #     break
-            #
-
-
-
             if self.task_queue.empty() is True:
-                # print("no op")
                 continue
+
             print("getting task from queue")
             t = self.task_queue.get()
             print(t.task_description())
@@ -956,6 +949,7 @@ class TaskConsumer2:
                 break
         print("TaskConsumer2 - All done")
 
+
 class TaskProducer:
     def __init__(self, task_queue: queue.Queue, stop_event: threading.Event):
         self.task_queue = task_queue
@@ -967,29 +961,18 @@ class TaskProducer:
 
     def start(self, start_condition):
         print("running TaskProducer")
-        # while True:
         with start_condition:
             print("Running a TaskProducer cycle")
             start_condition.notify()
 
         for task in self.iter_tasks():
 
-            #     self.condition.notify()
-                # try:
-            #     break
             print(f"Putting , {task.task_description()}")
 
             self.task_queue.put(task)
-            # print("notifying ")
-
-            # print("notified")
             print(start_condition)
-            # finally:
-            #     self.condition.notify()
             print("Finished a TaskProducer cycle")
 
-            # if self.stop_event.is_set():
-            #     break
         print("running TaskProducer - All done")
 
     def request_more_info(self, workflow, options, pretask_results):
@@ -1003,26 +986,26 @@ class TaskProducer:
             options=self.workflow_options,
             caller=self
         )
-            # self.task_generator = task_generator
         results = []
 
         for task in task_generator.tasks():
             self.total_tasks = task_generator.total_task
-            # self.total_tasks = task_generator.total_task
             yield task
             if task.task_result:
                 results.append(task.task_result)
             self.current_task_progress = task_generator.current_task
-            # self.current_task_progress = task_generator.current_task
         report = task_generator.generate_report(results)
-        # report = task_generator.generate_report(results)
         if report is not None:
             module_logger.info(task_generator.generate_report(results))
-            # self.logger.info(task_generator.generate_report(results))
+
 
 class TaskConsumer:
 
-    def __init__(self, task_queue: queue.Queue, stop_event: threading.Event) -> None:
+    def __init__(
+            self,
+            task_queue: queue.Queue,
+            stop_event: threading.Event
+    ) -> None:
         self.active = True
         self.task_queue = task_queue
         self.stop_event = stop_event
@@ -1034,8 +1017,6 @@ class TaskConsumer:
     def _work_it(self):
         print(self.task_queue.unfinished_tasks)
         while self.active or self.task_queue.unfinished_tasks > 0:
-            print(f"self._join {self._join}", file=sys.stderr)
-            print(f"self.task_queue.unfinished_tasks = {self.task_queue.unfinished_tasks}", file=sys.stderr)
             if self.task_queue.unfinished_tasks == 0:
                 if self._join is True:
                     print("Breaking", file=sys.stderr)
@@ -1063,10 +1044,7 @@ class TaskConsumer:
 
     def join(self):
         self._join = True
-        # print("JOINING")
-        # while self.task_queue.unfinished_tasks > 0:
-        #     print(f"waiting for {self.task_queue.unfinished_tasks}", file=sys.stderr)
-        # print("NO LONGER waiting", file=sys.stderr)
+
 
 class AbsTaskSchedulerState(abc.ABC):
 
@@ -1098,7 +1076,6 @@ class AbsTaskSchedulerState(abc.ABC):
             self.context._task_producer_thread.join()
             logging.debug("task_producer_thread stopped")
 
-
         if self.context._task_consumer_thread.is_alive():
             self.context.task_queue.put(
                 TaskPacket(TaskPacket.PacketType.COMMAND, "done"))
@@ -1123,21 +1100,7 @@ class TaskSchedulerInit(AbsTaskSchedulerState):
     status_name = 'initialized'
 
     def start(self):
-        print(self.context.workflow_name)
-        # if self.context.valid_workflows is not None:
-        #     workflow_class = self.context.valid_workflows.get(self.context.workflow_name)
-        # else:
-        #     workflow_class = available_workflows().get(self.context.workflow_name)
-        # self.context.task_producer.workflow_class = workflow_class()
-        # self.context.task_producer.workflow_options = self.context.workflow_options
-        # self.context.task_producer.working_directory = self.context.working_directory
-        #
-        # assert self.context.task_producer.workflow_class is not None
-        # assert self.context.task_producer.working_directory is not None
-        # assert self.context.task_producer.workflow_options is not None
-        # self.context._task_producer_thread.start()
-        # self.context.start_consumer_thread()
-        # self.context.status = TaskSchedulerWorking(self.context)
+        pass
 
     def run_next_task(self):
         self.context.status = TaskSchedulerWorking(self.context)
@@ -1173,16 +1136,26 @@ class TaskSchedulerWorking(AbsTaskSchedulerState):
         self.generator = None
         if self.context.task_producer.workflow_class is None:
             if self.context.valid_workflows is not None:
-                workflow_class = self.context.valid_workflows.get(self.context.workflow_name)
+                workflow_class = \
+                    self.context.valid_workflows.get(
+                        self.context.workflow_name
+                    )
             else:
-                workflow_class = available_workflows().get(self.context.workflow_name)
+                workflow_class = \
+                    available_workflows().get(self.context.workflow_name)
+
             if workflow_class is None:
-                warnings.warn(f"No workflow found for {self.context.workflow_name}")
-                # module_logger.warning()
+                warnings.warn(
+                    f"No workflow found for {self.context.workflow_name}"
+                )
                 return
             self.context.task_producer.workflow_class = workflow_class()
-            self.context.task_producer.workflow_options = self.context.workflow_options
-            self.context.task_producer.working_directory = self.context.working_directory
+
+            self.context.task_producer.workflow_options = \
+                self.context.workflow_options
+
+            self.context.task_producer.working_directory = \
+                self.context.working_directory
 
     def start(self):
         raise RuntimeError("Task scheduling already start")
@@ -1197,28 +1170,35 @@ class TaskSchedulerWorking(AbsTaskSchedulerState):
 
         if self.generator is None:
             self.generator = self.context.task_producer.iter_tasks()
-        # generator = self.context.iter_tasks()
         try:
             task = next(self.generator)
-            # with self.context.start_condition:
             self.context.task_queue.put(task)
-                # self.context.start_condition.notify_all()
         except StopIteration:
             self.generator = None
             module_logger.warning("No task added to queue")
 
     def run_all_tasks(self):
         if self.context.valid_workflows is not None:
-            workflow_class = self.context.valid_workflows.get(self.context.workflow_name)
+            workflow_class = \
+                self.context.valid_workflows.get(self.context.workflow_name)
+
         else:
-            workflow_class = available_workflows().get(self.context.workflow_name)
+            workflow_class = \
+                available_workflows().get(self.context.workflow_name)
+
         if workflow_class is None:
-            warnings.warn(f"No workflow found for {self.context.workflow_name}")
+            warnings.warn(
+                f"No workflow found for {self.context.workflow_name}"
+            )
             # module_logger.warning()
             return
         self.context.task_producer.workflow_class = workflow_class()
-        self.context.task_producer.workflow_options = self.context.workflow_options
-        self.context.task_producer.working_directory = self.context.working_directory
+
+        self.context.task_producer.workflow_options = \
+            self.context.workflow_options
+
+        self.context.task_producer.working_directory = \
+            self.context.working_directory
 
         assert self.context.task_producer.workflow_class is not None
         assert self.context.task_producer.working_directory is not None
@@ -1324,6 +1304,7 @@ class TaskProducer1(TaskManagementThread):
         if report is not None:
             logging.info(task_generator.generate_report(results))
 
+
 class TerminateConsumerThread(Exception):
     pass
 
@@ -1404,6 +1385,7 @@ class TaskScheduler2:
             name='producer',
             target=self.task_producer.run,
         )
+
     def start_consumer_thread(self):
         # self.task_consumer.start()
         self._task_consumer_thread.start()
