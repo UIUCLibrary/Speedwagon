@@ -7,7 +7,6 @@ import enum
 
 import logging
 import queue
-import sys
 import tempfile
 import threading
 import typing
@@ -999,53 +998,6 @@ class TaskProducer:
             module_logger.info(task_generator.generate_report(results))
 
 
-class TaskConsumer:
-
-    def __init__(
-            self,
-            task_queue: queue.Queue,
-            stop_event: threading.Event
-    ) -> None:
-        self.active = True
-        self.task_queue = task_queue
-        self.stop_event = stop_event
-        self._join = False
-
-    def start(self):
-        self._work_it()
-
-    def _work_it(self):
-        print(self.task_queue.unfinished_tasks)
-        while self.active or self.task_queue.unfinished_tasks > 0:
-            if self.task_queue.unfinished_tasks == 0:
-                if self._join is True:
-                    print("Breaking", file=sys.stderr)
-                    break
-                else:
-                    print("Going again", file=sys.stderr)
-                    continue
-            print("getting task", file=sys.stderr)
-            t = typing.cast(speedwagon.tasks.Subtask, self.task_queue.get())
-            print(t)
-            t.work()
-            print(t.status)
-            print(t.results)
-
-            self.task_queue.task_done()
-            if self.task_queue.unfinished_tasks == 0 and self._join is True:
-                print("Breaking", file=sys.stderr)
-                break
-
-        module_logger.debug("TaskConsumer stopped work")
-
-    def stop(self):
-        module_logger.debug("Stopping TaskConsumer")
-        self.active = False
-
-    def join(self):
-        self._join = True
-
-
 class AbsTaskSchedulerState(abc.ABC):
 
     def __init_subclass__(cls) -> None:
@@ -1203,6 +1155,10 @@ class TaskSchedulerWorking(AbsTaskSchedulerState):
         assert self.context.task_producer.workflow_class is not None
         assert self.context.task_producer.working_directory is not None
         assert self.context.task_producer.workflow_options is not None
+
+        self.context._task_consumer_thread.name = \
+            f"Consumer thread: {self.context.workflow_name}"
+
         self.context._task_producer_thread.start()
         self.context.start_consumer_thread()
         self.context.status = TaskSchedulerWorking(self.context)
