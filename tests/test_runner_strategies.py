@@ -833,6 +833,7 @@ class TestTaskScheduler2:
             def name(self):
                 name_called()
                 return "spam"
+
         scheduler = runner_strategies.TaskScheduler2(Mock(), "working dir")
         scheduler.valid_workflows = {"spam": SpamWorkflow}
         scheduler.workflow_name = "spam"
