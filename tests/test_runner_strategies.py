@@ -822,11 +822,13 @@ class TestTaskScheduler2:
 
     def test_workflow_name_comes_from_workflow(self):
         name_called = Mock()
+
         class SpamWorkflow(speedwagon.Workflow):
             def discover_task_metadata(self, initial_results: List[Any],
                                        additional_data: Dict[str, Any],
                                        **user_args) -> List[dict]:
                 return []
+
             @property
             def name(self):
                 name_called()
