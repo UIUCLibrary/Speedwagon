@@ -50,6 +50,13 @@ class AbsEvents(abc.ABC):
 
 class AbsJobCallbacks(abc.ABC):
     @abc.abstractmethod
+    def error(
+            self,
+            message: Optional[str] = None,
+            exec: Optional[BaseException] = None
+    ) -> None:
+        """Had an error"""
+
     def refresh(self) -> None:
         """Refresh."""
 
@@ -1775,7 +1782,8 @@ class BackgroundJobManager(AbsJobManager):
                 # self.logger.info(r.current_task_progress)
         except BaseException as e:
             self._exec = e
-            raise
+            callbacks.error()
+            # raise
         callbacks.done()
 
     def __exit__(self,

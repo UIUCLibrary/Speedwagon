@@ -925,6 +925,16 @@ class GuiJobCallbacks(runner_strategies.AbsJobCallbacks):
     def refresh(self) -> None:
         QtWidgets.QApplication.processEvents()
 
+    def error(
+            self,
+            message: Optional[str] = None,
+            exec: Optional[BaseException] = None
+    ) -> None:
+
+        error = QtWidgets.QErrorMessage()
+        error.showMessage(message or "An error occurred")
+        error.exec()
+
     def done(self) -> None:
         if self.context.window is not None:
             if self.context.window.start_button is not None:
