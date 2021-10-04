@@ -31,6 +31,7 @@ import speedwagon.models
 import speedwagon.tabs
 from speedwagon import worker, job, runner_strategies
 from speedwagon.dialog.settings import TabEditor
+from speedwagon.runner_strategies import ThreadedEvents
 from speedwagon.tabs import extract_tab_information
 import speedwagon.gui
 
@@ -252,7 +253,7 @@ def get_custom_tabs(
 
 class AbsStarter(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def run(self) -> int:
+    def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         pass
 
     @abc.abstractmethod
@@ -294,7 +295,7 @@ class StartupDefault(AbsStarter):
         self.ensure_settings_files()
         self.resolve_settings()
 
-    def run(self) -> int:
+    def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         # Display a splash screen until the app is loaded
         with resources.open_binary(speedwagon.__name__, "logo.png") as logo:
             splash = QtWidgets.QSplashScreen(
@@ -523,7 +524,7 @@ class SingleWorkflowLauncher(AbsStarter):
         self.options: Dict[str, Union[str, bool]] = {}
         self.logger = logger or logging.getLogger(__name__)
 
-    def run(self) -> int:
+    def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         """Run the workflow configured with the options given."""
         if self._active_workflow is None:
             raise AttributeError("Workflow has not been set")
@@ -593,7 +594,7 @@ class SingleWorkflowJSON(AbsStarter):
         available_workflows = job.available_workflows()
         self.workflow = available_workflows[workflow_name]()
 
-    def run(self) -> int:
+    def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         """Launch Speedwagon."""
         if self.options is None:
             raise ValueError("no data loaded")
@@ -650,7 +651,7 @@ class MultiWorkflowLauncher(AbsStarter):
             "queue.Queue[Tuple[job.AbsWorkflow, Dict[str, typing.Any]]]" \
             = queue.Queue()
 
-    def run(self) -> int:
+    def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         with worker.ToolJobManager() as work_manager:
             work_manager.logger = self.logger
             self._run(work_manager)
@@ -694,24 +695,61 @@ class MultiWorkflowLauncher(AbsStarter):
 
 class MultiWorkflowThreadedLauncher(AbsStarter):
 
-    def run(self) -> int:
-        self.job_manager.job_queue = self._pending_tasks
-        self.job_manager.start()
+    def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
+        with worker.ToolJobManager() as work_manager:
+            work_manager.logger = self.logger
+            self._run(work_manager)
+        return 0
+
+    def _perform(self):
+        print("clicked")
+        # for x in self.job_manager.workers:
+        #     self.window.log_manager.info(f"\nRunning {x.workflow_name}")
+        #     QtGui.QGuiApplication.processEvents()
+        #     x.run()
+        #     QtGui.QGuiApplication.processEvents()
+        #     x.join()
+
+    def _run(self, work_manager):
+
+        self.window = speedwagon.gui.MainWindow(
+            work_manager=work_manager,
+            debug=False)
+
+
+        # =================== MORE ===================
+        start_button = QtWidgets.QPushButton(text="Start", parent=self.window)
+        start_button.clicked.connect(self._perform)
+        self.window.mainLayout.addWidget(start_button)
+
+        quit_button = QtWidgets.QPushButton(text="Quit", parent=self.window)
+        quit_button.clicked.connect(QtCore.QCoreApplication.instance().quit)
+        self.window.mainLayout.addWidget(quit_button)
+
+        self.window.show()
+        work_manager.start()
+        self.window.log_manager.info("Staring up")
+        QtGui.QGuiApplication.processEvents()
 
     def __init__(
             self,
-            job_manager,
+            job_manager: runner_strategies.JobManager,
             logger:  Optional[logging.Logger] = None
     ) -> None:
         super().__init__()
         self.logger = logger or logging.getLogger(__name__)
-        self._pending_tasks: \
-            "queue.Queue[Tuple[job.AbsWorkflow, Dict[str, typing.Any]]]" \
-            = queue.Queue()
+        self.workers: typing.Set[runner_strategies.TaskScheduler2] = set()
+        # self._pending_tasks: \
+        #     "queue.Queue[Tuple[job.AbsWorkflow, Dict[str, typing.Any]]]" \
+        #     = queue.Queue()
         self.job_manager = job_manager
 
     def add_job(self, workflow, args):
-        self._pending_tasks.put((workflow, args))
+        working_dir = os.getcwd()
+        a = self.job_manager.submit_job(workflow.name, working_dir, args)
+        self.workers.add(a)
+
+        # self._pending_tasks.put((workflow, args))
 
     def initialize(self) -> None:
         pass
@@ -851,9 +889,9 @@ class ApplicationLauncher:
         """Initialize anything that needs to done prior to running."""
         self.strategy.initialize()
 
-    def run(self) -> int:
+    def run(self, app=None) -> int:
         """Run Speedwagon."""
-        return self.strategy.run()
+        return self.strategy.run(app)
 
 
 def main(argv: List[str] = None) -> None:
@@ -869,3 +907,154 @@ def main(argv: List[str] = None) -> None:
 
 if __name__ == '__main__':
     main()
+
+
+class GuiJobCallbacks(runner_strategies.AbsJobCallbacks):
+
+    def __init__(self,
+                 context: "BackgroundThreadLauncher",
+                 ) -> None:
+        self.context = context
+        if self.context.window is None:
+            raise RuntimeError("Context does not have an active window")
+        window: SimpleWindow = typing.cast(SimpleWindow, context.window)
+
+        self._com = QtSignalCommunicator()
+        self._com.update_total.connect(window.progress.setMaximum)
+        self._com.update_progress_gui.connect(window.progress.setValue)
+
+    def refresh(self) -> None:
+        QtWidgets.QApplication.processEvents()
+
+    def done(self) -> None:
+        if self.context.window is not None:
+            if self.context.window.start_button is not None:
+                self.context.window.start_button.setEnabled(True)
+            self.context.window.done.emit()
+
+    def update_progress(self, current: Optional[int],
+                        total: Optional[int]) -> None:
+        if current is None:
+            self._com.update_progress_gui.emit(-1)
+        else:
+            self._com.update_progress_gui.emit(current)
+
+        if total is not None:
+            self._com.update_total.emit(total)
+
+
+class SimplePopup(QtWidgets.QDialog):
+
+    def __init__(self, parent: "SimpleWindow") -> None:
+        super().__init__(parent)
+        layout = QtWidgets.QVBoxLayout()
+        self.text_box = QtWidgets.QLabel()
+        self.text_box.setText("Running")
+        layout.addWidget(self.text_box)
+        self.button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Cancel
+        )
+        self.setModal(True)
+        self.button_box.rejected.connect(parent.abort)
+        self.button_box.rejected.connect(self._request_abort)
+        # button_box.rejected.connect(parent.abort)
+        layout.addWidget(self.button_box)
+        self.setLayout(layout)
+
+    def _request_abort(self):
+        a = self.button_box.button(QtWidgets.QDialogButtonBox.Cancel)
+        self.text_box.setText("Canceling, please wait..")
+        a.setEnabled(False)
+
+
+class SimpleWindow(speedwagon.gui.MainWindow):
+    start = QtCore.pyqtSignal()
+    abort = QtCore.pyqtSignal()
+    done = QtCore.pyqtSignal()
+
+    def __init__(self, work_manager: "worker.ToolJobManager",
+                 debug: bool = False) -> None:
+        super().__init__(work_manager, debug)
+
+        self.progress = QtWidgets.QProgressBar(parent=self)
+
+        # self.progress.setValue(-1)
+        self.mainLayout.addWidget(self.progress)
+
+        self.start_button = QtWidgets.QPushButton(text="Start",
+                                                  parent=self)
+
+        self.start_button.clicked.connect(self.start)
+        self.mainLayout.addWidget(self.start_button)
+
+        self.quit_button = QtWidgets.QPushButton(text="Quit",
+                                                 parent=self)
+
+        self.mainLayout.addWidget(self.quit_button)
+        self.start.connect(self.run)
+        self.pop_up = SimplePopup(self)
+        self.done.connect(self._done)
+
+
+    def _done(self):
+        self.pop_up.accept()
+
+    def run(self):
+        self.progress.setRange(0, 0)
+        self.pop_up.show()
+        if self.start_button is not None:
+            self.start_button.setEnabled(False)
+
+
+class QtSignalCommunicator(QtCore.QObject):
+    update_progress_gui = QtCore.pyqtSignal(int)
+    update_total = QtCore.pyqtSignal(int)
+    job_done = QtCore.pyqtSignal()
+
+
+class BackgroundThreadLauncher(AbsStarter):
+
+    def __init__(self, job_manager: runner_strategies.AbsJobManager) -> None:
+        super().__init__()
+        self.job_manager = job_manager
+        self.window: Optional[SimpleWindow] = None
+        self.callbacks = None
+        self.options: Dict[str, typing.Any] = {}
+        self.workflow_name = None
+        self.events = ThreadedEvents()
+        self.working_directory = None
+
+    def start(self):
+        self.callbacks = GuiJobCallbacks(self)
+        self.job_manager.submit_job(
+            self.workflow_name,
+            working_directory=self.working_directory or os.getcwd(),
+            events=self.events,
+            options=self.options,
+            callbacks=self.callbacks
+        )
+
+    def abort(self):
+        self.events.stop()
+
+    def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
+        logger = logging.getLogger()
+        with worker.ToolJobManager() as work_manager:
+            work_manager.logger = logger
+
+            self.window = SimpleWindow(
+                work_manager=work_manager,
+                debug=False)
+            self.window.start.connect(self.start)
+            self.window.abort.connect(self.abort)
+
+            if app is not None:
+                self.window.quit_button.clicked.connect(app.exit)
+
+            self.window.show()
+            if app is not None:
+                app.exec_()
+        return 0
+
+    def initialize(self) -> None:
+        pass

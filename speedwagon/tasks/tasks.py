@@ -15,7 +15,8 @@ __all__ = [
     "MultiStageTaskBuilder",
     "TaskBuilder",
     "Result",
-    "Subtask"
+    "Subtask",
+    "TaskStatus"
 ]
 
 
