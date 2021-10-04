@@ -8,6 +8,7 @@ import enum
 import logging
 import os
 import queue
+import sys
 import tempfile
 import threading
 import typing
@@ -1630,84 +1631,84 @@ class AbsJobManager(contextlib.AbstractContextManager):
     ):
         pass
 
-#
-# class JobManager(AbsJobManager):
-#     def __init__(self) -> None:
-#         self.workers: List["TaskScheduler2"] = []
-#         self._threads = []
-#         self.valid_workflows: \
-#             Optional[dict[str, typing.Type[Workflow]]] = None
-#
-#     def __enter__(self) -> "JobManager":
-#         return self
-#
-#     def __exit__(self,
-#                  exc_type: Optional[Type[BaseException]],
-#                  exc_value: Optional[BaseException],
-#                  traceback: Optional[TracebackType]) -> None:
-#         print("Shutting down workers")
-#         for task_worker in self.workers:
-#             # assert task_worker.abort == task_worker.task_producer.abort
-#             # assert task_worker.abort == task_worker.task_consumer.abort
-#             # task_worker.task_producer.abort.set()
-#             # task_worker.task_consumer.abort.set()
-#             print("shut down setting")
-#             task_worker.shutting_down.set()
-#             print("shut down set")
-#             print("abort setting")
-#             task_worker.abort.set()
-#             print("abort set")
-#             print("joining task worker")
-#             task_worker.join()
-#             print("joining task worker - done")
-#         logging.debug("Joining threads")
-#         for t in self._threads:
-#             print(t)
-#             t.join()
-#         logging.debug("Joining threads - Done")
-#
-#     def __contains__(self, item: "TaskScheduler2") -> bool:
-#         return item in self.workers
-#
-#     def submit_job(
-#             self,
-#             workflow_name: str,
-#             working_directory: str,
-#             callbacks: AbsJobCallbacks,
-#             events: AbsEvents,
-#             options: Optional[Dict[str, Any]] = None,
-#     ) -> "TaskScheduler2":
-#
-#         options = options or {}
-#         task_scheduler = TaskScheduler2(self, working_directory)
-#
-#         if self.valid_workflows is not None:
-#             if any(
-#                 {
-#                     workflow_name not in self.valid_workflows,
-#                     workflow_name not in available_workflows()
-#                 }
-#             ) is False:
-#                 raise ValueError(
-#                     f"Unable to submit unknown workflow {workflow_name}"
-#                 )
-#
-#         # if self.valid_workflows is not None:
-#             task_scheduler.valid_workflows = self.valid_workflows
-#
-#         task_scheduler.workflow_name = workflow_name
-#         task_scheduler.workflow_options = options
-#         event = threading.Event()
-#         t = threading.Thread(target=task_scheduler.start, args=(event, ))
-#         self._threads.append(t)
-#         t.start()
-#         while not event.wait(1):
-#             print("waiting", file=sys.stderr)
-#         print("up")
-#         # task_scheduler.run()
-#         self.workers.append(task_scheduler)
-#         # TODO add this to a thread
-#         return task_scheduler
+
+class JobManager(AbsJobManager):
+    def __init__(self) -> None:
+        self.workers: List["TaskScheduler2"] = []
+        self._threads = []
+        self.valid_workflows: \
+            Optional[dict[str, typing.Type[Workflow]]] = None
+
+    def __enter__(self) -> "JobManager":
+        return self
+
+    def __exit__(self,
+                 exc_type: Optional[Type[BaseException]],
+                 exc_value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
+        print("Shutting down workers")
+        for task_worker in self.workers:
+            # assert task_worker.abort == task_worker.task_producer.abort
+            # assert task_worker.abort == task_worker.task_consumer.abort
+            # task_worker.task_producer.abort.set()
+            # task_worker.task_consumer.abort.set()
+            print("shut down setting")
+            task_worker.shutting_down.set()
+            print("shut down set")
+            print("abort setting")
+            task_worker.abort.set()
+            print("abort set")
+            print("joining task worker")
+            task_worker.join()
+            print("joining task worker - done")
+        logging.debug("Joining threads")
+        for t in self._threads:
+            print(t)
+            t.join()
+        logging.debug("Joining threads - Done")
+
+    def __contains__(self, item: "TaskScheduler2") -> bool:
+        return item in self.workers
+
+    def submit_job(
+            self,
+            workflow_name: str,
+            working_directory: str,
+            callbacks: AbsJobCallbacks,
+            events: AbsEvents,
+            options: Optional[Dict[str, Any]] = None,
+    ) -> "TaskScheduler2":
+
+        options = options or {}
+        task_scheduler = TaskScheduler2(self, working_directory)
+
+        if self.valid_workflows is not None:
+            if any(
+                {
+                    workflow_name not in self.valid_workflows,
+                    workflow_name not in available_workflows()
+                }
+            ) is False:
+                raise ValueError(
+                    f"Unable to submit unknown workflow {workflow_name}"
+                )
+
+        # if self.valid_workflows is not None:
+            task_scheduler.valid_workflows = self.valid_workflows
+
+        task_scheduler.workflow_name = workflow_name
+        task_scheduler.workflow_options = options
+        event = threading.Event()
+        t = threading.Thread(target=task_scheduler.start, args=(event, ))
+        self._threads.append(t)
+        t.start()
+        while not event.wait(1):
+            print("waiting", file=sys.stderr)
+        print("up")
+        # task_scheduler.run()
+        self.workers.append(task_scheduler)
+        # TODO add this to a thread
+        return task_scheduler
 
 
 class Run(TaskScheduler):
