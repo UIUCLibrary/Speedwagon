@@ -8,7 +8,6 @@ import enum
 import logging
 import os
 import queue
-import sys
 import tempfile
 import threading
 import typing
@@ -57,7 +56,11 @@ class AbsJobCallbacks(abc.ABC):
     def done(self) -> None:
         """Job is done."""
 
-    def update_progress(self, current: Optional[int], total: Optional[int]) -> None:
+    def update_progress(
+            self,
+            current: Optional[int],
+            total: Optional[int]
+    ) -> None:
         """Update the job's progress."""
 
 
@@ -397,7 +400,11 @@ class TaskGenerator:
             workflow: Workflow,
             options: typing.Mapping[str, Any],
             working_directory: str,
-            caller: typing.Optional[typing.Union["ThreadedTaskProducer", "TaskScheduler"]] = None
+
+            caller: typing.Optional[
+                typing.Union["ThreadedTaskProducer", "TaskScheduler"]
+            ] = None
+
     ) -> None:
         self.workflow = workflow
         self.options = options
@@ -965,7 +972,7 @@ class AbsTaskSchedulerState(abc.ABC):
         self.details: Optional[str] = None
 
     @abc.abstractmethod
-    def start(self, await_event: threading.Event=None) -> None:
+    def start(self, await_event: threading.Event = None) -> None:
         """Start task producer and consumer.
 
         Args:
@@ -986,7 +993,6 @@ class AbsTaskSchedulerState(abc.ABC):
             self.context.status = TaskSchedulerFailed(self.context)
             self.context.status.details = error.__str__()
             raise
-
 
     @abc.abstractmethod
     def run(self, await_event: Optional[threading.Event]) -> None:
@@ -1017,8 +1023,9 @@ class TaskSchedulerInit(AbsTaskSchedulerState):
         if workflow_class is None:
             raise AssertionError("Workflow not found")
         self.context.task_producer.workflow = workflow_class()
-        self.context.task_producer.workflow_options = self.context.workflow_options
 
+        self.context.task_producer.workflow_options = \
+            self.context.workflow_options
 
         # TODO: get rid of os.getcwd()
         self.context.task_producer.working_directory = os.getcwd()
@@ -1037,7 +1044,7 @@ class TaskSchedulerInit(AbsTaskSchedulerState):
 class TaskSchedulerIdle(AbsTaskSchedulerState):
     status_name = 'idle'
 
-    def start(self, await_event: threading.Event=None) -> None:
+    def start(self, await_event: threading.Event = None) -> None:
         raise RuntimeError("Scheduler already started")
 
     def run(self, await_event: Optional[threading.Event] = None) -> None:
@@ -1063,7 +1070,7 @@ class TaskSchedulerIdle(AbsTaskSchedulerState):
 class TaskSchedulerWorking(AbsTaskSchedulerState):
     status_name = "working"
 
-    def start(self, await_event: threading.Event=None) -> None:
+    def start(self, await_event: threading.Event = None) -> None:
         raise RuntimeError("Task scheduling already start")
 
     def run_next_task(self):
@@ -1116,7 +1123,7 @@ class TaskSchedulerWorking(AbsTaskSchedulerState):
 class TaskSchedulerFailed(AbsTaskSchedulerState):
     status_name = "failed"
 
-    def start(self, await_event: threading.Event=None) -> None:
+    def start(self, await_event: threading.Event = None) -> None:
         raise RuntimeError("Task failed")
 
     def run_next_task(self) -> None:
@@ -1131,10 +1138,11 @@ class TaskSchedulerFailed(AbsTaskSchedulerState):
         If in a failed state, there is nothing to join
         """
 
+
 class TaskSchedulerJoined(AbsTaskSchedulerState):
     status_name = "joined"
 
-    def start(self, await_event: threading.Event=None) -> None:
+    def start(self, await_event: threading.Event = None) -> None:
         raise RuntimeError("Unable to start once joined")
 
     def run_next_task(self) -> None:
@@ -1266,7 +1274,9 @@ class ThreadedTaskProducer(TaskManagementThread):
     def request_more_info(self, *args, **kwargs):
         pass
 
-    def iter_tasks(self) -> typing.Iterable[typing.Union[speedwagon.tasks.Subtask, None]]:
+    def iter_tasks(
+            self
+    ) -> typing.Iterable[typing.Union[speedwagon.tasks.Subtask, None]]:
 
         if self.workflow is None:
             return []
@@ -1322,9 +1332,9 @@ class ThreadedTaskProducer(TaskManagementThread):
             self._last_packet_finished = packet
 
 
-
 class TerminateConsumerThread(Exception):
     pass
+
 
 class ThreadedTaskConsumer(TaskManagementThread):
 
@@ -1336,9 +1346,15 @@ class ThreadedTaskConsumer(TaskManagementThread):
         self._active = False
         self.abort = threading.Event()
 
-    def start(self, confirm_started_condition: Optional[threading.Event] = None) -> None:
+    def start(
+            self,
+            confirm_started_condition: Optional[threading.Event] = None
+    ) -> None:
+
         self._active = True
-        confirm_started_condition = confirm_started_condition or threading.Event()
+        confirm_started_condition = \
+            confirm_started_condition or threading.Event()
+
         self._task_consumer_thread = threading.Thread(
             name='consumer',
             target=self.run,
@@ -1494,7 +1510,8 @@ class TaskScheduler2(AbsTaskScheduler):
         workflow = self._workflow_class()
         if workflow.name is None:
             if self.valid_workflows is not None:
-                for workflow_name, workflow_class in self.valid_workflows.items():
+                for workflow_name, workflow_class in \
+                        self.valid_workflows.items():
                     if workflow.__class__ == workflow_class:
                         return workflow_name
             return self._workflow_class.__name__
@@ -1618,7 +1635,8 @@ class AbsJobManager(contextlib.AbstractContextManager):
 #     def __init__(self) -> None:
 #         self.workers: List["TaskScheduler2"] = []
 #         self._threads = []
-#         self.valid_workflows: Optional[dict[str, typing.Type[Workflow]]] = None
+#         self.valid_workflows: \
+#             Optional[dict[str, typing.Type[Workflow]]] = None
 #
 #     def __enter__(self) -> "JobManager":
 #         return self

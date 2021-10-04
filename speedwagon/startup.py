@@ -716,7 +716,6 @@ class MultiWorkflowThreadedLauncher(AbsStarter):
             work_manager=work_manager,
             debug=False)
 
-
         # =================== MORE ===================
         start_button = QtWidgets.QPushButton(text="Start", parent=self.window)
         start_button.clicked.connect(self._perform)
@@ -994,7 +993,6 @@ class SimpleWindow(speedwagon.gui.MainWindow):
         self.start.connect(self.run)
         self.pop_up = SimplePopup(self)
         self.done.connect(self._done)
-
 
     def _done(self):
         self.pop_up.accept()
