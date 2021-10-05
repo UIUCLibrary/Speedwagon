@@ -689,3 +689,13 @@ class TestSimplePopup:
             pop_up_window.button_box.button(
                 QtWidgets.QDialogButtonBox.Cancel
             ).click()
+
+
+class TestBackgroundThreadLauncher:
+    def test_have_no_window_fails(self):
+        with speedwagon.runner_strategies.BackgroundJobManager() as manager:
+            launcher = speedwagon.startup.BackgroundThreadLauncher(manager)
+            with pytest.raises(RuntimeError) as e:
+                # launcher.workflow_name = "spam"
+                launcher.start()
+            assert "active window" in str(e.value)
