@@ -1002,7 +1002,7 @@ class TestThreadedTaskProducer:
         producer.workflow = NotAValidWorkflow()
         producer.working_directory = ""
         producer.start()
-        with pytest.raises(AttributeError):
+        with pytest.raises(AttributeError) as e:
             producer.join(timeout=None)
 
     def test_join_on_abort(self):

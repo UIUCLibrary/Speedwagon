@@ -1200,7 +1200,7 @@ class ThreadedTaskProducer(TaskManagementThread):
         self.abort = threading.Event()
         self._start_event = threading.Event()
 
-        self.exec: Optional[BaseException] = None
+        self.exc: Optional[BaseException] = None
 
     def is_finished(self) -> bool:
         return self._finished
@@ -1242,9 +1242,9 @@ class ThreadedTaskProducer(TaskManagementThread):
             logging.debug("task_producer_thread stopped")
         finally:
             self._finished = True
-            if self.exec is not None:
+            if self.exc is not None:
                 self.abort.set()
-                raise self.exec
+                raise self.exc
 
     def shutdown(self) -> None:
         self._active = False
@@ -1275,7 +1275,7 @@ class ThreadedTaskProducer(TaskManagementThread):
                     self._finished = True
             logging.debug('Producer thread finished ...')
         except BaseException as exception:
-            self.exec = exception
+            self.exc = exception
             self.abort.set()
             raise
 
