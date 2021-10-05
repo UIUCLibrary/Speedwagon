@@ -1007,7 +1007,8 @@ class TaskScheduler:
 #
 #     def start(self, await_event: threading.Event = None) -> None:
 #         self.context.status = TaskSchedulerIdle(self.context)
-#         # self.context.task_producer.workflow_name = self.context.workflow_name
+#         # self.context.task_producer.workflow_name = \
+#           self.context.workflow_name
 #         #
 #         # start_condition = threading.Condition()
 #         await_event = await_event or threading.Event()
@@ -1476,7 +1477,8 @@ class TaskPacket:
 #         self.current_task_progress: typing.Optional[int] = None
 #         self.total_tasks: typing.Optional[int] = None
 #
-#         self.valid_workflows: Optional[Dict[str, typing.Type[Workflow]]] = None
+#         self.valid_workflows: Optional[Dict[str, typing.Type[Workflow]]] \
+#           = None
 #         self._workflow_class: Optional[typing.Type[Workflow]] = None
 #         self.workflow_options: Dict[str, Any] = {}
 #
