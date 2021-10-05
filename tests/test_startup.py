@@ -677,3 +677,15 @@ class TestMultiWorkflowLauncher:
          )
         with pytest.raises(speedwagon.job.JobCancelled):
             startup_launcher.run()
+
+
+class TestSimplePopup:
+    def test_cancel_aborts(self, qtbot):
+        app = speedwagon.startup.SimpleWindow(Mock())
+        pop_up_window = speedwagon.startup.SimplePopup(app)
+        qtbot.add_widget(pop_up_window)
+
+        with qtbot.waitSignal(app.abort):
+            pop_up_window.button_box.button(
+                QtWidgets.QDialogButtonBox.Cancel
+            ).click()
