@@ -1170,14 +1170,14 @@ class TaskScheduler:
 #         self.tast_queue = task_queue
 
 
-class TaskManagementThread(abc.ABC):
-    def __init__(self, task_queue: 'queue.Queue[TaskPacket]') -> None:
-        self.task_queue = task_queue
-        self.workflow_options: Dict[str, Any] = {}
-
-    @abc.abstractmethod
-    def run(self, await_event: threading.Event) -> None:
-        """Run Main."""
+# class TaskManagementThread(abc.ABC):
+#     def __init__(self, task_queue: 'queue.Queue[TaskPacket]') -> None:
+#         self.task_queue = task_queue
+#         self.workflow_options: Dict[str, Any] = {}
+#
+#     @abc.abstractmethod
+#     def run(self, await_event: threading.Event) -> None:
+#         """Run Main."""
 
 
 # class ThreadedTaskProducer(TaskManagementThread):
