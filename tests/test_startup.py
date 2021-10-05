@@ -699,3 +699,55 @@ class TestBackgroundThreadLauncher:
                 # launcher.workflow_name = "spam"
                 launcher.start()
             assert "active window" in str(e.value)
+
+
+class TestGuiJobCallbacks:
+    @pytest.fixture()
+    def background_thread_launcher(self):
+        launcher = Mock()
+        return launcher
+
+    @pytest.fixture()
+    def gui_job_callbacks(self, background_thread_launcher):
+        return speedwagon.startup.GuiJobCallbacks(background_thread_launcher)
+
+    def test_refresh_calls_process_events(self, gui_job_callbacks, monkeypatch):
+        processEvents = Mock()
+        monkeypatch.setattr(
+            speedwagon.startup.QtWidgets.QApplication,
+            "processEvents",
+            processEvents
+        )
+        gui_job_callbacks.refresh()
+        assert processEvents.called is True
+
+    def test_error_opens_error_message(self, gui_job_callbacks, qtbot, monkeypatch):
+        error = Mock()
+
+        def QMessageBox():
+            return error
+
+        Critical = speedwagon.startup.QtWidgets.QMessageBox.Critical
+        monkeypatch.setattr(
+            speedwagon.startup.QtWidgets,
+            "QMessageBox",
+            QMessageBox
+        )
+        speedwagon.startup.QtWidgets.QMessageBox.Critical = Critical
+        gui_job_callbacks.error("Failed!")
+        error.setText.assert_called_with("Failed!")
+
+    def test_update_progress(
+            self,
+            gui_job_callbacks,
+            background_thread_launcher
+    ):
+        gui_job_callbacks.update_progress(10, 100)
+        progress = background_thread_launcher.window.progress
+        progress.setMaximum.assert_called_with(100)
+        progress.setValue.assert_called_with(10)
+
+    def test_done(self, gui_job_callbacks, background_thread_launcher):
+        gui_job_callbacks.done()
+        window = background_thread_launcher.window
+        assert window.done.emit.called is True
