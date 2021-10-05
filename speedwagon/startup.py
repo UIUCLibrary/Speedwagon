@@ -693,65 +693,65 @@ class MultiWorkflowLauncher(AbsStarter):
         self._pending_tasks.put((workflow, args))
 
 
-class MultiWorkflowThreadedLauncher(AbsStarter):
-
-    def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
-        with worker.ToolJobManager() as work_manager:
-            work_manager.logger = self.logger
-            self._run(work_manager)
-        return 0
-
-    def _perform(self):
-        print("clicked")
-        # for x in self.job_manager.workers:
-        #     self.window.log_manager.info(f"\nRunning {x.workflow_name}")
-        #     QtGui.QGuiApplication.processEvents()
-        #     x.run()
-        #     QtGui.QGuiApplication.processEvents()
-        #     x.join()
-
-    def _run(self, work_manager):
-
-        self.window = speedwagon.gui.MainWindow(
-            work_manager=work_manager,
-            debug=False)
-
-        # =================== MORE ===================
-        start_button = QtWidgets.QPushButton(text="Start", parent=self.window)
-        start_button.clicked.connect(self._perform)
-        self.window.mainLayout.addWidget(start_button)
-
-        quit_button = QtWidgets.QPushButton(text="Quit", parent=self.window)
-        quit_button.clicked.connect(QtCore.QCoreApplication.instance().quit)
-        self.window.mainLayout.addWidget(quit_button)
-
-        self.window.show()
-        work_manager.start()
-        self.window.log_manager.info("Staring up")
-        QtGui.QGuiApplication.processEvents()
-
-    def __init__(
-            self,
-            job_manager: runner_strategies.JobManager,
-            logger:  Optional[logging.Logger] = None
-    ) -> None:
-        super().__init__()
-        self.logger = logger or logging.getLogger(__name__)
-        self.workers: typing.Set[runner_strategies.TaskScheduler2] = set()
-        # self._pending_tasks: \
-        #     "queue.Queue[Tuple[job.AbsWorkflow, Dict[str, typing.Any]]]" \
-        #     = queue.Queue()
-        self.job_manager = job_manager
-
-    def add_job(self, workflow, args):
-        working_dir = os.getcwd()
-        a = self.job_manager.submit_job(workflow.name, working_dir, args)
-        self.workers.add(a)
-
-        # self._pending_tasks.put((workflow, args))
-
-    def initialize(self) -> None:
-        pass
+# class MultiWorkflowThreadedLauncher(AbsStarter):
+#
+#     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
+#         with worker.ToolJobManager() as work_manager:
+#             work_manager.logger = self.logger
+#             self._run(work_manager)
+#         return 0
+#
+#     def _perform(self):
+#         print("clicked")
+#         # for x in self.job_manager.workers:
+#         #     self.window.log_manager.info(f"\nRunning {x.workflow_name}")
+#         #     QtGui.QGuiApplication.processEvents()
+#         #     x.run()
+#         #     QtGui.QGuiApplication.processEvents()
+#         #     x.join()
+#
+#     def _run(self, work_manager):
+#
+#         self.window = speedwagon.gui.MainWindow(
+#             work_manager=work_manager,
+#             debug=False)
+#
+#         # =================== MORE ===================
+#         start_button = QtWidgets.QPushButton(text="Start", parent=self.window)
+#         start_button.clicked.connect(self._perform)
+#         self.window.mainLayout.addWidget(start_button)
+#
+#         quit_button = QtWidgets.QPushButton(text="Quit", parent=self.window)
+#         quit_button.clicked.connect(QtCore.QCoreApplication.instance().quit)
+#         self.window.mainLayout.addWidget(quit_button)
+#
+#         self.window.show()
+#         work_manager.start()
+#         self.window.log_manager.info("Staring up")
+#         QtGui.QGuiApplication.processEvents()
+#
+#     def __init__(
+#             self,
+#             job_manager: runner_strategies.JobManager,
+#             logger:  Optional[logging.Logger] = None
+#     ) -> None:
+#         super().__init__()
+#         self.logger = logger or logging.getLogger(__name__)
+#         self.workers: typing.Set[runner_strategies.TaskScheduler2] = set()
+#         # self._pending_tasks: \
+#         #     "queue.Queue[Tuple[job.AbsWorkflow, Dict[str, typing.Any]]]" \
+#         #     = queue.Queue()
+#         self.job_manager = job_manager
+#
+#     def add_job(self, workflow, args):
+#         working_dir = os.getcwd()
+#         a = self.job_manager.submit_job(workflow.name, working_dir, args)
+#         self.workers.add(a)
+#
+#         # self._pending_tasks.put((workflow, args))
+#
+#     def initialize(self) -> None:
+#         pass
 
 
 class TabsEditorApp(QtWidgets.QDialog):
