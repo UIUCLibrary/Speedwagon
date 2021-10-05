@@ -928,7 +928,7 @@ class GuiJobCallbacks(runner_strategies.AbsJobCallbacks):
     def error(
             self,
             message: Optional[str] = None,
-            exec: Optional[BaseException] = None
+            exc: Optional[BaseException] = None
     ) -> None:
 
         error = QtWidgets.QErrorMessage()

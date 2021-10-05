@@ -53,7 +53,7 @@ class AbsJobCallbacks(abc.ABC):
     def error(
             self,
             message: Optional[str] = None,
-            exec: Optional[BaseException] = None
+            exc: Optional[BaseException] = None
     ) -> None:
         """Had an error"""
 
