@@ -570,7 +570,7 @@ pipeline {
                                                 adapters: [
                                                         coberturaAdapter('reports/coverage.xml')
                                                     ],
-                                                calculateDiffForChangeRequests: true,
+//                                                 calculateDiffForChangeRequests: true,
                                                 sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                                             )
                                         }
