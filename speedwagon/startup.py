@@ -910,9 +910,11 @@ class SimplePopup(QtWidgets.QDialog):
         self.setLayout(layout)
 
     def _request_abort(self):
-        a = self.button_box.button(QtWidgets.QDialogButtonBox.Cancel)
+        cancel_button = self.button_box.button(
+            QtWidgets.QDialogButtonBox.Cancel
+        )
         self.text_box.setText("Canceling, please wait..")
-        a.setEnabled(False)
+        cancel_button.setEnabled(False)
 
 
 class SimpleWindow(speedwagon.gui.MainWindow):
