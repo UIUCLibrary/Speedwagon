@@ -1190,6 +1190,9 @@ class TestBackgroundJobManager:
             )
         assert callbacks.done.called is True
 
+    @pytest.mark.filterwarnings(
+        "ignore::pytest.PytestUnhandledThreadExceptionWarning"
+    )
     def test_exception_caught(self):
         class BadTask(speedwagon.tasks.Subtask):
 
