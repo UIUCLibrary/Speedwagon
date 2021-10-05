@@ -571,7 +571,7 @@ pipeline {
                                                         coberturaAdapter('reports/coverage.xml')
                                                     ],
 //                                                 calculateDiffForChangeRequests: true,
-                                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+//                                                 sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                                             )
                                         }
                                     }
