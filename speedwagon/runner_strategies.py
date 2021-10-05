@@ -6,16 +6,13 @@ import dataclasses
 import enum
 
 import logging
-import os
 import queue
-import sys
 import tempfile
 import threading
 import typing
 import warnings
-from abc import ABCMeta, abstractmethod
 from types import TracebackType
-from typing import List, Any, Dict, Optional, Type, Iterable, Mapping
+from typing import List, Any, Dict, Optional, Type
 from PyQt5 import QtWidgets
 
 import speedwagon
