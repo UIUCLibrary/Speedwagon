@@ -406,9 +406,7 @@ class TaskGenerator:
             options: typing.Mapping[str, Any],
             working_directory: str,
 
-            caller: typing.Optional[
-                typing.Union["ThreadedTaskProducer", "TaskScheduler"]
-            ] = None
+            caller: typing.Optional["TaskScheduler"] = None
 
     ) -> None:
         self.workflow = workflow
