@@ -1174,12 +1174,12 @@ class SpamWorkflow(speedwagon.Workflow):
 class TestBackgroundJobManager:
 
     def test_manager_does_nothing(self):
-        with runner_strategies.BackgroundJobManager() as manager:
+        with runner_strategies.BackgroundJobManager2() as manager:
             assert manager is not None
 
     def test_job_done_called(self):
         callbacks = Mock()
-        with runner_strategies.BackgroundJobManager() as manager:
+        with runner_strategies.BackgroundJobManager2() as manager:
             manager.valid_workflows = {"spam": SpamWorkflow}
             manager.submit_job(
                 workflow_name="spam",
@@ -1211,7 +1211,7 @@ class TestBackgroundJobManager:
                 ]
 
         with pytest.raises(FileNotFoundError):
-            with runner_strategies.BackgroundJobManager() as manager:
+            with runner_strategies.BackgroundJobManager2() as manager:
                 manager.valid_workflows = {"bacon": BaconWorkflow}
                 manager.submit_job(
                     workflow_name="bacon",

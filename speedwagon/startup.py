@@ -961,7 +961,7 @@ class QtSignalCommunicator(QtCore.QObject):
 
 class BackgroundThreadLauncher(AbsStarter):
 
-    def __init__(self, job_manager: runner_strategies.AbsJobManager) -> None:
+    def __init__(self, job_manager: runner_strategies.AbsJobManager2) -> None:
         super().__init__()
         self.job_manager = job_manager
         self.window: Optional[SimpleWindow] = None

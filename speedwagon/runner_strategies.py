@@ -1621,7 +1621,7 @@ class QtRunner(AbsRunner2):
         task_scheduler.run(job, options)
 
 
-class AbsJobManager(contextlib.AbstractContextManager):
+class AbsJobManager2(contextlib.AbstractContextManager):
 
     def __init__(self) -> None:
         super().__init__()
@@ -1639,7 +1639,7 @@ class AbsJobManager(contextlib.AbstractContextManager):
         pass
 
 #
-# class JobManager(AbsJobManager):
+# class JobManager(AbsJobManager2):
 #     def __init__(self) -> None:
 #         self.workers: List["TaskScheduler2"] = []
 #         self._threads = []
@@ -1739,7 +1739,7 @@ class Run(TaskScheduler):
         return workflow_class
 
 
-class BackgroundJobManager(AbsJobManager):
+class BackgroundJobManager2(AbsJobManager2):
     def __init__(self):
         super().__init__()
         self.logger = logging.getLogger(__name__)
@@ -1747,7 +1747,7 @@ class BackgroundJobManager(AbsJobManager):
         self.valid_workflows = None
         self._background_thread: Optional[threading.Thread] = None
 
-    def __enter__(self) -> "BackgroundJobManager":
+    def __enter__(self) -> "BackgroundJobManager2":
         self._exec = None
         self._background_thread = None
         return self
