@@ -1778,7 +1778,7 @@ class BackgroundJobManager(AbsJobManager2):
         except BaseException as exception_thrown:
             self._exec = exception_thrown
             callbacks.error()
-            # raise
+            raise
         callbacks.done()
 
     def __exit__(self,
