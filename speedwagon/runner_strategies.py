@@ -1734,7 +1734,7 @@ class Run(TaskScheduler):
         return workflow_class
 
 
-class BackgroundJobManager2(AbsJobManager2):
+class BackgroundJobManager(AbsJobManager2):
     def __init__(self):
         super().__init__()
         self.logger = logging.getLogger(__name__)
@@ -1742,7 +1742,7 @@ class BackgroundJobManager2(AbsJobManager2):
         self.valid_workflows = None
         self._background_thread: Optional[threading.Thread] = None
 
-    def __enter__(self) -> "BackgroundJobManager2":
+    def __enter__(self) -> "BackgroundJobManager":
         self._exec = None
         self._background_thread = None
         return self
@@ -1773,10 +1773,8 @@ class BackgroundJobManager2(AbsJobManager2):
                     total=task_scheduler.total_tasks
                 )
 
-                # self.logger.info(r.total_tasks)
-                # self.logger.info(r.current_task_progress)
-        except BaseException as e:
-            self._exec = e
+        except BaseException as exception_thrown:
+            self._exec = exception_thrown
             callbacks.error()
             # raise
         callbacks.done()
