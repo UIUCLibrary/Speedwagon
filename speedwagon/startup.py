@@ -31,6 +31,7 @@ import speedwagon.models
 import speedwagon.tabs
 from speedwagon import worker, job, runner_strategies
 from speedwagon.dialog.settings import TabEditor
+from speedwagon.dialog.dialogs import WorkflowProgress
 from speedwagon.runner_strategies import ThreadedEvents
 from speedwagon.tabs import extract_tab_information
 import speedwagon.gui
@@ -507,6 +508,165 @@ class StartupDefault(AbsStarter):
             )
 
 
+class WorkflowSignals(QtCore.QObject):
+    error = QtCore.pyqtSignal([str, BaseException, str], [BaseException, str])
+    progress_changed = QtCore.pyqtSignal(int)
+    total_jobs_changed = QtCore.pyqtSignal(int)
+    cancel_complete = QtCore.pyqtSignal()
+    success_achieved = QtCore.pyqtSignal()
+
+
+class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
+
+    def __init__(self, dialog_box: WorkflowProgress) -> None:
+        super().__init__()
+        self.signals = WorkflowSignals()
+        self.dialog_box = dialog_box
+
+        self.signals.progress_changed.connect(
+            self.dialog_box.set_current_progress
+        )
+
+        self.signals.total_jobs_changed.connect(self.dialog_box.set_total_jobs)
+        self.signals.error.connect(self._error_message)
+        self.signals.cancel_complete.connect(self.dialog_box.cancel_completed)
+
+        self.signals.success_achieved.connect(
+            self.dialog_box.success_completed
+        )
+
+    def error(
+            self,
+            message: Optional[str] = None,
+            exc: Optional[BaseException] = None,
+            traceback: Optional[str] = None
+    ) -> None:
+        self.signals.error.emit(message, exc, traceback)
+
+    def cancelling_complete(self):
+        self.signals.cancel_complete.emit()
+
+    def _error_message(
+            self,
+            message: Optional[str] = None,
+            exc: Optional[BaseException] = None,
+            traceback: Optional[str] = None
+    ) -> None:
+        if message is not None:
+            self.dialog_box.write_to_console(message)
+        self.dialog_box.write_to_console(str(exc), level=logging.ERROR)
+        error = QtWidgets.QMessageBox()
+        error.setWindowTitle("Workflow Failed")
+        error.setIcon(QtWidgets.QMessageBox.Critical)
+        error.setText(message or f"An error occurred: {exc}")
+        if traceback is not None:
+            error.setDetailedText(traceback)
+        error.exec()
+        self.dialog_box.failed()
+
+    def done(self) -> None:
+        self.signals.success_achieved.emit()
+
+    def refresh(self) -> None:
+        QtWidgets.QApplication.processEvents()
+
+    def update_progress(self, current: Optional[int],
+                        total: Optional[int]) -> None:
+        if total is not None:
+            self.signals.total_jobs_changed.emit(total)
+        if current is not None:
+            self.signals.progress_changed.emit(current)
+        # self.signals.update_progress(current, total)
+
+
+class Startup2Default(StartupDefault):
+
+    def __init__(self, app: QtWidgets.QApplication = None) -> None:
+        super().__init__(app)
+        self.startup_settings['debug'] = False
+
+    def _load_workflows(self, application: speedwagon.gui.MainWindow2) -> None:
+        self._logger.debug("Loading Workflows")
+        loading_workflows_stream = io.StringIO()
+        with contextlib.redirect_stderr(loading_workflows_stream):
+            all_workflows = job.available_workflows()
+        # Load every user configured tab
+        tabs_file_size = os.path.getsize(self.tabs_file)
+        if tabs_file_size > 0:
+            try:
+                for tab_name, extra_tab in \
+                        get_custom_tabs(all_workflows, self.tabs_file):
+                    application.add_tab(tab_name, collections.OrderedDict(
+                        sorted(extra_tab.items())))
+            except FileFormatError as error:
+                self._logger.warning(
+                    "Unable to load custom tabs from %s. Reason: %s",
+                    self.tabs_file,
+                    error
+                )
+
+        # All Workflows tab
+        self._logger.debug("Loading Tab All")
+        application.add_tab("All", collections.OrderedDict(
+            sorted(all_workflows.items())))
+        workflow_errors_msg = loading_workflows_stream.getvalue().strip()
+        if workflow_errors_msg:
+            for line in workflow_errors_msg.split("\n"):
+                self._logger.warning(line)
+
+    def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
+        with runner_strategies.BackgroundJobManager() as job_manager:
+            windows = speedwagon.gui.MainWindow2(
+                job_manager=job_manager,
+                debug=cast(bool, self.startup_settings['debug'])
+            )
+
+            windows.submit_job.connect(
+                lambda workflow_name, options:
+                self.submit_job(windows, job_manager, workflow_name, options)
+            )
+
+            self._load_workflows(windows)
+            windows.show()
+            return self.app.exec_()
+
+    def initialize(self) -> None:
+        pass
+
+    def abort_job(self, window, events: runner_strategies.AbsEvents):
+        window.stop()
+        events.stop()
+        # while events.is_stopped()
+
+    def submit_job(
+            self,
+            main_app: speedwagon.gui.MainWindow2,
+            job_manager: runner_strategies.BackgroundJobManager,
+            workflow_name,
+            options
+    ) -> None:
+        dialog_box = WorkflowProgress()
+        dialog_box.rejected.connect(main_app.close)
+        dialog_box.setWindowTitle(workflow_name)
+        dialog_box.show()
+        dialog_box.start()
+        threaded_events = ThreadedEvents()
+
+        dialog_box.aborted.connect(
+            lambda: self.abort_job(dialog_box, threaded_events)
+        )
+
+        job_manager.submit_job(
+            workflow_name=workflow_name,
+            options=options,
+            working_directory="/tmp",
+            callbacks=WorkflowProgressCallbacks(dialog_box),
+            events=threaded_events,
+        )
+        # dialog_box.write_to_console("ok")
+        dialog_box.exec()
+
+
 class SingleWorkflowLauncher(AbsStarter):
     """Single workflow launcher.
 
@@ -821,7 +981,7 @@ class ApplicationLauncher:
             strategy: Starter strategy class.
         """
         super().__init__()
-        self.strategy = strategy or StartupDefault()
+        self.strategy = strategy or Startup2Default()
 
     def initialize(self) -> None:
         """Initialize anything that needs to done prior to running."""
@@ -863,6 +1023,9 @@ class GuiJobCallbacks(runner_strategies.AbsJobCallbacks):
 
     def refresh(self) -> None:
         QtWidgets.QApplication.processEvents()
+
+    def cancelling_complete(self):
+        print("done")
 
     def error(
             self,

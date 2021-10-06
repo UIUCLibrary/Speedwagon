@@ -9,6 +9,7 @@ import logging
 import queue
 import tempfile
 import threading
+import traceback
 import typing
 import warnings
 from types import TracebackType
@@ -50,12 +51,17 @@ class AbsJobCallbacks(abc.ABC):
     def error(
             self,
             message: Optional[str] = None,
-            exc: Optional[BaseException] = None
+            exc: Optional[BaseException] = None,
+            traceback: Optional[str] = None
     ) -> None:
         """Had an error"""
 
     def refresh(self) -> None:
         """Refresh."""
+
+    @abc.abstractmethod
+    def cancelling_complete(self):
+        """Run when the job has been cancelled."""
 
     @abc.abstractmethod
     def done(self) -> None:
@@ -1768,6 +1774,7 @@ class BackgroundJobManager(AbsJobManager2):
             workflow = task_scheduler.get_workflow(workflow_name)()
             for task in task_scheduler.iter_tasks(workflow, options):
                 if events.is_stopped() is True:
+                    callbacks.cancelling_complete()
                     break
                 task.exec()
                 callbacks.update_progress(
@@ -1776,8 +1783,10 @@ class BackgroundJobManager(AbsJobManager2):
                 )
 
         except BaseException as exception_thrown:
+            traceback_info = traceback.format_exc()
+
             self._exec = exception_thrown
-            callbacks.error()
+            callbacks.error(exc=exception_thrown, traceback=traceback_info)
             raise
         callbacks.done()
 
@@ -1816,7 +1825,7 @@ class BackgroundJobManager(AbsJobManager2):
             self._background_thread = new_thread
             # todo: check if thread actually started
 
-        QtWidgets.QApplication.processEvents()
+        callbacks.refresh()
         while self._background_thread.is_alive():
             self._background_thread.join(timeout=.01)
             callbacks.refresh()

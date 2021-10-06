@@ -235,5 +235,33 @@ class TestWorkflowProgress:
     def test_get_console(self, qtbot):
         progress_dialog = dialogs.WorkflowProgress()
         print(progress_dialog.console)
-        progress_dialog.add_message.emit("spam")
+        progress_dialog.write_to_console("spam")
         assert "spam" in progress_dialog.get_console_content()
+
+    @pytest.mark.skip()
+    def test_a(self, qtbot):
+        timer = QtCore.QTimer()
+        timer.setInterval(100)
+        progress_dialog = dialogs.WorkflowProgress()
+
+        def timeout():
+            a = progress_dialog.progressBar.value()
+            a = a if a > -1 else 0
+            progress_dialog.set_current_progress(10 + a)
+
+        timer.timeout.connect(timeout)
+        button = QtWidgets.QPushButton("Do somethin")
+        progress_dialog.layout().addWidget(button)
+        button.clicked.connect(timer.start)
+        progress_dialog.exec()
+
+    @pytest.mark.skip()
+    def test_s(self, qtbot):
+        progress_dialog = dialogs.WorkflowProgress()
+        progress_dialog.write_to_console("Debug", logging.DEBUG)
+        progress_dialog.write_to_console("Warning", logging.WARNING)
+        progress_dialog.write_to_console("Error", logging.ERROR)
+        # assert "spam" in progress_dialog.get_console_content()
+        # progress_dialog.state = dialogs. WorkflowProgressStateWorkingIndeterminate(progress_dialog)
+        progress_dialog.exec()
+

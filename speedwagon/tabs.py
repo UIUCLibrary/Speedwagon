@@ -363,6 +363,10 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         self.tab_layout.addLayout(self.actions_layout)
 
 
+class WorkflowSignals(QtCore.QObject):
+    start_workflow = QtCore.pyqtSignal(str, dict)
+
+
 class WorkflowsTab(ItemSelectionTab):
     """Workflow tab."""
 
@@ -376,7 +380,7 @@ class WorkflowsTab(ItemSelectionTab):
         super().__init__("Workflow", parent,
                          models.WorkflowListModel(workflows), work_manager,
                          log_manager)
-
+        self.signals = WorkflowSignals()
         self._workflows = workflows
 
     def is_ready_to_start(self) -> bool:
@@ -407,7 +411,7 @@ class WorkflowsTab(ItemSelectionTab):
 
         except ValueError as exc:
             msg = self._create_error_message_box_from_exception(exc)
-            msg.exec()
+            msg.exec_()
 
         except JobCancelled as job_cancel_exception:
             msg = self._create_error_message_box_from_exception(
@@ -420,7 +424,7 @@ class WorkflowsTab(ItemSelectionTab):
                 msg.setIcon(QtWidgets.QMessageBox.Warning)
                 traceback.print_tb(job_cancel_exception.__traceback__)
                 print(job_cancel_exception, file=sys.stderr)
-            msg.exec()
+            msg.exec_()
             return
 
         except Exception as exc:
@@ -432,7 +436,7 @@ class WorkflowsTab(ItemSelectionTab):
                                                    exc,
                                                    tb=exc.__traceback__))
             )
-            msg.exec()
+            msg.exec_()
             return
 
     def _create_error_message_box_from_exception(
@@ -452,22 +456,30 @@ class WorkflowsTab(ItemSelectionTab):
 
     def start(self, item):
         """Start a workflow."""
-        new_workflow = item(dict(self.work_manager.user_settings))
-
-        # Add global settings to workflow
-        assert isinstance(new_workflow, AbsWorkflow)
-
-        # new_workflow.global_settings.update(
-        #     dict(self.work_manager.user_settings))
-
-        user_options = (self.options_model.get())
-
-        self.run(new_workflow, user_options)
+        self.signals.start_workflow.emit(item.name, self.options_model.get())
 
     def get_item_options_model(self, workflow):
         """Get item options model."""
         new_workflow = workflow(
             global_settings=dict(self.work_manager.user_settings)
+        )
+        model = models.ToolOptionsModel3(new_workflow.user_options())
+        return model
+
+
+class WorkflowsTab2(WorkflowsTab):
+    def __init__(self, parent: QtWidgets.QWidget,
+                 workflows: Dict[str, Type[speedwagon.job.AbsWorkflow]],
+                 ) -> None:
+        super().__init__(parent, workflows)
+        self._workflows = workflows
+
+    def get_item_options_model(self, workflow):
+        """Get item options model."""
+        # FIXME: use real global settings
+        new_workflow = workflow(
+            global_settings={"getmarc_server_url": "ddd"}
+            # global_settings=dict(self.work_manager.user_settings)
         )
         model = models.ToolOptionsModel3(new_workflow.user_options())
         return model

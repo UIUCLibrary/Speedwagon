@@ -71,7 +71,7 @@ class TestTabsEditorApp:
         editor.on_okay()
         assert editor.close.called is True
 
-
+@pytest.mark.skip("This might be changing")
 def test_start_up_calls_default(monkeypatch):
     StartupDefault_ = MagicMock()
     monkeypatch.setattr(speedwagon.startup, "StartupDefault", StartupDefault_)

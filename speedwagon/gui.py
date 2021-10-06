@@ -34,6 +34,7 @@ from speedwagon import tabs, worker
 import speedwagon
 import speedwagon.ui
 import speedwagon.config
+import speedwagon.runner_strategies
 
 __all__ = [
     "MainWindow",
@@ -380,6 +381,207 @@ class MainWindow(MainProgram):
             file_handle.write(data)
 
         self.log_manager.info("Saved log to {}".format(log_file_name))
+
+
+class MainWindow2(QtWidgets.QMainWindow):
+    submit_job = QtCore.pyqtSignal(str, dict)
+
+    def __init__(
+            self,
+            job_manager: "speedwagon.runner_strategies.BackgroundJobManager",
+            debug: bool = False) -> None:
+        super().__init__()
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.job_manager = job_manager
+
+        self._debug = debug
+        self.user_settings = None
+
+        with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
+            uic.loadUi(ui_file, self)
+
+        self.mainLayout.setContentsMargins(0, 0, 0, 0)
+        self.mainLayout.addWidget(self.main_splitter)
+
+        ###########################################################
+        # Tabs
+        ###########################################################
+        self._create_tabs_widget()
+
+        ###########################################################
+        #  Console
+        ###########################################################
+        self._create_console()
+
+        self.setup_menu()
+
+    def add_tab(self, workflow_name: str, workflows):
+
+        workflows_tab = tabs.WorkflowsTab2(
+            parent=self,
+            workflows=workflows,
+        )
+        workflows_tab.signals.start_workflow.connect(self._start_workflow)
+
+        workflows_tab.parent = self
+        workflows_tab.workflows = workflows
+        self._tabs.append(workflows_tab)
+        self.tab_widget.add_tab(workflows_tab.tab_widget, workflow_name)
+        self.tab_widget.setVisible(True)
+
+    def _start_workflow(self, workflow, options):
+        self.submit_job.emit(workflow, options)
+
+    def setup_menu(self):
+        # Add menu bar
+        menu_bar = self.menuBar()
+
+        # File Menu
+        file_menu = menu_bar.addMenu("File")
+
+        # File --> Export Log
+        export_logs_button = QtWidgets.QAction(" &Export Log", self)
+        export_logs_button.setIcon(
+            self.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton)
+        )
+        export_logs_button.triggered.connect(self.save_log)
+
+        file_menu.addAction(export_logs_button)
+        file_menu.setObjectName("fileMenu")
+        file_menu.addAction(export_logs_button)
+        file_menu.setObjectName("fileMenu")
+        file_menu.addSeparator()
+
+        # File --> Exit
+        # Create Exit button
+        exit_button = QtWidgets.QAction(" &Exit", self)
+        exit_button.setObjectName("exitAction")
+        exit_button.triggered.connect(QtWidgets.QApplication.exit)
+        file_menu.addAction(exit_button)
+        system_menu = menu_bar.addMenu("System")
+        system_menu.setObjectName("systemMenu")
+
+        # System --> Configuration
+        # Create a system info menu item
+        system_settings_menu_item = \
+            QtWidgets.QAction("Settings", self)
+        system_settings_menu_item.setObjectName('settingsAction')
+        system_settings_menu_item.triggered.connect(
+            self.show_configuration)
+        system_settings_menu_item.setShortcut("Ctrl+Shift+S")
+        system_menu.addAction(system_settings_menu_item)
+
+        # System --> System Info
+        # Create a system info menu item
+        system_info_menu_item = QtWidgets.QAction("System Info", self)
+        system_info_menu_item.setObjectName("systemInfoAction")
+        system_info_menu_item.triggered.connect(self.show_system_info)
+        system_menu.addAction(system_info_menu_item)
+
+        # Help Menu
+        help_menu = menu_bar.addMenu("Help")
+
+        # Help --> Help
+        # Create a Help menu item
+        help_button = QtWidgets.QAction(" &Help ", self)
+        help_button.triggered.connect(self.show_help)
+        help_menu.addAction(help_button)
+
+        # Help --> About
+        # Create an About button
+        about_button = QtWidgets.QAction(" &About ", self)
+        about_button.triggered.connect(self.show_about_window)
+        help_menu.addAction(about_button)
+
+    def show_configuration(self) -> None:
+        # Fixme: need to set up work_manager
+
+        config_dialog = speedwagon.dialog.settings.SettingsDialog(parent=self)
+
+        if self.work_manager.settings_path is not None:
+            config_dialog.settings_location = self.work_manager.settings_path
+
+        global_settings_tab = speedwagon.dialog.settings.GlobalSettingsTab()
+
+        if self.work_manager.settings_path is not None:
+            global_settings_tab.config_file = \
+                os.path.join(
+                    self.work_manager.settings_path, "config.ini")
+
+            global_settings_tab.read_config_data()
+
+        config_dialog.add_tab(global_settings_tab, "Global Settings")
+        config_dialog.accepted.connect(global_settings_tab.on_okay)
+
+        tabs_tab = speedwagon.dialog.settings.TabsConfigurationTab()
+
+        if self.work_manager.settings_path is not None:
+            tabs_tab.settings_location = \
+                os.path.join(self.work_manager.settings_path, "tabs.yml")
+            tabs_tab.load()
+
+        config_dialog.add_tab(tabs_tab, "Tabs")
+        config_dialog.accepted.connect(tabs_tab.on_okay)
+
+        config_dialog.exec()
+
+    def show_about_window(self) -> None:
+        speedwagon.dialog.dialogs.about_dialog_box(parent=self)
+
+    def show_help(self) -> None:
+        try:
+            pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
+            webbrowser.open_new(pkg_metadata['Home-page'])
+
+        except metadata.PackageNotFoundError as error:
+
+            self.log_manager.warning(
+                "No help link available. Reason: {}".format(error))
+
+    def show_system_info(self) -> None:
+        system_info_dialog = speedwagon.dialog.dialogs.SystemInfoDialog(self)
+        system_info_dialog.exec()
+
+    def save_log(self) -> None:
+        data = self._log_data.getvalue()
+
+        epoch_in_minutes = int(time.time() / 60)
+        log_file_name, _ = \
+            QtWidgets.QFileDialog.getSaveFileName(
+                self,
+                "Export Log",
+                "speedwagon_log_{}.txt".format(epoch_in_minutes),
+                "Text Files (*.txt)")
+
+        if not log_file_name:
+            return
+        with open(log_file_name, "w", encoding="utf-8") as file_handle:
+            file_handle.write(data)
+
+        self.log_manager.info("Saved log to {}".format(log_file_name))
+
+    def _create_tabs_widget(self) -> None:
+        self.tab_widget = ItemTabsWidget(self.main_splitter)
+        self.tab_widget.setVisible(False)
+        self._tabs: List[speedwagon.tabs.ItemSelectionTab] = []
+        # Add the tabs widget as the first widget
+        self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
+        self.main_splitter.addWidget(self.tab_widget)
+        self.main_splitter.setStretchFactor(0, 0)
+        self.main_splitter.setStretchFactor(1, 2)
+
+    def _create_console(self) -> None:
+
+        self.console = ToolConsole(self.main_splitter)
+        self.console.setMinimumHeight(75)
+        self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
+        self.main_splitter.addWidget(self.console)
+        self.console_log_handler = ConsoleLogger(self.console)
+        self._log_data = io.StringIO()
+        self.log_data_handler = logging.StreamHandler(self._log_data)
+        self.log_data_handler.setFormatter(DEBUG_LOGGING_FORMAT)
+        self.logger.addHandler(self.console_log_handler)
+        self.logger.addHandler(self.log_data_handler)
 
 
 class SplashScreenLogHandler(logging.Handler):
