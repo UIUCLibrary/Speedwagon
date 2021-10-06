@@ -1,12 +1,22 @@
 """Dialog boxes."""
+import abc
+import logging
 import typing
 from typing import Collection, Union
 
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
+from PyQt5 import uic
+from PyQt5.QtWidgets import QWidget
+
 try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
+
+try:  # pragma: no cover
+    from importlib import resources
+except ImportError:  # pragma: no cover
+    import importlib_resources as resources  # type: ignore
 
 import speedwagon
 
@@ -135,3 +145,99 @@ class SystemInfoDialog(QtWidgets.QDialog):
         return [
             f"{x.metadata['Name']} {x.metadata['Version']}" for x in pkgs
         ]
+
+
+class AbsWorkflowProgressState(abc.ABC):
+    def __init__(self, context: "WorkflowProgress"):
+        self.context = context
+
+
+class WorkflowProgressStateIdle(AbsWorkflowProgressState):
+
+    def __init__(self, context: "WorkflowProgress"):
+        super().__init__(context)
+        self._set_button_defaults()
+
+    def _set_button_defaults(self):
+        cancel_button: QtWidgets.QPushButton \
+            = self.context.buttonBox.button(self.context.buttonBox.Cancel)
+        cancel_button.setEnabled(False)
+
+
+class WorkflowProgressStateWorking(AbsWorkflowProgressState):
+
+    def __init__(self, context: "WorkflowProgress"):
+        super().__init__(context)
+
+        cancel_button: QtWidgets.QPushButton \
+            = self.context.buttonBox.button(self.context.buttonBox.Cancel)
+        cancel_button.setEnabled(True)
+
+        close_button: QtWidgets.QPushButton \
+            = self.context.buttonBox.button(self.context.buttonBox.Close)
+        close_button.setEnabled(False)
+
+
+class WorkflowProgressStateWorkingIndeterminate(WorkflowProgressStateWorking):
+
+    def __init__(self, context: "WorkflowProgress"):
+        super().__init__(context)
+        context.progressBar.setRange(0,0)
+
+
+class WorkflowProgress(QtWidgets.QDialog):
+    add_message = QtCore.pyqtSignal([str], [str, int])
+    set_current_progress = QtCore.pyqtSignal(int)
+    set_max_value = QtCore.pyqtSignal(int)
+
+    def __init__(self, parent: typing.Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+
+        # All ui info is located in the .ui file. Any graphical changes should
+        # be make in there.
+        with resources.path(
+                "speedwagon.ui",
+                "workflow_progress.ui"
+        ) as ui_file:
+            uic.loadUi(ui_file, self)
+
+        # =====================================================================
+        #  Type hints loaded to help with development after loading in the
+        #  Qt .ui files
+        # =====================================================================
+        self.buttonBox: QtWidgets.QDialogButtonBox
+        self.console: QtWidgets.QTextBrowser
+        # =====================================================================
+
+        self._console_data = QtGui.QTextDocument()
+        monospaced_font = \
+            QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
+        self._console_data.setDefaultFont(monospaced_font)
+
+        # self._set_button_defaults()
+
+        self.console.setDocument(self._console_data)
+        self.add_message[str].connect(self.write_to_console)
+        self.add_message[str, int].connect(self.write_to_console)
+
+        # =====================================================================
+        self.state = WorkflowProgressStateIdle(self)
+
+    def write_to_console(self, text, level=logging.INFO):
+        cursor = QtGui.QTextCursor(self._console_data)
+        cursor.movePosition(cursor.End)
+        cursor.beginEditBlock()
+        if level == logging.DEBUG:
+            cursor.insertHtml(f"<div><i>{text}</i></div>")
+        elif level == logging.WARNING:
+            cursor.insertHtml(f"<div><font color=\"yellow\">{text}</font></div>")
+        elif level == logging.ERROR:
+            cursor.insertHtml(f"<div><font color=\"red\">{text}</font></div>")
+        else:
+            cursor.insertHtml(f"<div>{text}</div>")
+
+        cursor.insertText("\n")
+        cursor.endEditBlock()
+
+    def get_console_content(self) -> str:
+        return self._console_data.toPlainText()

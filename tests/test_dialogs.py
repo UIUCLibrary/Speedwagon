@@ -1,7 +1,10 @@
 import platform
+import typing
+import logging
 from unittest.mock import Mock, patch, mock_open
 import pytest
-from speedwagon.dialog import settings
+from PyQt5 import QtWidgets
+from speedwagon.dialog import settings, dialogs
 from PyQt5 import QtCore
 
 
@@ -213,3 +216,24 @@ class TestTabEditor:
         assert editor.selectedTabComboBox.model().rowCount() == 1
         qtbot.mouseClick(editor.deleteCurrentTabButton, QtCore.Qt.LeftButton)
         assert editor.selectedTabComboBox.model().rowCount() == 0
+
+
+class TestWorkflowProgress:
+    @pytest.mark.parametrize(
+        "button_type, expected_active",
+        [
+            (QtWidgets.QDialogButtonBox.Cancel, False),
+            (QtWidgets.QDialogButtonBox.Close, True)
+        ]
+    )
+    def test_default_buttons(self, qtbot, button_type, expected_active):
+        progress_dialog = dialogs.WorkflowProgress()
+        qtbot.addWidget(progress_dialog)
+        assert progress_dialog.buttonBox.button(button_type).isEnabled() is \
+               expected_active
+
+    def test_get_console(self, qtbot):
+        progress_dialog = dialogs.WorkflowProgress()
+        print(progress_dialog.console)
+        progress_dialog.add_message.emit("spam")
+        assert "spam" in progress_dialog.get_console_content()
