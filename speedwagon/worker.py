@@ -452,6 +452,7 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
     def _cleanup(self) -> None:
         self._job_runtime.cleanup(self.logger)
 
+
 class ToolJobManager2(ToolJobManager):
     def __enter__(self) -> "ToolJobManager":
         return self
@@ -464,6 +465,7 @@ class ToolJobManager2(ToolJobManager):
                  exc_value: Optional[BaseException],
                  exc_tb: Optional[TracebackType]) -> None:
         return None
+
 
 class JobProcessor:
     def __init__(self, parent: "ToolJobManager"):

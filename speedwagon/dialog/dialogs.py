@@ -366,7 +366,9 @@ class WorkflowProgress(QtWidgets.QDialog):
         # =====================================================================
         self._console_data = QtGui.QTextDocument()
 
-        mono_font = QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
+        mono_font = \
+            QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
+
         self._console_data.setDefaultFont(mono_font)
         self._console_data.contentsChanged.connect(self._follow_text)
         self.console.setMinimumWidth(self.calculate_window_width(mono_font))
@@ -394,6 +396,7 @@ class WorkflowProgress(QtWidgets.QDialog):
         return QtGui.QFontMetrics(
             font_used
         ).horizontalAdvance("*" * characters_width)
+
     def start(self):
         self.state.start()
 

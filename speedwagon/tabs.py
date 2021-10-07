@@ -468,7 +468,6 @@ class WorkflowsTab(ItemSelectionTab):
 
         self.run(new_workflow, user_options)
 
-
     def get_item_options_model(self, workflow):
         """Get item options model."""
         new_workflow = workflow(

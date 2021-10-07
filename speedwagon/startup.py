@@ -19,7 +19,6 @@ import logging
 import os
 import queue
 import sys
-import time
 import typing
 from logging import LogRecord
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
@@ -613,7 +612,7 @@ class Startup2Default(StartupDefault):
         super().__init__(app)
         self.startup_settings['debug'] = False
         self.windows: Optional[speedwagon.gui.MainWindow2] = None
-        
+
     def _load_workflows(self, application: speedwagon.gui.MainWindow2) -> None:
         self._logger.debug("Loading Workflows")
         loading_workflows_stream = io.StringIO()
@@ -654,7 +653,12 @@ class Startup2Default(StartupDefault):
                 if self.windows is not None:
                     self.windows.submit_job.connect(
                         lambda workflow_name, options:
-                        self.submit_job(self.windows, job_manager, workflow_name, options)
+                        self.submit_job(
+                            self.windows,
+                            job_manager,
+                            workflow_name,
+                            options
+                        )
                     )
 
                 # windows.work_manager = work_manager
