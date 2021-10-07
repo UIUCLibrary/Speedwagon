@@ -155,6 +155,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             log_manager: logging.Logger
     ) -> None:
         """Create a new item selection tab."""
+        # assert work_manager
         super().__init__(parent, work_manager)
         self.log_manager = log_manager
         self.item_selection_model = item_model
@@ -467,7 +468,6 @@ class WorkflowsTab(ItemSelectionTab):
 
         self.run(new_workflow, user_options)
 
-        # self.signals.start_workflow.emit(item.name, self.options_model.get())
 
     def get_item_options_model(self, workflow):
         """Get item options model."""
@@ -481,6 +481,7 @@ class WorkflowsTab(ItemSelectionTab):
 class WorkflowsTab2(WorkflowsTab):
     def __init__(self, parent: QtWidgets.QWidget,
                  workflows: Dict[str, Type[speedwagon.job.AbsWorkflow]],
+                 # work_manager
                  ) -> None:
         super().__init__(parent, workflows)
         self._workflows = workflows
@@ -495,6 +496,9 @@ class WorkflowsTab2(WorkflowsTab):
         )
         model = models.ToolOptionsModel3(new_workflow.user_options())
         return model
+
+    def start(self, item):
+        self.signals.start_workflow.emit(item.name, self.options_model.get())
 
 
 class MyDelegate(QtWidgets.QStyledItemDelegate):

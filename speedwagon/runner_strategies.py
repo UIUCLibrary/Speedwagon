@@ -56,6 +56,14 @@ class AbsJobCallbacks(abc.ABC):
     ) -> None:
         """Had an error"""
 
+    @abc.abstractmethod
+    def status(self, text: str) -> None:
+        """Set status."""
+
+    @abc.abstractmethod
+    def log(self, text: str, level: int = logging.INFO) -> None:
+        """Log information"""
+
     def refresh(self) -> None:
         """Refresh."""
 
@@ -1776,6 +1784,8 @@ class BackgroundJobManager(AbsJobManager2):
                 if events.is_stopped() is True:
                     callbacks.cancelling_complete()
                     break
+                if task.name is not None:
+                    callbacks.status(task.name)
                 task.exec()
                 callbacks.update_progress(
                     current=task_scheduler.current_task_progress,
@@ -1827,9 +1837,10 @@ class BackgroundJobManager(AbsJobManager2):
 
         callbacks.refresh()
         while self._background_thread.is_alive():
-            self._background_thread.join(timeout=.01)
             callbacks.refresh()
-
+            self._background_thread.join(timeout=0.01)
+        callbacks.refresh()
+        self._background_thread.join()
         self._background_thread = None
 
 

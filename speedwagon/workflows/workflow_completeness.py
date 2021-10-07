@@ -19,7 +19,7 @@ from hathi_validate import validator
 
 import speedwagon
 import speedwagon.tasks.tasks
-from speedwagon.logging import GuiLogHandler
+from speedwagon.logging_helpers import GuiLogHandler
 from speedwagon.job import Workflow
 from . import shared_custom_widgets as options
 from .shared_custom_widgets import UserOption2, UserOption3

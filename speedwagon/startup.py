@@ -19,7 +19,9 @@ import logging
 import os
 import queue
 import sys
+import time
 import typing
+from logging import LogRecord
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
 import pathlib
 import yaml
@@ -349,7 +351,7 @@ class StartupDefault(AbsStarter):
 
             QtWidgets.QApplication.processEvents()
 
-            self._load_configurations(work_manager)
+            self.load_configurations(work_manager)
             self._load_workflows(windows)
 
             self._logger.debug("Loading User Interface")
@@ -368,8 +370,8 @@ class StartupDefault(AbsStarter):
             self._logger.removeHandler(splash_message_handler)
             return self.app.exec_()
 
-    def _load_configurations(self,
-                             work_manager: "worker.ToolJobManager") -> None:
+    def load_configurations(self,
+                            work_manager: "worker.ToolJobManager") -> None:
 
         self._logger.debug("Applying settings to Speedwagon")
         work_manager.user_settings = self.platform_settings
@@ -514,6 +516,18 @@ class WorkflowSignals(QtCore.QObject):
     total_jobs_changed = QtCore.pyqtSignal(int)
     cancel_complete = QtCore.pyqtSignal()
     success_achieved = QtCore.pyqtSignal()
+    message = QtCore.pyqtSignal(str, int)
+    status_changed = QtCore.pyqtSignal(str)
+
+
+class SignalLogger(logging.Handler):
+    def __init__(self, signal: QtCore.pyqtSignal):
+        super().__init__()
+        self._signal = signal
+
+    def emit(self, record: LogRecord) -> None:
+        result = logging.Formatter().format(record)
+        self._signal.emit(result, record.levelno)
 
 
 class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
@@ -534,6 +548,19 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         self.signals.success_achieved.connect(
             self.dialog_box.success_completed
         )
+
+        self.signals.status_changed.connect(self.set_banner_text)
+        self.signals.message.connect(self.dialog_box.write_to_console)
+        self.log_handler = SignalLogger(signal=self.signals.message)
+
+    def log(self, text: str, level: int = logging.INFO) -> None:
+        self.signals.message.emit(text, level)
+
+    def set_banner_text(self, text):
+        self.dialog_box.banner.setText(text)
+
+    def status(self, text: str) -> None:
+        self.signals.status_changed.emit(text)
 
     def error(
             self,
@@ -566,9 +593,10 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
 
     def done(self) -> None:
         self.signals.success_achieved.emit()
+        # self.signals.message.disconnect(self.dialog_box.write_to_console)
 
     def refresh(self) -> None:
-        QtWidgets.QApplication.processEvents()
+        QtCore.QCoreApplication.processEvents()
 
     def update_progress(self, current: Optional[int],
                         total: Optional[int]) -> None:
@@ -584,7 +612,8 @@ class Startup2Default(StartupDefault):
     def __init__(self, app: QtWidgets.QApplication = None) -> None:
         super().__init__(app)
         self.startup_settings['debug'] = False
-
+        self.windows: Optional[speedwagon.gui.MainWindow2] = None
+        
     def _load_workflows(self, application: speedwagon.gui.MainWindow2) -> None:
         self._logger.debug("Loading Workflows")
         loading_workflows_stream = io.StringIO()
@@ -616,18 +645,21 @@ class Startup2Default(StartupDefault):
 
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         with runner_strategies.BackgroundJobManager() as job_manager:
-            windows = speedwagon.gui.MainWindow2(
+            self.windows = speedwagon.gui.MainWindow2(
                 job_manager=job_manager,
                 debug=cast(bool, self.startup_settings['debug'])
             )
+            with worker.ToolJobManager() as work_manager:
+                self.load_configurations(work_manager)
+                if self.windows is not None:
+                    self.windows.submit_job.connect(
+                        lambda workflow_name, options:
+                        self.submit_job(self.windows, job_manager, workflow_name, options)
+                    )
 
-            windows.submit_job.connect(
-                lambda workflow_name, options:
-                self.submit_job(windows, job_manager, workflow_name, options)
-            )
-
-            self._load_workflows(windows)
-            windows.show()
+                # windows.work_manager = work_manager
+                    self._load_workflows(self.windows)
+                    self.windows.show()
             return self.app.exec_()
 
     def initialize(self) -> None:
@@ -645,7 +677,10 @@ class Startup2Default(StartupDefault):
             workflow_name,
             options
     ) -> None:
-        dialog_box = WorkflowProgress()
+        if self.windows is not None:
+            dialog_box = WorkflowProgress(parent=self.windows)
+        else:
+            dialog_box = WorkflowProgress()
         dialog_box.rejected.connect(main_app.close)
         dialog_box.setWindowTitle(workflow_name)
         dialog_box.show()
@@ -655,16 +690,21 @@ class Startup2Default(StartupDefault):
         dialog_box.aborted.connect(
             lambda: self.abort_job(dialog_box, threaded_events)
         )
-
-        job_manager.submit_job(
-            workflow_name=workflow_name,
-            options=options,
-            working_directory="/tmp",
-            callbacks=WorkflowProgressCallbacks(dialog_box),
-            events=threaded_events,
-        )
-        # dialog_box.write_to_console("ok")
-        dialog_box.exec()
+        callbacks = WorkflowProgressCallbacks(dialog_box)
+        main_logger = logging.getLogger()
+        try:
+            main_logger.addHandler(callbacks.log_handler)
+            main_logger.addHandler(main_app.console_log_handler)
+            job_manager.submit_job(
+                workflow_name=workflow_name,
+                options=options,
+                working_directory="/tmp",
+                callbacks=callbacks,
+                events=threaded_events,
+            )
+        finally:
+            main_logger.removeHandler(callbacks.log_handler)
+            main_logger.removeHandler(main_app.console_log_handler)
 
 
 class SingleWorkflowLauncher(AbsStarter):
@@ -1021,6 +1061,12 @@ class GuiJobCallbacks(runner_strategies.AbsJobCallbacks):
         self._com.update_total.connect(window.progress.setMaximum)
         self._com.update_progress_gui.connect(window.progress.setValue)
 
+    def status(self, text: str) -> None:
+        self.context.window.text_box.setText(text)
+
+    def log(self, text: str, level: int = logging.INFO) -> None:
+        """No-op."""
+
     def refresh(self) -> None:
         QtWidgets.QApplication.processEvents()
 
@@ -1030,9 +1076,9 @@ class GuiJobCallbacks(runner_strategies.AbsJobCallbacks):
     def error(
             self,
             message: Optional[str] = None,
-            exc: Optional[BaseException] = None
+            exc: Optional[BaseException] = None,
+            traceback: Optional[str] = None
     ) -> None:
-
         error = QtWidgets.QMessageBox()
         error.setIcon(QtWidgets.QMessageBox.Critical)
         error.setText(message or "An error occurred")
@@ -1136,6 +1182,8 @@ class BackgroundThreadLauncher(AbsStarter):
         self.workflow_name = None
         self.events = ThreadedEvents()
         self.working_directory = None
+        self.platform_settings = speedwagon.config.get_platform_settings()
+        self.user_data_dir = self.platform_settings.get("user_data_directory")
 
     def start(self):
         self.callbacks = GuiJobCallbacks(self)

@@ -1,7 +1,7 @@
 """Speedwagon."""
 
-from .job import Workflow, JobCancelled, available_workflows
-from . import tasks
+from speedwagon.job import Workflow, JobCancelled, available_workflows
+from speedwagon import tasks
 
 
 __all__ = [

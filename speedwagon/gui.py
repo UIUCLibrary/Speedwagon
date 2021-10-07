@@ -424,7 +424,6 @@ class MainWindow2(QtWidgets.QMainWindow):
         workflows_tab.signals.start_workflow.connect(self._start_workflow)
 
         workflows_tab.parent = self
-        workflows_tab.workflows = workflows
         self._tabs.append(workflows_tab)
         self.tab_widget.add_tab(workflows_tab.tab_widget, workflow_name)
         self.tab_widget.setVisible(True)
