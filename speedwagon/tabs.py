@@ -380,7 +380,6 @@ class WorkflowsTab(ItemSelectionTab):
         super().__init__("Workflow", parent,
                          models.WorkflowListModel(workflows), work_manager,
                          log_manager)
-        self.signals = WorkflowSignals()
         self._workflows = workflows
 
     def is_ready_to_start(self) -> bool:
@@ -456,7 +455,19 @@ class WorkflowsTab(ItemSelectionTab):
 
     def start(self, item):
         """Start a workflow."""
-        self.signals.start_workflow.emit(item.name, self.options_model.get())
+        new_workflow = item(dict(self.work_manager.user_settings))
+
+        # Add global settings to workflow
+        assert isinstance(new_workflow, AbsWorkflow)
+
+        # new_workflow.global_settings.update(
+        #     dict(self.work_manager.user_settings))
+
+        user_options = self.options_model.get()
+
+        self.run(new_workflow, user_options)
+
+        # self.signals.start_workflow.emit(item.name, self.options_model.get())
 
     def get_item_options_model(self, workflow):
         """Get item options model."""
@@ -473,6 +484,7 @@ class WorkflowsTab2(WorkflowsTab):
                  ) -> None:
         super().__init__(parent, workflows)
         self._workflows = workflows
+        self.signals = WorkflowSignals()
 
     def get_item_options_model(self, workflow):
         """Get item options model."""

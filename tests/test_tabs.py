@@ -85,7 +85,7 @@ class TestWorkflowsTab:
         selection_tab.init_selection()
         assert selection_tab.item_selector_view.currentIndex().data() == \
                workflows['Spam'].name
-    @pytest.mark.skip("Something's funky")
+    # @pytest.mark.skip("Something's funky")
     def test_start_calls_run_on_workflow(self, qtbot, monkeypatch):
         # Fixme: This doesn't work all of a sudden
         log_manager = Mock()
@@ -122,7 +122,7 @@ class TestWorkflowsTab:
             Exception
         ]
     )
-    @pytest.mark.skip("something's funky")
+    # @pytest.mark.skip("something's funky")
     def test_start_creates_a_messagebox_on_value_error(
             self, qtbot, monkeypatch, exception_type):
         # Fixme: This doesn't work all of a sudden
