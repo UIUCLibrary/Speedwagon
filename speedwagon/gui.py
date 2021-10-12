@@ -9,6 +9,7 @@ import os
 import sys
 import time
 import traceback
+import typing
 import webbrowser
 from typing import List
 
@@ -143,11 +144,22 @@ class MainProgram(QtWidgets.QMainWindow):
 
 
 class MainWindowMenuBuilder:
-    def __init__(self, parent) -> None:
+    def __init__(self, parent: QtWidgets.QMainWindow) -> None:
         self._parent = parent
         self._menu_bar: QtWidgets.QMenuBar = self._parent.menuBar()
+
         self.add_help: bool = True
         self.add_about: bool = True
+
+        self.show_configuration_signal: \
+            typing.Optional[QtCore.pyqtBoundSignal] = None
+
+        self.show_system_info_signal: \
+            typing.Optional[QtCore.pyqtBoundSignal] = None
+
+        self.exit_signal: typing.Optional[QtCore.pyqtBoundSignal] = None
+
+        self.save_log_signal: typing.Optional[QtCore.pyqtBoundSignal] = None
 
     def build(self) -> None:
         self._build_file_menu(self._menu_bar)
@@ -166,21 +178,34 @@ class MainWindowMenuBuilder:
     def _build_system_info_action(self, system_menu: QtWidgets.QMenu) -> None:
         # System --> System Info
         # Create a system info menu item
-        system_info_menu_item = QtWidgets.QAction("System Info", self._parent)
-        system_info_menu_item.setObjectName("systemInfoAction")
-        system_info_menu_item.triggered.connect(self._parent.show_system_info)
-        system_menu.addAction(system_info_menu_item)
+        if self.show_system_info_signal is not None:
+
+            system_info_menu_item = QtWidgets.QAction(
+                "System Info",
+                self._parent
+            )
+
+            system_info_menu_item.setObjectName("systemInfoAction")
+
+            system_info_menu_item.triggered.connect(
+                self.show_system_info_signal
+            )
+            system_menu.addAction(system_info_menu_item)
 
     def _build_config_action(self, system_menu: QtWidgets.QMenu) -> None:
         # System --> Configuration
         # Create a system info menu item
-        system_settings_menu_item = \
-            QtWidgets.QAction("Settings", self._parent)
-        system_settings_menu_item.setObjectName('settingsAction')
-        system_settings_menu_item.triggered.connect(
-            self._parent.show_configuration)
-        system_settings_menu_item.setShortcut("Ctrl+Shift+S")
-        system_menu.addAction(system_settings_menu_item)
+        if self.show_configuration_signal is not None:
+            system_settings_menu_item = \
+                QtWidgets.QAction("Settings", self._parent)
+
+            system_settings_menu_item.setObjectName('settingsAction')
+
+            system_settings_menu_item.triggered.connect(
+                self.show_configuration_signal)
+
+            system_settings_menu_item.setShortcut("Ctrl+Shift+S")
+            system_menu.addAction(system_settings_menu_item)
 
     def _build_file_menu(self, menu_bar: QtWidgets.QMenuBar) -> None:
 
@@ -192,27 +217,30 @@ class MainWindowMenuBuilder:
     def _build_exit_action(self, file_menu: QtWidgets.QMenu) -> None:
         # File --> Exit
         # Create Exit button
-        exit_button = QtWidgets.QAction(" &Exit", self._parent)
-        # exit_button = QtWidgets.QAction(" &Exit", self._parent)
-        exit_button.setObjectName("exitAction")
+        if self.exit_signal is not None:
+            exit_button = QtWidgets.QAction(" &Exit", self._parent)
+            exit_button.setObjectName("exitAction")
 
-        exit_button.triggered.connect(self._parent.close)
-        # exit_button.triggered.connect(QtWidgets.QApplication.exit)
-        file_menu.addAction(exit_button)
+            exit_button.triggered.connect(self.exit_signal)
+            # exit_button.triggered.connect(self._parent.close)
+            # exit_button.triggered.connect(QtWidgets.QApplication.exit)
+            file_menu.addAction(exit_button)
 
     def _build_export_log_action(self, file_menu: QtWidgets.QMenu) -> None:
         # File --> Export Log
-        export_logs_button = QtWidgets.QAction(" &Export Log", self._parent)
-        export_logs_button.setIcon(
-            self._parent.style().standardIcon(
-                QtWidgets.QStyle.SP_DialogSaveButton)
-        )
-        export_logs_button.triggered.connect(self._parent.save_log)
-        file_menu.addAction(export_logs_button)
-        file_menu.setObjectName("fileMenu")
-        file_menu.addAction(export_logs_button)
-        file_menu.setObjectName("fileMenu")
-        file_menu.addSeparator()
+        if self.save_log_signal is not None:
+            export_logs_button = QtWidgets.QAction(" &Export Log", self._parent)
+            export_logs_button.setIcon(
+                self._parent.style().standardIcon(
+                    QtWidgets.QStyle.SP_DialogSaveButton)
+            )
+            export_logs_button.triggered.connect(self.save_log_signal)
+            # export_logs_button.triggered.connect(self._parent.save_log)
+            file_menu.addAction(export_logs_button)
+            file_menu.setObjectName("fileMenu")
+            file_menu.addAction(export_logs_button)
+            file_menu.setObjectName("fileMenu")
+            file_menu.addSeparator()
 
     def _build_help(self, menu_bar: QtWidgets.QMenuBar) -> None:
         # Help Menu
@@ -356,8 +384,8 @@ class MainWindow1(MainProgram):
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
         self.console_log_handler = ConsoleLogger(self.console)
-        self._log_data = io.StringIO()
-        self.log_data_handler = logging.StreamHandler(self._log_data)
+        # self._log_data = io.StringIO()
+        # self.log_data_handler = logging.StreamHandler(self._log_data)
         self.log_data_handler.setFormatter(DEBUG_LOGGING_FORMAT)
         self.log_manager.addHandler(self.console_log_handler)
         self.log_manager.addHandler(self.log_data_handler)
@@ -480,6 +508,7 @@ class MainWindow2(QtWidgets.QMainWindow):
     configuration_requested = QtCore.pyqtSignal(QtWidgets.QWidget)
     system_info_requested = QtCore.pyqtSignal(QtWidgets.QWidget)
     help_requested = QtCore.pyqtSignal()
+    save_logs_requested = QtCore.pyqtSignal(QtWidgets.QWidget)
 
     def __init__(
             self,
@@ -512,6 +541,16 @@ class MainWindow2(QtWidgets.QMainWindow):
 
     def setup_menu(self):
         builder = MainWindowMenuBuilder(parent=self)
+        builder.exit_signal = self.close
+
+        builder.show_system_info_signal = \
+            lambda: self.system_info_requested.emit(self)
+
+        builder.show_configuration_signal = \
+            lambda: self.configuration_requested.emit(self)
+
+        builder.save_log_signal = self.save_log
+
         builder.add_help = True
         builder.build()
 
@@ -531,32 +570,31 @@ class MainWindow2(QtWidgets.QMainWindow):
     def _start_workflow(self, workflow, options):
         self.submit_job.emit(workflow, options)
 
-    def show_configuration(self) -> None:
-        self.configuration_requested.emit(self)
+    # def show_configuration(self) -> None:
+    #     self.configuration_requested.emit(self)
 
     def show_about_window(self) -> None:
         speedwagon.dialog.dialogs.about_dialog_box(parent=self)
 
-    def show_system_info(self) -> None:
-        self.system_info_requested.emit(self)
-
     def save_log(self) -> None:
-        data = self._log_data.getvalue()
+        # data = self._log_data.getvalue()
 
-        epoch_in_minutes = int(time.time() / 60)
-        log_file_name, _ = \
-            QtWidgets.QFileDialog.getSaveFileName(
-                self,
-                "Export Log",
-                "speedwagon_log_{}.txt".format(epoch_in_minutes),
-                "Text Files (*.txt)")
-
-        if not log_file_name:
-            return
-        with open(log_file_name, "w", encoding="utf-8") as file_handle:
-            file_handle.write(data)
-
-        self.log_manager.info("Saved log to {}".format(log_file_name))
+        self.save_logs_requested.emit(self)
+    #
+    #     epoch_in_minutes = int(time.time() / 60)
+    #     log_file_name, _ = \
+    #         QtWidgets.QFileDialog.getSaveFileName(
+    #             self,
+    #             "Export Log",
+    #             "speedwagon_log_{}.txt".format(epoch_in_minutes),
+    #             "Text Files (*.txt)")
+    #
+    #     if not log_file_name:
+    #         return
+    #     with open(log_file_name, "w", encoding="utf-8") as file_handle:
+    #         file_handle.write(data)
+    #
+    #     self.log_manager.info("Saved log to {}".format(log_file_name))
 
     def _create_tabs_widget(self) -> None:
         self.tab_widget = ItemTabsWidget(self.main_splitter)
@@ -575,11 +613,11 @@ class MainWindow2(QtWidgets.QMainWindow):
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
         self.console_log_handler = ConsoleLogger(self.console)
-        self._log_data = io.StringIO()
-        self.log_data_handler = logging.StreamHandler(self._log_data)
-        self.log_data_handler.setFormatter(DEBUG_LOGGING_FORMAT)
+        # self._log_data = io.StringIO()
+        # self.log_data_handler = logging.StreamHandler(self._log_data)
+        # self.log_data_handler.setFormatter(DEBUG_LOGGING_FORMAT)
         self.logger.addHandler(self.console_log_handler)
-        self.logger.addHandler(self.log_data_handler)
+        # self.logger.addHandler(self.log_data_handler)
 
 
 class SplashScreenLogHandler(logging.Handler):

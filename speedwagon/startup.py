@@ -19,6 +19,7 @@ import logging
 import os
 import queue
 import sys
+import time
 import typing
 import warnings
 import webbrowser
@@ -55,6 +56,9 @@ __all__ = [
     "standalone_tab_editor",
 ]
 
+
+# FORMAT = '%(asctime)-15s %(threadName)s %(message)s'
+# logging.basicConfig(format=FORMAT)
 
 class FileFormatError(Exception):
     """Exception is thrown when Something wrong with the contents of a file."""
@@ -275,7 +279,7 @@ class StartupDefault(AbsStarter):
     def __init__(self, app: QtWidgets.QApplication = None) -> None:
         """Create a new default startup routine."""
         self._logger = logging.getLogger(__name__)
-        self._logger.setLevel(logging.DEBUG)
+        self._logger.setlogger.setLevel(logging.DEBUG)
 
         self.handler = logging.StreamHandler(stream=sys.stderr)
         self.handler.setLevel(logging.DEBUG)
@@ -617,9 +621,23 @@ class Startup2Default(AbsStarter):
         }
 
         self.windows: Optional[speedwagon.gui.MainWindow2] = None
-        self.logger = logging.getLogger(f"{__name__}.Startup2Default")
+        self.logger = logging.getLogger()
+
+        formatter = logging.Formatter(
+            '%(asctime)-15s %(threadName)s %(message)s'
+        )
+
         self.platform_settings = speedwagon.config.get_platform_settings()
         self.app = app or QtWidgets.QApplication(sys.argv)
+
+        self._log_data = io.StringIO()
+        self.log_data_handler = logging.StreamHandler(self._log_data)
+        self.log_data_handler.setLevel(logging.DEBUG)
+        #
+        self.log_data_handler.setFormatter(formatter)
+
+        self.logger.addHandler(self.log_data_handler)
+        self.logger.setLevel(logging.DEBUG)
 
     def _load_help(self):
         try:
@@ -661,6 +679,33 @@ class Startup2Default(AbsStarter):
             for line in workflow_errors_msg.split("\n"):
                 self.logger.warning(line)
 
+    def save_log(self, parent: QtWidgets.QWidget) -> None:
+        data = self._log_data.getvalue()
+        epoch_in_minutes = int(time.time() / 60)
+        while True:
+            log_file_name, _ = \
+                QtWidgets.QFileDialog.getSaveFileName(
+                    parent,
+                    "Export Log",
+                    "speedwagon_log_{}.txt".format(epoch_in_minutes),
+                    "Text Files (*.txt)")
+
+            if not log_file_name:
+                return
+            try:
+                with open(log_file_name, "w", encoding="utf-8") as file_handle:
+                    file_handle.write(data)
+            except OSError as error:
+                message_box = QtWidgets.QMessageBox(parent)
+                message_box.setText("Saving Log Failed")
+                message_box.setDetailedText(str(error))
+                message_box.exec_()
+                continue
+
+            self.logger.info("Saved log to {}".format(log_file_name))
+            # self.windows.logger.info("Saved log to %s", log_file_name)
+            break
+
     @staticmethod
     def request_system_info(parent: QtWidgets.QWidget) -> None:
         system_info_dialog = speedwagon.dialog.dialogs.SystemInfoDialog(parent)
@@ -697,14 +742,17 @@ class Startup2Default(AbsStarter):
                 debug=cast(bool, self.startup_settings['debug'])
             )
             if self.windows is not None:
-
+                self.logger.addHandler(self.windows.console_log_handler)
                 self.windows.configuration_requested.connect(
                     self.request_settings
                 )
 
+                self.windows.save_logs_requested.connect(self.save_log)
+
                 self.windows.system_info_requested.connect(
                     self.request_system_info
                 )
+
                 self.windows.help_requested.connect(self._load_help)
 
                 self.windows.submit_job.connect(
@@ -753,12 +801,15 @@ class Startup2Default(AbsStarter):
             lambda: self.abort_job(dialog_box, threaded_events)
         )
         callbacks = WorkflowProgressCallbacks(dialog_box)
-        main_logger = logging.getLogger()
+        # main_logger = logging.getLogger()
+
         try:
-            main_logger.addHandler(callbacks.log_handler)
+            self.logger.addHandler(callbacks.log_handler)
+            # main_logger.addHandler(callbacks.log_handler)
 
             if main_app is not None:
-                main_logger.addHandler(main_app.console_log_handler)
+                self.logger.addHandler(main_app.console_log_handler)
+                # main_logger.addHandler(main_app.console_log_handler)
 
             job_manager.submit_job(
                 workflow_name=workflow_name,
@@ -768,9 +819,11 @@ class Startup2Default(AbsStarter):
                 events=threaded_events,
             )
         finally:
-            main_logger.removeHandler(callbacks.log_handler)
+            # main_logger.removeHandler(callbacks.log_handler)
+            self.logger.removeHandler(callbacks.log_handler)
             if main_app is not None:
-                main_logger.removeHandler(main_app.console_log_handler)
+                # main_logger.removeHandler(main_app.console_log_handler)
+                self.logger.removeHandler(main_app.console_log_handler)
 
 
 class SingleWorkflowLauncher(AbsStarter):
