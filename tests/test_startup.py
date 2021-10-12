@@ -635,6 +635,13 @@ class TestSignalLogger:
         class Dummy(QtCore.QObject):
             dummy_signal = QtCore.pyqtSignal(str, int)
 
+            def __init__(self):
+                super().__init__()
+                self.dummy_signal.connect(self.d)
+
+            def d(self, message, level):
+                print("hhh")
+
         dummy = Dummy()
 
         signal_log_handler = \
@@ -646,10 +653,10 @@ class TestSignalLogger:
 
         with qtbot.waitSignal(dummy.dummy_signal) as f:
             logger.info("Spam!")
+        logger.removeHandler(signal_log_handler)
 
 
 class TestMultiWorkflowLauncher:
-    @pytest.mark.skip("something is funky here")
     def test_all_workflows_validate_user_options(self, qtbot):
         startup_launcher = speedwagon.startup.MultiWorkflowLauncher()
         workflow_tasks = [

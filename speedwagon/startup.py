@@ -526,6 +526,7 @@ class WorkflowSignals(QtCore.QObject):
 
 
 class SignalLogHandler(logging.Handler):
+    # This is problematic, the signal could be GC and cause a segfault
     def __init__(self, signal: QtCore.pyqtBoundSignal) -> None:
         super().__init__()
         self._signal = signal
