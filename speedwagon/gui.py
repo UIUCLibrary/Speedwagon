@@ -229,7 +229,12 @@ class MainWindowMenuBuilder:
     def _build_export_log_action(self, file_menu: QtWidgets.QMenu) -> None:
         # File --> Export Log
         if self.save_log_signal is not None:
-            export_logs_button = QtWidgets.QAction(" &Export Log", self._parent)
+
+            export_logs_button = QtWidgets.QAction(
+                " &Export Log",
+                self._parent
+            )
+
             export_logs_button.setIcon(
                 self._parent.style().standardIcon(
                     QtWidgets.QStyle.SP_DialogSaveButton)
