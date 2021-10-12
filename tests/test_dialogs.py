@@ -218,6 +218,46 @@ class TestTabEditor:
         assert editor.selectedTabComboBox.model().rowCount() == 0
 
 
+class TestSettingsBuilder:
+    @pytest.fixture()
+    def nothing_set_settings(self, qtbot):
+        builder = settings.SettingsBuilder()
+        return builder.build()
+
+    def test_nothing_has_no_tabs(self, nothing_set_settings):
+        assert nothing_set_settings.tabs_widget.count() == 0
+
+    def test_nothing_no_settings_directory_button(self, nothing_set_settings):
+        assert \
+            nothing_set_settings.open_settings_path_button.isHidden() is True
+
+    def test_add_global_settings(self, qtbot, monkeypatch):
+        builder = settings.SettingsBuilder()
+        builder.add_global_settings("something.ini")
+        read_config_data = Mock()
+
+        monkeypatch.setattr(
+            settings.GlobalSettingsTab,
+            "read_config_data",
+            read_config_data
+        )
+
+        dialog = builder.build()
+        assert dialog.tabs_widget.count() == 1
+
+    def test_add_editor_tab(self, qtbot, monkeypatch):
+        builder = settings.SettingsBuilder()
+        builder.add_tabs_setting("something")
+        dialog = builder.build()
+        assert dialog.tabs_widget.count() == 1
+
+    def test_settings_path(self, qtbot):
+        builder = settings.SettingsBuilder()
+        builder.add_open_settings("some_directory")
+        dialog = builder.build()
+        assert dialog.open_settings_path_button.isHidden() is False
+
+
 class TestWorkflowProgress:
     @pytest.mark.parametrize(
         "button_type, expected_active",
