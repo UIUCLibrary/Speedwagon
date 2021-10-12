@@ -384,8 +384,8 @@ class MainWindow1(MainProgram):
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
         self.console_log_handler = ConsoleLogger(self.console)
-        # self._log_data = io.StringIO()
-        # self.log_data_handler = logging.StreamHandler(self._log_data)
+        self._log_data = io.StringIO()
+        self.log_data_handler = logging.StreamHandler(self._log_data)
         self.log_data_handler.setFormatter(DEBUG_LOGGING_FORMAT)
         self.log_manager.addHandler(self.console_log_handler)
         self.log_manager.addHandler(self.log_data_handler)
@@ -541,6 +541,7 @@ class MainWindow2(QtWidgets.QMainWindow):
 
     def setup_menu(self):
         builder = MainWindowMenuBuilder(parent=self)
+        # builder.exit_signal = QtWidgets.QApplication.exit
         builder.exit_signal = self.close
 
         builder.show_system_info_signal = \

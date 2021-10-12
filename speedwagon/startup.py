@@ -525,7 +525,7 @@ class WorkflowSignals(QtCore.QObject):
     status_changed = QtCore.pyqtSignal(str)
 
 
-class SignalLogger(logging.Handler):
+class SignalLogHandler(logging.Handler):
     def __init__(self, signal: QtCore.pyqtBoundSignal) -> None:
         super().__init__()
         self._signal = signal
@@ -556,7 +556,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
 
         self.signals.status_changed.connect(self.set_banner_text)
         self.signals.message.connect(self.dialog_box.write_to_console)
-        self.log_handler = SignalLogger(signal=self.signals.message)
+        self.log_handler = SignalLogHandler(signal=self.signals.message)
 
     def log(self, text: str, level: int = logging.INFO) -> None:
         self.signals.message.emit(text, level)

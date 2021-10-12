@@ -8,7 +8,7 @@ import os
 import importlib
 import yaml
 import pytest
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 
 import speedwagon.startup
 import speedwagon.config
@@ -628,6 +628,24 @@ class TestSingleWorkflowJSON:
         startup.workflow.validate_user_options = MagicMock()
         startup.run()
         assert run.called is True
+
+
+class TestSignalLogger:
+    def test_signal_is_sent(self, qtbot):
+        class Dummy(QtCore.QObject):
+            dummy_signal = QtCore.pyqtSignal(str, int)
+
+        dummy = Dummy()
+
+        signal_log_handler = \
+            speedwagon.startup.SignalLogHandler(dummy.dummy_signal)
+
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        logger.addHandler(signal_log_handler)
+
+        with qtbot.waitSignal(dummy.dummy_signal) as f:
+            logger.info("Spam!")
 
 
 class TestMultiWorkflowLauncher:

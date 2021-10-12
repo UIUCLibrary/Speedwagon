@@ -179,8 +179,8 @@ class TestMainWindow2:
         manager = Mock()
 
         monkeypatch.setattr(
-            speedwagon.gui.QtWidgets.QApplication,
-            "exit",
+            speedwagon.gui.QtWidgets.QWidget,
+            "close",
             exit_called
         )
 
