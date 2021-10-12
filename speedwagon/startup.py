@@ -20,6 +20,7 @@ import os
 import queue
 import sys
 import typing
+import warnings
 from logging import LogRecord
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
 import pathlib
@@ -1066,7 +1067,10 @@ class GuiJobCallbacks(runner_strategies.AbsJobCallbacks):
         self._com.update_progress_gui.connect(window.progress.setValue)
 
     def status(self, text: str) -> None:
-        self.context.window.text_box.setText(text)
+        if self.context.window is not None:
+            self.context.window.text_box.setText(text)
+        else:
+            warnings.warn("SimpleWindow is not open", UserWarning)
 
     def log(self, text: str, level: int = logging.INFO) -> None:
         """No-op."""
