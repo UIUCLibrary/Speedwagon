@@ -613,7 +613,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         # self.signals.update_progress(current, total)
 
 
-class Startup2Default(AbsStarter):
+class StartQtThreaded(AbsStarter):
 
     def __init__(self, app: QtWidgets.QApplication = None) -> None:
 
@@ -776,7 +776,6 @@ class Startup2Default(AbsStarter):
     def abort_job(self, window, events: runner_strategies.AbsEvents):
         window.stop()
         events.stop()
-        # while events.is_stopped()
 
     def submit_job(
             self,
@@ -1141,7 +1140,7 @@ class ApplicationLauncher:
             strategy: Starter strategy class.
         """
         super().__init__()
-        self.strategy = strategy or Startup2Default()
+        self.strategy = strategy or StartQtThreaded()
 
     def initialize(self) -> None:
         """Initialize anything that needs to done prior to running."""

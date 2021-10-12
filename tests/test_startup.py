@@ -799,3 +799,23 @@ class TestWorkflowProgressCallbacks:
         callbacks = speedwagon.startup.WorkflowProgressCallbacks(Mock())
         with qtbot.waitSignal(callbacks.signals.success_achieved) as blocker:
             callbacks.done()
+
+
+class TestStartQtThreaded:
+    def test_save_log_opens_dialog(self, qtbot, monkeypatch):
+        app = Mock()
+
+        getSaveFileName = Mock(
+            return_value=("dummy", None)
+        )
+
+        monkeypatch.setattr(
+            speedwagon.startup.QtWidgets.QFileDialog,
+            "getSaveFileName",
+            getSaveFileName
+        )
+
+        starter = speedwagon.startup.StartQtThreaded(app)
+        parent = Mock()
+        starter.save_log(parent)
+        assert getSaveFileName.called is True
