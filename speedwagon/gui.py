@@ -142,6 +142,97 @@ class MainProgram(QtWidgets.QMainWindow):
         self._debug = debug
 
 
+class MainWindowMenuBuilder:
+    def __init__(self, parent) -> None:
+        self._parent = parent
+        self._menu_bar: QtWidgets.QMenuBar = self._parent.menuBar()
+        self.add_help: bool = True
+        self.add_about: bool = True
+
+    def build(self) -> None:
+        self._build_file_menu(self._menu_bar)
+
+        self._build_system_menu(self._menu_bar)
+
+        self._build_help(self._menu_bar)
+
+    def _build_system_menu(self, menu_bar: QtWidgets.QMenuBar) -> None:
+        system_menu = menu_bar.addMenu("System")
+        system_menu.setObjectName("systemMenu")
+
+        self._build_config_action(system_menu)
+        self._build_system_info_action(system_menu)
+
+    def _build_system_info_action(self, system_menu: QtWidgets.QMenu) -> None:
+        # System --> System Info
+        # Create a system info menu item
+        system_info_menu_item = QtWidgets.QAction("System Info", self._parent)
+        system_info_menu_item.setObjectName("systemInfoAction")
+        system_info_menu_item.triggered.connect(self._parent.show_system_info)
+        system_menu.addAction(system_info_menu_item)
+
+    def _build_config_action(self, system_menu: QtWidgets.QMenu) -> None:
+        # System --> Configuration
+        # Create a system info menu item
+        system_settings_menu_item = \
+            QtWidgets.QAction("Settings", self._parent)
+        system_settings_menu_item.setObjectName('settingsAction')
+        system_settings_menu_item.triggered.connect(
+            self._parent.show_configuration)
+        system_settings_menu_item.setShortcut("Ctrl+Shift+S")
+        system_menu.addAction(system_settings_menu_item)
+
+    def _build_file_menu(self, menu_bar: QtWidgets.QMenuBar) -> None:
+
+        # File Menu
+        file_menu = menu_bar.addMenu("File")
+        self._build_export_log_action(file_menu)
+        self._build_exit_action(file_menu)
+
+    def _build_exit_action(self, file_menu: QtWidgets.QMenu) -> None:
+        # File --> Exit
+        # Create Exit button
+        exit_button = QtWidgets.QAction(" &Exit", self._parent)
+        # exit_button = QtWidgets.QAction(" &Exit", self._parent)
+        exit_button.setObjectName("exitAction")
+
+        exit_button.triggered.connect(self._parent.close)
+        # exit_button.triggered.connect(QtWidgets.QApplication.exit)
+        file_menu.addAction(exit_button)
+
+    def _build_export_log_action(self, file_menu: QtWidgets.QMenu) -> None:
+        # File --> Export Log
+        export_logs_button = QtWidgets.QAction(" &Export Log", self._parent)
+        export_logs_button.setIcon(
+            self._parent.style().standardIcon(
+                QtWidgets.QStyle.SP_DialogSaveButton)
+        )
+        export_logs_button.triggered.connect(self._parent.save_log)
+        file_menu.addAction(export_logs_button)
+        file_menu.setObjectName("fileMenu")
+        file_menu.addAction(export_logs_button)
+        file_menu.setObjectName("fileMenu")
+        file_menu.addSeparator()
+
+    def _build_help(self, menu_bar: QtWidgets.QMenuBar) -> None:
+        # Help Menu
+        help_menu = menu_bar.addMenu("Help")
+
+        if self.add_help is True:
+            # Help --> Help
+            # Create a Help menu item
+            help_button = QtWidgets.QAction(" &Help ", self._parent)
+            help_button.triggered.connect(self._parent.help_requested)
+            help_menu.addAction(help_button)
+
+        if self.add_about is True:
+            # Help --> About
+            # Create an About button
+            about_button = QtWidgets.QAction(" &About ", self._parent)
+            about_button.triggered.connect(self._parent.show_about_window)
+            help_menu.addAction(about_button)
+
+
 class MainWindow1(MainProgram):
     def __init__(
             self,
@@ -420,67 +511,9 @@ class MainWindow2(QtWidgets.QMainWindow):
         self.setup_menu()
 
     def setup_menu(self):
-        # Add menu bar
-        menu_bar = self.menuBar()
-
-        # File Menu
-        file_menu = menu_bar.addMenu("File")
-
-        # File --> Export Log
-        export_logs_button = QtWidgets.QAction(" &Export Log", self)
-        export_logs_button.setIcon(
-            self.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton)
-        )
-        export_logs_button.triggered.connect(self.save_log)
-
-        file_menu.addAction(export_logs_button)
-        file_menu.setObjectName("fileMenu")
-        file_menu.addAction(export_logs_button)
-        file_menu.setObjectName("fileMenu")
-        file_menu.addSeparator()
-
-        # File --> Exit
-        # Create Exit button
-        exit_button = QtWidgets.QAction(" &Exit", self)
-        exit_button.setObjectName("exitAction")
-        exit_button.triggered.connect(QtWidgets.QApplication.exit)
-        file_menu.addAction(exit_button)
-        system_menu = menu_bar.addMenu("System")
-        system_menu.setObjectName("systemMenu")
-
-        # System --> Configuration
-        # Create a system info menu item
-        system_settings_menu_item = \
-            QtWidgets.QAction("Settings", self)
-        system_settings_menu_item.setObjectName('settingsAction')
-
-        system_settings_menu_item.triggered.connect(
-            self.show_configuration)
-
-        system_settings_menu_item.setShortcut("Ctrl+Shift+S")
-        system_menu.addAction(system_settings_menu_item)
-
-        # System --> System Info
-        # Create a system info menu item
-        system_info_menu_item = QtWidgets.QAction("System Info", self)
-        system_info_menu_item.setObjectName("systemInfoAction")
-        system_info_menu_item.triggered.connect(self.show_system_info)
-        system_menu.addAction(system_info_menu_item)
-
-        # Help Menu
-        help_menu = menu_bar.addMenu("Help")
-
-        # Help --> Help
-        # Create a Help menu item
-        help_button = QtWidgets.QAction(" &Help ", self)
-        help_button.triggered.connect(self.help_requested)
-        help_menu.addAction(help_button)
-
-        # Help --> About
-        # Create an About button
-        about_button = QtWidgets.QAction(" &About ", self)
-        about_button.triggered.connect(self.show_about_window)
-        help_menu.addAction(about_button)
+        builder = MainWindowMenuBuilder(parent=self)
+        builder.add_help = True
+        builder.build()
 
     def add_tab(self, workflow_name: str, workflows):
 
