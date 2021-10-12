@@ -1,6 +1,8 @@
 from unittest.mock import Mock, MagicMock, patch, mock_open
 import webbrowser
 
+import PyQt5
+
 import speedwagon.startup
 import speedwagon.gui
 from PyQt5.QtWidgets import QApplication, QAction
@@ -169,3 +171,20 @@ class TestMainWindow:
         )
         window.show_configuration()
         assert exec_.called is True
+
+
+class TestMainWindow2:
+    def test_exit(self, qtbot, monkeypatch):
+        exit_called = Mock()
+        manager = Mock()
+
+        monkeypatch.setattr(
+            speedwagon.gui.QtWidgets.QApplication,
+            "exit",
+            exit_called
+        )
+
+        main_window = speedwagon.gui.MainWindow2(manager)
+        qtbot.addWidget(main_window)
+        main_window.findChild(QAction, name="exitAction").trigger()
+        assert exit_called.called is True
