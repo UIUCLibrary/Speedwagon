@@ -264,7 +264,6 @@ class AbsStarter(metaclass=abc.ABCMeta):
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         pass
 
-    @abc.abstractmethod
     def initialize(self) -> None:
         """Initialize startup routine."""
 
@@ -770,9 +769,6 @@ class StartQtThreaded(AbsStarter):
                 self.windows.show()
             return self.app.exec_()
 
-    def initialize(self) -> None:
-        pass
-
     def abort_job(self, window, events: runner_strategies.AbsEvents):
         window.stop()
         events.stop()
@@ -871,9 +867,6 @@ class SingleWorkflowLauncher(AbsStarter):
                             window.log_manager)
         window.log_manager.handlers.clear()
         window.close()
-
-    def initialize(self) -> None:
-        """No initialize is needed."""
 
     def set_workflow(self, workflow: job.AbsWorkflow) -> None:
         """Set the current workflow."""
@@ -1004,9 +997,6 @@ class MultiWorkflowLauncher(AbsStarter):
         finally:
             window.log_manager.handlers.clear()
             window.close()
-
-    def initialize(self) -> None:
-        """No need to initialize."""
 
     def add_job(self, workflow, args):
         self._pending_tasks.put((workflow, args))
@@ -1338,6 +1328,3 @@ class BackgroundThreadLauncher(AbsStarter):
             if app is not None:
                 app.exec_()
         return 0
-
-    def initialize(self) -> None:
-        pass
