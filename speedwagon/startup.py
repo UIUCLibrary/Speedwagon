@@ -21,6 +21,7 @@ import queue
 import sys
 import typing
 import warnings
+import webbrowser
 from logging import LogRecord
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
 import pathlib
@@ -521,7 +522,7 @@ class WorkflowSignals(QtCore.QObject):
 
 
 class SignalLogger(logging.Handler):
-    def __init__(self, signal: QtCore.pyqtSignal):
+    def __init__(self, signal: QtCore.pyqtBoundSignal) -> None:
         super().__init__()
         self._signal = signal
 
@@ -607,41 +608,63 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         # self.signals.update_progress(current, total)
 
 
-class Startup2Default(StartupDefault):
+class Startup2Default(AbsStarter):
 
     def __init__(self, app: QtWidgets.QApplication = None) -> None:
-        super().__init__(app)
-        self.startup_settings['debug'] = False
+
+        self.startup_settings: Dict[str, Union[str, bool]] = {
+            'debug': False
+        }
+
         self.windows: Optional[speedwagon.gui.MainWindow2] = None
+        self.logger = logging.getLogger(f"{__name__}.Startup2Default")
+        self.platform_settings = speedwagon.config.get_platform_settings()
+        self.app = app or QtWidgets.QApplication(sys.argv)
+
+    def _load_help(self):
+        try:
+            pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
+            webbrowser.open_new(pkg_metadata['Home-page'])
+        except metadata.PackageNotFoundError as error:
+            self.logger.warning(
+                "No help link available. Reason: {}".format(error))
 
     def _load_workflows(self, application: speedwagon.gui.MainWindow2) -> None:
-        self._logger.debug("Loading Workflows")
+        tabs_file = os.path.join(
+            self.platform_settings.get_app_data_directory(), "tabs.yml")
+
+        self.logger.debug("Loading Workflows")
         loading_workflows_stream = io.StringIO()
         with contextlib.redirect_stderr(loading_workflows_stream):
             all_workflows = job.available_workflows()
         # Load every user configured tab
-        tabs_file_size = os.path.getsize(self.tabs_file)
+        tabs_file_size = os.path.getsize(tabs_file)
         if tabs_file_size > 0:
             try:
                 for tab_name, extra_tab in \
-                        get_custom_tabs(all_workflows, self.tabs_file):
+                        get_custom_tabs(all_workflows, tabs_file):
                     application.add_tab(tab_name, collections.OrderedDict(
                         sorted(extra_tab.items())))
             except FileFormatError as error:
-                self._logger.warning(
+                self.logger.warning(
                     "Unable to load custom tabs from %s. Reason: %s",
-                    self.tabs_file,
+                    tabs_file,
                     error
                 )
 
         # All Workflows tab
-        self._logger.debug("Loading Tab All")
+        self.logger.debug("Loading Tab All")
         application.add_tab("All", collections.OrderedDict(
             sorted(all_workflows.items())))
         workflow_errors_msg = loading_workflows_stream.getvalue().strip()
         if workflow_errors_msg:
             for line in workflow_errors_msg.split("\n"):
-                self._logger.warning(line)
+                self.logger.warning(line)
+
+    @staticmethod
+    def request_system_info(parent: QtWidgets.QWidget) -> None:
+        system_info_dialog = speedwagon.dialog.dialogs.SystemInfoDialog(parent)
+        system_info_dialog.exec()
 
     @staticmethod
     def request_settings(parent: QtWidgets.QWidget) -> None:
@@ -673,26 +696,29 @@ class Startup2Default(StartupDefault):
                 job_manager=job_manager,
                 debug=cast(bool, self.startup_settings['debug'])
             )
-            with worker.ToolJobManager() as work_manager:
-                self.load_configurations(work_manager)
-                if self.windows is not None:
+            if self.windows is not None:
 
-                    self.windows.request_configuration.connect(
-                        self.request_settings
-                    )
-                    self.windows.submit_job.connect(
-                        lambda workflow_name, options:
-                        self.submit_job(
-                            self.windows,
-                            job_manager,
-                            workflow_name,
-                            options
-                        )
-                    )
+                self.windows.configuration_requested.connect(
+                    self.request_settings
+                )
 
-                # windows.work_manager = work_manager
-                    self._load_workflows(self.windows)
-                    self.windows.show()
+                self.windows.system_info_requested.connect(
+                    self.request_system_info
+                )
+                self.windows.help_requested.connect(self._load_help)
+
+                self.windows.submit_job.connect(
+                    lambda workflow_name, options:
+                    self.submit_job(
+                        self.windows,
+                        job_manager,
+                        workflow_name,
+                        options
+                    )
+                )
+
+                self._load_workflows(self.windows)
+                self.windows.show()
             return self.app.exec_()
 
     def initialize(self) -> None:
@@ -705,7 +731,7 @@ class Startup2Default(StartupDefault):
 
     def submit_job(
             self,
-            main_app: speedwagon.gui.MainWindow2,
+            main_app: Optional[speedwagon.gui.MainWindow2],
             job_manager: runner_strategies.BackgroundJobManager,
             workflow_name,
             options
@@ -714,7 +740,10 @@ class Startup2Default(StartupDefault):
             dialog_box = WorkflowProgress(parent=self.windows)
         else:
             dialog_box = WorkflowProgress()
-        dialog_box.rejected.connect(main_app.close)
+
+        if main_app is not None:
+            dialog_box.rejected.connect(main_app.close)
+
         dialog_box.setWindowTitle(workflow_name)
         dialog_box.show()
         dialog_box.start()
@@ -727,7 +756,10 @@ class Startup2Default(StartupDefault):
         main_logger = logging.getLogger()
         try:
             main_logger.addHandler(callbacks.log_handler)
-            main_logger.addHandler(main_app.console_log_handler)
+
+            if main_app is not None:
+                main_logger.addHandler(main_app.console_log_handler)
+
             job_manager.submit_job(
                 workflow_name=workflow_name,
                 options=options,
@@ -737,7 +769,8 @@ class Startup2Default(StartupDefault):
             )
         finally:
             main_logger.removeHandler(callbacks.log_handler)
-            main_logger.removeHandler(main_app.console_log_handler)
+            if main_app is not None:
+                main_logger.removeHandler(main_app.console_log_handler)
 
 
 class SingleWorkflowLauncher(AbsStarter):

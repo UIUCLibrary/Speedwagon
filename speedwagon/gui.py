@@ -142,9 +142,58 @@ class MainProgram(QtWidgets.QMainWindow):
         self._debug = debug
 
 
-class MainWindow:
+class MainWindow1(MainProgram):
+    def __init__(
+            self,
+            work_manager: "worker.ToolJobManager",
+            debug: bool = False
+    ) -> None:
+
+        super().__init__(work_manager, debug)
+        with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
+            self.load_ui_file(ui_file)
+
+        self.mainLayout.setContentsMargins(0, 0, 0, 0)
+        self.mainLayout.addWidget(self.main_splitter)
+
+        ###########################################################
+        # Tabs
+        ###########################################################
+        self._create_tabs_widget()
+
+        ###########################################################
+        #  Console
+        ###########################################################
+        self._create_console()
+
+        ###########################################################
+        self.debug_mode(debug)
+        self.setup_menu()
+
+        # ##################
+
+        self.statusBar()
+
+        # ##################
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+
     def load_ui_file(self, ui_file):
         uic.loadUi(ui_file, self)
+
+    def show_about_window(self) -> None:
+        speedwagon.dialog.dialogs.about_dialog_box(parent=self)
+
+    def show_system_info(self) -> None:
+        system_info_dialog = speedwagon.dialog.dialogs.SystemInfoDialog(self)
+        system_info_dialog.exec()
+
+    def show_help(self) -> None:
+        try:
+            pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
+            webbrowser.open_new(pkg_metadata['Home-page'])
+        except metadata.PackageNotFoundError as error:
+            self.log_manager.warning(
+                "No help link available. Reason: {}".format(error))
 
     def setup_menu(self):
         # Add menu bar
@@ -208,60 +257,6 @@ class MainWindow:
         about_button = QtWidgets.QAction(" &About ", self)
         about_button.triggered.connect(self.show_about_window)
         help_menu.addAction(about_button)
-
-    def show_about_window(self) -> None:
-        speedwagon.dialog.dialogs.about_dialog_box(parent=self)
-
-    def show_system_info(self) -> None:
-        system_info_dialog = speedwagon.dialog.dialogs.SystemInfoDialog(self)
-        system_info_dialog.exec()
-
-    def show_help(self) -> None:
-        pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
-        webbrowser.open_new(pkg_metadata['Home-page'])
-
-
-class MainWindow1(MainProgram, MainWindow):
-    def __init__(
-            self,
-            work_manager: "worker.ToolJobManager",
-            debug: bool = False
-    ) -> None:
-
-        super().__init__(work_manager, debug)
-        with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
-            self.load_ui_file(ui_file)
-
-        self.mainLayout.setContentsMargins(0, 0, 0, 0)
-        self.mainLayout.addWidget(self.main_splitter)
-
-        ###########################################################
-        # Tabs
-        ###########################################################
-        self._create_tabs_widget()
-
-        ###########################################################
-        #  Console
-        ###########################################################
-        self._create_console()
-
-        ###########################################################
-        self.debug_mode(debug)
-        self.setup_menu()
-
-        # ##################
-
-        self.statusBar()
-
-        # ##################
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-
-    def show_help(self) -> None:
-        try:
-            MainWindow.show_help(self)
-        except metadata.PackageNotFoundError as error:
-            self.log_manager.warning(
-                "No help link available. Reason: {}".format(error))
 
     def _create_console(self) -> None:
 
@@ -328,7 +323,6 @@ class MainWindow1(MainProgram, MainWindow):
         self.log_manager.removeHandler(self.console_log_handler)
         super().closeEvent(*args, **kwargs)
 
-
     def show_configuration(self) -> None:
 
         config_dialog = speedwagon.dialog.settings.SettingsDialog(parent=self)
@@ -387,9 +381,14 @@ class MainWindow1(MainProgram, MainWindow):
         self.log_manager.info("Saved log to {}".format(log_file_name))
 
 
-class MainWindow2(QtWidgets.QMainWindow, MainWindow):
+MainWindow = MainWindow1
+
+
+class MainWindow2(QtWidgets.QMainWindow):
     submit_job = QtCore.pyqtSignal(str, dict)
-    request_configuration = QtCore.pyqtSignal(QtWidgets.QWidget)
+    configuration_requested = QtCore.pyqtSignal(QtWidgets.QWidget)
+    system_info_requested = QtCore.pyqtSignal(QtWidgets.QWidget)
+    help_requested = QtCore.pyqtSignal()
 
     def __init__(
             self,
@@ -420,6 +419,69 @@ class MainWindow2(QtWidgets.QMainWindow, MainWindow):
 
         self.setup_menu()
 
+    def setup_menu(self):
+        # Add menu bar
+        menu_bar = self.menuBar()
+
+        # File Menu
+        file_menu = menu_bar.addMenu("File")
+
+        # File --> Export Log
+        export_logs_button = QtWidgets.QAction(" &Export Log", self)
+        export_logs_button.setIcon(
+            self.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton)
+        )
+        export_logs_button.triggered.connect(self.save_log)
+
+        file_menu.addAction(export_logs_button)
+        file_menu.setObjectName("fileMenu")
+        file_menu.addAction(export_logs_button)
+        file_menu.setObjectName("fileMenu")
+        file_menu.addSeparator()
+
+        # File --> Exit
+        # Create Exit button
+        exit_button = QtWidgets.QAction(" &Exit", self)
+        exit_button.setObjectName("exitAction")
+        exit_button.triggered.connect(QtWidgets.QApplication.exit)
+        file_menu.addAction(exit_button)
+        system_menu = menu_bar.addMenu("System")
+        system_menu.setObjectName("systemMenu")
+
+        # System --> Configuration
+        # Create a system info menu item
+        system_settings_menu_item = \
+            QtWidgets.QAction("Settings", self)
+        system_settings_menu_item.setObjectName('settingsAction')
+
+        system_settings_menu_item.triggered.connect(
+            self.show_configuration)
+
+        system_settings_menu_item.setShortcut("Ctrl+Shift+S")
+        system_menu.addAction(system_settings_menu_item)
+
+        # System --> System Info
+        # Create a system info menu item
+        system_info_menu_item = QtWidgets.QAction("System Info", self)
+        system_info_menu_item.setObjectName("systemInfoAction")
+        system_info_menu_item.triggered.connect(self.show_system_info)
+        system_menu.addAction(system_info_menu_item)
+
+        # Help Menu
+        help_menu = menu_bar.addMenu("Help")
+
+        # Help --> Help
+        # Create a Help menu item
+        help_button = QtWidgets.QAction(" &Help ", self)
+        help_button.triggered.connect(self.help_requested)
+        help_menu.addAction(help_button)
+
+        # Help --> About
+        # Create an About button
+        about_button = QtWidgets.QAction(" &About ", self)
+        about_button.triggered.connect(self.show_about_window)
+        help_menu.addAction(about_button)
+
     def add_tab(self, workflow_name: str, workflows):
 
         workflows_tab = tabs.WorkflowsTab2(
@@ -437,51 +499,13 @@ class MainWindow2(QtWidgets.QMainWindow, MainWindow):
         self.submit_job.emit(workflow, options)
 
     def show_configuration(self) -> None:
-        self.request_configuration.emit(self)
-        # # Fixme: need to set up work_manager
-        #
-        # config_dialog = speedwagon.dialog.settings.SettingsDialog(parent=self)
-        #
-        # if self.work_manager.settings_path is not None:
-        #     config_dialog.settings_location = self.work_manager.settings_path
-        #
-        # global_settings_tab = speedwagon.dialog.settings.GlobalSettingsTab()
-        #
-        # if self.work_manager.settings_path is not None:
-        #     global_settings_tab.config_file = \
-        #         os.path.join(
-        #             self.work_manager.settings_path, "config.ini")
-        #
-        #     global_settings_tab.read_config_data()
-        #
-        # config_dialog.add_tab(global_settings_tab, "Global Settings")
-        # config_dialog.accepted.connect(global_settings_tab.on_okay)
-        #
-        # tabs_tab = speedwagon.dialog.settings.TabsConfigurationTab()
-        #
-        # if self.work_manager.settings_path is not None:
-        #     tabs_tab.settings_location = \
-        #         os.path.join(self.work_manager.settings_path, "tabs.yml")
-        #     tabs_tab.load()
-        #
-        # config_dialog.add_tab(tabs_tab, "Tabs")
-        # config_dialog.accepted.connect(tabs_tab.on_okay)
-        #
-        # config_dialog.exec()
+        self.configuration_requested.emit(self)
 
     def show_about_window(self) -> None:
         speedwagon.dialog.dialogs.about_dialog_box(parent=self)
 
-    def show_help(self) -> None:
-        try:
-            MainWindow.show_help(self)
-        except metadata.PackageNotFoundError as error:
-            self.log_manager.warning(
-                "No help link available. Reason: {}".format(error))
-
     def show_system_info(self) -> None:
-        system_info_dialog = speedwagon.dialog.dialogs.SystemInfoDialog(self)
-        system_info_dialog.exec()
+        self.system_info_requested.emit(self)
 
     def save_log(self) -> None:
         data = self._log_data.getvalue()
