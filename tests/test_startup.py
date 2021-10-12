@@ -817,5 +817,6 @@ class TestStartQtThreaded:
 
         starter = speedwagon.startup.StartQtThreaded(app)
         parent = Mock()
-        starter.save_log(parent)
+        with patch('speedwagon.startup.open', mock_open()) as w:
+            starter.save_log(parent)
         assert getSaveFileName.called is True
