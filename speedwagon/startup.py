@@ -279,7 +279,7 @@ class StartupDefault(AbsStarter):
     def __init__(self, app: QtWidgets.QApplication = None) -> None:
         """Create a new default startup routine."""
         self._logger = logging.getLogger(__name__)
-        self._logger.setlogger.setLevel(logging.DEBUG)
+        self._logger.setLevel(logging.DEBUG)
 
         self.handler = logging.StreamHandler(stream=sys.stderr)
         self.handler.setLevel(logging.DEBUG)
