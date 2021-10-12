@@ -376,10 +376,11 @@ class WorkflowProgress(QtWidgets.QDialog):
         self.console.setDocument(self._console_data)
 
         # =====================================================================
-        c = self.buttonBox.button(self.buttonBox.Cancel)
-        c.clicked.connect(self.aborted)
+        self.buttonBox.button(
+            self.buttonBox.Cancel
+        ).clicked.connect(self.aborted)
+
         self.setModal(True)
-        # self.aborted.connect()
         # =====================================================================
         self.state: AbsWorkflowProgressState = WorkflowProgressStateIdle(self)
 
