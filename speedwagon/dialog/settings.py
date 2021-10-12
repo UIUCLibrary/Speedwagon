@@ -3,6 +3,7 @@
 import abc
 import os
 import platform
+import typing
 
 try:  # pragma: no cover
     from importlib import resources
@@ -261,6 +262,65 @@ class TabsConfigurationTab(QtWidgets.QWidget):
         self.editor.tabs_file = self.settings_location
         workflows = job.available_workflows()
         self.editor.set_all_workflows(workflows)
+
+
+class SettingsBuilder:
+    def __init__(self, parent: typing.Optional[QtWidgets.QWidget] = None):
+        """Create a new settings dialog builder.
+
+        Args:
+            parent: Parent widget of the settings window.
+        """
+        self._parent = parent
+        self._settings_path: typing.Optional[str] = None
+        self._global_config_file_path: typing.Optional[str] = None
+        self._tab_config_file_path: typing.Optional[str] = None
+
+    def _build_tab_editor_tab(self, config_dialog: SettingsDialog) -> None:
+        tabs_tab = TabsConfigurationTab()
+        if self._settings_path is not None:
+            tabs_tab.settings_location = self._tab_config_file_path
+            tabs_tab.load()
+
+        config_dialog.add_tab(tabs_tab, "Tabs")
+        config_dialog.accepted.connect(tabs_tab.on_okay)
+
+    def _build_global_settings(self, config_dialog: SettingsDialog) -> None:
+        global_settings_tab = GlobalSettingsTab()
+        if self._global_config_file_path is not None:
+            global_settings_tab.config_file = self._global_config_file_path
+            global_settings_tab.read_config_data()
+
+        config_dialog.accepted.connect(global_settings_tab.on_okay)
+        self._global_settings_tab = global_settings_tab
+
+        if self._global_settings_tab is not None:
+            config_dialog.add_tab(self._global_settings_tab, "Global Settings")
+
+    def build(self) -> SettingsDialog:
+        """Generate a new SettingsDialog object."""
+        config_dialog = SettingsDialog(parent=self._parent)
+        if self._settings_path is not None:
+            config_dialog.settings_location = self._settings_path
+        else:
+            config_dialog.open_settings_path_button.setVisible(False)
+
+        if self._global_config_file_path is not None:
+            self._build_global_settings(config_dialog)
+
+        if self._tab_config_file_path is not None:
+            self._build_tab_editor_tab(config_dialog)
+
+        return config_dialog
+
+    def add_global_settings(self, path: str) -> None:
+        self._global_config_file_path = path
+
+    def add_tabs_setting(self, path: str) -> None:
+        self._tab_config_file_path = path
+
+    def add_open_settings(self, path: str) -> None:
+        self._settings_path = path
 
 
 class TabEditor(QtWidgets.QWidget):

@@ -643,7 +643,31 @@ class Startup2Default(StartupDefault):
             for line in workflow_errors_msg.split("\n"):
                 self._logger.warning(line)
 
+    @staticmethod
+    def request_settings(parent: QtWidgets.QWidget) -> None:
+        platform_settings = speedwagon.config.get_platform_settings()
+        settings_path = platform_settings.get_app_data_directory()
+
+        dialog_builder = \
+            speedwagon.dialog.settings.SettingsBuilder(parent=parent)
+
+        dialog_builder.add_open_settings(
+            platform_settings.get_app_data_directory()
+        )
+
+        dialog_builder.add_global_settings(
+            os.path.join(settings_path, "config.ini")
+        )
+
+        dialog_builder.add_tabs_setting(
+            os.path.join(settings_path, "tabs.yml")
+        )
+
+        config_dialog = dialog_builder.build()
+        config_dialog.exec()
+
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
+
         with runner_strategies.BackgroundJobManager() as job_manager:
             self.windows = speedwagon.gui.MainWindow2(
                 job_manager=job_manager,
@@ -652,6 +676,10 @@ class Startup2Default(StartupDefault):
             with worker.ToolJobManager() as work_manager:
                 self.load_configurations(work_manager)
                 if self.windows is not None:
+
+                    self.windows.request_configuration.connect(
+                        self.request_settings
+                    )
                     self.windows.submit_job.connect(
                         lambda workflow_name, options:
                         self.submit_job(
