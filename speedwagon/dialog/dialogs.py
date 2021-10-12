@@ -281,7 +281,7 @@ class WorkflowProgressStateAborted(AbsWorkflowProgressState):
     def __init__(self, context: "WorkflowProgress"):
         super().__init__(context)
         self.reset_cancel_button()
-        self.set_progress_to_none(context.progressBar)
+        self.set_progress_to_none(context.progress_bar)
         self.set_buttons_to_close_only(context.button_box)
         close_button: QtWidgets.QPushButton \
             = self.context.button_box.button(self.context.button_box.Close)
@@ -297,12 +297,12 @@ class WorkflowProgressStateFailed(AbsWorkflowProgressState):
     def __init__(self, context: "WorkflowProgress"):
         super().__init__(context)
         self.reset_cancel_button()
-        self.set_progress_to_none(context.progressBar)
+        self.set_progress_to_none(context.progress_bar)
         self.set_buttons_to_close_only(context.button_box)
         close_button: QtWidgets.QPushButton \
             = self.context.button_box.button(self.context.button_box.Close)
         close_button.clicked.connect(self.context.reject)
-        self.hide_progress_bar(self.context.progressBar)
+        self.hide_progress_bar(self.context.progress_bar)
         self.context.banner.setText("Failed")
 
     def stop(self) -> None:
@@ -314,7 +314,7 @@ class WorkflowProgressStateWorkingIndeterminate(WorkflowProgressStateWorking):
     def __init__(self, context: "WorkflowProgress"):
         super().__init__(context)
         self.reset_cancel_button()
-        context.progressBar.setRange(0, 0)
+        context.progress_bar.setRange(0, 0)
 
 
 class WorkflowProgressStateDone(AbsWorkflowProgressState):
@@ -327,8 +327,8 @@ class WorkflowProgressStateDone(AbsWorkflowProgressState):
             = self.context.button_box.button(self.context.button_box.Close)
         close_button.setFocus()
         close_button.clicked.connect(self.context.accept)
-        self.set_progress_to_full(self.context.progressBar)
-        self.hide_progress_bar(self.context.progressBar)
+        self.set_progress_to_full(self.context.progress_bar)
+        self.hide_progress_bar(self.context.progress_bar)
         self.context.banner.setText("Finished")
         self.context.write_to_console("Done")
 
@@ -360,7 +360,7 @@ class WorkflowProgress(QtWidgets.QDialog):
         # =====================================================================
         self.button_box: QtWidgets.QDialogButtonBox
         self.console: QtWidgets.QTextBrowser
-        self.progressBar: QtWidgets.QProgressBar
+        self.progress_bar: QtWidgets.QProgressBar
         self.banner: QtWidgets.QLabel
 
         # =====================================================================
@@ -417,11 +417,11 @@ class WorkflowProgress(QtWidgets.QDialog):
 
     @QtCore.pyqtSlot(int)
     def set_total_jobs(self, value):
-        self.progressBar.setMaximum(value)
+        self.progress_bar.setMaximum(value)
 
     @QtCore.pyqtSlot(int)
     def set_current_progress(self, value):
-        self.progressBar.setValue(value)
+        self.progress_bar.setValue(value)
         QtWidgets.QApplication.processEvents()
 
     @QtCore.pyqtSlot(str, int)
