@@ -777,3 +777,25 @@ class TestGuiJobCallbacks:
         gui_job_callbacks.done()
         window = background_thread_launcher.window
         assert window.done.emit.called is True
+
+
+class TestWorkflowProgressCallbacks:
+    def test_job_changed_signal(self, qtbot):
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(Mock())
+        with qtbot.waitSignal(callbacks.signals.total_jobs_changed) as blocker:
+            callbacks.update_progress(1, 10)
+
+    def test_job_log_signal(self, qtbot):
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(Mock())
+        with qtbot.waitSignal(callbacks.signals.message) as blocker:
+            callbacks.log("dummy", logging.INFO)
+
+    def test_job_cancel_completed_signal(self, qtbot):
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(Mock())
+        with qtbot.waitSignal(callbacks.signals.cancel_complete) as blocker:
+            callbacks.cancelling_complete()
+
+    def test_job_done_signal(self, qtbot):
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(Mock())
+        with qtbot.waitSignal(callbacks.signals.success_achieved) as blocker:
+            callbacks.done()
