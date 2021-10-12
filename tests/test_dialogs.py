@@ -229,7 +229,7 @@ class TestWorkflowProgress:
     def test_default_buttons(self, qtbot, button_type, expected_active):
         progress_dialog = dialogs.WorkflowProgress()
         qtbot.addWidget(progress_dialog)
-        assert progress_dialog.buttonBox.button(button_type).isEnabled() is \
+        assert progress_dialog.button_box.button(button_type).isEnabled() is \
                expected_active
 
     def test_get_console(self, qtbot):
