@@ -330,7 +330,7 @@ class StartupDefault(AbsStarter):
             work_manager.settings_path = \
                 self.platform_settings.get_app_data_directory()
 
-            windows = speedwagon.gui.MainWindow(
+            windows = speedwagon.gui.MainWindow1(
                 work_manager=work_manager,
                 debug=cast(bool, self.startup_settings['debug'])
             )
@@ -377,7 +377,7 @@ class StartupDefault(AbsStarter):
         work_manager.user_settings = self.platform_settings
         work_manager.configuration_file = self.config_file
 
-    def _load_workflows(self, application: speedwagon.gui.MainWindow) -> None:
+    def _load_workflows(self, application: speedwagon.gui.MainWindow1) -> None:
         self._logger.debug("Loading Workflows")
         loading_workflows_stream = io.StringIO()
         with contextlib.redirect_stderr(loading_workflows_stream):
@@ -724,7 +724,7 @@ class SingleWorkflowLauncher(AbsStarter):
     def __init__(self, logger: typing.Optional[logging.Logger] = None) -> None:
         """Set up window for running a single workflow."""
         super().__init__()
-        self.window: Optional[speedwagon.gui.MainWindow] = None
+        self.window: Optional[speedwagon.gui.MainWindow1] = None
         self._active_workflow: Optional[job.AbsWorkflow] = None
         self.options: Dict[str, Union[str, bool]] = {}
         self.logger = logger or logging.getLogger(__name__)
@@ -740,7 +740,7 @@ class SingleWorkflowLauncher(AbsStarter):
         return 0
 
     def _run(self, work_manager):
-        window = speedwagon.gui.MainWindow(
+        window = speedwagon.gui.MainWindow1(
             work_manager=work_manager,
             debug=False)
 
@@ -836,8 +836,8 @@ class SingleWorkflowJSON(AbsStarter):
 
     @staticmethod
     def _load_window(work_manager: "worker.ToolJobManager",
-                     title: Optional[str]) -> speedwagon.gui.MainWindow:
-        window = speedwagon.gui.MainWindow(
+                     title: Optional[str]) -> speedwagon.gui.MainWindow1:
+        window = speedwagon.gui.MainWindow1(
             work_manager=work_manager,
             debug=False)
 
@@ -863,7 +863,7 @@ class MultiWorkflowLauncher(AbsStarter):
         return 0
 
     def _run(self, work_manager):
-        window = speedwagon.gui.MainWindow(
+        window = speedwagon.gui.MainWindow1(
             work_manager=work_manager,
             debug=False)
 
@@ -1135,7 +1135,7 @@ class SimplePopup(QtWidgets.QDialog):
         cancel_button.setEnabled(False)
 
 
-class SimpleWindow(speedwagon.gui.MainWindow):
+class SimpleWindow(speedwagon.gui.MainWindow1):
     start = QtCore.pyqtSignal()
     abort = QtCore.pyqtSignal()
     done = QtCore.pyqtSignal()

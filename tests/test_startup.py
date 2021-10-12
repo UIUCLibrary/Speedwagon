@@ -55,7 +55,7 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
     monkeypatch.setattr(QtWidgets, "QSplashScreen", MagicMock())
     monkeypatch.setattr(
         speedwagon.startup.speedwagon.gui,
-        "MainWindow",
+        "MainWindow1",
         MagicMock()
     )
     standard_startup._logger = Mock()
@@ -613,7 +613,7 @@ class TestSingleWorkflowJSON:
 
         monkeypatch.setattr(
             speedwagon.startup.speedwagon.gui,
-            "MainWindow",
+            "MainWindow1",
             MagicMock()
         )
 
