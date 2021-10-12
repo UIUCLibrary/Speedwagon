@@ -155,7 +155,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             log_manager: logging.Logger
     ) -> None:
         """Create a new item selection tab."""
-        # assert work_manager
         super().__init__(parent, work_manager)
         self.log_manager = log_manager
         self.item_selection_model = item_model

@@ -39,7 +39,7 @@
       <widget class="QTextBrowser" name="console"/>
      </item>
      <item>
-      <widget class="QProgressBar" name="progressBar">
+      <widget class="QProgressBar" name="progress_bar">
        <property name="maximum">
         <number>100</number>
        </property>
