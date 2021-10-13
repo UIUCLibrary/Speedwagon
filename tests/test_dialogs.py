@@ -274,9 +274,14 @@ class TestWorkflowProgress:
 
     def test_get_console(self, qtbot):
         progress_dialog = dialogs.WorkflowProgress()
-        print(progress_dialog.console)
         progress_dialog.write_to_console("spam")
         assert "spam" in progress_dialog.get_console_content()
+
+    def test_start_changes_state_to_working(self):
+        progress_dialog = dialogs.WorkflowProgress()
+        assert progress_dialog.current_state == "idle"
+        progress_dialog.start()
+        assert progress_dialog.current_state == "working"
 
     @pytest.mark.skip()
     def test_a(self, qtbot):

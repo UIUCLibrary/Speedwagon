@@ -150,6 +150,15 @@ class SystemInfoDialog(QtWidgets.QDialog):
 
 
 class AbsWorkflowProgressState(abc.ABC):
+    def __init_subclass__(cls, **kwargs):
+        if not hasattr(cls, "state_name") or cls.state_name is None:
+            raise NotImplementedError(
+                f"{cls.__name__} inherits from AbsWorkflowProgressState "
+                f"which requires implementation of 'state_name' class property"
+            )
+        super().__init_subclass__()
+        # self.state_name = None
+    state_name = None
     def __init__(self, context: "WorkflowProgress"):
         self.context: WorkflowProgress = context
 
@@ -195,6 +204,7 @@ class AbsWorkflowProgressState(abc.ABC):
 
 
 class WorkflowProgressStateIdle(AbsWorkflowProgressState):
+    state_name = "idle"
 
     def __init__(self, context: "WorkflowProgress"):
         super().__init__(context)
@@ -215,6 +225,7 @@ class WorkflowProgressStateIdle(AbsWorkflowProgressState):
 
 
 class WorkflowProgressStateWorking(AbsWorkflowProgressState):
+    state_name = "working"
 
     def __init__(self, context: "WorkflowProgress"):
         super().__init__(context)
@@ -253,6 +264,8 @@ class WorkflowProgressStateWorking(AbsWorkflowProgressState):
 
 
 class WorkflowProgressStateStopping(AbsWorkflowProgressState):
+    state_name = "stopping"
+
     def __init__(self, context: "WorkflowProgress"):
         super().__init__(context)
         self.context.write_to_console("Stopping")
@@ -278,6 +291,8 @@ class WorkflowProgressStateStopping(AbsWorkflowProgressState):
 
 
 class WorkflowProgressStateAborted(AbsWorkflowProgressState):
+    state_name = "aborted"
+
     def __init__(self, context: "WorkflowProgress"):
         super().__init__(context)
         self.reset_cancel_button()
@@ -294,6 +309,8 @@ class WorkflowProgressStateAborted(AbsWorkflowProgressState):
 
 
 class WorkflowProgressStateFailed(AbsWorkflowProgressState):
+    state_name = "failed"
+
     def __init__(self, context: "WorkflowProgress"):
         super().__init__(context)
         self.reset_cancel_button()
@@ -318,6 +335,7 @@ class WorkflowProgressStateWorkingIndeterminate(WorkflowProgressStateWorking):
 
 
 class WorkflowProgressStateDone(AbsWorkflowProgressState):
+    state_name = "done"
 
     def __init__(self, context: "WorkflowProgress"):
         super().__init__(context)
@@ -383,6 +401,10 @@ class WorkflowProgress(QtWidgets.QDialog):
         self.setModal(True)
         # =====================================================================
         self.state: AbsWorkflowProgressState = WorkflowProgressStateIdle(self)
+
+    @property
+    def current_state(self) -> str:
+        return self.state.state_name
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         self.state.close(event)
