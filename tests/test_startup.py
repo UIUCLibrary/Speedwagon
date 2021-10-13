@@ -10,6 +10,7 @@ import yaml
 import pytest
 from PyQt5 import QtWidgets, QtCore
 
+import speedwagon.logging_helpers
 import speedwagon.startup
 import speedwagon.config
 import speedwagon.job
@@ -646,7 +647,7 @@ class TestSignalLogger:
         dummy = Dummy()
 
         signal_log_handler = \
-            speedwagon.startup.SignalLogHandler(dummy.dummy_signal)
+            speedwagon.logging_helpers.SignalLogHandler(dummy.dummy_signal)
 
         logger = logging.getLogger()
         logger.setLevel(logging.INFO)

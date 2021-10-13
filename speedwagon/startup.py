@@ -23,7 +23,6 @@ import time
 import typing
 import warnings
 import webbrowser
-from logging import LogRecord
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
 import pathlib
 import yaml
@@ -36,6 +35,7 @@ import speedwagon.tabs
 from speedwagon import worker, job, runner_strategies
 from speedwagon.dialog.settings import TabEditor
 from speedwagon.dialog.dialogs import WorkflowProgress
+from speedwagon.logging_helpers import SignalLogHandler
 from speedwagon.runner_strategies import ThreadedEvents
 from speedwagon.tabs import extract_tab_information
 import speedwagon.gui
@@ -522,17 +522,6 @@ class WorkflowSignals(QtCore.QObject):
     success_achieved = QtCore.pyqtSignal()
     message = QtCore.pyqtSignal(str, int)
     status_changed = QtCore.pyqtSignal(str)
-
-
-class SignalLogHandler(logging.Handler):
-    # This is problematic, the signal could be GC and cause a segfault
-    def __init__(self, signal: QtCore.pyqtBoundSignal) -> None:
-        super().__init__()
-        self._signal = signal
-
-    def emit(self, record: LogRecord) -> None:
-        result = logging.Formatter().format(record)
-        self._signal.emit(result, record.levelno)
 
 
 class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
