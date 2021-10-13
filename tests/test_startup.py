@@ -1,6 +1,6 @@
 import argparse
 import os.path
-from unittest.mock import Mock, MagicMock, mock_open, patch
+from unittest.mock import Mock, MagicMock, mock_open, patch, ANY
 
 import json
 import logging
@@ -844,9 +844,47 @@ class TestStartQtThreaded:
     def test_run_opens_window(self, qtbot, monkeypatch):
         app = Mock()
         show = Mock()
-        monkeypatch.setattr(speedwagon.startup.speedwagon.gui.MainWindow2, "show", show)
+
+        monkeypatch.setattr(
+            speedwagon.startup.speedwagon.gui.MainWindow2,
+            "show",
+            show
+        )
+
         starter = speedwagon.startup.StartQtThreaded(app)
         starter.load_custom_tabs = Mock()
         starter.load_all_workflows_tab = Mock()
         starter.run()
         assert show.called is True
+
+    def test_load_custom_tabs(self, qtbot, monkeypatch):
+        app = Mock()
+        starter = speedwagon.startup.StartQtThreaded(app)
+
+        tabs_file = "somefile.yml"
+
+        loaded_workflows = Mock()
+
+        monkeypatch.setattr(
+            speedwagon.startup.os.path,
+            "getsize",
+            Mock(return_value=10)
+        )
+
+        monkeypatch.setattr(
+            speedwagon.startup,
+            "get_custom_tabs",
+            Mock(return_value=[
+                ("dummy", {})
+            ])
+        )
+        main_window = Mock()
+
+        starter.load_custom_tabs(
+            main_window=main_window,
+            tabs_file=tabs_file,
+            loaded_workflows=loaded_workflows
+        )
+
+        main_window.add_tab.assert_called_with("dummy", ANY)
+
