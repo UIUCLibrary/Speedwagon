@@ -285,11 +285,31 @@ class TestWorkflowProgress:
 
     def test_stop_changes_working_state_to_stopping(self):
         progress_dialog = dialogs.WorkflowProgress()
-        assert progress_dialog.current_state == "idle"
         progress_dialog.start()
         assert progress_dialog.current_state == "working"
         progress_dialog.stop()
         assert progress_dialog.current_state == "stopping"
+
+    def test_failed_changes_working_state_to_failed(self):
+        progress_dialog = dialogs.WorkflowProgress()
+        progress_dialog.start()
+        assert progress_dialog.current_state == "working"
+        progress_dialog.failed()
+        assert progress_dialog.current_state == "failed"
+
+    def test_cancel_completed_changes_stopping_state_to_aborted(self):
+        progress_dialog = dialogs.WorkflowProgress()
+        progress_dialog.start()
+        assert progress_dialog.current_state == "working"
+        progress_dialog.stop()
+        progress_dialog.cancel_completed()
+        assert progress_dialog.current_state == "aborted"
+
+    def test_success_completed_chances_status_to_done(self):
+        progress_dialog = dialogs.WorkflowProgress()
+        progress_dialog.start()
+        progress_dialog.success_completed()
+        assert progress_dialog.current_state == "done"
 
     @pytest.mark.skip()
     def test_a(self, qtbot):
