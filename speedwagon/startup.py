@@ -700,7 +700,7 @@ class StartQtThreaded(AbsStarter):
                     error
                 )
 
-    def save_log(self, parent: QtWidgets.QWidget) -> None:
+    def save_log(self, parent: QtWidgets.QWidget = None) -> None:
         data = self._log_data.getvalue()
         epoch_in_minutes = int(time.time() / 60)
         while True:
