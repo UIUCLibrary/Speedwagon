@@ -575,7 +575,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
     ) -> None:
         self.signals.error.emit(message, exc, traceback)
 
-    def cancelling_complete(self):
+    def cancelling_complete(self) -> None:
         self.signals.cancel_complete.emit()
 
     def _error_message(
@@ -792,8 +792,12 @@ class StartQtThreaded(AbsStarter):
 
             return self.app.exec_()
 
-    def abort_job(self, window, events: runner_strategies.AbsEvents):
-        window.stop()
+    def abort_job(
+            self,
+            dialog: WorkflowProgress,
+            events: runner_strategies.AbsEvents
+    ) -> None:
+        dialog.stop()
         events.stop()
 
     def submit_job(
