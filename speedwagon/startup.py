@@ -728,9 +728,10 @@ class StartQtThreaded(AbsStarter):
             break
 
     @staticmethod
-    def request_system_info(parent: QtWidgets.QWidget) -> None:
-        system_info_dialog = speedwagon.dialog.dialogs.SystemInfoDialog(parent)
-        system_info_dialog.exec()
+    def request_system_info(
+            parent: Optional[QtWidgets.QWidget] = None
+    ) -> None:
+        speedwagon.dialog.dialogs.SystemInfoDialog(parent).exec()
 
     @staticmethod
     def request_settings(parent: QtWidgets.QWidget = None) -> None:
