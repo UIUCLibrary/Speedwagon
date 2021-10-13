@@ -150,7 +150,7 @@ class SystemInfoDialog(QtWidgets.QDialog):
 
 
 class AbsWorkflowProgressState(abc.ABC):
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs) -> None:
         if not hasattr(cls, "state_name") or cls.state_name is None:
             raise NotImplementedError(
                 f"{cls.__name__} inherits from AbsWorkflowProgressState "
@@ -169,7 +169,7 @@ class AbsWorkflowProgressState(abc.ABC):
     def stop(self) -> None:
         """Stop."""
 
-    def close(self, event: QtGui.QCloseEvent):
+    def close(self, event: QtGui.QCloseEvent) -> None:
         """User clicks on close window."""
         event.accept()
 
@@ -186,20 +186,18 @@ class AbsWorkflowProgressState(abc.ABC):
             = button_box.button(button_box.Close)
         close_button.setEnabled(True)
 
-    def reset_cancel_button(self):
+    def reset_cancel_button(self) -> None:
         cancel_button: QtWidgets.QPushButton \
             = self.context.button_box.button(self.context.button_box.Cancel)
         cancel_button.setText("Cancel")
 
-    def set_progress_to_none(
-            self,
-            progress_bar: QtWidgets.QProgressBar
-    ) -> None:
+    @staticmethod
+    def set_progress_to_none(progress_bar: QtWidgets.QProgressBar) -> None:
         progress_bar.setRange(0, 100)
         progress_bar.setValue(0)
 
     @staticmethod
-    def hide_progress_bar(progress_bar: QtWidgets.QProgressBar):
+    def hide_progress_bar(progress_bar: QtWidgets.QProgressBar) -> None:
         progress_bar.setVisible(False)
 
 
@@ -214,13 +212,13 @@ class WorkflowProgressStateIdle(AbsWorkflowProgressState):
     def stop(self) -> None:
         warnings.warn("Already stopped")
 
-    def _set_button_defaults(self):
+    def _set_button_defaults(self) -> None:
         cancel_button: QtWidgets.QPushButton \
             = self.context.button_box.button(self.context.button_box.Cancel)
         cancel_button.setEnabled(False)
         self.context.rejected.connect(self.context.button_box.rejected)
 
-    def start(self):
+    def start(self) -> None:
         self.context.state = WorkflowProgressStateWorking(self.context)
 
 
@@ -409,45 +407,48 @@ class WorkflowProgress(QtWidgets.QDialog):
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         self.state.close(event)
 
-    def _follow_text(self):
+    def _follow_text(self) -> None:
         cursor = QtGui.QTextCursor(self._console_data)
         cursor.movePosition(cursor.End)
         self.console.setTextCursor(cursor)
 
     @staticmethod
-    def calculate_window_width(font_used, characters_width: int = 80):
+    def calculate_window_width(
+            font_used: QtGui.QFont,
+            characters_width: int = 80
+    ) -> int:
         return QtGui.QFontMetrics(
             font_used
         ).horizontalAdvance("*" * characters_width)
 
-    def start(self):
+    def start(self) -> None:
         self.state.start()
 
-    def stop(self):
+    def stop(self) -> None:
         self.state.stop()
 
-    def failed(self):
+    def failed(self) -> None:
         state = WorkflowProgressStateFailed(
             context=self)
         self.state = state
 
-    def cancel_completed(self):
+    def cancel_completed(self) -> None:
         self.state = WorkflowProgressStateAborted(self)
 
-    def success_completed(self):
+    def success_completed(self) -> None:
         self.state = WorkflowProgressStateDone(self)
 
     @QtCore.pyqtSlot(int)
-    def set_total_jobs(self, value):
+    def set_total_jobs(self, value: int) -> None:
         self.progress_bar.setMaximum(value)
 
     @QtCore.pyqtSlot(int)
-    def set_current_progress(self, value):
+    def set_current_progress(self, value: int) -> None:
         self.progress_bar.setValue(value)
         QtWidgets.QApplication.processEvents()
 
     @QtCore.pyqtSlot(str, int)
-    def write_to_console(self, text: str, level=logging.INFO):
+    def write_to_console(self, text: str, level=logging.INFO) -> None:
         cursor = QtGui.QTextCursor(self._console_data)
         cursor.movePosition(cursor.End)
         cursor.beginEditBlock()
