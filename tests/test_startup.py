@@ -861,6 +861,18 @@ class TestStartQtThreaded:
 
         assert QMessageBox.called is True
 
+    def test_request_system_info(self, monkeypatch):
+        SystemInfoDialog = Mock()
+
+        monkeypatch.setattr(
+            speedwagon.startup.speedwagon.dialog.dialogs,
+            "SystemInfoDialog",
+            SystemInfoDialog
+        )
+
+        speedwagon.startup.StartQtThreaded.request_system_info()
+        assert SystemInfoDialog.called is True
+
     def test_request_settings_opens_setting_dialog(self, qtbot, monkeypatch):
         exec_ = Mock()
         monkeypatch.setattr(SettingsDialog, "exec_", exec_)
