@@ -953,6 +953,12 @@ class TestStartQtThreaded:
         starter.load_all_workflows_tab = Mock()
         starter.run()
         open_new = Mock()
+
+        def metadata(*args, **kwargs):
+            return {'Home-page': "https://www.fake.com"}
+
+        monkeypatch.setattr(speedwagon.startup.metadata, "metadata", metadata)
         monkeypatch.setattr(speedwagon.startup.webbrowser, "open_new", open_new)
+        qtbot.addWidget(starter.windows)
         starter.windows.help_requested.emit()
         assert open_new.called is True
