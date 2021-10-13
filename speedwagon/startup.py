@@ -561,7 +561,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
     def log(self, text: str, level: int = logging.INFO) -> None:
         self.signals.message.emit(text, level)
 
-    def set_banner_text(self, text):
+    def set_banner_text(self, text: str) -> None:
         self.dialog_box.banner.setText(text)
 
     def status(self, text: str) -> None:
