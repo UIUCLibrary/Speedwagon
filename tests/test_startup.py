@@ -801,6 +801,12 @@ class TestWorkflowProgressCallbacks:
         with qtbot.waitSignal(callbacks.signals.success_achieved) as blocker:
             callbacks.done()
 
+    def test_set_banner_text(self, qtbot):
+        dialog_box = Mock()
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks.set_banner_text("something new")
+        dialog_box.banner.setText.assert_called_with("something new")
+
 
 class TestStartQtThreaded:
     def test_save_log_opens_dialog(self, qtbot, monkeypatch):
