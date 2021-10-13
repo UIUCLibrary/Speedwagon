@@ -790,8 +790,10 @@ class StartQtThreaded(AbsStarter):
 
                 self._load_workflows(self.windows)
                 self.windows.show()
-
-            return self.app.exec_()
+            try:
+                return self.app.exec_()
+            finally:
+                self.logger.removeHandler(self.windows.console_log_handler)
 
     def abort_job(
             self,
