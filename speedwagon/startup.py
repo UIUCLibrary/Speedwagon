@@ -639,7 +639,7 @@ class StartQtThreaded(AbsStarter):
         self.logger.addHandler(self.log_data_handler)
         self.logger.setLevel(logging.DEBUG)
 
-    def _load_help(self):
+    def _load_help(self) -> None:
         try:
             pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
             webbrowser.open_new(pkg_metadata['Home-page'])
@@ -655,12 +655,42 @@ class StartQtThreaded(AbsStarter):
         loading_workflows_stream = io.StringIO()
         with contextlib.redirect_stderr(loading_workflows_stream):
             all_workflows = job.available_workflows()
+
         # Load every user configured tab
+        self.load_custom_tabs(application, tabs_file, all_workflows)
+
+        # All Workflows tab
+        self.load_all_workflows_tab(application, all_workflows)
+
+        workflow_errors_msg = loading_workflows_stream.getvalue().strip()
+        if workflow_errors_msg:
+            for line in workflow_errors_msg.split("\n"):
+                self.logger.warning(line)
+
+    def load_all_workflows_tab(
+            self,
+            application: speedwagon.gui.MainWindow2,
+            loaded_workflows: typing.Dict[str, Type[speedwagon.Workflow]]
+    ) -> None:
+        self.logger.debug("Loading Tab All")
+        application.add_tab(
+            "All",
+            collections.OrderedDict(
+                sorted(loaded_workflows.items())
+            )
+        )
+
+    def load_custom_tabs(
+            self,
+            application: speedwagon.gui.MainWindow2,
+            tabs_file: str,
+            loaded_workflows: typing.Dict[str, Type[speedwagon.Workflow]]
+    ) -> None:
         tabs_file_size = os.path.getsize(tabs_file)
         if tabs_file_size > 0:
             try:
                 for tab_name, extra_tab in \
-                        get_custom_tabs(all_workflows, tabs_file):
+                        get_custom_tabs(loaded_workflows, tabs_file):
                     application.add_tab(tab_name, collections.OrderedDict(
                         sorted(extra_tab.items())))
             except FileFormatError as error:
@@ -669,15 +699,6 @@ class StartQtThreaded(AbsStarter):
                     tabs_file,
                     error
                 )
-
-        # All Workflows tab
-        self.logger.debug("Loading Tab All")
-        application.add_tab("All", collections.OrderedDict(
-            sorted(all_workflows.items())))
-        workflow_errors_msg = loading_workflows_stream.getvalue().strip()
-        if workflow_errors_msg:
-            for line in workflow_errors_msg.split("\n"):
-                self.logger.warning(line)
 
     def save_log(self, parent: QtWidgets.QWidget) -> None:
         data = self._log_data.getvalue()
@@ -741,6 +762,7 @@ class StartQtThreaded(AbsStarter):
                 job_manager=job_manager,
                 debug=cast(bool, self.startup_settings['debug'])
             )
+
             if self.windows is not None:
                 self.logger.addHandler(self.windows.console_log_handler)
                 self.windows.configuration_requested.connect(
@@ -767,6 +789,7 @@ class StartQtThreaded(AbsStarter):
 
                 self._load_workflows(self.windows)
                 self.windows.show()
+
             return self.app.exec_()
 
     def abort_job(self, window, events: runner_strategies.AbsEvents):
