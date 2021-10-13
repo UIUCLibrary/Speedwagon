@@ -275,6 +275,7 @@ class SettingsBuilder:
         self._settings_path: typing.Optional[str] = None
         self._global_config_file_path: typing.Optional[str] = None
         self._tab_config_file_path: typing.Optional[str] = None
+        self._global_settings_tab: typing.Optional[GlobalSettingsTab] = None
 
     def _build_tab_editor_tab(self, config_dialog: SettingsDialog) -> None:
         tabs_tab = TabsConfigurationTab()
