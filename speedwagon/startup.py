@@ -826,7 +826,7 @@ class StartQtThreaded(AbsStarter):
             job_manager.submit_job(
                 workflow_name=workflow_name,
                 options=options,
-                working_directory="/tmp",
+                working_directory=os.getcwd(),
                 callbacks=callbacks,
                 events=threaded_events,
             )
