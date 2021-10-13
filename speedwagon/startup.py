@@ -515,7 +515,7 @@ class StartupDefault(AbsStarter):
 
 
 class WorkflowSignals(QtCore.QObject):
-    error = QtCore.pyqtSignal([str, BaseException, str], [BaseException, str])
+    error = QtCore.pyqtSignal([object, object, object])
     progress_changed = QtCore.pyqtSignal(int)
     total_jobs_changed = QtCore.pyqtSignal(int)
     cancel_complete = QtCore.pyqtSignal()
