@@ -109,7 +109,7 @@ class SystemInfoDialog(QtWidgets.QDialog):
     #     Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags()
     def __init__(
             self,
-            parent: QtWidgets.QWidget,
+            parent: QtWidgets.QWidget = None,
             flags: Union[QtCore.Qt.WindowFlags,
                          QtCore.Qt.WindowType] = QtCore.Qt.WindowFlags()
     ) -> None:
@@ -157,8 +157,8 @@ class AbsWorkflowProgressState(abc.ABC):
                 f"which requires implementation of 'state_name' class property"
             )
         super().__init_subclass__()
-        # self.state_name = None
-    state_name = None
+    state_name: str
+
     def __init__(self, context: "WorkflowProgress"):
         self.context: WorkflowProgress = context
 
