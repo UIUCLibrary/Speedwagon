@@ -846,5 +846,7 @@ class TestStartQtThreaded:
         show = Mock()
         monkeypatch.setattr(speedwagon.startup.speedwagon.gui.MainWindow2, "show", show)
         starter = speedwagon.startup.StartQtThreaded(app)
+        starter.load_custom_tabs = Mock()
+        starter.load_all_workflows_tab = Mock()
         starter.run()
         assert show.called is True
