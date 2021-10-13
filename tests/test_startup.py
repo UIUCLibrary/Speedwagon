@@ -815,6 +815,26 @@ class TestWorkflowProgressCallbacks:
         callbacks.set_banner_text("something new")
         dialog_box.banner.setText.assert_called_with("something new")
 
+    @pytest.mark.parametrize("message,exc,traceback", [
+        ("Something", None, None),
+        (None, OSError(), None),
+        (None, OSError(), "Some traceback info"),
+    ])
+    def test_error(self, qtbot, monkeypatch, message, exc, traceback):
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(Mock())
+        QMessageBox = Mock()
+
+        monkeypatch.setattr(
+            speedwagon.startup.QtWidgets,
+            "QMessageBox",
+            QMessageBox
+        )
+
+        with qtbot.waitSignal(callbacks.signals.error) as blocker:
+            blocker.connect(callbacks.signals.error)
+            callbacks.error(message, exc, traceback)
+        assert QMessageBox.called is True
+
 
 class TestStartQtThreaded:
     def test_save_log_opens_dialog(self, qtbot, monkeypatch):
