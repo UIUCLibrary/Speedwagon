@@ -14,6 +14,7 @@ import speedwagon.startup
 import speedwagon.config
 import speedwagon.job
 import speedwagon.runner_strategies
+from speedwagon.dialog.settings import SettingsDialog
 
 
 def test_version_exits_after_being_called(monkeypatch):
@@ -820,3 +821,9 @@ class TestStartQtThreaded:
         with patch('speedwagon.startup.open', mock_open()) as w:
             starter.save_log(parent)
         assert getSaveFileName.called is True
+
+    def test_request_settings_opens_setting_dialog(self, qtbot, monkeypatch):
+        exec_ = Mock()
+        monkeypatch.setattr(SettingsDialog, "exec_", exec_)
+        speedwagon.startup.StartQtThreaded.request_settings(parent=None)
+        assert exec_.called is True
