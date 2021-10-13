@@ -634,7 +634,7 @@ class StartQtThreaded(AbsStarter):
             webbrowser.open_new(pkg_metadata['Home-page'])
         except metadata.PackageNotFoundError as error:
             self.logger.warning(
-                "No help link available. Reason: {}".format(error))
+                "No help link available. Reason: %s", error)
 
     def _load_workflows(self, application: speedwagon.gui.MainWindow2) -> None:
         tabs_file = os.path.join(
@@ -712,8 +712,7 @@ class StartQtThreaded(AbsStarter):
                 message_box.exec_()
                 continue
 
-            self.logger.info("Saved log to {}".format(log_file_name))
-            # self.windows.logger.info("Saved log to %s", log_file_name)
+            self.logger.info("Saved log to %s", log_file_name)
             break
 
     @staticmethod
