@@ -52,7 +52,7 @@ class AbsJobCallbacks(abc.ABC):
             self,
             message: Optional[str] = None,
             exc: Optional[BaseException] = None,
-            traceback: Optional[str] = None
+            traceback_string: Optional[str] = None
     ) -> None:
         """Had an error"""
 
@@ -1796,7 +1796,7 @@ class BackgroundJobManager(AbsJobManager2):
             traceback_info = traceback.format_exc()
 
             self._exec = exception_thrown
-            callbacks.error(exc=exception_thrown, traceback=traceback_info)
+            callbacks.error(exc=exception_thrown, traceback_string=traceback_info)
             raise
         callbacks.done()
 

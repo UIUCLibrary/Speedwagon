@@ -560,9 +560,9 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
             self,
             message: Optional[str] = None,
             exc: Optional[BaseException] = None,
-            traceback: Optional[str] = None
+            traceback_string: Optional[str] = None
     ) -> None:
-        self.signals.error.emit(message, exc, traceback)
+        self.signals.error.emit(message, exc, traceback_string)
 
     def cancelling_complete(self) -> None:
         self.signals.cancel_complete.emit()
@@ -1208,7 +1208,7 @@ class GuiJobCallbacks(runner_strategies.AbsJobCallbacks):
             self,
             message: Optional[str] = None,
             exc: Optional[BaseException] = None,
-            traceback: Optional[str] = None
+            traceback_string: Optional[str] = None
     ) -> None:
         error = QtWidgets.QMessageBox()
         error.setIcon(QtWidgets.QMessageBox.Critical)
