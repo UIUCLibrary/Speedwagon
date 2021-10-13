@@ -822,6 +822,45 @@ class TestStartQtThreaded:
             starter.save_log(parent)
         assert getSaveFileName.called is True
 
+    def test_save_log_error(self, qtbot, monkeypatch):
+        # Make sure that a dialog with an error message pops up if there is a
+        # problem with saving the log
+
+        save_file_return_name = "dummy"
+
+        def getSaveFileName(*args, **kwargs):
+            return save_file_return_name, None
+
+        monkeypatch.setattr(
+            speedwagon.startup.QtWidgets.QFileDialog,
+            "getSaveFileName",
+            getSaveFileName
+        )
+
+        starter = speedwagon.startup.StartQtThreaded(Mock())
+        QMessageBox = Mock()
+
+        def side_effect_for_saving(*args, **kwargs):
+            # Set the filename to None so that the function thinks it was
+            # canceled during the second loop otherwise, this will run as an
+            # infinite loop
+            nonlocal save_file_return_name
+            save_file_return_name = None
+
+            raise OSError("nope")
+
+        monkeypatch.setattr(
+            speedwagon.startup.QtWidgets,
+            "QMessageBox",
+            QMessageBox
+        )
+
+        with patch('speedwagon.startup.open', mock_open()) as mock:
+            mock.side_effect = side_effect_for_saving
+            starter.save_log(None)
+
+        assert QMessageBox.called is True
+
     def test_request_settings_opens_setting_dialog(self, qtbot, monkeypatch):
         exec_ = Mock()
         monkeypatch.setattr(SettingsDialog, "exec_", exec_)
