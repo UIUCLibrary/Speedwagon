@@ -840,3 +840,11 @@ class TestStartQtThreaded:
 
         speedwagon.startup.StartQtThreaded.request_settings()
         assert exec_.called is True
+
+    def test_run_opens_window(self, qtbot, monkeypatch):
+        app = Mock()
+        show = Mock()
+        monkeypatch.setattr(speedwagon.startup.speedwagon.gui.MainWindow2, "show", show)
+        starter = speedwagon.startup.StartQtThreaded(app)
+        starter.run()
+        assert show.called is True
