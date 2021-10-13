@@ -712,7 +712,7 @@ class StartQtThreaded(AbsStarter):
         system_info_dialog.exec()
 
     @staticmethod
-    def request_settings(parent: QtWidgets.QWidget) -> None:
+    def request_settings(parent: QtWidgets.QWidget = None) -> None:
         platform_settings = speedwagon.config.get_platform_settings()
         settings_path = platform_settings.get_app_data_directory()
 
@@ -732,7 +732,7 @@ class StartQtThreaded(AbsStarter):
         )
 
         config_dialog = dialog_builder.build()
-        config_dialog.exec()
+        config_dialog.exec_()
 
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
 

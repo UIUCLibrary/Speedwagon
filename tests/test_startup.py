@@ -825,5 +825,12 @@ class TestStartQtThreaded:
     def test_request_settings_opens_setting_dialog(self, qtbot, monkeypatch):
         exec_ = Mock()
         monkeypatch.setattr(SettingsDialog, "exec_", exec_)
-        speedwagon.startup.StartQtThreaded.request_settings(parent=None)
+
+        monkeypatch.setattr(
+            speedwagon.dialog.settings.GlobalSettingsTab,
+            "read_config_data",
+            Mock()
+        )
+
+        speedwagon.startup.StartQtThreaded.request_settings()
         assert exec_.called is True
