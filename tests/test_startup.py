@@ -832,5 +832,11 @@ class TestStartQtThreaded:
             Mock()
         )
 
+        monkeypatch.setattr(
+            speedwagon.dialog.settings.TabsConfigurationTab,
+            "load",
+            Mock()
+        )
+
         speedwagon.startup.StartQtThreaded.request_settings()
         assert exec_.called is True
