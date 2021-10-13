@@ -816,15 +816,12 @@ class StartQtThreaded(AbsStarter):
             lambda: self.abort_job(dialog_box, threaded_events)
         )
         callbacks = WorkflowProgressCallbacks(dialog_box)
-        # main_logger = logging.getLogger()
 
         try:
             self.logger.addHandler(callbacks.log_handler)
-            # main_logger.addHandler(callbacks.log_handler)
 
             if main_app is not None:
                 self.logger.addHandler(main_app.console_log_handler)
-                # main_logger.addHandler(main_app.console_log_handler)
 
             job_manager.submit_job(
                 workflow_name=workflow_name,
@@ -834,10 +831,8 @@ class StartQtThreaded(AbsStarter):
                 events=threaded_events,
             )
         finally:
-            # main_logger.removeHandler(callbacks.log_handler)
             self.logger.removeHandler(callbacks.log_handler)
             if main_app is not None:
-                # main_logger.removeHandler(main_app.console_log_handler)
                 self.logger.removeHandler(main_app.console_log_handler)
 
 
