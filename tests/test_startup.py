@@ -888,3 +888,20 @@ class TestStartQtThreaded:
 
         main_window.add_tab.assert_called_with("dummy", ANY)
 
+    def test_load_help(self, qtbot, monkeypatch):
+        show = Mock()
+
+        monkeypatch.setattr(
+            speedwagon.startup.speedwagon.gui.MainWindow2,
+            "show",
+            show
+        )
+
+        starter = speedwagon.startup.StartQtThreaded(Mock())
+        starter.load_custom_tabs = Mock()
+        starter.load_all_workflows_tab = Mock()
+        starter.run()
+        open_new = Mock()
+        monkeypatch.setattr(speedwagon.startup.webbrowser, "open_new", open_new)
+        starter.windows.help_requested.emit()
+        assert open_new.called is True
