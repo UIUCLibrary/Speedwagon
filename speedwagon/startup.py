@@ -682,7 +682,7 @@ class StartQtThreaded(AbsStarter):
 
     def load_custom_tabs(
             self,
-            application: speedwagon.gui.MainWindow2,
+            main_window: speedwagon.gui.MainWindow2,
             tabs_file: str,
             loaded_workflows: typing.Dict[str, Type[speedwagon.Workflow]]
     ) -> None:
@@ -691,7 +691,7 @@ class StartQtThreaded(AbsStarter):
             try:
                 for tab_name, extra_tab in \
                         get_custom_tabs(loaded_workflows, tabs_file):
-                    application.add_tab(tab_name, collections.OrderedDict(
+                    main_window.add_tab(tab_name, collections.OrderedDict(
                         sorted(extra_tab.items())))
             except FileFormatError as error:
                 self.logger.warning(
