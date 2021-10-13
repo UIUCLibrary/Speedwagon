@@ -283,6 +283,14 @@ class TestWorkflowProgress:
         progress_dialog.start()
         assert progress_dialog.current_state == "working"
 
+    def test_stop_changes_working_state_to_stopping(self):
+        progress_dialog = dialogs.WorkflowProgress()
+        assert progress_dialog.current_state == "idle"
+        progress_dialog.start()
+        assert progress_dialog.current_state == "working"
+        progress_dialog.stop()
+        assert progress_dialog.current_state == "stopping"
+
     @pytest.mark.skip()
     def test_a(self, qtbot):
         timer = QtCore.QTimer()
