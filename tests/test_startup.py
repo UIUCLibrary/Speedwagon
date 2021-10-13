@@ -801,6 +801,14 @@ class TestWorkflowProgressCallbacks:
         with qtbot.waitSignal(callbacks.signals.success_achieved) as blocker:
             callbacks.done()
 
+    def test_job_status_signal(self, qtbot):
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(Mock())
+        with qtbot.waitSignal(callbacks.signals.status_changed) as blocker:
+            blocker.connect(callbacks.signals.status_changed)
+            callbacks.status("some_other_status")
+
+        assert "some_other_status" in blocker.args
+
     def test_set_banner_text(self, qtbot):
         dialog_box = Mock()
         callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
