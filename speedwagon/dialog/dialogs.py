@@ -156,7 +156,7 @@ class AbsWorkflowProgressState(abc.ABC):
                 f"{cls.__name__} inherits from AbsWorkflowProgressState "
                 f"which requires implementation of 'state_name' class property"
             )
-        super().__init_subclass__()
+        super().__init_subclass__(**kwargs)
     state_name: str
 
     def __init__(self, context: "WorkflowProgress"):
