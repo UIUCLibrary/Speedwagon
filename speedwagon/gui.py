@@ -222,8 +222,6 @@ class MainWindowMenuBuilder:
             exit_button.setObjectName("exitAction")
 
             exit_button.triggered.connect(self.exit_signal)
-            # exit_button.triggered.connect(self._parent.close)
-            # exit_button.triggered.connect(QtWidgets.QApplication.exit)
             file_menu.addAction(exit_button)
 
     def _build_export_log_action(self, file_menu: QtWidgets.QMenu) -> None:
@@ -546,7 +544,6 @@ class MainWindow2(QtWidgets.QMainWindow):
 
     def setup_menu(self):
         builder = MainWindowMenuBuilder(parent=self)
-        # builder.exit_signal = QtWidgets.QApplication.exit
         builder.exit_signal = self.close
 
         builder.show_system_info_signal = \
@@ -576,36 +573,17 @@ class MainWindow2(QtWidgets.QMainWindow):
     def _start_workflow(self, workflow, options):
         self.submit_job.emit(workflow, options)
 
-    # def show_configuration(self) -> None:
-    #     self.configuration_requested.emit(self)
-
     def show_about_window(self) -> None:
         speedwagon.dialog.dialogs.about_dialog_box(parent=self)
 
     def save_log(self) -> None:
-        # data = self._log_data.getvalue()
-
         self.save_logs_requested.emit(self)
-    #
-    #     epoch_in_minutes = int(time.time() / 60)
-    #     log_file_name, _ = \
-    #         QtWidgets.QFileDialog.getSaveFileName(
-    #             self,
-    #             "Export Log",
-    #             "speedwagon_log_{}.txt".format(epoch_in_minutes),
-    #             "Text Files (*.txt)")
-    #
-    #     if not log_file_name:
-    #         return
-    #     with open(log_file_name, "w", encoding="utf-8") as file_handle:
-    #         file_handle.write(data)
-    #
-    #     self.log_manager.info("Saved log to {}".format(log_file_name))
 
     def _create_tabs_widget(self) -> None:
         self.tab_widget = ItemTabsWidget(self.main_splitter)
         self.tab_widget.setVisible(False)
         self._tabs: List[speedwagon.tabs.ItemSelectionTab] = []
+
         # Add the tabs widget as the first widget
         self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
         self.main_splitter.addWidget(self.tab_widget)
@@ -619,11 +597,7 @@ class MainWindow2(QtWidgets.QMainWindow):
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
         self.console_log_handler = ConsoleLogger(self.console)
-        # self._log_data = io.StringIO()
-        # self.log_data_handler = logging.StreamHandler(self._log_data)
-        # self.log_data_handler.setFormatter(DEBUG_LOGGING_FORMAT)
         self.logger.addHandler(self.console_log_handler)
-        # self.logger.addHandler(self.log_data_handler)
 
 
 class SplashScreenLogHandler(logging.Handler):
