@@ -1153,7 +1153,7 @@ class BackgroundJobManager(AbsJobManager2):
     def __exit__(self,
                  exc_type: Optional[Type[BaseException]],
                  exc_value: Optional[BaseException],
-                 traceback: Optional[TracebackType]) -> None:
+                 traceback_: Optional[TracebackType]) -> None:
         self.clean_up_thread()
         if self._exec is not None:
             raise self._exec
