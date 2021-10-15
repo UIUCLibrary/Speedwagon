@@ -823,25 +823,16 @@ class StartQtThreaded(AbsStarter):
         )
         callbacks = WorkflowProgressCallbacks(dialog_box)
 
-        try:
-            # self.logger.addHandler(callbacks.log_handler)
-            dialog_box.attach_logger(self.logger)
-            # if main_app is not None:
-            #     self.logger.addHandler(main_app.console_log_handler)
+        dialog_box.attach_logger(self.logger)
 
-            job_manager.submit_job(
-                workflow_name=workflow_name,
-                options=options,
-                working_directory=os.getcwd(),
-                callbacks=callbacks,
-                events=threaded_events,
-            )
-            threaded_events.started.set()
-        finally:
-            # self.logger.removeHandler(callbacks.log_handler)
-            if main_app is not None:
-                pass
-                # self.logger.removeHandler(main_app.console_log_handler)
+        job_manager.submit_job(
+            workflow_name=workflow_name,
+            options=options,
+            working_directory=os.getcwd(),
+            callbacks=callbacks,
+            events=threaded_events,
+        )
+        threaded_events.started.set()
 
 
 class SingleWorkflowLauncher(AbsStarter):
