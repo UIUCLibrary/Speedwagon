@@ -1,6 +1,7 @@
 """Data models for displaying data to user in the user interface."""
 
 import sys
+import typing
 from typing import Type, Dict, List, Any, Union, Tuple, Optional, cast
 import warnings
 from abc import abstractmethod
@@ -36,10 +37,10 @@ class JobModelData(enum.Enum):
 class ItemListModel(QtCore.QAbstractTableModel):
     """List model for items."""
 
-    def __init__(self, data: Dict["str", Type[AbsWorkflow]]) -> None:
+    def __init__(self, data: typing.Mapping[str, Type[Workflow]]) -> None:
         """Create a new ItemListModel qt list model for workflows."""
         super().__init__()
-        self.jobs: List[Type[AbsWorkflow]] = list(data.values())
+        self.jobs: List[Type[Workflow]] = list(data.values())
 
     def columnCount(self, *args, parent=QtCore.QModelIndex(), **kwargs) -> int:
         """Return 2.
@@ -77,7 +78,7 @@ class WorkflowListModel(ItemListModel):
             self,
             index: QtCore.QModelIndex,
             role: Optional[QtConstant] = None
-    ) -> Union[str, Type[AbsWorkflow], QtCore.QSize, QtCore.QVariant]:
+    ) -> Union[str, Type[Workflow], QtCore.QSize, QtCore.QVariant]:
         """Get data at a specific index."""
         if index.isValid():
             data = self.jobs[index.row()]

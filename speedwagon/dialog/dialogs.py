@@ -4,6 +4,7 @@ import logging
 import sys
 import typing
 import warnings
+from logging import LogRecord
 from typing import Collection, Union
 
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
@@ -21,6 +22,7 @@ except ImportError:  # pragma: no cover
     import importlib_resources as resources  # type: ignore
 
 import speedwagon
+import speedwagon.logging_helpers
 
 __all__ = [
     "SystemInfoDialog",
@@ -150,13 +152,13 @@ class SystemInfoDialog(QtWidgets.QDialog):
 
 
 class AbsWorkflowProgressState(abc.ABC):
-    def __init_subclass__(cls, **kwargs) -> None:
+    def __init_subclass__(cls) -> None:
         if not hasattr(cls, "state_name") or cls.state_name is None:
             raise NotImplementedError(
                 f"{cls.__name__} inherits from AbsWorkflowProgressState "
                 f"which requires implementation of 'state_name' class property"
             )
-        super().__init_subclass__(**kwargs)
+        super().__init_subclass__()
     state_name: str
 
     def __init__(self, context: "WorkflowProgress"):
@@ -232,11 +234,10 @@ class WorkflowProgressStateWorking(AbsWorkflowProgressState):
             = self.context.button_box.button(self.context.button_box.Cancel)
         cancel_button.setEnabled(True)
         self.context.button_box.rejected.disconnect()
-
         close_button: QtWidgets.QPushButton \
             = self.context.button_box.button(self.context.button_box.Close)
         close_button.setEnabled(False)
-        QtWidgets.QApplication.processEvents()
+        # QtWidgets.QApplication.processEvents()
 
     def start(self) -> None:
         warnings.warn("Already started")
@@ -346,7 +347,7 @@ class WorkflowProgressStateDone(AbsWorkflowProgressState):
         self.set_progress_to_full(self.context.progress_bar)
         self.hide_progress_bar(self.context.progress_bar)
         self.context.banner.setText("Finished")
-        self.context.write_to_console("Done")
+        # self.context.write_to_console("Done")
 
     @staticmethod
     def set_progress_to_full(progress_bar: QtWidgets.QProgressBar) -> None:
@@ -357,6 +358,19 @@ class WorkflowProgressStateDone(AbsWorkflowProgressState):
 
 
 class WorkflowProgress(QtWidgets.QDialog):
+    class DialogLogHandler(logging.Handler):
+        class LogSignals(QtCore.QObject):
+            message = QtCore.pyqtSignal(str, int)
+
+        def __init__(self, dialog: "WorkflowProgress") -> None:
+            super().__init__()
+            self.signals = WorkflowProgress.DialogLogHandler.LogSignals()
+            self._dialog = dialog
+            self.signals.message.connect(self._dialog.write_to_console)
+
+        def emit(self, record: LogRecord) -> None:
+            self.signals.message.emit(record.message, record.levelno)
+
     aborted = QtCore.pyqtSignal()
 
     def __init__(self, parent: typing.Optional[QWidget] = None) -> None:
@@ -380,7 +394,7 @@ class WorkflowProgress(QtWidgets.QDialog):
         self.banner: QtWidgets.QLabel
 
         # =====================================================================
-        self._console_data = QtGui.QTextDocument()
+        self._console_data = QtGui.QTextDocument(parent=self)
 
         mono_font = \
             QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
@@ -390,7 +404,6 @@ class WorkflowProgress(QtWidgets.QDialog):
         self.console.setMinimumWidth(self.calculate_window_width(mono_font))
         # self.console.setMinimumWidth(self.calculate_window_width(mono_font))
         self.console.setDocument(self._console_data)
-
         # =====================================================================
         self.button_box.button(
             self.button_box.Cancel
@@ -399,6 +412,34 @@ class WorkflowProgress(QtWidgets.QDialog):
         self.setModal(True)
         # =====================================================================
         self.state: AbsWorkflowProgressState = WorkflowProgressStateIdle(self)
+        # =====================================================================
+
+        # Seems to be causing the segfault
+        # self.finished.connect(self.clean_local_console)
+
+        self.finished.connect(self.remove_log_handles)
+        self._log_handler: typing.Optional[logging.Handler] = None
+        self._parent_logger: typing.Optional[logging.Logger] = None
+
+    def attach_logger(self, logger: logging.Logger):
+        self._parent_logger = logger
+        self._log_handler = WorkflowProgress.DialogLogHandler(self)
+        self._parent_logger.addHandler(self._log_handler)
+
+    def remove_log_handles(self):
+        if self._parent_logger is not None:
+            if self._log_handler is not None:
+                self._log_handler.flush()
+                self._parent_logger.removeHandler(self._log_handler)
+                self._log_handler = None
+            self._parent_logger = None
+
+    def clean_local_console(self):
+        # return
+        logging.info("Clearning _console_data")
+        # THIS SEEMS TO CAUSE A SEGFAULT when shutting down!!!
+        self._console_data.clear()
+        # self.console.clear()
 
     @property
     def current_state(self) -> str:
@@ -445,10 +486,11 @@ class WorkflowProgress(QtWidgets.QDialog):
     @QtCore.pyqtSlot(int)
     def set_current_progress(self, value: int) -> None:
         self.progress_bar.setValue(value)
-        QtWidgets.QApplication.processEvents()
+        # QtWidgets.QApplication.processEvents()
 
     @QtCore.pyqtSlot(str, int)
     def write_to_console(self, text: str, level=logging.INFO) -> None:
+        # return
         cursor = QtGui.QTextCursor(self._console_data)
         cursor.movePosition(cursor.End)
         cursor.beginEditBlock()

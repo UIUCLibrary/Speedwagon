@@ -42,8 +42,21 @@ class AbsEvents(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def is_done(self) -> bool:
+        pass
+
+    @abc.abstractmethod
     def is_stopped(self) -> bool:
         pass
+
+    @abc.abstractmethod
+    def done(self) -> None:
+        pass
+
+
+class JobSuccess(enum.Enum):
+    SUCCESS = 0
+    FAILURE = 1
 
 
 class AbsJobCallbacks(abc.ABC):
@@ -62,18 +75,25 @@ class AbsJobCallbacks(abc.ABC):
 
     @abc.abstractmethod
     def log(self, text: str, level: int = logging.INFO) -> None:
-        """Log information"""
+        """Log information."""
+
+    def start(self) -> None:
+        """Start."""
 
     def refresh(self) -> None:
         """Refresh."""
 
     @abc.abstractmethod
-    def cancelling_complete(self):
+    def cancelling_complete(self) -> None:
         """Run when the job has been cancelled."""
 
     @abc.abstractmethod
-    def done(self) -> None:
-        """Job is done."""
+    def finished(self, result: JobSuccess) -> None:
+        """Job finished"""
+    #
+    # @abc.abstractmethod
+    # def done(self) -> None:
+    #     """Job is done."""
 
     def update_progress(
             self,
@@ -1102,6 +1122,8 @@ class BackgroundJobManager(AbsJobManager2):
         self._exec: Optional[BaseException] = None
         self.valid_workflows = None
         self._background_thread: Optional[threading.Thread] = None
+        self.request_more_info = lambda *args, **kwargs: None
+        self.callbacks = None
 
     def __enter__(self) -> "BackgroundJobManager":
         self._exec = None
@@ -1114,21 +1136,24 @@ class BackgroundJobManager(AbsJobManager2):
             working_directory,
             options,
             callbacks: AbsJobCallbacks,
-            events: AbsEvents,
+            events: "ThreadedEvents",
     ):
-        self.logger.debug("Starting run_job_on_thread")
         try:
             task_scheduler = Run(working_directory)
+            task_scheduler.request_more_info = self.request_more_info
 
             # Makes testing easier
             if self.valid_workflows is not None:
                 task_scheduler.valid_workflows = self.valid_workflows
 
             workflow = task_scheduler.get_workflow(workflow_name)()
+            events.started.wait()
             for task in task_scheduler.iter_tasks(workflow, options):
+
                 if events.is_stopped() is True:
                     callbacks.cancelling_complete()
                     break
+
                 if task.name is not None:
                     callbacks.status(task.name)
                 task.exec()
@@ -1142,13 +1167,15 @@ class BackgroundJobManager(AbsJobManager2):
 
             self._exec = exception_thrown
 
+            callbacks.finished(JobSuccess.FAILURE)
             callbacks.error(
                 exc=exception_thrown,
                 traceback_string=traceback_info
             )
 
             raise
-        callbacks.done()
+        events.done()
+        callbacks.finished(JobSuccess.SUCCESS)
 
     def __exit__(self,
                  exc_type: Optional[Type[BaseException]],
@@ -1157,10 +1184,13 @@ class BackgroundJobManager(AbsJobManager2):
         self.clean_up_thread()
         if self._exec is not None:
             raise self._exec
+        logging.debug("thread threw no exceptions")
 
     def clean_up_thread(self):
         if self._background_thread is not None:
+            logging.debug("Background thread joined")
             self._background_thread.join()
+            self._background_thread = None
 
     def submit_job(
             self,
@@ -1170,7 +1200,11 @@ class BackgroundJobManager(AbsJobManager2):
             events: AbsEvents,
             options: Optional[Dict[str, Any]] = None,
     ):
-        if self._background_thread is None:
+
+        self.callbacks = callbacks
+        if self._background_thread is None or \
+                self._background_thread.is_alive() is False:
+
             new_thread = threading.Thread(
                 target=self.run_job_on_thread,
                 kwargs={
@@ -1178,29 +1212,33 @@ class BackgroundJobManager(AbsJobManager2):
                     "working_directory": working_directory,
                     "options": options,
                     "events": events,
-                    "callbacks": callbacks,
+                    "callbacks": self.callbacks,
                 }
             )
             new_thread.start()
             self._background_thread = new_thread
             # todo: check if thread actually started
-
-        callbacks.refresh()
-        while self._background_thread.is_alive():
-            callbacks.refresh()
-            self._background_thread.join(timeout=0.01)
-        callbacks.refresh()
-        self._background_thread.join()
-        self._background_thread = None
+            self.callbacks.start()
 
 
 class ThreadedEvents(AbsEvents):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.stopped = threading.Event()
+        self.started = threading.Event()
+        self._done = threading.Event()
+
+    def done(self) -> None:
+        self._done.set()
 
     def stop(self) -> None:
         self.stopped.set()
 
     def is_stopped(self) -> bool:
         return self.stopped.is_set()
+
+    def has_started(self) -> bool:
+        return self.started.is_set()
+
+    def is_done(self) -> bool:
+        return self._done.is_set()

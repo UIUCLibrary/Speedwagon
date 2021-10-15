@@ -32,4 +32,33 @@ class SignalLogHandler(logging.Handler):
 
     def emit(self, record: LogRecord) -> None:
         result = logging.Formatter().format(record)
+        # print(result)
         self._signal.emit(result, record.levelno)
+
+
+class ConsoleFormatter(logging.Formatter):
+    def _debug(self, text: str) -> str:
+        return f"<div><i>{text}</i></div>"
+
+    def _warning(self, text: str) -> str:
+        return f"<div><font color=\"yellow\">{text}</font></div>"
+
+    def _error(self, text: str) -> str:
+        return f"<div><font color=\"red\">{text}</font></div>"
+
+    def format(self, record: LogRecord) -> str:
+        level = record.levelno
+        text = super().format(record)
+        text = text.replace("\n", "<br>")
+
+        if level == logging.DEBUG:
+            return self._debug(text)
+
+        elif level == logging.WARNING:
+            return self._warning(text)
+
+        elif level == logging.ERROR:
+            return self._error(text)
+
+        else:
+            return f"<div>{text}</div>"

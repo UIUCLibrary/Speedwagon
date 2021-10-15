@@ -11,7 +11,10 @@ import time
 import traceback
 import typing
 import webbrowser
+from logging import LogRecord
 from typing import List
+
+from speedwagon.logging_helpers import ConsoleFormatter
 
 try:  # pragma: no cover
     from importlib import metadata
@@ -60,10 +63,25 @@ Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 
 class ToolConsole(QtWidgets.QWidget):
     """Logging console."""
-    add_log_message = QtCore.pyqtSignal(str)
+
+    class ConsoleLogHandler(logging.Handler):
+        class Signals(QtCore.QObject):
+            message = QtCore.pyqtSignal(str, logging.LogRecord)
+
+        def __init__(self, console_widget: "ToolConsole"):
+            super().__init__()
+            self.signals = ToolConsole.ConsoleLogHandler.Signals()
+            self.console_widget = console_widget
+            self.signals.message.connect(self.console_widget.add_message)
+
+        def emit(self, record: LogRecord) -> None:
+            message = self.format(record)
+            self.signals.message.emit(message, record)
 
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
+        self.log_handler = ToolConsole.ConsoleLogHandler(self)
+        self.log_handler.setFormatter(ConsoleFormatter())
         with resources.path(speedwagon.ui, "console.ui") as ui_file:
             uic.loadUi(ui_file, self)
 
@@ -76,14 +94,24 @@ class ToolConsole(QtWidgets.QWidget):
 
         self._console.setDocument(self._log)
         self._console.setFont(monospaced_font)
-        self.add_log_message.connect(self.add_message)
 
-    def add_message(self, message: str) -> None:
+        self._attached_logger: typing.Optional[logging.Logger] = None
+
+    def close(self) -> bool:
+        self.detach_logger()
+        return super().close()
+
+    def add_message(
+            self,
+            message: str,
+            record: typing.Optional[logging.LogRecord] = None
+    ) -> None:
+
         cursor = QtGui.QTextCursor(self._log)
         cursor.movePosition(cursor.End)
         cursor.beginEditBlock()
         self._console.setTextCursor(cursor)
-        cursor.insertText(message)
+        cursor.insertHtml(message)
 
         # To get the new line character
         self._console.append(None)
@@ -93,18 +121,30 @@ class ToolConsole(QtWidgets.QWidget):
     def text(self) -> str:
         return self._log.toPlainText()
 
+    def attach_logger(self, logger: logging.Logger) -> None:
+        logger.addHandler(self.log_handler)
+        self._attached_logger = logger
+
+    def detach_logger(self) -> None:
+        if self._attached_logger is not None:
+            self._attached_logger.removeHandler(self.log_handler)
+            self._attached_logger = None
+
 
 class ConsoleLogger(logging.Handler):
-    def __init__(self, console: ToolConsole, level=logging.NOTSET) -> None:
+    def __init__(
+            self,
+            console: ToolConsole,
+            level: int = logging.NOTSET
+    ) -> None:
         super().__init__(level)
         self.console = console
 
-    def emit(self, record) -> None:
+    def emit(self, record: logging.LogRecord) -> None:
         try:
             self.console.add_log_message.emit(
                 self.format(record)
             )
-            QtWidgets.QApplication.processEvents()
         except RuntimeError as error:
             print("Error: {}".format(error), file=sys.stderr)
             traceback.print_tb(error.__traceback__)
@@ -152,14 +192,15 @@ class MainWindowMenuBuilder:
         self.add_about: bool = True
 
         self.show_configuration_signal: \
-            typing.Optional[QtCore.pyqtBoundSignal] = None
+            typing.Optional[typing.Callable[[], None]] = None
 
         self.show_system_info_signal: \
-            typing.Optional[QtCore.pyqtBoundSignal] = None
+            typing.Optional[typing.Callable[[], None]] = None
 
-        self.exit_signal: typing.Optional[QtCore.pyqtBoundSignal] = None
+        self.exit_function: typing.Optional[typing.Callable[[], bool]] = None
 
-        self.save_log_signal: typing.Optional[QtCore.pyqtBoundSignal] = None
+        self.save_log_function: \
+            typing.Optional[typing.Callable[[], None]] = None
 
     def build(self) -> None:
         self._build_file_menu(self._menu_bar)
@@ -217,16 +258,16 @@ class MainWindowMenuBuilder:
     def _build_exit_action(self, file_menu: QtWidgets.QMenu) -> None:
         # File --> Exit
         # Create Exit button
-        if self.exit_signal is not None:
+        if self.exit_function is not None:
             exit_button = QtWidgets.QAction(" &Exit", self._parent)
             exit_button.setObjectName("exitAction")
 
-            exit_button.triggered.connect(self.exit_signal)
+            exit_button.triggered.connect(self.exit_function)
             file_menu.addAction(exit_button)
 
     def _build_export_log_action(self, file_menu: QtWidgets.QMenu) -> None:
         # File --> Export Log
-        if self.save_log_signal is not None:
+        if self.save_log_function is not None:
 
             export_logs_button = QtWidgets.QAction(
                 " &Export Log",
@@ -237,7 +278,7 @@ class MainWindowMenuBuilder:
                 self._parent.style().standardIcon(
                     QtWidgets.QStyle.SP_DialogSaveButton)
             )
-            export_logs_button.triggered.connect(self.save_log_signal)
+            export_logs_button.triggered.connect(self.save_log_function)
             # export_logs_button.triggered.connect(self._parent.save_log)
             file_menu.addAction(export_logs_button)
             file_menu.setObjectName("fileMenu")
@@ -273,7 +314,7 @@ class MainWindow1(MainProgram):
 
         super().__init__(work_manager, debug)
         with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
-            self.load_ui_file(ui_file)
+            self.load_ui_file(str(ui_file))
 
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
         self.mainLayout.addWidget(self.main_splitter)
@@ -299,7 +340,7 @@ class MainWindow1(MainProgram):
         # ##################
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
-    def load_ui_file(self, ui_file):
+    def load_ui_file(self, ui_file: str) -> None:
         uic.loadUi(ui_file, self)
 
     def show_about_window(self) -> None:
@@ -317,7 +358,7 @@ class MainWindow1(MainProgram):
             self.log_manager.warning(
                 "No help link available. Reason: {}".format(error))
 
-    def setup_menu(self):
+    def setup_menu(self) -> None:
         # Add menu bar
         menu_bar = self.menuBar()
 
@@ -386,11 +427,11 @@ class MainWindow1(MainProgram):
         self.console.setMinimumHeight(75)
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
-        self.console_log_handler = ConsoleLogger(self.console)
+        # self.console_log_handler = ConsoleLogger(self.console)
         self._log_data = io.StringIO()
         self.log_data_handler = logging.StreamHandler(self._log_data)
         self.log_data_handler.setFormatter(DEBUG_LOGGING_FORMAT)
-        self.log_manager.addHandler(self.console_log_handler)
+        # self.log_manager.addHandler(self.console_log_handler)
         self.log_manager.addHandler(self.log_data_handler)
 
     def _create_tabs_widget(self) -> None:
@@ -408,13 +449,13 @@ class MainWindow1(MainProgram):
         super().debug_mode(debug)
         if debug:
             self._set_logging_level(logging.DEBUG)
-            self.console_log_handler.setFormatter(DEBUG_LOGGING_FORMAT)
+            self.console.log_handler.setFormatter(DEBUG_LOGGING_FORMAT)
 
         else:
             self._set_logging_level(logging.INFO)
 
     def _set_logging_level(self, level: int) -> None:
-        self.console_log_handler.setLevel(level)
+        self.console.log_handler.setLevel(level)
         self.log_data_handler.setLevel(level)
 
     def set_current_tab(self, tab_name: str) -> None:
@@ -427,7 +468,11 @@ class MainWindow1(MainProgram):
                 return
         self.log_manager.warning("Unable to set tab to {}.".format(tab_name))
 
-    def add_tab(self, workflow_name, workflows):
+    def add_tab(
+            self,
+            workflow_name: str,
+            workflows: typing.Dict[str, typing.Type[speedwagon.Workflow]]
+    ) -> None:
 
         workflows_tab = tabs.WorkflowsTab(
             parent=self,
@@ -442,7 +487,6 @@ class MainWindow1(MainProgram):
         self.tab_widget.setVisible(True)
 
     def closeEvent(self, *args, **kwargs) -> None:  # pylint: disable=C0103
-        self.log_manager.removeHandler(self.console_log_handler)
         super().closeEvent(*args, **kwargs)
 
     def show_configuration(self) -> None:
@@ -542,9 +586,13 @@ class MainWindow2(QtWidgets.QMainWindow):
 
         self.setup_menu()
 
-    def setup_menu(self):
+    def close(self) -> bool:
+        self.console.close()
+        return super().close()
+
+    def setup_menu(self) -> None:
         builder = MainWindowMenuBuilder(parent=self)
-        builder.exit_signal = self.close
+        builder.exit_function = lambda: self.close()
 
         builder.show_system_info_signal = \
             lambda: self.system_info_requested.emit(self)
@@ -552,12 +600,19 @@ class MainWindow2(QtWidgets.QMainWindow):
         builder.show_configuration_signal = \
             lambda: self.configuration_requested.emit(self)
 
-        builder.save_log_signal = self.save_log
+        builder.save_log_function = self.save_log
 
         builder.add_help = True
         builder.build()
 
-    def add_tab(self, workflow_name: str, workflows):
+    def add_tab(
+            self,
+            workflow_name: str,
+            workflows: typing.Mapping[
+                str,
+                typing.Type[speedwagon.job.Workflow]
+            ]
+    ) -> None:
 
         workflows_tab = tabs.WorkflowsTab2(
             parent=self,
@@ -570,7 +625,9 @@ class MainWindow2(QtWidgets.QMainWindow):
         self.tab_widget.add_tab(workflows_tab.tab_widget, workflow_name)
         self.tab_widget.setVisible(True)
 
-    def _start_workflow(self, workflow, options):
+    def _start_workflow(self,
+                        workflow: str,
+                        options: typing.Dict[str, typing.Any]) -> None:
         self.submit_job.emit(workflow, options)
 
     def show_about_window(self) -> None:
@@ -596,8 +653,10 @@ class MainWindow2(QtWidgets.QMainWindow):
         self.console.setMinimumHeight(75)
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
-        self.console_log_handler = ConsoleLogger(self.console)
-        self.logger.addHandler(self.console_log_handler)
+        # self.console_log_handler = ConsoleLogger(self.console)
+        # self.logger.addHandler(self.console_log_handler)
+        # self.logger.addHandler(self.console.log_handler)
+        # self.logger.info("asdads")
 
 
 class SplashScreenLogHandler(logging.Handler):
@@ -608,7 +667,7 @@ class SplashScreenLogHandler(logging.Handler):
         super().__init__(level)
         self.widget = widget
 
-    def emit(self, record) -> None:
+    def emit(self, record: logging.LogRecord) -> None:
         self.widget.showMessage(
             self.format(record),
             QtCore.Qt.AlignCenter,

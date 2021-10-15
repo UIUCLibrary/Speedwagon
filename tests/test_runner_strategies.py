@@ -1177,7 +1177,7 @@ class TestBackgroundJobManager:
         with runner_strategies.BackgroundJobManager() as manager:
             assert manager is not None
 
-    def test_job_done_called(self):
+    def test_job_finished_called(self):
         callbacks = Mock()
         with runner_strategies.BackgroundJobManager() as manager:
             manager.valid_workflows = {"spam": SpamWorkflow}
@@ -1188,7 +1188,7 @@ class TestBackgroundJobManager:
                 callbacks=callbacks,
                 events=Mock(),
             )
-        assert callbacks.done.called is True
+        assert callbacks.finished.called is True
 
     @pytest.mark.filterwarnings(
         "ignore::pytest.PytestUnhandledThreadExceptionWarning"

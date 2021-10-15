@@ -21,7 +21,6 @@ import queue
 import sys
 import time
 import typing
-import warnings
 import webbrowser
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
 import pathlib
@@ -519,9 +518,11 @@ class WorkflowSignals(QtCore.QObject):
     progress_changed = QtCore.pyqtSignal(int)
     total_jobs_changed = QtCore.pyqtSignal(int)
     cancel_complete = QtCore.pyqtSignal()
-    success_achieved = QtCore.pyqtSignal()
+    # success_achieved = QtCore.pyqtSignal()
     message = QtCore.pyqtSignal(str, int)
     status_changed = QtCore.pyqtSignal(str)
+    started = QtCore.pyqtSignal()
+    finished = QtCore.pyqtSignal(runner_strategies.JobSuccess)
 
 
 class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
@@ -539,13 +540,20 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         self.signals.error.connect(self._error_message)
         self.signals.cancel_complete.connect(self.dialog_box.cancel_completed)
 
-        self.signals.success_achieved.connect(
-            self.dialog_box.success_completed
-        )
-
+        self.signals.finished.connect(self._finished)
+        self.signals.started.connect(self.dialog_box.show)
         self.signals.status_changed.connect(self.set_banner_text)
         self.signals.message.connect(self.dialog_box.write_to_console)
         self.log_handler = SignalLogHandler(signal=self.signals.message)
+
+    def __str__(self) -> str:
+        return f"self.signals.message= {self.signals.message}"
+
+    def _finished(self, results: runner_strategies.JobSuccess) -> None:
+        if results == runner_strategies.JobSuccess.SUCCESS:
+            self.dialog_box.success_completed()
+        if results == runner_strategies.JobSuccess.FAILURE:
+            self.dialog_box.reject()
 
     def log(self, text: str, level: int = logging.INFO) -> None:
         self.signals.message.emit(text, level)
@@ -563,6 +571,13 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
             traceback_string: Optional[str] = None
     ) -> None:
         self.signals.error.emit(message, exc, traceback_string)
+
+    def start(self) -> None:
+        self.signals.started.emit()
+        self.dialog_box.start()
+
+    def finished(self, results: runner_strategies.JobSuccess):
+        self.signals.finished.emit(results)
 
     def cancelling_complete(self) -> None:
         self.signals.cancel_complete.emit()
@@ -584,10 +599,6 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
             error.setDetailedText(traceback)
         error.exec()
         self.dialog_box.failed()
-
-    def done(self) -> None:
-        self.signals.success_achieved.emit()
-        # self.signals.message.disconnect(self.dialog_box.write_to_console)
 
     def refresh(self) -> None:
         QtCore.QCoreApplication.processEvents()
@@ -753,7 +764,11 @@ class StartQtThreaded(AbsStarter):
             )
 
             if self.windows is not None:
-                self.logger.addHandler(self.windows.console_log_handler)
+
+                self.windows.console.attach_logger(self.logger)
+                # self.windows.
+                # self.logger.addHandler(self.windows.console.log_handler)
+                # self.logger.addHandler(self.windows.console_log_handler)
                 self.windows.configuration_requested.connect(
                     self.request_settings
                 )
@@ -778,10 +793,7 @@ class StartQtThreaded(AbsStarter):
 
                 self._load_workflows(self.windows)
                 self.windows.show()
-            try:
-                return self.app.exec_()
-            finally:
-                self.logger.removeHandler(self.windows.console_log_handler)
+            return self.app.exec_()
 
     def abort_job(
             self,
@@ -798,17 +810,16 @@ class StartQtThreaded(AbsStarter):
             workflow_name,
             options
     ) -> None:
-        if self.windows is not None:
-            dialog_box = WorkflowProgress(parent=self.windows)
-        else:
-            dialog_box = WorkflowProgress()
+        # if self.windows is not None:
+        dialog_box = WorkflowProgress(parent=self.windows)
+        # else:
+        #     dialog_box = WorkflowProgress()
 
         if main_app is not None:
             dialog_box.rejected.connect(main_app.close)
 
         dialog_box.setWindowTitle(workflow_name)
         dialog_box.show()
-        dialog_box.start()
         threaded_events = ThreadedEvents()
 
         dialog_box.aborted.connect(
@@ -817,10 +828,10 @@ class StartQtThreaded(AbsStarter):
         callbacks = WorkflowProgressCallbacks(dialog_box)
 
         try:
-            self.logger.addHandler(callbacks.log_handler)
-
-            if main_app is not None:
-                self.logger.addHandler(main_app.console_log_handler)
+            # self.logger.addHandler(callbacks.log_handler)
+            dialog_box.attach_logger(self.logger)
+            # if main_app is not None:
+            #     self.logger.addHandler(main_app.console_log_handler)
 
             job_manager.submit_job(
                 workflow_name=workflow_name,
@@ -829,10 +840,12 @@ class StartQtThreaded(AbsStarter):
                 callbacks=callbacks,
                 events=threaded_events,
             )
+            threaded_events.started.set()
         finally:
-            self.logger.removeHandler(callbacks.log_handler)
+            # self.logger.removeHandler(callbacks.log_handler)
             if main_app is not None:
-                self.logger.removeHandler(main_app.console_log_handler)
+                pass
+                # self.logger.removeHandler(main_app.console_log_handler)
 
 
 class SingleWorkflowLauncher(AbsStarter):
@@ -862,13 +875,17 @@ class SingleWorkflowLauncher(AbsStarter):
             self._run(work_manager)
         return 0
 
-    def _run(self, work_manager):
+    def _run(self, work_manager: worker.ToolJobManager) -> None:
+        if self._active_workflow is None:
+            raise ValueError("No active workflow set")
+
         window = speedwagon.gui.MainWindow1(
             work_manager=work_manager,
             debug=False)
 
         window.show()
-        window.setWindowTitle(self._active_workflow.name)
+        if self._active_workflow.name is not None:
+            window.setWindowTitle(self._active_workflow.name)
         runner_strategy = \
             runner_strategies.QtRunner(window)
 
@@ -982,7 +999,7 @@ class MultiWorkflowLauncher(AbsStarter):
             self._run(work_manager)
         return 0
 
-    def _run(self, work_manager):
+    def _run(self, work_manager: worker.ToolJobManager) -> None:
         window = speedwagon.gui.MainWindow1(
             work_manager=work_manager,
             debug=False)
@@ -991,7 +1008,8 @@ class MultiWorkflowLauncher(AbsStarter):
         try:
             while not self._pending_tasks.empty():
                 active_workflow, options = self._pending_tasks.get()
-                window.setWindowTitle(active_workflow.name)
+                if active_workflow.name is not None:
+                    window.setWindowTitle(active_workflow.name)
                 runner_strategy = \
                     runner_strategies.QtRunner(window)
 
@@ -1167,180 +1185,3 @@ def main(argv: List[str] = None) -> None:
 
 if __name__ == '__main__':
     main()
-
-#
-# class GuiJobCallbacks(runner_strategies.AbsJobCallbacks):
-#
-#     def __init__(self,
-#                  context: "BackgroundThreadLauncher",
-#                  ) -> None:
-#         warnings.warn("Don't use", DeprecationWarning)
-#         self.context = context
-#         if self.context.window is None:
-#             raise RuntimeError("Context does not have an active window")
-#         window: SimpleWindow = typing.cast(SimpleWindow, context.window)
-#
-#         self._com = QtSignalCommunicator()
-#         self._com.update_total.connect(window.progress.setMaximum)
-#         self._com.update_progress_gui.connect(window.progress.setValue)
-#
-#     def status(self, text: str) -> None:
-#         if self.context.window is not None:
-#             self.context.window.text_box.setText(text)
-#         else:
-#             warnings.warn("SimpleWindow is not open", UserWarning)
-#
-#     def log(self, text: str, level: int = logging.INFO) -> None:
-#         """No-op."""
-#
-#     def refresh(self) -> None:
-#         QtWidgets.QApplication.processEvents()
-#
-#     def cancelling_complete(self):
-#         print("done")
-#
-#     def error(
-#             self,
-#             message: Optional[str] = None,
-#             exc: Optional[BaseException] = None,
-#             traceback_string: Optional[str] = None
-#     ) -> None:
-#         error = QtWidgets.QMessageBox()
-#         error.setIcon(QtWidgets.QMessageBox.Critical)
-#         error.setText(message or "An error occurred")
-#         error.exec()
-#
-#     def done(self) -> None:
-#         if self.context.window is not None:
-#             if self.context.window.start_button is not None:
-#                 self.context.window.start_button.setEnabled(True)
-#             self.context.window.done.emit()
-#
-#     def update_progress(self, current: Optional[int],
-#                         total: Optional[int]) -> None:
-#         if current is None:
-#             self._com.update_progress_gui.emit(-1)
-#         else:
-#             self._com.update_progress_gui.emit(current)
-#
-#         if total is not None:
-#             self._com.update_total.emit(total)
-#
-#
-# class SimplePopup(QtWidgets.QDialog):
-#
-#     def __init__(self, parent: "SimpleWindow") -> None:
-#         warnings.warn("Don't use", DeprecationWarning)
-#         super().__init__(parent)
-#         layout = QtWidgets.QVBoxLayout()
-#         self.text_box = QtWidgets.QLabel()
-#         self.text_box.setText("Running")
-#         layout.addWidget(self.text_box)
-#         self.button_box = QtWidgets.QDialogButtonBox(
-#             QtWidgets.QDialogButtonBox.Cancel
-#         )
-#         self.setModal(True)
-#         self.button_box.rejected.connect(parent.abort)
-#         self.button_box.rejected.connect(self._request_abort)
-#         # button_box.rejected.connect(parent.abort)
-#         layout.addWidget(self.button_box)
-#         self.setLayout(layout)
-#
-#     def _request_abort(self):
-#         cancel_button = self.button_box.button(
-#             QtWidgets.QDialogButtonBox.Cancel
-#         )
-#         self.text_box.setText("Canceling, please wait..")
-#         cancel_button.setEnabled(False)
-#
-#
-# class SimpleWindow(speedwagon.gui.MainWindow1):
-#     start = QtCore.pyqtSignal()
-#     abort = QtCore.pyqtSignal()
-#     done = QtCore.pyqtSignal()
-#
-#     def __init__(self, work_manager: "worker.ToolJobManager",
-#                  debug: bool = False) -> None:
-#         super().__init__(work_manager, debug)
-#         warnings.warn("don't use", DeprecationWarning)
-#         self.progress = QtWidgets.QProgressBar(parent=self)
-#
-#         # self.progress.setValue(-1)
-#         self.mainLayout.addWidget(self.progress)
-#
-#         self.start_button = QtWidgets.QPushButton(text="Start",
-#                                                   parent=self)
-#
-#         self.start_button.clicked.connect(self.start)
-#         self.mainLayout.addWidget(self.start_button)
-#
-#         self.quit_button = QtWidgets.QPushButton(text="Quit",
-#                                                  parent=self)
-#
-#         self.mainLayout.addWidget(self.quit_button)
-#         self.start.connect(self.run)
-#         self.pop_up = SimplePopup(self)
-#         self.done.connect(self._done)
-#
-#     def _done(self):
-#         self.pop_up.accept()
-#
-#     def run(self):
-#         self.progress.setRange(0, 0)
-#         self.pop_up.show()
-#         if self.start_button is not None:
-#             self.start_button.setEnabled(False)
-#
-#
-# class QtSignalCommunicator(QtCore.QObject):
-#     update_progress_gui = QtCore.pyqtSignal(int)
-#     update_total = QtCore.pyqtSignal(int)
-#     job_done = QtCore.pyqtSignal()
-#
-#
-# class BackgroundThreadLauncher(AbsStarter):
-#
-#     def __init__(self, job_manager: runner_strategies.AbsJobManager2) -> None:
-#         warnings.warn("don't use", DeprecationWarning)
-#         super().__init__()
-#         self.job_manager = job_manager
-#         self.window: Optional[SimpleWindow] = None
-#         self.callbacks = None
-#         self.options: Dict[str, typing.Any] = {}
-#         self.workflow_name = None
-#         self.events = ThreadedEvents()
-#         self.working_directory = None
-#         self.platform_settings = speedwagon.config.get_platform_settings()
-#         self.user_data_dir = self.platform_settings.get("user_data_directory")
-#
-#     def start(self):
-#         self.callbacks = GuiJobCallbacks(self)
-#         self.job_manager.submit_job(
-#             self.workflow_name,
-#             working_directory=self.working_directory or os.getcwd(),
-#             events=self.events,
-#             options=self.options,
-#             callbacks=self.callbacks
-#         )
-#
-#     def abort(self):
-#         self.events.stop()
-#
-#     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
-#         logger = logging.getLogger()
-#         with worker.ToolJobManager() as work_manager:
-#             work_manager.logger = logger
-#
-#             self.window = SimpleWindow(
-#                 work_manager=work_manager,
-#                 debug=False)
-#             self.window.start.connect(self.start)
-#             self.window.abort.connect(self.abort)
-#
-#             if app is not None:
-#                 self.window.quit_button.clicked.connect(app.exit)
-#
-#             self.window.show()
-#             if app is not None:
-#                 app.exec_()
-#         return 0

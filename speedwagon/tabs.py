@@ -5,6 +5,7 @@ import os
 import sys
 import traceback
 import enum
+import typing
 from typing import List, Optional, Tuple, Dict, Iterator, NamedTuple, cast, \
     Type, Any
 from abc import ABCMeta
@@ -373,14 +374,14 @@ class WorkflowsTab(ItemSelectionTab):
     def __init__(
             self,
             parent: QtWidgets.QWidget,
-            workflows: Dict[str, Type[speedwagon.job.AbsWorkflow]],
+            workflows: typing.Mapping[str, Type[speedwagon.job.Workflow]],
             work_manager=None,
             log_manager=None) -> None:
         """Create a new workflow tab."""
         super().__init__("Workflow", parent,
                          models.WorkflowListModel(workflows), work_manager,
                          log_manager)
-        self._workflows = workflows
+        self.workflows = workflows
 
     def is_ready_to_start(self) -> bool:
         """Get if the workflow is ready to start.
@@ -453,8 +454,10 @@ class WorkflowsTab(ItemSelectionTab):
         message_box.setText(message)
         return message_box
 
-    def start(self, item):
+    def start(self, item: typing.Type[Workflow]) -> None:
         """Start a workflow."""
+        if self.work_manager.user_settings is None:
+            raise RuntimeError("user_settings is not set")
         new_workflow = item(dict(self.work_manager.user_settings))
 
         # Add global settings to workflow
@@ -462,23 +465,29 @@ class WorkflowsTab(ItemSelectionTab):
 
         # new_workflow.global_settings.update(
         #     dict(self.work_manager.user_settings))
+        if self.options_model is None:
+            raise RuntimeError("options_model not set")
 
         user_options = self.options_model.get()
 
         self.run(new_workflow, user_options)
 
-    def get_item_options_model(self, workflow):
+    def get_item_options_model(
+            self,
+            workflow: typing.Type[Workflow]
+    ) -> "models.ToolOptionsModel3":
         """Get item options model."""
+        if self.work_manager.user_settings is None:
+            raise ValueError("user_settings not set")
         new_workflow = workflow(
             global_settings=dict(self.work_manager.user_settings)
         )
-        model = models.ToolOptionsModel3(new_workflow.user_options())
-        return model
+        return models.ToolOptionsModel3(new_workflow.user_options())
 
 
 class WorkflowsTab2(WorkflowsTab):
     def __init__(self, parent: QtWidgets.QWidget,
-                 workflows: Dict[str, Type[speedwagon.job.AbsWorkflow]],
+                 workflows: typing.Mapping[str, Type[speedwagon.job.Workflow]],
                  # work_manager
                  ) -> None:
         super().__init__(parent, workflows)
@@ -495,7 +504,10 @@ class WorkflowsTab2(WorkflowsTab):
         model = models.ToolOptionsModel3(new_workflow.user_options())
         return model
 
-    def start(self, item):
+    def start(self, item: typing.Type[Workflow]) -> None:
+        if self.options_model is None:
+            raise RuntimeError("options_model not set")
+
         self.signals.start_workflow.emit(item.name, self.options_model.get())
 
 

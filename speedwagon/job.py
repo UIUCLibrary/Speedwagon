@@ -172,6 +172,9 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
         """
         return {}
 
+    def user_options(self) -> typing.List[Any]:
+        return []
+
 
 class NullWorkflow(Workflow):
     """Null Workflow.
