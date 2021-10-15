@@ -90,10 +90,6 @@ class AbsJobCallbacks(abc.ABC):
     @abc.abstractmethod
     def finished(self, result: JobSuccess) -> None:
         """Job finished"""
-    #
-    # @abc.abstractmethod
-    # def done(self) -> None:
-    #     """Job is done."""
 
     def update_progress(
             self,

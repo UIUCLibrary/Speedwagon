@@ -56,9 +56,6 @@ __all__ = [
 ]
 
 
-# FORMAT = '%(asctime)-15s %(threadName)s %(message)s'
-# logging.basicConfig(format=FORMAT)
-
 class FileFormatError(Exception):
     """Exception is thrown when Something wrong with the contents of a file."""
 
@@ -519,7 +516,6 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         progress_changed = QtCore.pyqtSignal(int)
         total_jobs_changed = QtCore.pyqtSignal(int)
         cancel_complete = QtCore.pyqtSignal()
-        # success_achieved = QtCore.pyqtSignal()
         message = QtCore.pyqtSignal(str, int)
         status_changed = QtCore.pyqtSignal(str)
         started = QtCore.pyqtSignal()
@@ -610,7 +606,6 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
             self.signals.total_jobs_changed.emit(total)
         if current is not None:
             self.signals.progress_changed.emit(current)
-        # self.signals.update_progress(current, total)
 
 
 class StartQtThreaded(AbsStarter):
