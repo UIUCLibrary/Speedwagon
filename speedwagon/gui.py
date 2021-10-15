@@ -651,10 +651,6 @@ class MainWindow2(QtWidgets.QMainWindow):
         self.console.setMinimumHeight(75)
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
-        # self.console_log_handler = ConsoleLogger(self.console)
-        # self.logger.addHandler(self.console_log_handler)
-        # self.logger.addHandler(self.console.log_handler)
-        # self.logger.info("asdads")
 
 
 class SplashScreenLogHandler(logging.Handler):
