@@ -14,8 +14,6 @@ import webbrowser
 from logging import LogRecord
 from typing import List
 
-from speedwagon.logging_helpers import ConsoleFormatter
-
 try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
@@ -30,7 +28,6 @@ from collections import namedtuple
 
 from PyQt5 import QtWidgets, QtCore, QtGui  # type: ignore
 from PyQt5 import uic
-
 import speedwagon.dialog
 import speedwagon.dialog.dialogs
 import speedwagon.dialog.settings
@@ -39,6 +36,7 @@ import speedwagon
 import speedwagon.ui
 import speedwagon.config
 import speedwagon.runner_strategies
+from speedwagon.logging_helpers import ConsoleFormatter
 
 __all__ = [
     "MainWindow1",

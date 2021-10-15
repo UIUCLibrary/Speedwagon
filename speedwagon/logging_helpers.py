@@ -37,13 +37,16 @@ class SignalLogHandler(logging.Handler):
 
 
 class ConsoleFormatter(logging.Formatter):
-    def _debug(self, text: str) -> str:
+    @staticmethod
+    def _debug(text: str) -> str:
         return f"<div><i>{text}</i></div>"
 
-    def _warning(self, text: str) -> str:
+    @staticmethod
+    def _warning(text: str) -> str:
         return f"<div><font color=\"yellow\">{text}</font></div>"
 
-    def _error(self, text: str) -> str:
+    @staticmethod
+    def _error(text: str) -> str:
         return f"<div><font color=\"red\">{text}</font></div>"
 
     def format(self, record: LogRecord) -> str:
@@ -54,11 +57,10 @@ class ConsoleFormatter(logging.Formatter):
         if level == logging.DEBUG:
             return self._debug(text)
 
-        elif level == logging.WARNING:
+        if level == logging.WARNING:
             return self._warning(text)
 
-        elif level == logging.ERROR:
+        if level == logging.ERROR:
             return self._error(text)
 
-        else:
-            return f"<div>{text}</div>"
+        return f"<div>{text}</div>"
