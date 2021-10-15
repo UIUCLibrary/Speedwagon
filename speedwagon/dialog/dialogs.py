@@ -175,8 +175,8 @@ class AbsWorkflowProgressState(abc.ABC):
         """User clicks on close window."""
         event.accept()
 
+    @staticmethod
     def set_buttons_to_close_only(
-            self,
             button_box: QtWidgets.QDialogButtonBox
     ) -> None:
         cancel_button: QtWidgets.QPushButton = \

@@ -425,11 +425,9 @@ class MainWindow1(MainProgram):
         self.console.setMinimumHeight(75)
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
-        # self.console_log_handler = ConsoleLogger(self.console)
         self._log_data = io.StringIO()
         self.log_data_handler = logging.StreamHandler(self._log_data)
         self.log_data_handler.setFormatter(DEBUG_LOGGING_FORMAT)
-        # self.log_manager.addHandler(self.console_log_handler)
         self.log_manager.addHandler(self.log_data_handler)
 
     def _create_tabs_widget(self) -> None:
