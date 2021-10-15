@@ -1090,8 +1090,8 @@ class AbsJobManager2(contextlib.AbstractContextManager):
             callbacks: AbsJobCallbacks,
             events: AbsEvents,
             options: Optional[Dict[str, Any]] = None,
-    ):
-        pass
+    ) -> None:
+        """Submit job to worker."""
 
 
 class Run(TaskScheduler):
@@ -1100,7 +1100,7 @@ class Run(TaskScheduler):
         super().__init__(working_directory)
         self.valid_workflows = None
 
-    def get_workflow(self, workflow_name):
+    def get_workflow(self, workflow_name: str) -> typing.Type[Workflow]:
         if self.valid_workflows is not None:
             if workflow_name is None:
                 raise AssertionError("workflow_name is not set")
@@ -1116,14 +1116,13 @@ class Run(TaskScheduler):
 
 
 class BackgroundJobManager(AbsJobManager2):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.logger = logging.getLogger(__name__)
         self._exec: Optional[BaseException] = None
         self.valid_workflows = None
         self._background_thread: Optional[threading.Thread] = None
         self.request_more_info = lambda *args, **kwargs: None
-        self.callbacks = None
 
     def __enter__(self) -> "BackgroundJobManager":
         self._exec = None
@@ -1132,12 +1131,12 @@ class BackgroundJobManager(AbsJobManager2):
 
     def run_job_on_thread(
             self,
-            workflow_name,
-            working_directory,
-            options,
+            workflow_name: str,
+            working_directory: str,
+            options: Dict[str, Any],
             callbacks: AbsJobCallbacks,
             events: "ThreadedEvents",
-    ):
+    ) -> None:
         try:
             task_scheduler = Run(working_directory)
             task_scheduler.request_more_info = self.request_more_info
@@ -1186,7 +1185,7 @@ class BackgroundJobManager(AbsJobManager2):
             raise self._exec
         logging.debug("thread threw no exceptions")
 
-    def clean_up_thread(self):
+    def clean_up_thread(self) -> None:
         if self._background_thread is not None:
             logging.debug("Background thread joined")
             self._background_thread.join()
@@ -1201,7 +1200,6 @@ class BackgroundJobManager(AbsJobManager2):
             options: Optional[Dict[str, Any]] = None,
     ):
 
-        self.callbacks = callbacks
         if self._background_thread is None or \
                 self._background_thread.is_alive() is False:
 
@@ -1212,13 +1210,13 @@ class BackgroundJobManager(AbsJobManager2):
                     "working_directory": working_directory,
                     "options": options,
                     "events": events,
-                    "callbacks": self.callbacks,
+                    "callbacks": callbacks,
                 }
             )
             new_thread.start()
             self._background_thread = new_thread
             # todo: check if thread actually started
-            self.callbacks.start()
+            callbacks.start()
 
 
 class ThreadedEvents(AbsEvents):
