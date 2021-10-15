@@ -337,6 +337,7 @@ class WorkflowProgressStateDone(AbsWorkflowProgressState):
     state_name = "done"
 
     def __init__(self, context: "WorkflowProgress"):
+        print("done")
         super().__init__(context)
         self.reset_cancel_button()
         self.set_buttons_to_close_only(context.button_box)

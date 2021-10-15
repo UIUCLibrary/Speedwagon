@@ -800,7 +800,7 @@ class TestWorkflowProgressCallbacks:
     def test_job_finished_signal(self, qtbot):
         callbacks = speedwagon.startup.WorkflowProgressCallbacks(Mock())
         with qtbot.waitSignal(callbacks.signals.finished) as blocker:
-            callbacks.finished(0)
+            callbacks.finished(speedwagon.runner_strategies.JobSuccess.SUCCESS)
 
     def test_job_status_signal(self, qtbot):
         callbacks = speedwagon.startup.WorkflowProgressCallbacks(Mock())
