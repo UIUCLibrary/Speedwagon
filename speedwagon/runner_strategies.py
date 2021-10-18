@@ -1075,7 +1075,7 @@ class QtRunner(AbsRunner2):
 @dataclasses.dataclass
 class JobManagerLiaison:
     callbacks: AbsJobCallbacks
-    events: AbsEvents
+    events: ThreadedEvents
 
 
 class AbsJobManager2(contextlib.AbstractContextManager):
