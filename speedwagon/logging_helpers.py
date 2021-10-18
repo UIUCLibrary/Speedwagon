@@ -25,18 +25,28 @@ class GuiLogHandler(logging.Handler):
 
 
 class SignalLogHandler(logging.Handler):
-    # This is problematic, the signal could be GC and cause a segfault
+    """Qt Signal based log handler.
+
+    Emits the log as a signal.
+
+    Warnings:
+         This is problematic, the signal could be GC and cause a segfault
+    """
+
     def __init__(self, signal: QtCore.pyqtBoundSignal) -> None:
+        """Create a new log handler for Qt signals."""
         super().__init__()
         self._signal = signal
 
     def emit(self, record: LogRecord) -> None:
+        """Emit the record."""
         result = logging.Formatter().format(record)
-        # print(result)
         self._signal.emit(result, record.levelno)
 
 
 class ConsoleFormatter(logging.Formatter):
+    """Formatter for converting log records into html based logging format."""
+
     @staticmethod
     def _debug(text: str) -> str:
         return f"<div><i>{text}</i></div>"
@@ -50,6 +60,7 @@ class ConsoleFormatter(logging.Formatter):
         return f"<div><font color=\"red\">{text}</font></div>"
 
     def format(self, record: LogRecord) -> str:
+        """Format record for an html based console."""
         level = record.levelno
         text = super().format(record)
         text = text.replace("\n", "<br>")

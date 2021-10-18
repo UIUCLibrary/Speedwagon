@@ -67,7 +67,7 @@ class AbsJobCallbacks(abc.ABC):
             exc: Optional[BaseException] = None,
             traceback_string: Optional[str] = None
     ) -> None:
-        """Had an error"""
+        """Had an error."""
 
     @abc.abstractmethod
     def status(self, text: str) -> None:
@@ -89,7 +89,7 @@ class AbsJobCallbacks(abc.ABC):
 
     @abc.abstractmethod
     def finished(self, result: JobSuccess) -> None:
-        """Job finished"""
+        """Job finished."""
 
     def update_progress(
             self,
