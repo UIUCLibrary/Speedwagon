@@ -761,36 +761,36 @@ class StartQtThreaded(AbsStarter):
                 debug=cast(bool, self.startup_settings['debug'])
             )
 
-            if self.windows is not None:
+            if self.windows is None:
+                return 1
 
-                self.windows.console.attach_logger(self.logger)
-                # self.windows.
-                # self.logger.addHandler(self.windows.console.log_handler)
-                # self.logger.addHandler(self.windows.console_log_handler)
-                self.windows.configuration_requested.connect(
-                    self.request_settings
+            self.windows.console.attach_logger(self.logger)
+            # self.windows.
+            # self.logger.addHandler(self.windows.console.log_handler)
+            # self.logger.addHandler(self.windows.console_log_handler)
+            self.windows.configuration_requested.connect(
+                self.request_settings
+            )
+
+            self.windows.save_logs_requested.connect(self.save_log)
+
+            self.windows.system_info_requested.connect(
+                self.request_system_info
+            )
+
+            self.windows.help_requested.connect(self._load_help)
+            self.windows.submit_job.connect(
+                lambda workflow_name, options:
+                self.submit_job(
+                    self.windows,
+                    job_manager,
+                    workflow_name,
+                    options
                 )
+            )
 
-                self.windows.save_logs_requested.connect(self.save_log)
-
-                self.windows.system_info_requested.connect(
-                    self.request_system_info
-                )
-
-                self.windows.help_requested.connect(self._load_help)
-
-                self.windows.submit_job.connect(
-                    lambda workflow_name, options:
-                    self.submit_job(
-                        self.windows,
-                        job_manager,
-                        workflow_name,
-                        options
-                    )
-                )
-
-                self._load_workflows(self.windows)
-                self.windows.show()
+            self._load_workflows(self.windows)
+            self.windows.show()
             return self.app.exec_()
 
     def abort_job(
@@ -803,7 +803,7 @@ class StartQtThreaded(AbsStarter):
 
     def submit_job(
             self,
-            main_app: Optional[speedwagon.gui.MainWindow2],
+            main_app: typing.Optional[speedwagon.gui.MainWindow2],
             job_manager: runner_strategies.BackgroundJobManager,
             workflow_name,
             options
@@ -835,7 +835,8 @@ class StartQtThreaded(AbsStarter):
             lambda: self.abort_job(dialog_box, threaded_events)
         )
         callbacks = WorkflowProgressCallbacks(dialog_box)
-        callbacks.signals.finished.connect(main_app.console.log_handler.flush)
+        if main_app is not None:
+            callbacks.signals.finished.connect(main_app.console.log_handler.flush)
 
         dialog_box.attach_logger(self.logger)
 

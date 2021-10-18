@@ -359,13 +359,55 @@ class WorkflowProgressStateDone(AbsWorkflowProgressState):
     def stop(self) -> None:
         warnings.warn("Already Finished")
 
+class WorkflowProgressGui(QtWidgets.QDialog):
+    def __init__(self, parent: typing.Optional[QWidget] = None) -> None:
+        super().__init__(parent)
 
-class WorkflowProgress(QtWidgets.QDialog):
+        # All ui info is located in the .ui file. Any graphical changes should
+        # be make in there.
+        with resources.path(
+                "speedwagon.ui",
+                "workflow_progress.ui"
+        ) as ui_file:
+            uic.loadUi(ui_file, self)
+
+        # =====================================================================
+        #  Type hints loaded to help with development after loading in the
+        #  Qt .ui files
+        # =====================================================================
+        self.button_box: QtWidgets.QDialogButtonBox
+        self.console: QtWidgets.QTextBrowser
+        self.progress_bar: QtWidgets.QProgressBar
+        self.banner: QtWidgets.QLabel
+        # =====================================================================
+        self._log_handler: typing.Optional[logging.Handler] = None
+        self._parent_logger: typing.Optional[logging.Logger] = None
+
+    def flush(self):
+        if self._log_handler is not None:
+            self._log_handler.flush()
+
+    def attach_logger(self, logger: logging.Logger):
+        self._parent_logger = logger
+        self._log_handler = WorkflowProgress.DialogLogHandler(self)
+        formatter = speedwagon.logging_helpers.ConsoleFormatter()
+        self._log_handler.setFormatter(formatter)
+        self._parent_logger.addHandler(self._log_handler)
+
+    def remove_log_handles(self):
+        if self._parent_logger is not None:
+            if self._log_handler is not None:
+                self._log_handler.flush()
+                self._parent_logger.removeHandler(self._log_handler)
+                self._log_handler = None
+            self._parent_logger = None
+
+class WorkflowProgress(WorkflowProgressGui):
     class DialogLogHandler(logging.handlers.BufferingHandler):
         class LogSignals(QtCore.QObject):
             message = QtCore.pyqtSignal(str)
 
-        def __init__(self, dialog: "WorkflowProgress") -> None:
+        def __init__(self, dialog: "WorkflowProgressGui") -> None:
             super().__init__(capacity=200)
             self.signals = WorkflowProgress.DialogLogHandler.LogSignals()
             self._dialog = dialog
@@ -386,23 +428,6 @@ class WorkflowProgress(QtWidgets.QDialog):
 
     def __init__(self, parent: typing.Optional[QWidget] = None) -> None:
         super().__init__(parent)
-
-        # All ui info is located in the .ui file. Any graphical changes should
-        # be make in there.
-        with resources.path(
-                "speedwagon.ui",
-                "workflow_progress.ui"
-        ) as ui_file:
-            uic.loadUi(ui_file, self)
-
-        # =====================================================================
-        #  Type hints loaded to help with development after loading in the
-        #  Qt .ui files
-        # =====================================================================
-        self.button_box: QtWidgets.QDialogButtonBox
-        self.console: QtWidgets.QTextBrowser
-        self.progress_bar: QtWidgets.QProgressBar
-        self.banner: QtWidgets.QLabel
 
         # =====================================================================
         self._console_data = QtGui.QTextDocument(parent=self)
@@ -434,8 +459,6 @@ class WorkflowProgress(QtWidgets.QDialog):
         # self.finished.connect(self.clean_local_console)
 
         self.finished.connect(self.remove_log_handles)
-        self._log_handler: typing.Optional[logging.Handler] = None
-        self._parent_logger: typing.Optional[logging.Logger] = None
 
         self._refresh_timer = QtCore.QTimer(self)
         self._refresh_timer.timeout.connect(self.flush)
@@ -445,24 +468,6 @@ class WorkflowProgress(QtWidgets.QDialog):
     def stop_timer(self):
         self._refresh_timer.stop()
 
-    def flush(self):
-        if self._log_handler is not None:
-            self._log_handler.flush()
-
-    def attach_logger(self, logger: logging.Logger):
-        self._parent_logger = logger
-        self._log_handler = WorkflowProgress.DialogLogHandler(self)
-        formatter = speedwagon.logging_helpers.ConsoleFormatter()
-        self._log_handler.setFormatter(formatter)
-        self._parent_logger.addHandler(self._log_handler)
-
-    def remove_log_handles(self):
-        if self._parent_logger is not None:
-            if self._log_handler is not None:
-                self._log_handler.flush()
-                self._parent_logger.removeHandler(self._log_handler)
-                self._log_handler = None
-            self._parent_logger = None
 
     def clean_local_console(self):
         # return
