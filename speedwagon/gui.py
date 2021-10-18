@@ -5,8 +5,6 @@ that do the work
 """
 import io
 import logging
-from logging.handlers import BufferingHandler
-# import logging.handlers
 import os
 import sys
 import time

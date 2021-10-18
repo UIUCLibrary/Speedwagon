@@ -4,7 +4,6 @@ import logging
 import sys
 import typing
 import warnings
-from logging import LogRecord
 import logging.handlers
 from typing import Collection, Union
 
@@ -360,18 +359,16 @@ class WorkflowProgressStateDone(AbsWorkflowProgressState):
 
 class WorkflowProgress(QtWidgets.QDialog):
     class DialogLogHandler(logging.handlers.BufferingHandler):
-    # class DialogLogHandler(logging.Handler):
         class LogSignals(QtCore.QObject):
             message = QtCore.pyqtSignal(str)
-
-            # message = QtCore.pyqtSignal(str, int)
 
         def __init__(self, dialog: "WorkflowProgress") -> None:
             super().__init__(capacity=200)
             self.signals = WorkflowProgress.DialogLogHandler.LogSignals()
             self._dialog = dialog
-            self.signals.message.connect(self._dialog.write_html_block_to_console)
-
+            self.signals.message.connect(
+                self._dialog.write_html_block_to_console
+            )
 
         def flush(self) -> None:
             results = []
@@ -381,7 +378,6 @@ class WorkflowProgress(QtWidgets.QDialog):
                 report = "".join(results)
                 self.signals.message.emit(f"{report} <br>")
             super().flush()
-
 
     aborted = QtCore.pyqtSignal()
 
