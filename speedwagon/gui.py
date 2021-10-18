@@ -80,10 +80,6 @@ class ToolConsole(QtWidgets.QWidget):
                 self.signals.message.emit(" ".join(message_buffer))
             super().flush()
 
-        # def emit(self, record: LogRecord) -> None:
-        #     message = self.format(record)
-        #     self.signals.message.emit(message, record)
-
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
         self.log_handler = ToolConsole.ConsoleLogHandler(self)
