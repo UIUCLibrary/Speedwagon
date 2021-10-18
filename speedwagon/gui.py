@@ -74,14 +74,6 @@ class ToolConsole(QtWidgets.QWidget):
             self.console_widget = console_widget
             self.signals.message.connect(self.console_widget.add_message)
 
-        def flush(self) -> None:
-            print("Flushing")
-            super().flush()
-
-        def shouldFlush(self, record: LogRecord) -> bool:
-            print("Should flush")
-            return super().shouldFlush(record)
-
         def emit(self, record: LogRecord) -> None:
             message = self.format(record)
             self.signals.message.emit(message, record)
