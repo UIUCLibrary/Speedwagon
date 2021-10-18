@@ -54,7 +54,7 @@ class AbsEvents(abc.ABC):
         pass
 
 
-class JobSuccess(enum.Enum):
+class JobSuccess(enum.IntEnum):
     SUCCESS = 0
     FAILURE = 1
 
