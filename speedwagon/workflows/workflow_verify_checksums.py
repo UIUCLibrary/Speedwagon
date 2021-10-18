@@ -326,6 +326,7 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
 
     @staticmethod
     def validate_user_options(**user_args: str) -> bool:
+        """Validate user options."""
         input_data = user_args[UserArgs.INPUT.value]
         if input_data is None:
             raise ValueError("Missing value in input")
@@ -339,6 +340,7 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
                                    speedwagon.tasks.Result],
                                additional_data: Dict[str, None],
                                **user_args: str) -> List[dict]:
+        """Discover metadata needed for generating a task."""
         jobs: List[Dict[str, str]] = []
         relative_path = os.path.dirname(user_args[UserArgs.INPUT.value])
         checksum_report_file = os.path.abspath(user_args[UserArgs.INPUT.value])
