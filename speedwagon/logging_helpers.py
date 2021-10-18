@@ -2,8 +2,9 @@
 
 import logging
 from logging import LogRecord
-from typing import Callable
 import logging.handlers
+
+from typing import Callable
 from PyQt5 import QtCore
 
 
@@ -22,13 +23,6 @@ class GuiLogHandler(logging.handlers.BufferingHandler):
     def emit(self, record: logging.LogRecord) -> None:
         """Emit logged message to callback function."""
         self.callback(logging.Formatter().format(record))
-
-    def flush(self) -> None:
-        print("GUI logger flushing")
-        super().flush()
-
-    def shouldFlush(self, record: LogRecord) -> bool:
-        return super().shouldFlush(record)
 
 
 class SignalLogHandler(logging.handlers.BufferingHandler):

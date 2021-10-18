@@ -1,10 +1,10 @@
 """Dialog boxes."""
 import abc
 import logging
+import logging.handlers
 import sys
 import typing
 import warnings
-import logging.handlers
 from typing import Collection, Union
 
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore

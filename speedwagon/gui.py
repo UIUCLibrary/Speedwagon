@@ -12,6 +12,7 @@ import traceback
 import typing
 import webbrowser
 from logging import LogRecord
+import logging.handlers
 from typing import List
 
 try:  # pragma: no cover
@@ -62,19 +63,35 @@ Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 class ToolConsole(QtWidgets.QWidget):
     """Logging console."""
 
-    class ConsoleLogHandler(logging.Handler):
+    class ConsoleLogHandler(logging.handlers.BufferingHandler):
         class Signals(QtCore.QObject):
-            message = QtCore.pyqtSignal(str, logging.LogRecord)
+            message = QtCore.pyqtSignal(str)
 
         def __init__(self, console_widget: "ToolConsole"):
-            super().__init__()
+            super().__init__(capacity=100)
             self.signals = ToolConsole.ConsoleLogHandler.Signals()
             self.console_widget = console_widget
             self.signals.message.connect(self.console_widget.add_message)
 
-        def emit(self, record: LogRecord) -> None:
-            message = self.format(record)
-            self.signals.message.emit(message, record)
+
+        def flush(self) -> None:
+            message_buffer = []
+            if len(self.buffer) > 0:
+                for record in self.buffer:
+                    # print(m)
+                    message = self.format(record)
+                    message_buffer.append(message)
+                    # print(message)
+                try:
+                    self.signals.message.emit(" ".join(message_buffer))
+                except RuntimeError:
+                    print(message_buffer, file=sys.stderr)
+                    raise
+            super().flush()
+
+        # def emit(self, record: LogRecord) -> None:
+        #     message = self.format(record)
+        #     self.signals.message.emit(message, record)
 
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
@@ -90,7 +107,7 @@ class ToolConsole(QtWidgets.QWidget):
 
         self._log = QtGui.QTextDocument()
         self._log.setDefaultFont(monospaced_font)
-
+        self._log.contentsChanged.connect(self._follow_text)
         self._console.setDocument(self._log)
         self._console.setFont(monospaced_font)
 
@@ -100,10 +117,15 @@ class ToolConsole(QtWidgets.QWidget):
         self.detach_logger()
         return super().close()
 
+    def _follow_text(self) -> None:
+        cursor = QtGui.QTextCursor(self._log)
+        cursor.movePosition(cursor.End)
+        self._console.setTextCursor(cursor)
+
+    @QtCore.pyqtSlot(str)
     def add_message(
             self,
             message: str,
-            record: typing.Optional[logging.LogRecord] = None
     ) -> None:
 
         cursor = QtGui.QTextCursor(self._log)
@@ -126,22 +148,20 @@ class ToolConsole(QtWidgets.QWidget):
 
     def detach_logger(self) -> None:
         if self._attached_logger is not None:
+            self.log_handler.flush()
             self._attached_logger.removeHandler(self.log_handler)
             self._attached_logger = None
 
 
-class ConsoleLogger(logging.handlers.BufferingHandler):
+class ConsoleLogger(logging.Handler):
     def __init__(
             self,
             console: ToolConsole,
             level: int = logging.NOTSET
     ) -> None:
-        super().__init__(1)
+        super().__init__(level)
         # super().__init__(level)
         self.console = console
-
-    def shouldFlush(self, record: LogRecord) -> bool:
-        return super().shouldFlush(record)
 
     def emit(self, record: logging.LogRecord) -> None:
         try:
@@ -590,6 +610,10 @@ class MainWindow2(QtWidgets.QMainWindow):
     def close(self) -> bool:
         self.console.close()
         return super().close()
+
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        self.console.close()
+        super().closeEvent(a0)
 
     def setup_menu(self) -> None:
         builder = MainWindowMenuBuilder(parent=self)
