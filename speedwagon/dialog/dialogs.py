@@ -11,6 +11,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 from PyQt5 import uic
 from PyQt5.QtWidgets import QWidget
 
+
 try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
@@ -29,6 +30,8 @@ __all__ = [
     "WorkProgressBar",
     "about_dialog_box"
 ]
+
+ALREADY_STOPPED_MESSAGE = "Already stopped"
 
 
 class ErrorDialogBox(QtWidgets.QMessageBox):
@@ -212,7 +215,7 @@ class WorkflowProgressStateIdle(AbsWorkflowProgressState):
         self.reset_cancel_button()
 
     def stop(self) -> None:
-        warnings.warn("Already stopped")
+        warnings.warn(ALREADY_STOPPED_MESSAGE)
 
     def _set_button_defaults(self) -> None:
         cancel_button: QtWidgets.QPushButton \
@@ -304,7 +307,7 @@ class WorkflowProgressStateAborted(AbsWorkflowProgressState):
         close_button.clicked.connect(self.context.accept)
 
     def stop(self) -> None:
-        warnings.warn("Already stopped")
+        warnings.warn(ALREADY_STOPPED_MESSAGE)
 
 
 class WorkflowProgressStateFailed(AbsWorkflowProgressState):
@@ -322,7 +325,7 @@ class WorkflowProgressStateFailed(AbsWorkflowProgressState):
         self.context.banner.setText("Failed")
 
     def stop(self) -> None:
-        warnings.warn("Already stopped")
+        warnings.warn(ALREADY_STOPPED_MESSAGE)
 
 
 class WorkflowProgressStateWorkingIndeterminate(WorkflowProgressStateWorking):
