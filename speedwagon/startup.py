@@ -39,6 +39,7 @@ from speedwagon.runner_strategies import ThreadedEvents
 from speedwagon.tabs import extract_tab_information
 import speedwagon.gui
 
+TABS_YML_FILE_NAME = "tabs.yml"
 
 try:  # pragma: no cover
     from importlib import metadata
@@ -284,7 +285,9 @@ class StartupDefault(AbsStarter):
             self.platform_settings.get_app_data_directory(), "config.ini")
 
         self.tabs_file = os.path.join(
-            self.platform_settings.get_app_data_directory(), "tabs.yml")
+            self.platform_settings.get_app_data_directory(),
+            TABS_YML_FILE_NAME
+        )
 
         # Make sure required directories exists
         self.user_data_dir = self.platform_settings.get("user_data_directory")
@@ -645,7 +648,9 @@ class StartQtThreaded(AbsStarter):
 
     def _load_workflows(self, application: speedwagon.gui.MainWindow2) -> None:
         tabs_file = os.path.join(
-            self.platform_settings.get_app_data_directory(), "tabs.yml")
+            self.platform_settings.get_app_data_directory(),
+            TABS_YML_FILE_NAME
+        )
 
         self.logger.debug("Loading Workflows")
         loading_workflows_stream = io.StringIO()
@@ -745,7 +750,7 @@ class StartQtThreaded(AbsStarter):
         )
 
         dialog_builder.add_tabs_setting(
-            os.path.join(settings_path, "tabs.yml")
+            os.path.join(settings_path, TABS_YML_FILE_NAME)
         )
 
         config_dialog = dialog_builder.build()
@@ -1120,7 +1125,9 @@ def standalone_tab_editor(app: QtWidgets.QApplication = None) -> None:
     editor = TabsEditorApp()
     editor.load_all_workflows()
 
-    tabs_file = os.path.join(settings.get_app_data_directory(), "tabs.yml")
+    tabs_file = \
+        os.path.join(settings.get_app_data_directory(), TABS_YML_FILE_NAME)
+
     editor.load_tab_file(tabs_file)
 
     print("displaying tab editor")
