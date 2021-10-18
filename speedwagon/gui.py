@@ -5,14 +5,13 @@ that do the work
 """
 import io
 import logging
+import logging.handlers
 import os
 import sys
 import time
 import traceback
 import typing
 import webbrowser
-from logging import LogRecord
-import logging.handlers
 from typing import List
 
 try:  # pragma: no cover
@@ -73,20 +72,12 @@ class ToolConsole(QtWidgets.QWidget):
             self.console_widget = console_widget
             self.signals.message.connect(self.console_widget.add_message)
 
-
         def flush(self) -> None:
             message_buffer = []
             if len(self.buffer) > 0:
                 for record in self.buffer:
-                    # print(m)
-                    message = self.format(record)
-                    message_buffer.append(message)
-                    # print(message)
-                try:
-                    self.signals.message.emit(" ".join(message_buffer))
-                except RuntimeError:
-                    print(message_buffer, file=sys.stderr)
-                    raise
+                    message_buffer.append(self.format(record))
+                self.signals.message.emit(" ".join(message_buffer))
             super().flush()
 
         # def emit(self, record: LogRecord) -> None:
