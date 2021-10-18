@@ -38,9 +38,6 @@ class SignalLogHandler(logging.handlers.BufferingHandler):
         super().__init__(capacity=10)
         self._signal = signal
 
-    def shouldFlush(self, record: LogRecord) -> bool:
-        return super().shouldFlush(record)
-
     def emit(self, record: LogRecord) -> None:
         """Emit the record."""
         result = logging.Formatter().format(record)
