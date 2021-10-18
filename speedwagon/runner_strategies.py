@@ -1135,8 +1135,9 @@ class BackgroundJobManager(AbsJobManager2):
             workflow_name: str,
             working_directory: str,
             options: Dict[str, Any],
-            callbacks: AbsJobCallbacks,
-            events: "ThreadedEvents",
+            liaison: JobManagerLiaison,
+            # callbacks: AbsJobCallbacks,
+            # events: "ThreadedEvents",
     ) -> None:
         try:
             task_scheduler = Run(working_directory)
@@ -1147,19 +1148,19 @@ class BackgroundJobManager(AbsJobManager2):
                 task_scheduler.valid_workflows = self.valid_workflows
 
             workflow = task_scheduler.get_workflow(workflow_name)()
-            events.started.wait()
+            liaison.events.started.wait()
             for task in task_scheduler.iter_tasks(workflow, options):
 
-                if events.is_stopped() is True:
-                    callbacks.cancelling_complete()
+                if liaison.events.is_stopped() is True:
+                    liaison.callbacks.cancelling_complete()
                     break
 
                 if task.name is not None:
-                    callbacks.status(task.name)
+                    liaison.callbacks.status(task.name)
 
                 self.logger.info(task.task_description())
                 task.exec()
-                callbacks.update_progress(
+                liaison.callbacks.update_progress(
                     current=task_scheduler.current_task_progress,
                     total=task_scheduler.total_tasks
                 )
@@ -1169,15 +1170,15 @@ class BackgroundJobManager(AbsJobManager2):
 
             self._exec = exception_thrown
 
-            callbacks.finished(JobSuccess.FAILURE)
-            callbacks.error(
+            liaison.callbacks.finished(JobSuccess.FAILURE)
+            liaison.callbacks.error(
                 exc=exception_thrown,
                 traceback_string=traceback_info
             )
 
             raise
-        events.done()
-        callbacks.finished(JobSuccess.SUCCESS)
+        liaison.events.done()
+        liaison.callbacks.finished(JobSuccess.SUCCESS)
 
     def __exit__(self,
                  exc_type: Optional[Type[BaseException]],
@@ -1199,8 +1200,6 @@ class BackgroundJobManager(AbsJobManager2):
             workflow_name: str,
             working_directory: str,
             liaison: JobManagerLiaison,
-            # callbacks: AbsJobCallbacks,
-            # events: AbsEvents,
             options: Optional[Dict[str, Any]] = None,
     ):
         if self._background_thread is None or \
@@ -1211,8 +1210,7 @@ class BackgroundJobManager(AbsJobManager2):
                 kwargs={
                     "workflow_name": workflow_name,
                     "working_directory": working_directory,
-                    "events": liaison.events,
-                    "callbacks": liaison.callbacks,
+                    "liaison": liaison,
                     "options": options
                 }
             )
