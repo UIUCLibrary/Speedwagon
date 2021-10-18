@@ -530,9 +530,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
             self.dialog_box.set_current_progress
         )
 
-        # For some reason: this signal is not passing the value unless using
-        # a lambda
-        self.signals.finished.connect(lambda results: self._finished(results))
+        self.signals.finished.connect(self._finished)
 
         self.signals.total_jobs_changed.connect(self.dialog_box.set_total_jobs)
         self.signals.error.connect(self._error_message)
@@ -574,8 +572,8 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         self.signals.started.emit()
         self.dialog_box.start()
 
-    def finished(self, results: runner_strategies.JobSuccess):
-        self.signals.finished.emit(results.value)
+    def finished(self, result: runner_strategies.JobSuccess):
+        self.signals.finished.emit(result.value)
         self.dialog_box.flush()
 
     def cancelling_complete(self) -> None:
