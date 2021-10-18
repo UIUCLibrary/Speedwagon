@@ -39,19 +39,19 @@ class AbsEvents(abc.ABC):
 
     @abc.abstractmethod
     def stop(self) -> None:
-        pass
+        """Stop."""
 
     @abc.abstractmethod
     def is_done(self) -> bool:
-        pass
+        """Get if it is done."""
 
     @abc.abstractmethod
     def is_stopped(self) -> bool:
-        pass
+        """Get if it is stopped."""
 
     @abc.abstractmethod
     def done(self) -> None:
-        pass
+        """Set to done."""
 
 
 class JobSuccess(enum.IntEnum):
