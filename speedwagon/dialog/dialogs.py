@@ -359,6 +359,7 @@ class WorkflowProgressStateDone(AbsWorkflowProgressState):
     def stop(self) -> None:
         warnings.warn("Already Finished")
 
+
 class WorkflowProgressGui(QtWidgets.QDialog):
     def __init__(self, parent: typing.Optional[QWidget] = None) -> None:
         super().__init__(parent)
@@ -401,6 +402,7 @@ class WorkflowProgressGui(QtWidgets.QDialog):
                 self._parent_logger.removeHandler(self._log_handler)
                 self._log_handler = None
             self._parent_logger = None
+
 
 class WorkflowProgress(WorkflowProgressGui):
     class DialogLogHandler(logging.handlers.BufferingHandler):
@@ -467,7 +469,6 @@ class WorkflowProgress(WorkflowProgressGui):
 
     def stop_timer(self):
         self._refresh_timer.stop()
-
 
     def clean_local_console(self):
         # return

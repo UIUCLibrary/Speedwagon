@@ -836,7 +836,9 @@ class StartQtThreaded(AbsStarter):
         )
         callbacks = WorkflowProgressCallbacks(dialog_box)
         if main_app is not None:
-            callbacks.signals.finished.connect(main_app.console.log_handler.flush)
+            callbacks.signals.finished.connect(
+                main_app.console.log_handler.flush
+            )
 
         dialog_box.attach_logger(self.logger)
 
