@@ -598,9 +598,9 @@ class MainWindow2(QtWidgets.QMainWindow):
         self.console.close()
         return super().close()
 
-    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         self.console.close()
-        super().closeEvent(a0)
+        super().closeEvent(event)
 
     def setup_menu(self) -> None:
         builder = MainWindowMenuBuilder(parent=self)
