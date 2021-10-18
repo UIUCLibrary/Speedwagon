@@ -540,6 +540,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
 
         self.signals.started.connect(self.dialog_box.show)
         self.signals.status_changed.connect(self.set_banner_text)
+        self.signals.status_changed.connect(self.dialog_box.flush)
         self.signals.message.connect(self.dialog_box.write_to_console)
         self.log_handler = SignalLogHandler(signal=self.signals.message)
 
@@ -575,6 +576,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
 
     def finished(self, results: runner_strategies.JobSuccess):
         self.signals.finished.emit(results.value)
+        self.dialog_box.flush()
 
     def cancelling_complete(self) -> None:
         self.signals.cancel_complete.emit()
@@ -632,7 +634,7 @@ class StartQtThreaded(AbsStarter):
         #
         self.log_data_handler.setFormatter(formatter)
 
-        self.logger.addHandler(self.log_data_handler)
+        # self.logger.addHandler(self.log_data_handler)
         self.logger.setLevel(logging.DEBUG)
 
     def _load_help(self) -> None:

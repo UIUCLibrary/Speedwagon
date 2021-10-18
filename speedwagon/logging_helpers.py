@@ -3,11 +3,11 @@
 import logging
 from logging import LogRecord
 from typing import Callable
-
+import logging.handlers
 from PyQt5 import QtCore
 
 
-class GuiLogHandler(logging.Handler):
+class GuiLogHandler(logging.handlers.BufferingHandler):
     """Logger designed for gui."""
 
     def __init__(
@@ -16,15 +16,22 @@ class GuiLogHandler(logging.Handler):
             level: int = logging.NOTSET
     ) -> None:
         """Create a gui log handler."""
-        super().__init__(level)
+        super().__init__(capacity=1)
         self.callback = callback
 
     def emit(self, record: logging.LogRecord) -> None:
         """Emit logged message to callback function."""
         self.callback(logging.Formatter().format(record))
 
+    def flush(self) -> None:
+        print("GUI logger flushing")
+        super().flush()
 
-class SignalLogHandler(logging.Handler):
+    def shouldFlush(self, record: LogRecord) -> bool:
+        return super().shouldFlush(record)
+
+
+class SignalLogHandler(logging.handlers.BufferingHandler):
     """Qt Signal based log handler.
 
     Emits the log as a signal.
@@ -35,8 +42,11 @@ class SignalLogHandler(logging.Handler):
 
     def __init__(self, signal: QtCore.pyqtBoundSignal) -> None:
         """Create a new log handler for Qt signals."""
-        super().__init__()
+        super().__init__(capacity=10)
         self._signal = signal
+
+    def shouldFlush(self, record: LogRecord) -> bool:
+        return super().shouldFlush(record)
 
     def emit(self, record: LogRecord) -> None:
         """Emit the record."""

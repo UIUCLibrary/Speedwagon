@@ -5,6 +5,8 @@ that do the work
 """
 import io
 import logging
+from logging.handlers import BufferingHandler
+# import logging.handlers
 import os
 import sys
 import time
@@ -72,6 +74,14 @@ class ToolConsole(QtWidgets.QWidget):
             self.console_widget = console_widget
             self.signals.message.connect(self.console_widget.add_message)
 
+        def flush(self) -> None:
+            print("Flushing")
+            super().flush()
+
+        def shouldFlush(self, record: LogRecord) -> bool:
+            print("Should flush")
+            return super().shouldFlush(record)
+
         def emit(self, record: LogRecord) -> None:
             message = self.format(record)
             self.signals.message.emit(message, record)
@@ -79,6 +89,7 @@ class ToolConsole(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
         self.log_handler = ToolConsole.ConsoleLogHandler(self)
+
         self.log_handler.setFormatter(ConsoleFormatter())
         with resources.path(speedwagon.ui, "console.ui") as ui_file:
             uic.loadUi(ui_file, self)
@@ -129,14 +140,18 @@ class ToolConsole(QtWidgets.QWidget):
             self._attached_logger = None
 
 
-class ConsoleLogger(logging.Handler):
+class ConsoleLogger(logging.handlers.BufferingHandler):
     def __init__(
             self,
             console: ToolConsole,
             level: int = logging.NOTSET
     ) -> None:
-        super().__init__(level)
+        super().__init__(1)
+        # super().__init__(level)
         self.console = console
+
+    def shouldFlush(self, record: LogRecord) -> bool:
+        return super().shouldFlush(record)
 
     def emit(self, record: logging.LogRecord) -> None:
         try:

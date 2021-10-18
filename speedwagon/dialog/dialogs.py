@@ -5,6 +5,7 @@ import sys
 import typing
 import warnings
 from logging import LogRecord
+import logging.handlers
 from typing import Collection, Union
 
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
@@ -337,7 +338,6 @@ class WorkflowProgressStateDone(AbsWorkflowProgressState):
     state_name = "done"
 
     def __init__(self, context: "WorkflowProgress"):
-        print("done")
         super().__init__(context)
         self.reset_cancel_button()
         self.set_buttons_to_close_only(context.button_box)
@@ -359,18 +359,29 @@ class WorkflowProgressStateDone(AbsWorkflowProgressState):
 
 
 class WorkflowProgress(QtWidgets.QDialog):
-    class DialogLogHandler(logging.Handler):
+    class DialogLogHandler(logging.handlers.BufferingHandler):
+    # class DialogLogHandler(logging.Handler):
         class LogSignals(QtCore.QObject):
-            message = QtCore.pyqtSignal(str, int)
+            message = QtCore.pyqtSignal(str)
+
+            # message = QtCore.pyqtSignal(str, int)
 
         def __init__(self, dialog: "WorkflowProgress") -> None:
-            super().__init__()
+            super().__init__(capacity=200)
             self.signals = WorkflowProgress.DialogLogHandler.LogSignals()
             self._dialog = dialog
-            self.signals.message.connect(self._dialog.write_to_console)
+            self.signals.message.connect(self._dialog.write_html_block_to_console)
 
-        def emit(self, record: LogRecord) -> None:
-            self.signals.message.emit(record.message, record.levelno)
+
+        def flush(self) -> None:
+            results = []
+            for log in self.buffer:
+                results.append(self.format(log))
+            if len(results) > 0:
+                report = "".join(results)
+                self.signals.message.emit(f"{report} <br>")
+            super().flush()
+
 
     aborted = QtCore.pyqtSignal()
 
@@ -427,9 +438,23 @@ class WorkflowProgress(QtWidgets.QDialog):
         self._log_handler: typing.Optional[logging.Handler] = None
         self._parent_logger: typing.Optional[logging.Logger] = None
 
+        self._refresh_timer = QtCore.QTimer(self)
+        self._refresh_timer.timeout.connect(self.flush)
+        self.finished.connect(self.stop_timer)
+        self._refresh_timer.start(100)
+
+    def stop_timer(self):
+        self._refresh_timer.stop()
+
+    def flush(self):
+        if self._log_handler is not None:
+            self._log_handler.flush()
+
     def attach_logger(self, logger: logging.Logger):
         self._parent_logger = logger
         self._log_handler = WorkflowProgress.DialogLogHandler(self)
+        formatter = speedwagon.logging_helpers.ConsoleFormatter()
+        self._log_handler.setFormatter(formatter)
         self._parent_logger.addHandler(self._log_handler)
 
     def remove_log_handles(self):
@@ -494,7 +519,13 @@ class WorkflowProgress(QtWidgets.QDialog):
         self.progress_bar.setValue(value)
         # QtWidgets.QApplication.processEvents()
 
-    @QtCore.pyqtSlot(str, int)
+    def write_html_block_to_console(self, html: str) -> None:
+        cursor = QtGui.QTextCursor(self._console_data)
+        cursor.movePosition(cursor.End)
+        cursor.beginEditBlock()
+        cursor.insertHtml(html)
+        cursor.endEditBlock()
+
     def write_to_console(self, text: str, level=logging.INFO) -> None:
         # return
         cursor = QtGui.QTextCursor(self._console_data)
