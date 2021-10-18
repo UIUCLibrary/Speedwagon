@@ -311,7 +311,7 @@ class CaseInsensitiveComparison(AbsComparisonMethod):
         return a.lower() == b.lower()
 
 
-class VerifyChecksumBatchSingleWorkflow(ChecksumWorkflow):
+class VerifyChecksumBatchSingleWorkflow(Workflow):
     """Verify Checksum Batch."""
 
     name = "Verify Checksum Batch [Single]"
@@ -323,6 +323,16 @@ class VerifyChecksumBatchSingleWorkflow(ChecksumWorkflow):
                   "Input is a text file containing a list of multiple files " \
                   "and their md5 values. The listed files are expected to " \
                   "be siblings to the checksum file."
+
+    @staticmethod
+    def validate_user_options(**user_args: str) -> bool:
+        input_data = user_args[UserArgs.INPUT.value]
+        if input_data is None:
+            raise ValueError("Missing value in input")
+
+        if not os.path.exists(input_data) or os.path.isdir(input_data):
+            raise ValueError("Invalid user arguments")
+        return True
 
     def discover_task_metadata(self,
                                initial_results: List[

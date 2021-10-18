@@ -835,6 +835,7 @@ class StartQtThreaded(AbsStarter):
             lambda: self.abort_job(dialog_box, threaded_events)
         )
         callbacks = WorkflowProgressCallbacks(dialog_box)
+        callbacks.signals.finished.connect(main_app.console.log_handler.flush)
 
         dialog_box.attach_logger(self.logger)
 
