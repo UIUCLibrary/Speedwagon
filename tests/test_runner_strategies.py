@@ -1178,15 +1178,15 @@ class TestBackgroundJobManager:
             assert manager is not None
 
     def test_job_finished_called(self):
-        callbacks = Mock()
+        callbacks = Mock(name="callbacks")
+        liaison = runner_strategies.JobManagerLiaison(callbacks=callbacks, events=Mock())
         with runner_strategies.BackgroundJobManager() as manager:
             manager.valid_workflows = {"spam": SpamWorkflow}
             manager.submit_job(
                 workflow_name="spam",
                 options={},
                 working_directory="/tmp",
-                callbacks=callbacks,
-                events=Mock(),
+                liaison=liaison
             )
         assert callbacks.finished.called is True
 
@@ -1220,6 +1220,7 @@ class TestBackgroundJobManager:
                     workflow_name="bacon",
                     options={},
                     working_directory="/tmp",
-                    callbacks=Mock(),
-                    events=Mock(),
+                    liaison=runner_strategies.JobManagerLiaison(Mock(), Mock())
+                    # callbacks=Mock(),
+                    # events=Mock(),
                 )

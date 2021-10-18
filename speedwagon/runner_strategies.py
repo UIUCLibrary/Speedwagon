@@ -1072,6 +1072,12 @@ class QtRunner(AbsRunner2):
         task_scheduler.run(job, options)
 
 
+@dataclasses.dataclass
+class JobManagerLiaison:
+    callbacks: AbsJobCallbacks
+    events: AbsEvents
+
+
 class AbsJobManager2(contextlib.AbstractContextManager):
 
     def __init__(self) -> None:
@@ -1083,8 +1089,7 @@ class AbsJobManager2(contextlib.AbstractContextManager):
             self,
             workflow_name: str,
             working_directory: str,
-            callbacks: AbsJobCallbacks,
-            events: AbsEvents,
+            liaison: JobManagerLiaison,
             options: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Submit job to worker."""
@@ -1191,8 +1196,9 @@ class BackgroundJobManager(AbsJobManager2):
             self,
             workflow_name: str,
             working_directory: str,
-            callbacks: AbsJobCallbacks,
-            events: AbsEvents,
+            liaison: JobManagerLiaison,
+            # callbacks: AbsJobCallbacks,
+            # events: AbsEvents,
             options: Optional[Dict[str, Any]] = None,
     ):
         if self._background_thread is None or \
@@ -1203,15 +1209,15 @@ class BackgroundJobManager(AbsJobManager2):
                 kwargs={
                     "workflow_name": workflow_name,
                     "working_directory": working_directory,
-                    "options": options,
-                    "events": events,
-                    "callbacks": callbacks,
+                    "events": liaison.events,
+                    "callbacks": liaison.callbacks,
+                    "options": options
                 }
             )
             new_thread.start()
             self._background_thread = new_thread
             # todo: check if thread actually started
-            callbacks.start()
+            liaison.callbacks.start()
 
 
 class ThreadedEvents(AbsEvents):

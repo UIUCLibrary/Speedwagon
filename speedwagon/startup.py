@@ -840,8 +840,10 @@ class StartQtThreaded(AbsStarter):
             workflow_name=workflow_name,
             options=options,
             working_directory=os.getcwd(),
-            callbacks=callbacks,
-            events=threaded_events,
+            liaison=runner_strategies.JobManagerLiaison(
+                callbacks=callbacks,
+                events=threaded_events
+            )
         )
         threaded_events.started.set()
 
