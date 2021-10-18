@@ -311,7 +311,7 @@ class CaseInsensitiveComparison(AbsComparisonMethod):
         return a.lower() == b.lower()
 
 
-class VerifyChecksumBatchSingleWorkflow(Workflow):
+class VerifyChecksumBatchSingleWorkflow(ChecksumWorkflow):
     """Verify Checksum Batch."""
 
     name = "Verify Checksum Batch [Single]"

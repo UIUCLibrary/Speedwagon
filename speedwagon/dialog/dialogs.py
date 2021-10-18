@@ -401,9 +401,14 @@ class WorkflowProgress(QtWidgets.QDialog):
             QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
 
         self._console_data.setDefaultFont(mono_font)
-        self._console_data.contentsChanged.connect(self._follow_text)
+
+        typing.cast(
+            QtCore.pyqtBoundSignal,
+            self._console_data.contentsChanged
+        ).connect(self._follow_text)
+
         self.console.setMinimumWidth(self.calculate_window_width(mono_font))
-        # self.console.setMinimumWidth(self.calculate_window_width(mono_font))
+
         self.console.setDocument(self._console_data)
         # =====================================================================
         self.button_box.button(

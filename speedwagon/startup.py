@@ -806,11 +806,22 @@ class StartQtThreaded(AbsStarter):
             workflow_name,
             options
     ) -> None:
-        # if self.windows is not None:
-        dialog_box = WorkflowProgress(parent=self.windows)
-        # else:
-        #     dialog_box = WorkflowProgress()
 
+        workflow_class = \
+            job.available_workflows().get(workflow_name)
+        try:
+            if workflow_class is None:
+                raise ValueError(f"Unknown workflow: '{workflow_name}'")
+            workflow_class.validate_user_options(**options)
+        except ValueError as user_option_error:
+            self.report_exception(
+                parent=main_app,
+                exc=user_option_error,
+                dialog_box_title="Invalid User Options"
+            )
+            return
+
+        dialog_box = WorkflowProgress(parent=self.windows)
         if main_app is not None:
             dialog_box.rejected.connect(main_app.close)
 
@@ -833,6 +844,20 @@ class StartQtThreaded(AbsStarter):
             events=threaded_events,
         )
         threaded_events.started.set()
+
+    def report_exception(
+            self,
+            exc: BaseException,
+            parent: typing.Optional[QtWidgets.QWidget] = None,
+            dialog_box_title=None,
+    ) -> None:
+        text = str(exc)
+        self.logger.error(text)
+        dialog_box = QtWidgets.QMessageBox(parent)
+        if dialog_box_title is not None:
+            dialog_box.setWindowTitle(dialog_box_title)
+        dialog_box.setText(text)
+        dialog_box.exec_()
 
 
 class SingleWorkflowLauncher(AbsStarter):

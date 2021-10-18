@@ -1195,7 +1195,6 @@ class BackgroundJobManager(AbsJobManager2):
             events: AbsEvents,
             options: Optional[Dict[str, Any]] = None,
     ):
-
         if self._background_thread is None or \
                 self._background_thread.is_alive() is False:
 
