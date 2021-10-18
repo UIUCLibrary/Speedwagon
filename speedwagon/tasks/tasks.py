@@ -21,6 +21,8 @@ __all__ = [
 
 
 class TaskStatus(enum.IntEnum):
+    """Task Status."""
+
     IDLE = 0
     WORKING = 1
     SUCCESS = 2
