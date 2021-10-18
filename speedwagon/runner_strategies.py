@@ -1156,6 +1156,8 @@ class BackgroundJobManager(AbsJobManager2):
 
                 if task.name is not None:
                     callbacks.status(task.name)
+
+                self.logger.info(task.task_description())
                 task.exec()
                 callbacks.update_progress(
                     current=task_scheduler.current_task_progress,
