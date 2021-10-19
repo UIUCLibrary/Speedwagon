@@ -275,7 +275,11 @@ class WorkflowProgressStateStopping(AbsWorkflowProgressState):
 
         cancel_button: QtWidgets.QPushButton \
             = self.context.button_box.button(self.context.button_box.Cancel)
+
         cancel_button.setText("Force Quit")
+
+        self.context.progress_bar.setMaximum(0)
+        self.context.progress_bar.setMinimum(0)
 
     def start(self) -> None:
         warnings.warn("Already started")
