@@ -58,6 +58,7 @@ class AbsEvents(abc.ABC):
 class JobSuccess(enum.IntEnum):
     SUCCESS = 0
     FAILURE = 1
+    ABORTED = 2
 
 
 class AbsJobCallbacks(abc.ABC):
@@ -1166,6 +1167,9 @@ class BackgroundJobManager(AbsJobManager2):
                     current=task_scheduler.current_task_progress,
                     total=task_scheduler.total_tasks
                 )
+            liaison.callbacks.finished(JobSuccess.SUCCESS)
+        except speedwagon.job.JobCancelled as job_cancelled:
+            liaison.callbacks.finished(JobSuccess.ABORTED)
 
         except BaseException as exception_thrown:
             traceback_info = traceback.format_exc()
@@ -1180,7 +1184,7 @@ class BackgroundJobManager(AbsJobManager2):
 
             raise
         liaison.events.done()
-        liaison.callbacks.finished(JobSuccess.SUCCESS)
+
 
     def __exit__(self,
                  exc_type: Optional[Type[BaseException]],

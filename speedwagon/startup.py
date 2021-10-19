@@ -580,7 +580,10 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         def _finished(self, results) -> None:
             if results == runner_strategies.JobSuccess.SUCCESS:
                 self.dialog_box.success_completed()
-            elif results == runner_strategies.JobSuccess.FAILURE:
+            elif results in [
+                runner_strategies.JobSuccess.FAILURE,
+                runner_strategies.JobSuccess.ABORTED,
+            ]:
                 self.dialog_box.reject()
 
         def finished_called(
