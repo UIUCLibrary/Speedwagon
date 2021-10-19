@@ -548,9 +548,15 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
             self.status_changed.connect(self.dialog_box.flush)
             self.message.connect(self.dialog_box.write_to_console)
 
+        def log(self, text: str, level: int) -> None:
+            self.message.emit(text, level)
+
         @QtCore.pyqtSlot(str)
         def set_banner_text(self, text: str) -> None:
             self.dialog_box.banner.setText(text)
+
+        def set_status(self, text: str) -> None:
+            self.status_changed.emit(text)
 
         def _error_message(
                 self,
@@ -577,6 +583,32 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
             elif results == runner_strategies.JobSuccess.FAILURE:
                 self.dialog_box.reject()
 
+        def finished_called(
+                self,
+                result: runner_strategies.JobSuccess
+        ) -> None:
+            self.finished.emit(result)
+            self.dialog_box.flush()
+
+        def cancelling_complete(self) -> None:
+            self.cancel_complete.emit()
+            self.dialog_box.flush()
+
+        def update_progress(self, current: Optional[int],
+                            total: Optional[int]) -> None:
+            if total is not None:
+                self.total_jobs_changed.emit(total)
+            if current is not None:
+                self.progress_changed.emit(current)
+
+        def submit_error(
+                self,
+                message: Optional[str] = None,
+                exc: Optional[BaseException] = None,
+                traceback_string: Optional[str] = None
+        ) -> None:
+            self.error.emit(message, exc, traceback_string)
+
     def __init__(self, dialog_box: WorkflowProgress) -> None:
         super().__init__()
 
@@ -585,12 +617,9 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         self.log_handler = SignalLogHandler(signal=self.signals.message)
 
     def log(self, text: str, level: int = logging.INFO) -> None:
-        self.signals.message.emit(text, level)
+        self.signals.log(text, level)
 
-    def status(self, text: str) -> None:
-        self.signals.status_changed.emit(text)
-
-    def set_banner_text(self, text: str):
+    def set_banner_text(self, text: str) -> None:
         self.signals.set_banner_text(text)
 
     def error(
@@ -599,29 +628,27 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
             exc: Optional[BaseException] = None,
             traceback_string: Optional[str] = None
     ) -> None:
-        self.signals.error.emit(message, exc, traceback_string)
+        self.signals.submit_error(message, exc, traceback_string)
 
     def start(self) -> None:
         self.signals.started.emit()
         self.signals.dialog_box.start()
 
-    def finished(self, result: runner_strategies.JobSuccess):
-        self.signals.finished.emit(result)
-        self.signals.dialog_box.flush()
+    def finished(self, result: runner_strategies.JobSuccess) -> None:
+        self.signals.finished_called(result)
 
     def cancelling_complete(self) -> None:
-        self.signals.cancel_complete.emit()
-        self.signals.dialog_box.flush()
+        self.signals.cancelling_complete()
 
     def refresh(self) -> None:
         QtCore.QCoreApplication.processEvents()
 
     def update_progress(self, current: Optional[int],
                         total: Optional[int]) -> None:
-        if total is not None:
-            self.signals.total_jobs_changed.emit(total)
-        if current is not None:
-            self.signals.progress_changed.emit(current)
+        self.signals.update_progress(current, total)
+
+    def status(self, text: str) -> None:
+        self.signals.set_status(text)
 
 
 class StartQtThreaded(AbsStarter):
@@ -957,8 +984,8 @@ class StartQtThreaded(AbsStarter):
             self,
             main_app: typing.Optional[speedwagon.gui.MainWindow2],
             job_manager: runner_strategies.BackgroundJobManager,
-            workflow_name,
-            options
+            workflow_name: str,
+            options: Dict[str, typing.Any]
     ) -> None:
 
         workflow_class = \
@@ -1010,7 +1037,7 @@ class StartQtThreaded(AbsStarter):
             self,
             exc: BaseException,
             parent: typing.Optional[QtWidgets.QWidget] = None,
-            dialog_box_title=None,
+            dialog_box_title: Optional[str] = None,
     ) -> None:
         text = str(exc)
         self.logger.error(text)
