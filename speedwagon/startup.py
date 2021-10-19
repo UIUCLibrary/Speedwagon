@@ -972,8 +972,8 @@ class StartQtThreaded(AbsStarter):
             self.windows.show()
             return self.app.exec_()
 
+    @staticmethod
     def abort_job(
-            self,
             dialog: WorkflowProgress,
             events: runner_strategies.AbsEvents
     ) -> None:

@@ -84,7 +84,9 @@ class ToolConsole(QtWidgets.QWidget):
         super().__init__(parent)
         self.log_handler = ToolConsole.ConsoleLogHandler(self)
 
-        self.log_handler.setFormatter(ConsoleFormatter())
+        self.log_formatter = ConsoleFormatter()
+        self.log_handler.setFormatter(self.log_formatter)
+
         with resources.path(speedwagon.ui, "console.ui") as ui_file:
             uic.loadUi(ui_file, self)
 
