@@ -792,7 +792,7 @@ class TaskDispatcherRunning(AbsTaskDispatcherState):
             )
 
             self.parent.current_task = task
-            task.log = lambda message: logger.info(msg=message)
+            setattr(task, "log", lambda message: logger.info(msg=message))
             task.exec()
             logger.debug(
                 "Threaded worker completed task: [%s]",
