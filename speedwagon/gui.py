@@ -575,7 +575,7 @@ class MainWindow2(QtWidgets.QMainWindow):
         super().__init__()
         self.logger = logging.getLogger(self.__class__.__name__)
         self.job_manager = job_manager
-        self.user_settings = settings
+        self.user_settings = settings or {}
 
         with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
             uic.loadUi(ui_file, self)
@@ -663,6 +663,9 @@ class MainWindow2(QtWidgets.QMainWindow):
     def _create_console(self) -> None:
 
         self.console = ToolConsole(self.main_splitter)
+        self.console.log_formatter.verbose = \
+            self.user_settings.get('debug', False)
+
         self.console.setMinimumHeight(75)
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)

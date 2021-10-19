@@ -1,6 +1,7 @@
 """Logging related stuff."""
-
+import abc
 import logging
+import typing
 from logging import LogRecord
 import logging.handlers
 
@@ -44,34 +45,92 @@ class SignalLogHandler(logging.handlers.BufferingHandler):
         self._signal.emit(result, record.levelno)
 
 
+class AbsConsoleFormatter(abc.ABC):
+    @abc.abstractmethod
+    def format_debug(self, text: str, record: LogRecord) -> str:
+        """Format a debug message"""
+
+    @abc.abstractmethod
+    def format_warning(self, text: str, record: LogRecord) -> str:
+        """Format a warning message"""
+
+    @abc.abstractmethod
+    def format_error(self, text: str, record: LogRecord) -> str:
+        """Format an error message"""
+
+    @abc.abstractmethod
+    def format_info(self, text: str, record: LogRecord) -> str:
+        """Format a standard message"""
+
+
+class DefaultConsoleFormatStyle(AbsConsoleFormatter):
+
+    def format_debug(self, text: str, record: LogRecord) -> str:
+        return f"<div><i>{text}</i></div>"
+
+    def format_warning(self, text: str, record: LogRecord) -> str:
+        return f"<div><font color=\"yellow\">{text}</font></div>"
+
+    def format_error(self, text: str, record: LogRecord) -> str:
+        return f"<div><font color=\"red\">{text}</font></div>"
+
+    def format_info(self, text: str, record: LogRecord) -> str:
+        return f"<div>{text}</div>"
+
+
+class VerboseConsoleFormatStyle(AbsConsoleFormatter):
+    @staticmethod
+    def _basic_format(record: LogRecord):
+        return logging.Formatter(
+            '[%(levelname)s] (%(threadName)-10s) %(message)s'
+        ).format(record).replace("\n", "<br>")
+
+    def format_debug(self, text: str, record: LogRecord) -> str:
+        return f"<div><i>{self._basic_format(record)}</i></div>"
+
+    def format_warning(self, text: str, record: LogRecord) -> str:
+        return \
+            f"""<div>
+            <font color=\"yellow\">{self._basic_format(record)}</font>
+            </div>"""
+
+    def format_error(self, text: str, record: LogRecord) -> str:
+        return \
+            f"""<div>
+            <font color=\"red\">{self._basic_format(record)}</font>
+            </div>"""
+
+    def format_info(self, text: str, record: LogRecord) -> str:
+        return f"<div>{self._basic_format(record)}</div>"
+
+
 class ConsoleFormatter(logging.Formatter):
     """Formatter for converting log records into html based logging format."""
 
-    @staticmethod
-    def _debug(text: str) -> str:
-        return f"<div><i>{text}</i></div>"
-
-    @staticmethod
-    def _warning(text: str) -> str:
-        return f"<div><font color=\"yellow\">{text}</font></div>"
-
-    @staticmethod
-    def _error(text: str) -> str:
-        return f"<div><font color=\"red\">{text}</font></div>"
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.verbose = False
 
     def format(self, record: LogRecord) -> str:
         """Format record for an html based console."""
-        level = record.levelno
+        formatters: typing.Dict[bool, typing.Type[AbsConsoleFormatter]] = {
+            False: DefaultConsoleFormatStyle,
+            True: VerboseConsoleFormatStyle,
+
+        }
+
+        formatter: AbsConsoleFormatter = formatters[self.verbose]()
         text = super().format(record)
         text = text.replace("\n", "<br>")
 
+        level = record.levelno
         if level == logging.DEBUG:
-            return self._debug(text)
+            return formatter.format_debug(text, record)
 
         if level == logging.WARNING:
-            return self._warning(text)
+            return formatter.format_warning(text, record)
 
         if level == logging.ERROR:
-            return self._error(text)
+            return formatter.format_error(text, record)
 
-        return f"<div>{text}</div>"
+        return formatter.format_info(text, record)

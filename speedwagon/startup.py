@@ -675,7 +675,7 @@ class StartQtThreaded(AbsStarter):
         #
         self.log_data_handler.setFormatter(formatter)
 
-        # self.logger.addHandler(self.log_data_handler)
+        self.logger.addHandler(self.log_data_handler)
         self.logger.setLevel(logging.DEBUG)
 
     def _load_help(self) -> None:
