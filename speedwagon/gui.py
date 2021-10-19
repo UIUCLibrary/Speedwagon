@@ -568,13 +568,14 @@ class MainWindow2(QtWidgets.QMainWindow):
     def __init__(
             self,
             job_manager: "speedwagon.runner_strategies.BackgroundJobManager",
-            debug: bool = False) -> None:
+            settings: typing.Optional[
+                typing.Dict[str, typing.Union[str, bool]]
+            ] = None
+            ) -> None:
         super().__init__()
         self.logger = logging.getLogger(self.__class__.__name__)
         self.job_manager = job_manager
-
-        self._debug = debug
-        self.user_settings = None
+        self.user_settings = settings
 
         with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
             uic.loadUi(ui_file, self)
