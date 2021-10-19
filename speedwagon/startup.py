@@ -1020,11 +1020,13 @@ class StartQtThreaded(AbsStarter):
         dialog_box.setText(text)
         dialog_box.exec_()
 
-    def _find_invalid(self, all_workflows) -> \
-            typing.Iterable[
-                typing.Tuple[str, typing.Type[speedwagon.Workflow], str]
-            ]:
-        for title, workflow in all_workflows.items():
+    def _find_invalid(
+            self,
+            workflows: typing.Dict[str, typing.Type[speedwagon.Workflow]]
+    ) -> typing.Iterable[
+            typing.Tuple[str, typing.Type[speedwagon.Workflow], str]
+    ]:
+        for title, workflow in workflows.copy().items():
             try:
                 workflow(global_settings=self.startup_settings)
             except speedwagon.exceptions.SpeedwagonException as error:
