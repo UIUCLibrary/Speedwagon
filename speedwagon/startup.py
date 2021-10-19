@@ -800,7 +800,7 @@ class StartQtThreaded(AbsStarter):
         with contextlib.redirect_stderr(loading_workflows_stream):
             all_workflows = job.available_workflows()
 
-        for workflow_name, workflow, error in \
+        for workflow_name, error in \
                 self._find_invalid(all_workflows):
 
             self.logger.error(error)
@@ -1024,13 +1024,13 @@ class StartQtThreaded(AbsStarter):
             self,
             workflows: typing.Dict[str, typing.Type[speedwagon.Workflow]]
     ) -> typing.Iterable[
-            typing.Tuple[str, typing.Type[speedwagon.Workflow], str]
+            typing.Tuple[str, str]
     ]:
         for title, workflow in workflows.copy().items():
             try:
                 workflow(global_settings=self.startup_settings)
             except speedwagon.exceptions.SpeedwagonException as error:
-                yield title, workflow, str(error)
+                yield title, str(error)
 
 
 class SingleWorkflowLauncher(AbsStarter):
