@@ -657,7 +657,10 @@ class StartQtThreaded(AbsStarter):
 
     @property
     def config_file(self) -> str:
-        return os.path.join(self.platform_settings.get_app_data_directory(), "config.ini")
+        return os.path.join(
+            self.platform_settings.get_app_data_directory(),
+            "config.ini"
+        )
 
     @property
     def tabs_file(self) -> str:
@@ -720,7 +723,11 @@ class StartQtThreaded(AbsStarter):
                 self.app_data_dir
             )
 
-    def read_settings_file(self, settings_file: str) -> Dict[str, Union[str, bool]]:
+    def read_settings_file(
+            self,
+            settings_file: str
+    ) -> Dict[str, Union[str, bool]]:
+
         with speedwagon.config.ConfigManager(settings_file) as config:
             return config.global_settings
 
@@ -735,7 +742,10 @@ class StartQtThreaded(AbsStarter):
                 CliArgsSetter(),
             ]
         platform_settings = self.platform_settings
-        platform_settings._data.update(self.read_settings_file(self.config_file))
+
+        platform_settings._data.update(
+            self.read_settings_file(self.config_file)
+        )
 
         for settings_strategy in resolution_strategy_order:
             self.logger.debug("Loading settings from %s",
@@ -786,7 +796,9 @@ class StartQtThreaded(AbsStarter):
         with contextlib.redirect_stderr(loading_workflows_stream):
             all_workflows = job.available_workflows()
 
-        for workflow_name, workflow, error in self._find_invalid(all_workflows):
+        for workflow_name, workflow, error in \
+                self._find_invalid(all_workflows):
+
             self.logger.error(error)
             del all_workflows[workflow_name]
 
