@@ -666,7 +666,10 @@ class MainWindow2(QtWidgets.QMainWindow):
 
         self.console = ToolConsole(self.main_splitter)
         self.console.log_formatter.verbose = \
-            self.user_settings.get('debug', False)
+            typing.cast(
+                bool,
+                self.user_settings.get('debug', False)
+            )
 
         self.console.setMinimumHeight(75)
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
