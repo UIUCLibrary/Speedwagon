@@ -31,6 +31,7 @@ import speedwagon
 import speedwagon.config
 import speedwagon.models
 import speedwagon.tabs
+import speedwagon.exceptions
 from speedwagon import worker, job, runner_strategies
 from speedwagon.dialog.settings import TabEditor
 from speedwagon.dialog.dialogs import WorkflowProgress
@@ -785,6 +786,10 @@ class StartQtThreaded(AbsStarter):
         with contextlib.redirect_stderr(loading_workflows_stream):
             all_workflows = job.available_workflows()
 
+        for workflow_name, workflow, error in self._find_invalid(all_workflows):
+            self.logger.error(error)
+            del all_workflows[workflow_name]
+
         # Load every user configured tab
         self.load_custom_tabs(application, tabs_file, all_workflows)
 
@@ -998,6 +1003,16 @@ class StartQtThreaded(AbsStarter):
             dialog_box.setWindowTitle(dialog_box_title)
         dialog_box.setText(text)
         dialog_box.exec_()
+
+    def _find_invalid(self, all_workflows) -> \
+            typing.Iterable[
+                typing.Tuple[str, typing.Type[speedwagon.Workflow], str]
+            ]:
+        for title, workflow in all_workflows.items():
+            try:
+                workflow(global_settings=self.startup_settings)
+            except speedwagon.exceptions.SpeedwagonException as error:
+                yield title, workflow, str(error)
 
 
 class SingleWorkflowLauncher(AbsStarter):
