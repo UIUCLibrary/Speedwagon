@@ -782,36 +782,41 @@ class TestMultiWorkflowLauncher:
 
 
 class TestWorkflowProgressCallbacks:
-    def test_job_changed_signal(self, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(Mock())
+
+    @pytest.fixture()
+    def dialog_box(self, qtbot):
+        return speedwagon.dialog.dialogs.WorkflowProgress()
+
+    def test_job_changed_signal(self, dialog_box, qtbot):
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
         with qtbot.waitSignal(callbacks.signals.total_jobs_changed) as blocker:
             callbacks.update_progress(1, 10)
 
-    def test_job_log_signal(self, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(Mock())
+    def test_job_log_signal(self, dialog_box, qtbot):
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
         with qtbot.waitSignal(callbacks.signals.message) as blocker:
             callbacks.log("dummy", logging.INFO)
 
-    def test_job_cancel_completed_signal(self, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(Mock())
+    def test_job_cancel_completed_signal(self, dialog_box, qtbot):
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
         with qtbot.waitSignal(callbacks.signals.cancel_complete) as blocker:
             callbacks.cancelling_complete()
 
-    def test_job_finished_signal(self, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(Mock())
+    def test_job_finished_signal(self, dialog_box, qtbot):
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
         with qtbot.waitSignal(callbacks.signals.finished) as blocker:
             callbacks.finished(speedwagon.runner_strategies.JobSuccess.SUCCESS)
 
-    def test_job_status_signal(self, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(Mock())
+    def test_job_status_signal(self, dialog_box, qtbot):
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
         with qtbot.waitSignal(callbacks.signals.status_changed) as blocker:
             blocker.connect(callbacks.signals.status_changed)
             callbacks.status("some_other_status")
 
         assert "some_other_status" in blocker.args
 
-    def test_set_banner_text(self, qtbot):
-        dialog_box = Mock()
+    def test_set_banner_text(self, dialog_box, qtbot):
+        dialog_box.banner.setText = Mock()
         callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
         callbacks.set_banner_text("something new")
         dialog_box.banner.setText.assert_called_with("something new")
@@ -821,8 +826,8 @@ class TestWorkflowProgressCallbacks:
         (None, OSError(), None),
         (None, OSError(), "Some traceback info"),
     ])
-    def test_error(self, qtbot, monkeypatch, message, exc, traceback):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(Mock())
+    def test_error(self, qtbot, dialog_box, monkeypatch, message, exc, traceback):
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
         QMessageBox = Mock()
 
         monkeypatch.setattr(

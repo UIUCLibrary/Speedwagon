@@ -522,46 +522,71 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         message = QtCore.pyqtSignal(str, int)
         status_changed = QtCore.pyqtSignal(str)
         started = QtCore.pyqtSignal()
-        finished = QtCore.pyqtSignal(int)
+        finished = QtCore.pyqtSignal(runner_strategies.JobSuccess)
+
+        def __init__(self, parent: WorkflowProgress) -> None:
+            super().__init__(parent)
+            self.dialog_box = parent
+            self.status_changed.connect(self.set_banner_text)
+            self.progress_changed.connect(
+                self.dialog_box.set_current_progress
+            )
+            self.finished.connect(self._finished)
+            self.total_jobs_changed.connect(
+                self.dialog_box.set_total_jobs)
+            self.error.connect(self._error_message)
+            self.cancel_complete.connect(
+                self.dialog_box.cancel_completed)
+
+            self.started.connect(self.dialog_box.show)
+
+            self.status_changed.connect(self.dialog_box.flush)
+            self.message.connect(self.dialog_box.write_to_console)
+
+        @QtCore.pyqtSlot(str)
+        def set_banner_text(self, text: str) -> None:
+            self.dialog_box.banner.setText(text)
+
+        def _error_message(
+                self,
+                message: Optional[str] = None,
+                exc: Optional[BaseException] = None,
+                traceback: Optional[str] = None
+        ) -> None:
+            if message is not None:
+                self.dialog_box.write_to_console(message)
+            self.dialog_box.write_to_console(str(exc), level=logging.ERROR)
+            error = QtWidgets.QMessageBox()
+            error.setWindowTitle("Workflow Failed")
+            error.setIcon(QtWidgets.QMessageBox.Critical)
+            error.setText(message or f"An error occurred: {exc}")
+            if traceback is not None:
+                error.setDetailedText(traceback)
+            error.exec()
+            self.dialog_box.failed()
+
+        @QtCore.pyqtSlot(object)
+        def _finished(self, results) -> None:
+            if results == runner_strategies.JobSuccess.SUCCESS:
+                self.dialog_box.success_completed()
+            elif results == runner_strategies.JobSuccess.FAILURE:
+                self.dialog_box.reject()
 
     def __init__(self, dialog_box: WorkflowProgress) -> None:
         super().__init__()
-        self.signals = WorkflowProgressCallbacks.WorkflowSignals()
-        self.dialog_box = dialog_box
 
-        self.signals.progress_changed.connect(
-            self.dialog_box.set_current_progress
-        )
+        self.signals = WorkflowProgressCallbacks.WorkflowSignals(dialog_box)
 
-        self.signals.finished.connect(self._finished)
-
-        self.signals.total_jobs_changed.connect(self.dialog_box.set_total_jobs)
-        self.signals.error.connect(self._error_message)
-        self.signals.cancel_complete.connect(self.dialog_box.cancel_completed)
-
-        self.signals.started.connect(self.dialog_box.show)
-        self.signals.status_changed.connect(self.set_banner_text)
-        self.signals.status_changed.connect(self.dialog_box.flush)
-        self.signals.message.connect(self.dialog_box.write_to_console)
         self.log_handler = SignalLogHandler(signal=self.signals.message)
-
-    def __str__(self) -> str:
-        return f"self.signals.message= {self.signals.message}"
-
-    def _finished(self, results: int) -> None:
-        if results == runner_strategies.JobSuccess.SUCCESS.value:
-            self.dialog_box.success_completed()
-        elif results == runner_strategies.JobSuccess.FAILURE.value:
-            self.dialog_box.reject()
 
     def log(self, text: str, level: int = logging.INFO) -> None:
         self.signals.message.emit(text, level)
 
-    def set_banner_text(self, text: str) -> None:
-        self.dialog_box.banner.setText(text)
-
     def status(self, text: str) -> None:
         self.signals.status_changed.emit(text)
+
+    def set_banner_text(self, text: str):
+        self.signals.set_banner_text(text)
 
     def error(
             self,
@@ -573,32 +598,15 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
 
     def start(self) -> None:
         self.signals.started.emit()
-        self.dialog_box.start()
+        self.signals.dialog_box.start()
 
     def finished(self, result: runner_strategies.JobSuccess):
-        self.signals.finished.emit(result.value)
-        self.dialog_box.flush()
+        self.signals.finished.emit(result)
+        self.signals.dialog_box.flush()
 
     def cancelling_complete(self) -> None:
         self.signals.cancel_complete.emit()
-
-    def _error_message(
-            self,
-            message: Optional[str] = None,
-            exc: Optional[BaseException] = None,
-            traceback: Optional[str] = None
-    ) -> None:
-        if message is not None:
-            self.dialog_box.write_to_console(message)
-        self.dialog_box.write_to_console(str(exc), level=logging.ERROR)
-        error = QtWidgets.QMessageBox()
-        error.setWindowTitle("Workflow Failed")
-        error.setIcon(QtWidgets.QMessageBox.Critical)
-        error.setText(message or f"An error occurred: {exc}")
-        if traceback is not None:
-            error.setDetailedText(traceback)
-        error.exec()
-        self.dialog_box.failed()
+        self.signals.dialog_box.flush()
 
     def refresh(self) -> None:
         QtCore.QCoreApplication.processEvents()
