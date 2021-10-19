@@ -40,7 +40,6 @@ from speedwagon.runner_strategies import ThreadedEvents
 from speedwagon.tabs import extract_tab_information
 import speedwagon.gui
 
-TABS_YML_FILE_NAME = "tabs.yml"
 
 try:  # pragma: no cover
     from importlib import metadata
@@ -56,6 +55,9 @@ __all__ = [
     "SingleWorkflowJSON",
     "standalone_tab_editor",
 ]
+
+CONFIG_INI_FILE_NAME = "config.ini"
+TABS_YML_FILE_NAME = "tabs.yml"
 
 
 class FileFormatError(Exception):
@@ -283,7 +285,9 @@ class StartupDefault(AbsStarter):
         self.platform_settings = speedwagon.config.get_platform_settings()
 
         self.config_file = os.path.join(
-            self.platform_settings.get_app_data_directory(), "config.ini")
+            self.platform_settings.get_app_data_directory(),
+            CONFIG_INI_FILE_NAME
+        )
 
         self.tabs_file = os.path.join(
             self.platform_settings.get_app_data_directory(),
@@ -659,7 +663,7 @@ class StartQtThreaded(AbsStarter):
     def config_file(self) -> str:
         return os.path.join(
             self.platform_settings.get_app_data_directory(),
-            "config.ini"
+            CONFIG_INI_FILE_NAME
         )
 
     @property
@@ -891,7 +895,7 @@ class StartQtThreaded(AbsStarter):
         )
 
         dialog_builder.add_global_settings(
-            os.path.join(settings_path, "config.ini")
+            os.path.join(settings_path, CONFIG_INI_FILE_NAME)
         )
 
         dialog_builder.add_tabs_setting(
