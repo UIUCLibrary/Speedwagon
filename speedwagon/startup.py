@@ -654,6 +654,126 @@ class StartQtThreaded(AbsStarter):
             self.logger.warning(
                 "No help link available. Reason: %s", error)
 
+    @property
+    def config_file(self) -> str:
+        return os.path.join(self.platform_settings.get_app_data_directory(), "config.ini")
+
+    @property
+    def tabs_file(self) -> str:
+        tabs_file = os.path.join(
+            self.platform_settings.get_app_data_directory(),
+            TABS_YML_FILE_NAME
+        )
+        return tabs_file
+
+    @property
+    def user_data_dir(self) -> typing.Optional[str]:
+        return self.platform_settings.get("user_data_directory")
+
+    @property
+    def app_data_dir(self) -> typing.Optional[str]:
+        return self.platform_settings.get("app_data_directory")
+
+    def ensure_settings_files(self) -> None:
+        if not os.path.exists(self.config_file):
+            speedwagon.config.generate_default(self.config_file)
+
+            self.logger.debug(
+                "No config file found. Generated %s",
+                self.config_file
+            )
+        else:
+            self.logger.debug(
+                "Found existing config file %s",
+                self.config_file
+            )
+
+        if not os.path.exists(self.tabs_file):
+            pathlib.Path(self.tabs_file).touch()
+
+            self.logger.debug(
+                "No tabs.yml file found. Generated %s", self.tabs_file)
+        else:
+            self.logger.debug(
+                "Found existing tabs file %s", self.tabs_file)
+
+        if self.user_data_dir and not os.path.exists(self.user_data_dir):
+            os.makedirs(self.user_data_dir)
+            self.logger.debug("Created directory %s", self.user_data_dir)
+
+        else:
+            self.logger.debug(
+                "Found existing user data directory %s",
+                self.user_data_dir
+            )
+
+        if self.app_data_dir is not None and \
+                not os.path.exists(self.app_data_dir):
+
+            os.makedirs(self.app_data_dir)
+            self.logger.debug("Created %s", self.app_data_dir)
+        else:
+            self.logger.debug(
+                "Found existing app data "
+                "directory %s",
+                self.app_data_dir
+            )
+
+    def read_settings_file(self, settings_file: str) -> Dict[str, Union[str, bool]]:
+        with speedwagon.config.ConfigManager(settings_file) as config:
+            return config.global_settings
+
+    def resolve_settings(
+            self,
+            resolution_strategy_order: Optional[List[AbsSetting]] = None
+    ) -> Dict[str, Union[str, bool]]:
+        if resolution_strategy_order is None:
+            resolution_strategy_order = [
+                DefaultsSetter(),
+                ConfigFileSetter(self.config_file),
+                CliArgsSetter(),
+            ]
+        platform_settings = self.platform_settings
+        platform_settings._data.update(self.read_settings_file(self.config_file))
+
+        for settings_strategy in resolution_strategy_order:
+            self.logger.debug("Loading settings from %s",
+                              settings_strategy.friendly_name)
+
+            try:
+                startup_settings = settings_strategy.update(
+                    self.startup_settings)
+            except ValueError as error:
+                if isinstance(settings_strategy, ConfigFileSetter):
+                    self.logger.warning(
+                        "%s contains an invalid setting. Details: %s",
+                        self.config_file,
+                        error
+                    )
+
+                else:
+                    self.logger.warning("%s is an invalid setting",
+                                        error)
+        try:
+            self._debug = cast(bool, self.startup_settings['debug'])
+        except KeyError:
+            self.logger.warning(
+                "Unable to find a key for debug mode. Setting false")
+
+            self._debug = False
+        except ValueError as error:
+            self.logger.warning(
+                "%s is an invalid setting for debug mode."
+                "Setting false",
+                error)
+
+            self._debug = False
+        return startup_settings
+
+    def initialize(self) -> None:
+        self.ensure_settings_files()
+        self.startup_settings = self.resolve_settings()
+
     def _load_workflows(self, application: speedwagon.gui.MainWindow2) -> None:
         tabs_file = os.path.join(
             self.platform_settings.get_app_data_directory(),
@@ -769,7 +889,7 @@ class StartQtThreaded(AbsStarter):
         with runner_strategies.BackgroundJobManager() as job_manager:
             self.windows = speedwagon.gui.MainWindow2(
                 job_manager=job_manager,
-                debug=cast(bool, self.startup_settings['debug'])
+                settings=self.startup_settings
             )
 
             if self.windows is None:
@@ -857,6 +977,7 @@ class StartQtThreaded(AbsStarter):
             workflow_name=workflow_name,
             options=options,
             working_directory=os.getcwd(),
+            app=self,
             liaison=runner_strategies.JobManagerLiaison(
                 callbacks=callbacks,
                 events=threaded_events

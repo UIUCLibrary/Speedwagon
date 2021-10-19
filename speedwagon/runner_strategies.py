@@ -1,4 +1,5 @@
 """Defining execution of a given workflow steps and processes."""
+from __future__ import annotations
 
 import abc
 import contextlib
@@ -1089,6 +1090,7 @@ class AbsJobManager2(contextlib.AbstractContextManager):
             self,
             workflow_name: str,
             working_directory: str,
+            app: "speedwagon.startup.AbsStarter",
             liaison: JobManagerLiaison,
             options: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -1199,6 +1201,7 @@ class BackgroundJobManager(AbsJobManager2):
             self,
             workflow_name: str,
             working_directory: str,
+            app: "speedwagon.startup.AbsStarter",
             liaison: JobManagerLiaison,
             options: Optional[Dict[str, Any]] = None,
     ):

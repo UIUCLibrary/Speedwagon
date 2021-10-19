@@ -14,6 +14,7 @@ import yaml
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 
 import speedwagon
+import speedwagon.config
 from . import runner_strategies
 from . import models
 from . import worker  # pylint: disable=unused-import
@@ -329,10 +330,10 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
             item_settings.setSizePolicy(ITEM_SETTINGS_POLICY)
         except Exception as error:
+            traceback.print_exc()
             stack_trace = traceback.format_exception(etype=type(error),
                                                      value=error,
                                                      tb=error.__traceback__)
-
             message = "Unable to use {}. Reason: {}".format(
                 cast(AbsWorkflow, item).name, str(error.__class__.__name__))
 
@@ -496,13 +497,8 @@ class WorkflowsTab2(WorkflowsTab):
 
     def get_item_options_model(self, workflow):
         """Get item options model."""
-        # FIXME: use real global settings
-        new_workflow = workflow(
-            global_settings={"getmarc_server_url": "ddd"}
-            # global_settings=dict(self.work_manager.user_settings)
-        )
-        model = models.ToolOptionsModel3(new_workflow.user_options())
-        return model
+        new_workflow = workflow(global_settings=self.parent.user_settings)
+        return models.ToolOptionsModel3(new_workflow.user_options())
 
     def start(self, item: typing.Type[Workflow]) -> None:
         if self.options_model is None:

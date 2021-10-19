@@ -1185,6 +1185,7 @@ class TestBackgroundJobManager:
             manager.submit_job(
                 workflow_name="spam",
                 options={},
+                app=Mock(),
                 working_directory="/tmp",
                 liaison=liaison
             )
@@ -1219,6 +1220,7 @@ class TestBackgroundJobManager:
                 manager.submit_job(
                     workflow_name="bacon",
                     options={},
+                    app=Mock(),
                     working_directory="/tmp",
                     liaison=runner_strategies.JobManagerLiaison(Mock(), Mock())
                     # callbacks=Mock(),
