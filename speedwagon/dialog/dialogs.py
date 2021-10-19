@@ -174,7 +174,7 @@ class AbsWorkflowProgressState(abc.ABC):
     def stop(self) -> None:
         """Stop."""
 
-    def close(self, event: QtGui.QCloseEvent) -> None:
+    def close_dialog(self, event: QtGui.QCloseEvent) -> None:
         """User clicks on close window."""
         event.accept()
 
@@ -240,7 +240,6 @@ class WorkflowProgressStateWorking(AbsWorkflowProgressState):
         close_button: QtWidgets.QPushButton \
             = self.context.button_box.button(self.context.button_box.Close)
         close_button.setEnabled(False)
-        # QtWidgets.QApplication.processEvents()
 
     def start(self) -> None:
         warnings.warn("Already started")
@@ -248,7 +247,7 @@ class WorkflowProgressStateWorking(AbsWorkflowProgressState):
     def stop(self) -> None:
         self.context.state = WorkflowProgressStateStopping(self.context)
 
-    def close(self, event: QtGui.QCloseEvent):
+    def close_dialog(self, event: QtGui.QCloseEvent):
         dialog = QtWidgets.QMessageBox(
             QtWidgets.QMessageBox.Information,
             "Trying to stop job.",
@@ -257,12 +256,10 @@ class WorkflowProgressStateWorking(AbsWorkflowProgressState):
         )
         if dialog.exec() == QtWidgets.QMessageBox.Yes:
             self.context.aborted.emit()
-            # self.stop()
             self.context.state = WorkflowProgressStateStopping(self.context)
             event.accept()
         else:
             event.ignore()
-        # super().close(event)
 
 
 class WorkflowProgressStateStopping(AbsWorkflowProgressState):
@@ -486,7 +483,7 @@ class WorkflowProgress(WorkflowProgressGui):
         return self.state.state_name
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
-        self.state.close(event)
+        self.state.close_dialog(event)
 
     def _follow_text(self) -> None:
         cursor = QtGui.QTextCursor(self._console_data)

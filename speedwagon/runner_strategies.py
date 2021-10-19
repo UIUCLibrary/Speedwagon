@@ -361,7 +361,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                         _results.append(post_result)
 
                 runner.dialog.accept()
-                runner.dialog.close()
+                runner.dialog.close_dialog()
                 if runner.was_aborted:
                     raise TaskFailed(USER_ABORTED_MESSAGE)
                 return _results
@@ -411,7 +411,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                         results.append(post_result)
 
                 runner.dialog.accept()
-                runner.dialog.close()
+                runner.dialog.close_dialog()
                 if runner.was_aborted:
                     raise TaskFailed(USER_ABORTED_MESSAGE)
                 return results
