@@ -641,7 +641,7 @@ class StartQtThreaded(AbsStarter):
 
         self.platform_settings = speedwagon.config.get_platform_settings()
         self.app = app or QtWidgets.QApplication(sys.argv)
-
+        self._debug = False
         self._log_data = io.StringIO()
         self.log_data_handler = logging.StreamHandler(self._log_data)
         self.log_data_handler.setLevel(logging.DEBUG)
