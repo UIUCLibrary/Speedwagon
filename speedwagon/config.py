@@ -5,6 +5,7 @@ import contextlib
 import logging
 import os
 import sys
+import typing
 from collections import OrderedDict
 from pathlib import Path
 import io
@@ -353,13 +354,17 @@ class CliArgsSetter(AbsSetting):
 
     friendly_name = "Command line arguments setting"
 
+    def __init__(self, args: Optional[typing.List[str]] = None) -> None:
+        super().__init__()
+        self.args = args if args is not None else sys.argv[1:]
+
     def update(
             self,
             settings: Dict[str, Union[str, bool]] = None
     ) -> Dict["str", Union[str, bool]]:
         new_settings = super().update(settings)
 
-        args = self._parse_args()
+        args = self._parse_args(self.args)
         if args.start_tab is not None:
             new_settings["starting-tab"] = args.start_tab
 
@@ -396,9 +401,9 @@ class CliArgsSetter(AbsSetting):
         return parser
 
     @staticmethod
-    def _parse_args() -> argparse.Namespace:
+    def _parse_args(args: typing.List[str]) -> argparse.Namespace:
         parser = CliArgsSetter.get_arg_parser()
-        return parser.parse_args()
+        return parser.parse_args(args)
 
 
 class ConfigLoader:
@@ -442,16 +447,21 @@ class ConfigLoader:
 
                 else:
                     logger.warning("%s is an invalid setting", error)
-        return starting_settings
+        return settings
 
     def get_settings(self) -> Dict[str, Union[str, bool]]:
         self.read_settings_file(self.config_file)
-        return self._resolve(
-            self.resolution_strategy_order or [
+        if self.resolution_strategy_order is None:
+            resolution_order = [
                 speedwagon.config.DefaultsSetter(),
                 ConfigFileSetter(self.config_file),
                 speedwagon.config.CliArgsSetter(),
-            ],
+            ]
+        else:
+            resolution_order = self.resolution_strategy_order
+
+        return self._resolve(
+            resolution_order,
             config_file=self.config_file,
             logger=self.logger,
             starting_settings=self.startup_settings

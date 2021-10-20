@@ -344,7 +344,12 @@ class TestStartupDefault:
         loader = speedwagon.config.ConfigLoader(startup_worker.config_file)
         loader.resolution_strategy_order = []
         loader.startup_settings = {"sss": "dd"}
-        startup_worker.resolve_settings(resolution_strategy_order=[], loader=loader)
+
+        startup_worker.resolve_settings(
+            resolution_strategy_order=[],
+            loader=loader
+        )
+
         assert any(
             "Unable to find a key for debug mode" in m for m in caplog.messages
         )

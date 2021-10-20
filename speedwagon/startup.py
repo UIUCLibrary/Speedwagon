@@ -651,56 +651,35 @@ class StartQtThreaded(AbsStarter):
             self,
             resolution_strategy_order: Optional[
                 List[speedwagon.config.AbsSetting]
-            ] = None
+            ] = None,
+            loader: speedwagon.config.ConfigLoader = None
     ) -> Dict[str, Union[str, bool]]:
-        if resolution_strategy_order is None:
-            resolution_strategy_order = [
-                speedwagon.config.DefaultsSetter(),
-                speedwagon.config.ConfigFileSetter(self.config_file),
-                speedwagon.config.CliArgsSetter(),
-            ]
-        platform_settings = self.platform_settings
 
-        platform_settings._data.update(
-            self.read_settings_file(self.config_file)
+        loader = loader or speedwagon.config.ConfigLoader(self.config_file)
+
+        self.platform_settings._data.update(
+            loader.read_settings_file(self.config_file)
         )
 
-        for settings_strategy in resolution_strategy_order:
-            self.logger.debug("Loading settings from %s",
-                              settings_strategy.friendly_name)
+        loader.logger = self.logger
+        if resolution_strategy_order:
+            loader.resolution_strategy_order = resolution_strategy_order
 
-            try:
-                startup_settings = settings_strategy.update(
-                    self.startup_settings)
-            except ValueError as error:
-                if isinstance(
-                        settings_strategy,
-                        speedwagon.config.ConfigFileSetter
-                ):
-                    self.logger.warning(
-                        "%s contains an invalid setting. Details: %s",
-                        self.config_file,
-                        error
-                    )
+        results = loader.get_settings()
 
-                else:
-                    self.logger.warning("%s is an invalid setting",
-                                        error)
+        self.startup_settings = results
+        self._debug = self._get_debug(results)
+        return self.startup_settings
+
+    def _get_debug(self, settings) -> bool:
         try:
-            self._debug = cast(bool, self.startup_settings['debug'])
+            debug = cast(bool, settings['debug'])
         except KeyError:
             self.logger.warning(
                 "Unable to find a key for debug mode. Setting false")
 
-            self._debug = False
-        except ValueError as error:
-            self.logger.warning(
-                "%s is an invalid setting for debug mode."
-                "Setting false",
-                error)
-
-            self._debug = False
-        return startup_settings
+            debug = False
+        return bool(debug)
 
     def initialize(self) -> None:
         self.ensure_settings_files()
@@ -719,8 +698,11 @@ class StartQtThreaded(AbsStarter):
 
         for workflow_name, error in \
                 self._find_invalid(all_workflows):
+            error_message = \
+                f"Unable to load workflow '{workflow_name}'. Reason: {error}"
 
-            self.logger.error(error)
+            self.logger.error(error_message)
+            application.console.add_message(error_message)
             del all_workflows[workflow_name]
 
         # Load every user configured tab
@@ -846,7 +828,6 @@ class StartQtThreaded(AbsStarter):
             self.windows.system_info_requested.connect(
                 self.request_system_info
             )
-
             self.windows.help_requested.connect(self._load_help)
             self.windows.submit_job.connect(
                 lambda workflow_name, options:
@@ -946,7 +927,10 @@ class StartQtThreaded(AbsStarter):
         for title, workflow in workflows.copy().items():
             try:
                 workflow(global_settings=self.startup_settings)
-            except speedwagon.exceptions.SpeedwagonException as error:
+            except (
+                    speedwagon.exceptions.SpeedwagonException,
+                    AttributeError
+            ) as error:
                 yield title, str(error)
 
 
