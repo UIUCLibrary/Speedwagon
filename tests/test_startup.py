@@ -442,7 +442,7 @@ class TestStartupDefault:
         monkeypatch.setattr(speedwagon.startup.os, "makedirs", makedirs)
 
         touch = Mock()
-        monkeypatch.setattr(speedwagon.startup.pathlib.Path, "touch", touch)
+        monkeypatch.setattr(speedwagon.config.pathlib.Path, "touch", touch)
 
         return startup_worker
 
@@ -479,10 +479,10 @@ class TestStartupDefault:
             speedwagon.startup.os.path, "exists", exists
         )
         makedirs = Mock()
-        monkeypatch.setattr(speedwagon.startup.os, "makedirs", makedirs)
+        monkeypatch.setattr(speedwagon.config.os, "makedirs", makedirs)
 
         touch = Mock()
-        monkeypatch.setattr(speedwagon.startup.pathlib.Path, "touch", touch)
+        monkeypatch.setattr(speedwagon.config.pathlib.Path, "touch", touch)
 
         return startup_worker
 

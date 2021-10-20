@@ -23,7 +23,6 @@ import time
 import typing
 import webbrowser
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
-import pathlib
 import yaml
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 
@@ -161,6 +160,11 @@ def get_custom_tabs(
 
 
 class AbsStarter(metaclass=abc.ABCMeta):
+    config_file: str
+    tabs_file: str
+    user_data_dir: str
+    app_data_dir: str
+
     @abc.abstractmethod
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         pass
@@ -196,11 +200,16 @@ class StartupDefault(AbsStarter):
         )
 
         # Make sure required directories exists
-        self.user_data_dir = self.platform_settings.get("user_data_directory")
+        self.user_data_dir = typing.cast(
+            str, self.platform_settings.get("user_data_directory")
+        )
+
         self.startup_settings: Dict[str, Union[str, bool]] = {}
         self._debug = False
 
-        self.app_data_dir = self.platform_settings.get("app_data_directory")
+        self.app_data_dir = typing.cast(
+            str, self.platform_settings.get("app_data_directory")
+        )
         self.app = app or QtWidgets.QApplication(sys.argv)
 
     def initialize(self) -> None:
@@ -355,49 +364,7 @@ class StartupDefault(AbsStarter):
         return bool(debug)
 
     def ensure_settings_files(self) -> None:
-        if not os.path.exists(self.config_file):
-            speedwagon.config.generate_default(self.config_file)
-
-            self._logger.debug(
-                "No config file found. Generated %s",
-                self.config_file
-            )
-        else:
-            self._logger.debug(
-                "Found existing config file %s",
-                self.config_file
-            )
-
-        if not os.path.exists(self.tabs_file):
-            pathlib.Path(self.tabs_file).touch()
-
-            self._logger.debug(
-                "No tabs.yml file found. Generated %s", self.tabs_file)
-        else:
-            self._logger.debug(
-                "Found existing tabs file %s", self.tabs_file)
-
-        if self.user_data_dir and not os.path.exists(self.user_data_dir):
-            os.makedirs(self.user_data_dir)
-            self._logger.debug("Created directory %s", self.user_data_dir)
-
-        else:
-            self._logger.debug(
-                "Found existing user data directory %s",
-                self.user_data_dir
-            )
-
-        if self.app_data_dir is not None and \
-                not os.path.exists(self.app_data_dir):
-
-            os.makedirs(self.app_data_dir)
-            self._logger.debug("Created %s", self.app_data_dir)
-        else:
-            self._logger.debug(
-                "Found existing app data "
-                "directory %s",
-                self.app_data_dir
-            )
+        speedwagon.config.ensure_settings_files(self, self._logger)
 
 
 class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
@@ -539,7 +506,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
 class StartQtThreaded(AbsStarter):
 
     def __init__(self, app: QtWidgets.QApplication = None) -> None:
-
+        # super().__init__()
         self.startup_settings: Dict[str, Union[str, bool]] = {
             'debug': False
         }
@@ -563,6 +530,27 @@ class StartQtThreaded(AbsStarter):
         self.logger.addHandler(self.log_data_handler)
         self.logger.setLevel(logging.DEBUG)
 
+        self.load_settings()
+
+    def load_settings(self) -> None:
+        self.user_data_dir = typing.cast(
+            str, self.platform_settings.get("user_data_directory")
+        )
+
+        self.config_file = os.path.join(
+            self.platform_settings.get_app_data_directory(),
+            CONFIG_INI_FILE_NAME
+        )
+
+        self.app_data_dir = typing.cast(
+            str, self.platform_settings["app_data_directory"]
+        )
+
+        self.tabs_file = os.path.join(
+            self.platform_settings.get_app_data_directory(),
+            TABS_YML_FILE_NAME
+        )
+
     def _load_help(self) -> None:
         try:
             pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
@@ -571,73 +559,11 @@ class StartQtThreaded(AbsStarter):
             self.logger.warning(
                 "No help link available. Reason: %s", error)
 
-    @property
-    def config_file(self) -> str:
-        return os.path.join(
-            self.platform_settings.get_app_data_directory(),
-            CONFIG_INI_FILE_NAME
-        )
-
-    @property
-    def tabs_file(self) -> str:
-        tabs_file = os.path.join(
-            self.platform_settings.get_app_data_directory(),
-            TABS_YML_FILE_NAME
-        )
-        return tabs_file
-
-    @property
-    def user_data_dir(self) -> typing.Optional[str]:
-        return self.platform_settings.get("user_data_directory")
-
-    @property
-    def app_data_dir(self) -> typing.Optional[str]:
-        return self.platform_settings.get("app_data_directory")
-
     def ensure_settings_files(self) -> None:
-        if not os.path.exists(self.config_file):
-            speedwagon.config.generate_default(self.config_file)
-
-            self.logger.debug(
-                "No config file found. Generated %s",
-                self.config_file
-            )
-        else:
-            self.logger.debug(
-                "Found existing config file %s",
-                self.config_file
-            )
-
-        if not os.path.exists(self.tabs_file):
-            pathlib.Path(self.tabs_file).touch()
-
-            self.logger.debug(
-                "No tabs.yml file found. Generated %s", self.tabs_file)
-        else:
-            self.logger.debug(
-                "Found existing tabs file %s", self.tabs_file)
-
-        if self.user_data_dir and not os.path.exists(self.user_data_dir):
-            os.makedirs(self.user_data_dir)
-            self.logger.debug("Created directory %s", self.user_data_dir)
-
-        else:
-            self.logger.debug(
-                "Found existing user data directory %s",
-                self.user_data_dir
-            )
-
-        if self.app_data_dir is not None and \
-                not os.path.exists(self.app_data_dir):
-
-            os.makedirs(self.app_data_dir)
-            self.logger.debug("Created %s", self.app_data_dir)
-        else:
-            self.logger.debug(
-                "Found existing app data "
-                "directory %s",
-                self.app_data_dir
-            )
+        speedwagon.config.ensure_settings_files(
+            self,
+            logger=self.logger
+        )
 
     def read_settings_file(
             self,
@@ -816,9 +742,6 @@ class StartQtThreaded(AbsStarter):
                 return 1
 
             self.windows.console.attach_logger(self.logger)
-            # self.windows.
-            # self.logger.addHandler(self.windows.console.log_handler)
-            # self.logger.addHandler(self.windows.console_log_handler)
             self.windows.configuration_requested.connect(
                 self.request_settings
             )

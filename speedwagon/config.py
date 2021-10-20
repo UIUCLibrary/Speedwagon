@@ -4,6 +4,7 @@ import configparser
 import contextlib
 import logging
 import os
+import pathlib
 import sys
 import typing
 from collections import OrderedDict
@@ -11,7 +12,7 @@ from pathlib import Path
 import io
 import abc
 import collections.abc
-from typing import Optional, Dict, Type, Set, Iterator, Iterable, Union
+from typing import Optional, Dict, Type, Set, Iterator, Iterable, Union, List
 from types import TracebackType
 import platform
 
@@ -416,7 +417,7 @@ class ConfigLoader:
     def __init__(self, config_file: str) -> None:
         super().__init__()
         self.config_file = config_file
-        self.resolution_strategy_order = None
+        self.resolution_strategy_order: Optional[List[AbsSetting]] = None
         self.platform_settings = get_platform_settings()
         self.logger = logging.getLogger(__package__)
         self.startup_settings: Dict[str, Union[str, bool]] = {}
@@ -466,3 +467,102 @@ class ConfigLoader:
             logger=self.logger,
             starting_settings=self.startup_settings
         )
+
+
+class AbsEnsureConfigFile(abc.ABC):
+
+    def __init__(self, logger: Optional[logging.Logger] = None) -> None:
+        super().__init__()
+        self.logger = logger or logging.getLogger(__package__)
+
+    @abc.abstractmethod
+    def ensure_config_file(self, file_path: Optional[str] = None) -> None:
+        """Ensure the config.ini file."""
+
+    @abc.abstractmethod
+    def ensure_user_data_dir(self, directory: Optional[str] = None) -> None:
+        """Ensure the user data directory exists."""
+
+    @abc.abstractmethod
+    def ensure_tabs_file(self, file_path: Optional[str] = None) -> None:
+        """Ensure the tabs.yml file."""
+
+    @abc.abstractmethod
+    def ensure_app_data_dir(self, directory: Optional[str] = None) -> None:
+        """Ensure the user app directory exists."""
+
+
+class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
+    """Create a missing config file if not already exists."""
+
+    def __init__(
+            self,
+            app: "speedwagon.startup.AbsStarter",
+            logger: Optional[logging.Logger] = None
+    ) -> None:
+        super().__init__(logger)
+        self.app = app
+
+    def ensure_config_file(self, file_path: Optional[str] = None) -> None:
+        file_path = file_path or self.app.config_file
+        if not os.path.exists(file_path):
+            generate_default(file_path)
+
+            self.logger.debug("No config file found. Generated %s", file_path)
+        else:
+            self.logger.debug("Found existing config file %s", file_path)
+
+    def ensure_tabs_file(self, file_path: Optional[str] = None) -> None:
+        file_path = file_path or self.app.tabs_file
+        if not os.path.exists(file_path):
+            pathlib.Path(file_path).touch()
+
+            self.logger.debug(
+                "No tabs.yml file found. Generated %s", file_path
+            )
+        else:
+            self.logger.debug(
+                "Found existing tabs file %s", file_path)
+
+    def ensure_user_data_dir(self, directory: Optional[str] = None) -> None:
+        directory = directory or self.app.user_data_dir
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory)
+            self.logger.debug("Created directory %s", directory)
+
+        else:
+            self.logger.debug(
+                "Found existing user data directory %s",
+                directory
+            )
+
+    def ensure_app_data_dir(self, directory: Optional[str] = None) -> None:
+        directory = directory or self.app.app_data_dir
+        if directory is not None and \
+                not os.path.exists(directory):
+
+            os.makedirs(directory)
+            self.logger.debug("Created %s", directory)
+        else:
+            self.logger.debug(
+                "Found existing app data "
+                "directory %s",
+                directory
+            )
+
+
+def ensure_settings_files(
+        starter: "speedwagon.startup.AbsStarter",
+        logger: Optional[logging.Logger] = None,
+        strategy: Optional[AbsEnsureConfigFile] = None
+) -> None:
+
+    logger = logger or logging.getLogger(__package__)
+    strategy = strategy or CreateBasicMissingConfigFile(
+        app=starter,
+        logger=logger
+    )
+    strategy.ensure_config_file()
+    strategy.ensure_tabs_file()
+    strategy.ensure_user_data_dir()
+    strategy.ensure_app_data_dir()
