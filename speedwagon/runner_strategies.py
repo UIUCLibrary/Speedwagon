@@ -1170,6 +1170,7 @@ class BackgroundJobManager(AbsJobManager2):
             liaison.callbacks.finished(JobSuccess.SUCCESS)
         except speedwagon.job.JobCancelled as job_cancelled:
             liaison.callbacks.finished(JobSuccess.ABORTED)
+            logging.debug("Job canceled: %s", job_cancelled)
 
         except BaseException as exception_thrown:
             traceback_info = traceback.format_exc()
@@ -1184,7 +1185,6 @@ class BackgroundJobManager(AbsJobManager2):
 
             raise
         liaison.events.done()
-
 
     def __exit__(self,
                  exc_type: Optional[Type[BaseException]],

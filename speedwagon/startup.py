@@ -66,106 +66,7 @@ class FileFormatError(Exception):
 
 def parse_args() -> argparse.ArgumentParser:
     """Parse command line arguments."""
-    return CliArgsSetter.get_arg_parser()
-
-
-class AbsSetting(metaclass=abc.ABCMeta):
-
-    @property
-    @staticmethod
-    @abc.abstractmethod
-    def friendly_name():
-        return NotImplementedError
-
-    def update(
-            self,
-            settings: Dict[str, Union[str, bool]] = None
-    ) -> Dict["str", Union[str, bool]]:
-        if settings is None:
-            return {}
-        return settings
-
-
-class DefaultsSetter(AbsSetting):
-    friendly_name = "Setting defaults"
-
-    def update(
-            self,
-            settings: Dict[str, Union[str, bool]] = None
-    ) -> Dict["str", Union[str, bool]]:
-        new_settings = super().update(settings)
-        new_settings["debug"] = False
-        return new_settings
-
-
-class CliArgsSetter(AbsSetting):
-
-    friendly_name = "Command line arguments setting"
-
-    def update(
-            self,
-            settings: Dict[str, Union[str, bool]] = None
-    ) -> Dict["str", Union[str, bool]]:
-        new_settings = super().update(settings)
-
-        args = self._parse_args()
-        if args.start_tab is not None:
-            new_settings["starting-tab"] = args.start_tab
-
-        if args.debug is True:
-            new_settings["debug"] = args.debug
-
-        return new_settings
-
-    @staticmethod
-    def get_arg_parser() -> argparse.ArgumentParser:
-        parser = argparse.ArgumentParser()
-        try:
-            current_version = metadata.version(__package__)
-        except metadata.PackageNotFoundError:
-            current_version = "dev"
-        parser.add_argument(
-            '--version',
-            action='version',
-            version=current_version
-        )
-
-        parser.add_argument(
-            "--starting-tab",
-            dest="start_tab",
-            help="Which tab to have open on start"
-        )
-
-        parser.add_argument(
-            "--debug",
-            dest="debug",
-            action='store_true',
-            help="Run with debug mode"
-        )
-        return parser
-
-    @staticmethod
-    def _parse_args() -> argparse.Namespace:
-        parser = CliArgsSetter.get_arg_parser()
-        return parser.parse_args()
-
-
-class ConfigFileSetter(AbsSetting):
-    friendly_name = "Config file settings"
-
-    def __init__(self, config_file: str):
-        """Create a new config file setter."""
-        self.config_file = config_file
-
-    def update(
-            self,
-            settings: Dict[str, Union[str, bool]] = None
-    ) -> Dict["str", Union[str, bool]]:
-        """Update setting configuration."""
-        new_settings = super().update(settings)
-        with speedwagon.config.ConfigManager(self.config_file) as cfg:
-            new_settings.update(cfg.global_settings.items())
-        return new_settings
+    return speedwagon.config.CliArgsSetter.get_arg_parser()
 
 
 class CustomTabsFileReader:
@@ -429,48 +330,33 @@ class StartupDefault(AbsStarter):
 
     def resolve_settings(
             self,
-            resolution_strategy_order: Optional[List[AbsSetting]] = None
+            resolution_strategy_order: Optional[List[
+                speedwagon.config.AbsSetting]
+            ] = None,
+            loader: typing.Optional[speedwagon.config.ConfigLoader] = None
     ) -> None:
-        if resolution_strategy_order is None:
-            resolution_strategy_order = [
-                DefaultsSetter(),
-                ConfigFileSetter(self.config_file),
-                CliArgsSetter(),
-            ]
-        self.read_settings_file(self.config_file)
-        for settings_strategy in resolution_strategy_order:
+        loader = loader or speedwagon.config.ConfigLoader(self.config_file)
 
-            self._logger.debug("Loading settings from %s",
-                               settings_strategy.friendly_name)
+        self.platform_settings._data.update(
+            loader.read_settings_file(self.config_file)
+        )
+        loader.logger = self._logger
+        if resolution_strategy_order:
+            loader.resolution_strategy_order = resolution_strategy_order
+        results = loader.get_settings()
 
-            try:
-                self.startup_settings = settings_strategy.update(
-                    self.startup_settings)
-            except ValueError as error:
-                if isinstance(settings_strategy, ConfigFileSetter):
-                    self._logger.warning(
-                        "%s contains an invalid setting. Details: %s",
-                        self.config_file,
-                        error
-                    )
+        self.startup_settings = results
+        self._debug = self._get_debug(results)
 
-                else:
-                    self._logger.warning("%s is an invalid setting",
-                                         error)
+    def _get_debug(self, settings) -> bool:
         try:
-            self._debug = cast(bool, self.startup_settings['debug'])
+            debug = cast(bool, settings['debug'])
         except KeyError:
             self._logger.warning(
                 "Unable to find a key for debug mode. Setting false")
 
-            self._debug = False
-        except ValueError as error:
-            self._logger.warning(
-                "%s is an invalid setting for debug mode."
-                "Setting false",
-                error)
-
-            self._debug = False
+            debug = False
+        return bool(debug)
 
     def ensure_settings_files(self) -> None:
         if not os.path.exists(self.config_file):
@@ -767,13 +653,15 @@ class StartQtThreaded(AbsStarter):
 
     def resolve_settings(
             self,
-            resolution_strategy_order: Optional[List[AbsSetting]] = None
+            resolution_strategy_order: Optional[
+                List[speedwagon.config.AbsSetting]
+            ] = None
     ) -> Dict[str, Union[str, bool]]:
         if resolution_strategy_order is None:
             resolution_strategy_order = [
-                DefaultsSetter(),
-                ConfigFileSetter(self.config_file),
-                CliArgsSetter(),
+                speedwagon.config.DefaultsSetter(),
+                speedwagon.config.ConfigFileSetter(self.config_file),
+                speedwagon.config.CliArgsSetter(),
             ]
         platform_settings = self.platform_settings
 
@@ -789,7 +677,10 @@ class StartQtThreaded(AbsStarter):
                 startup_settings = settings_strategy.update(
                     self.startup_settings)
             except ValueError as error:
-                if isinstance(settings_strategy, ConfigFileSetter):
+                if isinstance(
+                        settings_strategy,
+                        speedwagon.config.ConfigFileSetter
+                ):
                     self.logger.warning(
                         "%s contains an invalid setting. Details: %s",
                         self.config_file,

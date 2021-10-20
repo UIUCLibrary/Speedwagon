@@ -20,7 +20,7 @@ from speedwagon.dialog.settings import SettingsDialog
 
 def test_version_exits_after_being_called(monkeypatch):
 
-    parser = speedwagon.startup.CliArgsSetter.get_arg_parser()
+    parser = speedwagon.config.CliArgsSetter.get_arg_parser()
     version_exit_mock = Mock()
 
     with monkeypatch.context() as m:
@@ -258,7 +258,16 @@ class TestCustomTabsFileReader:
 
 
 class TestStartupDefault:
-    def test_invalid_setting_logs_warning(self, caplog, monkeypatch):
+    @pytest.fixture
+    def parse_args(self):
+        def parse(*args, **kwargs):
+            return argparse.Namespace(
+                debug=False,
+                start_tab="main"
+            )
+        return parse
+
+    def test_invalid_setting_logs_warning(self, caplog, monkeypatch, parse_args):
 
         def update(*_, **__):
             raise ValueError("oops")
@@ -266,6 +275,10 @@ class TestStartupDefault:
         # uid not found. For example: in some docker containers
         monkeypatch.setattr(
             speedwagon.config.Path, "home", lambda: "my_home"
+        )
+
+        monkeypatch.setattr(
+            speedwagon.startup.argparse.ArgumentParser, "parse_args", parse_args
         )
 
         monkeypatch.setattr(
@@ -276,11 +289,15 @@ class TestStartupDefault:
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         resolution = Mock(FRIENDLY_NAME="dummy")
         resolution.update = lambda _: update()
-        startup_worker.resolve_settings(resolution_strategy_order=[resolution])
+
+        loader = speedwagon.config.ConfigLoader(startup_worker.config_file)
+        loader.resolution_strategy_order = [resolution]
+        startup_worker.resolve_settings(resolution_strategy_order=[resolution], loader=loader)
+
         assert any("oops is an invalid setting" in m for m in caplog.messages)
 
     def test_invalid_setting_logs_warning_for_ConfigFileSetter(
-            self, caplog, monkeypatch):
+            self, caplog, monkeypatch, parse_args):
 
         def update(*_, **__):
             raise ValueError("oops")
@@ -295,14 +312,18 @@ class TestStartupDefault:
             "get_app_data_directory",
             lambda *_: "app_data_dir"
         )
+        monkeypatch.setattr(
+            speedwagon.startup.argparse.ArgumentParser, "parse_args", parse_args
+        )
+
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         resolution = Mock(FRIENDLY_NAME="dummy")
-        resolution.__class__ = speedwagon.startup.ConfigFileSetter
+        resolution.__class__ = speedwagon.config.ConfigFileSetter
         resolution.update = lambda _: update()
         startup_worker.resolve_settings(resolution_strategy_order=[resolution])
         assert any("contains an invalid setting" in m for m in caplog.messages)
 
-    def test_missing_debug_setting(self, caplog, monkeypatch):
+    def test_missing_debug_setting(self, caplog, monkeypatch, parse_args):
         # Monkey patch Path.home() because this will fail on linux systems if
         # uid not found. For example: in some docker containers
         monkeypatch.setattr(
@@ -313,39 +334,19 @@ class TestStartupDefault:
             "get_app_data_directory",
             lambda *_: "app_data_dir"
         )
+
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
-        startup_worker.startup_settings = MagicMock()
-
-        startup_worker.startup_settings.__getitem__ = Mock(
-            side_effect=KeyError
+        startup_worker.startup_settings = {"sss": "dd"}
+        # startup_worker.startup_settings = MagicMock()
+        monkeypatch.setattr(
+            speedwagon.startup.argparse.ArgumentParser, "parse_args", parse_args
         )
-
-        startup_worker.resolve_settings([])
+        loader = speedwagon.config.ConfigLoader(startup_worker.config_file)
+        loader.resolution_strategy_order = []
+        loader.startup_settings = {"sss": "dd"}
+        startup_worker.resolve_settings(resolution_strategy_order=[], loader=loader)
         assert any(
             "Unable to find a key for debug mode" in m for m in caplog.messages
-        )
-
-    def test_invalid_debug_setting(self, caplog, monkeypatch):
-        # Monkey patch Path.home() because this will fail on linux systems if
-        # uid not found. For example: in some docker containers
-        monkeypatch.setattr(
-            speedwagon.config.Path, "home", lambda: "my_home"
-        )
-        monkeypatch.setattr(
-            speedwagon.config.WindowsConfig,
-            "get_app_data_directory",
-            lambda *_: "app_data_dir"
-        )
-        startup_worker = speedwagon.startup.StartupDefault(app=Mock())
-        startup_worker.startup_settings = MagicMock()
-
-        startup_worker.startup_settings.__getitem__ = Mock(
-            side_effect=ValueError
-        )
-
-        startup_worker.resolve_settings([])
-        assert any(
-            "invalid setting for debug mode" in m for m in caplog.messages
         )
 
     def test_default_resolve_settings_calls_default_setter(self, monkeypatch):
@@ -353,9 +354,9 @@ class TestStartupDefault:
         def update(*_, **__):
             raise ValueError("oops")
 
-        default_setter = Mock()
+        default_setter = MagicMock()
         monkeypatch.setattr(
-            speedwagon.startup, "DefaultsSetter", default_setter
+            speedwagon.config, "DefaultsSetter", default_setter
         )
 
         # Monkey patch Path.home() because this will fail on linux systems if
@@ -371,10 +372,10 @@ class TestStartupDefault:
         )
 
         monkeypatch.setattr(
-            speedwagon.startup.CliArgsSetter, "update", MagicMock()
+            speedwagon.config.CliArgsSetter, "update", MagicMock()
         )
 
-        startup_worker = speedwagon.startup.StartupDefault(app=Mock())
+        startup_worker = speedwagon.startup.StartupDefault(app=Mock(name="app"))
         resolution = Mock(friendly_name="dummy")
         resolution.update = lambda _: update()
         startup_worker.resolve_settings()

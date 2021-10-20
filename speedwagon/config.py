@@ -1,6 +1,8 @@
 """Load and save user configurations."""
+import argparse
 import configparser
 import contextlib
+import logging
 import os
 import sys
 from collections import OrderedDict
@@ -11,6 +13,12 @@ import collections.abc
 from typing import Optional, Dict, Type, Set, Iterator, Iterable, Union
 from types import TracebackType
 import platform
+
+try:  # pragma: no cover
+    from importlib import metadata
+except ImportError:  # pragma: no cover
+    import importlib_metadata as metadata  # type: ignore
+
 
 from PyQt5.QtCore import QAbstractItemModel
 
@@ -292,3 +300,161 @@ def ensure_keys(config_file: str, keys: Iterable[str]) -> Optional[Set[str]]:
         config_data.write(file_pointer)
 
     return added if len(added) > 0 else None
+
+
+class AbsSetting(metaclass=abc.ABCMeta):
+
+    @property
+    @staticmethod
+    @abc.abstractmethod
+    def friendly_name():
+        return NotImplementedError
+
+    def update(
+            self,
+            settings: Dict[str, Union[str, bool]] = None
+    ) -> Dict["str", Union[str, bool]]:
+        if settings is None:
+            return {}
+        return settings
+
+
+class DefaultsSetter(AbsSetting):
+    friendly_name = "Setting defaults"
+
+    def update(
+            self,
+            settings: Dict[str, Union[str, bool]] = None
+    ) -> Dict["str", Union[str, bool]]:
+        new_settings = super().update(settings)
+        new_settings["debug"] = False
+        return new_settings
+
+
+class ConfigFileSetter(AbsSetting):
+    friendly_name = "Config file settings"
+
+    def __init__(self, config_file: str):
+        """Create a new config file setter."""
+        self.config_file = config_file
+
+    def update(
+            self,
+            settings: Dict[str, Union[str, bool]] = None
+    ) -> Dict["str", Union[str, bool]]:
+        """Update setting configuration."""
+        new_settings = super().update(settings)
+        with speedwagon.config.ConfigManager(self.config_file) as cfg:
+            new_settings.update(cfg.global_settings.items())
+        return new_settings
+
+
+class CliArgsSetter(AbsSetting):
+
+    friendly_name = "Command line arguments setting"
+
+    def update(
+            self,
+            settings: Dict[str, Union[str, bool]] = None
+    ) -> Dict["str", Union[str, bool]]:
+        new_settings = super().update(settings)
+
+        args = self._parse_args()
+        if args.start_tab is not None:
+            new_settings["starting-tab"] = args.start_tab
+
+        if args.debug is True:
+            new_settings["debug"] = args.debug
+
+        return new_settings
+
+    @staticmethod
+    def get_arg_parser() -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser()
+        try:
+            current_version = metadata.version(__package__)
+        except metadata.PackageNotFoundError:
+            current_version = "dev"
+        parser.add_argument(
+            '--version',
+            action='version',
+            version=current_version
+        )
+
+        parser.add_argument(
+            "--starting-tab",
+            dest="start_tab",
+            help="Which tab to have open on start"
+        )
+
+        parser.add_argument(
+            "--debug",
+            dest="debug",
+            action='store_true',
+            help="Run with debug mode"
+        )
+        return parser
+
+    @staticmethod
+    def _parse_args() -> argparse.Namespace:
+        parser = CliArgsSetter.get_arg_parser()
+        return parser.parse_args()
+
+
+class ConfigLoader:
+    def read_settings_file(
+            self,
+            settings_file: str
+    ) -> Dict[str, Union[str, bool]]:
+
+        with speedwagon.config.ConfigManager(settings_file) as config:
+            return config.global_settings
+
+    def __init__(self, config_file: str) -> None:
+        super().__init__()
+        self.config_file = config_file
+        self.resolution_strategy_order = None
+        self.platform_settings = get_platform_settings()
+        self.logger = logging.getLogger(__package__)
+        self.startup_settings: Dict[str, Union[str, bool]] = {}
+
+    @staticmethod
+    def _resolve(
+            resolution_strategy_order: Iterable[AbsSetting],
+            config_file: str,
+            starting_settings: Dict[str, Union[str, bool]],
+            logger: logging.Logger
+    ) -> Dict[str, Union[str, bool]]:
+
+        settings = starting_settings.copy()
+        for settings_strategy in resolution_strategy_order:
+
+            logger.debug("Loading settings from %s",
+                         settings_strategy.friendly_name)
+
+            try:
+                settings = settings_strategy.update(settings)
+            except ValueError as error:
+                if isinstance(settings_strategy, ConfigFileSetter):
+                    logger.warning(
+                        "%s contains an invalid setting. Details: %s",
+                        config_file,
+                        error
+                    )
+
+                else:
+                    logger.warning("%s is an invalid setting", error)
+        return starting_settings
+
+    def get_settings(self) -> Dict[str, Union[str, bool]]:
+        self.read_settings_file(self.config_file)
+        return self._resolve(
+            self.resolution_strategy_order or [
+                speedwagon.config.DefaultsSetter(),
+                ConfigFileSetter(self.config_file),
+                speedwagon.config.CliArgsSetter(),
+            ],
+            config_file=self.config_file,
+            logger=self.logger,
+            starting_settings=self.startup_settings
+        )
