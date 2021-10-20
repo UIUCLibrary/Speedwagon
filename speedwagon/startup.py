@@ -508,7 +508,7 @@ def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
 
 
 class QtRequestMoreInfo(QtCore.QObject):
-    request = QtCore.pyqtSignal(object,object, object, object)
+    request = QtCore.pyqtSignal(object, object, object, object)
 
     def __init__(self, parent: QtWidgets.QWidget) -> None:
         super().__init__(parent)
@@ -517,14 +517,13 @@ class QtRequestMoreInfo(QtCore.QObject):
         self.exc: Optional[BaseException] = None
         self.request.connect(self._request)
 
-    def _request(self, waiter: threading.Condition,
+    def _request(self, user_is_interacting: threading.Condition,
                  workflow: speedwagon.Workflow,
                  options,
                  pre_results
                  ):
-        with waiter:
+        with user_is_interacting:
             try:
-
                 self.results = workflow.get_additional_info(
                     self._parent,
                     options=options,
@@ -536,7 +535,7 @@ class QtRequestMoreInfo(QtCore.QObject):
                 self.exc = exc
                 raise
             finally:
-                waiter.notify()
+                user_is_interacting.notify()
 
 
 class StartQtThreaded(AbsStarter):
@@ -819,7 +818,7 @@ class StartQtThreaded(AbsStarter):
             waiter.wait()
         if self._request_window.exc is not None:
             raise self._request_window.exc
-        return self._request_window.request
+        return self._request_window.results
         # except job.JobCancelled:
         #     pass
         # return {}
@@ -882,6 +881,7 @@ class StartQtThreaded(AbsStarter):
 
         dialog_box.attach_logger(self.logger)
         job_manager.request_more_info = self.request_more_info
+        # FIXME: os.getcwd() is incorrect
         job_manager.submit_job(
             workflow_name=workflow_name,
             options=options,
