@@ -241,7 +241,7 @@ class StartupDefault(AbsStarter):
         splash.show()
         QtWidgets.QApplication.processEvents(QtCore.QEventLoop.AllEvents)
 
-        self.set_app_display_metadata()
+        set_app_display_metadata(self.app)
 
         with worker.ToolJobManager() as work_manager:
 
@@ -322,16 +322,6 @@ class StartupDefault(AbsStarter):
         if workflow_errors_msg:
             for line in workflow_errors_msg.split("\n"):
                 self._logger.warning(line)
-
-    def set_app_display_metadata(self) -> None:
-        with resources.open_binary(speedwagon.__name__, "favicon.ico") as icon:
-            self.app.setWindowIcon(QtGui.QIcon(icon.name))
-        try:
-            self.app.setApplicationVersion(metadata.version(__package__))
-        except metadata.PackageNotFoundError:
-            pass
-        self.app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
-        QtWidgets.QApplication.processEvents()
 
     def resolve_settings(
             self,
@@ -503,10 +493,20 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         self.signals.set_status(text)
 
 
+def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
+    with resources.open_binary(speedwagon.__name__, "favicon.ico") as icon:
+        app.setWindowIcon(QtGui.QIcon(icon.name))
+    try:
+        app.setApplicationVersion(metadata.version(__package__))
+    except metadata.PackageNotFoundError:
+        pass
+    app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
+    QtWidgets.QApplication.processEvents()
+
+
 class StartQtThreaded(AbsStarter):
 
     def __init__(self, app: QtWidgets.QApplication = None) -> None:
-        # super().__init__()
         self.startup_settings: Dict[str, Union[str, bool]] = {
             'debug': False
         }
@@ -522,15 +522,16 @@ class StartQtThreaded(AbsStarter):
         self.app = app or QtWidgets.QApplication(sys.argv)
         self._debug = False
         self._log_data = io.StringIO()
+
         self.log_data_handler = logging.StreamHandler(self._log_data)
         self.log_data_handler.setLevel(logging.DEBUG)
-        #
         self.log_data_handler.setFormatter(formatter)
 
         self.logger.addHandler(self.log_data_handler)
         self.logger.setLevel(logging.DEBUG)
 
         self.load_settings()
+        set_app_display_metadata(self.app)
 
     def load_settings(self) -> None:
         self.user_data_dir = typing.cast(
