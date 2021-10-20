@@ -814,31 +814,16 @@ class StartQtThreaded(AbsStarter):
     def request_more_info(self, workflow, options, pre_results):
         waiter = threading.Condition()
         with waiter:
-            self._request_window.request.emit(waiter, workflow, options, pre_results)
+            self._request_window.request.emit(
+                waiter,
+                workflow,
+                options,
+                pre_results
+            )
             waiter.wait()
         if self._request_window.exc is not None:
             raise self._request_window.exc
         return self._request_window.results
-        # except job.JobCancelled:
-        #     pass
-        # return {}
-        # with waiter:
-        # window.request(workflow, options, pre_results)
-        # return window.results
-        #     # try:
-        #     more_info.more.emit(waiter, windows, workflow, options, pre_results)
-        #     waiter.wait()
-        #     if more_info.exc is not None:
-        #         raise more_info.exc
-        # # except job.JobCancelled as e:
-        # #     nonlocal aborted
-        # #     aborted = True
-        # #     print(e)
-        # #     nonlocal aborted
-        # #     aborted = True
-        # #     return None
-        #
-        # return more_info.results
 
     def submit_job(
             self,
