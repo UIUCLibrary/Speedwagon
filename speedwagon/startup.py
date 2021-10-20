@@ -19,6 +19,7 @@ import logging
 import os
 import queue
 import sys
+import threading
 import time
 import typing
 import webbrowser
@@ -417,11 +418,13 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
 
         @QtCore.pyqtSlot(object)
         def _finished(self, results) -> None:
-            if results == runner_strategies.JobSuccess.SUCCESS:
+            if results in [
+                runner_strategies.JobSuccess.SUCCESS,
+                runner_strategies.JobSuccess.ABORTED,
+            ]:
                 self.dialog_box.success_completed()
             elif results in [
                 runner_strategies.JobSuccess.FAILURE,
-                runner_strategies.JobSuccess.ABORTED,
             ]:
                 self.dialog_box.reject()
 
@@ -504,6 +507,38 @@ def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
     QtWidgets.QApplication.processEvents()
 
 
+class QtRequestMoreInfo(QtCore.QObject):
+    request = QtCore.pyqtSignal(object,object, object, object)
+
+    def __init__(self, parent: QtWidgets.QWidget) -> None:
+        super().__init__(parent)
+        self.results = None
+        self._parent = parent
+        self.exc: Optional[BaseException] = None
+        self.request.connect(self._request)
+
+    def _request(self, waiter: threading.Condition,
+                 workflow: speedwagon.Workflow,
+                 options,
+                 pre_results
+                 ):
+        with waiter:
+            try:
+
+                self.results = workflow.get_additional_info(
+                    self._parent,
+                    options=options,
+                    pretask_results=pre_results
+                )
+            except job.JobCancelled as exc:
+                self.exc = exc
+            except BaseException as exc:
+                self.exc = exc
+                raise
+            finally:
+                waiter.notify()
+
+
 class StartQtThreaded(AbsStarter):
 
     def __init__(self, app: QtWidgets.QApplication = None) -> None:
@@ -532,6 +567,8 @@ class StartQtThreaded(AbsStarter):
 
         self.load_settings()
         set_app_display_metadata(self.app)
+
+        self._request_window = QtRequestMoreInfo(self.windows)
 
     def load_settings(self) -> None:
         self.user_data_dir = typing.cast(
@@ -775,6 +812,35 @@ class StartQtThreaded(AbsStarter):
         dialog.stop()
         events.stop()
 
+    def request_more_info(self, workflow, options, pre_results):
+        waiter = threading.Condition()
+        with waiter:
+            self._request_window.request.emit(waiter, workflow, options, pre_results)
+            waiter.wait()
+        if self._request_window.exc is not None:
+            raise self._request_window.exc
+        return self._request_window.request
+        # except job.JobCancelled:
+        #     pass
+        # return {}
+        # with waiter:
+        # window.request(workflow, options, pre_results)
+        # return window.results
+        #     # try:
+        #     more_info.more.emit(waiter, windows, workflow, options, pre_results)
+        #     waiter.wait()
+        #     if more_info.exc is not None:
+        #         raise more_info.exc
+        # # except job.JobCancelled as e:
+        # #     nonlocal aborted
+        # #     aborted = True
+        # #     print(e)
+        # #     nonlocal aborted
+        # #     aborted = True
+        # #     return None
+        #
+        # return more_info.results
+
     def submit_job(
             self,
             main_app: typing.Optional[speedwagon.gui.MainWindow2],
@@ -815,7 +881,7 @@ class StartQtThreaded(AbsStarter):
             )
 
         dialog_box.attach_logger(self.logger)
-
+        job_manager.request_more_info = self.request_more_info
         job_manager.submit_job(
             workflow_name=workflow_name,
             options=options,
