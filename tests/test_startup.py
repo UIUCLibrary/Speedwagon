@@ -849,6 +849,24 @@ class TestWorkflowProgressCallbacks:
 
 
 class TestStartQtThreaded:
+    def test_report_exception(self, qtbot, monkeypatch):
+        app = Mock()
+        message_box = Mock(name="QMessageBox")
+
+        monkeypatch.setattr(
+            speedwagon.startup.QtWidgets,
+            "QMessageBox",
+            Mock(return_value=message_box)
+        )
+
+        starter = speedwagon.startup.StartQtThreaded(app)
+
+        error_message = "I'm an error"
+
+        exc = ValueError(error_message)
+        starter.report_exception(exc)
+        message_box.setText.assert_called_with(error_message)
+
     def test_save_log_opens_dialog(self, qtbot, monkeypatch):
         app = Mock()
 
