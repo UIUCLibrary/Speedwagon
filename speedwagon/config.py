@@ -402,11 +402,9 @@ class CliArgsSetter(AbsSetting):
 
 
 class ConfigLoader:
-    def read_settings_file(
-            self,
-            settings_file: str
-    ) -> Dict[str, Union[str, bool]]:
 
+    @staticmethod
+    def read_settings_file(settings_file: str) -> Dict[str, Union[str, bool]]:
         with speedwagon.config.ConfigManager(settings_file) as config:
             return config.global_settings
 
