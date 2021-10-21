@@ -46,39 +46,58 @@ class SignalLogHandler(logging.handlers.BufferingHandler):
 
 
 class AbsConsoleFormatter(abc.ABC):
+    """Formatter for generating HTML formatted text."""
+
     @abc.abstractmethod
     def format_debug(self, text: str, record: LogRecord) -> str:
-        """Format a debug message"""
+        """Format a debug message."""
 
     @abc.abstractmethod
     def format_warning(self, text: str, record: LogRecord) -> str:
-        """Format a warning message"""
+        """Format a warning message."""
 
     @abc.abstractmethod
     def format_error(self, text: str, record: LogRecord) -> str:
-        """Format an error message"""
+        """Format an error message."""
 
     @abc.abstractmethod
     def format_info(self, text: str, record: LogRecord) -> str:
-        """Format a standard message"""
+        """Format a standard message."""
 
 
 class DefaultConsoleFormatStyle(AbsConsoleFormatter):
+    """Standard Format for a console.
+
+    Red for Errors.
+    Yellow for Warnings.
+    Italics for Debug Messages.
+    No formatting for info Messages.
+    """
 
     def format_debug(self, text: str, record: LogRecord) -> str:
+        """Italicize debug messages."""
         return f"<div><i>{text}</i></div>"
 
     def format_warning(self, text: str, record: LogRecord) -> str:
+        """Format warning messages in yellow."""
         return f"<div><font color=\"yellow\">{text}</font></div>"
 
     def format_error(self, text: str, record: LogRecord) -> str:
+        """Format error messages in red."""
         return f"<div><font color=\"red\">{text}</font></div>"
 
     def format_info(self, text: str, record: LogRecord) -> str:
+        """No special formatting for info messages."""
         return f"<div>{text}</div>"
 
 
 class VerboseConsoleFormatStyle(AbsConsoleFormatter):
+    """Verbose console formatter that includes more information.
+
+    This adds message level (debug, warning, etc) and running thread to the
+    message.
+    """
+
     @staticmethod
     def _basic_format(record: LogRecord):
         return logging.Formatter(
@@ -86,21 +105,25 @@ class VerboseConsoleFormatStyle(AbsConsoleFormatter):
         ).format(record).replace("\n", "<br>")
 
     def format_debug(self, text: str, record: LogRecord) -> str:
+        """Italicize debug messages."""
         return f"<div><i>{self._basic_format(record)}</i></div>"
 
     def format_warning(self, text: str, record: LogRecord) -> str:
+        """Format warning messages in yellow."""
         return \
             f"""<div>
             <font color=\"yellow\">{self._basic_format(record)}</font>
             </div>"""
 
     def format_error(self, text: str, record: LogRecord) -> str:
+        """Format error messages in red."""
         return \
             f"""<div>
             <font color=\"red\">{self._basic_format(record)}</font>
             </div>"""
 
     def format_info(self, text: str, record: LogRecord) -> str:
+        """No special formatting for info messages."""
         return f"<div>{self._basic_format(record)}</div>"
 
 
@@ -108,6 +131,10 @@ class ConsoleFormatter(logging.Formatter):
     """Formatter for converting log records into html based logging format."""
 
     def __init__(self, *args, **kwargs) -> None:
+        """Set a new console formatter.
+
+        Verbose defaults to false.
+        """
         super().__init__(*args, **kwargs)
         self.verbose = False
 
