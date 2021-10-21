@@ -250,7 +250,7 @@ class TabsConfigurationTab(QtWidgets.QWidget):
             tabs.extract_tab_information(
                 cast(
                     models.TabsModel,
-                    self.editor.selectedTabComboBox.model()
+                    self.editor.selected_tab_combo_box.model()
                 )
             )
         )
@@ -344,14 +344,14 @@ class TabEditor(QtWidgets.QWidget):
         # ======================================================================
         # Type hints
         # ======================================================================
-        self.tabWorkflowsListView: QtWidgets.QListView
-        self.selectedTabComboBox: QtWidgets.QComboBox
-        self.newTabButton: QtWidgets.QPushButton
-        self.deleteCurrentTabButton: QtWidgets.QPushButton
-        self.addItemsButton: QtWidgets.QPushButton
-        self.removeItemsButton: QtWidgets.QPushButton
+        self.tab_workflows_list_view: QtWidgets.QListView
+        self.selected_tab_combo_box: QtWidgets.QComboBox
+        self.new_tab_button: QtWidgets.QPushButton
+        self.delete_current_tab_button: QtWidgets.QPushButton
+        self.add_items_button: QtWidgets.QPushButton
+        self.remove_items_button: QtWidgets.QPushButton
         self.splitter: QtWidgets.QSplitter
-        self.allWorkflowsListView: QtWidgets.QListView
+        self.all_workflows_list_view: QtWidgets.QListView
         # ======================================================================
 
         self._tabs_file: Optional[str] = None
@@ -364,17 +364,17 @@ class TabEditor(QtWidgets.QWidget):
         self._active_tab_worksflows_model: models.WorkflowListModel2 = \
             models.WorkflowListModel2()
 
-        self.tabWorkflowsListView.setModel(self._active_tab_worksflows_model)
+        self.tab_workflows_list_view.setModel(self._active_tab_worksflows_model)
 
-        self.selectedTabComboBox.setModel(self._tabs_model)
+        self.selected_tab_combo_box.setModel(self._tabs_model)
 
-        self.selectedTabComboBox.currentIndexChanged.connect(self._changed_tab)
+        self.selected_tab_combo_box.currentIndexChanged.connect(self._changed_tab)
 
-        self.newTabButton.clicked.connect(self._create_new_tab)
+        self.new_tab_button.clicked.connect(self._create_new_tab)
 
-        self.deleteCurrentTabButton.clicked.connect(self._delete_tab)
-        self.addItemsButton.clicked.connect(self._add_items_to_tab)
-        self.removeItemsButton.clicked.connect(self._remove_items)
+        self.delete_current_tab_button.clicked.connect(self._delete_tab)
+        self.add_items_button.clicked.connect(self._add_items_to_tab)
+        self.remove_items_button.clicked.connect(self._remove_items)
         self._tabs_model.dataChanged.connect(self.on_modified)
         self.modified: bool = False
         self.splitter.setChildrenCollapsible(False)
@@ -395,21 +395,21 @@ class TabEditor(QtWidgets.QWidget):
 
             tab.workflows_model.dataChanged.connect(self.on_modified)
             self._tabs_model.add_tab(tab)
-        self.selectedTabComboBox.setCurrentIndex(0)
+        self.selected_tab_combo_box.setCurrentIndex(0)
         self._tabs_file = value
         self.modified = False
 
     def _changed_tab(self, tab: int) -> None:
         model: QtCore.QAbstractListModel = cast(
             models.TabsModel,
-            self.selectedTabComboBox.model()
+            self.selected_tab_combo_box.model()
         )
         index = model.index(tab)
         if index.isValid():
             data = model.data(index, role=QtCore.Qt.UserRole)
-            self.tabWorkflowsListView.setModel(data.workflows_model)
+            self.tab_workflows_list_view.setModel(data.workflows_model)
         else:
-            self.tabWorkflowsListView.setModel(models.WorkflowListModel2())
+            self.tab_workflows_list_view.setModel(models.WorkflowListModel2())
 
     def _create_new_tab(self) -> None:
         while True:
@@ -433,21 +433,21 @@ class TabEditor(QtWidgets.QWidget):
 
             new_tab = tabs.TabData(new_tab_name, models.WorkflowListModel2())
             self._tabs_model.add_tab(new_tab)
-            new_index = self.selectedTabComboBox.findText(new_tab_name)
-            self.selectedTabComboBox.setCurrentIndex(new_index)
+            new_index = self.selected_tab_combo_box.findText(new_tab_name)
+            self.selected_tab_combo_box.setCurrentIndex(new_index)
             return
 
     def _delete_tab(self) -> None:
-        data = self.selectedTabComboBox.currentData()
-        model = self.selectedTabComboBox.model()
+        data = self.selected_tab_combo_box.currentData()
+        model = self.selected_tab_combo_box.model()
         model.remove_tab(data)
 
     def _add_items_to_tab(self) -> None:
         model = cast(
             models.WorkflowListModel2,
-            self.tabWorkflowsListView.model()
+            self.tab_workflows_list_view.model()
         )
-        for i in self.allWorkflowsListView.selectedIndexes():
+        for i in self.all_workflows_list_view.selectedIndexes():
             new_workflow = i.data(role=QtCore.Qt.UserRole)
             model.add_workflow(new_workflow)
         model.sort(0)
@@ -455,11 +455,11 @@ class TabEditor(QtWidgets.QWidget):
     def _remove_items(self) -> None:
         model = cast(
             models.WorkflowListModel2,
-            self.tabWorkflowsListView.model()
+            self.tab_workflows_list_view.model()
         )
         items_to_remove = [
             i.data(role=QtCore.Qt.UserRole)
-            for i in self.tabWorkflowsListView.selectedIndexes()
+            for i in self.tab_workflows_list_view.selectedIndexes()
         ]
 
         for item in items_to_remove:
@@ -475,9 +475,9 @@ class TabEditor(QtWidgets.QWidget):
             self._all_workflows_model.add_workflow(values)
 
         self._all_workflows_model.sort(0)
-        self.allWorkflowsListView.setModel(self._all_workflows_model)
+        self.all_workflows_list_view.setModel(self._all_workflows_model)
 
     @property
     def current_tab(self) -> QtWidgets.QWidget:
         """Get current tab widget."""
-        return self.selectedTabComboBox.currentData()
+        return self.selected_tab_combo_box.currentData()

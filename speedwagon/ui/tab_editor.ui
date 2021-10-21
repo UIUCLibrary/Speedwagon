@@ -25,7 +25,7 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-        <widget class="QListView" name="allWorkflowsListView">
+        <widget class="QListView" name="all_workflows_list_view">
          <property name="editTriggers">
           <set>QAbstractItemView::NoEditTriggers</set>
          </property>
@@ -47,17 +47,17 @@
        <item>
         <layout class="QGridLayout" name="gridLayout">
          <item row="1" column="0">
-          <widget class="QPushButton" name="deleteCurrentTabButton">
+          <widget class="QPushButton" name="delete_current_tab_button">
            <property name="text">
             <string>Delete Tab</string>
            </property>
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QComboBox" name="selectedTabComboBox"/>
+          <widget class="QComboBox" name="selected_tab_combo_box"/>
          </item>
          <item row="5" column="0">
-          <widget class="QPushButton" name="addItemsButton">
+          <widget class="QPushButton" name="add_items_button">
            <property name="text">
             <string>Add Item</string>
            </property>
@@ -70,21 +70,21 @@
           </widget>
          </item>
          <item row="6" column="0">
-          <widget class="QPushButton" name="removeItemsButton">
+          <widget class="QPushButton" name="remove_items_button">
            <property name="text">
             <string>Remove Item</string>
            </property>
           </widget>
          </item>
          <item row="1" column="1" rowspan="9">
-          <widget class="QListView" name="tabWorkflowsListView">
+          <widget class="QListView" name="tab_workflows_list_view">
            <property name="selectionMode">
             <enum>QAbstractItemView::ExtendedSelection</enum>
            </property>
           </widget>
          </item>
          <item row="0" column="0">
-          <widget class="QPushButton" name="newTabButton">
+          <widget class="QPushButton" name="new_tab_button">
            <property name="text">
             <string>New Tab</string>
            </property>

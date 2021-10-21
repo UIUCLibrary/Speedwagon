@@ -131,33 +131,33 @@ class TestTabEditor:
         workflows = {
             '': mock_workflow
         }
-        editor.allWorkflowsListView.setModel = Mock()
+        editor.all_workflows_list_view.setModel = Mock()
         editor.set_all_workflows(workflows)
-        assert editor.allWorkflowsListView.setModel.called is True
+        assert editor.all_workflows_list_view.setModel.called is True
 
     def test_create_new_tab(self, qtbot, monkeypatch, editor):
         qtbot.addWidget(editor)
-        assert editor.selectedTabComboBox.model().rowCount() == 0
+        assert editor.selected_tab_combo_box.model().rowCount() == 0
         with monkeypatch.context() as mp:
             mp.setattr(
                 settings.QtWidgets.QInputDialog,
                 "getText",
                 lambda *args, **kwargs: ("new tab", True)
             )
-            qtbot.mouseClick(editor.newTabButton, QtCore.Qt.LeftButton)
-        assert editor.selectedTabComboBox.model().rowCount() == 1
+            qtbot.mouseClick(editor.new_tab_button, QtCore.Qt.LeftButton)
+        assert editor.selected_tab_combo_box.model().rowCount() == 1
 
     def test_create_new_tab_can_cancel(self, qtbot, monkeypatch, editor):
         qtbot.addWidget(editor)
-        assert editor.selectedTabComboBox.model().rowCount() == 0
+        assert editor.selected_tab_combo_box.model().rowCount() == 0
         with monkeypatch.context() as mp:
             mp.setattr(
                 settings.QtWidgets.QInputDialog,
                 "getText",
                 lambda *args, **kwargs: ("new tab", False)
             )
-            qtbot.mouseClick(editor.newTabButton, QtCore.Qt.LeftButton)
-        assert editor.selectedTabComboBox.model().rowCount() == 0
+            qtbot.mouseClick(editor.new_tab_button, QtCore.Qt.LeftButton)
+        assert editor.selected_tab_combo_box.model().rowCount() == 0
 
     def test_create_new_tab_cannot_create_same_name_tabs(
             self,
@@ -201,7 +201,7 @@ class TestTabEditor:
                 "QMessageBox",
                 Mock(return_value=QMessageBox)
             )
-            qtbot.mouseClick(editor.newTabButton, QtCore.Qt.LeftButton)
+            qtbot.mouseClick(editor.new_tab_button, QtCore.Qt.LeftButton)
             assert QMessageBox.setWindowTitle.called is True
 
     def test_delete_tab(self, qtbot, monkeypatch, editor):
@@ -212,10 +212,10 @@ class TestTabEditor:
                 "getText",
                 lambda *args, **kwargs: ("new tab", True)
             )
-            qtbot.mouseClick(editor.newTabButton, QtCore.Qt.LeftButton)
-        assert editor.selectedTabComboBox.model().rowCount() == 1
-        qtbot.mouseClick(editor.deleteCurrentTabButton, QtCore.Qt.LeftButton)
-        assert editor.selectedTabComboBox.model().rowCount() == 0
+            qtbot.mouseClick(editor.new_tab_button, QtCore.Qt.LeftButton)
+        assert editor.selected_tab_combo_box.model().rowCount() == 1
+        qtbot.mouseClick(editor.delete_current_tab_button, QtCore.Qt.LeftButton)
+        assert editor.selected_tab_combo_box.model().rowCount() == 0
 
 
 class TestSettingsBuilder:
