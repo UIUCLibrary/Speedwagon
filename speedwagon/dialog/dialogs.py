@@ -385,18 +385,18 @@ class WorkflowProgressGui(QtWidgets.QDialog):
         self._log_handler: typing.Optional[logging.Handler] = None
         self._parent_logger: typing.Optional[logging.Logger] = None
 
-    def flush(self):
+    def flush(self) -> None:
         if self._log_handler is not None:
             self._log_handler.flush()
 
-    def attach_logger(self, logger: logging.Logger):
+    def attach_logger(self, logger: logging.Logger) -> None:
         self._parent_logger = logger
         self._log_handler = WorkflowProgress.DialogLogHandler(self)
         formatter = speedwagon.logging_helpers.ConsoleFormatter()
         self._log_handler.setFormatter(formatter)
         self._parent_logger.addHandler(self._log_handler)
 
-    def remove_log_handles(self):
+    def remove_log_handles(self) -> None:
         if self._parent_logger is not None:
             if self._log_handler is not None:
                 self._log_handler.flush()
@@ -468,15 +468,13 @@ class WorkflowProgress(WorkflowProgressGui):
         self.finished.connect(self.stop_timer)
         self._refresh_timer.start(100)
 
-    def stop_timer(self):
+    def stop_timer(self) -> None:
         self._refresh_timer.stop()
 
-    def clean_local_console(self):
-        # return
-        logging.info("Clearning _console_data")
-        # THIS SEEMS TO CAUSE A SEGFAULT when shutting down!!!
+    def clean_local_console(self) -> None:
+        # CRITICAL: Running self.console.clear() seems to cause A SEGFAULT when
+        # shutting down!!!
         self._console_data.clear()
-        # self.console.clear()
 
     @property
     def current_state(self) -> str:
@@ -535,7 +533,7 @@ class WorkflowProgress(WorkflowProgressGui):
         cursor.insertHtml(html)
         cursor.endEditBlock()
 
-    def write_to_console(self, text: str, level=logging.INFO) -> None:
+    def write_to_console(self, text: str, level: int = logging.INFO) -> None:
         # return
         cursor = QtGui.QTextCursor(self._console_data)
         cursor.movePosition(cursor.End)
