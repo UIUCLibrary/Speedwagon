@@ -329,6 +329,14 @@ class SettingsBuilder:
 
 
 class TabEditorWidget(QtWidgets.QWidget):
+    tab_workflows_list_view: QtWidgets.QListView
+    selected_tab_combo_box: QtWidgets.QComboBox
+    new_tab_button: QtWidgets.QPushButton
+    delete_current_tab_button: QtWidgets.QPushButton
+    add_items_button: QtWidgets.QPushButton
+    remove_items_button: QtWidgets.QPushButton
+    splitter: QtWidgets.QSplitter
+
     def __init__(
             self,
             parent: QtWidgets.QWidget = None,
@@ -339,21 +347,6 @@ class TabEditorWidget(QtWidgets.QWidget):
         super().__init__(parent, flags)
         with resources.path("speedwagon.ui", "tab_editor.ui") as ui_file:
             uic.loadUi(ui_file, self)
-        # ======================================================================
-        # Type hints
-        # ======================================================================
-        self.tab_workflows_list_view: QtWidgets.QListView
-        self.selected_tab_combo_box: QtWidgets.QComboBox
-        self.new_tab_button: QtWidgets.QPushButton
-        self.delete_current_tab_button: QtWidgets.QPushButton
-        self.add_items_button: QtWidgets.QPushButton
-        self.remove_items_button: QtWidgets.QPushButton
-        self.splitter: QtWidgets.QSplitter
-        self.all_workflows_list_view: QtWidgets.QListView
-        # ======================================================================
-
-        self.tabs_model = models.TabsModel()
-        self.selected_tab_combo_box.setModel(self.tabs_model)
 
 
 class TabEditor(TabEditorWidget):
