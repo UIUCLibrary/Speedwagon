@@ -1,5 +1,6 @@
 import argparse
 import os.path
+import threading
 from unittest.mock import Mock, MagicMock, mock_open, patch, ANY
 
 import json
@@ -989,4 +990,32 @@ class TestStartQtThreaded:
         loader.get_settings = Mock(return_value={})
         loader.read_settings_file = Mock(return_value={})
         starter.resolve_settings(resolution_strategy_order=[], loader=loader)
+
         assert loader.get_settings.called is True
+
+    def test_read_settings_file(self, qtbot, monkeypatch):
+        read = Mock()
+
+        monkeypatch.setattr(
+            speedwagon.config.configparser.ConfigParser,
+            "read",
+            read
+        )
+
+        starter = speedwagon.startup.StartQtThreaded(Mock())
+        starter.read_settings_file("somefile")
+        read.assert_called_with("somefile")
+
+    def test_request_more_info_emits_request_signal(self, qtbot):
+        starter = speedwagon.startup.StartQtThreaded(Mock())
+        workflow = Mock()
+        options = {}
+        pre_results = []
+        wait_condition = MagicMock()
+        with qtbot.waitSignal(starter._request_window.request):
+            starter.request_more_info(
+                workflow,
+                options,
+                pre_results,
+                wait_condition=wait_condition
+            )

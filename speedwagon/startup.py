@@ -799,8 +799,8 @@ class StartQtThreaded(AbsStarter):
         dialog.stop()
         events.stop()
 
-    def request_more_info(self, workflow, options, pre_results):
-        waiter = threading.Condition()
+    def request_more_info(self, workflow, options, pre_results, wait_condition = None):
+        waiter = wait_condition or threading.Condition()
         with waiter:
             self._request_window.request.emit(
                 waiter,
