@@ -310,3 +310,8 @@ class TestWorkflowProgress:
         progress_dialog.start()
         progress_dialog.success_completed()
         assert progress_dialog.current_state == "done"
+
+    def test_write_html_block_to_console(self):
+        progress_dialog = dialogs.WorkflowProgress()
+        progress_dialog.write_html_block_to_console("<h1>hello</h1>")
+        assert "hello" in progress_dialog.get_console_content()
