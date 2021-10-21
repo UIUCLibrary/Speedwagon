@@ -773,6 +773,21 @@ class TestWorkflowProgressCallbacks:
             callbacks.error(message, exc, traceback)
         assert QMessageBox.called is True
 
+    def test_start_calls_start_signal(self, dialog_box, qtbot):
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        with qtbot.waitSignal(callbacks.signals.started):
+            callbacks.start()
+
+    def test_refresh_calls_process_events(self, dialog_box, monkeypatch):
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        processEvents = Mock()
+        monkeypatch.setattr(
+            speedwagon.startup.QtCore.QCoreApplication,
+            "processEvents",
+            processEvents
+        )
+        callbacks.refresh()
+        assert processEvents.called is True
 
 class TestStartQtThreaded:
     def test_report_exception(self, qtbot, monkeypatch):
