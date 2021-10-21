@@ -1090,7 +1090,6 @@ class AbsJobManager2(contextlib.AbstractContextManager):
     def submit_job(
             self,
             workflow_name: str,
-            working_directory: str,
             app: "speedwagon.startup.AbsStarter",
             liaison: JobManagerLiaison,
             options: Optional[Dict[str, Any]] = None,
@@ -1136,55 +1135,53 @@ class BackgroundJobManager(AbsJobManager2):
     def run_job_on_thread(
             self,
             workflow_name: str,
-            working_directory: str,
             options: Dict[str, Any],
             liaison: JobManagerLiaison,
-            # callbacks: AbsJobCallbacks,
-            # events: "ThreadedEvents",
     ) -> None:
-        try:
-            task_scheduler = Run(working_directory)
-            task_scheduler.request_more_info = self.request_more_info
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            try:
+                task_scheduler = Run(tmp_dir)
+                task_scheduler.request_more_info = self.request_more_info
 
-            # Makes testing easier
-            if self.valid_workflows is not None:
-                task_scheduler.valid_workflows = self.valid_workflows
+                # Makes testing easier
+                if self.valid_workflows is not None:
+                    task_scheduler.valid_workflows = self.valid_workflows
 
-            workflow = task_scheduler.get_workflow(workflow_name)()
-            liaison.events.started.wait()
-            for task in task_scheduler.iter_tasks(workflow, options):
+                workflow = task_scheduler.get_workflow(workflow_name)()
+                liaison.events.started.wait()
+                for task in task_scheduler.iter_tasks(workflow, options):
 
-                if liaison.events.is_stopped() is True:
-                    liaison.callbacks.cancelling_complete()
-                    break
+                    if liaison.events.is_stopped() is True:
+                        liaison.callbacks.cancelling_complete()
+                        break
 
-                if task.name is not None:
-                    liaison.callbacks.status(task.name)
+                    if task.name is not None:
+                        liaison.callbacks.status(task.name)
 
-                self.logger.info(task.task_description())
-                task.exec()
-                liaison.callbacks.update_progress(
-                    current=task_scheduler.current_task_progress,
-                    total=task_scheduler.total_tasks
+                    self.logger.info(task.task_description())
+                    task.exec()
+                    liaison.callbacks.update_progress(
+                        current=task_scheduler.current_task_progress,
+                        total=task_scheduler.total_tasks
+                    )
+                liaison.callbacks.finished(JobSuccess.SUCCESS)
+            except speedwagon.job.JobCancelled as job_cancelled:
+                liaison.callbacks.finished(JobSuccess.ABORTED)
+                logging.debug("Job canceled: %s", job_cancelled)
+
+            except BaseException as exception_thrown:
+                traceback_info = traceback.format_exc()
+
+                self._exec = exception_thrown
+
+                liaison.callbacks.finished(JobSuccess.FAILURE)
+                liaison.callbacks.error(
+                    exc=exception_thrown,
+                    traceback_string=traceback_info
                 )
-            liaison.callbacks.finished(JobSuccess.SUCCESS)
-        except speedwagon.job.JobCancelled as job_cancelled:
-            liaison.callbacks.finished(JobSuccess.ABORTED)
-            logging.debug("Job canceled: %s", job_cancelled)
 
-        except BaseException as exception_thrown:
-            traceback_info = traceback.format_exc()
-
-            self._exec = exception_thrown
-
-            liaison.callbacks.finished(JobSuccess.FAILURE)
-            liaison.callbacks.error(
-                exc=exception_thrown,
-                traceback_string=traceback_info
-            )
-
-            raise
-        liaison.events.done()
+                raise
+            liaison.events.done()
 
     def __exit__(self,
                  exc_type: Optional[Type[BaseException]],
@@ -1204,7 +1201,6 @@ class BackgroundJobManager(AbsJobManager2):
     def submit_job(
             self,
             workflow_name: str,
-            working_directory: str,
             app: "speedwagon.startup.AbsStarter",
             liaison: JobManagerLiaison,
             options: Optional[Dict[str, Any]] = None,
@@ -1216,7 +1212,6 @@ class BackgroundJobManager(AbsJobManager2):
                 target=self.run_job_on_thread,
                 kwargs={
                     "workflow_name": workflow_name,
-                    "working_directory": working_directory,
                     "liaison": liaison,
                     "options": options
                 }

@@ -155,7 +155,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         )
 
     def get_additional_info(self,
-                            parent: QtWidgets.QWidget,
+                            parent: typing.Optional[QtWidgets.QWidget],
                             options: Mapping[Any, Any],
                             pretask_results: List[speedwagon.tasks.Result]
                             ) -> Dict[str, Any]:

@@ -1186,7 +1186,6 @@ class TestBackgroundJobManager:
                 workflow_name="spam",
                 options={},
                 app=Mock(),
-                working_directory="/tmp",
                 liaison=liaison
             )
         assert callbacks.finished.called is True
@@ -1221,8 +1220,5 @@ class TestBackgroundJobManager:
                     workflow_name="bacon",
                     options={},
                     app=Mock(),
-                    working_directory="/tmp",
                     liaison=runner_strategies.JobManagerLiaison(Mock(), Mock())
-                    # callbacks=Mock(),
-                    # events=Mock(),
                 )

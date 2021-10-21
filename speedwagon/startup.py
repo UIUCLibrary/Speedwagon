@@ -510,7 +510,7 @@ def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
 class QtRequestMoreInfo(QtCore.QObject):
     request = QtCore.pyqtSignal(object, object, object, object)
 
-    def __init__(self, parent: QtWidgets.QWidget) -> None:
+    def __init__(self, parent: typing.Optional[QtWidgets.QWidget]) -> None:
         super().__init__(parent)
         self.results = None
         self._parent = parent
@@ -566,7 +566,6 @@ class StartQtThreaded(AbsStarter):
 
         self.load_settings()
         set_app_display_metadata(self.app)
-
         self._request_window = QtRequestMoreInfo(self.windows)
 
     def load_settings(self) -> None:
@@ -865,12 +864,10 @@ class StartQtThreaded(AbsStarter):
             )
 
         dialog_box.attach_logger(self.logger)
-        job_manager.request_more_info = self.request_more_info
-        # FIXME: os.getcwd() is incorrect
+        setattr(job_manager, "request_more_info", self.request_more_info)
         job_manager.submit_job(
             workflow_name=workflow_name,
             options=options,
-            working_directory=os.getcwd(),
             app=self,
             liaison=runner_strategies.JobManagerLiaison(
                 callbacks=callbacks,
