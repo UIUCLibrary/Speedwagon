@@ -1040,3 +1040,24 @@ class TestStartQtThreaded:
             options
         )
         assert starter.report_exception.called is True
+
+    def test_submit_job_submits_to_job_manager(self, qtbot, monkeypatch):
+        starter = speedwagon.startup.StartQtThreaded(Mock())
+        job_manager = Mock()
+        workflow_name = "spam"
+        options = {}
+        starter.report_exception = Mock()
+        spam_workflow = Mock()
+
+        monkeypatch.setattr(
+            speedwagon.startup.job,
+            "available_workflows",
+            lambda: {"spam": spam_workflow}
+        )
+
+        starter.submit_job(
+            job_manager,
+            workflow_name,
+            options
+        )
+        assert job_manager.submit_job.called is True

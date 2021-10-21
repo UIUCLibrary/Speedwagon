@@ -780,10 +780,10 @@ class StartQtThreaded(AbsStarter):
             self.windows.submit_job.connect(
                 lambda workflow_name, options:
                 self.submit_job(
-                    self.windows,
                     job_manager,
                     workflow_name,
-                    options
+                    options,
+                    main_app=self.windows,
                 )
             )
 
@@ -815,10 +815,10 @@ class StartQtThreaded(AbsStarter):
 
     def submit_job(
             self,
-            main_app: typing.Optional[speedwagon.gui.MainWindow2],
             job_manager: runner_strategies.BackgroundJobManager,
             workflow_name: str,
-            options: Dict[str, typing.Any]
+            options: Dict[str, typing.Any],
+            main_app: typing.Optional[speedwagon.gui.MainWindow2] = None,
     ) -> None:
 
         workflow_class = \
