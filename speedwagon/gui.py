@@ -606,7 +606,10 @@ class MainWindow2(MainWindow2UI):
         self.console.close()
         return super().close()
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+    def closeEvent(  # pylint: disable=C0103
+            self,
+            event: QtGui.QCloseEvent
+    ) -> None:
         self.console.close()
         super().closeEvent(event)
 
