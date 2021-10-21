@@ -337,3 +337,26 @@ class TestWorkflowProgressGui:
         progress_dialog.write_html_block_to_console("<h1>hello</h1>")
         assert "hello" in progress_dialog.get_console_content()
 
+
+class TestWorkflowProgressState:
+    @pytest.mark.parametrize(
+        "button_clicked, event_called",
+        [
+            (dialogs.QtWidgets.QMessageBox.Yes, "accept"),
+            (dialogs.QtWidgets.QMessageBox.No, "ignore"),
+        ]
+    )
+    def test_event_called_based_on_button_press(
+            self,
+            qtbot,
+            monkeypatch,
+            button_clicked,
+            event_called
+    ):
+        context = Mock()
+        state = dialogs.WorkflowProgressStateWorking(context)
+        event = Mock()
+        exec_ = Mock(return_value=button_clicked)
+        monkeypatch.setattr(dialogs.QtWidgets.QMessageBox, "exec", exec_)
+        state.close_dialog(event)
+        assert getattr(event, event_called).called is True
