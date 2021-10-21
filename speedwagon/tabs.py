@@ -160,7 +160,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         super().__init__(parent, work_manager)
         self.log_manager = log_manager
         self.item_selection_model = item_model
-        self.options_model: Optional[models.ItemListModel] = None
+        self.options_model: Optional[models.ToolOptionsModel3] = None
         self.tab_name = name
 
         self.item_selector_view = self._create_selector_view(
@@ -249,11 +249,14 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         return tool_mapper
 
     @abc.abstractmethod
-    def start(self, item) -> None:
+    def start(self, item: typing.Type[Workflow]) -> None:
         """Start item."""
 
     @abc.abstractmethod
-    def get_item_options_model(self, workflow):
+    def get_item_options_model(
+            self,
+            workflow: Type[Workflow]
+    ) -> "models.ToolOptionsModel3":
         """Get item options model."""
 
     def create_actions(self) -> Tuple[Dict[str, QtWidgets.QWidget],
@@ -276,10 +279,13 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         return actions, tool_actions_layout
 
     def _start(self) -> None:
-        selected_workflow = self.item_selection_model.data(
-            self.item_selector_view.selectedIndexes()[0],
-            QtCore.Qt.UserRole)
-
+        selected_workflow = cast(
+            typing.Type[Workflow],
+            self.item_selection_model.data(
+                self.item_selector_view.selectedIndexes()[0],
+                QtCore.Qt.UserRole
+            )
+        )
         if self.is_ready_to_start():
             try:
                 self.start(selected_workflow)
@@ -316,7 +322,11 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
     def item_selected(self, index: QtCore.QModelIndex) -> None:
         """Set the current selection based on the index."""
-        item = self.item_selection_model.data(index, QtCore.Qt.UserRole)
+        item = cast(
+            typing.Type[Workflow],
+            self.item_selection_model.data(index, QtCore.Qt.UserRole)
+        )
+
         item_settings = self.workspace_widgets[TabWidgets.SETTINGS]
         #################
         try:
@@ -442,7 +452,7 @@ class WorkflowsTab(ItemSelectionTab):
 
     def _create_error_message_box_from_exception(
             self,
-            exc,
+            exc: BaseException,
             window_title: Optional[str] = None,
             message: Optional[str] = None
     ) -> QtWidgets.QMessageBox:

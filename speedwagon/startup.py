@@ -1126,11 +1126,15 @@ class TabsEditorApp(QtWidgets.QDialog):
         if self.editor.modified is True:
             if self.tabs_file is None:
                 return
-            print("Saving changes")
-            tabs = extract_tab_information(
-                self.editor.selectedTabComboBox.model())
-
-            speedwagon.tabs.write_tabs_yaml(self.tabs_file, tabs)
+            speedwagon.tabs.write_tabs_yaml(
+                self.tabs_file,
+                extract_tab_information(
+                    cast(
+                        speedwagon.models.TabsModel,
+                        self.editor.selectedTabComboBox.model()
+                    )
+                )
+            )
 
         self.close()
 

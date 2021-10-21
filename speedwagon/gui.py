@@ -7,9 +7,7 @@ import io
 import logging
 import logging.handlers
 import os
-import sys
 import time
-import traceback
 import typing
 import webbrowser
 from typing import List
@@ -90,6 +88,11 @@ class ToolConsole(QtWidgets.QWidget):
         with resources.path(speedwagon.ui, "console.ui") as ui_file:
             uic.loadUi(ui_file, self)
 
+        # ======================================================================
+        # Type hints:
+        self._console: QtWidgets.QTextBrowser
+        # ======================================================================
+
         #  Use a monospaced font based on what's on system running
         monospaced_font = \
             QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
@@ -122,9 +125,6 @@ class ToolConsole(QtWidgets.QWidget):
         cursor.beginEditBlock()
         self._console.setTextCursor(cursor)
         cursor.insertHtml(message)
-
-        # To get the new line character
-        self._console.append(None)
         cursor.endEditBlock()
 
     @property
@@ -142,33 +142,16 @@ class ToolConsole(QtWidgets.QWidget):
             self._attached_logger = None
 
 
-class ConsoleLogger(logging.Handler):
-    def __init__(
-            self,
-            console: ToolConsole,
-            level: int = logging.NOTSET
-    ) -> None:
-        super().__init__(level)
-        # super().__init__(level)
-        self.console = console
-
-    def emit(self, record: logging.LogRecord) -> None:
-        try:
-            self.console.add_log_message.emit(
-                self.format(record)
-            )
-        except RuntimeError as error:
-            print("Error: {}".format(error), file=sys.stderr)
-            traceback.print_tb(error.__traceback__)
-
-
 class ItemTabsWidget(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
         with resources.path(speedwagon.ui, "setup_job.ui") as ui_file:
             uic.loadUi(ui_file, self)
-
+        # ======================================================================
+        # Type Hints
+        self.tabs: QtWidgets.QTabWidget
+        # ======================================================================
         self.layout().addWidget(self.tabs)
 
     def add_tab(self, tab: QtWidgets.QWidget, name: str) -> None:
@@ -327,6 +310,13 @@ class MainWindow1(MainProgram):
         super().__init__(work_manager, debug)
         with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
             self.load_ui_file(str(ui_file))
+
+        # ======================================================================
+        # Type hints
+        # ======================================================================
+        self.mainLayout: QtWidgets.QVBoxLayout
+        self.main_splitter: QtWidgets.QSplitter
+        # ======================================================================
 
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
         self.mainLayout.addWidget(self.main_splitter)
@@ -581,6 +571,13 @@ class MainWindow2(QtWidgets.QMainWindow):
 
         with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
             uic.loadUi(ui_file, self)
+
+        # ======================================================================
+        # Type hints
+        # ======================================================================
+        self.mainLayout: QtWidgets.QVBoxLayout
+        self.main_splitter: QtWidgets.QSplitter
+        # ======================================================================
 
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
         self.mainLayout.addWidget(self.main_splitter)
