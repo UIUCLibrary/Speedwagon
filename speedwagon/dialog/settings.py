@@ -364,11 +364,15 @@ class TabEditor(QtWidgets.QWidget):
         self._active_tab_worksflows_model: models.WorkflowListModel2 = \
             models.WorkflowListModel2()
 
-        self.tab_workflows_list_view.setModel(self._active_tab_worksflows_model)
+        self.tab_workflows_list_view.setModel(
+            self._active_tab_worksflows_model
+        )
 
         self.selected_tab_combo_box.setModel(self._tabs_model)
 
-        self.selected_tab_combo_box.currentIndexChanged.connect(self._changed_tab)
+        self.selected_tab_combo_box.currentIndexChanged.connect(
+            self._changed_tab
+        )
 
         self.new_tab_button.clicked.connect(self._create_new_tab)
 
