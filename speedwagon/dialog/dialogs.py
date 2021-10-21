@@ -419,10 +419,8 @@ class WorkflowProgress(WorkflowProgressGui):
             )
 
         def flush(self) -> None:
-            results = []
-            for log in self.buffer:
-                results.append(self.format(log))
-            if len(results) > 0:
+            results = [self.format(log) for log in self.buffer]
+            if results:
                 report = "".join(results)
                 self.signals.message.emit(f"{report} <br>")
             super().flush()
