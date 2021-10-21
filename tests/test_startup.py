@@ -1019,3 +1019,24 @@ class TestStartQtThreaded:
                 pre_results,
                 wait_condition=wait_condition
             )
+
+    def test_submit_job_errors_on_unknown_workflow(self, qtbot, monkeypatch):
+        starter = speedwagon.startup.StartQtThreaded(Mock())
+        main_app = QtWidgets.QWidget()
+        job_manager = Mock()
+        workflow_name = "unknown_workflow"
+        options = {}
+        starter.report_exception = Mock()
+
+        # Simulate no valid workflow
+        monkeypatch.setattr(
+            speedwagon.startup.job, "available_workflows", lambda: {}
+        )
+
+        starter.submit_job(
+            main_app,
+            job_manager,
+            workflow_name,
+            options
+        )
+        assert starter.report_exception.called is True
