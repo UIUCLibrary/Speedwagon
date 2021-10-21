@@ -1086,3 +1086,42 @@ class TestStartQtThreaded:
             options
         )
         assert job_manager.submit_job.called is True
+
+
+class TestQtRequestMoreInfo:
+    def test_job_cancelled(self, qtbot):
+        info_request = speedwagon.startup.QtRequestMoreInfo(QtWidgets.QWidget())
+        user_is_interacting = MagicMock()
+        workflow = Mock()
+        exc = speedwagon.job.JobCancelled()
+        workflow.get_additional_info = Mock(
+            side_effect=exc
+        )
+        options = Mock()
+        pre_results = Mock()
+
+        info_request.request_more_info(
+            user_is_interacting,
+            workflow,
+            options,
+            pre_results
+        )
+        assert info_request.exc == exc
+
+    def test_job_exception_passes_on(self, qtbot):
+        info_request = speedwagon.startup.QtRequestMoreInfo(QtWidgets.QWidget())
+        user_is_interacting = MagicMock()
+        workflow = Mock()
+        workflow.get_additional_info = Mock(
+            side_effect=ValueError("ooops")
+        )
+        options = Mock()
+        pre_results = Mock()
+        with pytest.raises(ValueError):
+            info_request.request_more_info(
+                user_is_interacting,
+                workflow,
+                options,
+                pre_results
+            )
+

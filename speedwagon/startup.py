@@ -515,14 +515,15 @@ class QtRequestMoreInfo(QtCore.QObject):
         self.results: Optional[Dict[str, typing.Any]] = None
         self._parent = parent
         self.exc: Optional[BaseException] = None
-        self.request.connect(self._request)
+        self.request.connect(self.request_more_info)
 
-    def _request(self,
-                 user_is_interacting: threading.Condition,
-                 workflow: speedwagon.Workflow,
-                 options: Dict[str, typing.Any],
-                 pre_results: List[typing.Any]
-                 ) -> None:
+    def request_more_info(
+            self,
+            user_is_interacting: threading.Condition,
+            workflow: speedwagon.Workflow,
+            options: Dict[str, typing.Any],
+            pre_results: List[typing.Any]
+    ) -> None:
         with user_is_interacting:
             try:
                 self.results = workflow.get_additional_info(
