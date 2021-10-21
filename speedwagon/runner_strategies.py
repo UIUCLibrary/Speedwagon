@@ -1218,7 +1218,6 @@ class BackgroundJobManager(AbsJobManager2):
             )
             new_thread.start()
             self._background_thread = new_thread
-            # todo: check if thread actually started
             liaison.callbacks.start()
 
 
