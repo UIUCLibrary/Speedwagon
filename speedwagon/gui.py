@@ -314,12 +314,12 @@ class MainWindow1(MainProgram):
         # ======================================================================
         # Type hints
         # ======================================================================
-        self.mainLayout: QtWidgets.QVBoxLayout
+        self.main_layout: QtWidgets.QVBoxLayout
         self.main_splitter: QtWidgets.QSplitter
         # ======================================================================
 
-        self.mainLayout.setContentsMargins(0, 0, 0, 0)
-        self.mainLayout.addWidget(self.main_splitter)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.addWidget(self.main_splitter)
 
         ###########################################################
         # Tabs
@@ -575,12 +575,12 @@ class MainWindow2(QtWidgets.QMainWindow):
         # ======================================================================
         # Type hints
         # ======================================================================
-        self.mainLayout: QtWidgets.QVBoxLayout
+        self.main_layout: QtWidgets.QVBoxLayout
         self.main_splitter: QtWidgets.QSplitter
         # ======================================================================
 
-        self.mainLayout.setContentsMargins(0, 0, 0, 0)
-        self.mainLayout.addWidget(self.main_splitter)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.addWidget(self.main_splitter)
 
         ###########################################################
         # Tabs
