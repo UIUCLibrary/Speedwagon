@@ -512,7 +512,7 @@ class QtRequestMoreInfo(QtCore.QObject):
 
     def __init__(self, parent: typing.Optional[QtWidgets.QWidget]) -> None:
         super().__init__(parent)
-        self.results = None
+        self.results: Optional[Dict[str, typing.Any]] = None
         self._parent = parent
         self.exc: Optional[BaseException] = None
         self.request.connect(self._request)
