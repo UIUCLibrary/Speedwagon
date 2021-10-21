@@ -12,8 +12,6 @@ import typing
 import webbrowser
 from typing import List
 
-from PyQt5.QtWidgets import QWidget
-
 try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
@@ -554,7 +552,10 @@ MainWindow = MainWindow1
 
 class MainWindow2UI(QtWidgets.QMainWindow):
 
-    def __init__(self, parent: typing.Optional[QWidget] = None) -> None:
+    def __init__(
+            self,
+            parent: typing.Optional[QtWidgets.QWidget] = None
+    ) -> None:
         super().__init__(parent)
         with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
             uic.loadUi(ui_file, self)
