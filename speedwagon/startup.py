@@ -22,8 +22,13 @@ import sys
 import threading
 import time
 import typing
-import webbrowser
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
+try:
+    from typing import Final
+except ImportError:
+    from typing_extensions import Final
+
+import webbrowser
 import yaml
 from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
 
@@ -56,8 +61,8 @@ __all__ = [
     "standalone_tab_editor",
 ]
 
-CONFIG_INI_FILE_NAME: typing.Final[str] = "config.ini"
-TABS_YML_FILE_NAME:  typing.Final[str] = "tabs.yml"
+CONFIG_INI_FILE_NAME: Final[str] = "config.ini"
+TABS_YML_FILE_NAME:  Final[str] = "tabs.yml"
 
 
 class FileFormatError(Exception):
