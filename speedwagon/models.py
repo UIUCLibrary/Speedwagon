@@ -3,6 +3,12 @@
 import sys
 import typing
 from typing import Type, Dict, List, Any, Union, Tuple, Optional, cast
+
+try:
+    from typing import Final
+except ImportError:
+    from typing_extensions import Final
+
 import warnings
 from abc import abstractmethod
 from collections import namedtuple
@@ -396,7 +402,7 @@ class ToolOptionsModel3(ToolOptionsModel):
 class SettingsModel(QtCore.QAbstractTableModel):
     """Settings Qt table model."""
 
-    columns: typing.Final[int] = 2
+    columns: Final[int] = 2
 
     def __init__(self, *__args) -> None:
         """Create a new settings Qt model."""
