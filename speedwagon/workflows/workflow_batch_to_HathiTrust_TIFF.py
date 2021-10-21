@@ -221,12 +221,11 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
             len(checksum_files_generated)
         )
 
-        message = f"Results:\n" \
+        return f"Results:\n" \
                   f"* {package_transformed_message}\n" \
                   f"* {marc_files_message}\n" \
                   f"* {yaml_file_message}\n" \
                   f"* {checksum_message}"
-        return message
 
     @classmethod
     def group_results(
