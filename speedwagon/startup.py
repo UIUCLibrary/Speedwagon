@@ -555,14 +555,13 @@ class StartQtThreaded(AbsStarter):
 
         self.platform_settings = speedwagon.config.get_platform_settings()
         self.app = app or QtWidgets.QApplication(sys.argv)
-        self._debug = False
         self._log_data = io.StringIO()
 
-        self.log_data_handler = logging.StreamHandler(self._log_data)
-        self.log_data_handler.setLevel(logging.DEBUG)
-        self.log_data_handler.setFormatter(formatter)
+        log_data_handler = logging.StreamHandler(self._log_data)
+        log_data_handler.setLevel(logging.DEBUG)
+        log_data_handler.setFormatter(formatter)
 
-        self.logger.addHandler(self.log_data_handler)
+        self.logger.addHandler(log_data_handler)
         self.logger.setLevel(logging.DEBUG)
 
         self.load_settings()
@@ -631,18 +630,7 @@ class StartQtThreaded(AbsStarter):
         results = loader.get_settings()
 
         self.startup_settings = results
-        self._debug = self._get_debug(results)
         return self.startup_settings
-
-    def _get_debug(self, settings: Dict[str, typing.Any]) -> bool:
-        try:
-            debug = cast(bool, settings['debug'])
-        except KeyError:
-            self.logger.warning(
-                "Unable to find a key for debug mode. Setting false")
-
-            debug = False
-        return bool(debug)
 
     def initialize(self) -> None:
         self.ensure_settings_files()
