@@ -1222,3 +1222,23 @@ class TestBackgroundJobManager:
                     app=Mock(),
                     liaison=runner_strategies.JobManagerLiaison(Mock(), Mock())
                 )
+
+
+class TestThreadedEvents:
+    def test_done(self):
+        events = runner_strategies.ThreadedEvents()
+        assert events.is_done() is False
+        events.done()
+        assert events.is_done() is True
+
+    def test_stop(self):
+        events = runner_strategies.ThreadedEvents()
+        assert events.is_stopped() is False
+        events.stop()
+        assert events.is_stopped() is True
+
+    def test_started(self):
+        events = runner_strategies.ThreadedEvents()
+        assert events.has_started() is False
+        events.started.set()
+        assert events.has_started() is True
