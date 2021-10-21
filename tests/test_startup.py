@@ -724,6 +724,16 @@ class TestWorkflowProgressCallbacks:
         with qtbot.waitSignal(callbacks.signals.total_jobs_changed) as blocker:
             callbacks.update_progress(1, 10)
 
+    def test_job_progress_none_total_does_not_trigger(self, dialog_box, qtbot):
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        with qtbot.assertNotEmitted(callbacks.signals.total_jobs_changed) as blocker:
+            callbacks.update_progress(10, None)
+
+    def test_job_progress_none_current_does_not_trigger(self, dialog_box, qtbot):
+        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        with qtbot.assertNotEmitted(callbacks.signals.progress_changed) as blocker:
+            callbacks.update_progress(None, 10)
+
     def test_job_log_signal(self, dialog_box, qtbot):
         callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
         with qtbot.waitSignal(callbacks.signals.message) as blocker:
