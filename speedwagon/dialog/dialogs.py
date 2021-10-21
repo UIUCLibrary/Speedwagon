@@ -404,6 +404,15 @@ class WorkflowProgressGui(QtWidgets.QDialog):
         self._log_handler: typing.Optional[logging.Handler] = None
         self._parent_logger: typing.Optional[logging.Logger] = None
 
+        self._console_data = QtGui.QTextDocument(parent=self)
+
+    def write_html_block_to_console(self, html: str) -> None:
+        cursor = QtGui.QTextCursor(self._console_data)
+        cursor.movePosition(cursor.End)
+        cursor.beginEditBlock()
+        cursor.insertHtml(html)
+        cursor.endEditBlock()
+
     def flush(self) -> None:
         if self._log_handler is not None:
             self._log_handler.flush()
@@ -423,6 +432,9 @@ class WorkflowProgressGui(QtWidgets.QDialog):
                 self._log_handler = None
             self._parent_logger = None
 
+    def get_console_content(self) -> str:
+        return self._console_data.toPlainText()
+
 
 class WorkflowProgress(WorkflowProgressGui):
 
@@ -432,7 +444,6 @@ class WorkflowProgress(WorkflowProgressGui):
         super().__init__(parent)
 
         # =====================================================================
-        self._console_data = QtGui.QTextDocument(parent=self)
 
         mono_font = \
             QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
@@ -524,13 +535,6 @@ class WorkflowProgress(WorkflowProgressGui):
     def set_current_progress(self, value: int) -> None:
         self.progress_bar.setValue(value)
 
-    def write_html_block_to_console(self, html: str) -> None:
-        cursor = QtGui.QTextCursor(self._console_data)
-        cursor.movePosition(cursor.End)
-        cursor.beginEditBlock()
-        cursor.insertHtml(html)
-        cursor.endEditBlock()
-
     def write_to_console(self, text: str, level: int = logging.INFO) -> None:
         cursor = QtGui.QTextCursor(self._console_data)
         cursor.movePosition(cursor.End)
@@ -550,5 +554,3 @@ class WorkflowProgress(WorkflowProgressGui):
         cursor.insertText("\n")
         cursor.endEditBlock()
 
-    def get_console_content(self) -> str:
-        return self._console_data.toPlainText()

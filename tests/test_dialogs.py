@@ -311,16 +311,29 @@ class TestWorkflowProgress:
         progress_dialog.success_completed()
         assert progress_dialog.current_state == "done"
 
-    def test_write_html_block_to_console(self):
-        progress_dialog = dialogs.WorkflowProgress()
-        progress_dialog.write_html_block_to_console("<h1>hello</h1>")
-        assert "hello" in progress_dialog.get_console_content()
+
+class TestWorkflowProgressGui:
+    def test_remove_log_handles(self, qtbot):
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        progress_dialog = dialogs.WorkflowProgressGui()
+        progress_dialog.attach_logger(logger)
+        progress_dialog.remove_log_handles()
+        logger.info("Some message")
+        progress_dialog.flush()
+        assert "Some message" not in progress_dialog.get_console_content()
 
     def test_attach_logger(self, qtbot):
         logger = logging.getLogger()
         logger.setLevel(logging.INFO)
-        progress_dialog = dialogs.WorkflowProgress()
+        progress_dialog = dialogs.WorkflowProgressGui()
         progress_dialog.attach_logger(logger)
         logger.info("Some message")
         progress_dialog.flush()
         assert "Some message" in progress_dialog.get_console_content()
+
+    def test_write_html_block_to_console(self):
+        progress_dialog = dialogs.WorkflowProgressGui()
+        progress_dialog.write_html_block_to_console("<h1>hello</h1>")
+        assert "hello" in progress_dialog.get_console_content()
+
