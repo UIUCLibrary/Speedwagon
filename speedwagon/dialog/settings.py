@@ -360,6 +360,8 @@ class TabEditor(TabEditorWidget):
     ) -> None:
         """Create a tab editor widget."""
         super().__init__(parent, flags)
+        self.tabs_model = models.TabsModel()
+        self.selected_tab_combo_box.setModel(self.tabs_model)
 
         self._tabs_file: Optional[str] = None
 
