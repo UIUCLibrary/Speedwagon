@@ -799,6 +799,7 @@ class TestWorkflowProgressCallbacks:
         callbacks.refresh()
         assert processEvents.called is True
 
+
 class TestStartQtThreaded:
     @pytest.fixture()
     def starter(self, monkeypatch, qtbot):
@@ -807,6 +808,13 @@ class TestStartQtThreaded:
             "get_app_data_directory",
             lambda *_: "app_data_dir"
         )
+
+        monkeypatch.setattr(
+            speedwagon.config.Path,
+            "home",
+            lambda *_: "/usr/home"
+        )
+
         app = Mock()
         return speedwagon.startup.StartQtThreaded(app)
 
@@ -905,6 +913,12 @@ class TestStartQtThreaded:
             speedwagon.dialog.settings.TabsConfigurationTab,
             "load",
             Mock()
+        )
+
+        monkeypatch.setattr(
+            speedwagon.config.Path,
+            "home",
+            lambda *_: "/usr/home"
         )
 
         monkeypatch.setattr(
