@@ -979,3 +979,14 @@ class TestStartQtThreaded:
         qtbot.addWidget(starter.windows)
         starter.windows.help_requested.emit()
         assert open_new.called is True
+
+    def test_resolve_settings_calls_get_settings(self, qtbot, monkeypatch):
+        starter = speedwagon.startup.StartQtThreaded(Mock())
+        starter.load_custom_tabs = Mock()
+        starter.load_all_workflows_tab = Mock()
+        starter.run()
+        loader = Mock()
+        loader.get_settings = Mock(return_value={})
+        loader.read_settings_file = Mock(return_value={})
+        starter.resolve_settings(resolution_strategy_order=[], loader=loader)
+        assert loader.get_settings.called is True
