@@ -553,4 +553,3 @@ class WorkflowProgress(WorkflowProgressGui):
 
         cursor.insertText("\n")
         cursor.endEditBlock()
-
