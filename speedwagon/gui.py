@@ -12,6 +12,8 @@ import typing
 import webbrowser
 from typing import List
 
+from PyQt5.QtWidgets import QWidget
+
 try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
@@ -550,7 +552,22 @@ class MainWindow1(MainProgram):
 MainWindow = MainWindow1
 
 
-class MainWindow2(QtWidgets.QMainWindow):
+class MainWindow2UI(QtWidgets.QMainWindow):
+
+    def __init__(self, parent: typing.Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
+            uic.loadUi(ui_file, self)
+
+        # ======================================================================
+        # Type hints
+        # ======================================================================
+        self.main_layout: QtWidgets.QVBoxLayout
+        self.main_splitter: QtWidgets.QSplitter
+        # ======================================================================
+
+
+class MainWindow2(MainWindow2UI):
     submit_job = QtCore.pyqtSignal(str, dict)
     configuration_requested = QtCore.pyqtSignal(QtWidgets.QWidget)
     system_info_requested = QtCore.pyqtSignal(QtWidgets.QWidget)
@@ -568,16 +585,6 @@ class MainWindow2(QtWidgets.QMainWindow):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.job_manager = job_manager
         self.user_settings = settings or {}
-
-        with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
-            uic.loadUi(ui_file, self)
-
-        # ======================================================================
-        # Type hints
-        # ======================================================================
-        self.main_layout: QtWidgets.QVBoxLayout
-        self.main_splitter: QtWidgets.QSplitter
-        # ======================================================================
 
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.addWidget(self.main_splitter)
