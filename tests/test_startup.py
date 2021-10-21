@@ -337,7 +337,6 @@ class TestStartupDefault:
 
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.startup_settings = {"sss": "dd"}
-        # startup_worker.startup_settings = MagicMock()
         monkeypatch.setattr(
             speedwagon.startup.argparse.ArgumentParser, "parse_args", parse_args
         )
@@ -711,80 +710,6 @@ class TestMultiWorkflowLauncher:
          )
         with pytest.raises(speedwagon.job.JobCancelled):
             startup_launcher.run()
-
-
-# class TestSimplePopup:
-#     def test_cancel_aborts(self, qtbot):
-#         app = speedwagon.startup.SimpleWindow(Mock())
-#         pop_up_window = speedwagon.startup.SimplePopup(app)
-#         qtbot.add_widget(pop_up_window)
-#
-#         with qtbot.waitSignal(app.abort):
-#             pop_up_window.button_box.button(
-#                 QtWidgets.QDialogButtonBox.Cancel
-#             ).click()
-
-
-# class TestBackgroundThreadLauncher:
-#     def test_have_no_window_fails(self):
-#         with speedwagon.runner_strategies.BackgroundJobManager() as manager:
-#             launcher = speedwagon.startup.BackgroundThreadLauncher(manager)
-#             with pytest.raises(RuntimeError) as e:
-#                 # launcher.workflow_name = "spam"
-#                 launcher.start()
-#             assert "active window" in str(e.value)
-# #
-#
-# class TestGuiJobCallbacks:
-#     @pytest.fixture()
-#     def background_thread_launcher(self):
-#         launcher = Mock()
-#         return launcher
-#
-#     @pytest.fixture()
-#     def gui_job_callbacks(self, background_thread_launcher):
-#         return speedwagon.startup.GuiJobCallbacks(background_thread_launcher)
-#
-#     def test_refresh_calls_process_events(self, gui_job_callbacks, monkeypatch):
-#         processEvents = Mock()
-#         monkeypatch.setattr(
-#             speedwagon.startup.QtWidgets.QApplication,
-#             "processEvents",
-#             processEvents
-#         )
-#         gui_job_callbacks.refresh()
-#         assert processEvents.called is True
-#
-#     def test_error_opens_error_message(self, gui_job_callbacks, qtbot, monkeypatch):
-#         error = Mock()
-#
-#         def QMessageBox():
-#             return error
-#
-#         Critical = speedwagon.startup.QtWidgets.QMessageBox.Critical
-#         monkeypatch.setattr(
-#             speedwagon.startup.QtWidgets,
-#             "QMessageBox",
-#             QMessageBox
-#         )
-#         speedwagon.startup.QtWidgets.QMessageBox.Critical = Critical
-#         gui_job_callbacks.error("Failed!")
-#         error.setText.assert_called_with("Failed!")
-#
-#     def test_update_progress(
-#             self,
-#             gui_job_callbacks,
-#             background_thread_launcher
-#     ):
-#         gui_job_callbacks.update_progress(10, 100)
-#         progress = background_thread_launcher.window.progress
-#         progress.setMaximum.assert_called_with(100)
-#         progress.setValue.assert_called_with(10)
-#
-#     def test_done(self, gui_job_callbacks, background_thread_launcher):
-#         gui_job_callbacks.done()
-#         window = background_thread_launcher.window
-#         assert window.done.emit.called is True
 
 
 class TestWorkflowProgressCallbacks:
