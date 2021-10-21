@@ -222,10 +222,10 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         )
 
         return f"Results:\n" \
-                  f"* {package_transformed_message}\n" \
-                  f"* {marc_files_message}\n" \
-                  f"* {yaml_file_message}\n" \
-                  f"* {checksum_message}"
+               f"* {package_transformed_message}\n" \
+               f"* {marc_files_message}\n" \
+               f"* {yaml_file_message}\n" \
+               f"* {checksum_message}"
 
     @classmethod
     def group_results(
