@@ -907,6 +907,12 @@ class TestStartQtThreaded:
             Mock()
         )
 
+        monkeypatch.setattr(
+            speedwagon.config.WindowsConfig,
+            "get_app_data_directory",
+            lambda *_: "app_data_dir"
+        )
+
         speedwagon.startup.StartQtThreaded.request_settings()
         assert exec_.called is True
 
