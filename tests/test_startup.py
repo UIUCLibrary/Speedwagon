@@ -1003,6 +1003,34 @@ class TestStartQtThreaded:
 
         main_window.add_tab.assert_called_with("dummy", ANY)
 
+    def test_load_help_no_package_info(self, qtbot, monkeypatch, caplog):
+        show = Mock()
+
+        monkeypatch.setattr(
+            speedwagon.startup.speedwagon.gui.MainWindow2,
+            "show",
+            show
+        )
+
+        starter = speedwagon.startup.StartQtThreaded(Mock())
+        starter.load_custom_tabs = Mock()
+        starter.load_all_workflows_tab = Mock()
+        starter.run()
+
+        monkeypatch.setattr(
+            speedwagon.startup.metadata,
+            "metadata",
+            Mock(
+                side_effect=speedwagon.startup.metadata.PackageNotFoundError(
+                    "Not found yet"
+                )
+            )
+        )
+        starter.windows.help_requested.emit()
+        assert any(
+            "No help link available" in m for m in caplog.messages
+        )
+
     def test_load_help(self, qtbot, monkeypatch):
         show = Mock()
 
