@@ -247,7 +247,7 @@ class WorkflowProgressStateWorking(AbsWorkflowProgressState):
     def stop(self) -> None:
         self.context.state = WorkflowProgressStateStopping(self.context)
 
-    def close_dialog(self, event: QtGui.QCloseEvent):
+    def close_dialog(self, event: QtGui.QCloseEvent) -> None:
         dialog = QtWidgets.QMessageBox(
             QtWidgets.QMessageBox.Information,
             "Trying to stop job.",
@@ -522,7 +522,6 @@ class WorkflowProgress(WorkflowProgressGui):
     @QtCore.pyqtSlot(int)
     def set_current_progress(self, value: int) -> None:
         self.progress_bar.setValue(value)
-        # QtWidgets.QApplication.processEvents()
 
     def write_html_block_to_console(self, html: str) -> None:
         cursor = QtGui.QTextCursor(self._console_data)
@@ -532,7 +531,6 @@ class WorkflowProgress(WorkflowProgressGui):
         cursor.endEditBlock()
 
     def write_to_console(self, text: str, level: int = logging.INFO) -> None:
-        # return
         cursor = QtGui.QTextCursor(self._console_data)
         cursor.movePosition(cursor.End)
         cursor.beginEditBlock()
