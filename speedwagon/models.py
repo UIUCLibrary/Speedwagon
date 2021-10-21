@@ -528,7 +528,10 @@ class TabsModel(QtCore.QAbstractListModel):
             return workflow.get(role, QtCore.QVariant())
         return QtCore.QVariant()
 
-    def rowCount(self, *args, parent=None, **kwargs) -> int:
+    def rowCount(
+            self,
+            parent: typing.Optional[QtCore.QModelIndex] = None
+    ) -> int:
         """Get the number of tabs loaded in the model."""
         return len(self.tabs)
 
