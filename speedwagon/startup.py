@@ -56,8 +56,8 @@ __all__ = [
     "standalone_tab_editor",
 ]
 
-CONFIG_INI_FILE_NAME = "config.ini"
-TABS_YML_FILE_NAME = "tabs.yml"
+CONFIG_INI_FILE_NAME: typing.Final[str] = "config.ini"
+TABS_YML_FILE_NAME:  typing.Final[str] = "tabs.yml"
 
 
 class FileFormatError(Exception):
