@@ -395,6 +395,7 @@ class ToolOptionsModel3(ToolOptionsModel):
 
 class SettingsModel(QtCore.QAbstractTableModel):
     """Settings Qt table model."""
+    columns: typing.Final[int] = 2
 
     def __init__(self, *__args) -> None:
         """Create a new settings Qt model."""
@@ -433,7 +434,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
         """Add setting key value to the settings."""
         self._data.append((name, value))
 
-    def columnCount(  # pylint: disable=R0201
+    def columnCount(
             self,
             parent: typing.Optional[QtCore.QModelIndex] = None
     ) -> int:
@@ -441,7 +442,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
 
         One for the heading and one for the content.
         """
-        return 2
+        return self.columns
 
     def headerData(
             self,
