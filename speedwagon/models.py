@@ -395,6 +395,7 @@ class ToolOptionsModel3(ToolOptionsModel):
 
 class SettingsModel(QtCore.QAbstractTableModel):
     """Settings Qt table model."""
+
     columns: typing.Final[int] = 2
 
     def __init__(self, *__args) -> None:
