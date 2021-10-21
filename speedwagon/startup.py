@@ -799,7 +799,13 @@ class StartQtThreaded(AbsStarter):
         dialog.stop()
         events.stop()
 
-    def request_more_info(self, workflow, options, pre_results, wait_condition = None):
+    def request_more_info(
+            self,
+            workflow: speedwagon.Workflow,
+            options: Dict[str, typing.Any],
+            pre_results: List[typing.Any],
+            wait_condition: Optional[threading.Condition] = None
+    ) -> Optional[Dict[str, typing.Any]]:
         waiter = wait_condition or threading.Condition()
         with waiter:
             self._request_window.request.emit(
