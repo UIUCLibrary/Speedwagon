@@ -315,3 +315,12 @@ class TestWorkflowProgress:
         progress_dialog = dialogs.WorkflowProgress()
         progress_dialog.write_html_block_to_console("<h1>hello</h1>")
         assert "hello" in progress_dialog.get_console_content()
+
+    def test_attach_logger(self, qtbot):
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        progress_dialog = dialogs.WorkflowProgress()
+        progress_dialog.attach_logger(logger)
+        logger.info("Some message")
+        progress_dialog.flush()
+        assert "Some message" in progress_dialog.get_console_content()
