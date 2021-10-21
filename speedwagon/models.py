@@ -433,7 +433,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
         """Add setting key value to the settings."""
         self._data.append((name, value))
 
-    def columnCount(
+    def columnCount(  # pylint: disable=R0201
             self,
             parent: typing.Optional[QtCore.QModelIndex] = None
     ) -> int:

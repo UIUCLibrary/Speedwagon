@@ -174,7 +174,10 @@ class AbsWorkflowProgressState(abc.ABC):
     def stop(self) -> None:
         """Stop."""
 
-    def close_dialog(self, event: QtGui.QCloseEvent) -> None:
+    def close_dialog(  # pylint: disable=R0201
+            self,
+            event: QtGui.QCloseEvent
+    ) -> None:
         """User clicks on close window."""
         event.accept()
 
