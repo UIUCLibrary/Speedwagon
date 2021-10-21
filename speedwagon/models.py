@@ -210,15 +210,21 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
 class ToolOptionsModel(QtCore.QAbstractTableModel):
     """Tool options Qt table model."""
 
-    def __init__(self, parent):
+    def __init__(self, parent: Optional[QtCore.QObject] = None) -> None:
         """Create a new ToolOptionsModel qt table model."""
         super().__init__(parent)
-        self._data = []
+        self._data: List[Any] = []
 
-    def rowCount(self, *args, parent=None, **kwargs) -> int:
+    def rowCount(
+            self,
+            parent: typing.Optional[QtCore.QModelIndex] = None
+    ) -> int:
         return len(self._data)
 
-    def columnCount(self, *args, parent=None, **kwargs) -> int:
+    def columnCount(
+            self,
+            parent: typing.Optional[QtCore.QModelIndex] = None
+    ) -> int:
         if len(self._data) > 0:
             return 1
         return 0
@@ -416,7 +422,10 @@ class SettingsModel(QtCore.QAbstractTableModel):
 
         return QtCore.QVariant()
 
-    def rowCount(self,  *args, parent=None, **kwargs) -> int:
+    def rowCount(
+            self,
+            parent: typing.Optional[QtCore.QModelIndex] = None
+    ) -> int:
         """Return the number of settings loaded in the model."""
         return len(self._data)
 
@@ -424,7 +433,10 @@ class SettingsModel(QtCore.QAbstractTableModel):
         """Add setting key value to the settings."""
         self._data.append((name, value))
 
-    def columnCount(self, *args, parent=None, **kwargs) -> int:
+    def columnCount(
+            self,
+            parent: typing.Optional[QtCore.QModelIndex] = None
+    ) -> int:
         """Return number of columns.
 
         One for the heading and one for the content.
