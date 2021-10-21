@@ -517,11 +517,12 @@ class QtRequestMoreInfo(QtCore.QObject):
         self.exc: Optional[BaseException] = None
         self.request.connect(self._request)
 
-    def _request(self, user_is_interacting: threading.Condition,
+    def _request(self,
+                 user_is_interacting: threading.Condition,
                  workflow: speedwagon.Workflow,
-                 options,
-                 pre_results
-                 ):
+                 options: Dict[str, typing.Any],
+                 pre_results: List[typing.Any]
+                 ) -> None:
         with user_is_interacting:
             try:
                 self.results = workflow.get_additional_info(
@@ -601,8 +602,8 @@ class StartQtThreaded(AbsStarter):
             logger=self.logger
         )
 
+    @staticmethod
     def read_settings_file(
-            self,
             settings_file: str
     ) -> Dict[str, Union[str, bool]]:
 
@@ -633,7 +634,7 @@ class StartQtThreaded(AbsStarter):
         self._debug = self._get_debug(results)
         return self.startup_settings
 
-    def _get_debug(self, settings) -> bool:
+    def _get_debug(self, settings: Dict[str, typing.Any]) -> bool:
         try:
             debug = cast(bool, settings['debug'])
         except KeyError:
@@ -711,7 +712,7 @@ class StartQtThreaded(AbsStarter):
                     error
                 )
 
-    def save_log(self, parent: QtWidgets.QWidget = None) -> None:
+    def save_log(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         data = self._log_data.getvalue()
         epoch_in_minutes = int(time.time() / 60)
         while True:
