@@ -328,9 +328,7 @@ class SettingsBuilder:
         self._settings_path = path
 
 
-class TabEditor(QtWidgets.QWidget):
-    """Widget for editing tabs."""
-
+class TabEditorWidget(QtWidgets.QWidget):
     def __init__(
             self,
             parent: QtWidgets.QWidget = None,
@@ -354,21 +352,33 @@ class TabEditor(QtWidgets.QWidget):
         self.all_workflows_list_view: QtWidgets.QListView
         # ======================================================================
 
-        self._tabs_file: Optional[str] = None
+        self.tabs_model = models.TabsModel()
+        self.selected_tab_combo_box.setModel(self.tabs_model)
 
-        self._tabs_model = models.TabsModel()
+
+class TabEditor(TabEditorWidget):
+    """Widget for editing tabs."""
+
+    def __init__(
+            self,
+            parent: QtWidgets.QWidget = None,
+            flags: Union[QtCore.Qt.WindowFlags,
+                         QtCore.Qt.WindowType] = QtCore.Qt.WindowFlags()
+    ) -> None:
+        """Create a tab editor widget."""
+        super().__init__(parent, flags)
+
+        self._tabs_file: Optional[str] = None
 
         self._all_workflows_model: models.WorkflowListModel2 = \
             models.WorkflowListModel2()
 
-        self._active_tab_worksflows_model: models.WorkflowListModel2 = \
+        self._active_tab_workflows_model: models.WorkflowListModel2 = \
             models.WorkflowListModel2()
 
         self.tab_workflows_list_view.setModel(
-            self._active_tab_worksflows_model
+            self._active_tab_workflows_model
         )
-
-        self.selected_tab_combo_box.setModel(self._tabs_model)
 
         self.selected_tab_combo_box.currentIndexChanged.connect(
             self._changed_tab
@@ -379,7 +389,7 @@ class TabEditor(QtWidgets.QWidget):
         self.delete_current_tab_button.clicked.connect(self._delete_tab)
         self.add_items_button.clicked.connect(self._add_items_to_tab)
         self.remove_items_button.clicked.connect(self._remove_items)
-        self._tabs_model.dataChanged.connect(self.on_modified)
+        self.tabs_model.dataChanged.connect(self.on_modified)
         self.modified: bool = False
         self.splitter.setChildrenCollapsible(False)
 
@@ -398,7 +408,7 @@ class TabEditor(QtWidgets.QWidget):
         for tab in tabs.read_tabs_yaml(value):
 
             tab.workflows_model.dataChanged.connect(self.on_modified)
-            self._tabs_model.add_tab(tab)
+            self.tabs_model.add_tab(tab)
         self.selected_tab_combo_box.setCurrentIndex(0)
         self._tabs_file = value
         self.modified = False
@@ -426,7 +436,7 @@ class TabEditor(QtWidgets.QWidget):
             if not accepted:
                 return
 
-            if new_tab_name in self._tabs_model:
+            if new_tab_name in self.tabs_model:
                 message = f"Tab named \"{new_tab_name}\" already exists."
                 error = QtWidgets.QMessageBox(self)
                 error.setText(message)
@@ -436,7 +446,7 @@ class TabEditor(QtWidgets.QWidget):
                 continue
 
             new_tab = tabs.TabData(new_tab_name, models.WorkflowListModel2())
-            self._tabs_model.add_tab(new_tab)
+            self.tabs_model.add_tab(new_tab)
             new_index = self.selected_tab_combo_box.findText(new_tab_name)
             self.selected_tab_combo_box.setCurrentIndex(new_index)
             return
