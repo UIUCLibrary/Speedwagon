@@ -482,7 +482,10 @@ class WorkflowProgress(WorkflowProgressGui):
     def current_state(self) -> str:
         return self.state.state_name
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+    def closeEvent(  # pylint: disable=C0103
+            self,
+            event: QtGui.QCloseEvent
+    ) -> None:
         self.state.close_dialog(event)
 
     def _follow_text(self) -> None:
