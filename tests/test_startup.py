@@ -800,8 +800,17 @@ class TestWorkflowProgressCallbacks:
         assert processEvents.called is True
 
 class TestStartQtThreaded:
-    def test_report_exception(self, qtbot, monkeypatch):
+    @pytest.fixture()
+    def starter(self, monkeypatch, qtbot):
+        monkeypatch.setattr(
+            speedwagon.config.WindowsConfig,
+            "get_app_data_directory",
+            lambda *_: "app_data_dir"
+        )
         app = Mock()
+        return speedwagon.startup.StartQtThreaded(app)
+
+    def test_report_exception(self, qtbot, monkeypatch, starter):
         message_box = Mock(name="QMessageBox")
 
         monkeypatch.setattr(
@@ -810,16 +819,13 @@ class TestStartQtThreaded:
             Mock(return_value=message_box)
         )
 
-        starter = speedwagon.startup.StartQtThreaded(app)
-
         error_message = "I'm an error"
 
         exc = ValueError(error_message)
         starter.report_exception(exc)
         message_box.setText.assert_called_with(error_message)
 
-    def test_save_log_opens_dialog(self, qtbot, monkeypatch):
-        app = Mock()
+    def test_save_log_opens_dialog(self, qtbot, monkeypatch, starter):
 
         getSaveFileName = Mock(
             return_value=("dummy", None)
@@ -830,14 +836,12 @@ class TestStartQtThreaded:
             "getSaveFileName",
             getSaveFileName
         )
-
-        starter = speedwagon.startup.StartQtThreaded(app)
         parent = Mock()
         with patch('speedwagon.startup.open', mock_open()) as w:
             starter.save_log(parent)
         assert getSaveFileName.called is True
 
-    def test_save_log_error(self, qtbot, monkeypatch):
+    def test_save_log_error(self, qtbot, monkeypatch, starter):
         # Make sure that a dialog with an error message pops up if there is a
         # problem with saving the log
 
@@ -852,7 +856,6 @@ class TestStartQtThreaded:
             getSaveFileName
         )
 
-        starter = speedwagon.startup.StartQtThreaded(Mock())
         QMessageBox = Mock()
 
         def side_effect_for_saving(*args, **kwargs):
@@ -907,8 +910,7 @@ class TestStartQtThreaded:
         speedwagon.startup.StartQtThreaded.request_settings()
         assert exec_.called is True
 
-    def test_run_opens_window(self, qtbot, monkeypatch):
-        app = Mock()
+    def test_run_opens_window(self, qtbot, monkeypatch, starter):
         show = Mock()
 
         monkeypatch.setattr(
@@ -916,16 +918,13 @@ class TestStartQtThreaded:
             "show",
             show
         )
-
-        starter = speedwagon.startup.StartQtThreaded(app)
         starter.load_custom_tabs = Mock()
         starter.load_all_workflows_tab = Mock()
         starter.run()
         assert show.called is True
 
-    def test_load_custom_tabs(self, qtbot, monkeypatch):
+    def test_load_custom_tabs(self, qtbot, monkeypatch, starter):
         app = Mock()
-        starter = speedwagon.startup.StartQtThreaded(app)
 
         tabs_file = "somefile.yml"
 
@@ -954,7 +953,7 @@ class TestStartQtThreaded:
 
         main_window.add_tab.assert_called_with("dummy", ANY)
 
-    def test_load_help_no_package_info(self, qtbot, monkeypatch, caplog):
+    def test_load_help_no_package_info(self, qtbot, monkeypatch, caplog, starter):
         show = Mock()
 
         monkeypatch.setattr(
@@ -963,7 +962,6 @@ class TestStartQtThreaded:
             show
         )
 
-        starter = speedwagon.startup.StartQtThreaded(Mock())
         starter.load_custom_tabs = Mock()
         starter.load_all_workflows_tab = Mock()
         starter.run()
@@ -982,7 +980,7 @@ class TestStartQtThreaded:
             "No help link available" in m for m in caplog.messages
         )
 
-    def test_load_help(self, qtbot, monkeypatch):
+    def test_load_help(self, qtbot, monkeypatch, starter):
         show = Mock()
 
         monkeypatch.setattr(
@@ -991,7 +989,6 @@ class TestStartQtThreaded:
             show
         )
 
-        starter = speedwagon.startup.StartQtThreaded(Mock())
         starter.load_custom_tabs = Mock()
         starter.load_all_workflows_tab = Mock()
         starter.run()
@@ -1006,8 +1003,7 @@ class TestStartQtThreaded:
         starter.windows.help_requested.emit()
         assert open_new.called is True
 
-    def test_resolve_settings_calls_get_settings(self, qtbot, monkeypatch):
-        starter = speedwagon.startup.StartQtThreaded(Mock())
+    def test_resolve_settings_calls_get_settings(self, qtbot, monkeypatch, starter):
         starter.load_custom_tabs = Mock()
         starter.load_all_workflows_tab = Mock()
         starter.run()
@@ -1018,7 +1014,7 @@ class TestStartQtThreaded:
 
         assert loader.get_settings.called is True
 
-    def test_read_settings_file(self, qtbot, monkeypatch):
+    def test_read_settings_file(self, qtbot, monkeypatch, starter):
         read = Mock()
 
         monkeypatch.setattr(
@@ -1027,12 +1023,10 @@ class TestStartQtThreaded:
             read
         )
 
-        starter = speedwagon.startup.StartQtThreaded(Mock())
         starter.read_settings_file("somefile")
         read.assert_called_with("somefile")
 
-    def test_request_more_info_emits_request_signal(self, qtbot):
-        starter = speedwagon.startup.StartQtThreaded(Mock())
+    def test_request_more_info_emits_request_signal(self, qtbot, starter):
         workflow = Mock()
         options = {}
         pre_results = []
@@ -1045,8 +1039,7 @@ class TestStartQtThreaded:
                 wait_condition=wait_condition
             )
 
-    def test_submit_job_errors_on_unknown_workflow(self, qtbot, monkeypatch):
-        starter = speedwagon.startup.StartQtThreaded(Mock())
+    def test_submit_job_errors_on_unknown_workflow(self, qtbot, monkeypatch, starter):
         main_app = QtWidgets.QWidget()
         job_manager = Mock()
         workflow_name = "unknown_workflow"
@@ -1066,8 +1059,16 @@ class TestStartQtThreaded:
         )
         assert starter.report_exception.called is True
 
-    def test_submit_job_submits_to_job_manager(self, qtbot, monkeypatch):
-        starter = speedwagon.startup.StartQtThreaded(Mock())
+    def test_submit_job_submits_to_job_manager(self, qtbot, monkeypatch, starter):
+        monkeypatch.setattr(
+            speedwagon.config.Path, "home", lambda: "my_home"
+        )
+        monkeypatch.setattr(
+            speedwagon.config.WindowsConfig,
+            "get_app_data_directory",
+            lambda *_: "app_data_dir"
+        )
+
         job_manager = Mock()
         workflow_name = "spam"
         options = {}
