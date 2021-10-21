@@ -73,10 +73,10 @@ class ToolConsole(QtWidgets.QWidget):
             self.signals.message.connect(self.console_widget.add_message)
 
         def flush(self) -> None:
-            message_buffer = []
             if len(self.buffer) > 0:
-                for record in self.buffer:
-                    message_buffer.append(self.format(record))
+                message_buffer = [
+                    self.format(record) for record in self.buffer
+                ]
                 self.signals.message.emit(" ".join(message_buffer))
             super().flush()
 
