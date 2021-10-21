@@ -345,6 +345,9 @@ class TabEditorWidget(QtWidgets.QWidget):
     ) -> None:
         """Create a tab editor widget."""
         super().__init__(parent, flags)
+        self.load_ui_file()
+
+    def load_ui_file(self) -> None:
         with resources.path("speedwagon.ui", "tab_editor.ui") as ui_file:
             uic.loadUi(ui_file, self)
 

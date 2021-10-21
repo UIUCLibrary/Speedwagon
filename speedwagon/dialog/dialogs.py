@@ -362,6 +362,25 @@ class WorkflowProgressStateDone(AbsWorkflowProgressState):
 
 
 class WorkflowProgressGui(QtWidgets.QDialog):
+    class DialogLogHandler(logging.handlers.BufferingHandler):
+        class LogSignals(QtCore.QObject):
+            message = QtCore.pyqtSignal(str)
+
+        def __init__(self, dialog: "WorkflowProgressGui") -> None:
+            super().__init__(capacity=200)
+            self.signals = WorkflowProgress.DialogLogHandler.LogSignals()
+            self._dialog = dialog
+            self.signals.message.connect(
+                self._dialog.write_html_block_to_console
+            )
+
+        def flush(self) -> None:
+            results = [self.format(log) for log in self.buffer]
+            if results:
+                report = "".join(results)
+                self.signals.message.emit(f"{report} <br>")
+            super().flush()
+
     def __init__(self, parent: typing.Optional[QWidget] = None) -> None:
         super().__init__(parent)
 
@@ -391,7 +410,7 @@ class WorkflowProgressGui(QtWidgets.QDialog):
 
     def attach_logger(self, logger: logging.Logger) -> None:
         self._parent_logger = logger
-        self._log_handler = WorkflowProgress.DialogLogHandler(self)
+        self._log_handler = WorkflowProgressGui.DialogLogHandler(self)
         formatter = speedwagon.logging_helpers.ConsoleFormatter()
         self._log_handler.setFormatter(formatter)
         self._parent_logger.addHandler(self._log_handler)
@@ -406,24 +425,6 @@ class WorkflowProgressGui(QtWidgets.QDialog):
 
 
 class WorkflowProgress(WorkflowProgressGui):
-    class DialogLogHandler(logging.handlers.BufferingHandler):
-        class LogSignals(QtCore.QObject):
-            message = QtCore.pyqtSignal(str)
-
-        def __init__(self, dialog: "WorkflowProgressGui") -> None:
-            super().__init__(capacity=200)
-            self.signals = WorkflowProgress.DialogLogHandler.LogSignals()
-            self._dialog = dialog
-            self.signals.message.connect(
-                self._dialog.write_html_block_to_console
-            )
-
-        def flush(self) -> None:
-            results = [self.format(log) for log in self.buffer]
-            if results:
-                report = "".join(results)
-                self.signals.message.emit(f"{report} <br>")
-            super().flush()
 
     aborted = QtCore.pyqtSignal()
 
