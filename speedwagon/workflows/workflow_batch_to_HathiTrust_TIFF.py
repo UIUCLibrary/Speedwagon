@@ -2,6 +2,7 @@
 
 import itertools
 import os
+import warnings
 from typing import Dict, Optional, List, Any, Type, Mapping
 import typing
 from collections.abc import Sized
@@ -35,6 +36,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                   "file. It takes as its input a folder of CaptureOne batch " \
                   "files. It takes as its output a folder location where " \
                   "new files will be written."
+    active = False
 
     def __init__(self,
                  global_settings: Optional[Dict[str, str]] = None
@@ -45,6 +47,12 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
             global_settings:
                 Settings that could affect the way the workflow runs.
         """
+        warnings.warn(
+            "Pending removal of CaptureOne Batch to HathiTrust TIFF Complete "
+            "Package",
+            DeprecationWarning
+        )
+
         super().__init__()
 
         if global_settings is not None:
