@@ -1,5 +1,4 @@
 import platform
-import typing
 import logging
 from unittest.mock import Mock, patch, mock_open
 import pytest
@@ -214,7 +213,12 @@ class TestTabEditor:
             )
             qtbot.mouseClick(editor.new_tab_button, QtCore.Qt.LeftButton)
         assert editor.selected_tab_combo_box.model().rowCount() == 1
-        qtbot.mouseClick(editor.delete_current_tab_button, QtCore.Qt.LeftButton)
+
+        qtbot.mouseClick(
+            editor.delete_current_tab_button,
+            QtCore.Qt.LeftButton
+        )
+
         assert editor.selected_tab_combo_box.model().rowCount() == 0
 
 
