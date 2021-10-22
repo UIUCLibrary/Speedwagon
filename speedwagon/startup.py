@@ -173,7 +173,7 @@ class AbsStarter(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
-        pass
+        """Run the application."""
 
     def initialize(self) -> None:
         """Initialize startup routine."""
