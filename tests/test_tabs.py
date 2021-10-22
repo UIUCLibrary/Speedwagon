@@ -8,6 +8,7 @@ import speedwagon.tabs
 import speedwagon.exceptions
 import speedwagon.job
 
+
 class TestWorkflowsTab:
     def test_exception_calls_message_box(self, qtbot, monkeypatch):
         from PyQt5 import QtWidgets
@@ -85,15 +86,15 @@ class TestWorkflowsTab:
         selection_tab.init_selection()
         assert selection_tab.item_selector_view.currentIndex().data() == \
                workflows['Spam'].name
-    # @pytest.mark.skip("Something's funky")
+
     def test_start_calls_run_on_workflow(self, qtbot, monkeypatch):
-        # Fixme: This doesn't work all of a sudden
         log_manager = Mock()
         work_manager = MagicMock(user_settings={})
         workflows = OrderedDict()
 
         class MockWorkflow(speedwagon.job.AbsWorkflow):
             name = "Spam"
+
             def discover_task_metadata(
                     self, initial_results, additional_data, **user_args):
                 pass
@@ -122,11 +123,8 @@ class TestWorkflowsTab:
             Exception
         ]
     )
-    # @pytest.mark.skip("something's funky")
     def test_start_creates_a_messagebox_on_value_error(
             self, qtbot, monkeypatch, exception_type):
-        # Fixme: This doesn't work all of a sudden
-        # log_manager = Mock()
         work_manager = MagicMock(user_settings={})
         workflows = OrderedDict()
 
@@ -146,27 +144,24 @@ class TestWorkflowsTab:
         selection_tab = speedwagon.tabs.WorkflowsTab(
             parent=None,
             workflows=workflows,
-            # log_manager=log_manager,
             work_manager=work_manager
         )
         from speedwagon.runner_strategies import RunRunner
-        mock_runner = Mock(side_effect=exception_type("something went wrong"))
-        monkeypatch.setattr(RunRunner, "run", mock_runner)
-        # from speedwagon.tabs.QtWidgets import QMessageBox
-        mock_message_box_exec = Mock()
-        # called = False
-        # def mock_message_box_exec(*args, **kwargs):
-        #     called = True
-        # with monkeypatch.context() as mp:
-        monkeypatch.setattr(speedwagon.tabs.WorkflowsTab, "_create_error_message_box_from_exception", mock_message_box_exec)
-        # monkeypatch.setattr(tabs.QtWidgets.QMessageBox, "exec", mock_message_box_exec)
-        # monkeypatch.setattr(tabs.QtWidgets.QMessageBox, "exec_", mock_message_box_exec)
-        selection_tab.start(workflows["Spam"])
 
-            # assert isinstance(
-            #     mock_runner.call_args_list[0][0][0],
-            #     MockWorkflow
-            # )
+        mock_runner = Mock(
+            side_effect=exception_type("something went wrong")
+        )
+
+        monkeypatch.setattr(RunRunner, "run", mock_runner)
+        mock_message_box_exec = Mock()
+
+        monkeypatch.setattr(
+            speedwagon.tabs.WorkflowsTab,
+            "_create_error_message_box_from_exception",
+            mock_message_box_exec
+        )
+
+        selection_tab.start(workflows["Spam"])
 
         assert mock_message_box_exec.called is True
 
@@ -198,7 +193,13 @@ class TestWorkflowsTab:
         )
 
         exec_ = Mock()
-        monkeypatch.setattr(speedwagon.tabs.QtWidgets.QMessageBox, "exec_", exec_)
+
+        monkeypatch.setattr(
+            speedwagon.tabs.QtWidgets.QMessageBox,
+            "exec_",
+            exec_
+        )
+
         selection_tab = speedwagon.tabs.WorkflowsTab(
             parent=None,
             workflows=workflows,
