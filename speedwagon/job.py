@@ -155,7 +155,7 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
         You need to implement the discover_task_metadata() method.
     """
 
-    def get_additional_info(self, parent: QtWidgets.QWidget,
+    def get_additional_info(self, parent: typing.Optional[QtWidgets.QWidget],
                             options: dict, pretask_results: list) -> dict:
         """Request additional information from the user.
 
@@ -171,6 +171,10 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
 
         """
         return {}
+
+    def user_options(self) -> typing.List[Any]:
+        """Get use options."""
+        return []
 
 
 class NullWorkflow(Workflow):

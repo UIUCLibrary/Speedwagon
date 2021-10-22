@@ -155,7 +155,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         )
 
     def get_additional_info(self,
-                            parent: QtWidgets.QWidget,
+                            parent: typing.Optional[QtWidgets.QWidget],
                             options: Mapping[Any, Any],
                             pretask_results: List[speedwagon.tasks.Result]
                             ) -> Dict[str, Any]:
@@ -221,12 +221,11 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
             len(checksum_files_generated)
         )
 
-        message = f"Results:\n" \
-                  f"* {package_transformed_message}\n" \
-                  f"* {marc_files_message}\n" \
-                  f"* {yaml_file_message}\n" \
-                  f"* {checksum_message}"
-        return message
+        return f"Results:\n" \
+               f"* {package_transformed_message}\n" \
+               f"* {marc_files_message}\n" \
+               f"* {yaml_file_message}\n" \
+               f"* {checksum_message}"
 
     @classmethod
     def group_results(

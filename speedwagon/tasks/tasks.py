@@ -15,11 +15,14 @@ __all__ = [
     "MultiStageTaskBuilder",
     "TaskBuilder",
     "Result",
-    "Subtask"
+    "Subtask",
+    "TaskStatus"
 ]
 
 
 class TaskStatus(enum.IntEnum):
+    """Task Status."""
+
     IDLE = 0
     WORKING = 1
     SUCCESS = 2

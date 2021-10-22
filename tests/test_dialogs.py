@@ -1,7 +1,9 @@
 import platform
+import logging
 from unittest.mock import Mock, patch, mock_open
 import pytest
-from speedwagon.dialog import settings
+from PyQt5 import QtWidgets
+from speedwagon.dialog import settings, dialogs
 from PyQt5 import QtCore
 
 
@@ -128,33 +130,33 @@ class TestTabEditor:
         workflows = {
             '': mock_workflow
         }
-        editor.allWorkflowsListView.setModel = Mock()
+        editor.all_workflows_list_view.setModel = Mock()
         editor.set_all_workflows(workflows)
-        assert editor.allWorkflowsListView.setModel.called is True
+        assert editor.all_workflows_list_view.setModel.called is True
 
     def test_create_new_tab(self, qtbot, monkeypatch, editor):
         qtbot.addWidget(editor)
-        assert editor.selectedTabComboBox.model().rowCount() == 0
+        assert editor.selected_tab_combo_box.model().rowCount() == 0
         with monkeypatch.context() as mp:
             mp.setattr(
                 settings.QtWidgets.QInputDialog,
                 "getText",
                 lambda *args, **kwargs: ("new tab", True)
             )
-            qtbot.mouseClick(editor.newTabButton, QtCore.Qt.LeftButton)
-        assert editor.selectedTabComboBox.model().rowCount() == 1
+            qtbot.mouseClick(editor.new_tab_button, QtCore.Qt.LeftButton)
+        assert editor.selected_tab_combo_box.model().rowCount() == 1
 
     def test_create_new_tab_can_cancel(self, qtbot, monkeypatch, editor):
         qtbot.addWidget(editor)
-        assert editor.selectedTabComboBox.model().rowCount() == 0
+        assert editor.selected_tab_combo_box.model().rowCount() == 0
         with monkeypatch.context() as mp:
             mp.setattr(
                 settings.QtWidgets.QInputDialog,
                 "getText",
                 lambda *args, **kwargs: ("new tab", False)
             )
-            qtbot.mouseClick(editor.newTabButton, QtCore.Qt.LeftButton)
-        assert editor.selectedTabComboBox.model().rowCount() == 0
+            qtbot.mouseClick(editor.new_tab_button, QtCore.Qt.LeftButton)
+        assert editor.selected_tab_combo_box.model().rowCount() == 0
 
     def test_create_new_tab_cannot_create_same_name_tabs(
             self,
@@ -198,7 +200,7 @@ class TestTabEditor:
                 "QMessageBox",
                 Mock(return_value=QMessageBox)
             )
-            qtbot.mouseClick(editor.newTabButton, QtCore.Qt.LeftButton)
+            qtbot.mouseClick(editor.new_tab_button, QtCore.Qt.LeftButton)
             assert QMessageBox.setWindowTitle.called is True
 
     def test_delete_tab(self, qtbot, monkeypatch, editor):
@@ -209,7 +211,172 @@ class TestTabEditor:
                 "getText",
                 lambda *args, **kwargs: ("new tab", True)
             )
-            qtbot.mouseClick(editor.newTabButton, QtCore.Qt.LeftButton)
-        assert editor.selectedTabComboBox.model().rowCount() == 1
-        qtbot.mouseClick(editor.deleteCurrentTabButton, QtCore.Qt.LeftButton)
-        assert editor.selectedTabComboBox.model().rowCount() == 0
+            qtbot.mouseClick(editor.new_tab_button, QtCore.Qt.LeftButton)
+        assert editor.selected_tab_combo_box.model().rowCount() == 1
+
+        qtbot.mouseClick(
+            editor.delete_current_tab_button,
+            QtCore.Qt.LeftButton
+        )
+
+        assert editor.selected_tab_combo_box.model().rowCount() == 0
+
+
+class TestSettingsBuilder:
+    @pytest.fixture()
+    def nothing_set_settings(self, qtbot):
+        builder = settings.SettingsBuilder()
+        return builder.build()
+
+    def test_nothing_has_no_tabs(self, nothing_set_settings):
+        assert nothing_set_settings.tabs_widget.count() == 0
+
+    def test_nothing_no_settings_directory_button(self, nothing_set_settings):
+        assert \
+            nothing_set_settings.open_settings_path_button.isHidden() is True
+
+    def test_add_global_settings(self, qtbot, monkeypatch):
+        builder = settings.SettingsBuilder()
+        builder.add_global_settings("something.ini")
+        read_config_data = Mock()
+
+        monkeypatch.setattr(
+            settings.GlobalSettingsTab,
+            "read_config_data",
+            read_config_data
+        )
+
+        dialog = builder.build()
+        assert dialog.tabs_widget.count() == 1
+
+    def test_add_editor_tab(self, qtbot, monkeypatch):
+        builder = settings.SettingsBuilder()
+        builder.add_tabs_setting("something")
+        dialog = builder.build()
+        assert dialog.tabs_widget.count() == 1
+
+    def test_settings_path(self, qtbot):
+        builder = settings.SettingsBuilder()
+        builder.add_open_settings("some_directory")
+        dialog = builder.build()
+        assert dialog.open_settings_path_button.isHidden() is False
+
+
+class TestWorkflowProgress:
+    @pytest.mark.parametrize(
+        "button_type, expected_active",
+        [
+            (QtWidgets.QDialogButtonBox.Cancel, False),
+            (QtWidgets.QDialogButtonBox.Close, True)
+        ]
+    )
+    def test_default_buttons(self, qtbot, button_type, expected_active):
+        progress_dialog = dialogs.WorkflowProgress()
+        qtbot.addWidget(progress_dialog)
+        assert progress_dialog.button_box.button(button_type).isEnabled() is \
+               expected_active
+
+    def test_get_console(self, qtbot):
+        progress_dialog = dialogs.WorkflowProgress()
+        progress_dialog.write_to_console("spam")
+        assert "spam" in progress_dialog.get_console_content()
+
+    def test_start_changes_state_to_working(self, qtbot):
+        progress_dialog = dialogs.WorkflowProgress()
+        assert progress_dialog.current_state == "idle"
+        progress_dialog.start()
+        assert progress_dialog.current_state == "working"
+
+    def test_stop_changes_working_state_to_stopping(self, qtbot):
+        progress_dialog = dialogs.WorkflowProgress()
+        progress_dialog.start()
+        assert progress_dialog.current_state == "working"
+        progress_dialog.stop()
+        assert progress_dialog.current_state == "stopping"
+
+    def test_failed_changes_working_state_to_failed(self, qtbot):
+        progress_dialog = dialogs.WorkflowProgress()
+        progress_dialog.start()
+        assert progress_dialog.current_state == "working"
+        progress_dialog.failed()
+        assert progress_dialog.current_state == "failed"
+
+    def test_cancel_completed_changes_stopping_state_to_aborted(self, qtbot):
+        progress_dialog = dialogs.WorkflowProgress()
+        progress_dialog.start()
+        assert progress_dialog.current_state == "working"
+        progress_dialog.stop()
+        progress_dialog.cancel_completed()
+        assert progress_dialog.current_state == "aborted"
+
+    def test_success_completed_chances_status_to_done(self, qtbot):
+        progress_dialog = dialogs.WorkflowProgress()
+        progress_dialog.start()
+        progress_dialog.success_completed()
+        assert progress_dialog.current_state == "done"
+
+
+class TestWorkflowProgressGui:
+    def test_remove_log_handles(self, qtbot):
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        progress_dialog = dialogs.WorkflowProgressGui()
+        progress_dialog.attach_logger(logger)
+        progress_dialog.remove_log_handles()
+        logger.info("Some message")
+        progress_dialog.flush()
+        assert "Some message" not in progress_dialog.get_console_content()
+
+    def test_attach_logger(self, qtbot):
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        progress_dialog = dialogs.WorkflowProgressGui()
+        progress_dialog.attach_logger(logger)
+        logger.info("Some message")
+        progress_dialog.flush()
+        assert "Some message" in progress_dialog.get_console_content()
+
+    def test_write_html_block_to_console(self, qtbot):
+        progress_dialog = dialogs.WorkflowProgressGui()
+        progress_dialog.write_html_block_to_console("<h1>hello</h1>")
+        assert "hello" in progress_dialog.get_console_content()
+
+
+class TestWorkflowProgressState:
+    @pytest.mark.parametrize(
+        "button_clicked, event_called",
+        [
+            (dialogs.QtWidgets.QMessageBox.Yes, "accept"),
+            (dialogs.QtWidgets.QMessageBox.No, "ignore"),
+        ]
+    )
+    def test_event_called_based_on_button_press(
+            self,
+            qtbot,
+            monkeypatch,
+            button_clicked,
+            event_called
+    ):
+        context = Mock()
+        state = dialogs.WorkflowProgressStateWorking(context)
+        event = Mock()
+        exec_ = Mock(return_value=button_clicked)
+        monkeypatch.setattr(dialogs.QtWidgets.QMessageBox, "exec", exec_)
+        state.close_dialog(event)
+        assert getattr(event, event_called).called is True
+
+    @pytest.mark.parametrize(
+        "state_class,command",
+        [
+            (dialogs.WorkflowProgressStateWorking, "start"),
+            (dialogs.WorkflowProgressStateStopping, "start"),
+            (dialogs.WorkflowProgressStateAborted, "stop"),
+            (dialogs.WorkflowProgressStateFailed, "stop"),
+            (dialogs.WorkflowProgressStateDone, "stop"),
+        ]
+    )
+    def test_warnings(self, state_class, command):
+        with pytest.warns(None) as record:
+            state = state_class(context=Mock())
+            getattr(state, command)()
+        assert len(record) > 0

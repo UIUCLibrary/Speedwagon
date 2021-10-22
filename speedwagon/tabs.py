@@ -5,6 +5,7 @@ import os
 import sys
 import traceback
 import enum
+import typing
 from typing import List, Optional, Tuple, Dict, Iterator, NamedTuple, cast, \
     Type, Any
 from abc import ABCMeta
@@ -13,6 +14,7 @@ import yaml
 from PyQt5 import QtWidgets, QtCore  # type: ignore
 
 import speedwagon
+import speedwagon.config
 from . import runner_strategies
 from . import models
 from . import worker  # pylint: disable=unused-import
@@ -158,7 +160,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         super().__init__(parent, work_manager)
         self.log_manager = log_manager
         self.item_selection_model = item_model
-        self.options_model: Optional[models.ItemListModel] = None
+        self.options_model: Optional[models.ToolOptionsModel3] = None
         self.tab_name = name
 
         self.item_selector_view = self._create_selector_view(
@@ -247,11 +249,14 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         return tool_mapper
 
     @abc.abstractmethod
-    def start(self, item) -> None:
+    def start(self, item: typing.Type[Workflow]) -> None:
         """Start item."""
 
     @abc.abstractmethod
-    def get_item_options_model(self, workflow):
+    def get_item_options_model(
+            self,
+            workflow: Type[Workflow]
+    ) -> "models.ToolOptionsModel3":
         """Get item options model."""
 
     def create_actions(self) -> Tuple[Dict[str, QtWidgets.QWidget],
@@ -274,10 +279,13 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         return actions, tool_actions_layout
 
     def _start(self) -> None:
-        selected_workflow = self.item_selection_model.data(
-            self.item_selector_view.selectedIndexes()[0],
-            QtCore.Qt.UserRole)
-
+        selected_workflow = cast(
+            typing.Type[Workflow],
+            self.item_selection_model.data(
+                self.item_selector_view.selectedIndexes()[0],
+                QtCore.Qt.UserRole
+            )
+        )
         if self.is_ready_to_start():
             try:
                 self.start(selected_workflow)
@@ -314,7 +322,11 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
     def item_selected(self, index: QtCore.QModelIndex) -> None:
         """Set the current selection based on the index."""
-        item = self.item_selection_model.data(index, QtCore.Qt.UserRole)
+        item = cast(
+            typing.Type[Workflow],
+            self.item_selection_model.data(index, QtCore.Qt.UserRole)
+        )
+
         item_settings = self.workspace_widgets[TabWidgets.SETTINGS]
         #################
         try:
@@ -328,10 +340,10 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
             item_settings.setSizePolicy(ITEM_SETTINGS_POLICY)
         except Exception as error:
+            traceback.print_exc()
             stack_trace = traceback.format_exception(etype=type(error),
                                                      value=error,
                                                      tb=error.__traceback__)
-
             message = "Unable to use {}. Reason: {}".format(
                 cast(AbsWorkflow, item).name, str(error.__class__.__name__))
 
@@ -363,21 +375,24 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         self.tab_layout.addLayout(self.actions_layout)
 
 
+class WorkflowSignals(QtCore.QObject):
+    start_workflow = QtCore.pyqtSignal(str, dict)
+
+
 class WorkflowsTab(ItemSelectionTab):
     """Workflow tab."""
 
     def __init__(
             self,
             parent: QtWidgets.QWidget,
-            workflows: Dict[str, Type[speedwagon.job.AbsWorkflow]],
+            workflows: typing.Mapping[str, Type[speedwagon.job.Workflow]],
             work_manager=None,
             log_manager=None) -> None:
         """Create a new workflow tab."""
         super().__init__("Workflow", parent,
                          models.WorkflowListModel(workflows), work_manager,
                          log_manager)
-
-        self._workflows = workflows
+        self.workflows = workflows
 
     def is_ready_to_start(self) -> bool:
         """Get if the workflow is ready to start.
@@ -407,7 +422,7 @@ class WorkflowsTab(ItemSelectionTab):
 
         except ValueError as exc:
             msg = self._create_error_message_box_from_exception(exc)
-            msg.exec()
+            msg.exec_()
 
         except JobCancelled as job_cancel_exception:
             msg = self._create_error_message_box_from_exception(
@@ -420,7 +435,7 @@ class WorkflowsTab(ItemSelectionTab):
                 msg.setIcon(QtWidgets.QMessageBox.Warning)
                 traceback.print_tb(job_cancel_exception.__traceback__)
                 print(job_cancel_exception, file=sys.stderr)
-            msg.exec()
+            msg.exec_()
             return
 
         except Exception as exc:
@@ -432,12 +447,12 @@ class WorkflowsTab(ItemSelectionTab):
                                                    exc,
                                                    tb=exc.__traceback__))
             )
-            msg.exec()
+            msg.exec_()
             return
 
     def _create_error_message_box_from_exception(
             self,
-            exc,
+            exc: BaseException,
             window_title: Optional[str] = None,
             message: Optional[str] = None
     ) -> QtWidgets.QMessageBox:
@@ -450,8 +465,10 @@ class WorkflowsTab(ItemSelectionTab):
         message_box.setText(message)
         return message_box
 
-    def start(self, item):
+    def start(self, item: typing.Type[Workflow]) -> None:
         """Start a workflow."""
+        if self.work_manager.user_settings is None:
+            raise RuntimeError("user_settings is not set")
         new_workflow = item(dict(self.work_manager.user_settings))
 
         # Add global settings to workflow
@@ -459,18 +476,45 @@ class WorkflowsTab(ItemSelectionTab):
 
         # new_workflow.global_settings.update(
         #     dict(self.work_manager.user_settings))
+        if self.options_model is None:
+            raise RuntimeError("options_model not set")
 
-        user_options = (self.options_model.get())
+        user_options = self.options_model.get()
 
         self.run(new_workflow, user_options)
 
-    def get_item_options_model(self, workflow):
+    def get_item_options_model(
+            self,
+            workflow: typing.Type[Workflow]
+    ) -> "models.ToolOptionsModel3":
         """Get item options model."""
+        if self.work_manager.user_settings is None:
+            raise ValueError("user_settings not set")
         new_workflow = workflow(
             global_settings=dict(self.work_manager.user_settings)
         )
-        model = models.ToolOptionsModel3(new_workflow.user_options())
-        return model
+        return models.ToolOptionsModel3(new_workflow.user_options())
+
+
+class WorkflowsTab2(WorkflowsTab):
+    def __init__(self, parent: QtWidgets.QWidget,
+                 workflows: typing.Mapping[str, Type[speedwagon.job.Workflow]],
+                 # work_manager
+                 ) -> None:
+        super().__init__(parent, workflows)
+        self._workflows = workflows
+        self.signals = WorkflowSignals()
+
+    def get_item_options_model(self, workflow):
+        """Get item options model."""
+        new_workflow = workflow(global_settings=self.parent.user_settings)
+        return models.ToolOptionsModel3(new_workflow.user_options())
+
+    def start(self, item: typing.Type[Workflow]) -> None:
+        if self.options_model is None:
+            raise RuntimeError("options_model not set")
+
+        self.signals.start_workflow.emit(item.name, self.options_model.get())
 
 
 class MyDelegate(QtWidgets.QStyledItemDelegate):

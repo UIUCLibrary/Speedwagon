@@ -170,7 +170,7 @@ class PackageBrowser(QtWidgets.QDialog):
     def __init__(
             self,
             packages: typing.List[collection.Package],
-            parent: QtWidgets.QWidget,
+            parent: typing.Optional[QtWidgets.QWidget],
             flags: typing.Union[
                 Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
     ) -> None:

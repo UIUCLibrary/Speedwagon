@@ -10,4 +10,6 @@ class SpeedwagonException(Exception):
 
 
 class MissingConfiguration(SpeedwagonException):
+    """An expected key was missing from the config."""
+
     description = "Missing required configuration settings"

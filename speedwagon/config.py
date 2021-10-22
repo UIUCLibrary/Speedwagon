@@ -1,16 +1,26 @@
 """Load and save user configurations."""
+import argparse
 import configparser
 import contextlib
+import logging
 import os
+import pathlib
 import sys
+import typing
 from collections import OrderedDict
 from pathlib import Path
 import io
 import abc
 import collections.abc
-from typing import Optional, Dict, Type, Set, Iterator, Iterable, Union
+from typing import Optional, Dict, Type, Set, Iterator, Iterable, Union, List
 from types import TracebackType
 import platform
+
+try:  # pragma: no cover
+    from importlib import metadata
+except ImportError:  # pragma: no cover
+    import importlib_metadata as metadata  # type: ignore
+
 
 from PyQt5.QtCore import QAbstractItemModel
 
@@ -292,3 +302,267 @@ def ensure_keys(config_file: str, keys: Iterable[str]) -> Optional[Set[str]]:
         config_data.write(file_pointer)
 
     return added if len(added) > 0 else None
+
+
+class AbsSetting(metaclass=abc.ABCMeta):
+
+    @property
+    @staticmethod
+    @abc.abstractmethod
+    def friendly_name():
+        return NotImplementedError
+
+    def update(  # pylint: disable=R0201
+            self,
+            settings: Dict[str, Union[str, bool]] = None
+    ) -> Dict["str", Union[str, bool]]:
+        if settings is None:
+            return {}
+        return settings
+
+
+class DefaultsSetter(AbsSetting):
+    friendly_name = "Setting defaults"
+
+    def update(
+            self,
+            settings: Dict[str, Union[str, bool]] = None
+    ) -> Dict["str", Union[str, bool]]:
+        new_settings = super().update(settings)
+        new_settings["debug"] = False
+        return new_settings
+
+
+class ConfigFileSetter(AbsSetting):
+    friendly_name = "Config file settings"
+
+    def __init__(self, config_file: str):
+        """Create a new config file setter."""
+        self.config_file = config_file
+
+    def update(
+            self,
+            settings: Dict[str, Union[str, bool]] = None
+    ) -> Dict["str", Union[str, bool]]:
+        """Update setting configuration."""
+        new_settings = super().update(settings)
+        with speedwagon.config.ConfigManager(self.config_file) as cfg:
+            new_settings.update(cfg.global_settings.items())
+        return new_settings
+
+
+class CliArgsSetter(AbsSetting):
+
+    friendly_name = "Command line arguments setting"
+
+    def __init__(self, args: Optional[typing.List[str]] = None) -> None:
+        super().__init__()
+        self.args = args if args is not None else sys.argv[1:]
+
+    def update(
+            self,
+            settings: Dict[str, Union[str, bool]] = None
+    ) -> Dict["str", Union[str, bool]]:
+        new_settings = super().update(settings)
+
+        args = self._parse_args(self.args)
+        if args.start_tab is not None:
+            new_settings["starting-tab"] = args.start_tab
+
+        if args.debug is True:
+            new_settings["debug"] = args.debug
+
+        return new_settings
+
+    @staticmethod
+    def get_arg_parser() -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser()
+        try:
+            current_version = metadata.version(__package__)
+        except metadata.PackageNotFoundError:
+            current_version = "dev"
+        parser.add_argument(
+            '--version',
+            action='version',
+            version=current_version
+        )
+
+        parser.add_argument(
+            "--starting-tab",
+            dest="start_tab",
+            help="Which tab to have open on start"
+        )
+
+        parser.add_argument(
+            "--debug",
+            dest="debug",
+            action='store_true',
+            help="Run with debug mode"
+        )
+        return parser
+
+    @staticmethod
+    def _parse_args(args: typing.List[str]) -> argparse.Namespace:
+        parser = CliArgsSetter.get_arg_parser()
+        return parser.parse_args(args)
+
+
+class ConfigLoader:
+
+    @staticmethod
+    def read_settings_file(settings_file: str) -> Dict[str, Union[str, bool]]:
+        with speedwagon.config.ConfigManager(settings_file) as config:
+            return config.global_settings
+
+    def __init__(self, config_file: str) -> None:
+        super().__init__()
+        self.config_file = config_file
+        self.resolution_strategy_order: Optional[List[AbsSetting]] = None
+        self.platform_settings = get_platform_settings()
+        self.logger = logging.getLogger(__package__)
+        self.startup_settings: Dict[str, Union[str, bool]] = {}
+
+    @staticmethod
+    def _resolve(
+            resolution_strategy_order: Iterable[AbsSetting],
+            config_file: str,
+            starting_settings: Dict[str, Union[str, bool]],
+            logger: logging.Logger
+    ) -> Dict[str, Union[str, bool]]:
+
+        settings = starting_settings.copy()
+        for settings_strategy in resolution_strategy_order:
+
+            logger.debug("Loading settings from %s",
+                         settings_strategy.friendly_name)
+
+            try:
+                settings = settings_strategy.update(settings)
+            except ValueError as error:
+                if isinstance(settings_strategy, ConfigFileSetter):
+                    logger.warning(
+                        "%s contains an invalid setting. Details: %s",
+                        config_file,
+                        error
+                    )
+
+                else:
+                    logger.warning("%s is an invalid setting", error)
+        return settings
+
+    def get_settings(self) -> Dict[str, Union[str, bool]]:
+        self.read_settings_file(self.config_file)
+        if self.resolution_strategy_order is None:
+            resolution_order = [
+                speedwagon.config.DefaultsSetter(),
+                ConfigFileSetter(self.config_file),
+                speedwagon.config.CliArgsSetter(),
+            ]
+        else:
+            resolution_order = self.resolution_strategy_order
+
+        return self._resolve(
+            resolution_order,
+            config_file=self.config_file,
+            logger=self.logger,
+            starting_settings=self.startup_settings
+        )
+
+
+class AbsEnsureConfigFile(abc.ABC):
+
+    def __init__(self, logger: Optional[logging.Logger] = None) -> None:
+        super().__init__()
+        self.logger = logger or logging.getLogger(__package__)
+
+    @abc.abstractmethod
+    def ensure_config_file(self, file_path: Optional[str] = None) -> None:
+        """Ensure the config.ini file."""
+
+    @abc.abstractmethod
+    def ensure_user_data_dir(self, directory: Optional[str] = None) -> None:
+        """Ensure the user data directory exists."""
+
+    @abc.abstractmethod
+    def ensure_tabs_file(self, file_path: Optional[str] = None) -> None:
+        """Ensure the tabs.yml file."""
+
+    @abc.abstractmethod
+    def ensure_app_data_dir(self, directory: Optional[str] = None) -> None:
+        """Ensure the user app directory exists."""
+
+
+class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
+    """Create a missing config file if not already exists."""
+
+    def __init__(
+            self,
+            app: "speedwagon.startup.AbsStarter",
+            logger: Optional[logging.Logger] = None
+    ) -> None:
+        super().__init__(logger)
+        self.app = app
+
+    def ensure_config_file(self, file_path: Optional[str] = None) -> None:
+        file_path = file_path or self.app.config_file
+        if not os.path.exists(file_path):
+            generate_default(file_path)
+
+            self.logger.debug("No config file found. Generated %s", file_path)
+        else:
+            self.logger.debug("Found existing config file %s", file_path)
+
+    def ensure_tabs_file(self, file_path: Optional[str] = None) -> None:
+        file_path = file_path or self.app.tabs_file
+        if not os.path.exists(file_path):
+            pathlib.Path(file_path).touch()
+
+            self.logger.debug(
+                "No tabs.yml file found. Generated %s", file_path
+            )
+        else:
+            self.logger.debug(
+                "Found existing tabs file %s", file_path)
+
+    def ensure_user_data_dir(self, directory: Optional[str] = None) -> None:
+        directory = directory or self.app.user_data_dir
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory)
+            self.logger.debug("Created directory %s", directory)
+
+        else:
+            self.logger.debug(
+                "Found existing user data directory %s",
+                directory
+            )
+
+    def ensure_app_data_dir(self, directory: Optional[str] = None) -> None:
+        directory = directory or self.app.app_data_dir
+        if directory is not None and \
+                not os.path.exists(directory):
+
+            os.makedirs(directory)
+            self.logger.debug("Created %s", directory)
+        else:
+            self.logger.debug(
+                "Found existing app data "
+                "directory %s",
+                directory
+            )
+
+
+def ensure_settings_files(
+        starter: "speedwagon.startup.AbsStarter",
+        logger: Optional[logging.Logger] = None,
+        strategy: Optional[AbsEnsureConfigFile] = None
+) -> None:
+
+    logger = logger or logging.getLogger(__package__)
+    strategy = strategy or CreateBasicMissingConfigFile(
+        app=starter,
+        logger=logger
+    )
+    strategy.ensure_config_file()
+    strategy.ensure_tabs_file()
+    strategy.ensure_user_data_dir()
+    strategy.ensure_app_data_dir()

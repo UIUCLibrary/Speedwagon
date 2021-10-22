@@ -12,7 +12,7 @@ class TestSingleWorkflowLauncher:
             single_item_launcher = startup.SingleWorkflowLauncher()
 
             monkeypatch.setattr(
-                startup.speedwagon.gui.MainWindow,
+                startup.speedwagon.gui.MainWindow1,
                 "show",
                 Mock()
             )

@@ -666,7 +666,10 @@ def test_955_and035(f955, f035, expected_valid,
 def test_035_task_has_959():
 
     root = ET.parse(StringIO(SAMPLE_RECORD))
-    assert workflow_get_marc.MarcEnhancement035Task.has_959_field_with_uiudb(root) is True
+    assert \
+        workflow_get_marc.MarcEnhancement035Task.has_959_field_with_uiudb(
+            root
+        ) is True
 
 
 @pytest.mark.parametrize("identifier_type, subdirectory, identifier, volume",
@@ -818,7 +821,10 @@ def test_discover_task_metadata(monkeypatch, unconfigured_workflow, arg_subdir,
     ]
     assert \
         all([actual[x] == expected[x] for x in top_level_keys]) and \
-        all([actual['enhancements'][x] == expected['enhancements'][x] for x in enhancement_keys]), \
+        all([
+                actual['enhancements'][x] == expected['enhancements'][x]
+                for x in enhancement_keys
+            ]), \
         f"Expected {expected}, Got {actual}"
 
 

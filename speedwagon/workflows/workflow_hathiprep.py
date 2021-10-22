@@ -133,7 +133,7 @@ class HathiPrepWorkflow(speedwagon.Workflow):
         )
 
     def get_additional_info(self,
-                            parent: QtWidgets.QWidget,
+                            parent: typing.Optional[QtWidgets.QWidget],
                             options: Mapping[str, str],
                             pretask_results: list
                             ) -> Dict[str, List[collection.Package]]:

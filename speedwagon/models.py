@@ -1,7 +1,14 @@
 """Data models for displaying data to user in the user interface."""
 
 import sys
+import typing
 from typing import Type, Dict, List, Any, Union, Tuple, Optional, cast
+
+try:
+    from typing import Final
+except ImportError:
+    from typing_extensions import Final  # type: ignore
+
 import warnings
 from abc import abstractmethod
 from collections import namedtuple
@@ -36,10 +43,10 @@ class JobModelData(enum.Enum):
 class ItemListModel(QtCore.QAbstractTableModel):
     """List model for items."""
 
-    def __init__(self, data: Dict["str", Type[AbsWorkflow]]) -> None:
+    def __init__(self, data: typing.Mapping[str, Type[Workflow]]) -> None:
         """Create a new ItemListModel qt list model for workflows."""
         super().__init__()
-        self.jobs: List[Type[AbsWorkflow]] = list(data.values())
+        self.jobs: List[Type[Workflow]] = list(data.values())
 
     def columnCount(self, *args, parent=QtCore.QModelIndex(), **kwargs) -> int:
         """Return 2.
@@ -77,7 +84,7 @@ class WorkflowListModel(ItemListModel):
             self,
             index: QtCore.QModelIndex,
             role: Optional[QtConstant] = None
-    ) -> Union[str, Type[AbsWorkflow], QtCore.QSize, QtCore.QVariant]:
+    ) -> Union[str, Type[Workflow], QtCore.QSize, QtCore.QVariant]:
         """Get data at a specific index."""
         if index.isValid():
             data = self.jobs[index.row()]
@@ -209,15 +216,21 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
 class ToolOptionsModel(QtCore.QAbstractTableModel):
     """Tool options Qt table model."""
 
-    def __init__(self, parent):
+    def __init__(self, parent: Optional[QtCore.QObject] = None) -> None:
         """Create a new ToolOptionsModel qt table model."""
         super().__init__(parent)
-        self._data = []
+        self._data: List[Any] = []
 
-    def rowCount(self, *args, parent=None, **kwargs) -> int:
+    def rowCount(
+            self,
+            parent: typing.Optional[QtCore.QModelIndex] = None
+    ) -> int:
         return len(self._data)
 
-    def columnCount(self, *args, parent=None, **kwargs) -> int:
+    def columnCount(
+            self,
+            parent: typing.Optional[QtCore.QModelIndex] = None
+    ) -> int:
         if len(self._data) > 0:
             return 1
         return 0
@@ -389,6 +402,8 @@ class ToolOptionsModel3(ToolOptionsModel):
 class SettingsModel(QtCore.QAbstractTableModel):
     """Settings Qt table model."""
 
+    columns: Final[int] = 2
+
     def __init__(self, *__args) -> None:
         """Create a new settings Qt model."""
         super().__init__(*__args)
@@ -415,7 +430,10 @@ class SettingsModel(QtCore.QAbstractTableModel):
 
         return QtCore.QVariant()
 
-    def rowCount(self,  *args, parent=None, **kwargs) -> int:
+    def rowCount(
+            self,
+            parent: typing.Optional[QtCore.QModelIndex] = None
+    ) -> int:
         """Return the number of settings loaded in the model."""
         return len(self._data)
 
@@ -423,12 +441,15 @@ class SettingsModel(QtCore.QAbstractTableModel):
         """Add setting key value to the settings."""
         self._data.append((name, value))
 
-    def columnCount(self, *args, parent=None, **kwargs) -> int:
+    def columnCount(
+            self,
+            parent: typing.Optional[QtCore.QModelIndex] = None
+    ) -> int:
         """Return number of columns.
 
         One for the heading and one for the content.
         """
-        return 2
+        return self.columns
 
     def headerData(
             self,
@@ -515,7 +536,10 @@ class TabsModel(QtCore.QAbstractListModel):
             return workflow.get(role, QtCore.QVariant())
         return QtCore.QVariant()
 
-    def rowCount(self, *args, parent=None, **kwargs) -> int:
+    def rowCount(
+            self,
+            parent: typing.Optional[QtCore.QModelIndex] = None
+    ) -> int:
         """Get the number of tabs loaded in the model."""
         return len(self.tabs)
 

@@ -40,7 +40,7 @@ import speedwagon
 from speedwagon import validators
 from speedwagon.job import Workflow
 from speedwagon.workflows import shared_custom_widgets as options
-from speedwagon.logging import GuiLogHandler
+from speedwagon.logging_helpers import GuiLogHandler
 import speedwagon.exceptions
 
 __all__ = ['CaptureOneToDlCompoundAndDLWorkflow']

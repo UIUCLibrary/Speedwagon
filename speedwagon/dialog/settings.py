@@ -3,6 +3,7 @@
 import abc
 import os
 import platform
+import typing
 
 try:  # pragma: no cover
     from importlib import resources
@@ -247,7 +248,11 @@ class TabsConfigurationTab(QtWidgets.QWidget):
         tabs.write_tabs_yaml(
             self.settings_location,
             tabs.extract_tab_information(
-                self.editor.selectedTabComboBox.model())
+                cast(
+                    models.TabsModel,
+                    self.editor.selected_tab_combo_box.model()
+                )
+            )
         )
 
         msg_box = QtWidgets.QMessageBox(self)
@@ -263,7 +268,91 @@ class TabsConfigurationTab(QtWidgets.QWidget):
         self.editor.set_all_workflows(workflows)
 
 
-class TabEditor(QtWidgets.QWidget):
+class SettingsBuilder:
+    def __init__(self, parent: typing.Optional[QtWidgets.QWidget] = None):
+        """Create a new settings dialog builder.
+
+        Args:
+            parent: Parent widget of the settings window.
+        """
+        self._parent = parent
+        self._settings_path: typing.Optional[str] = None
+        self._global_config_file_path: typing.Optional[str] = None
+        self._tab_config_file_path: typing.Optional[str] = None
+        self._global_settings_tab: typing.Optional[GlobalSettingsTab] = None
+
+    def _build_tab_editor_tab(self, config_dialog: SettingsDialog) -> None:
+        tabs_tab = TabsConfigurationTab()
+        if self._settings_path is not None:
+            tabs_tab.settings_location = self._tab_config_file_path
+            tabs_tab.load()
+
+        config_dialog.add_tab(tabs_tab, "Tabs")
+        config_dialog.accepted.connect(tabs_tab.on_okay)
+
+    def _build_global_settings(self, config_dialog: SettingsDialog) -> None:
+        global_settings_tab = GlobalSettingsTab()
+        if self._global_config_file_path is not None:
+            global_settings_tab.config_file = self._global_config_file_path
+            global_settings_tab.read_config_data()
+
+        config_dialog.accepted.connect(global_settings_tab.on_okay)
+        self._global_settings_tab = global_settings_tab
+
+        if self._global_settings_tab is not None:
+            config_dialog.add_tab(self._global_settings_tab, "Global Settings")
+
+    def build(self) -> SettingsDialog:
+        """Generate a new SettingsDialog object."""
+        config_dialog = SettingsDialog(parent=self._parent)
+        if self._settings_path is not None:
+            config_dialog.settings_location = self._settings_path
+        else:
+            config_dialog.open_settings_path_button.setVisible(False)
+
+        if self._global_config_file_path is not None:
+            self._build_global_settings(config_dialog)
+
+        if self._tab_config_file_path is not None:
+            self._build_tab_editor_tab(config_dialog)
+
+        return config_dialog
+
+    def add_global_settings(self, path: str) -> None:
+        self._global_config_file_path = path
+
+    def add_tabs_setting(self, path: str) -> None:
+        self._tab_config_file_path = path
+
+    def add_open_settings(self, path: str) -> None:
+        self._settings_path = path
+
+
+class TabEditorWidget(QtWidgets.QWidget):
+    tab_workflows_list_view: QtWidgets.QListView
+    selected_tab_combo_box: QtWidgets.QComboBox
+    new_tab_button: QtWidgets.QPushButton
+    delete_current_tab_button: QtWidgets.QPushButton
+    add_items_button: QtWidgets.QPushButton
+    remove_items_button: QtWidgets.QPushButton
+    splitter: QtWidgets.QSplitter
+
+    def __init__(
+            self,
+            parent: QtWidgets.QWidget = None,
+            flags: Union[QtCore.Qt.WindowFlags,
+                         QtCore.Qt.WindowType] = QtCore.Qt.WindowFlags()
+    ) -> None:
+        """Create a tab editor widget."""
+        super().__init__(parent, flags)
+        self.load_ui_file()
+
+    def load_ui_file(self) -> None:
+        with resources.path("speedwagon.ui", "tab_editor.ui") as ui_file:
+            uic.loadUi(ui_file, self)
+
+
+class TabEditor(TabEditorWidget):
     """Widget for editing tabs."""
 
     def __init__(
@@ -274,31 +363,31 @@ class TabEditor(QtWidgets.QWidget):
     ) -> None:
         """Create a tab editor widget."""
         super().__init__(parent, flags)
-        with resources.path("speedwagon.ui", "tab_editor.ui") as ui_file:
-            uic.loadUi(ui_file, self)
+        self.tabs_model = models.TabsModel()
+        self.selected_tab_combo_box.setModel(self.tabs_model)
 
         self._tabs_file: Optional[str] = None
-
-        self._tabs_model = models.TabsModel()
 
         self._all_workflows_model: models.WorkflowListModel2 = \
             models.WorkflowListModel2()
 
-        self._active_tab_worksflows_model: models.WorkflowListModel2 = \
+        self._active_tab_workflows_model: models.WorkflowListModel2 = \
             models.WorkflowListModel2()
 
-        self.tabWorkflowsListView.setModel(self._active_tab_worksflows_model)
+        self.tab_workflows_list_view.setModel(
+            self._active_tab_workflows_model
+        )
 
-        self.selectedTabComboBox.setModel(self._tabs_model)
+        self.selected_tab_combo_box.currentIndexChanged.connect(
+            self._changed_tab
+        )
 
-        self.selectedTabComboBox.currentIndexChanged.connect(self._changed_tab)
+        self.new_tab_button.clicked.connect(self._create_new_tab)
 
-        self.newTabButton.clicked.connect(self._create_new_tab)
-
-        self.deleteCurrentTabButton.clicked.connect(self._delete_tab)
-        self.addItemsButton.clicked.connect(self._add_items_to_tab)
-        self.removeItemsButton.clicked.connect(self._remove_items)
-        self._tabs_model.dataChanged.connect(self.on_modified)
+        self.delete_current_tab_button.clicked.connect(self._delete_tab)
+        self.add_items_button.clicked.connect(self._add_items_to_tab)
+        self.remove_items_button.clicked.connect(self._remove_items)
+        self.tabs_model.dataChanged.connect(self.on_modified)
         self.modified: bool = False
         self.splitter.setChildrenCollapsible(False)
 
@@ -317,19 +406,22 @@ class TabEditor(QtWidgets.QWidget):
         for tab in tabs.read_tabs_yaml(value):
 
             tab.workflows_model.dataChanged.connect(self.on_modified)
-            self._tabs_model.add_tab(tab)
-        self.selectedTabComboBox.setCurrentIndex(0)
+            self.tabs_model.add_tab(tab)
+        self.selected_tab_combo_box.setCurrentIndex(0)
         self._tabs_file = value
         self.modified = False
 
     def _changed_tab(self, tab: int) -> None:
-        model: QtCore.QAbstractListModel = self.selectedTabComboBox.model()
+        model: QtCore.QAbstractListModel = cast(
+            models.TabsModel,
+            self.selected_tab_combo_box.model()
+        )
         index = model.index(tab)
         if index.isValid():
             data = model.data(index, role=QtCore.Qt.UserRole)
-            self.tabWorkflowsListView.setModel(data.workflows_model)
+            self.tab_workflows_list_view.setModel(data.workflows_model)
         else:
-            self.tabWorkflowsListView.setModel(models.WorkflowListModel2())
+            self.tab_workflows_list_view.setModel(models.WorkflowListModel2())
 
     def _create_new_tab(self) -> None:
         while True:
@@ -342,7 +434,7 @@ class TabEditor(QtWidgets.QWidget):
             if not accepted:
                 return
 
-            if new_tab_name in self._tabs_model:
+            if new_tab_name in self.tabs_model:
                 message = f"Tab named \"{new_tab_name}\" already exists."
                 error = QtWidgets.QMessageBox(self)
                 error.setText(message)
@@ -352,28 +444,34 @@ class TabEditor(QtWidgets.QWidget):
                 continue
 
             new_tab = tabs.TabData(new_tab_name, models.WorkflowListModel2())
-            self._tabs_model.add_tab(new_tab)
-            new_index = self.selectedTabComboBox.findText(new_tab_name)
-            self.selectedTabComboBox.setCurrentIndex(new_index)
+            self.tabs_model.add_tab(new_tab)
+            new_index = self.selected_tab_combo_box.findText(new_tab_name)
+            self.selected_tab_combo_box.setCurrentIndex(new_index)
             return
 
     def _delete_tab(self) -> None:
-        data = self.selectedTabComboBox.currentData()
-        model = self.selectedTabComboBox.model()
+        data = self.selected_tab_combo_box.currentData()
+        model = self.selected_tab_combo_box.model()
         model.remove_tab(data)
 
     def _add_items_to_tab(self) -> None:
-        model: models.WorkflowListModel2 = self.tabWorkflowsListView.model()
-        for i in self.allWorkflowsListView.selectedIndexes():
+        model = cast(
+            models.WorkflowListModel2,
+            self.tab_workflows_list_view.model()
+        )
+        for i in self.all_workflows_list_view.selectedIndexes():
             new_workflow = i.data(role=QtCore.Qt.UserRole)
             model.add_workflow(new_workflow)
         model.sort(0)
 
     def _remove_items(self) -> None:
-        model: models.WorkflowListModel2 = self.tabWorkflowsListView.model()
+        model = cast(
+            models.WorkflowListModel2,
+            self.tab_workflows_list_view.model()
+        )
         items_to_remove = [
             i.data(role=QtCore.Qt.UserRole)
-            for i in self.tabWorkflowsListView.selectedIndexes()
+            for i in self.tab_workflows_list_view.selectedIndexes()
         ]
 
         for item in items_to_remove:
@@ -389,9 +487,9 @@ class TabEditor(QtWidgets.QWidget):
             self._all_workflows_model.add_workflow(values)
 
         self._all_workflows_model.sort(0)
-        self.allWorkflowsListView.setModel(self._all_workflows_model)
+        self.all_workflows_list_view.setModel(self._all_workflows_model)
 
     @property
     def current_tab(self) -> QtWidgets.QWidget:
         """Get current tab widget."""
-        return self.selectedTabComboBox.currentData()
+        return self.selected_tab_combo_box.currentData()

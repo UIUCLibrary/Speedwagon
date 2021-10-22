@@ -3,8 +3,8 @@ import os
 
 import pytest
 from unittest.mock import Mock, MagicMock
-
-from speedwagon import runner_strategies
+from typing import List, Any, Dict
+from speedwagon import runner_strategies, tasks
 import speedwagon
 
 
@@ -111,6 +111,7 @@ def test_task_aborted(caplog, step, monkeypatch):
     manager.get_results = Mock(return_value=[])
     manager.open = MagicMock(name="manager.open")
     runner = Mock(name="runner", was_aborted=False)
+    runner.progress_dialog_box_handler = logging.StreamHandler()
     manager.open.return_value.__enter__.return_value = runner
 
     runner_strategy = runner_strategies.UsingExternalManagerForAdapter(manager)
@@ -120,6 +121,7 @@ def test_task_aborted(caplog, step, monkeypatch):
 
     options = {}
     logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
     job.discover_task_metadata = Mock(
         return_value=[MagicMock(name="new_task_metadata")])
 
@@ -460,19 +462,124 @@ class TestTaskDispatcher:
                dispatcher.stop() is None
 
     @pytest.mark.parametrize(
-        "thread_status, expected_active",
+        "thread_status, expected_active, state",
         [
-            (None, False),
-            (Mock(is_alive=Mock(return_value=False)), False),
-            (Mock(is_alive=Mock(return_value=True)), True)
+            (
+                    None,
+                    False,
+                    runner_strategies.TaskDispatcherIdle
+            ),
+            (
+                    Mock(is_alive=Mock(return_value=False)),
+                    False,
+                    runner_strategies.TaskDispatcherIdle
+            ),
+            (
+                    Mock(is_alive=Mock(return_value=True)),
+                    True,
+                    runner_strategies.TaskDispatcherRunning
+            )
         ]
     )
-    def test_active(self, thread_status, expected_active):
+    def test_active(self, thread_status, expected_active, state):
         dispatcher = runner_strategies.TaskDispatcher(
             job_queue=Mock()
         )
-        dispatcher._thread = thread_status
+        dispatcher.current_state = state(dispatcher)
+        dispatcher.thread = thread_status
         assert dispatcher.active is expected_active
+
+    def test_start_set_state_to_running(self):
+        dispatcher = runner_strategies.TaskDispatcher(
+            job_queue=Mock()
+        )
+
+        dispatcher.current_state = \
+            runner_strategies.TaskDispatcherIdle(dispatcher)
+
+        try:
+            dispatcher.start()
+            assert dispatcher.current_state.state_name == "Running"
+        finally:
+            dispatcher.stop()
+
+    def test_stop_set_state(self, monkeypatch):
+        dispatcher = runner_strategies.TaskDispatcher(
+            job_queue=Mock()
+        )
+
+        # ======================================================================
+        # This has to happen before the monkey patching so that the method can
+        # still manage to run.
+        # ======================================================================
+        dispatcher.current_state = \
+            runner_strategies.TaskDispatcherIdle(dispatcher)
+
+        actual_halt_dispatch = \
+            runner_strategies.TaskDispatcherStopping.halt_dispatching
+
+        def halt_dispatching(*args, **kwargs):
+            actual_halt_dispatch(*args, **kwargs)
+
+        halt_dispatching_method = Mock()
+        halt_dispatching_method.side_effect = halt_dispatching
+        # ======================================================================
+
+        with monkeypatch.context() as mp:
+            mp.setattr(runner_strategies.TaskDispatcherStopping,
+                       "halt_dispatching",
+                       lambda caller: halt_dispatching_method(caller)
+                       )
+            try:
+                dispatcher.start()
+                assert dispatcher.current_state.state_name == "Running"
+            finally:
+                dispatcher.stop()
+        assert dispatcher.current_state.state_name == "Idle"
+        assert halt_dispatching_method.called is True
+
+
+class TestTaskDispatcherRunning:
+    def test_running_on_active_is_noop_warning(self, caplog):
+        dispatcher = runner_strategies.TaskDispatcher(
+            job_queue=Mock()
+        )
+        state = runner_strategies.TaskDispatcherRunning(dispatcher)
+        state.start()
+
+        assert any(
+            "Processing thread is already started"
+            in message.message and message.levelname == "WARNING"
+            for message in caplog.records
+        )
+
+
+class TestTaskDispatcherStopping:
+    def test_running_stop_on_stopping_is_noop_warning(self, caplog):
+        dispatcher = runner_strategies.TaskDispatcher(
+            job_queue=Mock()
+        )
+        state = runner_strategies.TaskDispatcherStopping(dispatcher)
+        state.stop()
+
+        assert any(
+            "Processing thread is currently stopping"
+            in message.message and message.levelname == "WARNING"
+            for message in caplog.records
+        )
+
+    def test_running_starting_on_stopping_is_noop_warning(self, caplog):
+        dispatcher = runner_strategies.TaskDispatcher(
+            job_queue=Mock()
+        )
+        state = runner_strategies.TaskDispatcherStopping(dispatcher)
+        state.start()
+
+        assert any(
+            "Unable to start while processing is stopping"
+            in message.message and message.levelname == "WARNING"
+            for message in caplog.records
+        )
 
 
 class TestTaskScheduler:
@@ -526,4 +633,113 @@ class TestTaskScheduler:
         subtask.exec = Mock()
         subtask._task_queue = Mock(unfinished_tasks=1)
         with pytest.raises(speedwagon.job.JobCancelled):
-            scheduler.push_job_to_queue(workflow, options, scheduler.reporter)
+            scheduler.run_workflow_jobs(workflow, options, scheduler.reporter)
+
+
+class SpamTask(speedwagon.tasks.Subtask):
+    name = "Spam"
+
+    def work(self) -> bool:
+        return True
+
+    def discover_task_metadata(self, initial_results: List[Any],
+                               additional_data: Dict[str, Any],
+                               **user_args) -> List[dict]:
+        return [
+            {"dummy": "yes"},
+            {"dummy": "yes"},
+        ]
+
+
+class SpamWorkflow(speedwagon.Workflow):
+    name = "spam"
+
+    def create_new_task(self, task_builder: speedwagon.tasks.TaskBuilder,
+                        **job_args) -> None:
+        task_builder.add_subtask(SpamTask())
+
+    def discover_task_metadata(self, initial_results: List[Any],
+                               additional_data: Dict[str, Any],
+                               **user_args) -> List[dict]:
+        return [
+            {"dummy": "yes"},
+            {"dummy": "yes"},
+        ]
+
+
+class TestBackgroundJobManager:
+
+    def test_manager_does_nothing(self):
+        with runner_strategies.BackgroundJobManager() as manager:
+            assert manager is not None
+
+    def test_job_finished_called(self):
+        callbacks = Mock(name="callbacks")
+
+        liaison = runner_strategies.JobManagerLiaison(
+            callbacks=callbacks,
+            events=Mock()
+        )
+
+        with runner_strategies.BackgroundJobManager() as manager:
+            manager.valid_workflows = {"spam": SpamWorkflow}
+            manager.submit_job(
+                workflow_name="spam",
+                options={},
+                app=Mock(),
+                liaison=liaison
+            )
+        assert callbacks.finished.called is True
+
+    @pytest.mark.filterwarnings(
+        "ignore::pytest.PytestUnhandledThreadExceptionWarning"
+    )
+    def test_exception_caught(self):
+        class BadTask(speedwagon.tasks.Subtask):
+
+            def work(self) -> bool:
+                raise FileNotFoundError("whoops")
+
+        class BaconWorkflow(speedwagon.Workflow):
+            name = "bacon"
+
+            def create_new_task(self, task_builder: tasks.TaskBuilder,
+                                **job_args) -> None:
+                task_builder.add_subtask(BadTask())
+
+            def discover_task_metadata(self, initial_results: List[Any],
+                                       additional_data: Dict[str, Any],
+                                       **user_args) -> List[dict]:
+                return [
+                    {"dummy": "yes"}
+                ]
+
+        with pytest.raises(FileNotFoundError):
+            with runner_strategies.BackgroundJobManager() as manager:
+                manager.valid_workflows = {"bacon": BaconWorkflow}
+                manager.submit_job(
+                    workflow_name="bacon",
+                    options={},
+                    app=Mock(),
+                    liaison=runner_strategies.JobManagerLiaison(Mock(), Mock())
+                )
+
+
+class TestThreadedEvents:
+    def test_done(self):
+        events = runner_strategies.ThreadedEvents()
+        assert events.is_done() is False
+        events.done()
+        assert events.is_done() is True
+
+    def test_stop(self):
+        events = runner_strategies.ThreadedEvents()
+        assert events.is_stopped() is False
+        events.stop()
+        assert events.is_stopped() is True
+
+    def test_started(self):
+        events = runner_strategies.ThreadedEvents()
+        assert events.has_started() is False
+        events.started.set()
+        assert events.has_started() is True

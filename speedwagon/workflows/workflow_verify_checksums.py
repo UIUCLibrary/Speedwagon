@@ -324,11 +324,23 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
                   "and their md5 values. The listed files are expected to " \
                   "be siblings to the checksum file."
 
+    @staticmethod
+    def validate_user_options(**user_args: str) -> bool:
+        """Validate user options."""
+        input_data = user_args[UserArgs.INPUT.value]
+        if input_data is None:
+            raise ValueError("Missing value in input")
+
+        if not os.path.exists(input_data) or os.path.isdir(input_data):
+            raise ValueError("Invalid user arguments")
+        return True
+
     def discover_task_metadata(self,
                                initial_results: List[
                                    speedwagon.tasks.Result],
                                additional_data: Dict[str, None],
                                **user_args: str) -> List[dict]:
+        """Discover metadata needed for generating a task."""
         jobs: List[Dict[str, str]] = []
         relative_path = os.path.dirname(user_args[UserArgs.INPUT.value])
         checksum_report_file = os.path.abspath(user_args[UserArgs.INPUT.value])
