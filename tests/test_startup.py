@@ -268,7 +268,12 @@ class TestStartupDefault:
             )
         return parse
 
-    def test_invalid_setting_logs_warning(self, caplog, monkeypatch, parse_args):
+    def test_invalid_setting_logs_warning(
+            self,
+            caplog,
+            monkeypatch,
+            parse_args
+    ):
 
         def update(*_, **__):
             raise ValueError("oops")
@@ -279,7 +284,9 @@ class TestStartupDefault:
         )
 
         monkeypatch.setattr(
-            speedwagon.startup.argparse.ArgumentParser, "parse_args", parse_args
+            speedwagon.startup.argparse.ArgumentParser,
+            "parse_args",
+            parse_args
         )
 
         monkeypatch.setattr(
@@ -293,7 +300,11 @@ class TestStartupDefault:
 
         loader = speedwagon.config.ConfigLoader(startup_worker.config_file)
         loader.resolution_strategy_order = [resolution]
-        startup_worker.resolve_settings(resolution_strategy_order=[resolution], loader=loader)
+
+        startup_worker.resolve_settings(
+            resolution_strategy_order=[resolution],
+            loader=loader
+        )
 
         assert any("oops is an invalid setting" in m for m in caplog.messages)
 
@@ -313,8 +324,11 @@ class TestStartupDefault:
             "get_app_data_directory",
             lambda *_: "app_data_dir"
         )
+
         monkeypatch.setattr(
-            speedwagon.startup.argparse.ArgumentParser, "parse_args", parse_args
+            speedwagon.startup.argparse.ArgumentParser,
+            "parse_args",
+            parse_args
         )
 
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
@@ -338,9 +352,13 @@ class TestStartupDefault:
 
         startup_worker = speedwagon.startup.StartupDefault(app=Mock())
         startup_worker.startup_settings = {"sss": "dd"}
+
         monkeypatch.setattr(
-            speedwagon.startup.argparse.ArgumentParser, "parse_args", parse_args
+            speedwagon.startup.argparse.ArgumentParser,
+            "parse_args",
+            parse_args
         )
+
         loader = speedwagon.config.ConfigLoader(startup_worker.config_file)
         loader.resolution_strategy_order = []
         loader.startup_settings = {"sss": "dd"}
@@ -380,7 +398,9 @@ class TestStartupDefault:
             speedwagon.config.CliArgsSetter, "update", MagicMock()
         )
 
-        startup_worker = speedwagon.startup.StartupDefault(app=Mock(name="app"))
+        startup_worker = \
+            speedwagon.startup.StartupDefault(app=Mock(name="app"))
+
         resolution = Mock(friendly_name="dummy")
         resolution.update = lambda _: update()
         startup_worker.resolve_settings()
@@ -726,12 +746,19 @@ class TestWorkflowProgressCallbacks:
 
     def test_job_progress_none_total_does_not_trigger(self, dialog_box, qtbot):
         callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
-        with qtbot.assertNotEmitted(callbacks.signals.total_jobs_changed) as blocker:
+        with qtbot.assertNotEmitted(
+                callbacks.signals.total_jobs_changed
+        ) as blocker:
             callbacks.update_progress(10, None)
 
-    def test_job_progress_none_current_does_not_trigger(self, dialog_box, qtbot):
+    def test_job_progress_none_current_does_not_trigger(
+            self,
+            dialog_box,
+            qtbot
+    ):
         callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
-        with qtbot.assertNotEmitted(callbacks.signals.progress_changed) as blocker:
+        with qtbot.assertNotEmitted(callbacks.signals.progress_changed) as \
+                blocker:
             callbacks.update_progress(None, 10)
 
     def test_job_log_signal(self, dialog_box, qtbot):
@@ -768,7 +795,15 @@ class TestWorkflowProgressCallbacks:
         (None, OSError(), None),
         (None, OSError(), "Some traceback info"),
     ])
-    def test_error(self, qtbot, dialog_box, monkeypatch, message, exc, traceback):
+    def test_error(
+            self,
+            qtbot,
+            dialog_box,
+            monkeypatch,
+            message,
+            exc,
+            traceback
+    ):
         callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
         QMessageBox = Mock()
 
@@ -973,7 +1008,13 @@ class TestStartQtThreaded:
 
         main_window.add_tab.assert_called_with("dummy", ANY)
 
-    def test_load_help_no_package_info(self, qtbot, monkeypatch, caplog, starter):
+    def test_load_help_no_package_info(
+            self,
+            qtbot,
+            monkeypatch,
+            caplog,
+            starter
+    ):
         show = Mock()
 
         monkeypatch.setattr(
@@ -1018,12 +1059,23 @@ class TestStartQtThreaded:
             return {'Home-page': "https://www.fake.com"}
 
         monkeypatch.setattr(speedwagon.startup.metadata, "metadata", metadata)
-        monkeypatch.setattr(speedwagon.startup.webbrowser, "open_new", open_new)
+
+        monkeypatch.setattr(
+            speedwagon.startup.webbrowser,
+            "open_new",
+            open_new
+        )
+
         qtbot.addWidget(starter.windows)
         starter.windows.help_requested.emit()
         assert open_new.called is True
 
-    def test_resolve_settings_calls_get_settings(self, qtbot, monkeypatch, starter):
+    def test_resolve_settings_calls_get_settings(
+            self,
+            qtbot,
+            monkeypatch,
+            starter
+    ):
         starter.load_custom_tabs = Mock()
         starter.load_all_workflows_tab = Mock()
         starter.run()
@@ -1059,7 +1111,12 @@ class TestStartQtThreaded:
                 wait_condition=wait_condition
             )
 
-    def test_submit_job_errors_on_unknown_workflow(self, qtbot, monkeypatch, starter):
+    def test_submit_job_errors_on_unknown_workflow(
+            self,
+            qtbot,
+            monkeypatch,
+            starter
+    ):
         main_app = QtWidgets.QWidget()
         job_manager = Mock()
         workflow_name = "unknown_workflow"
@@ -1079,7 +1136,12 @@ class TestStartQtThreaded:
         )
         assert starter.report_exception.called is True
 
-    def test_submit_job_submits_to_job_manager(self, qtbot, monkeypatch, starter):
+    def test_submit_job_submits_to_job_manager(
+            self,
+            qtbot,
+            monkeypatch,
+            starter
+    ):
         monkeypatch.setattr(
             speedwagon.config.Path, "home", lambda: "my_home"
         )
@@ -1111,7 +1173,9 @@ class TestStartQtThreaded:
 
 class TestQtRequestMoreInfo:
     def test_job_cancelled(self, qtbot):
-        info_request = speedwagon.startup.QtRequestMoreInfo(QtWidgets.QWidget())
+        info_request = \
+            speedwagon.startup.QtRequestMoreInfo(QtWidgets.QWidget())
+
         user_is_interacting = MagicMock()
         workflow = Mock()
         exc = speedwagon.job.JobCancelled()
@@ -1130,7 +1194,9 @@ class TestQtRequestMoreInfo:
         assert info_request.exc == exc
 
     def test_job_exception_passes_on(self, qtbot):
-        info_request = speedwagon.startup.QtRequestMoreInfo(QtWidgets.QWidget())
+        info_request = \
+            speedwagon.startup.QtRequestMoreInfo(QtWidgets.QWidget())
+
         user_is_interacting = MagicMock()
         workflow = Mock()
         workflow.get_additional_info = Mock(
@@ -1145,4 +1211,3 @@ class TestQtRequestMoreInfo:
                 options,
                 pre_results
             )
-
