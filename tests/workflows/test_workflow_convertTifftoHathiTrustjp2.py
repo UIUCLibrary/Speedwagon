@@ -1,3 +1,4 @@
+import warnings
 from unittest.mock import Mock, ANY
 
 import pytest
@@ -8,8 +9,10 @@ from speedwagon import models
 class TestConvertTiffToHathiJp2Workflow:
     @pytest.fixture
     def workflow(self):
-        return \
-            workflow_convertTifftoHathiTrustJP2.ConvertTiffToHathiJp2Workflow()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return \
+                workflow_convertTifftoHathiTrustJP2.ConvertTiffToHathiJp2Workflow()
 
     @pytest.fixture
     def default_options(self, workflow):

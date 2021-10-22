@@ -1,3 +1,4 @@
+import warnings
 from unittest.mock import Mock, ANY
 
 import pytest
@@ -130,8 +131,10 @@ class TestZipPackagesWorkflow:
 class TestRegenerateChecksumBatchSingleWorkflow:
     @pytest.fixture
     def workflow(self):
-        return \
-            workflow_make_checksum.RegenerateChecksumBatchSingleWorkflow()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return \
+                workflow_make_checksum.RegenerateChecksumBatchSingleWorkflow()
 
     @pytest.fixture
     def default_options(self, workflow):
@@ -265,8 +268,10 @@ class TestRegenerateChecksumBatchSingleWorkflow:
 class TestRegenerateChecksumBatchMultipleWorkflow:
     @pytest.fixture
     def workflow(self):
-        return \
-            workflow_make_checksum.RegenerateChecksumBatchMultipleWorkflow()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return \
+                workflow_make_checksum.RegenerateChecksumBatchMultipleWorkflow()
 
     @pytest.fixture
     def default_options(self, workflow):

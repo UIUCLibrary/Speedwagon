@@ -1,3 +1,4 @@
+import warnings
 from unittest.mock import MagicMock, Mock
 
 import pytest
@@ -69,7 +70,9 @@ def test_output_must_exist(monkeypatch):
     with monkeypatch.context() as mp:
         mp.setattr(os.path, "exists", mock_exists)
         with pytest.raises(ValueError) as e:
-            workflow = ht_wf.CaptureOneToDlCompoundWorkflow()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                workflow = ht_wf.CaptureOneToDlCompoundWorkflow()
             workflow.validate_user_options(**options)
 
             assert "Directory ./invalid_folder/ does not exist" in str(e.value)
@@ -89,7 +92,9 @@ def test_input_must_exist(monkeypatch):
     with monkeypatch.context() as mp:
         mp.setattr(os.path, "exists", mock_exists)
         with pytest.raises(ValueError) as e:
-            workflow = ht_wf.CaptureOneToDlCompoundWorkflow()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                workflow = ht_wf.CaptureOneToDlCompoundWorkflow()
             workflow.validate_user_options(**options)
             assert "Directory ./invalid_folder/ does not exist" in str(e.value)
 
@@ -106,7 +111,9 @@ def test_input_and_out_invalid_produces_errors_with_both(monkeypatch):
     with monkeypatch.context() as mp:
         mp.setattr(os.path, "exists", mock_exists)
         with pytest.raises(ValueError) as e:
-            workflow = ht_wf.CaptureOneToDlCompoundWorkflow()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                workflow = ht_wf.CaptureOneToDlCompoundWorkflow()
             workflow.validate_user_options(**options)
         message = str(e.value)
         assert \
@@ -121,7 +128,9 @@ def test_discover_task_metadata(monkeypatch):
         "Input": "./some_real_source_folder",
         "Output": "./some_real_folder/",
     }
-    workflow = ht_wf.CaptureOneToDlCompoundWorkflow()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        workflow = ht_wf.CaptureOneToDlCompoundWorkflow()
 
     def mock_exists(path):
         if path == user_args["Input"]:
@@ -172,7 +181,9 @@ def test_create_new_task_dl(monkeypatch):
         "output": "./some_real_dl_folder/",
         "source_path": "./some_real_source_folder/",
     }
-    workflow = ht_wf.CaptureOneToDlCompoundWorkflow()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        workflow = ht_wf.CaptureOneToDlCompoundWorkflow()
     workflow.create_new_task(task_builder, **job_args)
     task_built = task_builder.build_task()
     assert len(task_built.subtasks) == 1

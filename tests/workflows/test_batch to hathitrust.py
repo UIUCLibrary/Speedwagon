@@ -1,3 +1,4 @@
+import warnings
 from unittest.mock import Mock, MagicMock
 
 import pytest
@@ -18,14 +19,18 @@ from uiucprescon.packager.common import Metadata as PackageMetadata
     (2, "Identifier type")
 ])
 def test_hathi_limited_to_dl_compound_has_options(index, label):
-    workflow = wf.CaptureOneBatchToHathiComplete()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        workflow = wf.CaptureOneBatchToHathiComplete()
     user_options = workflow.user_options()
     assert len(user_options) > 0
     assert user_options[index].label_text == label
 
 
 def test_initial_task_creates_task():
-    workflow = wf.CaptureOneBatchToHathiComplete()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        workflow = wf.CaptureOneBatchToHathiComplete()
     user_args = {
         "Source": "./some_real_source_folder",
         "Destination": "./some_real_folder/",
@@ -43,7 +48,9 @@ def test_initial_task_creates_task():
 
 
 def test_initial_task(monkeypatch):
-    workflow = wf.CaptureOneBatchToHathiComplete()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        workflow = wf.CaptureOneBatchToHathiComplete()
     user_args = {
         "Source": "./some_real_source_folder",
         "Destination": "./some_real_folder/",
@@ -100,7 +107,9 @@ def test_package_browser(qtbot):
 
 
 def test_get_additional_info(qtbot, monkeypatch):
-    workflow = wf.CaptureOneBatchToHathiComplete()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        workflow = wf.CaptureOneBatchToHathiComplete()
     mock_package = MagicMock()
     mock_data = {
             "ID": "99423682912205899",
@@ -154,11 +163,13 @@ def test_get_additional_info(qtbot, monkeypatch):
 
 @pytest.fixture
 def unconfigured_workflow():
-    workflow = wf.CaptureOneBatchToHathiComplete(
-        global_settings={
-            "getmarc_server_url": "http://fake.com"
-        }
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        workflow = wf.CaptureOneBatchToHathiComplete(
+            global_settings={
+                "getmarc_server_url": "http://fake.com"
+            }
+        )
     user_options = {i.label_text: i.data for i in workflow.user_options()}
 
     return workflow, user_options
