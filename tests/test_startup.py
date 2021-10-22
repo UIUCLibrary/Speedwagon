@@ -852,7 +852,10 @@ class TestStartQtThreaded:
         )
 
         app = Mock()
-        return speedwagon.startup.StartQtThreaded(app)
+        startup = speedwagon.startup.StartQtThreaded(app)
+        yield startup
+        if startup.windows is not None:
+            startup.windows.close()
 
     def test_report_exception(self, qtbot, monkeypatch, starter):
         message_box = Mock(name="QMessageBox")
@@ -980,8 +983,6 @@ class TestStartQtThreaded:
         assert show.called is True
 
     def test_load_custom_tabs(self, qtbot, monkeypatch, starter):
-        app = Mock()
-
         tabs_file = "somefile.yml"
 
         loaded_workflows = Mock()
@@ -1084,8 +1085,10 @@ class TestStartQtThreaded:
         loader.get_settings = Mock(return_value={})
         loader.read_settings_file = Mock(return_value={})
         starter.resolve_settings(resolution_strategy_order=[], loader=loader)
-
-        assert loader.get_settings.called is True
+        try:
+            assert loader.get_settings.called is True
+        finally:
+            starter.windows.console.detach_logger()
 
     def test_read_settings_file(self, qtbot, monkeypatch, starter):
         read = Mock()
