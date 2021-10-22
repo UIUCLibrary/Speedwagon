@@ -364,3 +364,19 @@ class TestWorkflowProgressState:
         monkeypatch.setattr(dialogs.QtWidgets.QMessageBox, "exec", exec_)
         state.close_dialog(event)
         assert getattr(event, event_called).called is True
+
+    @pytest.mark.parametrize(
+        "state_class,command",
+        [
+            (dialogs.WorkflowProgressStateWorking, "start"),
+            (dialogs.WorkflowProgressStateStopping, "start"),
+            (dialogs.WorkflowProgressStateAborted, "stop"),
+            (dialogs.WorkflowProgressStateFailed, "stop"),
+            (dialogs.WorkflowProgressStateDone, "stop"),
+        ]
+    )
+    def test_warnings(self, state_class, command):
+        with pytest.warns(None) as record:
+            state = state_class(context=Mock())
+            getattr(state, command)()
+        assert len(record) > 0
