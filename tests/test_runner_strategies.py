@@ -1,7 +1,5 @@
 import logging
 import os
-import queue
-import threading
 
 import pytest
 from unittest.mock import Mock, MagicMock
@@ -584,7 +582,6 @@ class TestTaskDispatcherStopping:
         )
 
 
-
 class TestTaskScheduler:
     def test_default_request_more_info_noop(self, capsys):
         scheduler = runner_strategies.TaskScheduler(
@@ -638,334 +635,13 @@ class TestTaskScheduler:
         with pytest.raises(speedwagon.job.JobCancelled):
             scheduler.run_workflow_jobs(workflow, options, scheduler.reporter)
 
-#
-# class TestJobManager:
-#     def test_d(self):
-#         with runner_strategies.JobManager() as job_manager:
-#             pass
-#
-#     def test_manages_creations(self):
-#         with runner_strategies.JobManager() as job_manager:
-#             job_manager.valid_workflows = {"spam": SpamWorkflow}
-#             new_worker = job_manager.submit_job(
-#                 workflow_name="spam",
-#                 working_directory="working_dir",
-#             )
-#             assert new_worker in job_manager
-#
-#     def test_current_progress_defaults_to_none(self):
-#         with runner_strategies.JobManager() as job_manager:
-#             job_manager.valid_workflows = {"spam": Mock()}
-#             new_worker = job_manager.submit_job(
-#                 workflow_name="spam",
-#                 working_directory="working_dir"
-#             )
-#             assert new_worker.current_task_progress is None
-#
-#     def test_submit_job_name_matches(self):
-#         class SpamWorkflow(speedwagon.Workflow):
-#             # name = "spam"
-#
-#             def discover_task_metadata(self, initial_results: List[Any],
-#                                        additional_data: Dict[str, Any],
-#                                        **user_args) -> List[dict]:
-#                 return []
-#
-#         with runner_strategies.JobManager() as job_manager:
-#             job_manager.valid_workflows = {"spam": SpamWorkflow}
-#             new_worker = job_manager.submit_job(
-#                 workflow_name="spam",
-#                 working_directory="working_dir",
-#             )
-#             assert new_worker.workflow_name == "spam"
-#
-#     def test_join_status_joined(self):
-#         class DummyWorkflow(speedwagon.Workflow):
-#
-#             def discover_task_metadata(self, initial_results: List[Any],
-#                                        additional_data: Dict[str, Any],
-#                                        **user_args) -> List[dict]:
-#                 return []
-#
-#         with runner_strategies.JobManager() as job_manager:
-#             job_manager.valid_workflows = {"spam": DummyWorkflow}
-#             new_worker = job_manager.submit_job(
-#                 workflow_name="spam",
-#                 working_directory="working_dir",
-#             )
-#             new_worker.start()
-#             assert new_worker.status.status_name == "idle"
-#             new_worker.run()
-#             new_worker.join()
-#             assert new_worker.status.status_name == "joined"
-#
-#     def test_job_manager_closed_status_joined(self):
-#         class DummyWorkflow(speedwagon.Workflow):
-#
-#             def discover_task_metadata(self, initial_results: List[Any],
-#                                        additional_data: Dict[str, Any],
-#                                        **user_args) -> List[dict]:
-#                 return []
-#
-#         with runner_strategies.JobManager() as job_manager:
-#             job_manager.valid_workflows = {"spam": DummyWorkflow}
-#             new_worker = job_manager.submit_job(
-#                 workflow_name="spam",
-#                 working_directory="working_dir",
-#             )
-#             new_worker.start()
-#             assert new_worker.status.status_name == "idle"
-#             new_worker.run()
-#         assert new_worker.status.status_name == "joined"
-#
-#     @pytest.fixture(scope="module")
-#     def task_queue(self):
-#         return queue.Queue(maxsize=1)
-#
-#     @pytest.fixture(scope="module")
-#     def task_ready_condition(self):
-#         return threading.Condition()
-#
-#     @pytest.fixture()
-#     def producer(self, task_queue):
-#         task_producer = runner_strategies.ThreadedTaskProducer(
-#             task_queue
-#         )
-#
-#         yield task_producer
-#         task_producer.shutdown()
-#
-#     # def test_join_status_single_step(self):
-#     #     class DummyTask(speedwagon.tasks.Subtask):
-#     #
-#     #         def work(self) -> bool:
-#     #             pass
-#     #
-#     #     class DummyWorkflow(speedwagon.Workflow):
-#     #         name = "spam"
-#     #         def create_new_task(self, task_builder: tasks.TaskBuilder,
-#     #                             **job_args) -> None:
-#     #             dummy_task = DummyTask()
-#     #             task_builder.add_subtask(dummy_task)
-#     #
-#     #         def discover_task_metadata(self, initial_results: List[Any],
-#     #                                    additional_data: Dict[str, Any],
-#     #                                    **user_args) -> List[dict]:
-#     #             return [
-#     #                 {"dummy": "yes"},
-#     #                 {"dummy": "yes"},
-#     #             ]
-#     #
-#     #     with runner_strategies.JobManager() as job_manager:
-#     #         job_manager.valid_workflows = {"spam": DummyWorkflow}
-#     #         new_worker = job_manager.submit_job(
-#     #             workflow_name="spam",
-#     #             working_directory="working_dir",
-#     #         )
-#     #         new_worker.run_next_task()
-#     #         # assert new_worker.total_tasks == 2
-#     #         # assert new_worker.status.status_name == "working"
-#     #         # new_worker.join()
-#     #     assert new_worker.status.status_name == "joined"
-#     def test_job_error_propagates(self):
-#         # FIXME: There is a race condition
-#
-#         class DummyTask(speedwagon.tasks.Subtask):
-#             def work(self) -> bool:
-#                 raise ValueError("I did something wrong")
-#
-#         class DummyWorkflow(speedwagon.Workflow):
-#             name = "spam"
-#
-#             def create_new_task(self,
-#                                 task_builder: speedwagon.tasks.TaskBuilder,
-#                                 **job_args) -> None:
-#                 dummy_task = DummyTask()
-#                 task_builder.add_subtask(dummy_task)
-#
-#             def discover_task_metadata(self, initial_results: List[Any],
-#                                        additional_data: Dict[str, Any],
-#                                        **user_args) -> List[dict]:
-#                 return [
-#                     {"dummy": "yes"},
-#                     {"dummy": "yes"},
-#                 ]
-#
-#         with pytest.raises(ValueError):
-#             with runner_strategies.JobManager() as job_manager:
-#                 job_manager.valid_workflows = {"spam": DummyWorkflow}
-#                 new_worker = job_manager.submit_job(
-#                     workflow_name="spam",
-#                     working_directory="working_dir",
-#                 )
-#                 new_worker.start()
-#                 new_worker.run()
-#                 new_worker.join()
-#
-#     def test_failed_task_propagates(self,
-#                                     task_queue,
-#                                     producer):
-#
-#         class FailingTask(speedwagon.tasks.Subtask):
-#             def work(self) -> bool:
-#                 raise ValueError("I did something wrong")
-#
-#         task_consumer = runner_strategies.ThreadedTaskConsumer(
-#             task_queue
-#         )
-#         producer.workflow = Mock()
-#         producer.working_directory = "somewhere"
-#         producer.submit_task(FailingTask())
-#         producer.start()
-#         task_consumer.start()
-#         with pytest.raises(ValueError) as e:
-#             task_consumer.shutdown()
-#         assert "I did something wrong" in str(e.value)
-#
-#
-#     def test_spam(self):
-#         class Spam:
-#             def __init__(self):
-#                 self.exc = None
-#
-#             def payload(self):
-#                 print("running")
-#                 try:
-#                     raise Exception("noooo")
-#                 except Exception as e:
-#                     self.exc = e
-#                     raise
-#
-#         p = Spam()
-#
-#         t = threading.Thread(target=p.payload)
-#         t.start()
-#         # def join():
-#         #     t.join()
-#         #     if p.exc is not None:
-#         #         raise p.exc
-#
-#
-#         with pytest.raises(Exception):
-#             t.join()
-#             if p.exc is not None:
-#                 raise p.exc
-
-# class TestTaskSchedulerStates:
-#     def test_starting_init_changes_status_to_idle(self):
-#         job_manager = Mock()
-#
-#         # This makes sure that the task producer returns that it's ready
-#         job_manager.task_producer.start = lambda await_event: await_event.set()
-#         state = runner_strategies.TaskSchedulerInit(job_manager)
-#         state.start(None)
-#         try:
-#             assert job_manager.status.status_name == "idle"
-#         finally:
-#             state.join()
-#
-#     def test_running_in_idle_changes_to_working(self):
-#         class DummyWorkflow(speedwagon.Workflow):
-#             name = "spam"
-#
-#             def create_new_task(self,
-#                                 task_builder: speedwagon.tasks.TaskBuilder,
-#                                 **job_args) -> None:
-#                 task_builder.add_subtask(Mock())
-#
-#             def discover_task_metadata(self, initial_results: List[Any],
-#                                        additional_data: Dict[str, Any],
-#                                        **user_args) -> List[dict]:
-#                 return [
-#                     {"dummy": "yes"},
-#                     {"dummy": "yes"},
-#                 ]
-#
-#         context = Mock(name="context")
-#
-#         task_scheduler = runner_strategies.TaskScheduler2(context, "")
-#         task_scheduler.valid_workflows = {"spam": DummyWorkflow}
-#         state = runner_strategies.TaskSchedulerIdle(task_scheduler)
-#         state.context.workflow_name = "spam"
-#         state.run()
-#         try:
-#             assert task_scheduler.status.status_name == "working"
-#         finally:
-#             task_scheduler.join()
-#
-#     def test_joining_in_working_changes_status_to_joining(self):
-#         job_manager = Mock()
-#         state = runner_strategies.TaskSchedulerWorking(job_manager)
-#         state.join()
-#         assert job_manager.status.status_name == "joined"
-#
-#     @pytest.mark.parametrize("state", [
-#         runner_strategies.TaskSchedulerIdle,
-#         runner_strategies.TaskSchedulerWorking,
-#         runner_strategies.TaskSchedulerJoined,
-#     ])
-#     def test_starting_in_invalid_state_results_in_error(self, state):
-#         job_manager = Mock()
-#         with pytest.raises(RuntimeError):
-#             state(job_manager).start(None)
-#
-#     @pytest.mark.parametrize("state", [
-#         runner_strategies.TaskSchedulerInit,
-#         runner_strategies.TaskSchedulerWorking,
-#         runner_strategies.TaskSchedulerJoined,
-#     ])
-#     def test_running_in_invalid_state_results_in_error(self, state):
-#         job_manager = Mock()
-#         with pytest.raises(RuntimeError):
-#             state(job_manager).run()
-#
-#     # def test_s(self):
-#     #     with runner_strategies.JobManager() as job_manager:
-#     #         job_manager.start()
-
-#
-# class TestExecuteTaskPacket:
-#     def test_done_raises_terminate(self):
-#         task_consumer = runner_strategies.ThreadedTaskConsumer(queue.Queue())
-#         with pytest.raises(runner_strategies.TerminateConsumerThread):
-#             task_consumer.execute_task_packet(
-#                 packet=runner_strategies.TaskPacket(
-#                     runner_strategies.TaskPacket.PacketType.COMMAND,
-#                     "done"
-#                 )
-#             )
-#
-#     def test_task_calls_exec(self):
-#         task = Mock()
-#         task_consumer = runner_strategies.ThreadedTaskConsumer(queue.Queue())
-#         task_consumer.execute_task_packet(
-#             packet=runner_strategies.TaskPacket(
-#                 runner_strategies.TaskPacket.PacketType.TASK,
-#                 task
-#             )
-#         )
-#         assert task.exec.called is True
-#
-#     def test_error_fails_only_with_a_log(self, caplog):
-#         task_consumer = runner_strategies.ThreadedTaskConsumer(queue.Queue())
-#         task_consumer.execute_task_packet(
-#             packet=runner_strategies.TaskPacket(
-#                 "something_invalid",
-#                 1
-#             )
-#         )
-#
-#         assert any(
-#             "Unknown packet type"
-#             in message.message and message.levelname == "ERROR"
-#             for message in caplog.records
-#         )
-#
 
 class SpamTask(speedwagon.tasks.Subtask):
     name = "Spam"
+
     def work(self) -> bool:
         return True
+
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data: Dict[str, Any],
                                **user_args) -> List[dict]:
@@ -999,7 +675,12 @@ class TestBackgroundJobManager:
 
     def test_job_finished_called(self):
         callbacks = Mock(name="callbacks")
-        liaison = runner_strategies.JobManagerLiaison(callbacks=callbacks, events=Mock())
+
+        liaison = runner_strategies.JobManagerLiaison(
+            callbacks=callbacks,
+            events=Mock()
+        )
+
         with runner_strategies.BackgroundJobManager() as manager:
             manager.valid_workflows = {"spam": SpamWorkflow}
             manager.submit_job(
