@@ -26,7 +26,7 @@ from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
 try:
     from typing import Final
 except ImportError:
-    from typing_extensions import Final
+    from typing_extensions import Final  # type: ignore
 
 import webbrowser
 import yaml

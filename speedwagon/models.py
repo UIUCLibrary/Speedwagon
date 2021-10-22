@@ -7,7 +7,7 @@ from typing import Type, Dict, List, Any, Union, Tuple, Optional, cast
 try:
     from typing import Final
 except ImportError:
-    from typing_extensions import Final
+    from typing_extensions import Final  # type: ignore
 
 import warnings
 from abc import abstractmethod
