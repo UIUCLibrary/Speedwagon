@@ -281,27 +281,27 @@ class TestWorkflowProgress:
         progress_dialog.write_to_console("spam")
         assert "spam" in progress_dialog.get_console_content()
 
-    def test_start_changes_state_to_working(self):
+    def test_start_changes_state_to_working(self, qtbot):
         progress_dialog = dialogs.WorkflowProgress()
         assert progress_dialog.current_state == "idle"
         progress_dialog.start()
         assert progress_dialog.current_state == "working"
 
-    def test_stop_changes_working_state_to_stopping(self):
+    def test_stop_changes_working_state_to_stopping(self, qtbot):
         progress_dialog = dialogs.WorkflowProgress()
         progress_dialog.start()
         assert progress_dialog.current_state == "working"
         progress_dialog.stop()
         assert progress_dialog.current_state == "stopping"
 
-    def test_failed_changes_working_state_to_failed(self):
+    def test_failed_changes_working_state_to_failed(self, qtbot):
         progress_dialog = dialogs.WorkflowProgress()
         progress_dialog.start()
         assert progress_dialog.current_state == "working"
         progress_dialog.failed()
         assert progress_dialog.current_state == "failed"
 
-    def test_cancel_completed_changes_stopping_state_to_aborted(self):
+    def test_cancel_completed_changes_stopping_state_to_aborted(self, qtbot):
         progress_dialog = dialogs.WorkflowProgress()
         progress_dialog.start()
         assert progress_dialog.current_state == "working"
@@ -309,7 +309,7 @@ class TestWorkflowProgress:
         progress_dialog.cancel_completed()
         assert progress_dialog.current_state == "aborted"
 
-    def test_success_completed_chances_status_to_done(self):
+    def test_success_completed_chances_status_to_done(self, qtbot):
         progress_dialog = dialogs.WorkflowProgress()
         progress_dialog.start()
         progress_dialog.success_completed()
@@ -336,7 +336,7 @@ class TestWorkflowProgressGui:
         progress_dialog.flush()
         assert "Some message" in progress_dialog.get_console_content()
 
-    def test_write_html_block_to_console(self):
+    def test_write_html_block_to_console(self, qtbot):
         progress_dialog = dialogs.WorkflowProgressGui()
         progress_dialog.write_html_block_to_console("<h1>hello</h1>")
         assert "hello" in progress_dialog.get_console_content()
