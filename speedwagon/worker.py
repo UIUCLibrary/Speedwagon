@@ -53,7 +53,7 @@ class AbsJobWorker:
             self.successful = True
             return self.result
         except Exception as error:
-            print("Failed {}".format(error), file=sys.stderr)
+            print(f"Failed {error}", file=sys.stderr)
             self.successful = False
             raise
 

@@ -190,16 +190,15 @@ class MakeJp2Workflow(job.Workflow):
         if input_path is None:
             raise ValueError("No input path selected")
         if not os.path.exists(input_path):
-            raise ValueError("Unable to locate {}.".format(input_path))
+            raise ValueError(f"Unable to locate {input_path}.")
 
         if not os.path.isdir(input_path):
-            raise ValueError(
-                "Input not a valid directory {}".format(input_path))
+            raise ValueError(f"Input not a valid directory {input_path}")
 
         if destination_path is None:
             raise ValueError("No output path selected")
         if not os.path.exists(destination_path):
-            raise ValueError("Unable to locate {}.".format(destination_path))
+            raise ValueError(f"Unable to locate {destination_path}.")
 
         if not os.path.isdir(destination_path):
             raise ValueError(

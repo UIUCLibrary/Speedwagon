@@ -229,8 +229,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
 
         try:
             module = importlib.import_module(
-                "{}.{}".format(self.package_name,
-                               os.path.splitext(module_file)[0])
+                f"{self.package_name}.{os.path.splitext(module_file)[0]}"
             )
             members = inspect.getmembers(module, class_member_filter)
 
@@ -241,7 +240,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
                     yield module_class.name, module_class
 
         except ImportError as error:
-            msg = "Unable to load {}. Reason: {}".format(module_file, error)
+            msg = f"Unable to load {module_file}. Reason: {error}"
             print(msg, file=sys.stderr)
             self.logger.warning(msg)
 
@@ -259,7 +258,7 @@ class WorkflowFinder(AbsDynamicFinder):
 
     @property
     def package_name(self) -> str:
-        return "{}.workflows".format(__package__)
+        return f"{__package__}.workflows"
 
     @property
     def base_class(self) -> typing.Type[AbsWorkflow]:

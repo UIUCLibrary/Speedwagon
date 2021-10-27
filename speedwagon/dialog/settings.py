@@ -50,10 +50,7 @@ class UnsupportedOpenSettings(AbsOpenSettings):
     def system_open_directory(self, settings_directory: str) -> None:
         msg = QtWidgets.QMessageBox(parent=self.parent)
         msg.setIcon(QtWidgets.QMessageBox.Warning)
-        msg.setText(
-            "Don't know how to do that on {}".format(platform.system())
-        )
-
+        msg.setText(f"Don't know how to do that on {platform.system()}")
         msg.show()
 
 

@@ -158,7 +158,7 @@ class HathiPrepWorkflow(speedwagon.Workflow):
             package_factory = PackageFactory(
                 uiucprescon.packager.packages.HathiJp2())
         else:
-            raise ValueError("Unknown type {}".format(image_type))
+            raise ValueError(f"Unknown type {image_type}")
 
         browser = PackageBrowser(
             list(package_factory.locate_packages(root_dir)),
