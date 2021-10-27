@@ -427,3 +427,17 @@ class TestCompletenessReportGenerator:
         ]
         report = report_builder.build_report()
         assert "spam" in report
+
+
+class TestValidateOCRFilesTask:
+    def test_permission_error_mentioned_in_report(self, monkeypatch):
+        run_validation = MagicMock()
+        run_validation.side_effect = PermissionError()
+        monkeypatch.setattr(
+            workflow_completeness.validate_process,
+            "run_validation",
+            run_validation
+        )
+        task = workflow_completeness.ValidateOCRFilesTask("somepath")
+        task.work()
+        assert any("Permission issues" in a.message for a in task.results)
