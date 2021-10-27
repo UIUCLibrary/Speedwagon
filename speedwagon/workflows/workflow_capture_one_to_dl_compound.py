@@ -2,6 +2,7 @@
 from __future__ import annotations
 import logging
 import typing
+import warnings
 
 from typing import Any, Dict, Iterator, List, Union, Optional
 
@@ -31,7 +32,16 @@ class CaptureOneToDlCompoundWorkflow(Workflow):
                   '\n' \
                   '\n' \
                   'Output is a directory to put the new packages'
-    active = True
+    active = False
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        warnings.warn(
+            "Pending removal of Convert CaptureOne TIFF to Digital "
+            "Library Compound Object",
+            DeprecationWarning
+        )
 
     def user_options(self) -> List[options.UserOptionCustomDataType]:
         """Get the options types need to configuring the workflow.

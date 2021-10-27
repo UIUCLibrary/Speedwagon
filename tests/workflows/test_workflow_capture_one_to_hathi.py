@@ -1,3 +1,4 @@
+import warnings
 from unittest.mock import Mock, MagicMock
 
 import pytest
@@ -8,8 +9,10 @@ from speedwagon import models
 class TestCaptureOneToHathiTiffPackageWorkflow:
     @pytest.fixture
     def workflow(self):
-        return \
-            workflow_capture_one_to_hathi.CaptureOneToHathiTiffPackageWorkflow()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return \
+                workflow_capture_one_to_hathi.CaptureOneToHathiTiffPackageWorkflow()
 
     @pytest.fixture
     def default_options(self, workflow):

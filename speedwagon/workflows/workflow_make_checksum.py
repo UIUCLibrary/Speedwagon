@@ -6,6 +6,7 @@ import typing
 import os
 
 import itertools
+import warnings
 from abc import ABC
 from typing import List, Any, DefaultDict, Optional
 
@@ -229,6 +230,15 @@ class RegenerateChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
                   f"given {DEFAULT_CHECKSUM_FILE_NAME} file" \
                   "\n" \
                   "Input: Path to a root folder"
+    active = False
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        warnings.warn(
+            "Pending removal of Regenerate Checksum Batch [Single]",
+            DeprecationWarning
+        )
 
     def discover_task_metadata(self,
                                initial_results: List[
@@ -309,6 +319,15 @@ class RegenerateChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
                   "Input: Path to a root directory that contains " \
                   f"subdirectories to generate {DEFAULT_CHECKSUM_FILE_NAME} " \
                   f"files"
+    active = False
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        warnings.warn(
+            "Pending removal of Regenerate Checksum Batch [Multiple]",
+            DeprecationWarning
+        )
 
     def discover_task_metadata(self,
                                initial_results: List[Any],

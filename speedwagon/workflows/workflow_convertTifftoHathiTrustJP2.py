@@ -5,6 +5,7 @@ import enum
 import os
 import shutil
 import itertools
+import warnings
 from typing import List, Any, Optional
 
 import pykdu_compress
@@ -84,13 +85,21 @@ class CopyFile(AbsProcessStrategy):
 
 class ConvertTiffToHathiJp2Workflow(Workflow):
     name = "Convert TIFF to HathiTrust JP2"
-    active = True
+    active = False
     description = "Input is a path to a folder containing subfolders which " \
                   "may contain TIFF files." \
                   "\n" \
                   "Output is a new path where the input folder and its " \
                   "exact structure will be copied, but all TIFF files will " \
                   "be replaced by HathiTrust-compliant JP2 files."
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        warnings.warn(
+            "Pending removal of Convert TIFF to HathiTrust JP2",
+            DeprecationWarning
+        )
 
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data,

@@ -2,6 +2,7 @@
 
 import logging
 import typing
+import warnings
 from typing import List, Any, Dict, Optional
 from contextlib import contextmanager
 from uiucprescon import packager
@@ -27,7 +28,15 @@ class CaptureOneToHathiTiffPackageWorkflow(Workflow):
                   "It takes as its input a folder of CaptureOne batch " \
                   "files. It takes as its output a folder location where " \
                   "new files will be written."
-    active = True
+    active = False
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        warnings.warn(
+            "Pending removal of Convert CaptureOne TIFF to Hathi TIFF package",
+            DeprecationWarning
+        )
 
     def discover_task_metadata(
             self,
