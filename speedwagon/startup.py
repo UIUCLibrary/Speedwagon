@@ -47,22 +47,19 @@ import speedwagon.gui
 
 
 try:  # pragma: no cover
-    from importlib import metadata
-    from importlib import resources  # type: ignore
-
+    from importlib import metadata  # type: ignore
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
-    import importlib_resources as resources  # type: ignore
 
 try:
-    from importlib.resources import as_file
+    from importlib.resources import as_file  # type: ignore
 except ImportError:  # pragma: no cover
-    from importlib_resources import as_file
+    from importlib_resources import as_file  # type: ignore
 
 try:
-    from importlib.resources import files
+    from importlib.resources import files  # type: ignore
 except ImportError:  # pragma: no cover
-    from importlib_resources import files
+    from importlib_resources import files  # type: ignore
 
 __all__ = [
     "ApplicationLauncher",
