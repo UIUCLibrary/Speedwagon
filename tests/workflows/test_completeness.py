@@ -462,3 +462,20 @@ class TestPackageNamingConventionTask:
         )
         with pytest.raises(FileNotFoundError):
             task.work()
+
+
+class TestValidateMarcTask:
+    def test_file_not_found(self, monkeypatch):
+        run_validation = MagicMock()
+        run_validation.side_effect = FileNotFoundError()
+        monkeypatch.setattr(
+            workflow_completeness.validate_process,
+            "run_validation",
+            run_validation
+        )
+        monkeypatch.setattr(
+            workflow_completeness.os.path, "exists", lambda _: True
+        )
+        task = workflow_completeness.ValidateMarcTask("somepath")
+        task.work()
+        assert any("Unable to Validate Marc" in a.message for a in task.results)
