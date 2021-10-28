@@ -453,3 +453,12 @@ class TestValidateOCRFilesTask:
         task.log = Mock()
         task.work()
         assert "No validation errors found in" in task.log.call_args.args[0]
+
+
+class TestPackageNamingConventionTask:
+    def test_file_not_found(self):
+        task = workflow_completeness.PackageNamingConventionTask(
+            "some_invalid_path"
+        )
+        with pytest.raises(FileNotFoundError):
+            task.work()
