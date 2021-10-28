@@ -141,10 +141,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
 
     def __init__(self, manager: "worker.ToolJobManager") -> None:
         """Create a new runner."""
-        warnings.warn(
-            "Use UsingExternalManagerForAdapter2 instead",
-            DeprecationWarning
-        )
+        warnings.warn("Use a different AbsRunner instead", DeprecationWarning)
         self._manager = manager
 
     @staticmethod
