@@ -195,8 +195,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 except TaskFailed as error:
 
                     logger.error(
-                        "Job stopped during pre-task phase. "
-                        "Reason: {}".format(error)
+                        f"Job stopped during pre-task phase. Reason: {error}"
                     )
 
                     return
@@ -213,8 +212,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 except TaskFailed as error:
 
                     logger.error(
-                        "Job stopped during main tasks phase. "
-                        "Reason: {}".format(error)
+                        f"Job stopped during main tasks phase. Reason: {error}"
                     )
 
                     return
@@ -227,8 +225,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                 except TaskFailed as error:
 
                     logger.error(
-                        "Job stopped during post-task phase. "
-                        "Reason: {}".format(error)
+                        f"Job stopped during post-task phase. Reason: {error}"
                     )
 
                     return

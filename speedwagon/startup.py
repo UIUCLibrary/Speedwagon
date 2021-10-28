@@ -139,21 +139,30 @@ class CustomTabsFileReader:
                                   self._get_tab_items(new_tab, tab_name)
 
                     except TypeError as tab_error:
-                        print("Error loading tab '{}'. "
-                              "Reason: {}".format(tab_name, tab_error),
-                              file=sys.stderr)
+                        print(
+                            f"Error loading tab '{tab_name}'. "
+                            f"Reason: {tab_error}",
+                            file=sys.stderr
+                        )
                         continue
 
         except FileNotFoundError as error:
-            print("Custom tabs file not found. "
-                  "Reason: {}".format(error), file=sys.stderr)
+            print(
+                f"Custom tabs file not found. Reason: {error}",
+                file=sys.stderr
+            )
         except AttributeError as error:
-            print("Custom tabs file failed to load. "
-                  "Reason: {}".format(error), file=sys.stderr)
+            print(
+                "Custom tabs file failed to load. "
+                f"Reason: {error}",
+                file=sys.stderr
+            )
 
         except yaml.YAMLError as error:
-            print("{} file failed to load. "
-                  "Reason: {}".format(yaml_file, error), file=sys.stderr)
+            print(
+                f"{yaml_file} file failed to load. Reason: {error}",
+                file=sys.stderr
+            )
 
 
 def get_custom_tabs(
@@ -714,7 +723,7 @@ class StartQtThreaded(AbsStarter):
                 QtWidgets.QFileDialog.getSaveFileName(
                     parent,
                     "Export Log",
-                    "speedwagon_log_{}.txt".format(epoch_in_minutes),
+                    f"speedwagon_log_{epoch_in_minutes}.txt"
                     "Text Files (*.txt)")
 
             if not log_file_name:

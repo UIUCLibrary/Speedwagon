@@ -62,10 +62,11 @@ class ConvertFile(AbsProcessStrategy):
             infile=source_file, outfile=output_file_path)
 
         if return_core != 0:
-            raise ProcessingException("kdu_compress_cli returned "
-                                      "nonzero value: {}.".format(return_core))
+            raise ProcessingException(
+                f"kdu_compress_cli returned nonzero value: {return_core}"
+            )
         self.output = output_file_path
-        self.status = "Generated {}".format(output_file_path)
+        self.status = f"Generated {output_file_path}"
 
 
 class ConvertTiffPreservationToDLJp2Workflow(Workflow):
@@ -168,18 +169,15 @@ class ConvertTiffPreservationToDLJp2Workflow(Workflow):
             failure = True
 
         if not failure:
-            report = "Success! [{}] JP2 files written to \"{}\" folder".format(
-                len(results), dest)
-        else:
-            failed_list = "* \n".join(
-                [result.data["source_filename"]
-                 for result in failed_results]
-            )
+            return f'Success! [{len(results)}] JP2 files written ' \
+                     f'to "{dest}" folder'
+        failed_list = "* \n".join(
+            result.data["source_filename"] for result in failed_results
+        )
 
-            report = "Failed!\n" \
-                     "The following files failed to convert: \n" \
-                     "{}".format(failed_list)
-        return report
+        return "Failed!\n" \
+               "The following files failed to convert: \n" \
+               f"{failed_list}"
 
     @classmethod
     def _partition_results(cls, results: List[speedwagon.tasks.Result]):
@@ -212,7 +210,7 @@ class PackageImageConverterTask(speedwagon.tasks.Subtask):
 
         try:
             os.makedirs(des_path)
-            self.log("Created {}".format(des_path))
+            self.log(f"Created {des_path}")
         except FileExistsError:
             pass
 

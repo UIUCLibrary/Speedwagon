@@ -344,8 +344,9 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             stack_trace = traceback.format_exception(etype=type(error),
                                                      value=error,
                                                      tb=error.__traceback__)
-            message = "Unable to use {}. Reason: {}".format(
-                cast(AbsWorkflow, item).name, str(error.__class__.__name__))
+            message = \
+                f'Unable to use {cast(AbsWorkflow, item).name}. ' \
+                f'Reason: {error.__class__.__name__}'
 
             warning_message_dialog = QtWidgets.QMessageBox(self.parent)
             spanner = QtWidgets.QSpacerItem(300,
@@ -403,8 +404,8 @@ class WorkflowsTab(ItemSelectionTab):
         if len(self.item_selector_view.selectedIndexes()) != 1:
             print(
                 "Invalid number of selected Indexes. "
-                "Expected 1. Found {}".format(
-                    len(self.item_selector_view.selectedIndexes()))
+                "Expected 1. "
+                f"Found {len(self.item_selector_view.selectedIndexes())}"
             )
 
             return False
@@ -611,17 +612,23 @@ def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
                 yield new_tab
 
         except FileNotFoundError as error:
-            print("Custom tabs file not found. "
-                  "Reason: {}".format(error), file=sys.stderr)
+            print(
+                f"Custom tabs file not found. Reason: {error}",
+                file=sys.stderr
+            )
             raise
         except AttributeError as error:
-            print("Custom tabs file failed to load. "
-                  "Reason: {}".format(error), file=sys.stderr)
+            print(
+                f"Custom tabs file failed to load. Reason: {error}",
+                file=sys.stderr
+            )
             raise
 
         except yaml.YAMLError as yaml_error:
-            print("{} file failed to load. "
-                  "Reason: {}".format(yaml_file, yaml_error), file=sys.stderr)
+            print(
+                f"{yaml_file} file failed to load. Reason: {yaml_error}",
+                file=sys.stderr
+            )
             raise
 
 

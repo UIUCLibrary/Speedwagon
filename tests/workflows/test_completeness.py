@@ -1,6 +1,6 @@
 import os
 from unittest.mock import Mock, MagicMock
-
+import itertools
 import pytest
 
 import speedwagon
@@ -427,3 +427,102 @@ class TestCompletenessReportGenerator:
         ]
         report = report_builder.build_report()
         assert "spam" in report
+
+
+class TestValidateOCRFilesTask:
+    def test_permission_error_mentioned_in_report(self, monkeypatch):
+        run_validation = MagicMock()
+        run_validation.side_effect = PermissionError()
+        monkeypatch.setattr(
+            workflow_completeness.validate_process,
+            "run_validation",
+            run_validation
+        )
+        task = workflow_completeness.ValidateOCRFilesTask("somepath")
+        task.work()
+        assert any("Permission issues" in a.message for a in task.results)
+
+    def test_no_validation_errors_found(self, monkeypatch):
+        run_validation = MagicMock()
+        monkeypatch.setattr(
+            workflow_completeness.validate_process,
+            "run_validation",
+            run_validation
+        )
+        task = workflow_completeness.ValidateOCRFilesTask("somepath")
+        task.log = Mock()
+        task.work()
+        expected_message = "No validation errors found"
+
+        logs = list(itertools.chain.from_iterable(task.log.call_args))
+        assert any(
+            expected_message in log_message for log_message in logs
+        ), f"Expected to find '{expected_message}'. Found {logs}"
+
+
+class TestPackageNamingConventionTask:
+    def test_file_not_found(self):
+        task = workflow_completeness.PackageNamingConventionTask(
+            "some_invalid_path"
+        )
+        with pytest.raises(FileNotFoundError):
+            task.work()
+
+
+class TestValidateMarcTask:
+    def test_file_not_found(self, monkeypatch):
+        run_validation = MagicMock()
+        run_validation.side_effect = FileNotFoundError()
+        monkeypatch.setattr(
+            workflow_completeness.validate_process,
+            "run_validation",
+            run_validation
+        )
+        monkeypatch.setattr(
+            workflow_completeness.os.path, "exists", lambda _: True
+        )
+        task = workflow_completeness.ValidateMarcTask("somepath")
+        task.work()
+        assert any(
+            "Unable to Validate Marc" in a.message for a in task.results
+        )
+
+    def test_permission_error(self, monkeypatch):
+        run_validation = MagicMock()
+        run_validation.side_effect = PermissionError()
+        monkeypatch.setattr(
+            workflow_completeness.validate_process,
+            "run_validation",
+            run_validation
+        )
+        monkeypatch.setattr(
+            workflow_completeness.os.path, "exists", lambda _: True
+        )
+        task = workflow_completeness.ValidateMarcTask("somepath")
+        task.log = Mock()
+        task.work()
+        assert any(
+            "Permission issues" in a.message for a in task.results
+        )
+
+    def test_no_validation_errors_found(self, monkeypatch):
+        run_validation = MagicMock()
+        run_validation.return_value = None
+        monkeypatch.setattr(
+            workflow_completeness.validate_process,
+            "run_validation",
+            run_validation
+        )
+        monkeypatch.setattr(
+            workflow_completeness.os.path, "exists", lambda _: True
+        )
+        task = workflow_completeness.ValidateMarcTask("somepath")
+        log = Mock()
+        task.log = log
+        task.work()
+        expected_message = "No validation errors found"
+
+        logs = list(itertools.chain.from_iterable(task.log.call_args))
+        assert any(
+            "successfully validated" in message for message in logs
+        ), f"Expected to find '{expected_message}'. Found {logs}"
