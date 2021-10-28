@@ -47,11 +47,19 @@ import speedwagon.gui
 
 
 try:  # pragma: no cover
-    from importlib import metadata
-    from importlib import resources  # type: ignore
+    from importlib import metadata  # type: ignore
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
-    import importlib_resources as resources  # type: ignore
+
+try:
+    from importlib.resources import as_file  # type: ignore
+except ImportError:  # pragma: no cover
+    from importlib_resources import as_file  # type: ignore
+
+try:
+    from importlib.resources import files  # type: ignore
+except ImportError:  # pragma: no cover
+    from importlib_resources import files  # type: ignore
 
 __all__ = [
     "ApplicationLauncher",
@@ -233,9 +241,10 @@ class StartupDefault(AbsStarter):
 
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         # Display a splash screen until the app is loaded
-        with resources.open_binary(speedwagon.__name__, "logo.png") as logo:
+
+        with as_file(files(speedwagon).joinpath('logo.png')) as logo:
             splash = QtWidgets.QSplashScreen(
-                QtGui.QPixmap(logo.name).scaled(400, 400))
+                QtGui.QPixmap(str(logo)).scaled(400, 400))
 
         splash.setEnabled(False)
         splash.setWindowFlags(
@@ -511,8 +520,8 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
 
 
 def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
-    with resources.open_binary(speedwagon.__name__, "favicon.ico") as icon:
-        app.setWindowIcon(QtGui.QIcon(icon.name))
+    with as_file(files(speedwagon).joinpath('favicon.ico')) as icon:
+        app.setWindowIcon(QtGui.QIcon(str(icon)))
     try:
         app.setApplicationVersion(metadata.version(__package__))
     except metadata.PackageNotFoundError:

@@ -8,6 +8,7 @@ from speedwagon import runner_strategies, tasks
 import speedwagon
 
 
+@pytest.mark.filterwarnings("ignore:Use a different AbsRunner instead")
 def test_job_call_order(monkeypatch):
 
     manager = Mock(name="manager")
@@ -66,6 +67,7 @@ def test_job_call_order(monkeypatch):
     'discover_task_metadata',
     'completion_task'
 ])
+@pytest.mark.filterwarnings("ignore:Use a different AbsRunner instead")
 def test_task_exception_logs_error(step):
     manager = Mock(name="manager")
     manager.get_results = Mock(return_value=["dddd"])
@@ -106,6 +108,7 @@ def test_task_exception_logs_error(step):
     'discover_task_metadata',
     'completion_task'
 ])
+@pytest.mark.filterwarnings("ignore:Use a different AbsRunner instead")
 def test_task_aborted(caplog, step, monkeypatch):
     manager = Mock(name="manager")
     manager.get_results = Mock(return_value=[])
