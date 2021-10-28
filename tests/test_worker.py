@@ -8,6 +8,7 @@ from speedwagon import worker
 
 
 class TestWorkRunnerExternal3:
+    @pytest.mark.filterwarnings("ignore:Don't use the dialog")
     def test_abort_calls_callback(self, qtbot):
         with worker.WorkRunnerExternal3(QtWidgets.QWidget()) as r:
             r.abort_callback = Mock()
