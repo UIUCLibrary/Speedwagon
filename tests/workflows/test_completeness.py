@@ -441,3 +441,15 @@ class TestValidateOCRFilesTask:
         task = workflow_completeness.ValidateOCRFilesTask("somepath")
         task.work()
         assert any("Permission issues" in a.message for a in task.results)
+
+    def test_no_validation_errors_found(self, monkeypatch):
+        run_validation = MagicMock()
+        monkeypatch.setattr(
+            workflow_completeness.validate_process,
+            "run_validation",
+            run_validation
+        )
+        task = workflow_completeness.ValidateOCRFilesTask("somepath")
+        task.log = Mock()
+        task.work()
+        assert "No validation errors found in" in task.log.call_args.args[0]
