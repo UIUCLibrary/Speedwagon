@@ -21,7 +21,7 @@ PyYAML==5.4
 ruamel.yaml==0.16.10
 ruamel.yaml.clib==0.2.0
 tzlocal==2.1
-uiucprescon.packager[kdu]>=0.2.14
+uiucprescon.packager[kdu]>=0.2.15b2
 uiucprescon.images>=0.0.5
 uiucprescon.imagevalidate>=0.1.7
 uiucprescon.ocr>=0.1.3

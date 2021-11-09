@@ -9,4 +9,4 @@ pykdu-compress==0.1.6
 uiucprescon.images==0.0.5
 uiucprescon.imagevalidate==0.1.7
 uiucprescon.ocr==0.1.3
-uiucprescon.packager==0.2.14
+uiucprescon.packager==0.2.15b2
