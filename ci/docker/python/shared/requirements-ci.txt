@@ -2,7 +2,7 @@ build
 conan
 devpi-client
 flake8
-pykdu_compress >= 0.1.5
+pykdu_compress >= 0.1.7b2
 pylint
 sphinx
 pydocstyle
