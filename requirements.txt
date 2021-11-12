@@ -19,7 +19,7 @@ PyQt5-stubs
 pytz==2020.1
 PyYAML==5.4
 ruamel.yaml>=0.17.17
-ruamel.yaml.clib>=0.2.6
+# ruamel.yaml.clib>=0.2.6
 tzlocal==2.1
 uiucprescon.packager[kdu]>=0.2.15b2
 uiucprescon.images>=0.0.5
