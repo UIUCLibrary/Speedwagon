@@ -23,7 +23,7 @@ ruamel.yaml>=0.17.17
 tzlocal==2.1
 uiucprescon.packager[kdu]>=0.2.15b2
 uiucprescon.images>=0.0.5
-uiucprescon.imagevalidate>=0.1.9b1
+uiucprescon.imagevalidate>=0.1.9b2
 uiucprescon.ocr>=0.1.4b1
 yarl>=1.4.2
 zipp==3.1.0
