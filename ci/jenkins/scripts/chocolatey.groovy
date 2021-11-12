@@ -14,10 +14,9 @@ def sanitize_chocolatey_version(version){
             return dashed_version.replaceFirst(dev_pattern, "-dev")
         }
 
-        def beta_pattern = '(?<=\\d(\\.?))b((?=\\d)?)'
-        if(dashed_version.matches(beta_pattern)){
-            echo "Discovered a beta version"
-            return dashed_version.replaceFirst(beta_pattern, "beta")
+        if(version.matches('(([0-9]+(([.])?))+)b([0-9]+)')){
+            echo 'Discovered a beta version'
+            return dashed_version.replaceFirst('([.]?b)', "-beta")
         }
 
         def alpha_pattern = '(?<=\\d(\\.?))a((?=\\d)?)'
