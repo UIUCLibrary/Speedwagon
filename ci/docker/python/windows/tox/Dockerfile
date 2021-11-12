@@ -130,7 +130,7 @@ SHELL ["cmd", "/S", "/C" ]
 COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt c:/requirements/
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
-ENV PY_PYTHON=3.9
+ENV PY_PYTHON=3.10
 RUN py -m pip install --upgrade pip wheel && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements.txt -r c:/requirements/requirements-dev.txt && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-vendor.txt && `
