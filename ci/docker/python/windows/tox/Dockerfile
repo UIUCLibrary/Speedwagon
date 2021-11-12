@@ -2,8 +2,9 @@
 
 ARG PYTHON_36_VERSION=3.6.8
 ARG PYTHON_37_VERSION=3.7.9
-ARG PYTHON_38_VERSION=3.8.5
-ARG PYTHON_39_VERSION=3.9.0
+ARG PYTHON_38_VERSION=3.8.10
+ARG PYTHON_39_VERSION=3.9.7
+ARG PYTHON_310_VERSION=3.10.0
 
 ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8
 FROM ${FROM_IMAGE} as certsgen
@@ -46,8 +47,9 @@ ARG PYTHON_36_VERSION
 ARG PYTHON_37_VERSION
 ARG PYTHON_38_VERSION
 ARG PYTHON_39_VERSION
+ARG PYTHON_310_VERSION
 
-RUN $PYTHON_VERSIONS = @(${Env:PYTHON_36_VERSION}, ${Env:PYTHON_37_VERSION}, ${Env:PYTHON_38_VERSION}, ${Env:PYTHON_39_VERSION}) ; `
+RUN $PYTHON_VERSIONS = @(${Env:PYTHON_36_VERSION}, ${Env:PYTHON_37_VERSION}, ${Env:PYTHON_38_VERSION}, ${Env:PYTHON_39_VERSION}, ${Env:PYTHON_310_VERSION}) ; `
     foreach( $PYTHON_VERSION in $PYTHON_VERSIONS ){ `
         Write-Host "Installing Python $PYTHON_VERSION with Chocolatey" ; `
         $process = start-process -NoNewWindow -PassThru -FilePath C:\ProgramData\chocolatey\bin\choco.exe -ArgumentList 'install -y --stoponfirstfailure --no-progress --verbose python3', "--version=$PYTHON_VERSION", "-my" -Wait ;`
@@ -121,6 +123,21 @@ RUN py -m pip install --upgrade pip wheel && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt
 RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
 RUN py -m pip list
+# ==============================================================================# ==============================================================================
+
+FROM BASE_BUILDER as WHEEL_BUILDER_PY310
+SHELL ["cmd", "/S", "/C" ]
+COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt c:/requirements/
+ARG PIP_EXTRA_INDEX_URL
+ARG PIP_INDEX_URL
+ENV PY_PYTHON=3.10
+RUN py -m pip install --upgrade pip wheel && `
+    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements.txt -r c:/requirements/requirements-dev.txt && `
+    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-vendor.txt && `
+    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt && `
+    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt
+RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
+RUN py -m pip list
 # ==============================================================================
 
 #FROM BASE_BUILDER as CONAN_BUILDER
@@ -160,6 +177,7 @@ COPY --from=WHEEL_BUILDER_PY36 c:/wheels/ c:/wheels/
 COPY --from=WHEEL_BUILDER_PY37 c:/wheels/ c:/wheels/
 COPY --from=WHEEL_BUILDER_PY38 c:/wheels/ c:/wheels/
 COPY --from=WHEEL_BUILDER_PY39 c:/wheels/ c:/wheels/
+COPY --from=WHEEL_BUILDER_PY310 c:/wheels/ c:/wheels/
 
 ENV PIP_FIND_LINKS=c:\wheels
 

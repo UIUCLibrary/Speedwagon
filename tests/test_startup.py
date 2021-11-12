@@ -45,6 +45,13 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
         "get_app_data_directory",
         dummy_app_data_dir
     )
+
+    monkeypatch.setattr(
+        speedwagon.config.NixConfig,
+        "get_user_data_directory",
+        lambda _: '~'
+    )
+
     standard_startup = speedwagon.startup.StartupDefault(app=app)
 
     standard_startup.startup_settings['debug'] = True

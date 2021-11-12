@@ -341,7 +341,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             item_settings.setSizePolicy(ITEM_SETTINGS_POLICY)
         except Exception as error:
             traceback.print_exc()
-            stack_trace = traceback.format_exception(etype=type(error),
+            stack_trace = traceback.format_exception(type(error),
                                                      value=error,
                                                      tb=error.__traceback__)
             message = "Unable to use {}. Reason: {}".format(
