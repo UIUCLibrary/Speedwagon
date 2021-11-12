@@ -47,9 +47,9 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
     )
 
     monkeypatch.setattr(
-        speedwagon.config.AbsConfig,
+        speedwagon.config.NixConfig,
         "get_user_data_directory",
-        lambda: '~'
+        lambda _: '~'
     )
 
     standard_startup = speedwagon.startup.StartupDefault(app=app)
