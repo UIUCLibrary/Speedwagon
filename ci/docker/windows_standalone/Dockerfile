@@ -21,6 +21,10 @@ RUN Invoke-WebRequest https://aka.ms/vs/16/release/vs_buildtools.exe -OutFile ${
     if (! (Test-Path 'C:\BuildTools\Common7\Tools\VsDevCmd.bat')) `
     { `
         Start-Process -NoNewWindow -FilePath $Env:TEMP\\collect.exe -ArgumentList '-nologo -zip:${Env:TEMP}\\vslogs.zip' -Wait; `
+        if (! (Test-Path '${Env:TEMP}\\vslogs.zip')) `
+        { `
+            throw 'C:\BuildTools\Common7\Tools\VsDevCmd.bat not found and ${Env:TEMP}\\vslogs.zip never generated' ; `
+        } ; `
         Expand-Archive -Path vslogs.zip -DestinationPath $Env:TEMP\\logs\\ ; `
         Get-Content -LiteralPath '$Env:TEMP\\logs\\[Content_Types].xml' ; `
         throw 'VsDevCmd.bat not found' ; `
