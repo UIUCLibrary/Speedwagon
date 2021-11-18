@@ -1,42 +1,54 @@
 # escape=`
-ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8
+ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8-windowsservercore-ltsc2019
 FROM ${FROM_IMAGE}
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 # First install Visual Studio Build Tools
-ADD ci/docker/windows_standalone/startup.bat c:\startup\startup.bat
-RUN Invoke-WebRequest https://aka.ms/vs/16/release/vs_buildtools.exe -OutFile ${Env:TEMP}\\vs_buildtools.exe ; `
-    Invoke-WebRequest https://aka.ms/vs/16/release/channel -OutFile ${Env:TEMP}\\VisualStudio.chman ; `
-    Invoke-WebRequest https://aka.ms/vscollect.exe  -OutFile ${Env:TEMP}\\collect.exe ; `
-    Write-Host 'Installing Visual Studio Build Tools' ; `
-    $process = Start-Process -NoNewWindow -PassThru -FilePath $Env:TEMP\\vs_buildtools.exe -ArgumentList '--quiet  --installPath "C:\\BuildTools"  --wait --norestart --nocache --add Microsoft.VisualStudio.Component.Windows10SDK.18362' -Wait  ; `
+ADD ci/docker/windows_standalone/startup.bat c:/startup/startup.bat
+RUN Invoke-WebRequest https://aka.ms/vs/17/release/vs_buildtools.exe -OutFile vs_buildtools.exe ;`
+    $VS_INSTALL_PATH =  \"${Env:ProgramFiles(x86)}\" + '\Microsoft Visual Studio\2022\BuildTools' ; `
+    Write-Host \"Installing Visual Studio Build Tools to ${VS_INSTALL_PATH}\" ; `
+    $ARGS_LIST = @(`
+        '--quiet', `
+        '--wait', `
+        '--norestart', `
+        '--nocache', `
+        \"--installPath ${VS_INSTALL_PATH}\",`
+        '--remove Microsoft.VisualStudio.Component.Windows10SDK.10240',`
+        '--remove Microsoft.VisualStudio.Component.Windows10SDK.10586', `
+        '--remove Microsoft.VisualStudio.Component.Windows10SDK.14393', `
+        '--remove Microsoft.VisualStudio.Component.Windows81SDK'`
+        ) ;`
+    $process = Start-Process -NoNewWindow -PassThru -FilePath vs_buildtools.exe  `
+    -ArgumentList $ARGS_LIST -Wait  ; `
     if ( $process.ExitCode -eq 0) `
     { `
         Write-Host 'Installing Visual Studio Build Tools - Done' ; `
     } `
     else `
     { `
-        throw \"Installing Visual Studio Build Tools exited with code $($process.ExitCode)\" ;  `
-    };`
-    Write-Host "Testing for VsDevCmd.bat" ; `
-    if (! (Test-Path 'C:\BuildTools\Common7\Tools\VsDevCmd.bat')) `
+        Get-ChildItem c:\\ ; `
+        Get-ChildItem ${Env:ProgramFiles(x86)} ; `
+        Get-ChildItem ${VS_INSTALL_PATH} ; `
+        Get-ChildItem ${VS_INSTALL_PATH}\\Common7\\Tools ; `
+        $message = \"Installing Visual Studio Build Tools exited with code $($process.ExitCode) \"; `
+        Write-Host $message ;  `
+        throw 'unable to continue' ; `
+    } ; `
+    Write-Host 'Testing for VsDevCmd.bat' ; `
+    if (! (Test-Path 'c:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat')) `
     { `
+        Write-Host 'Testing for VsDevCmd.bat - Failed' ; `
         Start-Process -NoNewWindow -FilePath $Env:TEMP\\collect.exe -ArgumentList '-nologo -zip:${Env:TEMP}\\vslogs.zip' -Wait; `
         if (! (Test-Path '${Env:TEMP}\\vslogs.zip')) `
         { `
-            throw 'C:\BuildTools\Common7\Tools\VsDevCmd.bat not found and ${Env:TEMP}\\vslogs.zip never generated' ; `
+            throw 'VsDevCmd.bat not found and ${Env:TEMP}\\vslogs.zip never generated' ; `
         } ; `
         Expand-Archive -Path vslogs.zip -DestinationPath $Env:TEMP\\logs\\ ; `
         Get-Content -LiteralPath '$Env:TEMP\\logs\\[Content_Types].xml' ; `
         throw 'VsDevCmd.bat not found' ; `
     } ; `
     Write-Host "Testing for VsDevCmd.bat - Found" ; `
-    Write-Host "Adding VsDevCmd.bat to cmd.exe startup" ; `
-    Set-ItemProperty -Path 'HKLM:\Software\Microsoft\Command Processor' -Name 'AutoRun' -Value "c:\startup\startup.bat" ; `
-    Write-Host "Adding VsDevCmd.bat to cmd.exe startup - Done" ; `
-    Write-Host "Cleaning up $Env:TEMP" ; `
-    Remove-Item -Force -Recurse $Env:TEMP\* ; `
-    Write-Host "Cleaning up $Env:TEMP - Done" ; `
-    Write-Host 'Visual Studio Build Tools installed!'
+    Set-ItemProperty -Path 'HKLM:\Software\Microsoft\Command Processor' -Name 'AutoRun' -Value "c:\startup\startup.bat"
 
 ARG CHOCOLATEY_SOURCE=https://chocolatey.org/api/v2
 ARG ChocolateyEnvironmentDebug=false
@@ -103,7 +115,6 @@ RUN $ErrorActionPreference = 'Stop'; `
 ENV PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
 ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"
 
-
 ADD requirements.txt requirements-dev.txt c:\temp\
 RUN python -m pip install --upgrade pip ; `
     pip install wheel ; `
@@ -116,6 +127,6 @@ RUN pip install --no-index --find-links=c:\wheels\ `
         -r c:\temp\requirements-dev.txt
 
 ENV PIP_FIND_LINKS=c:\wheels\
-COPY ci/docker/windows_standalone/build_standalone.ps1 c:\scripts\build_standalone.ps1
+COPY ci/docker/windows_standalone/build_standalone.ps1 c:/scripts/build_standalone.ps1
 CMD c:\scripts\build_standalone.ps1
-#SHELL ["cmd", "/S", "/C"]
+##SHELL ["cmd", "/S", "/C"]
