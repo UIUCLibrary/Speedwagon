@@ -12,6 +12,7 @@ RUN Invoke-WebRequest https://aka.ms/vs/17/release/vs_buildtools.exe -OutFile vs
         '--norestart', `
         '--nocache', `
         \"--installPath ${VS_INSTALL_PATH}\",`
+        '--add Microsoft.VisualStudio.Component.Windows10SDK.18362', `
         '--remove Microsoft.VisualStudio.Component.Windows10SDK.10240',`
         '--remove Microsoft.VisualStudio.Component.Windows10SDK.10586', `
         '--remove Microsoft.VisualStudio.Component.Windows10SDK.14393', `
