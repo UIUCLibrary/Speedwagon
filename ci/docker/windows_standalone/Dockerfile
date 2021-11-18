@@ -3,7 +3,6 @@ ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8-windowsservercore-ltsc
 FROM ${FROM_IMAGE}
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 # First install Visual Studio Build Tools
-ADD ci/docker/windows_standalone/startup.bat c:/startup/startup.bat
 RUN Invoke-WebRequest https://aka.ms/vs/17/release/vs_buildtools.exe -OutFile vs_buildtools.exe ;`
     $VS_INSTALL_PATH =  \"${Env:ProgramFiles(x86)}\" + '\Microsoft Visual Studio\2022\BuildTools' ; `
     Write-Host \"Installing Visual Studio Build Tools to ${VS_INSTALL_PATH}\" ; `
@@ -49,7 +48,7 @@ RUN Invoke-WebRequest https://aka.ms/vs/17/release/vs_buildtools.exe -OutFile vs
     } ; `
     Write-Host "Testing for VsDevCmd.bat - Found" ; `
     Set-ItemProperty -Path 'HKLM:\Software\Microsoft\Command Processor' -Name 'AutoRun' -Value "c:\startup\startup.bat"
-
+ADD ci/docker/windows_standalone/startup.bat c:/startup/startup.bat
 ARG CHOCOLATEY_SOURCE=https://chocolatey.org/api/v2
 ARG ChocolateyEnvironmentDebug=false
 ADD ci/docker/windows_standalone/install_choco.ps1 choco/install_choco.ps1
