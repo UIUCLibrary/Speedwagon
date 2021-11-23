@@ -373,6 +373,16 @@ class ToolOptionsModel3(ToolOptionsModel):
             options[data.label_text] = data.data
         return options
 
+    def set_configure(self, key: str, value):
+        self.setData(self._look_up_index(key), value)
+
+    def _look_up_index(self, key: str) -> typing.Optional[QtCore.QModelIndex]:
+        for i in range(self.rowCount()):
+            index = self.index(i, 0)
+            if self.data(index, role=QtCore.Qt.UserRole).label_text == key:
+                return index
+        return None
+
     def headerData(
             self,
             index: int,

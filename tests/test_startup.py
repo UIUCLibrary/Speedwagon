@@ -879,6 +879,32 @@ class TestStartQtThreaded:
         starter.report_exception(exc)
         message_box.setText.assert_called_with(error_message)
 
+    def test_save_workflow_config(self, qtbot, starter):
+        dialog = Mock()
+        dialog.getSaveFileName = MagicMock(return_value=("make_jp2.json", ""))
+
+        serialization_strategy = Mock()
+        starter.save_workflow_config(
+            workflow_name="Spam",
+            data={},
+            dialog_box=dialog,
+            serialization_strategy=serialization_strategy
+        )
+        assert serialization_strategy.save.called is True
+
+    def test_load_workflow_config(self, qtbot, starter):
+        dialog = Mock()
+        dialog.getOpenFileName = MagicMock(return_value=("make_jp2.json", ""))
+
+        serialization_strategy = MagicMock()
+        serialization_strategy.load = Mock(return_value=("name", {}))
+        starter.import_workflow_config(
+            parent=Mock(),
+            dialog_box=dialog,
+            serialization_strategy=serialization_strategy
+        )
+        assert serialization_strategy.load.called is True
+
     def test_save_log_opens_dialog(self, qtbot, monkeypatch, starter):
 
         getSaveFileName = Mock(

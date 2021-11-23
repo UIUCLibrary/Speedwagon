@@ -11,7 +11,8 @@ from typing import List, Optional, Tuple, Dict, Iterator, NamedTuple, cast, \
 from abc import ABCMeta
 
 import yaml
-from PyQt5 import QtWidgets, QtCore  # type: ignore
+from PyQt5 import QtWidgets, QtCore, QtGui  # type: ignore
+from PyQt5.QtWidgets import QWidget
 
 import speedwagon
 import speedwagon.config
@@ -145,6 +146,21 @@ class Tab:
         return tab_tools, tab_tools_layout
 
 
+class PopupMenu(QtWidgets.QMenu):
+    def __init__(self, parent: typing.Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.b = QtWidgets.QPushButton(parent=self)
+
+    def showEvent(self, event: QtGui.QShowEvent) -> None:
+        super().showEvent(event)
+        p = self.pos()
+        geo = self.b.geometry()
+
+        self.move(
+            p.x() + geo.width() - self.geometry().width(), p.y()
+        )
+
+
 class ItemSelectionTab(Tab, metaclass=ABCMeta):
     """Tab for selection of item."""
 
@@ -158,6 +174,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     ) -> None:
         """Create a new item selection tab."""
         super().__init__(parent, work_manager)
+        self.export_action = QtWidgets.QAction(text="summy")
         self.log_manager = log_manager
         self.item_selection_model = item_model
         self.options_model: Optional[models.ToolOptionsModel3] = None
@@ -265,7 +282,9 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         tool_actions_layout = QtWidgets.QHBoxLayout()
 
         start_button = QtWidgets.QPushButton()
+
         start_button.setText("Start")
+        start_button.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         start_button.clicked.connect(self._start)
 
         tool_actions_layout.addSpacerItem(
