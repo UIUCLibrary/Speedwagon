@@ -258,9 +258,7 @@ class HathiCheckMissingComponentsTask(CompletenessSubTask):
 
             if not missing_files_errors:
                 self.log(
-                    "Found no missing component files in {}".format(
-                        self.package_path
-                    )
+                    f"Found no missing component files in {self.package_path}"
                 )
 
             else:
@@ -306,9 +304,7 @@ class ValidateExtraSubdirectoriesTask(CompletenessSubTask):
 
             if not extra_subdirectories_errors:
                 self.log(
-                    "No extra subdirectories found in {}".format(
-                        self.package_path
-                    )
+                    f"No extra subdirectories found in {self.package_path}"
                 )
 
             else:
@@ -351,11 +347,8 @@ class ValidateChecksumsTask(CompletenessSubTask):
                 ]
 
                 self.log(
-                    "Validating checksums of the {} files "
-                    "included in {}".format(
-                        len(files_to_check),
-                        checksum_report
-                    )
+                    f"Validating checksums of the {len(files_to_check)} files "
+                    f"included in {checksum_report}"
                 )
 
                 checksum_report_errors: List[hathi_result.Result] = \
@@ -367,9 +360,8 @@ class ValidateChecksumsTask(CompletenessSubTask):
                 )
                 if not checksum_report_errors:
                     self.log(
-                        "All checksums in {} successfully validated".format(
-                            checksum_report
-                        )
+                        f"All checksums in {checksum_report} successfully "
+                        f"validated"
                     )
                 else:
                     for error in checksum_report_errors:
@@ -423,9 +415,7 @@ class ValidateMarcTask(CompletenessSubTask):
                     )
 
                 else:
-                    self.log(
-                        "Validating marc.xml in {}".format(self.package_path)
-                    )
+                    self.log(f"Validating marc.xml in {self.package_path}")
 
                     marc_errors: List[hathi_result.Result] = \
                         validate_process.run_validation(
@@ -433,7 +423,7 @@ class ValidateMarcTask(CompletenessSubTask):
                         )
 
                     if not marc_errors:
-                        self.log("{} successfully validated".format(marc_file))
+                        self.log(f"{marc_file} successfully validated")
                     else:
                         for error in marc_errors:
                             self.log(error.message)
@@ -529,16 +519,10 @@ class ValidateYMLTask(CompletenessSubTask):
 
             try:
                 if not os.path.exists(yml_file):
-                    self.log(
-                        "Skipping \'{}\' due to file not found".format(
-                            yml_file
-                        )
-                    )
+                    self.log(f"Skipping '{yml_file}' due to file not found")
 
                 else:
-                    self.log(
-                        "Validating meta.yml in {}".format(self.package_path)
-                    )
+                    self.log(f"Validating meta.yml in {self.package_path}")
 
                     meta_yml_errors = validate_process.run_validation(
                         validator.ValidateMetaYML(yaml_file=yml_file,
@@ -547,7 +531,7 @@ class ValidateYMLTask(CompletenessSubTask):
                     )
 
                     if not meta_yml_errors:
-                        self.log("{} successfully validated".format(yml_file))
+                        self.log(f"{yml_file} successfully validated")
                     else:
                         for error in meta_yml_errors:
                             self.log(error.message)
@@ -734,7 +718,7 @@ class CompletenessReportBuilder:
                 for result in result_group:
                     results.append(result)
         except KeyError as error:
-            print("KeyError: {}".format(error), file=sys.stderr)
+            print(F"KeyError: {error}", file=sys.stderr)
         return results
 
     def build_report(self) -> str:
