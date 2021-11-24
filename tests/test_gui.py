@@ -215,12 +215,39 @@ class TestMainWindow2:
 
     def test_set_current_tab_invalid_throws(self, qtbot):
         main_window = speedwagon.gui.MainWindow2(Mock())
-        workflows_tab1 = speedwagon.tabs.WorkflowsTab2(
-            parent=main_window.tab_widget,
-            workflows=MagicMock(),
+        main_window.tab_widget.add_tab(
+            speedwagon.tabs.WorkflowsTab2(
+                parent=main_window.tab_widget,
+                workflows=MagicMock(),
+            ).tab_widget,
+            "Spam"
         )
-        main_window.tab_widget.add_tab(workflows_tab1.tab_widget, "Spam")
 
         # eggs is NOT a valid tab
         with pytest.raises(IndexError):
             main_window.set_current_tab("eggs")
+
+    def test_set_active_workflow(self, qtbot):
+        main_window = speedwagon.gui.MainWindow2(Mock())
+
+        bacon = MagicMock()
+        bacon.name = "Bacon"
+
+        eggs = MagicMock()
+        eggs.name = "Eggs"
+
+        main_window.add_tab(
+            "All", {
+                "Bacon": bacon,
+                "Eggs": eggs,
+            }
+        )
+        main_window.tab_widget.add_tab(
+            speedwagon.tabs.WorkflowsTab2(
+                parent=main_window.tab_widget,
+                workflows=MagicMock(),
+            ).tab_widget,
+            "Spam"
+        )
+        main_window.set_active_workflow("Eggs")
+        assert main_window.get_current_workflow_name() == "Eggs"
