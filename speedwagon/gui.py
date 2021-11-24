@@ -632,13 +632,14 @@ class MainWindow2(MainWindow2UI):
 
     def set_current_tab(self, tab_name: str) -> None:
         tab_index = self.locate_tab_index_by_name(tab_name)
-        if tab_index is not None:
-            self.tab_widget.tabs.setCurrentIndex(tab_index)
+        if tab_index is None:
+            raise IndexError(f"No tab named {tab_name}")
+        self.tab_widget.tabs.setCurrentIndex(tab_index)
 
     def locate_tab_index_by_name(self, name) -> typing.Optional[int]:
-        for i, tab in enumerate(self._tabs):
-            if tab.tab_name == name:
-                return i
+        for index in range(self.tab_widget.tabs.count()):
+            if self.tab_widget.tabs.tabText(index) == name:
+                return index
         return None
 
     def set_active_workflow(self, workflow_name: str) -> None:
