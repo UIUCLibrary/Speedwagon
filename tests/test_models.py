@@ -216,7 +216,10 @@ class TestToolOptionsModel3:
         assert new_model.get()["Spam label"] == "Dummy"
 
     def test_get_item(self):
-        data = [Mock(data="Spam", label_text="Spam label")]
+        data = [
+            Mock(data="Spam", label_text="Spam label"),
+            Mock(data="Bacon", label_text="Bacon label"),
+        ]
         new_model = models.ToolOptionsModel3(data)
         new_model["Spam label"] = "Dummy"
         assert new_model["Spam label"] == "Dummy"
