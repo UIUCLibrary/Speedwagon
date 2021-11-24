@@ -834,11 +834,11 @@ class StartQtThreaded(AbsStarter):
 
             self.windows.save_logs_requested.connect(self.save_log)
 
-            self.windows.export_workflow_config.connect(
+            self.windows.export_job_config.connect(
                 self.save_workflow_config
             )
 
-            self.windows.import_workflow_config.connect(
+            self.windows.import_job_config.connect(
                 self.import_workflow_config
             )
 

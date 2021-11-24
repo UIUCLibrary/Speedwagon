@@ -600,8 +600,8 @@ class MainWindow2(MainWindow2UI):
     system_info_requested = QtCore.pyqtSignal(QtWidgets.QWidget)
     help_requested = QtCore.pyqtSignal()
     save_logs_requested = QtCore.pyqtSignal(QtWidgets.QWidget)
-    export_workflow_config = QtCore.pyqtSignal(str, dict, QtWidgets.QWidget)
-    import_workflow_config = QtCore.pyqtSignal(QtWidgets.QWidget)
+    export_job_config = QtCore.pyqtSignal(str, dict, QtWidgets.QWidget)
+    import_job_config = QtCore.pyqtSignal(QtWidgets.QWidget)
 
     def __init__(
             self,
@@ -688,13 +688,13 @@ class MainWindow2(MainWindow2UI):
 
         builder.save_log_function = self.save_log
 
-        builder.export_signal = lambda: self.export_workflow_config.emit(
+        builder.export_signal = lambda: self.export_job_config.emit(
             self.get_current_workflow_name(),
-            self.get_current_tab_settings(),
+            self.get_current_job_settings(),
             self
         )
 
-        builder.import_signal = lambda: self.import_workflow_config.emit(self)
+        builder.import_signal = lambda: self.import_job_config.emit(self)
 
         builder.add_help = True
         builder.build()
@@ -713,7 +713,7 @@ class MainWindow2(MainWindow2UI):
             ].item_selection_model.data(item_selected_index,
                                         QtCore.Qt.UserRole).name
 
-    def get_current_tab_settings(self) -> typing.Dict[str, typing.Any]:
+    def get_current_job_settings(self) -> typing.Dict[str, typing.Any]:
         return \
             self._tabs[self.tab_widget.tabs.currentIndex()].options_model.get()
 

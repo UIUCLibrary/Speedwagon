@@ -1,3 +1,5 @@
+import typing
+from typing import Any, List, Dict
 from unittest.mock import Mock, MagicMock, patch, mock_open
 import webbrowser
 
@@ -7,6 +9,7 @@ import pytest
 import speedwagon.startup
 import speedwagon.tabs
 import speedwagon.gui
+from speedwagon.workflows import shared_custom_widgets
 from PyQt5.QtWidgets import QApplication, QAction
 
 
@@ -251,3 +254,26 @@ class TestMainWindow2:
         )
         main_window.set_active_workflow("Eggs")
         assert main_window.get_current_workflow_name() == "Eggs"
+
+    def test_set_current_workflow_settings(self, qtbot):
+        main_window = speedwagon.gui.MainWindow2(Mock())
+
+        class Eggs(speedwagon.Workflow):
+            def discover_task_metadata(self, initial_results: List[Any],
+                                       additional_data: Dict[str, Any],
+                                       **user_args) -> List[dict]:
+                return []
+
+            def user_options(self) -> typing.List[Any]:
+                return [
+                    shared_custom_widgets.UserOptionPythonDataType2(
+                        label_text="Dummy"
+                    )
+                ]
+
+        main_window.add_tab("All", {"Eggs": Eggs})
+
+        main_window.set_active_workflow("Eggs")
+
+        main_window.set_current_workflow_settings({"Dummy": "Yes"})
+        assert main_window.get_current_job_settings()["Dummy"] == "Yes"

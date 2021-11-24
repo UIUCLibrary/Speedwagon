@@ -380,7 +380,8 @@ class ToolOptionsModel3(ToolOptionsModel):
                 return index
         return None
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: str):
+        """Locate the option based on the name"""
         for data in self._data:
             if data.label_text == item:
                 return data.data
