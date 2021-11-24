@@ -215,19 +215,16 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
             []
         )
 
-        package_transformed_message = "{} objects transformed".format(
-            len(package_transformed))
+        package_transformed_message = \
+            f"{len(package_transformed)} objects transformed"
 
-        marc_files_message = "{} marc.xml files generated".format(
-            len(marc_files_generated))
+        marc_files_message = \
+            f"{len(marc_files_generated)} marc.xml files generated"
 
-        yaml_file_message = "{} meta.yml files generated".format(
-            len(yaml_results)
-        )
+        yaml_file_message = f"{len(yaml_results)} meta.yml files generated"
 
-        checksum_message = "{} checksum.md5 files generated".format(
-            len(checksum_files_generated)
-        )
+        checksum_message = \
+            f"{len(checksum_files_generated)} checksum.md5 files generated"
 
         return f"Results:\n" \
                f"* {package_transformed_message}\n" \
@@ -266,8 +263,11 @@ class TransformPackageTask(speedwagon.tasks.Subtask):
         )
         package_factory.transform(self._package, self._destination)
 
-        self.log("Transformed CaptureOne package {} to a HathiTiff package "
-                 "in {}".format(self._bib_id, self._destination))
+        self.log(
+            f"Transformed CaptureOne package {self._bib_id} to a HathiTiff "
+            f"package in {self._destination}"
+        )
+
         self.set_results(
             {
                 "bib_id": self._bib_id,
