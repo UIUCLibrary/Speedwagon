@@ -116,3 +116,28 @@ class TestConfigJSONSerialize:
 
         with pytest.raises(AssertionError):
             serializer.load()
+
+
+class TestJobConfigSerialization:
+
+    @pytest.fixture()
+    def mock_strategy (self):
+        return Mock(
+            spec=speedwagon.job.AbsJobConfigSerializationStrategy
+        )
+
+    def test_save(self, mock_strategy):
+
+        serializer = speedwagon.job.JobConfigSerialization(
+            strategy=mock_strategy
+        )
+        serializer.save("Spam Workflow", {})
+        assert mock_strategy.save.called is True
+
+    def test_load(self, mock_strategy):
+
+        serializer = speedwagon.job.JobConfigSerialization(
+            strategy=mock_strategy
+        )
+        serializer.load()
+        assert mock_strategy.load.called is True
