@@ -84,8 +84,7 @@ class ZipPackagesWorkflow(Workflow):
 
         output = user_args.get("Output")
         if output:
-            return \
-                "Zipping complete. All files written to \"{}\".".format(output)
+            return f"Zipping complete. All files written to \"{output}\"."
 
         return "Zipping complete. All files written to output location"
 
@@ -112,7 +111,7 @@ class ZipTask(speedwagon.tasks.Subtask):
         my_logger = logging.getLogger(hathizip.__name__)
         my_logger.setLevel(logging.INFO)
         with self.log_config(my_logger):
-            self.log("Zipping {}".format(self._source_path))
+            self.log(f"Zipping {self._source_path}")
             hathizip.process.compress_folder_inplace(
                 path=self._source_path,
                 dst=self._destination_path)

@@ -402,7 +402,7 @@ class MultiStageTask(Task):
                 self.result = self.process_subtask_results(subtask_results)
             return self.result
         except Exception as error:
-            print("Failed {}".format(error), file=sys.stderr)
+            print(f"Failed {error}", file=sys.stderr)
             raise
 
     def process_subtask_results(self, subtask_results: List[Any]) -> Any:

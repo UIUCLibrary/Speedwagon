@@ -92,7 +92,7 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
         for k in GenerateMarcXMLFilesWorkflow.required_settings_keys:
             value = self.global_settings.get(k)
             if value is None:
-                raise MissingConfiguration("Missing value for {}".format(k))
+                raise MissingConfiguration(f"Missing value for {k}")
 
     def user_options(self) -> List[UserOptions]:
         """Get the settings presented to the user."""
@@ -512,7 +512,7 @@ def strip_volume(full_bib_id: str) -> int:
     volume_regex = re.compile("^[0-9]{7}(?=((v[0-9]*)((i[0-9])?)?)?$)")
     result = volume_regex.match(full_bib_id)
     if not result:
-        raise ValueError("{} is not a valid bib_id".format(full_bib_id))
+        raise ValueError(f"{full_bib_id} is not a valid bib_id")
     return int(result.group(0))
 
 

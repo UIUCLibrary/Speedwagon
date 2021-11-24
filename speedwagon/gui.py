@@ -384,7 +384,8 @@ class MainWindow1(MainProgram):
             webbrowser.open_new(pkg_metadata['Home-page'])
         except metadata.PackageNotFoundError as error:
             self.log_manager.warning(
-                "No help link available. Reason: {}".format(error))
+                f"No help link available. Reason: {error}"
+            )
 
     def setup_menu(self) -> None:
         # Add menu bar
@@ -492,7 +493,7 @@ class MainWindow1(MainProgram):
             if tab_name == tab_title:
                 self.tab_widget.tabs.setCurrentIndex(tab)
                 return
-        self.log_manager.warning("Unable to set tab to {}.".format(tab_name))
+        self.log_manager.warning(f"Unable to set tab to {tab_name}.")
 
     def add_tab(
             self,
@@ -551,7 +552,7 @@ class MainWindow1(MainProgram):
         if len(num_selected) != 1:
             print(
                 "Invalid number of selected Indexes. "
-                "Expected 1. Found {}".format(num_selected)
+                f"Expected 1. Found {num_selected}"
             )
 
     def save_log(self) -> None:
@@ -562,7 +563,7 @@ class MainWindow1(MainProgram):
             QtWidgets.QFileDialog.getSaveFileName(
                 self,
                 "Export Log",
-                "speedwagon_log_{}.txt".format(epoch_in_minutes),
+                f"speedwagon_log_{epoch_in_minutes}.txt",
                 "Text Files (*.txt)")
 
         if not log_file_name:
@@ -570,7 +571,7 @@ class MainWindow1(MainProgram):
         with open(log_file_name, "w", encoding="utf-8") as file_handle:
             file_handle.write(data)
 
-        self.log_manager.info("Saved log to {}".format(log_file_name))
+        self.log_manager.info(f"Saved log to {log_file_name}")
 
 
 MainWindow = MainWindow1
