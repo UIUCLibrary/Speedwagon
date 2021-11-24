@@ -121,7 +121,7 @@ class TestConfigJSONSerialize:
 class TestJobConfigSerialization:
 
     @pytest.fixture()
-    def mock_strategy (self):
+    def mock_strategy(self):
         return Mock(
             spec=speedwagon.job.AbsJobConfigSerializationStrategy
         )
