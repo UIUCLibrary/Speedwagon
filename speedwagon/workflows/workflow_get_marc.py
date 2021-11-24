@@ -512,7 +512,7 @@ def strip_volume(full_bib_id: str) -> int:
     volume_regex = re.compile("^[0-9]{7}(?=((v[0-9]*)((i[0-9])?)?)?$)")
     result = volume_regex.match(full_bib_id)
     if not result:
-        raise ValueError("{} is not a valid bib_id".format(full_bib_id))
+        raise ValueError(f"{full_bib_id} is not a valid bib_id")
     return int(result.group(0))
 
 
