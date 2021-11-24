@@ -99,3 +99,20 @@ class TestConfigJSONSerialize:
             name, data = serializer.load()
             assert name == "Spam"
 
+    def test_save_missing_filename_throws(self):
+        serializer = speedwagon.job.ConfigJSONSerialize()
+
+        # NOTICE: no file was added
+        # for example: serializer.file_name = "myfile.json"
+
+        with pytest.raises(AssertionError):
+            serializer.save("something", {})
+
+    def test_loading_missing_filename_throws(self):
+        serializer = speedwagon.job.ConfigJSONSerialize()
+
+        # NOTICE: no file was added
+        # for example: serializer.file_name = "myfile.json"
+
+        with pytest.raises(AssertionError):
+            serializer.load()
