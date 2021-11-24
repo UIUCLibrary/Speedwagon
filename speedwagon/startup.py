@@ -585,7 +585,7 @@ class StartQtThreaded(AbsStarter):
         serialization_strategy = \
             serialization_strategy or job.ConfigJSONSerialize()
 
-        dialog_box = dialog_box or QtWidgets.QFileDialog
+        dialog_box = dialog_box or QtWidgets.QFileDialog()
         load_file, _ = dialog_box.getOpenFileName(
             parent,
             "Import Job Configuration",
@@ -617,7 +617,7 @@ class StartQtThreaded(AbsStarter):
         serialization_strategy = \
             serialization_strategy or job.ConfigJSONSerialize()
 
-        dialog_box = dialog_box or QtWidgets.QFileDialog
+        dialog_box = dialog_box or QtWidgets.QFileDialog()
         export_file_name, _ = dialog_box.getSaveFileName(
                 parent,
                 "Export Job Configuration",

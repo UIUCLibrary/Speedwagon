@@ -376,7 +376,10 @@ class ToolOptionsModel3(ToolOptionsModel):
     def _look_up_index(self, key: str) -> typing.Optional[QtCore.QModelIndex]:
         for i in range(self.rowCount()):
             index = self.index(i, 0)
-            if self.data(index, role=QtCore.Qt.UserRole).label_text == key:
+            if typing.cast(
+                shared_custom_widgets.UserOption2,
+                self.data(index, role=QtCore.Qt.UserRole)
+            ).label_text == key:
                 return index
         return None
 

@@ -699,7 +699,7 @@ class MainWindow2(MainWindow2UI):
         builder.add_help = True
         builder.build()
 
-    def get_current_workflow_name(self) -> str:
+    def get_current_workflow_name(self) -> typing.Optional[str]:
         current_tab_index = self.tab_widget.tabs.currentIndex()
 
         item_selected_index = \
@@ -707,15 +707,25 @@ class MainWindow2(MainWindow2UI):
                 current_tab_index
             ].item_selector_view.selectedIndexes()[0]
 
-        return \
-            self._tabs[
-                current_tab_index
-            ].item_selection_model.data(item_selected_index,
-                                        QtCore.Qt.UserRole).name
+        current_workflow = typing.cast(
+                speedwagon.Workflow,
+                self._tabs[
+                    current_tab_index
+                ].item_selection_model.data(
+                    item_selected_index,
+                    QtCore.Qt.UserRole
+                )
+            )
+        return current_workflow.name
 
     def get_current_job_settings(self) -> typing.Dict[str, typing.Any]:
-        return \
-            self._tabs[self.tab_widget.tabs.currentIndex()].options_model.get()
+        current_tab = self._tabs[self.tab_widget.tabs.currentIndex()]
+        if current_tab is None:
+            raise IndexError("Unable to locate the current tab")
+        if current_tab.options_model is None:
+            raise ValueError("Current tab has no option model")
+
+        return current_tab.options_model.get()
 
     def add_tab(
             self,
