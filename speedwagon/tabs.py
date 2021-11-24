@@ -146,21 +146,6 @@ class Tab:
         return tab_tools, tab_tools_layout
 
 
-class PopupMenu(QtWidgets.QMenu):
-    def __init__(self, parent: typing.Optional[QWidget] = None) -> None:
-        super().__init__(parent)
-        self.b = QtWidgets.QPushButton(parent=self)
-
-    def showEvent(self, event: QtGui.QShowEvent) -> None:
-        super().showEvent(event)
-        p = self.pos()
-        geo = self.b.geometry()
-
-        self.move(
-            p.x() + geo.width() - self.geometry().width(), p.y()
-        )
-
-
 class ItemSelectionTab(Tab, metaclass=ABCMeta):
     """Tab for selection of item."""
 
