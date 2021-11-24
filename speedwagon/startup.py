@@ -574,6 +574,61 @@ class StartQtThreaded(AbsStarter):
         set_app_display_metadata(self.app)
         self._request_window = QtRequestMoreInfo(self.windows)
 
+    @staticmethod
+    def import_workflow_config(
+            parent: speedwagon.gui.MainWindow2,
+            dialog_box: typing.Optional[QtWidgets.QFileDialog] = None,
+            serialization_strategy: typing.Optional[
+                job.AbsJobConfigSerializationStrategy
+            ] = None
+    ) -> None:
+        serialization_strategy = \
+            serialization_strategy or job.ConfigJSONSerialize()
+
+        dialog_box = dialog_box or QtWidgets.QFileDialog()
+        load_file, _ = dialog_box.getOpenFileName(
+            parent,
+            "Import Job Configuration",
+            "",
+            "Job Configuration JSON (*.json);;All Files (*)"
+        )
+
+        if load_file == "":
+            # Return if cancelled
+            return
+
+        serialization_strategy.file_name = load_file
+        workflow_name, data = serialization_strategy.load()
+        parent.logger.debug(f"Loading {workflow_name}")
+        parent.set_current_tab("All")
+        parent.set_active_workflow(workflow_name)
+        parent.set_current_workflow_settings(data)
+
+    @staticmethod
+    def save_workflow_config(
+            workflow_name,
+            data,
+            parent: typing.Optional[QtWidgets.QWidget] = None,
+            dialog_box: typing.Optional[QtWidgets.QFileDialog] = None,
+            serialization_strategy: typing.Optional[
+                job.AbsJobConfigSerializationStrategy
+            ] = None
+    ) -> None:
+        serialization_strategy = \
+            serialization_strategy or job.ConfigJSONSerialize()
+
+        dialog_box = dialog_box or QtWidgets.QFileDialog()
+        export_file_name, _ = dialog_box.getSaveFileName(
+                parent,
+                "Export Job Configuration",
+                f"{workflow_name}.json",
+                "Job Configuration JSON (*.json)"
+        )
+
+        if export_file_name:
+            serialization_strategy.file_name = export_file_name
+            serialization_strategy.save(workflow_name, data)
+
     def load_settings(self) -> None:
         self.user_data_dir = typing.cast(
             str, self.platform_settings.get("user_data_directory")
@@ -778,6 +833,14 @@ class StartQtThreaded(AbsStarter):
             )
 
             self.windows.save_logs_requested.connect(self.save_log)
+
+            self.windows.export_job_config.connect(
+                self.save_workflow_config
+            )
+
+            self.windows.import_job_config.connect(
+                self.import_workflow_config
+            )
 
             self.windows.system_info_requested.connect(
                 self.request_system_info

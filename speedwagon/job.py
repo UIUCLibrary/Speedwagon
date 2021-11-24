@@ -3,6 +3,7 @@
 import abc
 import importlib
 import inspect
+import json
 import logging
 import os
 import sys
@@ -299,3 +300,67 @@ def all_required_workflow_keys(
     for workflow in workflows.values():
         keys = keys.union(set(workflow.required_settings_keys))
     return keys
+
+
+class AbsJobConfigSerializationStrategy(abc.ABC):
+    def __init__(self):
+        self.file_name: typing.Optional[str] = None
+
+    @abc.abstractmethod
+    def save(self, workflow_name: str, data: Dict[str, Any]) -> None:
+        """Save data to file."""
+
+    @abc.abstractmethod
+    def load(self) -> typing.Tuple[str, Dict[str, Any]]:
+        """Load data from file and return."""
+
+
+class JobConfigSerialization:
+
+    def __init__(self, strategy: AbsJobConfigSerializationStrategy) -> None:
+        super().__init__()
+        self._strategy = strategy
+
+    def save(self, workflow_name: str, data: Dict[str, Any]) -> None:
+        self._strategy.save(workflow_name, data)
+
+    def load(self) -> typing.Tuple[str, Dict[str, Any]]:
+        return self._strategy.load()
+
+
+class ConfigJSONSerialize(AbsJobConfigSerializationStrategy):
+
+    def save(self, workflow_name: str, data: Dict[str, Any]) -> None:
+        if self.file_name is None:
+            raise AssertionError(
+                "Required class attribute missing: file_name "
+            )
+
+        with open(self.file_name, "w", encoding="utf-8") as file_writer:
+            file_writer.write(self.serialize_data(workflow_name, data))
+
+    @staticmethod
+    def serialize_data(name: str, data: Dict[str, Any]) -> str:
+        return json.dumps(
+            {
+                "Workflow": name,
+                "Configuration": data
+            },
+            indent=4
+
+        )
+
+    @staticmethod
+    def deserialize_data(
+            data: typing.Mapping[str, Any]
+    ) -> typing.Tuple[str, Dict[str, Any]]:
+        return data["Workflow"], data["Configuration"]
+
+    def load(self) -> typing.Tuple[str, Dict[str, Any]]:
+        if self.file_name is None:
+            raise AssertionError(
+                "Required class attribute missing: file_name "
+            )
+
+        with open(self.file_name, "r", encoding="utf-8") as file_reader:
+            return self.deserialize_data(json.load(file_reader))

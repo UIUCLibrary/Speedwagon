@@ -197,9 +197,13 @@ class MainWindowMenuBuilder:
         self.save_log_function: \
             typing.Optional[typing.Callable[[], None]] = None
 
+        self.export_signal: typing.Optional[typing.Callable[[], None]] = None
+        self.import_signal: typing.Optional[typing.Callable[[], None]] = None
+
     def build(self) -> None:
         self._build_file_menu(self._menu_bar)
 
+        self._build_job_menu(self._menu_bar)
         self._build_system_menu(self._menu_bar)
 
         self._build_help(self._menu_bar)
@@ -298,6 +302,28 @@ class MainWindowMenuBuilder:
             about_button = QtWidgets.QAction(" &About ", self._parent)
             about_button.triggered.connect(self._parent.show_about_window)
             help_menu.addAction(about_button)
+
+    def _build_job_menu(self, menu_bar: QtWidgets.QMenuBar) -> None:
+        job_menu = menu_bar.addMenu("Job")
+        job_menu.setObjectName("jobMenu")
+
+        if self.export_signal is not None:
+            export_button = QtWidgets.QAction(
+                "Export",
+                self._parent
+            )
+
+            export_button.triggered.connect(self.export_signal)
+            job_menu.addAction(export_button)
+
+        if self.import_signal is not None:
+            import_button = QtWidgets.QAction(
+                "Import",
+                self._parent
+            )
+
+            import_button.triggered.connect(self.import_signal)
+            job_menu.addAction(import_button)
 
 
 class MainWindow1(MainProgram):
@@ -574,6 +600,8 @@ class MainWindow2(MainWindow2UI):
     system_info_requested = QtCore.pyqtSignal(QtWidgets.QWidget)
     help_requested = QtCore.pyqtSignal()
     save_logs_requested = QtCore.pyqtSignal(QtWidgets.QWidget)
+    export_job_config = QtCore.pyqtSignal(str, dict, QtWidgets.QWidget)
+    import_job_config = QtCore.pyqtSignal(QtWidgets.QWidget)
 
     def __init__(
             self,
@@ -599,8 +627,43 @@ class MainWindow2(MainWindow2UI):
         #  Console
         ###########################################################
         self._create_console()
-
         self.setup_menu()
+        ###########################################################
+
+    def set_current_tab(self, tab_name: str) -> None:
+        tab_index = self.locate_tab_index_by_name(tab_name)
+        if tab_index is None:
+            raise IndexError(f"No tab named {tab_name}")
+        self.tab_widget.tabs.setCurrentIndex(tab_index)
+
+    def locate_tab_index_by_name(self, name) -> typing.Optional[int]:
+        for index in range(self.tab_widget.tabs.count()):
+            if self.tab_widget.tabs.tabText(index) == name:
+                return index
+        return None
+
+    def set_active_workflow(self, workflow_name: str) -> None:
+        tab_index = self.locate_tab_index_by_name("All")
+        if tab_index is None:
+            raise AssertionError("Missing All tab")
+        all_tab = self._tabs[tab_index]
+        for i in range(all_tab.item_selector_view.model().rowCount()):
+            workflow_index = all_tab.item_selector_view.model().index(i, 0)
+            name = workflow_index.data()
+            if name == workflow_name:
+                all_tab.item_selector_view.setCurrentIndex(workflow_index)
+
+    def set_current_workflow_settings(
+            self,
+            data: typing.Dict[str, typing.Any]
+    ):
+        tab_index = self.locate_tab_index_by_name("All")
+        if tab_index is None:
+            raise AssertionError("Missing All tab")
+        all_tab = self._tabs[tab_index]
+        model = all_tab.workspace_widgets[tabs.TabWidgets.SETTINGS].model()
+        for key, value in data.items():
+            model[key] = value
 
     def close(self) -> bool:
         self.console.close()
@@ -625,12 +688,48 @@ class MainWindow2(MainWindow2UI):
 
         builder.save_log_function = self.save_log
 
+        builder.export_signal = lambda: self.export_job_config.emit(
+            self.get_current_workflow_name(),
+            self.get_current_job_settings(),
+            self
+        )
+
+        builder.import_signal = lambda: self.import_job_config.emit(self)
+
         builder.add_help = True
         builder.build()
 
+    def get_current_workflow_name(self) -> typing.Optional[str]:
+        current_tab_index = self.tab_widget.tabs.currentIndex()
+
+        item_selected_index = \
+            self._tabs[
+                current_tab_index
+            ].item_selector_view.selectedIndexes()[0]
+
+        current_workflow = typing.cast(
+                speedwagon.Workflow,
+                self._tabs[
+                    current_tab_index
+                ].item_selection_model.data(
+                    item_selected_index,
+                    QtCore.Qt.UserRole
+                )
+            )
+        return current_workflow.name
+
+    def get_current_job_settings(self) -> typing.Dict[str, typing.Any]:
+        current_tab = self._tabs[self.tab_widget.tabs.currentIndex()]
+        if current_tab is None:
+            raise IndexError("Unable to locate the current tab")
+        if current_tab.options_model is None:
+            raise ValueError("Current tab has no option model")
+
+        return current_tab.options_model.get()
+
     def add_tab(
             self,
-            workflow_name: str,
+            tab_name: str,
             workflows: typing.Mapping[
                 str,
                 typing.Type[speedwagon.job.Workflow]
@@ -641,11 +740,12 @@ class MainWindow2(MainWindow2UI):
             parent=self,
             workflows=workflows,
         )
+        workflows_tab.tab_name = tab_name
         workflows_tab.signals.start_workflow.connect(self._start_workflow)
 
         workflows_tab.parent = self
         self._tabs.append(workflows_tab)
-        self.tab_widget.add_tab(workflows_tab.tab_widget, workflow_name)
+        self.tab_widget.add_tab(workflows_tab.tab_widget, tab_name)
         self.tab_widget.setVisible(True)
 
     def _start_workflow(self,

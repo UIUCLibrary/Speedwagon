@@ -1,10 +1,15 @@
+import typing
+from typing import Any, List, Dict
 from unittest.mock import Mock, MagicMock, patch, mock_open
 import webbrowser
 
 import PyQt5
+import pytest
 
 import speedwagon.startup
+import speedwagon.tabs
 import speedwagon.gui
+from speedwagon.workflows import shared_custom_widgets
 from PyQt5.QtWidgets import QApplication, QAction
 
 
@@ -188,3 +193,87 @@ class TestMainWindow2:
         qtbot.addWidget(main_window)
         main_window.findChild(QAction, name="exitAction").trigger()
         assert exit_called.called is True
+
+    @pytest.mark.parametrize("tab_name", ["Spam", "Dummy"])
+    def test_set_current_tab(self, qtbot, tab_name):
+        manager = Mock()
+        main_window = speedwagon.gui.MainWindow2(manager)
+        workflows_tab1 = speedwagon.tabs.WorkflowsTab2(
+            parent=main_window.tab_widget,
+            workflows=MagicMock(),
+        )
+        main_window.tab_widget.add_tab(workflows_tab1.tab_widget, "Dummy")
+        workflows_tab2 = speedwagon.tabs.WorkflowsTab2(
+            parent=main_window.tab_widget,
+            workflows=MagicMock(),
+        )
+        main_window.tab_widget.add_tab(workflows_tab2.tab_widget, "Spam")
+
+        main_window.set_current_tab(tab_name)
+        current_tab_name = \
+            main_window.tab_widget.tabs.tabText(
+                main_window.tab_widget.tabs.currentIndex()
+            )
+        assert current_tab_name == tab_name
+
+    def test_set_current_tab_invalid_throws(self, qtbot):
+        main_window = speedwagon.gui.MainWindow2(Mock())
+        main_window.tab_widget.add_tab(
+            speedwagon.tabs.WorkflowsTab2(
+                parent=main_window.tab_widget,
+                workflows=MagicMock(),
+            ).tab_widget,
+            "Spam"
+        )
+
+        # eggs is NOT a valid tab
+        with pytest.raises(IndexError):
+            main_window.set_current_tab("eggs")
+
+    def test_set_active_workflow(self, qtbot):
+        main_window = speedwagon.gui.MainWindow2(Mock())
+
+        bacon = MagicMock()
+        bacon.name = "Bacon"
+
+        eggs = MagicMock()
+        eggs.name = "Eggs"
+
+        main_window.add_tab(
+            "All", {
+                "Bacon": bacon,
+                "Eggs": eggs,
+            }
+        )
+        main_window.tab_widget.add_tab(
+            speedwagon.tabs.WorkflowsTab2(
+                parent=main_window.tab_widget,
+                workflows=MagicMock(),
+            ).tab_widget,
+            "Spam"
+        )
+        main_window.set_active_workflow("Eggs")
+        assert main_window.get_current_workflow_name() == "Eggs"
+
+    def test_set_current_workflow_settings(self, qtbot):
+        main_window = speedwagon.gui.MainWindow2(Mock())
+
+        class Eggs(speedwagon.Workflow):
+            def discover_task_metadata(self, initial_results: List[Any],
+                                       additional_data: Dict[str, Any],
+                                       **user_args) -> List[dict]:
+                return []
+
+            def user_options(self) -> typing.List[Any]:
+                return [
+                    shared_custom_widgets.UserOptionPythonDataType2(
+                        label_text="Dummy"
+                    )
+                ]
+
+        main_window.add_tab("All", {"Eggs": Eggs})
+
+        main_window.set_active_workflow("Eggs")
+
+        main_window.set_current_workflow_settings({"Dummy": "Yes"})
+        assert main_window.get_current_job_settings()["Dummy"] == "Yes"

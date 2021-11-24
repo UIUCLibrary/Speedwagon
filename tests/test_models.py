@@ -209,6 +209,27 @@ class TestToolOptionsModel3:
         s = new_model.data(new_model.index(0,0))
         assert s == "Bacon"
 
+    def test_set(self):
+        data = [Mock(data="Spam", label_text="Spam label")]
+        new_model = models.ToolOptionsModel3(data)
+        new_model["Spam label"] = "Dummy"
+        assert new_model.get()["Spam label"] == "Dummy"
+
+    def test_get_item(self):
+        data = [
+            Mock(data="Spam", label_text="Spam label"),
+            Mock(data="Bacon", label_text="Bacon label"),
+        ]
+        new_model = models.ToolOptionsModel3(data)
+        new_model["Spam label"] = "Dummy"
+        assert new_model["Spam label"] == "Dummy"
+
+    def test_get_item_invalid(self):
+        data = []
+        new_model = models.ToolOptionsModel3(data)
+        with pytest.raises(IndexError):
+            new_model["Eggs"]
+
 
 class TestSettingsModel:
     @pytest.mark.parametrize("role", [
@@ -218,7 +239,7 @@ class TestSettingsModel:
     def test_data(self, role):
         model = models.SettingsModel(None)
         model.add_setting("spam", "eggs")
-        model.data(model.index(0,0), role=role) == "spam"
+        assert model.data(model.index(0, 0), role=role) == "spam"
 
     @pytest.mark.parametrize("index, expected", [
         (0, "Key"),

@@ -373,6 +373,27 @@ class ToolOptionsModel3(ToolOptionsModel):
             options[data.label_text] = data.data
         return options
 
+    def _look_up_index(self, key: str) -> typing.Optional[QtCore.QModelIndex]:
+        for i in range(self.rowCount()):
+            index = self.index(i, 0)
+            if typing.cast(
+                shared_custom_widgets.UserOption2,
+                self.data(index, role=QtCore.Qt.UserRole)
+            ).label_text == key:
+                return index
+        return None
+
+    def __getitem__(self, item: str):
+        """Locate the option based on the name."""
+        for data in self._data:
+            if data.label_text == item:
+                return data.data
+        raise IndexError(f"No option found for {item}")
+
+    def __setitem__(self, key, value):
+        """Set an option based on the name."""
+        self.setData(self._look_up_index(key), value)
+
     def headerData(
             self,
             index: int,

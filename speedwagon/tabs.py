@@ -158,6 +158,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     ) -> None:
         """Create a new item selection tab."""
         super().__init__(parent, work_manager)
+        self.export_action = QtWidgets.QAction(text="summy")
         self.log_manager = log_manager
         self.item_selection_model = item_model
         self.options_model: Optional[models.ToolOptionsModel3] = None
@@ -265,7 +266,9 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         tool_actions_layout = QtWidgets.QHBoxLayout()
 
         start_button = QtWidgets.QPushButton()
+
         start_button.setText("Start")
+        start_button.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         start_button.clicked.connect(self._start)
 
         tool_actions_layout.addSpacerItem(
