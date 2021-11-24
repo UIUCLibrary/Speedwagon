@@ -197,12 +197,12 @@ class MakeJp2Workflow(job.Workflow):
 
         if destination_path is None:
             raise ValueError("No output path selected")
+
         if not os.path.exists(destination_path):
             raise ValueError(f"Unable to locate {destination_path}")
 
         if not os.path.isdir(destination_path):
-            raise ValueError(
-                "Output is not a valid directory")
+            raise ValueError("Output is not a valid directory")
         return True
 
     def create_new_task(self,
