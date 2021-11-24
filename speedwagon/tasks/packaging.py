@@ -32,7 +32,7 @@ class AbsFindPackageTask(speedwagon.tasks.Subtask, abc.ABC):
 
     def work(self) -> bool:
         """Perform the task."""
-        self.log("Locating packages in {}".format(self._root))
+        self.log(f"Locating packages in {self._root}")
         self.set_results(self.find_packages(self._root))
         return True
 
