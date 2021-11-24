@@ -87,7 +87,7 @@ class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
 
         with open(self._output_filename, "w", encoding="utf-8") as write_file:
             write_file.write(report)
-        self.log("Wrote {}".format(self._output_filename))
+        self.log(f"Wrote {self._output_filename}")
 
         return True
 
