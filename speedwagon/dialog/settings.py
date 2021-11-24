@@ -51,7 +51,7 @@ class UnsupportedOpenSettings(AbsOpenSettings):
         msg = QtWidgets.QMessageBox(parent=self.parent)
         msg.setIcon(QtWidgets.QMessageBox.Warning)
         msg.setText(
-            "Don't know how to do that on {}".format(platform.system())
+            f"Don't know how to do that on {platform.system()}"
         )
 
         msg.show()
