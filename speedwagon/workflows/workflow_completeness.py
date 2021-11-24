@@ -408,11 +408,7 @@ class ValidateMarcTask(CompletenessSubTask):
         with self.log_config(my_logger):
             try:
                 if not os.path.exists(marc_file):
-                    self.log(
-                        "Skipping \'{}\' due to file not found".format(
-                            marc_file
-                        )
-                    )
+                    self.log(f"Skipping \'{marc_file}\' due to file not found")
 
                 else:
                     self.log(f"Validating marc.xml in {self.package_path}")
@@ -430,15 +426,13 @@ class ValidateMarcTask(CompletenessSubTask):
                             errors.append(error)
             except FileNotFoundError as error:
                 result_builder.add_error(
-                    "Unable to Validate Marc. Reason: {}".format(error)
+                    f"Unable to Validate Marc. Reason: {error}"
                 )
             except PermissionError as error:
                 report_builder = hathi_result.SummaryDirector(
                    source=self.package_path
                 )
-                report_builder.add_error(
-                    "Permission issues. \"{}\"".format(error)
-                )
+                report_builder.add_error(f"Permission issues. \"{error}\"")
                 self.set_results(report_builder.construct())
                 return False
 
@@ -485,11 +479,7 @@ class ValidateOCRFilesTask(CompletenessSubTask):
                 raise
 
             if ocr_errors:
-                self.log(
-                    "No validation errors found in {}".format(
-                        self.package_path
-                    )
-                )
+                self.log(f"No validation errors found in {self.package_path}")
 
                 for error in ocr_errors:
                     self.log(error.message)
@@ -653,8 +643,9 @@ class PackageNamingConventionTask(CompletenessSubTask):
 
     def work(self) -> bool:
         if not os.path.isdir(self.package_path):
-            raise FileNotFoundError("Unable to locate \"{}\".".format(
-                os.path.abspath(self.package_path)))
+            raise FileNotFoundError(
+                f"Unable to locate \"{os.path.abspath(self.package_path)}\"."
+            )
 
         warnings: List[hathi_result.Result] = []
         package_name = os.path.split(self.package_path)[-1]
