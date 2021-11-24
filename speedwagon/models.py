@@ -381,13 +381,14 @@ class ToolOptionsModel3(ToolOptionsModel):
         return None
 
     def __getitem__(self, item: str):
-        """Locate the option based on the name"""
+        """Locate the option based on the name."""
         for data in self._data:
             if data.label_text == item:
                 return data.data
         raise IndexError(f"No option found for {item}")
 
     def __setitem__(self, key, value):
+        """Set an option based on the name."""
         self.setData(self._look_up_index(key), value)
 
     def headerData(
