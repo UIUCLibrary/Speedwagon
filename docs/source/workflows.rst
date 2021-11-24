@@ -8,5 +8,4 @@ Workflows
    workflows/generate
    workflows/hathiprep
    workflows/verifying
-   workflows/regenerate_checksum
    workflows/zippackages
