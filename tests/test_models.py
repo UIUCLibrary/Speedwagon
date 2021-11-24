@@ -221,6 +221,12 @@ class TestToolOptionsModel3:
         new_model["Spam label"] = "Dummy"
         assert new_model["Spam label"] == "Dummy"
 
+    def test_get_item_invalid(self):
+        data = []
+        new_model = models.ToolOptionsModel3(data)
+        with pytest.raises(IndexError):
+            new_model["Eggs"]
+
 
 class TestSettingsModel:
     @pytest.mark.parametrize("role", [
