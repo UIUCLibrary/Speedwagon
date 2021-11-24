@@ -54,7 +54,7 @@ class ConvertFile(AbsProcessStrategy):
                                         basename + ".jp2"
                                         )
         self.generate_jp2(source_file, output_file_path)
-        self.status = "Generated {}".format(output_file_path)
+        self.status = f"Generated {output_file_path}"
 
     @staticmethod
     def generate_jp2(source_file: str, output_file_path: str):
@@ -189,7 +189,7 @@ class ImageConvertTask(speedwagon.tasks.Subtask):
     def work(self) -> bool:
         try:
             os.makedirs(self._output_path)
-            self.log("Created {}".format(self._output_path))
+            self.log(f"Created {self._output_path}")
         except FileExistsError:
             pass
 
@@ -214,7 +214,7 @@ class CopyTask(speedwagon.tasks.Subtask):
     def work(self) -> bool:
         try:
             os.makedirs(self._output_path)
-            self.log("Created {}".format(self._output_path))
+            self.log(f"Created {self._output_path}")
         except FileExistsError:
             pass
 
