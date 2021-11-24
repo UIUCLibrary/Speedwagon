@@ -92,7 +92,7 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
         for k in GenerateMarcXMLFilesWorkflow.required_settings_keys:
             value = self.global_settings.get(k)
             if value is None:
-                raise MissingConfiguration("Missing value for {}".format(k))
+                raise MissingConfiguration(f"Missing value for {k}")
 
     def user_options(self) -> List[UserOptions]:
         """Get the settings presented to the user."""
