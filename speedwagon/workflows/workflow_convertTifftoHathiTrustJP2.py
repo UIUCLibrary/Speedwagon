@@ -80,7 +80,7 @@ class CopyFile(AbsProcessStrategy):
     def process(self, source_file: str, destination_path: str) -> None:
         filename = os.path.basename(source_file)
         shutil.copyfile(source_file, os.path.join(destination_path, filename))
-        self.status = "Copied {} to {}".format(source_file, destination_path)
+        self.status = f"Copied {source_file} to {destination_path}"
 
 
 class ConvertTiffToHathiJp2Workflow(Workflow):
