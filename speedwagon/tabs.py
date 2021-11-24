@@ -11,8 +11,7 @@ from typing import List, Optional, Tuple, Dict, Iterator, NamedTuple, cast, \
 from abc import ABCMeta
 
 import yaml
-from PyQt5 import QtWidgets, QtCore, QtGui  # type: ignore
-from PyQt5.QtWidgets import QWidget
+from PyQt5 import QtWidgets, QtCore  # type: ignore
 
 import speedwagon
 import speedwagon.config
