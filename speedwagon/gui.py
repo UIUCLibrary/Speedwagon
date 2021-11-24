@@ -493,7 +493,7 @@ class MainWindow1(MainProgram):
             if tab_name == tab_title:
                 self.tab_widget.tabs.setCurrentIndex(tab)
                 return
-        self.log_manager.warning("Unable to set tab to {}.".format(tab_name))
+        self.log_manager.warning(f"Unable to set tab to {tab_name}.")
 
     def add_tab(
             self,
@@ -552,7 +552,7 @@ class MainWindow1(MainProgram):
         if len(num_selected) != 1:
             print(
                 "Invalid number of selected Indexes. "
-                "Expected 1. Found {}".format(num_selected)
+                f"Expected 1. Found {num_selected}"
             )
 
     def save_log(self) -> None:
