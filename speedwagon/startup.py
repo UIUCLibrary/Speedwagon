@@ -603,10 +603,9 @@ class StartQtThreaded(AbsStarter):
         parent.set_current_tab("All")
         parent.set_active_workflow(workflow_name)
         parent.set_current_workflow_settings(data)
-        # todo: set the settings to the correct value
 
+    @staticmethod
     def save_workflow_config(
-            self,
             workflow_name,
             data,
             parent: typing.Optional[QtWidgets.QWidget] = None,
