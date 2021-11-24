@@ -120,8 +120,10 @@ class OCRWorkflow(speedwagon.Workflow):
                         language_code = key
                         break
                 else:
-                    raise ValueError("Unable to look up language code "
-                                     "for {}".format(user_args["Language"]))
+                    language = user_args["Language"]
+                    raise ValueError(
+                        f"Unable to look up language code for {language}"
+                    )
 
                 new_task = {
                     "source_file_path": image_file,
