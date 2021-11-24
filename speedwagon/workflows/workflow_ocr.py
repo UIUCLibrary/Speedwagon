@@ -114,14 +114,16 @@ class OCRWorkflow(speedwagon.Workflow):
             for image_file in result.data:
                 image_path = os.path.dirname(image_file)
                 base_name = os.path.splitext(os.path.basename(image_file))[0]
-                ocr_file_name = "{}.txt".format(base_name)
+                ocr_file_name = f"{base_name}.txt"
                 for key, value in ocr.LANGUAGE_CODES.items():
                     if value == user_args["Language"]:
                         language_code = key
                         break
                 else:
-                    raise ValueError("Unable to look up language code "
-                                     "for {}".format(user_args["Language"]))
+                    language = user_args["Language"]
+                    raise ValueError(
+                        f"Unable to look up language code for {language}"
+                    )
 
                 new_task = {
                     "source_file_path": image_file,
@@ -193,8 +195,11 @@ class OCRWorkflow(speedwagon.Workflow):
 
             tessdata_path = locate_tessdata()
 
-            print("Note: Invalid setting for tessdata. "
-                  "Using path {} ".format(tessdata_path), file=sys.stderr)
+            print(
+                "Note: Invalid setting for tessdata. "
+                f"Using path {tessdata_path}",
+                file=sys.stderr
+            )
         else:
             tessdata_path = self.tessdata_path
 
@@ -241,11 +246,10 @@ class OCRWorkflow(speedwagon.Workflow):
         if path is None:
             raise ValueError("No path selected")
         if not os.path.exists(path):
-            raise ValueError("Unable to locate {}.".format(path))
+            raise ValueError(f"Unable to locate {path}.")
 
         if not os.path.isdir(path):
-            raise ValueError(
-                "Input not a valid directory {}.".format(path))
+            raise ValueError(f"Input not a valid directory {path}.")
         return True
 
     @classmethod
@@ -253,13 +257,14 @@ class OCRWorkflow(speedwagon.Workflow):
                         **user_args) -> Optional[str]:
         amount = len(cls._get_ocr_tasks(results))
 
-        return "*************************************\n" \
+        return \
+            "*************************************\n" \
             "Report\n" \
             "*************************************\n" \
-            "Completed generating OCR {} files.\n" \
+            f"Completed generating OCR {amount} files.\n" \
             "\n" \
             "*************************************\n" \
-            "Done\n".format(amount)
+            "Done\n"
 
     @staticmethod
     def _get_ocr_tasks(
@@ -289,7 +294,7 @@ class FindImagesTask(speedwagon.tasks.Subtask):
             f"Finding files in {self._root} with {self._extension} extension"
 
     def work(self) -> bool:
-        self.log("Locating {} files in {}".format(self._extension, self._root))
+        self.log(f"Locating {self._extension} files in {self._root}")
 
         def find_images(file_located: str) -> bool:
 
@@ -347,7 +352,7 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
         resulting_text = self.read_image(self._source, self._lang)
 
         # Generate a text file from the text data extracted from the image
-        self.log("Writing to {}".format(self._output_text_file))
+        self.log(f"Writing to {self._output_text_file}")
         with open(self._output_text_file, "w", encoding="utf8") as write_file:
             write_file.write(resulting_text)
 
@@ -367,7 +372,7 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
 
         # Get the ocr text reader for the proper language
         reader = self.engine.get_reader(lang)
-        self.log("Reading {}".format(os.path.normcase(file)))
+        self.log(f"Reading {os.path.normcase(file)}")
 
         file_handle = io.StringIO()
 

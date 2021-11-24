@@ -156,7 +156,7 @@ class ChecksumWorkflow(Workflow):
                                  f"\n\n{status}" \
                                  f"\n{failure_list}"
                 messages.append(single_message)
-            report = "\n{}\n".format(line_sep).join(messages)
+            report = f"\n{line_sep}\n".join(messages)
 
         else:
             stats_message = f"All {len(results)} passed checksum validation."
@@ -405,7 +405,8 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
                                  f"\n\n{status}" \
                                  f"\n{failure_list}"
                 messages.append(single_message)
-            report = "\n{}\n".format(line_sep).join(messages)
+
+            report = f"\n{line_sep}\n".join(messages)
 
         else:
             stats_message = f"All {len(results)} passed checksum validation."

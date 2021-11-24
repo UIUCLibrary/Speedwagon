@@ -29,7 +29,8 @@ class MakeMetaYamlTask(speedwagon.tasks.Subtask):
     def work(self) -> bool:
         """Perform the job."""
         meta_filename = "meta.yml"
-        self.log("Generating meta.yml for {}".format(self._package_id))
+        self.log(f"Generating meta.yml for {self._package_id}")
+
         package_builder = package_creater.InplacePackage(self._source)
         package_builder.make_yaml(build_path=self.subtask_working_dir,
                                   title_page=self._title_page)
@@ -41,7 +42,7 @@ class MakeMetaYamlTask(speedwagon.tasks.Subtask):
 
         shutil.move(meta_yml, dest)
         assert os.path.exists(dest)
-        self.log("Added meta.yml to {}".format(self._source))
+        self.log(f"Added meta.yml to {self._source}")
 
         self.set_results(
             {
@@ -72,7 +73,7 @@ class GenerateChecksumTask(speedwagon.tasks.Subtask):
     def work(self) -> bool:
         """Generate the checksum."""
         checksum_filename = "checksum.md5"
-        self.log("Generating checksums for {}".format(self._package_id))
+        self.log(f"Generating checksums for {self._package_id}")
         package_builder = package_creater.InplacePackage(self._source)
         package_builder.create_checksum_report(self.subtask_working_dir)
 
@@ -86,7 +87,7 @@ class GenerateChecksumTask(speedwagon.tasks.Subtask):
 
         shutil.move(generated_checksum_file, dest)
         assert os.path.exists(dest)
-        self.log("Added checksum.md5 to {}".format(self._source))
+        self.log(f"Added checksum.md5 to {self._source}")
 
         self.set_results(
             {
@@ -116,7 +117,7 @@ class PrepTask(speedwagon.tasks.Subtask):
 
     def work(self) -> bool:
         """Run the prep task."""
-        self.log("Prepping on {}".format(self._source))
+        self.log(f"Prepping on {self._source}")
         package_builder = package_creater.InplacePackage(self._source)
         package_builder.generate_package(destination=self._source,
                                          title_page=self._title_page)
