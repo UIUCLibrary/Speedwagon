@@ -574,8 +574,8 @@ class StartQtThreaded(AbsStarter):
         set_app_display_metadata(self.app)
         self._request_window = QtRequestMoreInfo(self.windows)
 
+    @staticmethod
     def import_workflow_config(
-            self,
             parent: speedwagon.gui.MainWindow2,
             dialog_box: typing.Optional[QtWidgets.QFileDialog] = None,
             serialization_strategy: typing.Optional[

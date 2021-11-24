@@ -336,7 +336,7 @@ class ConfigJSONSerialize(AbsJobConfigSerializationStrategy):
                 "Required class attribute missing: file_name "
             )
 
-        with open(self.file_name, "w") as file_writer:
+        with open(self.file_name, "w", encoding="utf-8") as file_writer:
             file_writer.write(self.serialize_data(workflow_name, data))
 
     @staticmethod
@@ -362,5 +362,5 @@ class ConfigJSONSerialize(AbsJobConfigSerializationStrategy):
                 "Required class attribute missing: file_name "
             )
 
-        with open(self.file_name, "r") as file_reader:
+        with open(self.file_name, "r", encoding="utf-8") as file_reader:
             return self.deserialize_data(json.load(file_reader))

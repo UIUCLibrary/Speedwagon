@@ -43,7 +43,8 @@ class TestConfigJSONSerialize:
         serializer.file_name = file_output
         with patch('speedwagon.job.open', mock_open()) as file_opener:
             serializer.save(workflow_name="Spam", data={})
-        assert call(file_output, "w") in file_opener.mock_calls
+        assert \
+            call(file_output, "w", encoding="utf-8") in file_opener.mock_calls
 
     def test_serialize(self):
         serialize_data = speedwagon.job.ConfigJSONSerialize().serialize_data(
@@ -80,7 +81,11 @@ class TestConfigJSONSerialize:
             file_opener.mock_add_spec("file", "mode")
             serializer.load()
 
-        assert call("my_saves.json", "r") in file_opener.mock_calls
+        assert call(
+            "my_saves.json",
+            "r",
+            encoding="utf-8"
+        ) in file_opener.mock_calls
 
     def test_open_file_workflow_name(self, workflow_json_string):
         serializer = speedwagon.job.ConfigJSONSerialize()
