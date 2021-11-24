@@ -68,7 +68,7 @@ class HathiLimitedToDLWorkflow(Workflow):
         required = ['Input', "Output"]
         for arg in required:
             if user_args[arg] is None or str(user_args[arg]).strip() == "":
-                raise ValueError("Missing required value for {}".format(arg))
+                raise ValueError(f"Missing required value for {arg}")
 
         if user_args['Output'] == user_args['Input']:
             raise ValueError("Input cannot be the same as Output")
@@ -113,7 +113,7 @@ class PackageConverter(speedwagon.tasks.Subtask):
         my_logger.setLevel(logging.INFO)
 
         with self.log_config(my_logger):
-            self.log("Converting package from {}".format(self.src))
+            self.log(f"Converting package from {self.src}")
             self.output_packager.transform(self.src, self.dst)
             self.set_results({
                 "destination": self.dst
