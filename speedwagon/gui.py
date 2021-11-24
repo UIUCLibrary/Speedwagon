@@ -662,7 +662,7 @@ class MainWindow2(MainWindow2UI):
         all_tab = self._tabs[tab_index]
         model = all_tab.workspace_widgets[tabs.TabWidgets.SETTINGS].model()
         for key, value in data.items():
-            model.set_configure(key, value)
+            model[key] = value
 
     def close(self) -> bool:
         self.console.close()
