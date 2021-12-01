@@ -65,7 +65,7 @@ class ToolConsole(QtWidgets.QWidget):
             message = QtCore.pyqtSignal(str)
 
         def __init__(self, console_widget: "ToolConsole"):
-            super().__init__(capacity=100)
+            super().__init__(capacity=1)
             self.signals = ToolConsole.ConsoleLogHandler.Signals()
             self.console_widget = console_widget
             self.signals.message.connect(self.console_widget.add_message)
@@ -73,9 +73,10 @@ class ToolConsole(QtWidgets.QWidget):
         def flush(self) -> None:
             if len(self.buffer) > 0:
                 message_buffer = [
-                    self.format(record) for record in self.buffer
+                    self.format(record).strip() for record in self.buffer
                 ]
-                self.signals.message.emit(" ".join(message_buffer))
+                message = " ".join(message_buffer).strip()
+                self.signals.message.emit(message)
             super().flush()
 
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
@@ -783,6 +784,7 @@ class MainWindow2(MainWindow2UI):
         self.console.setMinimumHeight(75)
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
+        self.console.attach_logger(self.logger)
 
 
 class SplashScreenLogHandler(logging.Handler):

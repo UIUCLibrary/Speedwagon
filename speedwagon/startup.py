@@ -41,7 +41,7 @@ from speedwagon import worker, job, runner_strategies
 from speedwagon.dialog.settings import TabEditor
 from speedwagon.dialog.dialogs import WorkflowProgress
 from speedwagon.logging_helpers import SignalLogHandler
-from speedwagon.runner_strategies import ThreadedEvents
+from speedwagon.runner_strategies import ThreadedEvents, JobSuccess
 from speedwagon.tabs import extract_tab_information
 import speedwagon.gui
 
@@ -507,6 +507,26 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
 
     def status(self, text: str) -> None:
         self.signals.set_status(text)
+
+
+class WorkflowNullCallbacks(runner_strategies.AbsJobCallbacks):
+
+    def error(self, message: Optional[str] = None,
+              exc: Optional[BaseException] = None,
+              traceback_string: Optional[str] = None) -> None:
+        """No-op."""
+
+    def status(self, text: str) -> None:
+        """No-op."""
+
+    def log(self, text: str, level: int = logging.INFO) -> None:
+        """No-op."""
+
+    def cancelling_complete(self) -> None:
+        """No-op."""
+
+    def finished(self, result: JobSuccess) -> None:
+        """No-op."""
 
 
 def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
@@ -1047,6 +1067,10 @@ class SingleWorkflowJSON(AbsStarter):
         Args:
             logger: Optional Logger, defaults to default logger for __name__.
         """
+        super().__init__()
+        self.on_exit: typing.Optional[
+            typing.Callable[[speedwagon.gui.MainWindow2], None]
+        ] = None
         self.options: typing.Optional[typing.Dict[str, typing.Any]] = None
         self.workflow: typing.Optional[job.AbsWorkflow] = None
         self.logger = logger or logging.getLogger(__name__)
@@ -1059,8 +1083,8 @@ class SingleWorkflowJSON(AbsStarter):
 
         """
         loaded_data = json.loads(data)
-        self.options = loaded_data['options']
-        self._set_workflow(loaded_data['workflow'])
+        self.options = loaded_data['Configuration']
+        self._set_workflow(loaded_data['Workflow'])
 
     def _set_workflow(self, workflow_name: str) -> None:
         available_workflows = job.available_workflows()
@@ -1072,46 +1096,43 @@ class SingleWorkflowJSON(AbsStarter):
             raise ValueError("no data loaded")
         if self.workflow is None:
             raise ValueError("no workflow loaded")
-
-        with worker.ToolJobManager() as work_manager:
-            work_manager.logger = self.logger
-
-            self._run(work_manager, self.workflow, self.options)
+        with runner_strategies.BackgroundJobManager() as job_manager:
+            self._run_workflow(job_manager, self.workflow, self.options)
+            if app is not None:
+                app.quit()
         return 0
 
-    def initialize(self) -> None:
-        """Initialize environment."""
-        if self.options is None:
-            raise ValueError("no data loaded")
-        if self.workflow is None:
-            raise ValueError("no workflow loaded")
-
     @staticmethod
-    def _run(work_manager: "worker.ToolJobManager",
-             workflow: job.AbsWorkflow,
-             options: Dict[str, typing.Any]) -> None:
-        window = SingleWorkflowJSON._load_window(work_manager, workflow.name)
-        window.show()
-        runner_strategy = runner_strategies.QtRunner(window)
-
-        workflow.validate_user_options(**options)
-
-        runner_strategy.run(workflow,
-                            options,
-                            window.log_manager)
-        window.log_manager.handlers.clear()
-
-    @staticmethod
-    def _load_window(work_manager: "worker.ToolJobManager",
-                     title: Optional[str]) -> speedwagon.gui.MainWindow1:
-        window = speedwagon.gui.MainWindow1(
-            work_manager=work_manager,
-            debug=False)
-
+    def _load_main_window(
+            job_manager: "runner_strategies.BackgroundJobManager",
+            title: Optional[str]
+    ) -> speedwagon.gui.MainWindow2:
+        window = speedwagon.gui.MainWindow2(job_manager)
         if title is not None:
             window.setWindowTitle(title)
 
         return window
+
+    def _run_workflow(
+            self,
+            job_manager: runner_strategies.BackgroundJobManager,
+            workflow,
+            options
+    ):
+        window = \
+            SingleWorkflowJSON._load_main_window(job_manager, workflow.name)
+
+        runner_strategy = runner_strategies.QtRunner(window)
+        window.logger = cast(logging.Logger, window.logger)
+        window.show()
+        window.console.log_handler.capacity = 1
+        runner_strategy.run(workflow,
+                            options,
+                            window.logger
+                            )
+
+        if self.on_exit is not None:
+            self.on_exit(window)
 
 
 class MultiWorkflowLauncher(AbsStarter):
