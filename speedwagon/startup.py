@@ -1086,8 +1086,8 @@ class SingleWorkflowJSON(AbsStarter):
         self.options = loaded_data['Configuration']
         self._set_workflow(loaded_data['Workflow'])
 
-    def load(self, fp) -> None:
-        loaded_data = json.load(fp)
+    def load(self, file_pointer) -> None:
+        loaded_data = json.load(file_pointer)
         self.options = loaded_data['Configuration']
         self._set_workflow(loaded_data['Workflow'])
 
@@ -1346,12 +1346,16 @@ class SubCommand(abc.ABC):
 
 
 class RunCommand(SubCommand):
-    def json_startup(self):
+    def json_startup(self) -> None:
         startup_strategy = SingleWorkflowJSON()
         startup_strategy.load(self.args.json)
+        self._run_strategy(startup_strategy)
 
-        app_launcher = speedwagon.startup.ApplicationLauncher(
-            strategy=startup_strategy)
+    @staticmethod
+    def _run_strategy(startup_strategy):
+        app_launcher = \
+            speedwagon.startup.ApplicationLauncher(strategy=startup_strategy)
+
         app = ApplicationLauncher()
         app.initialize()
         sys.exit(app_launcher.run())
