@@ -1102,8 +1102,10 @@ class SingleWorkflowJSON(AbsStarter):
         return 0
 
     @staticmethod
-    def _load_main_window(job_manager: "runner_strategies.AbsJobManager2",
-                          title: Optional[str]) -> speedwagon.gui.MainWindow2:
+    def _load_main_window(
+            job_manager: "runner_strategies.BackgroundJobManager",
+            title: Optional[str]
+    ) -> speedwagon.gui.MainWindow2:
         window = speedwagon.gui.MainWindow2(job_manager)
         if title is not None:
             window.setWindowTitle(title)
