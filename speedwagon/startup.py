@@ -1129,7 +1129,8 @@ class SingleWorkflowJSON(AbsStarter):
                             options,
                             window.logger
                             )
-        if self.on_exit is not None:
+
+        if callable(self.on_exit) is True:
             self.on_exit(window)
 
 
