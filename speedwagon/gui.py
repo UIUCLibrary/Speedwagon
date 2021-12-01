@@ -786,6 +786,7 @@ class MainWindow2(MainWindow2UI):
         self.main_splitter.addWidget(self.console)
         self.console.attach_logger(self.logger)
 
+
 class SplashScreenLogHandler(logging.Handler):
     def __init__(self,
                  widget: QtWidgets.QWidget,
