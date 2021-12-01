@@ -1279,3 +1279,9 @@ class TestRunCommand:
         with pytest.raises(SystemExit):
             run_command.run()
         assert ApplicationLauncher.called is True
+
+
+def test_run_command_invalid():
+    with pytest.raises(ValueError) as error:
+        speedwagon.startup.run_command(command_name="bad", args=Mock())
+    assert "bad" in str(error.value).lower()
