@@ -22,6 +22,7 @@ import sys
 import threading
 import time
 import typing
+import warnings
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
 try:
     from typing import Final
@@ -1059,13 +1060,13 @@ class SingleWorkflowJSON(AbsStarter):
         SingleWorkflowJSON class added
 
     """
-
     def __init__(self, logger: Optional[logging.Logger] = None) -> None:
         """Create a environment where the workflow is loaded from a json file.
 
         Args:
             logger: Optional Logger, defaults to default logger for __name__.
         """
+        warnings.warn("use SingleWorkflowJSON2 instead", category=PendingDeprecationWarning)
         self.options: typing.Optional[typing.Dict[str, typing.Any]] = None
         self.workflow: typing.Optional[job.AbsWorkflow] = None
         self.logger = logger or logging.getLogger(__name__)
@@ -1096,6 +1097,7 @@ class SingleWorkflowJSON(AbsStarter):
             work_manager.logger = self.logger
 
             self._run(work_manager, self.workflow, self.options)
+
         return 0
 
     def initialize(self) -> None:
@@ -1140,6 +1142,7 @@ class SingleWorkflowJSON2(SingleWorkflowJSON):
             logger: Optional[logging.Logger] = None
     ) -> None:
         super().__init__(logger)
+        self.on_exit: typing.Optional[typing.Callable[[speedwagon.gui.MainWindow2], None]] = None
         # self.job_manager = job_manager
 
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
@@ -1149,9 +1152,6 @@ class SingleWorkflowJSON2(SingleWorkflowJSON):
         if self.workflow is None:
             raise ValueError("no workflow loaded")
         with runner_strategies.BackgroundJobManager() as job_manager:
-        # with worker.ToolJobManager() as work_manager:
-        #     work_manager.logger = self.logger
-
             self._run(job_manager, self.workflow, self.options)
             if app is not None:
                 app.quit()
@@ -1159,7 +1159,7 @@ class SingleWorkflowJSON2(SingleWorkflowJSON):
 
     @staticmethod
     def _load_window(job_manager: "runner_strategies.AbsJobManager2",
-                     title: Optional[str]) -> speedwagon.gui.MainWindow1:
+                     title: Optional[str]) -> speedwagon.gui.MainWindow2:
         window = speedwagon.gui.MainWindow2(job_manager)
             # work_manager=work_manager,
             # debug=False)
@@ -1174,16 +1174,25 @@ class SingleWorkflowJSON2(SingleWorkflowJSON):
         window = SingleWorkflowJSON2._load_window(job_manager, workflow.name)
         progress_callbacks = WorkflowNullCallbacks()
         events = ThreadedEvents()
+        runner_strategy = runner_strategies.QtRunner(window)
+        window.logger = cast(logging.Logger, window.logger)
         window.show()
-        job_manager.submit_job(
-            workflow_name=workflow.name,
-            app=None,
-            options=options,
-            liaison=runner_strategies.JobManagerLiaison(
-                callbacks=progress_callbacks,
-                events=events
-            )
-        )
+        window.console.log_handler.capacity = 1
+        runner_strategy.run(workflow,
+                            options,
+                            window.logger
+                            )
+        if self.on_exit is not None:
+            self.on_exit(window)
+        # job_manager.submit_job(
+        #     workflow_name=workflow.name,
+        #     app=None,
+        #     options=options,
+        #     liaison=runner_strategies.JobManagerLiaison(
+        #         callbacks=progress_callbacks,
+        #         events=events
+        #     )
+        # )
         #     liaison=runner_strategies.JobManagerLiaison(
         #                 callbacks=progress_callbacks,
         #                 events=threaded_events

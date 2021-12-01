@@ -378,10 +378,10 @@ class WorkflowProgressGui(QtWidgets.QDialog):
             )
 
         def flush(self) -> None:
-            results = [self.format(log) for log in self.buffer]
+            results = [self.format(log).strip() for log in self.buffer]
             if results:
                 report = "".join(results)
-                self.signals.message.emit(f"{report} <br>")
+                self.signals.message.emit(f"{report}")
             super().flush()
 
     def __init__(self, parent: typing.Optional[QWidget] = None) -> None:
@@ -413,7 +413,7 @@ class WorkflowProgressGui(QtWidgets.QDialog):
         cursor = QtGui.QTextCursor(self._console_data)
         cursor.movePosition(cursor.End)
         cursor.beginEditBlock()
-        cursor.insertHtml(html)
+        cursor.insertHtml(html.strip())
         cursor.endEditBlock()
 
     def flush(self) -> None:
@@ -542,7 +542,7 @@ class WorkflowProgress(WorkflowProgressGui):
         cursor = QtGui.QTextCursor(self._console_data)
         cursor.movePosition(cursor.End)
         cursor.beginEditBlock()
-        text = text.replace("\n", "<br>")
+        # text = text.replace("\n", "<br>")
         if level == logging.DEBUG:
             cursor.insertHtml(f"<div><i>{text}</i></div>")
         elif level == logging.WARNING:

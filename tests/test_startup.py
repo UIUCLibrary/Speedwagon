@@ -613,6 +613,7 @@ class TestSingleWorkflowJSON:
         startup.workflow = Mock()
         startup.initialize()
 
+    @pytest.mark.skip("SingleWorkflowJSON is being removed")
     def test_load_json(self):
         startup = speedwagon.startup.SingleWorkflowJSON()
 
@@ -632,6 +633,7 @@ class TestSingleWorkflowJSON:
                startup.options["Output"] == "dummy_out" and \
                startup.workflow.name == 'Zip Packages'
 
+    @pytest.mark.skip("SingleWorkflowJSON is being removed")
     def test_runner_strategies_called(self, monkeypatch):
         startup = speedwagon.startup.SingleWorkflowJSON()
 

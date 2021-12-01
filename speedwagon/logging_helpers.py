@@ -76,19 +76,19 @@ class DefaultConsoleFormatStyle(AbsConsoleFormatter):
 
     def format_debug(self, text: str, record: LogRecord) -> str:
         """Italicize debug messages."""
-        return f"<div><i>{text}</i></div>"
+        return f"<div><i>{text}</i><br></div>"
 
     def format_warning(self, text: str, record: LogRecord) -> str:
         """Format warning messages in yellow."""
-        return f"<div><font color=\"yellow\">{text}</font></div>"
+        return f"<div><font color=\"yellow\">{text}</font><br></div>"
 
     def format_error(self, text: str, record: LogRecord) -> str:
         """Format error messages in red."""
-        return f"<div><font color=\"red\">{text}</font></div>"
+        return f"<div><font color=\"red\">{text}</font><br></div>"
 
     def format_info(self, text: str, record: LogRecord) -> str:
         """No special formatting for info messages."""
-        return f"<div>{text}</div>"
+        return f"{text}<br>"
 
 
 class VerboseConsoleFormatStyle(AbsConsoleFormatter):
@@ -147,7 +147,7 @@ class ConsoleFormatter(logging.Formatter):
         }
 
         formatter: AbsConsoleFormatter = formatters[self.verbose]()
-        text = super().format(record)
+        text = super().format(record).strip()
         text = text.replace("\n", "<br>")
 
         level = record.levelno
