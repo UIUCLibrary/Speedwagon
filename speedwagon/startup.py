@@ -514,19 +514,19 @@ class WorkflowNullCallbacks(runner_strategies.AbsJobCallbacks):
     def error(self, message: Optional[str] = None,
               exc: Optional[BaseException] = None,
               traceback_string: Optional[str] = None) -> None:
-        """Does nothing."""
+        """No-op."""
 
     def status(self, text: str) -> None:
-        """Does nothing."""
+        """No-op."""
 
     def log(self, text: str, level: int = logging.INFO) -> None:
-        """Does nothing."""
+        """No-op."""
 
     def cancelling_complete(self) -> None:
-        """Does nothing."""
+        """No-op."""
 
     def finished(self, result: JobSuccess) -> None:
-        """Does nothing."""
+        """No-op."""
 
 
 def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
@@ -1060,6 +1060,7 @@ class SingleWorkflowJSON(AbsStarter):
         SingleWorkflowJSON class added
 
     """
+
     def __init__(self, logger: Optional[logging.Logger] = None) -> None:
         """Create a environment where the workflow is loaded from a json file.
 
