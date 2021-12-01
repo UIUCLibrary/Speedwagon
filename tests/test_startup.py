@@ -577,7 +577,7 @@ class TestStartupDefault:
 class TestSingleWorkflowJSON2:
     def test_run_without_json_raises_exception(self):
         with pytest.raises(ValueError) as error:
-            startup = speedwagon.startup.SingleWorkflowJSON2()
+            startup = speedwagon.startup.SingleWorkflowJSON()
             startup.options = Mock()
             startup.workflow = None
             startup.run()
@@ -585,14 +585,14 @@ class TestSingleWorkflowJSON2:
 
     def test_run_without_options_raises_exception(self):
         with pytest.raises(ValueError) as error:
-            startup = speedwagon.startup.SingleWorkflowJSON2()
+            startup = speedwagon.startup.SingleWorkflowJSON()
             startup.options = None
             startup.workflow = Mock()
             startup.run()
         assert "no data" in str(error.value).lower()
 
     def test_run_on_exit_is_called(self, qtbot):
-        startup = speedwagon.startup.SingleWorkflowJSON2()
+        startup = speedwagon.startup.SingleWorkflowJSON()
         startup.options = Mock()
         workflow = Mock()
         workflow.name = "spam"
@@ -602,7 +602,7 @@ class TestSingleWorkflowJSON2:
         assert startup.on_exit.called is True
 
     def test_load_json(self):
-        startup = speedwagon.startup.SingleWorkflowJSON2()
+        startup = speedwagon.startup.SingleWorkflowJSON()
 
         startup.load_json_string(
             json.dumps(
@@ -638,57 +638,14 @@ class TestSingleWorkflowJSON:
             startup.run()
         assert "no data" in str(error.value).lower()
 
-    def test_initialize_without_workflow_raises_exception(self):
-        with pytest.raises(ValueError) as error:
-            startup = speedwagon.startup.SingleWorkflowJSON()
-            startup.options = Mock()
-            startup.workflow = None
-            startup.initialize()
-        assert "workflow" in str(error.value).lower()
-
-    def test_initialize_without_options_raises_exception(self):
-        with pytest.raises(ValueError) as error:
-            startup = speedwagon.startup.SingleWorkflowJSON()
-            startup.options = None
-            startup.workflow = Mock()
-            startup.initialize()
-        assert "no data" in str(error.value).lower()
-
-    def test_initialize_success(self):
-        startup = speedwagon.startup.SingleWorkflowJSON()
-        startup.options = Mock()
-        startup.workflow = Mock()
-        startup.initialize()
-
-    @pytest.mark.skip("SingleWorkflowJSON is being removed")
-    def test_load_json(self):
+    def test_runner_strategies_called(self, monkeypatch, qtbot):
         startup = speedwagon.startup.SingleWorkflowJSON()
 
         startup.load_json_string(
             json.dumps(
                 {
-                    "workflow": "Zip Packages",
-                    "options": {
-                        "Source": "dummy_source",
-                        "Output": "dummy_out"
-                    }
-                }
-            )
-        )
-
-        assert startup.options["Source"] == "dummy_source" and \
-               startup.options["Output"] == "dummy_out" and \
-               startup.workflow.name == 'Zip Packages'
-
-    @pytest.mark.skip("SingleWorkflowJSON is being removed")
-    def test_runner_strategies_called(self, monkeypatch):
-        startup = speedwagon.startup.SingleWorkflowJSON()
-
-        startup.load_json_string(
-            json.dumps(
-                {
-                    "workflow": "Zip Packages",
-                    "options": {
+                    "Workflow": "Zip Packages",
+                    "Configuration": {
                         "Source": "dummy_source",
                         "Output": "dummy_out"
                     }
@@ -714,8 +671,6 @@ class TestSingleWorkflowJSON:
         startup.run()
         assert run.called is True
 
-
-class TestSignalLogger:
     def test_signal_is_sent(self, qtbot):
         class Dummy(QtCore.QObject):
             dummy_signal = QtCore.pyqtSignal(str, int)

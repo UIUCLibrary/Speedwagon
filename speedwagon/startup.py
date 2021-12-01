@@ -22,7 +22,6 @@ import sys
 import threading
 import time
 import typing
-import warnings
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
 try:
     from typing import Final
@@ -1067,11 +1066,10 @@ class SingleWorkflowJSON(AbsStarter):
         Args:
             logger: Optional Logger, defaults to default logger for __name__.
         """
-        warnings.warn(
-            "use SingleWorkflowJSON2 instead",
-            category=PendingDeprecationWarning
-        )
-
+        super().__init__()
+        self.on_exit: typing.Optional[
+            typing.Callable[[speedwagon.gui.MainWindow2], None]
+        ] = None
         self.options: typing.Optional[typing.Dict[str, typing.Any]] = None
         self.workflow: typing.Optional[job.AbsWorkflow] = None
         self.logger = logger or logging.getLogger(__name__)
@@ -1097,87 +1095,30 @@ class SingleWorkflowJSON(AbsStarter):
             raise ValueError("no data loaded")
         if self.workflow is None:
             raise ValueError("no workflow loaded")
-
-        with worker.ToolJobManager() as work_manager:
-            work_manager.logger = self.logger
-
-            self._run(work_manager, self.workflow, self.options)
-
-        return 0
-
-    def initialize(self) -> None:
-        """Initialize environment."""
-        if self.options is None:
-            raise ValueError("no data loaded")
-        if self.workflow is None:
-            raise ValueError("no workflow loaded")
-
-    @staticmethod
-    def _run(work_manager: "worker.ToolJobManager",
-             workflow: job.AbsWorkflow,
-             options: Dict[str, typing.Any]) -> None:
-        window = SingleWorkflowJSON._load_window(work_manager, workflow.name)
-        window.show()
-        runner_strategy = runner_strategies.QtRunner(window)
-
-        workflow.validate_user_options(**options)
-
-        runner_strategy.run(workflow,
-                            options,
-                            window.log_manager)
-        window.log_manager.handlers.clear()
-
-    @staticmethod
-    def _load_window(work_manager: "worker.ToolJobManager",
-                     title: Optional[str]) -> speedwagon.gui.MainWindow1:
-        window = speedwagon.gui.MainWindow1(
-            work_manager=work_manager,
-            debug=False)
-        if title is not None:
-            window.setWindowTitle(title)
-
-        return window
-
-
-class SingleWorkflowJSON2(SingleWorkflowJSON):
-
-    def __init__(
-            self,
-            logger: Optional[logging.Logger] = None
-    ) -> None:
-        super().__init__(logger)
-        self.on_exit: typing.Optional[
-            typing.Callable[[speedwagon.gui.MainWindow2], None]
-        ] = None
-
-    def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
-        """Launch Speedwagon."""
-        if self.options is None:
-            raise ValueError("no data loaded")
-        if self.workflow is None:
-            raise ValueError("no workflow loaded")
         with runner_strategies.BackgroundJobManager() as job_manager:
-            self._run(job_manager, self.workflow, self.options)
+            self._run_workflow(job_manager, self.workflow, self.options)
             if app is not None:
                 app.quit()
         return 0
 
     @staticmethod
-    def _load_window(job_manager: "runner_strategies.AbsJobManager2",
-                     title: Optional[str]) -> speedwagon.gui.MainWindow2:
+    def _load_main_window(job_manager: "runner_strategies.AbsJobManager2",
+                          title: Optional[str]) -> speedwagon.gui.MainWindow2:
         window = speedwagon.gui.MainWindow2(job_manager)
         if title is not None:
             window.setWindowTitle(title)
 
         return window
 
-    def _run(
+    def _run_workflow(
             self,
             job_manager: runner_strategies.BackgroundJobManager,
             workflow,
             options
     ):
-        window = SingleWorkflowJSON2._load_window(job_manager, workflow.name)
+        window = \
+            SingleWorkflowJSON._load_main_window(job_manager, workflow.name)
+
         runner_strategy = runner_strategies.QtRunner(window)
         window.logger = cast(logging.Logger, window.logger)
         window.show()
