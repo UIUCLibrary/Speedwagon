@@ -515,19 +515,19 @@ class WorkflowNullCallbacks(runner_strategies.AbsJobCallbacks):
     def error(self, message: Optional[str] = None,
               exc: Optional[BaseException] = None,
               traceback_string: Optional[str] = None) -> None:
-        pass
+        """Does nothing."""
 
     def status(self, text: str) -> None:
-        pass
+        """Does nothing."""
 
     def log(self, text: str, level: int = logging.INFO) -> None:
-        pass
+        """Does nothing."""
 
     def cancelling_complete(self) -> None:
-        pass
+        """Does nothing."""
 
     def finished(self, result: JobSuccess) -> None:
-        pass
+        """Does nothing."""
 
 
 def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
