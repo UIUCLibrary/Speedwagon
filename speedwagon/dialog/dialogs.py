@@ -542,7 +542,6 @@ class WorkflowProgress(WorkflowProgressGui):
         cursor = QtGui.QTextCursor(self._console_data)
         cursor.movePosition(cursor.End)
         cursor.beginEditBlock()
-        # text = text.replace("\n", "<br>")
         if level == logging.DEBUG:
             cursor.insertHtml(f"<div><i>{text}</i></div>")
         elif level == logging.WARNING:
