@@ -1367,8 +1367,13 @@ class RunCommand(SubCommand):
             print(f"Invalid {self.args}")
 
 
-def run_command(command_name: str, args: argparse.Namespace) -> None:
-    command = {
+def run_command(
+        command_name: str,
+        args: argparse.Namespace,
+        command=None
+) -> None:
+
+    command = command or {
         "run": RunCommand
     }.get(command_name)
 

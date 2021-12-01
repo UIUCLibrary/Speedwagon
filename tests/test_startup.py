@@ -1285,3 +1285,15 @@ def test_run_command_invalid():
     with pytest.raises(ValueError) as error:
         speedwagon.startup.run_command(command_name="bad", args=Mock())
     assert "bad" in str(error.value).lower()
+
+
+def test_run_command_valid():
+    good = Mock()
+    command = Mock(return_value=good)
+
+    speedwagon.startup.run_command(
+        command_name="good",
+        args=Mock(),
+        command=command
+    )
+    assert good.run.called is True
