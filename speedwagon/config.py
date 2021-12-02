@@ -399,6 +399,20 @@ class CliArgsSetter(AbsSetting):
             action='store_true',
             help="Run with debug mode"
         )
+
+        subparsers = parser.add_subparsers(
+            dest='command',
+            help='sub-command help'
+        )
+
+        run_parser = subparsers.add_parser('run', help='run help')
+
+        run_parser.add_argument(
+            '--json',
+            type=argparse.FileType("r", encoding="utf-8"),
+            help='Run job from json file'
+        )
+
         return parser
 
     @staticmethod

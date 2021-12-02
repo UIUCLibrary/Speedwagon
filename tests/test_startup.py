@@ -1,6 +1,8 @@
 import argparse
 import os.path
 import threading
+import io
+from unittest import mock
 from unittest.mock import Mock, MagicMock, mock_open, patch, ANY
 
 import json
@@ -1252,3 +1254,46 @@ class TestQtRequestMoreInfo:
                 options,
                 pre_results
             )
+
+
+class TestRunCommand:
+    def test_application_launcher_called(self, monkeypatch):
+        f = io.StringIO('{"Workflow":"dummy", "Configuration": {}}')
+        args = argparse.Namespace(json=f)
+
+        ApplicationLauncher = Mock()
+
+        monkeypatch.setattr(
+            speedwagon.job,
+            "available_workflows",
+            lambda: MagicMock()
+        )
+
+        monkeypatch.setattr(
+            speedwagon.startup,
+            "ApplicationLauncher",
+            ApplicationLauncher
+        )
+
+        run_command = speedwagon.startup.RunCommand(args)
+        with pytest.raises(SystemExit):
+            run_command.run()
+        assert ApplicationLauncher.called is True
+
+
+def test_run_command_invalid():
+    with pytest.raises(ValueError) as error:
+        speedwagon.startup.run_command(command_name="bad", args=Mock())
+    assert "bad" in str(error.value).lower()
+
+
+def test_run_command_valid():
+    good = Mock()
+    command = Mock(return_value=good)
+
+    speedwagon.startup.run_command(
+        command_name="good",
+        args=Mock(),
+        command=command
+    )
+    assert good.run.called is True

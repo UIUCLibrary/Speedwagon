@@ -1086,6 +1086,11 @@ class SingleWorkflowJSON(AbsStarter):
         self.options = loaded_data['Configuration']
         self._set_workflow(loaded_data['Workflow'])
 
+    def load(self, file_pointer) -> None:
+        loaded_data = json.load(file_pointer)
+        self.options = loaded_data['Configuration']
+        self._set_workflow(loaded_data['Workflow'])
+
     def _set_workflow(self, workflow_name: str) -> None:
         available_workflows = job.available_workflows()
         self.workflow = available_workflows[workflow_name]()
@@ -1124,6 +1129,7 @@ class SingleWorkflowJSON(AbsStarter):
 
         runner_strategy = runner_strategies.QtRunner(window)
         window.logger = cast(logging.Logger, window.logger)
+        window.logger.setLevel(logging.INFO)
         window.show()
         window.console.log_handler.capacity = 1
         runner_strategy.run(workflow,
@@ -1329,12 +1335,68 @@ class ApplicationLauncher:
         return self.strategy.run(app)
 
 
+class SubCommand(abc.ABC):
+    def __init__(self, args) -> None:
+        super().__init__()
+        self.args = args
+
+    @abc.abstractmethod
+    def run(self):
+        """Run the command"""
+
+
+class RunCommand(SubCommand):
+    def json_startup(self) -> None:
+        startup_strategy = SingleWorkflowJSON()
+        startup_strategy.load(self.args.json)
+        self._run_strategy(startup_strategy)
+
+    @staticmethod
+    def _run_strategy(startup_strategy):
+        app_launcher = \
+            speedwagon.startup.ApplicationLauncher(strategy=startup_strategy)
+
+        app = ApplicationLauncher()
+        app.initialize()
+        sys.exit(app_launcher.run())
+
+    def run(self):
+        if "json" in self.args:
+            self.json_startup()
+        else:
+            print(f"Invalid {self.args}")
+
+
+def run_command(
+        command_name: str,
+        args: argparse.Namespace,
+        command=None
+) -> None:
+
+    command = command or {
+        "run": RunCommand
+    }.get(command_name)
+
+    if command is None:
+        raise ValueError(f"Unknown command {command_name}")
+
+    new_command = command(args)
+    new_command.run()
+
+
 def main(argv: List[str] = None) -> None:
     """Launch main entry point."""
     argv = argv or sys.argv
     if "tab-editor" in argv:
         standalone_tab_editor()
         return
+    parser = speedwagon.config.CliArgsSetter.get_arg_parser()
+    args = parser.parse_args(argv[1:])
+
+    if args.command is not None:
+        run_command(command_name=args.command, args=args)
+        return
+
     app = ApplicationLauncher()
     app.initialize()
     sys.exit(app.run())
