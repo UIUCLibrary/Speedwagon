@@ -576,52 +576,6 @@ class TestStartupDefault:
         )
 
 
-class TestSingleWorkflowJSON2:
-    def test_run_without_json_raises_exception(self):
-        with pytest.raises(ValueError) as error:
-            startup = speedwagon.startup.SingleWorkflowJSON()
-            startup.options = Mock()
-            startup.workflow = None
-            startup.run()
-        assert "workflow" in str(error.value).lower()
-
-    def test_run_without_options_raises_exception(self):
-        with pytest.raises(ValueError) as error:
-            startup = speedwagon.startup.SingleWorkflowJSON()
-            startup.options = None
-            startup.workflow = Mock()
-            startup.run()
-        assert "no data" in str(error.value).lower()
-
-    def test_run_on_exit_is_called(self, qtbot):
-        startup = speedwagon.startup.SingleWorkflowJSON()
-        startup.options = Mock()
-        workflow = Mock()
-        workflow.name = "spam"
-        startup.workflow = workflow
-        startup.on_exit = Mock()
-        startup.run()
-        assert startup.on_exit.called is True
-
-    def test_load_json(self):
-        startup = speedwagon.startup.SingleWorkflowJSON()
-
-        startup.load_json_string(
-            json.dumps(
-                {
-                    "Workflow": "Zip Packages",
-                    "Configuration": {
-                        "Source": "dummy_source",
-                        "Output": "dummy_out"
-                    }
-                }
-            )
-        )
-
-        assert startup.options["Source"] == "dummy_source" and \
-               startup.options["Output"] == "dummy_out" and \
-               startup.workflow.name == 'Zip Packages'
-
 
 class TestSingleWorkflowJSON:
     def test_run_without_json_raises_exception(self):
@@ -698,6 +652,47 @@ class TestSingleWorkflowJSON:
         with qtbot.waitSignal(dummy.dummy_signal) as f:
             logger.info("Spam!")
         logger.removeHandler(signal_log_handler)
+
+    def test_run_on_exit_is_called(self, qtbot, monkeypatch):
+        startup = speedwagon.startup.SingleWorkflowJSON()
+        startup.options = Mock()
+        workflow = Mock()
+        workflow.name = "spam"
+        startup.workflow = workflow
+        startup.on_exit = Mock()
+
+        MainWindow2 = QtWidgets.QMainWindow()
+        MainWindow2.logger = Mock()
+        MainWindow2.console = Mock()
+        MainWindow2.show = Mock()
+        qtbot.addWidget(MainWindow2)
+
+        monkeypatch.setattr(
+            speedwagon.startup.speedwagon.gui,
+            "MainWindow2",
+            lambda _: MainWindow2
+        )
+        startup.run()
+        assert startup.on_exit.called is True
+
+    def test_load_json(self):
+        startup = speedwagon.startup.SingleWorkflowJSON()
+
+        startup.load_json_string(
+            json.dumps(
+                {
+                    "Workflow": "Zip Packages",
+                    "Configuration": {
+                        "Source": "dummy_source",
+                        "Output": "dummy_out"
+                    }
+                }
+            )
+        )
+
+        assert startup.options["Source"] == "dummy_source" and \
+               startup.options["Output"] == "dummy_out" and \
+               startup.workflow.name == 'Zip Packages'
 
 
 class TestMultiWorkflowLauncher:
