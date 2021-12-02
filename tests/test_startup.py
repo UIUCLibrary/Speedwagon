@@ -641,6 +641,8 @@ class TestSingleWorkflowJSON:
         assert "no data" in str(error.value).lower()
 
     def test_runner_strategies_called(self, monkeypatch, qtbot):
+        import tracemalloc
+        tracemalloc.start()
         startup = speedwagon.startup.SingleWorkflowJSON()
 
         startup.load_json_string(
@@ -657,7 +659,7 @@ class TestSingleWorkflowJSON:
 
         monkeypatch.setattr(
             speedwagon.startup.speedwagon.gui,
-            "MainWindow1",
+            "MainWindow2",
             MagicMock()
         )
 
