@@ -380,7 +380,7 @@ pipeline {
         booleanParam(name: 'DEPLOY_HATHI_TOOL_BETA', defaultValue: false, description: 'Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/')
         booleanParam(name: 'DEPLOY_SCCM', defaultValue: false, description: 'Request deployment of MSI installer to SCCM')
         booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
-        string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
+//         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
     stages {
 
@@ -1424,51 +1424,88 @@ pipeline {
                         beforeAgent true
                         beforeInput true
                     }
-                    agent any
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs ' --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                          }
+                    }
+                    options{
+                        timeout(time: 1, unit: 'DAYS')
+                    }
                     input {
                         message 'Update project documentation?'
                     }
                     steps{
                         unstash 'DOCS_ARCHIVE'
-                        dir('build/docs/html/'){
-                            sshPublisher(
-                                publishers: [
-                                    sshPublisherDesc(
-                                        configName: 'apache-ns - lib-dccuser-updater',
-                                        sshLabel: [label: 'Linux'],
-                                        transfers: [sshTransfer(excludes: '',
-                                        execCommand: '',
-                                        execTimeout: 120000,
-                                        flatten: false,
-                                        makeEmptyDirs: false,
-                                        noDefaultExcludes: false,
-                                        patternSeparator: '[, ]+',
-                                        remoteDirectory: params.DEPLOY_DOCS_URL_SUBFOLDER,
-                                        remoteDirectorySDF: false,
-                                        removePrefix: '',
-                                        sourceFiles: '**')],
-                                    usePromotionTimestamp: false,
-                                    useWorkspaceInPromotion: false,
-                                    verbose: true
-                                    )
-                                ]
-                            )
+                        withCredentials([usernamePassword(credentialsId: 'dccdocs-server', passwordVariable: 'docsPassword', usernameVariable: 'docsUsername')]) {
+                            sh 'python utils/upload_docs.py --username=$docsUsername --password=$docsPassword --subroute=speedwagon build/docs/html apache-ns.library.illinois.edu'
                         }
                     }
                     post{
-                        success{
-                            jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: params.JIRA_ISSUE_VALUE
-                        }
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
                                 patterns: [
-                                    [pattern: 'build/', type: 'INCLUDE']
+                                    [pattern: 'build/', type: 'INCLUDE'],
+                                    [pattern: 'dist/', type: 'INCLUDE'],
                                 ]
                             )
                         }
                     }
                 }
+//                 stage('Deploy Online Documentation') {
+//                     when{
+//                         equals expected: true, actual: params.DEPLOY_DOCS
+//                         beforeAgent true
+//                         beforeInput true
+//                     }
+//                     agent any
+//                     input {
+//                         message 'Update project documentation?'
+//                     }
+//                     steps{
+//                         unstash 'DOCS_ARCHIVE'
+//                         dir('build/docs/html/'){
+//                             sshPublisher(
+//                                 publishers: [
+//                                     sshPublisherDesc(
+//                                         configName: 'apache-ns - lib-dccuser-updater',
+//                                         sshLabel: [label: 'Linux'],
+//                                         transfers: [sshTransfer(excludes: '',
+//                                         execCommand: '',
+//                                         execTimeout: 120000,
+//                                         flatten: false,
+//                                         makeEmptyDirs: false,
+//                                         noDefaultExcludes: false,
+//                                         patternSeparator: '[, ]+',
+//                                         remoteDirectory: params.DEPLOY_DOCS_URL_SUBFOLDER,
+//                                         remoteDirectorySDF: false,
+//                                         removePrefix: '',
+//                                         sourceFiles: '**')],
+//                                     usePromotionTimestamp: false,
+//                                     useWorkspaceInPromotion: false,
+//                                     verbose: true
+//                                     )
+//                                 ]
+//                             )
+//                         }
+//                     }
+//                     post{
+//                         success{
+//                             jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: params.JIRA_ISSUE_VALUE
+//                         }
+//                         cleanup{
+//                             cleanWs(
+//                                 deleteDirs: true,
+//                                 patterns: [
+//                                     [pattern: 'build/', type: 'INCLUDE']
+//                                 ]
+//                             )
+//                         }
+//                     }
+//                 }
                 stage('Deploy standalone to Hathi tools Beta'){
                     when {
                         allOf{

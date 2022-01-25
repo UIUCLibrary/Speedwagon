@@ -5,6 +5,7 @@ flake8
 pykdu_compress >= 0.1.7b2
 pylint
 sphinx
+paramiko
 pydocstyle
 pytest-xvfb
 sphinx-argparse
