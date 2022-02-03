@@ -1089,6 +1089,12 @@ class SingleWorkflowJSON(AbsStarter):
         self._set_workflow(loaded_data['Workflow'])
 
     def load(self, file_pointer: io.TextIOBase) -> None:
+        """Load the information from the json/
+
+        Args:
+            file_pointer: File pointer to json file
+
+        """
         loaded_data = json.load(file_pointer)
         self.options = loaded_data['Configuration']
         self._set_workflow(loaded_data['Workflow'])
