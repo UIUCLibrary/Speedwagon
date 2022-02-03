@@ -1353,7 +1353,7 @@ class SubCommand(abc.ABC):
 
     @abc.abstractmethod
     def run(self):
-        """Run the command"""
+        """Run the command."""
 
 
 class RunCommand(SubCommand):
