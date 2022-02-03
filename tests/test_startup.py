@@ -1290,6 +1290,13 @@ def test_run_command_valid(monkeypatch):
     monkeypatch.setattr(speedwagon.config.sys, "argv", ["speedwagon", "run"])
     monkeypatch.setattr(speedwagon.config.sys, "argv", ["speedwagon", "run"])
     monkeypatch.setattr(speedwagon.config.Path, "home", lambda: "/home/dummy")
+
+    monkeypatch.setattr(
+        speedwagon.config.WindowsConfig,
+        "get_app_data_directory",
+        lambda _: "c:\\Users\\dummy"
+    )
+
     speedwagon.startup.run_command(
         command_name="good",
         args=Mock(),
