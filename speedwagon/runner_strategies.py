@@ -1123,7 +1123,8 @@ class BackgroundJobManager(AbsJobManager2):
         self.valid_workflows = None
         self._background_thread: Optional[threading.Thread] = None
         self.request_more_info = lambda *args, **kwargs: None
-        self.global_settings = None
+        self.global_settings: \
+            Optional[Dict[str, typing.Union[str, bool]]] = None
 
     def __enter__(self) -> "BackgroundJobManager":
         self._exec = None
