@@ -1132,9 +1132,8 @@ class BackgroundJobManager(AbsJobManager2):
     def run_job_on_thread(
             self,
             workflow_name: str,
-            options: Dict[str, Any],
+            options: Dict[str, Dict[str, Any]],
             liaison: JobManagerLiaison,
-            global_settings=None
     ) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             try:
@@ -1146,10 +1145,14 @@ class BackgroundJobManager(AbsJobManager2):
                     task_scheduler.valid_workflows = self.valid_workflows
 
                 workflow = task_scheduler.get_workflow(workflow_name)(
-                    global_settings=global_settings
+                    global_settings=options.get("global_settings")
                 )
                 liaison.events.started.wait()
-                for task in task_scheduler.iter_tasks(workflow, options):
+
+                for task in task_scheduler.iter_tasks(
+                        workflow,
+                        options['options']
+                ):
 
                     if liaison.events.is_stopped() is True:
                         liaison.callbacks.cancelling_complete()
@@ -1204,9 +1207,8 @@ class BackgroundJobManager(AbsJobManager2):
             app: "speedwagon.startup.AbsStarter",
             liaison: JobManagerLiaison,
             options: Optional[Dict[str, Any]] = None,
-            global_settings=None
-    ):
-
+            global_settings: Optional[Dict[str, Any]] = None
+    ) -> None:
         if self._background_thread is None or \
                 self._background_thread.is_alive() is False:
 
@@ -1215,8 +1217,10 @@ class BackgroundJobManager(AbsJobManager2):
                 kwargs={
                     "workflow_name": workflow_name,
                     "liaison": liaison,
-                    "options": options,
-                    "global_settings":  global_settings
+                    "options": {
+                        "options": options,
+                        "global_settings": global_settings
+                    },
                 }
             )
             new_thread.start()
