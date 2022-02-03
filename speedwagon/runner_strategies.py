@@ -1123,6 +1123,8 @@ class BackgroundJobManager(AbsJobManager2):
         self.valid_workflows = None
         self._background_thread: Optional[threading.Thread] = None
         self.request_more_info = lambda *args, **kwargs: None
+        self.global_settings: \
+            Optional[Dict[str, typing.Union[str, bool]]] = None
 
     def __enter__(self) -> "BackgroundJobManager":
         self._exec = None
@@ -1132,7 +1134,7 @@ class BackgroundJobManager(AbsJobManager2):
     def run_job_on_thread(
             self,
             workflow_name: str,
-            options: Dict[str, Any],
+            options: Dict[str, Dict[str, Any]],
             liaison: JobManagerLiaison,
     ) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -1144,9 +1146,15 @@ class BackgroundJobManager(AbsJobManager2):
                 if self.valid_workflows is not None:
                     task_scheduler.valid_workflows = self.valid_workflows
 
-                workflow = task_scheduler.get_workflow(workflow_name)()
+                workflow = task_scheduler.get_workflow(workflow_name)(
+                    global_settings=options.get("global_settings")
+                )
                 liaison.events.started.wait()
-                for task in task_scheduler.iter_tasks(workflow, options):
+
+                for task in task_scheduler.iter_tasks(
+                        workflow,
+                        options['options']
+                ):
 
                     if liaison.events.is_stopped() is True:
                         liaison.callbacks.cancelling_complete()
@@ -1201,7 +1209,7 @@ class BackgroundJobManager(AbsJobManager2):
             app: "speedwagon.startup.AbsStarter",
             liaison: JobManagerLiaison,
             options: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> None:
         if self._background_thread is None or \
                 self._background_thread.is_alive() is False:
 
@@ -1210,7 +1218,10 @@ class BackgroundJobManager(AbsJobManager2):
                 kwargs={
                     "workflow_name": workflow_name,
                     "liaison": liaison,
-                    "options": options
+                    "options": {
+                        "options": options,
+                        "global_settings": self.global_settings
+                    },
                 }
             )
             new_thread.start()
