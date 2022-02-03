@@ -1288,6 +1288,8 @@ def test_run_command_valid(monkeypatch):
     good = Mock()
     command = Mock(return_value=good)
     monkeypatch.setattr(speedwagon.config.sys, "argv", ["speedwagon", "run"])
+    monkeypatch.setattr(speedwagon.config.sys, "argv", ["speedwagon", "run"])
+    monkeypatch.setattr(speedwagon.config.Path, "home", lambda: "/home/dummy")
     speedwagon.startup.run_command(
         command_name="good",
         args=Mock(),
