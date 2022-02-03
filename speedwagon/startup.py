@@ -847,6 +847,7 @@ class StartQtThreaded(AbsStarter):
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
 
         with runner_strategies.BackgroundJobManager() as job_manager:
+            job_manager.global_settings = self.startup_settings
             self.windows = speedwagon.gui.MainWindow2(
                 job_manager=job_manager,
                 settings=self.startup_settings
@@ -960,7 +961,6 @@ class StartQtThreaded(AbsStarter):
         job_manager.submit_job(
             workflow_name=workflow_name,
             options=options,
-            global_settings=self.startup_settings,
             app=self,
             liaison=runner_strategies.JobManagerLiaison(
                 callbacks=callbacks,

@@ -1123,6 +1123,7 @@ class BackgroundJobManager(AbsJobManager2):
         self.valid_workflows = None
         self._background_thread: Optional[threading.Thread] = None
         self.request_more_info = lambda *args, **kwargs: None
+        self.global_settings = None
 
     def __enter__(self) -> "BackgroundJobManager":
         self._exec = None
@@ -1207,7 +1208,6 @@ class BackgroundJobManager(AbsJobManager2):
             app: "speedwagon.startup.AbsStarter",
             liaison: JobManagerLiaison,
             options: Optional[Dict[str, Any]] = None,
-            global_settings: Optional[Dict[str, Any]] = None
     ) -> None:
         if self._background_thread is None or \
                 self._background_thread.is_alive() is False:
@@ -1219,7 +1219,7 @@ class BackgroundJobManager(AbsJobManager2):
                     "liaison": liaison,
                     "options": {
                         "options": options,
-                        "global_settings": global_settings
+                        "global_settings": self.global_settings
                     },
                 }
             )
