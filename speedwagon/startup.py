@@ -960,6 +960,7 @@ class StartQtThreaded(AbsStarter):
         job_manager.submit_job(
             workflow_name=workflow_name,
             options=options,
+            global_settings=self.startup_settings,
             app=self,
             liaison=runner_strategies.JobManagerLiaison(
                 callbacks=callbacks,
@@ -1068,6 +1069,7 @@ class SingleWorkflowJSON(AbsStarter):
             logger: Optional Logger, defaults to default logger for __name__.
         """
         super().__init__()
+        self.global_settings = None
         self.on_exit: typing.Optional[
             typing.Callable[[speedwagon.gui.MainWindow2], None]
         ] = None
@@ -1086,14 +1088,16 @@ class SingleWorkflowJSON(AbsStarter):
         self.options = loaded_data['Configuration']
         self._set_workflow(loaded_data['Workflow'])
 
-    def load(self, file_pointer) -> None:
+    def load(self, file_pointer: io.TextIOBase) -> None:
         loaded_data = json.load(file_pointer)
         self.options = loaded_data['Configuration']
         self._set_workflow(loaded_data['Workflow'])
 
     def _set_workflow(self, workflow_name: str) -> None:
         available_workflows = job.available_workflows()
-        self.workflow = available_workflows[workflow_name]()
+        self.workflow = available_workflows[workflow_name](
+            global_settings=self.global_settings or {}
+        )
 
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         """Launch Speedwagon."""
@@ -1339,6 +1343,7 @@ class SubCommand(abc.ABC):
     def __init__(self, args) -> None:
         super().__init__()
         self.args = args
+        self.global_settings = None
 
     @abc.abstractmethod
     def run(self):
@@ -1348,6 +1353,7 @@ class SubCommand(abc.ABC):
 class RunCommand(SubCommand):
     def json_startup(self) -> None:
         startup_strategy = SingleWorkflowJSON()
+        startup_strategy.global_settings = self.global_settings
         startup_strategy.load(self.args.json)
         self._run_strategy(startup_strategy)
 
@@ -1367,20 +1373,31 @@ class RunCommand(SubCommand):
             print(f"Invalid {self.args}")
 
 
+def get_global_options():
+    platform_settings = speedwagon.config.get_platform_settings()
+
+    config_file = os.path.join(
+        platform_settings.get_app_data_directory(),
+        CONFIG_INI_FILE_NAME
+    )
+    return speedwagon.config.ConfigLoader(config_file).get_settings()
+
+
 def run_command(
         command_name: str,
         args: argparse.Namespace,
         command=None
 ) -> None:
-
-    command = command or {
+    commands = {
         "run": RunCommand
-    }.get(command_name)
+    }
+    command = command or commands.get(command_name)
 
     if command is None:
         raise ValueError(f"Unknown command {command_name}")
 
     new_command = command(args)
+    new_command.global_settings = get_global_options()
     new_command.run()
 
 
