@@ -54,25 +54,26 @@ def testPkg(args = [:]){
         unstash "${args.stash}"
     }
     def teardown =  args['testTeardown'] ? args['testTeardown']: {}
-
+    def retries = args.containsKey('retry') ? args.retry : 1
     def agentRunner = getAgent(args)
-    agentRunner {
-        setup()
-        try{
-            findFiles(glob: args.glob).each{
-                def toxCommand = "${tox} --installpkg ${it.path} -e ${getToxEnv(args)}"
-                if(isUnix()){
-                    sh(label: "Testing tox version", script: "${tox} --version")
-//                     toxCommand = toxCommand + " --workdir /tmp/tox"
-                    sh(label: "Running Tox", script: toxCommand)
-                } else{
-                    bat(label: "Testing tox version", script: "${tox} --version")
-                    toxCommand = toxCommand + " --workdir %TEMP%\\tox"
-                    bat(label: "Running Tox", script: toxCommand)
+    retry(retries){
+        agentRunner {
+            setup()
+            try{
+                findFiles(glob: args.glob).each{
+                    def toxCommand = "${tox} --installpkg ${it.path} -e ${getToxEnv(args)}"
+                    if(isUnix()){
+                        sh(label: "Testing tox version", script: "${tox} --version")
+                        sh(label: "Running Tox", script: toxCommand)
+                    } else{
+                        bat(label: "Testing tox version", script: "${tox} --version")
+                        toxCommand = toxCommand + " --workdir %TEMP%\\tox"
+                        bat(label: "Running Tox", script: toxCommand)
+                    }
                 }
+            } finally{
+                teardown()
             }
-        } finally{
-            teardown()
         }
     }
 }

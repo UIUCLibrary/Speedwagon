@@ -1,9 +1,9 @@
 #!groovy
 import static groovy.json.JsonOutput.* // For pretty printing json data
 
-SUPPORTED_MAC_VERSIONS = ['3.8', '3.9']
-SUPPORTED_LINUX_VERSIONS = ['3.7', '3.8', '3.9']
-SUPPORTED_WINDOWS_VERSIONS = ['3.7', '3.8', '3.9']
+SUPPORTED_MAC_VERSIONS = ['3.8', '3.9', '3.10']
+SUPPORTED_LINUX_VERSIONS = ['3.7', '3.8', '3.9', '3.10']
+SUPPORTED_WINDOWS_VERSIONS = ['3.7', '3.8', '3.9', '3.10']
 DOCKER_PLATFORM_BUILD_ARGS = [
     linux: '',
     windows: '--build-arg CHOCOLATEY_SOURCE'
@@ -297,7 +297,7 @@ def startup(){
 
 def create_wheels(){
     def wheelCreatorTasks = [:]
-    ['3.7', '3.8', '3.9'].each{ pythonVersion ->
+    ['3.7', '3.8', '3.9', '3.10'].each{ pythonVersion ->
         wheelCreatorTasks["Packaging wheels for ${pythonVersion}"] = {
             node('windows && docker') {
                 ws{
@@ -740,7 +740,8 @@ pipeline {
                                                 ],
                                                 glob: 'dist/*.tar.gz,dist/*.zip',
                                                 stash: 'PYTHON_PACKAGES',
-                                                pythonVersion: pythonVersion
+                                                pythonVersion: pythonVersion,
+                                                retry: 3,
                                             )
                                         }
                                         windowsTests["Windows - Python ${pythonVersion}: wheel"] = {
@@ -754,7 +755,8 @@ pipeline {
                                                 ],
                                                 glob: 'dist/*.whl',
                                                 stash: 'PYTHON_PACKAGES',
-                                                pythonVersion: pythonVersion
+                                                pythonVersion: pythonVersion,
+                                                retry: 3,
                                             )
                                         }
                                     }
@@ -771,7 +773,8 @@ pipeline {
                                                 ],
                                                 glob: 'dist/*.tar.gz',
                                                 stash: 'PYTHON_PACKAGES',
-                                                pythonVersion: pythonVersion
+                                                pythonVersion: pythonVersion,
+                                                retry: 3,
                                             )
                                         }
                                         linuxTests["Linux - Python ${pythonVersion}: wheel"] = {
@@ -785,7 +788,8 @@ pipeline {
                                                 ],
                                                 glob: 'dist/*.whl',
                                                 stash: 'PYTHON_PACKAGES',
-                                                pythonVersion: pythonVersion
+                                                pythonVersion: pythonVersion,
+                                                retry: 3,
                                             )
                                         }
                                     }
@@ -816,7 +820,8 @@ pipeline {
                                                     },
                                                     testTeardown: {
                                                         sh 'rm -r venv/'
-                                                    }
+                                                    },
+                                                    retry: 3,
                                                 )
                                             }
                                         }
@@ -843,7 +848,8 @@ pipeline {
                                                     },
                                                     testTeardown: {
                                                         sh 'rm -r venv/'
-                                                    }
+                                                    },
+                                                    retry: 3,
 
                                                 )
                                             }
@@ -887,6 +893,7 @@ pipeline {
                                         script {
                                             findFiles(glob: 'dist/*.whl').each{
                                                 [
+                                                    'PYTHON_DEPS_3.10',
                                                     'PYTHON_DEPS_3.9',
                                                     'PYTHON_DEPS_3.8',
                                                     'PYTHON_DEPS_3.7',
