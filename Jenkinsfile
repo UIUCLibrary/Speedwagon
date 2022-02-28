@@ -1051,7 +1051,6 @@ pipeline {
                                             [pattern: 'venv/', type: 'INCLUDE'],
                                         ]
                                     )
-                                    sh 'ls'
                                 }
                             }
                         }
@@ -1702,6 +1701,11 @@ pipeline {
 //                         }
 //                     }
 //                 }
+                stage('Deploy MacOS DMG to Nexus'){
+                    steps{
+                        echo 'here'
+                    }
+                }
                 stage('Deploy standalone to Hathi tools Beta'){
                     when {
                         allOf{
