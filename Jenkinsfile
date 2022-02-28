@@ -1031,7 +1031,7 @@ pipeline {
                             }
                             post{
                                 success{
-                                    archiveArtifacts artifacts: 'dist/*.app'
+                                    archiveArtifacts artifacts: 'dist/*.app', fingerprint: true
                                     stash includes: 'dist/*.app', name: 'APPLE_APPLICATION_BUNDLE'
                                 }
                                 cleanup{
