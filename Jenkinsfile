@@ -1017,7 +1017,9 @@ pipeline {
                             steps{
                                 sh(
                                     label: 'Creating Mac Application Bundle',
-                                    script: '''python3 -m venv venv'''
+                                    script: '''python3 -m venv --upgrade-deps venv
+                                                venv/bin/pip install pyinstaller
+                                    '''
                                     )
                             }
                             post{
