@@ -1034,6 +1034,9 @@ pipeline {
                                     archiveArtifacts artifacts: 'dist/*.app', fingerprint: true
                                     stash includes: 'dist/*.app', name: 'APPLE_APPLICATION_BUNDLE'
                                 }
+                                failure{
+                                    sh 'ls -R'
+                                }
                                 cleanup{
                                     cleanWs(
                                         deleteDirs: true,
