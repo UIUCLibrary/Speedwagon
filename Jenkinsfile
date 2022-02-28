@@ -1028,14 +1028,19 @@ pipeline {
                                     }
                                 }
                                 sh(label: 'Running pyinstaller script', script: 'venv/bin/python packaging/create_osx_app_bundle.py')
+                                sh(label: 'Packaging installer as .dmg file',
+                                    script:'''
+                                        mkdir -p build/appleBundle
+                                        mv $WORKSPACE/dist/*.app build/appleBundle/
+                                        hdiutil create build/tmp.dmg -ov -volname "SpeedwagonInstall" -fs HFS+ -srcfolder "$WORKSPACE/build/appleBundle/"
+                                        hdiutil convert build/tmp.dmg -format UDZO -o dist/SpeedwagonInstall.dmg
+                                        '''
+                                    )
                             }
                             post{
                                 success{
-                                    archiveArtifacts artifacts: 'dist/*.app', fingerprint: true
-                                    stash includes: 'dist/*.app', name: 'APPLE_APPLICATION_BUNDLE'
-                                }
-                                failure{
-                                    sh 'ls -R'
+                                    archiveArtifacts artifacts: 'dist/*.dmg', fingerprint: true
+                                    stash includes: 'dist/*.dmg', name: 'APPLE_APPLICATION_BUNDLE'
                                 }
                                 cleanup{
                                     cleanWs(
