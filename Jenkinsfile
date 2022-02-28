@@ -867,8 +867,14 @@ pipeline {
                 stage('End-user packages'){
                     parallel{
                         stage('Mac Application Bundle'){
+                            agent{
+                                label 'mac && python3'
+                            }
                             steps{
-                                echo 'Creating Mac Application Bundle'
+                                sh(
+                                    label: 'Creating Mac Application Bundle',
+                                    script: 'ls'
+                                    )
                             }
                         }
                         stage('Chocolatey'){
