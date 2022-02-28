@@ -873,8 +873,21 @@ pipeline {
                             steps{
                                 sh(
                                     label: 'Creating Mac Application Bundle',
-                                    script: 'ls'
+                                    script: '''python3 -m venv venv'''
                                     )
+                            }
+                            post{
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        patterns: [
+                                            [pattern: 'dist/', type: 'INCLUDE'],
+                                            [pattern: 'build/', type: 'INCLUDE'],
+                                            [pattern: 'venv/', type: 'INCLUDE'],
+                                        ]
+                                    )
+                                    sh 'ls'
+                                }
                             }
                         }
                         stage('Chocolatey'){
