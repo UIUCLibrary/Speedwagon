@@ -1015,6 +1015,7 @@ pipeline {
                                 label 'mac && python3'
                             }
                             steps{
+                                unstash 'PYTHON_PACKAGES'
                                 sh(
                                     label: 'Creating Mac Application Bundle',
                                     script: '''python3 -m venv --upgrade-deps venv
