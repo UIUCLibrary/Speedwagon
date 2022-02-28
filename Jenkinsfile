@@ -1033,7 +1033,7 @@ pipeline {
                                         mkdir -p build/appleBundle
                                         mv \$WORKSPACE/dist/*.app build/appleBundle/
                                         hdiutil create build/tmp.dmg -ov -volname \"SpeedwagonInstall\" -fs HFS+ -srcfolder \"\$WORKSPACE/build/appleBundle/\"
-                                        hdiutil convert build/tmp.dmg -format UDZO -o dist/SpeedwagonInstall.dmg
+                                        hdiutil convert build/tmp.dmg -format UDZO -o dist/Speedwagon-${props.Version}.dmg
                                         """
                                     )
                             }
