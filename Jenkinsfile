@@ -1030,6 +1030,10 @@ pipeline {
                                 sh(label: 'Running pyinstaller script', script: 'venv/bin/python packaging/create_osx_app_bundle.py')
                             }
                             post{
+                                success{
+                                    archiveArtifacts artifacts: 'dist/*.app'
+                                    stash includes: 'dist/*.app', name: 'APPLE_APPLICATION_BUNDLE'
+                                }
                                 cleanup{
                                     cleanWs(
                                         deleteDirs: true,
