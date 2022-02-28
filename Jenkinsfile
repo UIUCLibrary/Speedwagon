@@ -1029,12 +1029,12 @@ pipeline {
                                 }
                                 sh(label: 'Running pyinstaller script', script: 'venv/bin/python packaging/create_osx_app_bundle.py')
                                 sh(label: 'Packaging installer as .dmg file',
-                                    script:'''
+                                    script:"""
                                         mkdir -p build/appleBundle
-                                        mv $WORKSPACE/dist/*.app build/appleBundle/
-                                        hdiutil create build/tmp.dmg -ov -volname "SpeedwagonInstall" -fs HFS+ -srcfolder "$WORKSPACE/build/appleBundle/"
+                                        mv \$WORKSPACE/dist/*.app build/appleBundle/
+                                        hdiutil create build/tmp.dmg -ov -volname \"SpeedwagonInstall\" -fs HFS+ -srcfolder \"\$WORKSPACE/build/appleBundle/\"
                                         hdiutil convert build/tmp.dmg -format UDZO -o dist/SpeedwagonInstall.dmg
-                                        '''
+                                        """
                                     )
                             }
                             post{
