@@ -1022,6 +1022,11 @@ pipeline {
                                                 venv/bin/pip install pyinstaller
                                     '''
                                     )
+                                script{
+                                    findFiles(glob: 'dist/speedwagon*.whl').each{ wheel ->
+                                        echo("Found ${wheel}")
+                                    }
+                                }
                             }
                             post{
                                 cleanup{
