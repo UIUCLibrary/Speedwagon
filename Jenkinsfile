@@ -866,6 +866,11 @@ pipeline {
                 }
                 stage('End-user packages'){
                     parallel{
+                        stage('Mac Application Bundle'){
+                            steps{
+                                echo 'Creating Mac Application Bundle'
+                            }
+                        }
                         stage('Chocolatey'){
                             when{
                                 anyOf{
