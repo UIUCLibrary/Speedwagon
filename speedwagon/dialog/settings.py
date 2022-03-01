@@ -12,9 +12,8 @@ except ImportError:  # pragma: no cover
 
 from typing import Optional, Dict, cast, Type, Union
 
-from PyQt5 import QtWidgets, QtCore  # type: ignore
-from PyQt5 import uic
-from speedwagon import config, models, tabs, job
+from PySide6 import QtWidgets, QtCore  # type: ignore
+from speedwagon import config, models, tabs, job, ui_loader
 
 
 __all__ = ['GlobalSettingsTab', 'TabsConfigurationTab', 'TabEditor']
@@ -349,7 +348,7 @@ class TabEditorWidget(QtWidgets.QWidget):
 
     def load_ui_file(self) -> None:
         with resources.path("speedwagon.ui", "tab_editor.ui") as ui_file:
-            uic.loadUi(ui_file, self)
+            ui_loader.load_ui(ui_file, self)
 
 
 class TabEditor(TabEditorWidget):

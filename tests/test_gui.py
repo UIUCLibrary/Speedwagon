@@ -3,14 +3,14 @@ from typing import Any, List, Dict
 from unittest.mock import Mock, MagicMock, patch, mock_open
 import webbrowser
 
-import PyQt5
 import pytest
 
 import speedwagon.startup
 import speedwagon.tabs
 import speedwagon.gui
 from speedwagon.workflows import shared_custom_widgets
-from PyQt5.QtWidgets import QApplication, QAction
+from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QAction
 
 
 def test_show_help_open_web(qtbot, monkeypatch):
@@ -42,7 +42,7 @@ def test_system_info_menu(qtbot, monkeypatch):
     mock_work_manager = Mock()
     main_window = speedwagon.gui.MainWindow1(mock_work_manager)
     qtbot.addWidget(main_window)
-    from PyQt5 import QtWidgets
+    from PySide6 import QtWidgets
     system_menu = main_window.menuBar().findChild(QtWidgets.QMenu,
                                                   name="systemMenu")
 
@@ -62,7 +62,7 @@ def test_show_configuration_menu(qtbot, monkeypatch):
     mock_work_manager = MagicMock(settings_path="some-path")
     main_window = speedwagon.gui.MainWindow1(mock_work_manager)
     qtbot.addWidget(main_window)
-    from PyQt5 import QtWidgets
+    from PySide6 import QtWidgets
     system_menu = main_window.menuBar().findChild(QtWidgets.QMenu,
                                                   name="systemMenu")
 

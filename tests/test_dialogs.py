@@ -2,9 +2,8 @@ import platform
 import logging
 from unittest.mock import Mock, patch, mock_open
 import pytest
-from PyQt5 import QtWidgets
+from PySide6 import QtWidgets,  QtCore
 from speedwagon.dialog import settings, dialogs
-from PyQt5 import QtCore
 
 
 def test_settings_open_dir_if_location_is_set(qtbot, monkeypatch):
@@ -30,7 +29,7 @@ class TestOpenSettings:
                settings_directory in system.call_args_list[0][0][0]
 
     def test_open_unsupported_settings(self, qtbot, monkeypatch):
-        from PyQt5 import QtWidgets
+        from PySide6 import QtWidgets
         settings_directory = "some/settings/path"
         opening_strategy = settings.UnsupportedOpenSettings(settings_directory)
         show = Mock()
@@ -53,7 +52,7 @@ class TestOpenSettings:
 
 class TestGlobalSettingsTab:
     def test_on_okay_not_modified(self, qtbot, monkeypatch):
-        from PyQt5 import QtWidgets
+        from PySide6 import QtWidgets
         mock_exec = Mock()
         monkeypatch.setattr(QtWidgets.QMessageBox, "exec", mock_exec)
         settings_tab = settings.GlobalSettingsTab()
@@ -68,7 +67,7 @@ class TestGlobalSettingsTab:
                              ])
     def test_on_okay_modified(self, qtbot, monkeypatch, config_file,
                               expect_file_written):
-        from PyQt5 import QtWidgets
+        from PySide6 import QtWidgets
         from speedwagon import config
         mock_exec = Mock()
         monkeypatch.setattr(QtWidgets.QMessageBox, "exec", mock_exec)
@@ -86,7 +85,7 @@ class TestGlobalSettingsTab:
 class TestTabsConfigurationTab:
     def test_on_ok_not_modified(self, qtbot, monkeypatch):
         config_tab = settings.TabsConfigurationTab()
-        from PyQt5 import QtWidgets
+        from PySide6 import QtWidgets
         mock_exec = Mock()
         monkeypatch.setattr(QtWidgets.QMessageBox, "exec", mock_exec)
         config_tab.on_okay()
@@ -99,7 +98,7 @@ class TestTabsConfigurationTab:
     def test_on_okay_modified(self, qtbot, monkeypatch, settings_location,
                               writes_to_file):
 
-        from PyQt5 import QtWidgets
+        from PySide6 import QtWidgets
 
         config_tab = settings.TabsConfigurationTab()
         config_tab.settings_location = settings_location

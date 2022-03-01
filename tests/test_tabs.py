@@ -11,7 +11,7 @@ import speedwagon.job
 
 class TestWorkflowsTab:
     def test_exception_calls_message_box(self, qtbot, monkeypatch):
-        from PyQt5 import QtWidgets
+        from PySide6 import QtWidgets
         mock_log_manager = Mock()
         workflows = MagicMock()
 
@@ -75,7 +75,7 @@ class TestWorkflowsTab:
         workflows = OrderedDict()
         workflows["Spam"] = MagicMock()
         workflows["Bacon"] = MagicMock()
-        from PyQt5 import QtWidgets
+        from PySide6 import QtWidgets
         base_widget = QtWidgets.QWidget()
         selection_tab = speedwagon.tabs.WorkflowsTab(
             parent=base_widget,

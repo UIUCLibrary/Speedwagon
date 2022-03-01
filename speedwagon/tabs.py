@@ -11,7 +11,7 @@ from typing import List, Optional, Tuple, Dict, Iterator, NamedTuple, cast, \
 from abc import ABCMeta
 
 import yaml
-from PyQt5 import QtWidgets, QtCore  # type: ignore
+from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
 
 import speedwagon
 import speedwagon.config
@@ -158,7 +158,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     ) -> None:
         """Create a new item selection tab."""
         super().__init__(parent, work_manager)
-        self.export_action = QtWidgets.QAction(text="summy")
+        self.export_action = QtGui.QAction(text="summy")
         self.log_manager = log_manager
         self.item_selection_model = item_model
         self.options_model: Optional[models.ToolOptionsModel3] = None
@@ -224,7 +224,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         )
 
         cast(
-            QtCore.pyqtBoundSignal,
+            QtCore.Signal,
             selector_view.selectionModel().currentChanged
         ).connect(self._update_tool_selected)
 
@@ -380,7 +380,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
 
 class WorkflowSignals(QtCore.QObject):
-    start_workflow = QtCore.pyqtSignal(str, dict)
+    start_workflow = QtCore.Signal(str, dict)
 
 
 class WorkflowsTab(ItemSelectionTab):

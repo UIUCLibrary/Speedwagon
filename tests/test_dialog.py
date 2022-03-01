@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from PyQt5 import QtWidgets
+from PySide6 import QtWidgets
 try:
     from importlib import metadata
     from importlib.metadata import PackageNotFoundError

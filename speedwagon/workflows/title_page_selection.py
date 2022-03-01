@@ -4,8 +4,8 @@ import os
 import typing
 from typing import NamedTuple, Any
 
-from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import Qt
+from PySide6 import QtWidgets, QtCore
+from PySide6.QtCore import Qt
 from uiucprescon.packager.packages import collection
 
 
@@ -117,7 +117,7 @@ class PackagesModel(QtCore.QAbstractTableModel):
             index: int,
             orientation: Qt.Orientation,
             role: int = QtCore.Qt.DisplayRole
-    ) -> typing.Union[str, QtCore.QVariant]:
+    ) -> typing.Union[str, QtCore.QObject]:
         """Get model header information."""
         if role == QtCore.Qt.DisplayRole and \
                 orientation == QtCore.Qt.Horizontal:

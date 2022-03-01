@@ -30,8 +30,7 @@ except ImportError:
 
 import webbrowser
 import yaml
-from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
-
+from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
 import speedwagon
 import speedwagon.config
 import speedwagon.models
@@ -373,14 +372,14 @@ class StartupDefault(AbsStarter):
 
 class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
     class WorkflowSignals(QtCore.QObject):
-        error = QtCore.pyqtSignal([object, object, object])
-        progress_changed = QtCore.pyqtSignal(int)
-        total_jobs_changed = QtCore.pyqtSignal(int)
-        cancel_complete = QtCore.pyqtSignal()
-        message = QtCore.pyqtSignal(str, int)
-        status_changed = QtCore.pyqtSignal(str)
-        started = QtCore.pyqtSignal()
-        finished = QtCore.pyqtSignal(runner_strategies.JobSuccess)
+        error = QtCore.Signal([object, object, object])
+        progress_changed = QtCore.Signal(int)
+        total_jobs_changed = QtCore.Signal(int)
+        cancel_complete = QtCore.Signal()
+        message = QtCore.Signal(str, int)
+        status_changed = QtCore.Signal(str)
+        started = QtCore.Signal()
+        finished = QtCore.Signal(runner_strategies.JobSuccess)
 
         def __init__(self, parent: WorkflowProgress) -> None:
             super().__init__(parent)
@@ -404,7 +403,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         def log(self, text: str, level: int) -> None:
             self.message.emit(text, level)
 
-        @QtCore.pyqtSlot(str)
+        @QtCore.Slot(str)
         def set_banner_text(self, text: str) -> None:
             self.dialog_box.banner.setText(text)
 
@@ -429,7 +428,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
             error.exec()
             self.dialog_box.failed()
 
-        @QtCore.pyqtSlot(object)
+        @QtCore.Slot(object)
         def _finished(self, results) -> None:
             if results in [
                 runner_strategies.JobSuccess.SUCCESS,
@@ -541,7 +540,7 @@ def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
 
 
 class QtRequestMoreInfo(QtCore.QObject):
-    request = QtCore.pyqtSignal(object, object, object, object)
+    request = QtCore.Signal(object, object, object, object)
 
     def __init__(self, parent: typing.Optional[QtWidgets.QWidget]) -> None:
         super().__init__(parent)

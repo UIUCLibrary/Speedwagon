@@ -24,12 +24,12 @@ except ImportError:  # pragma: no cover
 
 from collections import namedtuple
 
-from PyQt5 import QtWidgets, QtCore, QtGui  # type: ignore
-from PyQt5 import uic
+from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
+
 import speedwagon.dialog
 import speedwagon.dialog.dialogs
 import speedwagon.dialog.settings
-from speedwagon import tabs, worker
+from speedwagon import tabs, worker, ui_loader
 import speedwagon
 import speedwagon.ui
 import speedwagon.config
@@ -62,7 +62,7 @@ class ToolConsole(QtWidgets.QWidget):
 
     class ConsoleLogHandler(logging.handlers.BufferingHandler):
         class Signals(QtCore.QObject):
-            message = QtCore.pyqtSignal(str)
+            message = QtCore.Signal(str)
 
         def __init__(self, console_widget: "ToolConsole"):
             super().__init__(capacity=1)
@@ -87,7 +87,7 @@ class ToolConsole(QtWidgets.QWidget):
         self.log_handler.setFormatter(self.log_formatter)
 
         with resources.path(speedwagon.ui, "console.ui") as ui_file:
-            uic.loadUi(ui_file, self)
+            ui_loader.load_ui(ui_file, self)
 
         # ======================================================================
         # Type hints:
@@ -115,7 +115,7 @@ class ToolConsole(QtWidgets.QWidget):
         cursor.movePosition(cursor.End)
         self._console.setTextCursor(cursor)
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.Slot(str)
     def add_message(
             self,
             message: str,
@@ -148,7 +148,7 @@ class ItemTabsWidget(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
         with resources.path(speedwagon.ui, "setup_job.ui") as ui_file:
-            uic.loadUi(ui_file, self)
+            ui_loader.load_ui(ui_file, self)
         # ======================================================================
         # Type Hints
         self.tabs: QtWidgets.QTabWidget
@@ -221,7 +221,7 @@ class MainWindowMenuBuilder:
         # Create a system info menu item
         if self.show_system_info_signal is not None:
 
-            system_info_menu_item = QtWidgets.QAction(
+            system_info_menu_item = QtGui.QAction(
                 "System Info",
                 self._parent
             )
@@ -238,7 +238,7 @@ class MainWindowMenuBuilder:
         # Create a system info menu item
         if self.show_configuration_signal is not None:
             system_settings_menu_item = \
-                QtWidgets.QAction("Settings", self._parent)
+                QtGui.QAction("Settings", self._parent)
 
             system_settings_menu_item.setObjectName('settingsAction')
 
@@ -259,7 +259,7 @@ class MainWindowMenuBuilder:
         # File --> Exit
         # Create Exit button
         if self.exit_function is not None:
-            exit_button = QtWidgets.QAction(" &Exit", self._parent)
+            exit_button = QtGui.QAction(" &Exit", self._parent)
             exit_button.setObjectName("exitAction")
 
             exit_button.triggered.connect(self.exit_function)
@@ -269,7 +269,7 @@ class MainWindowMenuBuilder:
         # File --> Export Log
         if self.save_log_function is not None:
 
-            export_logs_button = QtWidgets.QAction(
+            export_logs_button = QtGui.QAction(
                 " &Export Log",
                 self._parent
             )
@@ -293,14 +293,14 @@ class MainWindowMenuBuilder:
         if self.add_help is True:
             # Help --> Help
             # Create a Help menu item
-            help_button = QtWidgets.QAction(" &Help ", self._parent)
+            help_button = QtGui.QAction(" &Help ", self._parent)
             help_button.triggered.connect(self._parent.help_requested)
             help_menu.addAction(help_button)
 
         if self.add_about is True:
             # Help --> About
             # Create an About button
-            about_button = QtWidgets.QAction(" &About ", self._parent)
+            about_button = QtGui.QAction(" &About ", self._parent)
             about_button.triggered.connect(self._parent.show_about_window)
             help_menu.addAction(about_button)
 
@@ -309,7 +309,7 @@ class MainWindowMenuBuilder:
         job_menu.setObjectName("jobMenu")
 
         if self.export_signal is not None:
-            export_button = QtWidgets.QAction(
+            export_button = QtGui.QAction(
                 "Export",
                 self._parent
             )
@@ -318,7 +318,7 @@ class MainWindowMenuBuilder:
             job_menu.addAction(export_button)
 
         if self.import_signal is not None:
-            import_button = QtWidgets.QAction(
+            import_button = QtGui.QAction(
                 "Import",
                 self._parent
             )
@@ -370,7 +370,7 @@ class MainWindow1(MainProgram):
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
     def load_ui_file(self, ui_file: str) -> None:
-        uic.loadUi(ui_file, self)
+        ui_loader.load_ui(ui_file, self)
 
     def show_about_window(self) -> None:
         speedwagon.dialog.dialogs.about_dialog_box(parent=self)
@@ -396,7 +396,7 @@ class MainWindow1(MainProgram):
         file_menu = menu_bar.addMenu("File")
 
         # File --> Export Log
-        export_logs_button = QtWidgets.QAction(" &Export Log", self)
+        export_logs_button = QtGui.QAction(" &Export Log", self)
         export_logs_button.setIcon(
             self.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton)
         )
@@ -410,7 +410,7 @@ class MainWindow1(MainProgram):
 
         # File --> Exit
         # Create Exit button
-        exit_button = QtWidgets.QAction(" &Exit", self)
+        exit_button = QtGui.QAction(" &Exit", self)
         exit_button.setObjectName("exitAction")
         exit_button.triggered.connect(QtWidgets.QApplication.exit)
         file_menu.addAction(exit_button)
@@ -420,7 +420,7 @@ class MainWindow1(MainProgram):
         # System --> Configuration
         # Create a system info menu item
         system_settings_menu_item = \
-            QtWidgets.QAction("Settings", self)
+            QtGui.QAction("Settings", self)
         system_settings_menu_item.setObjectName('settingsAction')
 
         system_settings_menu_item.triggered.connect(
@@ -431,7 +431,7 @@ class MainWindow1(MainProgram):
 
         # System --> System Info
         # Create a system info menu item
-        system_info_menu_item = QtWidgets.QAction("System Info", self)
+        system_info_menu_item = QtGui.QAction("System Info", self)
         system_info_menu_item.setObjectName("systemInfoAction")
         system_info_menu_item.triggered.connect(self.show_system_info)
         system_menu.addAction(system_info_menu_item)
@@ -441,13 +441,13 @@ class MainWindow1(MainProgram):
 
         # Help --> Help
         # Create a Help menu item
-        help_button = QtWidgets.QAction(" &Help ", self)
+        help_button = QtGui.QAction(" &Help ", self)
         help_button.triggered.connect(self.show_help)
         help_menu.addAction(help_button)
 
         # Help --> About
         # Create an About button
-        about_button = QtWidgets.QAction(" &About ", self)
+        about_button = QtGui.QAction(" &About ", self)
         about_button.triggered.connect(self.show_about_window)
         help_menu.addAction(about_button)
 
@@ -586,7 +586,7 @@ class MainWindow2UI(QtWidgets.QMainWindow):
     ) -> None:
         super().__init__(parent)
         with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
-            uic.loadUi(ui_file, self)
+            ui_loader.load_ui(ui_file, self)
 
         # ======================================================================
         # Type hints
@@ -597,13 +597,13 @@ class MainWindow2UI(QtWidgets.QMainWindow):
 
 
 class MainWindow2(MainWindow2UI):
-    submit_job = QtCore.pyqtSignal(str, dict)
-    configuration_requested = QtCore.pyqtSignal(QtWidgets.QWidget)
-    system_info_requested = QtCore.pyqtSignal(QtWidgets.QWidget)
-    help_requested = QtCore.pyqtSignal()
-    save_logs_requested = QtCore.pyqtSignal(QtWidgets.QWidget)
-    export_job_config = QtCore.pyqtSignal(str, dict, QtWidgets.QWidget)
-    import_job_config = QtCore.pyqtSignal(QtWidgets.QWidget)
+    submit_job = QtCore.Signal(str, dict)
+    configuration_requested = QtCore.Signal(QtWidgets.QWidget)
+    system_info_requested = QtCore.Signal(QtWidgets.QWidget)
+    help_requested = QtCore.Signal()
+    save_logs_requested = QtCore.Signal(QtWidgets.QWidget)
+    export_job_config = QtCore.Signal(str, dict, QtWidgets.QWidget)
+    import_job_config = QtCore.Signal(QtWidgets.QWidget)
 
     def __init__(
             self,

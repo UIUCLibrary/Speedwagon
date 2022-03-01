@@ -3,7 +3,7 @@ from unittest.mock import Mock, MagicMock
 import pytest
 from uiucprescon.packager.packages import collection
 from speedwagon.workflows import title_page_selection
-from PyQt5 import QtWidgets, QtCore
+from PySide6 import QtWidgets, QtCore
 
 
 class TestFileSelectDelegate:

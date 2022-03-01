@@ -2,7 +2,7 @@ import time
 from unittest.mock import Mock
 
 import pytest
-from PyQt5 import QtWidgets
+from PySide6 import QtWidgets
 
 from speedwagon import worker
 

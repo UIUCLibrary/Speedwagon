@@ -4,7 +4,7 @@ import abc
 import os
 
 from typing import Type, Union, List
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PySide6 import QtWidgets, QtCore, QtGui
 
 
 class AbsCustomData2(metaclass=abc.ABCMeta):
@@ -28,7 +28,7 @@ class WidgetMeta(abc.ABCMeta, type(QtCore.QObject)):  # type: ignore
 class CustomItemWidget(QtWidgets.QWidget):
     """Custom item Widget."""
 
-    editingFinished = QtCore.pyqtSignal()
+    editingFinished = QtCore.Signal()
 
     def __init__(self, parent=None, *args, **kwargs) -> None:
         """Create a custom item widget."""
@@ -50,7 +50,7 @@ class CustomItemWidget(QtWidgets.QWidget):
         self.editingFinished.emit()
 
 
-class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
+class AbsBrowseableWidget(CustomItemWidget):
     """Abstract browsable widget."""
 
     def __init__(self, *args, **kwargs) -> None:
@@ -244,7 +244,7 @@ class UserOptionPythonDataType2(UserOption2):
         return isinstance(self.data, self.data_type)
 
 
-class ListSelectionWidget(CustomItemWidget, metaclass=WidgetMeta):
+class ListSelectionWidget(CustomItemWidget):
     """List selection widget."""
 
     def __init__(self, selections: List[str], *args, **kwargs) -> None:

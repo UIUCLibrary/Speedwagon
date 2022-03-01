@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from PyQt5 import QtWidgets, QtCore
+from PySide6 import QtWidgets
 from typing import List, Any
 from speedwagon.job import AbsWorkflow
 from speedwagon.tabs import WorkflowsTab

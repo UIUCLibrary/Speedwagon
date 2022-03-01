@@ -11,7 +11,7 @@ import os
 import importlib
 import yaml
 import pytest
-from PyQt5 import QtWidgets, QtCore
+from PySide6 import QtWidgets, QtCore
 
 import speedwagon.logging_helpers
 import speedwagon.startup
@@ -631,7 +631,7 @@ class TestSingleWorkflowJSON:
 
     def test_signal_is_sent(self, qtbot):
         class Dummy(QtCore.QObject):
-            dummy_signal = QtCore.pyqtSignal(str, int)
+            dummy_signal = QtCore.Signal(str, int)
 
             def __init__(self):
                 super().__init__()
