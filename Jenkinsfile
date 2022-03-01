@@ -470,31 +470,33 @@ def testPythonPackages(){
 }
 
 def buildSphinx(){
-    def sphinx  = load('ci/jenkins/scripts/sphinx.groovy')
-    sh(script: '''mkdir -p logs
-                  '''
-      )
+    withEnv(['QT_QPA_PLATFORM=offscreen']) {
+        def sphinx  = load('ci/jenkins/scripts/sphinx.groovy')
+        sh(script: '''mkdir -p logs
+                      '''
+          )
 
-    sphinx.buildSphinxDocumentation(
-        sourceDir: 'docs/source',
-        outputDir: 'build/docs/html',
-        doctreeDir: 'build/docs/.doctrees',
-        builder: 'html',
-        writeWarningsToFile: 'logs/build_sphinx_html.log'
-        )
-    sphinx.buildSphinxDocumentation(
-        sourceDir: 'docs/source',
-        outputDir: 'build/docs/latex',
-        doctreeDir: 'build/docs/.doctrees',
-        builder: 'latex'
-        )
+        sphinx.buildSphinxDocumentation(
+            sourceDir: 'docs/source',
+            outputDir: 'build/docs/html',
+            doctreeDir: 'build/docs/.doctrees',
+            builder: 'html',
+            writeWarningsToFile: 'logs/build_sphinx_html.log'
+            )
+        sphinx.buildSphinxDocumentation(
+            sourceDir: 'docs/source',
+            outputDir: 'build/docs/latex',
+            doctreeDir: 'build/docs/.doctrees',
+            builder: 'latex'
+            )
 
-    sh(label: 'Building PDF docs',
-       script: '''make -C build/docs/latex
-                  mkdir -p dist/docs
-                  mv build/docs/latex/*.pdf dist/docs/
-                  '''
-    )
+        sh(label: 'Building PDF docs',
+           script: '''make -C build/docs/latex
+                      mkdir -p dist/docs
+                      mv build/docs/latex/*.pdf dist/docs/
+                      '''
+        )
+    }
 }
 
 startup()
