@@ -1735,8 +1735,12 @@ pipeline {
                         unstash 'APPLE_APPLICATION_BUNDLE'
                         script{
                             findFiles(glob: 'dist/*.dmg').each{
-                                echo "got ${it}"
-//                             put_response = httpRequest authentication: NEXUS_CREDS, httpMode: 'PUT', uploadFile: tagData['local_filename'], url: "${BOTTLE_URL_ROOT}/${filename}", wrapAsMultipart: false
+                                try{
+                                    def put_response = httpRequest authentication: NEXUS_CREDS, httpMode: 'PUT', uploadFile: it.path, url: "${SERVER_URL}/speedwagon/${it.name}", wrapAsMultipart: false
+                                } catch(Exception e){
+                                    echo "http request response: ${put_response.content}"
+                                    throw e;
+                                }
                             }
                         }
                     }
