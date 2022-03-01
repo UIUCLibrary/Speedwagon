@@ -14,6 +14,10 @@ PYPI_SERVERS = [
     'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_testing/'
     ]
 
+NEXUS_SERVERS = [
+    'https://jenkins.library.illinois.edu/nexus/repository/prescon-dist/',
+    ]
+
 def getDevPiStagingIndex(){
 
     if (env.TAG_NAME?.trim()){
@@ -1712,6 +1716,18 @@ pipeline {
                 stage('Deploy MacOS DMG to Nexus'){
                     when{
                         equals expected: true, actual: params.DEPLOY_DMG
+                        beforeAgent true
+                        beforeInput true
+                    }
+                    input {
+                        message 'Upload to Nexus server?'
+                        parameters {
+                            choice(
+                                choices: NEXUS_SERVERS,
+                                description: 'Url to upload artifact.',
+                                name: 'SERVER_URL'
+                            )
+                        }
                     }
                     steps{
                         echo 'here'
