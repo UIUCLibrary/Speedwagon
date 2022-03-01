@@ -1719,6 +1719,7 @@ pipeline {
                         beforeAgent true
                         beforeInput true
                     }
+                    agent any
                     input {
                         message 'Upload to Nexus server?'
                         parameters {
@@ -1733,8 +1734,8 @@ pipeline {
                     steps{
                         unstash 'APPLE_APPLICATION_BUNDLE'
                         script{
-                            findFiles glob: 'dist/*.dmg'.each{
-                                echo "got ${it.path}"
+                            findFiles(glob: 'dist/*.dmg').each{
+                                echo "got ${it}"
 //                             put_response = httpRequest authentication: NEXUS_CREDS, httpMode: 'PUT', uploadFile: tagData['local_filename'], url: "${BOTTLE_URL_ROOT}/${filename}", wrapAsMultipart: false
                             }
                         }
