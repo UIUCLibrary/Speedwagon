@@ -1735,9 +1735,18 @@ pipeline {
                         script{
                             findFiles glob: 'dist/*.dmg'.each{
                                 echo "got ${it.path}"
-//                                 deploy_to_nexus(it, SERVER_URL, "jenkins-nexus")
-                            }
 //                             put_response = httpRequest authentication: NEXUS_CREDS, httpMode: 'PUT', uploadFile: tagData['local_filename'], url: "${BOTTLE_URL_ROOT}/${filename}", wrapAsMultipart: false
+                            }
+                        }
+                    }
+                    post{
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: 'dist/', type: 'INCLUDE']
+                                ]
+                            )
                         }
                     }
                 }
