@@ -81,5 +81,6 @@ def create_hook_file(
         print(f"Added to hiddenignore: {x}")
     hook_generator.write()
 
+
 if __name__ == '__main__':
     main()
