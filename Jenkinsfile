@@ -16,6 +16,7 @@ PYPI_SERVERS = [
 
 NEXUS_SERVERS = [
     'https://jenkins.library.illinois.edu/nexus/repository/prescon-dist/',
+    'https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/'
     ]
 
 def getDevPiStagingIndex(){
@@ -1729,6 +1730,7 @@ pipeline {
                                 description: 'Url to upload artifact.',
                                 name: 'SERVER_URL'
                             )
+                            string defaultValue: 'speedwagon', description: 'subdirectory to store artifact', name: 'archiveFolder'
                         }
                     }
                     steps{
@@ -1736,7 +1738,7 @@ pipeline {
                         script{
                             findFiles(glob: 'dist/*.dmg').each{
                                 try{
-                                    def put_response = httpRequest authentication: NEXUS_CREDS, httpMode: 'PUT', uploadFile: it.path, url: "${SERVER_URL}/speedwagon/${it.name}", wrapAsMultipart: false
+                                    def put_response = httpRequest authentication: NEXUS_CREDS, httpMode: 'PUT', uploadFile: it.path, url: "${SERVER_URL}/${archiveFolder}/${it.name}", wrapAsMultipart: false
                                 } catch(Exception e){
                                     echo "http request response: ${put_response.content}"
                                     throw e;
