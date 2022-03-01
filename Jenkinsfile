@@ -14,6 +14,11 @@ PYPI_SERVERS = [
     'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_testing/'
     ]
 
+NEXUS_SERVERS = [
+    'https://jenkins.library.illinois.edu/nexus/repository/prescon-dist/',
+    'https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/'
+    ]
+
 def getDevPiStagingIndex(){
 
     if (env.TAG_NAME?.trim()){
@@ -321,6 +326,149 @@ def create_wheels(){
     }
     parallel(wheelCreatorTasks)
 }
+
+def testPythonPackages(){
+    script{
+        def packages
+        node(){
+            checkout scm
+            packages = load 'ci/jenkins/scripts/packaging.groovy'
+        }
+        def windowsTests = [:]
+        SUPPORTED_WINDOWS_VERSIONS.each{ pythonVersion ->
+            windowsTests["Windows - Python ${pythonVersion}: sdist"] = {
+                packages.testPkg(
+                    agent: [
+                        dockerfile: [
+                            label: 'windows && docker',
+                            filename: 'ci/docker/python/windows/tox/Dockerfile',
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                        ]
+                    ],
+                    glob: 'dist/*.tar.gz,dist/*.zip',
+                    stash: 'PYTHON_PACKAGES',
+                    pythonVersion: pythonVersion,
+                    retry: 3,
+                )
+            }
+            windowsTests["Windows - Python ${pythonVersion}: wheel"] = {
+                packages.testPkg(
+                    agent: [
+                        dockerfile: [
+                            label: 'windows && docker',
+                            filename: 'ci/docker/python/windows/tox/Dockerfile',
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                        ]
+                    ],
+                    glob: 'dist/*.whl',
+                    stash: 'PYTHON_PACKAGES',
+                    pythonVersion: pythonVersion,
+                    retry: 3,
+                )
+            }
+        }
+        def linuxTests = [:]
+        SUPPORTED_LINUX_VERSIONS.each{ pythonVersion ->
+            linuxTests["Linux - Python ${pythonVersion}: sdist"] = {
+                packages.testPkg(
+                    agent: [
+                        dockerfile: [
+                            label: 'linux && docker',
+                            filename: 'ci/docker/python/linux/tox/Dockerfile',
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                        ]
+                    ],
+                    glob: 'dist/*.tar.gz',
+                    stash: 'PYTHON_PACKAGES',
+                    pythonVersion: pythonVersion,
+                    retry: 3,
+                )
+            }
+            linuxTests["Linux - Python ${pythonVersion}: wheel"] = {
+                packages.testPkg(
+                    agent: [
+                        dockerfile: [
+                            label: 'linux && docker',
+                            filename: 'ci/docker/python/linux/tox/Dockerfile',
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                        ]
+                    ],
+                    glob: 'dist/*.whl',
+                    stash: 'PYTHON_PACKAGES',
+                    pythonVersion: pythonVersion,
+                    retry: 3,
+                )
+            }
+        }
+        def tests = linuxTests + windowsTests
+        def macTests = [:]
+
+        SUPPORTED_MAC_VERSIONS.each{ pythonVersion ->
+            macTests["Mac - Python ${pythonVersion}: sdist"] = {
+                withEnv(['QT_QPA_PLATFORM=offscreen']) {
+                    packages.testPkg(
+                        agent: [
+                            label: "mac && python${pythonVersion}",
+                        ],
+                        glob: 'dist/*.tar.gz,dist/*.zip',
+                        stash: 'PYTHON_PACKAGES',
+                        pythonVersion: pythonVersion,
+                        toxExec: 'venv/bin/tox',
+                        testSetup: {
+                            checkout scm
+                            unstash 'PYTHON_PACKAGES'
+                            sh(
+                                label:'Install Tox',
+                                script: '''python3 -m venv venv
+                                           venv/bin/pip install pip --upgrade
+                                           venv/bin/pip install tox
+                                           '''
+                            )
+                        },
+                        testTeardown: {
+                            sh 'rm -r venv/'
+                        },
+                        retry: 3,
+                    )
+                }
+            }
+            macTests["Mac - Python ${pythonVersion}: wheel"] = {
+                withEnv(['QT_QPA_PLATFORM=offscreen']) {
+                    packages.testPkg(
+                        agent: [
+                            label: "mac && python${pythonVersion}",
+                        ],
+                        glob: 'dist/*.whl',
+                        stash: 'PYTHON_PACKAGES',
+                        pythonVersion: pythonVersion,
+                        toxExec: 'venv/bin/tox',
+                        testSetup: {
+                            checkout scm
+                            unstash 'PYTHON_PACKAGES'
+                            sh(
+                                label:'Install Tox',
+                                script: '''python3 -m venv venv
+                                           venv/bin/pip install pip --upgrade
+                                           venv/bin/pip install tox
+                                           '''
+                            )
+                        },
+                        testTeardown: {
+                            sh 'rm -r venv/'
+                        },
+                        retry: 3,
+
+                    )
+                }
+            }
+        }
+        if(params.TEST_PACKAGES_ON_MAC == true){
+            tests = tests + macTests
+        }
+        parallel(tests)
+    }
+}
+
 def buildSphinx(){
     def sphinx  = load('ci/jenkins/scripts/sphinx.groovy')
     sh(script: '''mkdir -p logs
@@ -370,6 +518,7 @@ pipeline {
         booleanParam(name: 'BUILD_CHOCOLATEY_PACKAGE', defaultValue: false, description: 'Build package for chocolatey package manager')
         booleanParam(name: "TEST_PACKAGES_ON_MAC", defaultValue: false, description: "Test Python packages on Mac")
         booleanParam(name: 'TEST_PACKAGES', defaultValue: true, description: 'Test Python packages by installing them and running tests on the installed package')
+        booleanParam(name: 'PACKAGE_MAC_OS_STANDALONE_DMG', defaultValue: false, description: 'Create a Apple Application Bundle DMG')
         booleanParam(name: 'PACKAGE_WINDOWS_STANDALONE_MSI', defaultValue: false, description: 'Create a standalone wix based .msi installer')
         booleanParam(name: 'PACKAGE_WINDOWS_STANDALONE_NSIS', defaultValue: false, description: 'Create a standalone NULLSOFT NSIS based .exe installer')
         booleanParam(name: 'PACKAGE_WINDOWS_STANDALONE_ZIP', defaultValue: false, description: 'Create a standalone portable package')
@@ -377,6 +526,7 @@ pipeline {
         booleanParam(name: 'DEPLOY_DEVPI_PRODUCTION', defaultValue: false, description: 'Deploy to https://devpi.library.illinois.edu/production/release')
         booleanParam(name: 'DEPLOY_PYPI', defaultValue: false, description: 'Deploy to pypi')
         booleanParam(name: 'DEPLOY_CHOCOLATEY', defaultValue: false, description: 'Deploy to Chocolatey repository')
+        booleanParam(name: 'DEPLOY_DMG', defaultValue: false, description: 'Deploy MacOS standalone')
         booleanParam(name: 'DEPLOY_HATHI_TOOL_BETA', defaultValue: false, description: 'Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/')
         booleanParam(name: 'DEPLOY_SCCM', defaultValue: false, description: 'Request deployment of MSI installer to SCCM')
         booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
@@ -721,151 +871,203 @@ pipeline {
                                 equals expected: true, actual: params.TEST_PACKAGES
                             }
                             steps{
-                                script{
-                                    def packages
-                                    node(){
-                                        checkout scm
-                                        packages = load 'ci/jenkins/scripts/packaging.groovy'
-                                    }
-                                    def windowsTests = [:]
-                                    SUPPORTED_WINDOWS_VERSIONS.each{ pythonVersion ->
-                                        windowsTests["Windows - Python ${pythonVersion}: sdist"] = {
-                                            packages.testPkg(
-                                                agent: [
-                                                    dockerfile: [
-                                                        label: 'windows && docker',
-                                                        filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
-                                                    ]
-                                                ],
-                                                glob: 'dist/*.tar.gz,dist/*.zip',
-                                                stash: 'PYTHON_PACKAGES',
-                                                pythonVersion: pythonVersion,
-                                                retry: 3,
-                                            )
-                                        }
-                                        windowsTests["Windows - Python ${pythonVersion}: wheel"] = {
-                                            packages.testPkg(
-                                                agent: [
-                                                    dockerfile: [
-                                                        label: 'windows && docker',
-                                                        filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
-                                                    ]
-                                                ],
-                                                glob: 'dist/*.whl',
-                                                stash: 'PYTHON_PACKAGES',
-                                                pythonVersion: pythonVersion,
-                                                retry: 3,
-                                            )
-                                        }
-                                    }
-                                    def linuxTests = [:]
-                                    SUPPORTED_LINUX_VERSIONS.each{ pythonVersion ->
-                                        linuxTests["Linux - Python ${pythonVersion}: sdist"] = {
-                                            packages.testPkg(
-                                                agent: [
-                                                    dockerfile: [
-                                                        label: 'linux && docker',
-                                                        filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                                    ]
-                                                ],
-                                                glob: 'dist/*.tar.gz',
-                                                stash: 'PYTHON_PACKAGES',
-                                                pythonVersion: pythonVersion,
-                                                retry: 3,
-                                            )
-                                        }
-                                        linuxTests["Linux - Python ${pythonVersion}: wheel"] = {
-                                            packages.testPkg(
-                                                agent: [
-                                                    dockerfile: [
-                                                        label: 'linux && docker',
-                                                        filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                                    ]
-                                                ],
-                                                glob: 'dist/*.whl',
-                                                stash: 'PYTHON_PACKAGES',
-                                                pythonVersion: pythonVersion,
-                                                retry: 3,
-                                            )
-                                        }
-                                    }
-                                    def tests = linuxTests + windowsTests
-                                    def macTests = [:]
-
-                                    SUPPORTED_MAC_VERSIONS.each{ pythonVersion ->
-                                        macTests["Mac - Python ${pythonVersion}: sdist"] = {
-                                            withEnv(['QT_QPA_PLATFORM=offscreen']) {
-                                                packages.testPkg(
-                                                    agent: [
-                                                        label: "mac && python${pythonVersion}",
-                                                    ],
-                                                    glob: 'dist/*.tar.gz,dist/*.zip',
-                                                    stash: 'PYTHON_PACKAGES',
-                                                    pythonVersion: pythonVersion,
-                                                    toxExec: 'venv/bin/tox',
-                                                    testSetup: {
-                                                        checkout scm
-                                                        unstash 'PYTHON_PACKAGES'
-                                                        sh(
-                                                            label:'Install Tox',
-                                                            script: '''python3 -m venv venv
-                                                                       venv/bin/pip install pip --upgrade
-                                                                       venv/bin/pip install tox
-                                                                       '''
-                                                        )
-                                                    },
-                                                    testTeardown: {
-                                                        sh 'rm -r venv/'
-                                                    },
-                                                    retry: 3,
-                                                )
-                                            }
-                                        }
-                                        macTests["Mac - Python ${pythonVersion}: wheel"] = {
-                                            withEnv(['QT_QPA_PLATFORM=offscreen']) {
-                                                packages.testPkg(
-                                                    agent: [
-                                                        label: "mac && python${pythonVersion}",
-                                                    ],
-                                                    glob: 'dist/*.whl',
-                                                    stash: 'PYTHON_PACKAGES',
-                                                    pythonVersion: pythonVersion,
-                                                    toxExec: 'venv/bin/tox',
-                                                    testSetup: {
-                                                        checkout scm
-                                                        unstash 'PYTHON_PACKAGES'
-                                                        sh(
-                                                            label:'Install Tox',
-                                                            script: '''python3 -m venv venv
-                                                                       venv/bin/pip install pip --upgrade
-                                                                       venv/bin/pip install tox
-                                                                       '''
-                                                        )
-                                                    },
-                                                    testTeardown: {
-                                                        sh 'rm -r venv/'
-                                                    },
-                                                    retry: 3,
-
-                                                )
-                                            }
-                                        }
-                                    }
-                                    if(params.TEST_PACKAGES_ON_MAC == true){
-                                        tests = tests + macTests
-                                    }
-                                    parallel(tests)
-                                }
+                                testPythonPackages()
+//                                 script{
+//                                     def packages
+//                                     node(){
+//                                         checkout scm
+//                                         packages = load 'ci/jenkins/scripts/packaging.groovy'
+//                                     }
+//                                     def windowsTests = [:]
+//                                     SUPPORTED_WINDOWS_VERSIONS.each{ pythonVersion ->
+//                                         windowsTests["Windows - Python ${pythonVersion}: sdist"] = {
+//                                             packages.testPkg(
+//                                                 agent: [
+//                                                     dockerfile: [
+//                                                         label: 'windows && docker',
+//                                                         filename: 'ci/docker/python/windows/tox/Dockerfile',
+//                                                         additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+//                                                     ]
+//                                                 ],
+//                                                 glob: 'dist/*.tar.gz,dist/*.zip',
+//                                                 stash: 'PYTHON_PACKAGES',
+//                                                 pythonVersion: pythonVersion,
+//                                                 retry: 3,
+//                                             )
+//                                         }
+//                                         windowsTests["Windows - Python ${pythonVersion}: wheel"] = {
+//                                             packages.testPkg(
+//                                                 agent: [
+//                                                     dockerfile: [
+//                                                         label: 'windows && docker',
+//                                                         filename: 'ci/docker/python/windows/tox/Dockerfile',
+//                                                         additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+//                                                     ]
+//                                                 ],
+//                                                 glob: 'dist/*.whl',
+//                                                 stash: 'PYTHON_PACKAGES',
+//                                                 pythonVersion: pythonVersion,
+//                                                 retry: 3,
+//                                             )
+//                                         }
+//                                     }
+//                                     def linuxTests = [:]
+//                                     SUPPORTED_LINUX_VERSIONS.each{ pythonVersion ->
+//                                         linuxTests["Linux - Python ${pythonVersion}: sdist"] = {
+//                                             packages.testPkg(
+//                                                 agent: [
+//                                                     dockerfile: [
+//                                                         label: 'linux && docker',
+//                                                         filename: 'ci/docker/python/linux/tox/Dockerfile',
+//                                                         additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+//                                                     ]
+//                                                 ],
+//                                                 glob: 'dist/*.tar.gz',
+//                                                 stash: 'PYTHON_PACKAGES',
+//                                                 pythonVersion: pythonVersion,
+//                                                 retry: 3,
+//                                             )
+//                                         }
+//                                         linuxTests["Linux - Python ${pythonVersion}: wheel"] = {
+//                                             packages.testPkg(
+//                                                 agent: [
+//                                                     dockerfile: [
+//                                                         label: 'linux && docker',
+//                                                         filename: 'ci/docker/python/linux/tox/Dockerfile',
+//                                                         additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+//                                                     ]
+//                                                 ],
+//                                                 glob: 'dist/*.whl',
+//                                                 stash: 'PYTHON_PACKAGES',
+//                                                 pythonVersion: pythonVersion,
+//                                                 retry: 3,
+//                                             )
+//                                         }
+//                                     }
+//                                     def tests = linuxTests + windowsTests
+//                                     def macTests = [:]
+//
+//                                     SUPPORTED_MAC_VERSIONS.each{ pythonVersion ->
+//                                         macTests["Mac - Python ${pythonVersion}: sdist"] = {
+//                                             withEnv(['QT_QPA_PLATFORM=offscreen']) {
+//                                                 packages.testPkg(
+//                                                     agent: [
+//                                                         label: "mac && python${pythonVersion}",
+//                                                     ],
+//                                                     glob: 'dist/*.tar.gz,dist/*.zip',
+//                                                     stash: 'PYTHON_PACKAGES',
+//                                                     pythonVersion: pythonVersion,
+//                                                     toxExec: 'venv/bin/tox',
+//                                                     testSetup: {
+//                                                         checkout scm
+//                                                         unstash 'PYTHON_PACKAGES'
+//                                                         sh(
+//                                                             label:'Install Tox',
+//                                                             script: '''python3 -m venv venv
+//                                                                        venv/bin/pip install pip --upgrade
+//                                                                        venv/bin/pip install tox
+//                                                                        '''
+//                                                         )
+//                                                     },
+//                                                     testTeardown: {
+//                                                         sh 'rm -r venv/'
+//                                                     },
+//                                                     retry: 3,
+//                                                 )
+//                                             }
+//                                         }
+//                                         macTests["Mac - Python ${pythonVersion}: wheel"] = {
+//                                             withEnv(['QT_QPA_PLATFORM=offscreen']) {
+//                                                 packages.testPkg(
+//                                                     agent: [
+//                                                         label: "mac && python${pythonVersion}",
+//                                                     ],
+//                                                     glob: 'dist/*.whl',
+//                                                     stash: 'PYTHON_PACKAGES',
+//                                                     pythonVersion: pythonVersion,
+//                                                     toxExec: 'venv/bin/tox',
+//                                                     testSetup: {
+//                                                         checkout scm
+//                                                         unstash 'PYTHON_PACKAGES'
+//                                                         sh(
+//                                                             label:'Install Tox',
+//                                                             script: '''python3 -m venv venv
+//                                                                        venv/bin/pip install pip --upgrade
+//                                                                        venv/bin/pip install tox
+//                                                                        '''
+//                                                         )
+//                                                     },
+//                                                     testTeardown: {
+//                                                         sh 'rm -r venv/'
+//                                                     },
+//                                                     retry: 3,
+//
+//                                                 )
+//                                             }
+//                                         }
+//                                     }
+//                                     if(params.TEST_PACKAGES_ON_MAC == true){
+//                                         tests = tests + macTests
+//                                     }
+//                                     parallel(tests)
+//                                 }
                             }
                         }
                     }
                 }
                 stage('End-user packages'){
                     parallel{
+                        stage('Mac Application Bundle'){
+                            agent{
+                                label 'mac && python3'
+                            }
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
+                                    equals expected: true, actual: params.DEPLOY_DMG
+                                }
+                            }
+                            steps{
+                                unstash 'PYTHON_PACKAGES'
+                                sh(
+                                    label: 'Creating build environment',
+                                    script: '''python3 -m venv --upgrade-deps venv
+                                                venv/bin/pip install pyinstaller
+                                    '''
+                                    )
+                                script{
+                                    findFiles(glob: 'dist/speedwagon*.whl').each{ wheel ->
+                                        sh(label: "Installing ${wheel.name}", script: "venv/bin/pip install ${wheel}")
+                                    }
+                                }
+                                sh(label: 'Running pyinstaller script', script: 'venv/bin/python packaging/create_osx_app_bundle.py')
+                                sh(label: 'Packaging installer as .dmg file',
+                                    script:"""
+                                        mkdir -p build/appleBundle
+                                        mv \$WORKSPACE/dist/*.app build/appleBundle/
+                                        ln -s /Applications build/appleBundle/Applications
+                                        hdiutil create build/tmp.dmg -ov -volname \"SpeedwagonInstall\" -fs HFS+ -srcfolder \"\$WORKSPACE/build/appleBundle/\"
+                                        hdiutil convert build/tmp.dmg -format UDZO -o dist/Speedwagon-${props.Version}.dmg
+                                        """
+                                    )
+                            }
+                            post{
+                                success{
+                                    archiveArtifacts artifacts: 'dist/*.dmg', fingerprint: true
+                                    stash includes: 'dist/*.dmg', name: 'APPLE_APPLICATION_BUNDLE'
+                                }
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        patterns: [
+                                            [pattern: 'dist/', type: 'INCLUDE'],
+                                            [pattern: 'build/', type: 'INCLUDE'],
+                                            [pattern: 'venv/', type: 'INCLUDE'],
+                                        ]
+                                    )
+                                }
+                            }
+                        }
                         stage('Chocolatey'){
                             when{
                                 anyOf{
@@ -1513,6 +1715,49 @@ pipeline {
 //                         }
 //                     }
 //                 }
+                stage('Deploy MacOS DMG to Nexus'){
+                    when{
+                        equals expected: true, actual: params.DEPLOY_DMG
+                        beforeAgent true
+                        beforeInput true
+                    }
+                    agent any
+                    input {
+                        message 'Upload to Nexus server?'
+                        parameters {
+                            credentials credentialType: 'com.cloudbees.plugins.credentials.common.StandardCredentials', defaultValue: 'jenkins-nexus', name: 'NEXUS_CREDS', required: true
+                            choice(
+                                choices: NEXUS_SERVERS,
+                                description: 'Url to upload artifact.',
+                                name: 'SERVER_URL'
+                            )
+                            string defaultValue: 'speedwagon', description: 'subdirectory to store artifact', name: 'archiveFolder'
+                        }
+                    }
+                    steps{
+                        unstash 'APPLE_APPLICATION_BUNDLE'
+                        script{
+                            findFiles(glob: 'dist/*.dmg').each{
+                                try{
+                                    def put_response = httpRequest authentication: NEXUS_CREDS, httpMode: 'PUT', uploadFile: it.path, url: "${SERVER_URL}/${archiveFolder}/${it.name}", wrapAsMultipart: false
+                                } catch(Exception e){
+                                    echo "http request response: ${put_response.content}"
+                                    throw e;
+                                }
+                            }
+                        }
+                    }
+                    post{
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: 'dist/', type: 'INCLUDE']
+                                ]
+                            )
+                        }
+                    }
+                }
                 stage('Deploy standalone to Hathi tools Beta'){
                     when {
                         allOf{
