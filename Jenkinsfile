@@ -1045,6 +1045,7 @@ pipeline {
                                     script:"""
                                         mkdir -p build/appleBundle
                                         mv \$WORKSPACE/dist/*.app build/appleBundle/
+                                        ln -s /Applications build/appleBundle/Applications
                                         hdiutil create build/tmp.dmg -ov -volname \"SpeedwagonInstall\" -fs HFS+ -srcfolder \"\$WORKSPACE/build/appleBundle/\"
                                         hdiutil convert build/tmp.dmg -format UDZO -o dist/Speedwagon-${props.Version}.dmg
                                         """
