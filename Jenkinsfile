@@ -1722,6 +1722,7 @@ pipeline {
                     input {
                         message 'Upload to Nexus server?'
                         parameters {
+                            credentials credentialType: 'com.cloudbees.plugins.credentials.common.StandardCredentials', defaultValue: 'jenkins-nexus', name: 'NEXUS_CREDS', required: true
                             choice(
                                 choices: NEXUS_SERVERS,
                                 description: 'Url to upload artifact.',
@@ -1730,7 +1731,14 @@ pipeline {
                         }
                     }
                     steps{
-                        echo 'here'
+                        unstash 'APPLE_APPLICATION_BUNDLE'
+                        script{
+                            findFiles glob: 'dist/*.dmg'.each{
+                                echo "got ${it.path}"
+//                                 deploy_to_nexus(it, SERVER_URL, "jenkins-nexus")
+                            }
+//                             put_response = httpRequest authentication: NEXUS_CREDS, httpMode: 'PUT', uploadFile: tagData['local_filename'], url: "${BOTTLE_URL_ROOT}/${filename}", wrapAsMultipart: false
+                        }
                     }
                 }
                 stage('Deploy standalone to Hathi tools Beta'){
