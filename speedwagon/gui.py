@@ -514,9 +514,6 @@ class MainWindow1(MainProgram):
         self.tab_widget.add_tab(workflows_tab.tab_widget, workflow_name)
         self.tab_widget.setVisible(True)
 
-    def closeEvent(self, *args, **kwargs) -> None:  # pylint: disable=C0103
-        super().closeEvent(*args, **kwargs)
-
     def show_configuration(self) -> None:
 
         config_dialog = speedwagon.dialog.settings.SettingsDialog(parent=self)
