@@ -1189,40 +1189,54 @@ class TestStartQtThreaded:
         )
         assert starter.report_exception.called is True
 
-#     def test_submit_job_submits_to_job_manager(
-#             self,
-#             qtbot,
-#             monkeypatch,
-#             starter
-#     ):
-#         monkeypatch.setattr(
-#             speedwagon.config.Path, "home", lambda: "my_home"
-#         )
-#         monkeypatch.setattr(
-#             speedwagon.config.WindowsConfig,
-#             "get_app_data_directory",
-#             lambda *_: "app_data_dir"
-#         )
-#
-#         job_manager = Mock()
-#         workflow_name = "spam"
-#         options = {}
-#         starter.report_exception = Mock()
-#         spam_workflow = Mock()
-#
-#         monkeypatch.setattr(
-#             speedwagon.startup.job,
-#             "available_workflows",
-#             lambda: {"spam": spam_workflow}
-#         )
-#
-#         starter.submit_job(
-#             job_manager,
-#             workflow_name,
-#             options
-#         )
-#
-#         assert job_manager.submit_job.called is True
+    def test_submit_job_submits_to_job_manager(
+            self,
+            qtbot,
+            monkeypatch,
+            starter
+    ):
+        monkeypatch.setattr(
+            speedwagon.config.Path, "home", lambda: "my_home"
+        )
+        monkeypatch.setattr(
+            speedwagon.config.WindowsConfig,
+            "get_app_data_directory",
+            lambda *_: "app_data_dir"
+        )
+
+        job_manager = Mock()
+        workflow_name = "spam"
+        options = {}
+        starter.report_exception = Mock()
+        spam_workflow = Mock()
+
+        monkeypatch.setattr(
+            speedwagon.startup.job,
+            "available_workflows",
+            lambda: {"spam": spam_workflow}
+        )
+        WorkflowProgress = speedwagon.startup.WorkflowProgress
+        dummy = None
+        def create_workflow(*args, **kwargs):
+            nonlocal dummy
+            dummy = WorkflowProgress(*args, **kwargs)
+            return dummy
+        monkeypatch.setattr(
+            speedwagon.startup,
+            "WorkflowProgress",
+            create_workflow
+        )
+
+        starter.submit_job(
+            job_manager,
+            workflow_name,
+            options
+        )
+        try:
+            assert job_manager.submit_job.called is True
+        finally:
+            if dummy is not None:
+                dummy.remove_log_handles()
 
 
 class TestQtRequestMoreInfo:
