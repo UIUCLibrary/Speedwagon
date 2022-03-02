@@ -34,7 +34,8 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
             index: QtCore.QModelIndex
     ) -> None:
         """Set editor data."""
-        object_record: collection.PackageObject = index.data(role=Qt.UserRole)
+        object_record: collection.PackageObject = \
+            index.data(role=typing.cast(int, Qt.UserRole))
 
         try:
             title_page = object_record.component_metadata[
@@ -60,11 +61,13 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
             index: QtCore.QModelIndex
     ) -> None:
         """Set model data."""
-        record: collection.PackageObject = model.data(index, role=Qt.UserRole)
+        record: collection.PackageObject = \
+            model.data(index, role=typing.cast(int, Qt.UserRole))
+
         record.component_metadata[
             collection.Metadata.TITLE_PAGE] = widget.currentText()
 
-        model.setData(index, record, role=Qt.UserRole)
+        model.setData(index, record, role=typing.cast(int, Qt.UserRole))
 
 
 class PackagesModel(QtCore.QAbstractTableModel):
@@ -116,7 +119,7 @@ class PackagesModel(QtCore.QAbstractTableModel):
             self,
             index: int,
             orientation: Qt.Orientation,
-            role: int = QtCore.Qt.DisplayRole
+            role: int = typing.cast(int, QtCore.Qt.DisplayRole)
     ) -> typing.Union[str, QtCore.QObject]:
         """Get model header information."""
         if role == QtCore.Qt.DisplayRole and \

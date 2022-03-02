@@ -715,7 +715,7 @@ class MainWindow2(MainWindow2UI):
                     current_tab_index
                 ].item_selection_model.data(
                     item_selected_index,
-                    QtCore.Qt.UserRole
+                    role=typing.cast(int, QtCore.Qt.UserRole)
                 )
             )
         return current_workflow.name

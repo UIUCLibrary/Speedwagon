@@ -84,7 +84,7 @@ class WorkflowListModel(ItemListModel):
             self,
             index: QtCore.QModelIndex,
             role: Optional[QtConstant] = None
-    ) -> Union[str, Type[Workflow], QtCore.QSize, QtCore.QObject]:
+    ) -> Optional[Union[str, Type[Workflow], QtCore.QSize, QtCore.QObject]]:
         """Get data at a specific index."""
         if index.isValid():
             data = self.jobs[index.row()]
@@ -141,7 +141,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
             self,
             index: QtCore.QModelIndex,
             role: Optional[QtConstant] = None
-    ) -> Union[str, Type[Workflow], QtCore.QObject]:
+    ) -> Optional[Union[str, Type[Workflow], QtCore.QObject]]:
         """Get data at specific index."""
         if not index.isValid():
             return None
@@ -149,13 +149,14 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
 
         if role is None:
             return None
-        workflow: Dict[int, Optional[Union[str,
-                                           Type[Workflow],
-                                           QtCore.QObject]]] = {
+        workflow: Dict[QtCore.Qt.ItemDataRole,
+                       Optional[Union[str,
+                                      Type[Workflow],
+                                      QtCore.QObject]]] = {
             QtCore.Qt.DisplayRole: self.workflows[row].name,
             QtCore.Qt.UserRole: self.workflows[row],
         }
-        value = workflow.get(role)
+        value = workflow.get(typing.cast(QtCore.Qt.ItemDataRole, role))
         if value is not None:
             return value
         return None
@@ -165,10 +166,10 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
 
         Defaults alphabetically by title.
         """
-        cast(QtCore.Signal, self.layoutAboutToBeChanged).emit()
+        cast(QtCore.SignalInstance, self.layoutAboutToBeChanged).emit()
 
         self.workflows.sort(key=key or (lambda i: i.name))
-        cast(QtCore.Signal, self.layoutChanged).emit()
+        cast(QtCore.SignalInstance, self.layoutChanged).emit()
 
     def add_workflow(self, workflow: Type[Workflow]) -> None:
         """Add workflow to model."""
@@ -299,9 +300,9 @@ class ToolOptionsPairsModel(ToolOptionsModel):
     def headerData(
             self,
             index: int,
-            orientation: QtConstant,
+            orientation: QtCore.Qt.Orientation,
             role: Optional[QtConstant] = None
-    ) -> Union[str, QtCore.QObject]:
+    ) -> Optional[Union[str, QtCore.QObject]]:
         """Get header information."""
         if orientation == QtCore.Qt.Vertical \
                 and role == QtCore.Qt.DisplayRole:
@@ -346,10 +347,10 @@ class ToolOptionsModel3(ToolOptionsModel):
             self,
             index: QtCore.QModelIndex,
             role=QtCore.Qt.DisplayRole
-    ) -> Union[QtCore.QObject,
-               QtCore.QSize,
-               shared_custom_widgets.UserOption2,
-               str]:
+    ) -> Optional[Union[QtCore.QObject,
+                        QtCore.QSize,
+                        shared_custom_widgets.UserOption2,
+                        str]]:
         """Get data at an index in the model."""
         if index.isValid():
             if role == QtCore.Qt.DisplayRole:
@@ -396,8 +397,9 @@ class ToolOptionsModel3(ToolOptionsModel):
     def headerData(
             self,
             index: int,
-            orientation: int,
-            role: Optional[QtConstant] = None) -> Union[QtCore.QObject, str]:
+            orientation: QtCore.Qt.Orientation,
+            role: Optional[QtConstant] = None
+    ) -> Optional[Union[QtCore.QObject, str]]:
         """Get header data for a given index."""
         if orientation == QtCore.Qt.Vertical and \
                 role == QtCore.Qt.DisplayRole:
@@ -437,7 +439,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
             self,
             index: QtCore.QModelIndex,
             role: Optional[QtConstant] = None
-    ) -> Union[str, QtCore.QObject]:
+    ) -> Optional[Union[str, QtCore.QObject]]:
         """Get role data from an index."""
         if not index.isValid():
             return None
@@ -474,9 +476,9 @@ class SettingsModel(QtCore.QAbstractTableModel):
     def headerData(
             self,
             index: int,
-            orientation: int,
+            orientation: QtCore.Qt.Orientation,
             role: Optional[QtConstant] = None
-    ) -> Union[str, QtCore.QObject]:
+    ) -> Optional[Union[str, QtCore.QObject]]:
         """Get header data from settings."""
         if orientation == QtCore.Qt.Horizontal and \
                 role == QtCore.Qt.DisplayRole:
@@ -539,7 +541,7 @@ class TabsModel(QtCore.QAbstractListModel):
     def data(self,
              index: QtCore.QModelIndex,
              role: Optional[QtConstant] = None
-             ) -> Union[QtCore.QObject, str, "tabs.TabData"]:
+             ) -> Optional[Union[str, "tabs.TabData"]]:
         """Get data about a tab for an index."""
         if not index.isValid():
             return None
@@ -549,11 +551,11 @@ class TabsModel(QtCore.QAbstractListModel):
             return None
 
         if role is not None:
-            workflow: Dict[int, Any] = {
+            workflow: Dict[QtCore.Qt.ItemDataRole, Any] = {
                 QtCore.Qt.DisplayRole: self.tabs[row].tab_name,
                 QtCore.Qt.UserRole: self.tabs[row]
             }
-            return workflow.get(role)
+            return workflow.get(typing.cast(QtCore.Qt.ItemDataRole, role))
         return None
 
     def rowCount(

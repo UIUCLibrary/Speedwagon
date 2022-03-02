@@ -96,7 +96,10 @@ class Tab:
 
     @classmethod
     def create_workspace_layout(cls, parent: QtWidgets.QWidget) \
-            -> Tuple[Dict[TabWidgets, QtWidgets.QWidget], QtWidgets.QLayout]:
+            -> Tuple[
+                Dict[TabWidgets, QtWidgets.QWidget],
+                QtWidgets.QFormLayout
+            ]:
 
         tool_config_layout = QtWidgets.QFormLayout()
 
@@ -115,7 +118,7 @@ class Tab:
                                   description_information)
         tool_config_layout.addRow(QtWidgets.QLabel("Settings"), settings)
 
-        new_widgets = {
+        new_widgets: Dict[TabWidgets, QtWidgets.QWidget] = {
             TabWidgets.NAME: name_line,
             TabWidgets.DESCRIPTION: description_information,
             TabWidgets.SETTINGS: settings,
@@ -125,8 +128,8 @@ class Tab:
 
     @classmethod
     def create_workspace(cls, title: str, parent: QtWidgets.QWidget) -> \
-            Tuple[QtWidgets.QWidget, Dict[
-                TabWidgets, QtWidgets.QWidget], QtWidgets.QLayout]:
+            Tuple[QtWidgets.QGroupBox, Dict[
+                TabWidgets, QtWidgets.QWidget], QtWidgets.QFormLayout]:
         tool_workspace = QtWidgets.QGroupBox()
 
         tool_workspace.setTitle(title)
@@ -224,7 +227,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         )
 
         cast(
-            QtCore.Signal,
+            QtCore.SignalInstance,
             selector_view.selectionModel().currentChanged
         ).connect(self._update_tool_selected)
 
@@ -286,7 +289,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             typing.Type[Workflow],
             self.item_selection_model.data(
                 self.item_selector_view.selectedIndexes()[0],
-                QtCore.Qt.UserRole
+                role=typing.cast(int, QtCore.Qt.UserRole)
             )
         )
         if self.is_ready_to_start():
@@ -327,7 +330,9 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         """Set the current selection based on the index."""
         item = cast(
             typing.Type[Workflow],
-            self.item_selection_model.data(index, QtCore.Qt.UserRole)
+            self.item_selection_model.data(
+                index, role=typing.cast(int, QtCore.Qt.UserRole)
+            )
         )
 
         item_settings = self.workspace_widgets[TabWidgets.SETTINGS]
@@ -533,7 +538,9 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
     ) -> QtWidgets.QWidget:
 
         if index.isValid():
-            tool_settings = index.data(QtCore.Qt.UserRole)
+            tool_settings = \
+                index.data(role=typing.cast(int, QtCore.Qt.UserRole))
+
             browser_widget = tool_settings.edit_widget()
             if browser_widget:
                 assert isinstance(browser_widget, widgets.CustomItemWidget)
@@ -555,7 +562,7 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
             index: QtCore.QModelIndex
     ) -> None:
         if index.isValid():
-            i = index.data(QtCore.Qt.UserRole)
+            i = index.data(role=typing.cast(int, QtCore.Qt.UserRole))
             if isinstance(editor, widgets.CustomItemWidget):
                 editor.data = i.data
         super().setEditorData(editor, index)

@@ -238,7 +238,7 @@ class StartupDefault(AbsStarter):
         splash.setEnabled(False)
         splash.setWindowFlags(
             cast(
-                QtCore.Qt.WindowType,
+                QtCore.Qt.WindowFlags,
                 QtCore.Qt.WindowStaysOnTopHint |
                 QtCore.Qt.FramelessWindowHint
              )
@@ -372,7 +372,7 @@ class StartupDefault(AbsStarter):
 
 class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
     class WorkflowSignals(QtCore.QObject):
-        error = QtCore.Signal([object, object, object])
+        error = QtCore.Signal(object, object, object)
         progress_changed = QtCore.Signal(int)
         total_jobs_changed = QtCore.Signal(int)
         cancel_complete = QtCore.Signal()

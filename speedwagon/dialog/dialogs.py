@@ -459,7 +459,7 @@ class WorkflowProgress(WorkflowProgressGui):
         self._console_data.setDefaultFont(mono_font)
 
         typing.cast(
-            QtCore.Signal,
+            QtCore.SignalInstance,
             self._console_data.contentsChanged
         ).connect(self._follow_text)
 

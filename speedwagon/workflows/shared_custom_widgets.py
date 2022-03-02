@@ -2,7 +2,6 @@
 
 import abc
 import os
-
 from typing import Type, Union, List
 from PySide6 import QtWidgets, QtCore, QtGui
 

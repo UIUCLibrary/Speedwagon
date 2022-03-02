@@ -417,7 +417,7 @@ class TabEditor(TabEditorWidget):
         )
         index = model.index(tab)
         if index.isValid():
-            data = model.data(index, role=QtCore.Qt.UserRole)
+            data = model.data(index, role=typing.cast(int, QtCore.Qt.UserRole))
             self.tab_workflows_list_view.setModel(data.workflows_model)
         else:
             self.tab_workflows_list_view.setModel(models.WorkflowListModel2())

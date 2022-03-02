@@ -34,7 +34,7 @@ class SignalLogHandler(logging.handlers.BufferingHandler):
          This is problematic, the signal could be GC and cause a segfault
     """
 
-    def __init__(self, signal: QtCore.Signal) -> None:
+    def __init__(self, signal: QtCore.SignalInstance) -> None:
         """Create a new log handler for Qt signals."""
         super().__init__(capacity=10)
         self._signal = signal
