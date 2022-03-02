@@ -302,7 +302,7 @@ class ToolOptionsPairsModel(ToolOptionsModel):
             index: int,
             orientation: QtCore.Qt.Orientation,
             role: Optional[QtConstant] = None
-    ) -> Optional[Union[str, QtCore.QObject]]:
+    ) -> Union[None, str, QtCore.QObject]:
         """Get header information."""
         if orientation == QtCore.Qt.Vertical \
                 and role == QtCore.Qt.DisplayRole:
@@ -347,10 +347,11 @@ class ToolOptionsModel3(ToolOptionsModel):
             self,
             index: QtCore.QModelIndex,
             role=QtCore.Qt.DisplayRole
-    ) -> Optional[Union[QtCore.QObject,
-                        QtCore.QSize,
-                        shared_custom_widgets.UserOption2,
-                        str]]:
+    ) -> Union[None,
+               QtCore.QObject,
+               QtCore.QSize,
+               shared_custom_widgets.UserOption2,
+               str]:
         """Get data at an index in the model."""
         if index.isValid():
             if role == QtCore.Qt.DisplayRole:
@@ -399,7 +400,7 @@ class ToolOptionsModel3(ToolOptionsModel):
             index: int,
             orientation: QtCore.Qt.Orientation,
             role: Optional[QtConstant] = None
-    ) -> Optional[Union[QtCore.QObject, str]]:
+    ) -> Union[None, QtCore.QObject, str]:
         """Get header data for a given index."""
         if orientation == QtCore.Qt.Vertical and \
                 role == QtCore.Qt.DisplayRole:
