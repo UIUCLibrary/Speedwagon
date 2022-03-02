@@ -147,7 +147,7 @@ class PackagesModel(QtCore.QAbstractTableModel):
         if role == QtCore.Qt.UserRole:
             return self._packages[row]
 
-        return QtCore.QVariant()
+        return None
 
     def results(self) -> typing.List[collection.Package]:
         """Get results."""
