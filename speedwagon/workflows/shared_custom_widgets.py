@@ -64,7 +64,9 @@ class AbsBrowseableWidget(CustomItemWidget):
 
         self.action.triggered.connect(self.browse_clicked)
 
+        # pylint: disable=no-member
         self.text_line.textEdited.connect(self._change_data)
+
         self.inner_layout.addWidget(self.text_line)
 
     def get_browse_icon(self) -> QtGui.QIcon:
@@ -255,6 +257,8 @@ class ListSelectionWidget(CustomItemWidget):
         self._model = QtCore.QStringListModel()
         self._model.setStringList(self._selections)
         self._combobox.setModel(self._model)
+
+        # pylint: disable=no-member
         self._combobox.currentIndexChanged.connect(self._update)
         self.inner_layout.addWidget(self._combobox,
                                     alignment=QtCore.Qt.AlignBaseline)

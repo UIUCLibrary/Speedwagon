@@ -195,6 +195,8 @@ class PackageBrowser(QtWidgets.QDialog):
 
         self._buttons = QtWidgets.QButtonGroup(parent=self)
         self.ok_button = QtWidgets.QPushButton("Done")
+
+        # pylint: disable=no-member
         self.ok_button.clicked.connect(self.accept)
         self.cancel_button = QtWidgets.QPushButton("Cancel")
         self.cancel_button.clicked.connect(self.reject)

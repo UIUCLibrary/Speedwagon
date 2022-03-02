@@ -940,6 +940,7 @@ class StartQtThreaded(AbsStarter):
 
         dialog_box = WorkflowProgress(parent=self.windows)
         if main_app is not None:
+            # pylint: disable=no-member
             dialog_box.rejected.connect(main_app.close)
 
         dialog_box.setWindowTitle(workflow_name)
@@ -1222,6 +1223,7 @@ class TabsEditorApp(QtWidgets.QDialog):
 
         self.setLayout(layout)
 
+        # pylint: disable=no-member
         self.dialog_button_box.accepted.connect(self.on_okay)
         self.dialog_button_box.rejected.connect(self.on_cancel)
         self.rejected.connect(self.on_cancel)

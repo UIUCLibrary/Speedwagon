@@ -99,6 +99,7 @@ class SettingsDialog(QtWidgets.QDialog):
         self.open_settings_path_button = QtWidgets.QPushButton(self)
         self.open_settings_path_button.setText("Open Config File Directory")
 
+        # pylint: disable=no-member
         # pylint: disable=unnecessary-lambda
         # This needs a lambda to delay execution. Otherwise Qt might segfault
         # when it tries to open the dialog box
@@ -386,6 +387,8 @@ class TabEditor(TabEditorWidget):
         self.delete_current_tab_button.clicked.connect(self._delete_tab)
         self.add_items_button.clicked.connect(self._add_items_to_tab)
         self.remove_items_button.clicked.connect(self._remove_items)
+
+        # pylint: disable=no-member
         self.tabs_model.dataChanged.connect(self.on_modified)
         self.modified: bool = False
         self.splitter.setChildrenCollapsible(False)

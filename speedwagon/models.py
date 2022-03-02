@@ -106,6 +106,7 @@ class WorkflowListModel(ItemListModel):
 
         Defaults alphabetically by title.
         """
+        # pylint: disable=no-member
         self.layoutAboutToBeChanged.emit()
 
         self.jobs.sort(key=key or (lambda i: i.name))
@@ -166,6 +167,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
 
         Defaults alphabetically by title.
         """
+        # pylint: disable=no-member
         cast(QtCore.SignalInstance, self.layoutAboutToBeChanged).emit()
 
         self.workflows.sort(key=key or (lambda i: i.name))
@@ -181,6 +183,8 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
             index = self.createIndex(row, 0)
             self.beginInsertRows(index, 0, self.rowCount())
             self.workflows.insert(row, workflow)
+
+            # pylint: disable=no-member
             self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
             self.endInsertRows()
 
@@ -201,6 +205,8 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
             return False
 
         self.workflows[row] = workflow
+
+        # pylint: disable=no-member
         self.dataChanged.emit(index, index, [role])
         return True
 
@@ -210,6 +216,8 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
             index = QtCore.QModelIndex()
             self.beginRemoveRows(index, 0, self.rowCount())
             self.workflows.remove(workflow)
+
+            # pylint: disable=no-member
             self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
             self.endRemoveRows()
 
@@ -512,6 +520,8 @@ class SettingsModel(QtCore.QAbstractTableModel):
         # Only update the model if the data is actually different
         if data != original_data[1]:
             self._data[row] = (self._data[row][0], data)
+
+            # pylint: disable=no-member
             self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
 
         return True
@@ -572,6 +582,8 @@ class TabsModel(QtCore.QAbstractListModel):
         index = self.createIndex(row, 0)
         self.beginInsertRows(index, 0, self.rowCount())
         self.tabs.insert(row, tab)
+
+        # pylint: disable=no-member
         self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
         self.endInsertRows()
 
@@ -581,6 +593,8 @@ class TabsModel(QtCore.QAbstractListModel):
         if tab in self.tabs:
             self.beginRemoveRows(index, 0, self.rowCount())
             self.tabs.remove(tab)
+
+            # pylint: disable=no-member
             self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
             self.endRemoveRows()
 
@@ -602,5 +616,7 @@ class TabsModel(QtCore.QAbstractListModel):
             return False
 
         self.tabs[row] = tab
+
+        # pylint: disable=no-member
         self.dataChanged.emit(index, index, [role])
         return True

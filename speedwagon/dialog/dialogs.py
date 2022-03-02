@@ -137,7 +137,7 @@ class SystemInfoDialog(QtWidgets.QDialog):
 
         self._button_box = \
             QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
-
+        # pylint: disable=no-member
         self._button_box.accepted.connect(self.accept)
         layout.addWidget(self._button_box)
 
@@ -458,6 +458,7 @@ class WorkflowProgress(WorkflowProgressGui):
 
         self._console_data.setDefaultFont(mono_font)
 
+        # pylint: disable=no-member
         typing.cast(
             QtCore.SignalInstance,
             self._console_data.contentsChanged

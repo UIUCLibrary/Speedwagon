@@ -272,6 +272,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
         start_button.setText("Start")
         start_button.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        # pylint: disable=no-member
         start_button.clicked.connect(self._start)
 
         tool_actions_layout.addSpacerItem(
@@ -554,6 +555,7 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
 
     # noinspection PyUnresolvedReferences
     def update_custom_item(self) -> None:
+        # pylint: disable=no-member
         self.commitData.emit(self.sender())
 
     def setEditorData(  # pylint: disable=C0103

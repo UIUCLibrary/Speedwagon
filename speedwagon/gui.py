@@ -100,6 +100,7 @@ class ToolConsole(QtWidgets.QWidget):
 
         self._log = QtGui.QTextDocument()
         self._log.setDefaultFont(monospaced_font)
+        # pylint: disable=no-member
         self._log.contentsChanged.connect(self._follow_text)
         self._console.setDocument(self._log)
         self._console.setFont(monospaced_font)
@@ -227,7 +228,7 @@ class MainWindowMenuBuilder:
             )
 
             system_info_menu_item.setObjectName("systemInfoAction")
-
+            # pylint: disable=no-member
             system_info_menu_item.triggered.connect(
                 self.show_system_info_signal
             )
@@ -241,7 +242,7 @@ class MainWindowMenuBuilder:
                 QtGui.QAction("Settings", self._parent)
 
             system_settings_menu_item.setObjectName('settingsAction')
-
+            # pylint: disable=no-member
             system_settings_menu_item.triggered.connect(
                 self.show_configuration_signal)
 
@@ -262,6 +263,7 @@ class MainWindowMenuBuilder:
             exit_button = QtGui.QAction(" &Exit", self._parent)
             exit_button.setObjectName("exitAction")
 
+            # pylint: disable=no-member
             exit_button.triggered.connect(self.exit_function)
             file_menu.addAction(exit_button)
 
@@ -278,6 +280,7 @@ class MainWindowMenuBuilder:
                 self._parent.style().standardIcon(
                     QtWidgets.QStyle.SP_DialogSaveButton)
             )
+            # pylint: disable=no-member
             export_logs_button.triggered.connect(self.save_log_function)
             # export_logs_button.triggered.connect(self._parent.save_log)
             file_menu.addAction(export_logs_button)
@@ -294,6 +297,7 @@ class MainWindowMenuBuilder:
             # Help --> Help
             # Create a Help menu item
             help_button = QtGui.QAction(" &Help ", self._parent)
+            # pylint: disable=no-member
             help_button.triggered.connect(self._parent.help_requested)
             help_menu.addAction(help_button)
 
@@ -301,6 +305,7 @@ class MainWindowMenuBuilder:
             # Help --> About
             # Create an About button
             about_button = QtGui.QAction(" &About ", self._parent)
+            # pylint: disable=no-member
             about_button.triggered.connect(self._parent.show_about_window)
             help_menu.addAction(about_button)
 
@@ -314,6 +319,7 @@ class MainWindowMenuBuilder:
                 self._parent
             )
 
+            # pylint: disable=no-member
             export_button.triggered.connect(self.export_signal)
             job_menu.addAction(export_button)
 
@@ -323,7 +329,9 @@ class MainWindowMenuBuilder:
                 self._parent
             )
 
+            # pylint: disable=no-member
             import_button.triggered.connect(self.import_signal)
+
             job_menu.addAction(import_button)
 
 
@@ -400,6 +408,8 @@ class MainWindow1(MainProgram):
         export_logs_button.setIcon(
             self.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton)
         )
+
+        # pylint: disable=no-member
         export_logs_button.triggered.connect(self.save_log)
 
         file_menu.addAction(export_logs_button)
@@ -531,6 +541,8 @@ class MainWindow1(MainProgram):
             global_settings_tab.read_config_data()
 
         config_dialog.add_tab(global_settings_tab, "Global Settings")
+
+        # pylint: disable=no-member
         config_dialog.accepted.connect(global_settings_tab.on_okay)
 
         tabs_tab = speedwagon.dialog.settings.TabsConfigurationTab()
