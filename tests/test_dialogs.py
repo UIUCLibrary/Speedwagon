@@ -320,6 +320,7 @@ class TestWorkflowProgressGui:
         logger = logging.getLogger()
         logger.setLevel(logging.INFO)
         progress_dialog = dialogs.WorkflowProgressGui()
+        qtbot.add_widget(progress_dialog)
         progress_dialog.attach_logger(logger)
         progress_dialog.remove_log_handles()
         logger.info("Some message")
@@ -330,13 +331,18 @@ class TestWorkflowProgressGui:
         logger = logging.getLogger()
         logger.setLevel(logging.INFO)
         progress_dialog = dialogs.WorkflowProgressGui()
+        qtbot.add_widget(progress_dialog)
         progress_dialog.attach_logger(logger)
-        logger.info("Some message")
-        progress_dialog.flush()
-        assert "Some message" in progress_dialog.get_console_content()
+        try:
+            logger.info("Some message")
+            progress_dialog.flush()
+            assert "Some message" in progress_dialog.get_console_content()
+        finally:
+            progress_dialog.remove_log_handles()
 
     def test_write_html_block_to_console(self, qtbot):
         progress_dialog = dialogs.WorkflowProgressGui()
+        qtbot.add_widget(progress_dialog)
         progress_dialog.write_html_block_to_console("<h1>hello</h1>")
         assert "hello" in progress_dialog.get_console_content()
 
