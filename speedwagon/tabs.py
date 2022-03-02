@@ -579,13 +579,6 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
             return
         super().setModelData(widget, model, index)
 
-    def destroyEditor(  # pylint: disable=C0103
-            self,
-            widget: QtWidgets.QWidget,
-            index: QtCore.QModelIndex
-    ) -> None:
-        super().destroyEditor(widget, index)
-
 
 class TabData(NamedTuple):
     """Tab data."""
