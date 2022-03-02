@@ -1189,40 +1189,40 @@ class TestStartQtThreaded:
         )
         assert starter.report_exception.called is True
 
-    def test_submit_job_submits_to_job_manager(
-            self,
-            qtbot,
-            monkeypatch,
-            starter
-    ):
-        monkeypatch.setattr(
-            speedwagon.config.Path, "home", lambda: "my_home"
-        )
-        monkeypatch.setattr(
-            speedwagon.config.WindowsConfig,
-            "get_app_data_directory",
-            lambda *_: "app_data_dir"
-        )
-
-        job_manager = Mock()
-        workflow_name = "spam"
-        options = {}
-        starter.report_exception = Mock()
-        spam_workflow = Mock()
-
-        monkeypatch.setattr(
-            speedwagon.startup.job,
-            "available_workflows",
-            lambda: {"spam": spam_workflow}
-        )
-
-        starter.submit_job(
-            job_manager,
-            workflow_name,
-            options
-        )
-
-        assert job_manager.submit_job.called is True
+#     def test_submit_job_submits_to_job_manager(
+#             self,
+#             qtbot,
+#             monkeypatch,
+#             starter
+#     ):
+#         monkeypatch.setattr(
+#             speedwagon.config.Path, "home", lambda: "my_home"
+#         )
+#         monkeypatch.setattr(
+#             speedwagon.config.WindowsConfig,
+#             "get_app_data_directory",
+#             lambda *_: "app_data_dir"
+#         )
+#
+#         job_manager = Mock()
+#         workflow_name = "spam"
+#         options = {}
+#         starter.report_exception = Mock()
+#         spam_workflow = Mock()
+#
+#         monkeypatch.setattr(
+#             speedwagon.startup.job,
+#             "available_workflows",
+#             lambda: {"spam": spam_workflow}
+#         )
+#
+#         starter.submit_job(
+#             job_manager,
+#             workflow_name,
+#             options
+#         )
+#
+#         assert job_manager.submit_job.called is True
 
 
 class TestQtRequestMoreInfo:
