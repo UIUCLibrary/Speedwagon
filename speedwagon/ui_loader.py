@@ -10,12 +10,11 @@ class UiLoader(QUiLoader):
     def createWidget(self, class_name, parent=None, name=''):
         if parent is None and self.base_instance:
             return self.base_instance
-        else:
-            # create a new widget for child widgets
-            widget = QUiLoader.createWidget(self, class_name, parent, name)
-            if self.base_instance:
-                setattr(self.base_instance, name, widget)
-            return widget
+        # create a new widget for child widgets
+        widget = QUiLoader.createWidget(self, class_name, parent, name)
+        if self.base_instance:
+            setattr(self.base_instance, name, widget)
+        return widget
 
 
 def load_ui(ui_file, base_instance=None):
