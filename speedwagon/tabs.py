@@ -366,7 +366,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             warning_message_dialog.setIcon(QtWidgets.QMessageBox.Warning)
             warning_message_dialog.setText(message)
             warning_message_dialog.setDetailedText("".join(stack_trace))
-            layout = warning_message_dialog.layout()
+            layout: QtWidgets.QGridLayout = warning_message_dialog.layout()
 
             layout.addItem(
                 spanner, layout.rowCount(), 0, 1, layout.columnCount())
