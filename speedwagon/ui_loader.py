@@ -1,13 +1,26 @@
+import typing
+
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import QMetaObject
+from PySide6 import QtWidgets
+
+__all__ = ['load_ui']
 
 
 class UiLoader(QUiLoader):
-    def __init__(self, base_instance):
+    def __init__(
+            self,
+            base_instance: typing.Optional[QtWidgets.QWidget]
+    ) -> None:
         QUiLoader.__init__(self, base_instance)
         self.base_instance = base_instance
 
-    def createWidget(self, class_name, parent=None, name=''):
+    def createWidget(
+            self,
+            class_name: str,
+            parent: typing.Optional[QtWidgets.QWidget] = None,
+            name: str = ''
+    ) -> QtWidgets.QWidget:
         if parent is None and self.base_instance:
             return self.base_instance
         # create a new widget for child widgets
@@ -17,7 +30,10 @@ class UiLoader(QUiLoader):
         return widget
 
 
-def load_ui(ui_file, base_instance=None):
+def load_ui(
+        ui_file: str,
+        base_instance: typing.Optional[QtWidgets.QWidget] = None
+) -> QtWidgets.QWidget:
     loader = UiLoader(base_instance)
     widget = loader.load(ui_file)
     QMetaObject.connectSlotsByName(widget)
