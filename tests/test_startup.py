@@ -19,7 +19,7 @@ import speedwagon.config
 import speedwagon.job
 import speedwagon.runner_strategies
 from speedwagon.dialog.settings import SettingsDialog
-
+import speedwagon.dialog
 
 def test_version_exits_after_being_called(monkeypatch):
 
@@ -696,7 +696,7 @@ class TestSingleWorkflowJSON:
 
 
 class TestMultiWorkflowLauncher:
-    def test_all_workflows_validate_user_options(self, qtbot):
+    def test_all_workflows_validate_user_options(self, qtbot, monkeypatch):
         startup_launcher = speedwagon.startup.MultiWorkflowLauncher()
         workflow_tasks = [
 
@@ -717,6 +717,12 @@ class TestMultiWorkflowLauncher:
         ]
 
         jobs = []
+
+        monkeypatch.setattr(
+            speedwagon.gui.MainWindow1,
+            "show", lambda self: None
+        )
+
         for workflow_name, workflow_args in workflow_tasks:
             mock_workflow = MagicMock()
             mock_workflow.name = workflow_name
@@ -726,7 +732,7 @@ class TestMultiWorkflowLauncher:
         startup_launcher.run()
         assert all(job.validate_user_options.called is True for job in jobs)
 
-    def test_task_failing(self, qtbot):
+    def test_task_failing(self):
         startup_launcher = speedwagon.startup.MultiWorkflowLauncher()
         mock_workflow = MagicMock()
         mock_workflow.name = 'Verify Checksum Batch [Single]'
@@ -747,8 +753,14 @@ class TestMultiWorkflowLauncher:
 class TestWorkflowProgressCallbacks:
 
     @pytest.fixture()
-    def dialog_box(self, qtbot):
-        return speedwagon.dialog.dialogs.WorkflowProgress()
+    def dialog_box(self, qtbot, monkeypatch):
+        widget = speedwagon.dialog.dialogs.WorkflowProgress()
+        monkeypatch.setattr(
+            speedwagon.dialog.dialogs.WorkflowProgressStateWorking,
+            "close_dialog", lambda self, event: None)
+        qtbot.add_widget(widget)
+        yield widget
+        widget.close()
 
     def test_job_changed_signal(self, dialog_box, qtbot):
         callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
@@ -847,7 +859,7 @@ class TestWorkflowProgressCallbacks:
 
 
 class TestStartQtThreaded:
-    @pytest.fixture()
+    @pytest.fixture(scope="function")
     def starter(self, monkeypatch, qtbot):
         monkeypatch.setattr(
             speedwagon.config.WindowsConfig,
@@ -866,6 +878,7 @@ class TestStartQtThreaded:
         yield startup
         if startup.windows is not None:
             startup.windows.close()
+        startup.app.closeAllWindows()
 
     def test_report_exception(self, qtbot, monkeypatch, starter):
         message_box = Mock(name="QMessageBox")
@@ -1208,6 +1221,7 @@ class TestStartQtThreaded:
             workflow_name,
             options
         )
+
         assert job_manager.submit_job.called is True
 
 

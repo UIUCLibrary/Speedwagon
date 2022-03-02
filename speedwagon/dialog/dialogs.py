@@ -380,7 +380,11 @@ class WorkflowProgressGui(QtWidgets.QDialog):
             results = [self.format(log).strip() for log in self.buffer]
             if results:
                 report = "".join(results)
-                self.signals.message.emit(f"{report}")
+                try:
+                    self.signals.message.emit(f"{report}")
+                except RuntimeError as e:
+                    print(e)
+                    raise
             super().flush()
 
     def __init__(

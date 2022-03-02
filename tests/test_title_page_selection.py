@@ -18,6 +18,8 @@ class TestFileSelectDelegate:
             QtWidgets.QComboBox
         )
 
+    @pytest.mark.filterwarnings(
+        "ignore:Use get_files instead:DeprecationWarning")
     def test_set_data_to_title_page_if_already_set(self, delegate):
         combo_box = QtWidgets.QComboBox()
 
@@ -43,6 +45,8 @@ class TestFileSelectDelegate:
         delegate.setEditorData(combo_box, index)
         assert combo_box.currentText() == "file2.jp2"
 
+    @pytest.mark.filterwarnings(
+        "ignore:Use get_files instead:DeprecationWarning")
     def test_set_data_to_first_file_if_no_title_page_set(self, delegate):
         combo_box = QtWidgets.QComboBox()
 
