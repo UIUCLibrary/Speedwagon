@@ -657,12 +657,11 @@ pipeline {
                                             steps{
                                                 sh 'mypy --version'
                                                 catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: "UNSTABLE") {
-                                                    sh(label: 'Running MyPy',
-                                                       script: '''mkdir -p logs
-                                                                  mypy -p speedwagon --exclude speedwagon/ui/ --html-report reports/mypy/html | tee logs/mypy.log
-                                                                  echo ${PIPESTATUS[0]}
-                                                                  '''
-                                                    )
+                                                    tee('logs/mypy.log'){
+                                                        sh(label: 'Running MyPy',
+                                                           script: 'mypy -p speedwagon --exclude speedwagon/ui/ --html-report reports/mypy/html'
+                                                        )
+                                                    }
                                                 }
                                             }
                                             post {
