@@ -1117,6 +1117,62 @@ class SingleWorkflowJSON(AbsStarter):
                 app.quit()
         return 0
 
+    def report_exception(
+            self,
+            exc: BaseException,
+            parent: typing.Optional[QtWidgets.QWidget] = None,
+            dialog_box_title: Optional[str] = None,
+    ) -> None:
+        text = str(exc)
+        self.logger.error(text)
+        dialog_box = QtWidgets.QMessageBox(parent)
+        if dialog_box_title is not None:
+            dialog_box.setWindowTitle(dialog_box_title)
+        dialog_box.setText(text)
+        dialog_box.exec_()
+
+    def _run_workflow(
+            self,
+            job_manager: runner_strategies.BackgroundJobManager,
+            workflow: speedwagon.job.AbsWorkflow,
+            options,
+            main_app: typing.Optional[speedwagon.gui.MainWindow2] = None
+    ):
+
+        try:
+            if workflow.name is None:
+                raise ValueError(f"Unknown workflow: '{workflow}'")
+            workflow.validate_user_options(**options)
+        except ValueError as user_option_error:
+            self.report_exception(
+                parent=None,
+                exc=user_option_error,
+                dialog_box_title="Invalid User Options"
+            )
+            return
+
+        dialog_box = WorkflowProgress()
+        if main_app is not None:
+            dialog_box.rejected.connect(main_app.close)
+
+        dialog_box.setWindowTitle(workflow.name or "Workflow")
+        dialog_box.show()
+
+        callbacks = WorkflowProgressCallbacks(dialog_box)
+        dialog_box.attach_logger(job_manager.logger)
+        threaded_events = ThreadedEvents()
+        job_manager.submit_job(
+            workflow_name=workflow.name,
+            options=options,
+            app=self,
+            liaison=runner_strategies.JobManagerLiaison(
+                callbacks=callbacks,
+                events=threaded_events
+            )
+        )
+        threaded_events.started.set()
+        dialog_box.exec_()
+
     @staticmethod
     def _load_main_window(
             job_manager: "runner_strategies.BackgroundJobManager",
@@ -1127,28 +1183,6 @@ class SingleWorkflowJSON(AbsStarter):
             window.setWindowTitle(title)
 
         return window
-
-    def _run_workflow(
-            self,
-            job_manager: runner_strategies.BackgroundJobManager,
-            workflow,
-            options
-    ):
-        window = \
-            SingleWorkflowJSON._load_main_window(job_manager, workflow.name)
-
-        runner_strategy = runner_strategies.QtRunner(window)
-        window.logger = cast(logging.Logger, window.logger)
-        window.logger.setLevel(logging.INFO)
-        window.show()
-        window.console.log_handler.capacity = 1
-        runner_strategy.run(workflow,
-                            options,
-                            window.logger
-                            )
-
-        if self.on_exit is not None:
-            self.on_exit(window)
 
 
 class MultiWorkflowLauncher(AbsStarter):

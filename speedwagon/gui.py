@@ -65,7 +65,7 @@ class ToolConsole(QtWidgets.QWidget):
             message = QtCore.pyqtSignal(str)
 
         def __init__(self, console_widget: "ToolConsole"):
-            super().__init__(capacity=1)
+            super().__init__(capacity=10)
             self.signals = ToolConsole.ConsoleLogHandler.Signals()
             self.console_widget = console_widget
             self.signals.message.connect(self.console_widget.add_message)
@@ -73,9 +73,9 @@ class ToolConsole(QtWidgets.QWidget):
         def flush(self) -> None:
             if len(self.buffer) > 0:
                 message_buffer = [
-                    self.format(record).strip() for record in self.buffer
+                    self.format(record) for record in self.buffer
                 ]
-                message = " ".join(message_buffer).strip()
+                message = "".join(message_buffer).strip()
                 self.signals.message.emit(message)
             super().flush()
 
@@ -105,6 +105,7 @@ class ToolConsole(QtWidgets.QWidget):
         self._console.setFont(monospaced_font)
 
         self._attached_logger: typing.Optional[logging.Logger] = None
+        self.cursor = QtGui.QTextCursor(self._log)
 
     def close(self) -> bool:
         self.detach_logger()
@@ -121,12 +122,11 @@ class ToolConsole(QtWidgets.QWidget):
             message: str,
     ) -> None:
 
-        cursor = QtGui.QTextCursor(self._log)
-        cursor.movePosition(cursor.End)
-        cursor.beginEditBlock()
-        self._console.setTextCursor(cursor)
-        cursor.insertHtml(message)
-        cursor.endEditBlock()
+        self.cursor.movePosition(self.cursor.End)
+        self.cursor.beginEditBlock()
+        self._console.setTextCursor(self.cursor)
+        self.cursor.insertHtml(message)
+        self.cursor.endEditBlock()
 
     @property
     def text(self) -> str:
