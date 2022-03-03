@@ -7,7 +7,7 @@ from PySide6 import QtWidgets
 __all__ = ['load_ui']
 
 
-class UiLoader(QUiLoader):
+class UiLoader(QUiLoader):  # pylint: disable=too-few-public-methods
     def __init__(
             self,
             base_instance: typing.Optional[QtWidgets.QWidget]
@@ -15,7 +15,7 @@ class UiLoader(QUiLoader):
         QUiLoader.__init__(self, base_instance)
         self.base_instance = base_instance
 
-    def createWidget(
+    def createWidget(  # pylint: disable=invalid-name
             self,
             class_name: str,
             parent: typing.Optional[QtWidgets.QWidget] = None,
