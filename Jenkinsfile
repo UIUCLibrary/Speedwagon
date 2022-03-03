@@ -692,7 +692,7 @@ pipeline {
                                         stage('Run Flake8 Static Analysis') {
                                             steps{
                                                 catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: "UNSTABLE") {
-                                                    sh script: 'flake8 speedwagon --tee --output-file=logs/flake8.log'
+                                                    sh script: 'flake8 speedwagon -j 1 --tee --output-file=logs/flake8.log'
                                                 }
                                             }
                                             post {
