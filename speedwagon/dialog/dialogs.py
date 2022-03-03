@@ -395,7 +395,7 @@ class WorkflowProgressGui(QtWidgets.QDialog):
                 "speedwagon.ui",
                 "workflow_progress.ui"
         ) as ui_file:
-            ui_loader.load_ui(ui_file, self)
+            ui_loader.load_ui(str(ui_file), self)
 
         # =====================================================================
         #  Type hints loaded to help with development after loading in the
