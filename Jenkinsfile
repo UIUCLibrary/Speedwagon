@@ -1043,6 +1043,7 @@ pipeline {
                                         sh(label: "Installing ${wheel.name}", script: "venv/bin/pip install ${wheel}")
                                     }
                                 }
+                                sh('venv/bin/pip list')
                                 sh(label: 'Running pyinstaller script', script: 'venv/bin/python packaging/create_osx_app_bundle.py')
                                 sh(label: 'Packaging installer as .dmg file',
                                     script:"""
