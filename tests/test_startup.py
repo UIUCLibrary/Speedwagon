@@ -1217,6 +1217,7 @@ class TestStartQtThreaded:
         )
         WorkflowProgress = speedwagon.startup.WorkflowProgress
         dummy = None
+
         def create_workflow(*args, **kwargs):
             nonlocal dummy
             dummy = WorkflowProgress(*args, **kwargs)
