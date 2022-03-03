@@ -975,13 +975,8 @@ class StartQtThreaded(AbsStarter):
             parent: typing.Optional[QtWidgets.QWidget] = None,
             dialog_box_title: Optional[str] = None,
     ) -> None:
-        text = str(exc)
-        self.logger.error(text)
-        dialog_box = QtWidgets.QMessageBox(parent)
-        if dialog_box_title is not None:
-            dialog_box.setWindowTitle(dialog_box_title)
-        dialog_box.setText(text)
-        dialog_box.exec_()
+        self.logger.error(str(exc))
+        report_exception_dialog(exc, dialog_box_title, parent)
 
     def _find_invalid(
             self,
@@ -1054,6 +1049,15 @@ class SingleWorkflowLauncher(AbsStarter):
         self._active_workflow = workflow
 
 
+def report_exception_dialog(exc, dialog_box_title, parent):
+    text = str(exc)
+    dialog_box = QtWidgets.QMessageBox(parent)
+    if dialog_box_title is not None:
+        dialog_box.setWindowTitle(dialog_box_title)
+    dialog_box.setText(text)
+    dialog_box.exec_()
+
+
 class SingleWorkflowJSON(AbsStarter):
     """Start up class for loading instructions from a JSON file.
 
@@ -1123,13 +1127,12 @@ class SingleWorkflowJSON(AbsStarter):
             parent: typing.Optional[QtWidgets.QWidget] = None,
             dialog_box_title: Optional[str] = None,
     ) -> None:
-        text = str(exc)
-        self.logger.error(text)
-        dialog_box = QtWidgets.QMessageBox(parent)
-        if dialog_box_title is not None:
-            dialog_box.setWindowTitle(dialog_box_title)
-        dialog_box.setText(text)
-        dialog_box.exec_()
+        self.logger.error(str(exc))
+        report_exception_dialog(
+            exc=exc,
+            dialog_box_title=dialog_box_title,
+            parent=parent
+        )
 
     def _run_workflow(
             self,
