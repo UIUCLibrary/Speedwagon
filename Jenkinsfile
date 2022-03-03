@@ -52,7 +52,7 @@ def run_pylint(){
         timeout(MAX_TIME){
             sh(
                 label: 'Running pylint for sonarqube',
-                script: 'pylint speedwagon -j 1-d duplicate-code --output-format=parseable | tee reports/pylint.txt',
+                script: 'pylint speedwagon -j 1 -d duplicate-code --output-format=parseable | tee reports/pylint.txt',
                 returnStatus: true
             )
         }
