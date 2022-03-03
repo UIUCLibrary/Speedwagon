@@ -46,13 +46,11 @@ def run_pylint(){
                 )
             }
         }
-        tee('reports/pylint.txt'){
-            sh(
-                label: 'Running pylint for sonarqube',
-                script: 'pylint speedwagon -d duplicate-code --output-format=parseable',
-                returnStatus: true
-            )
-        }
+        sh(
+            label: 'Running pylint for sonarqube',
+            script: 'pylint speedwagon -d duplicate-code --output-format=parseable | tee reports/pylint.txt',
+            returnStatus: true
+        )
     }
 }
 
