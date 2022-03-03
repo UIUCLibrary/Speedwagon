@@ -598,7 +598,6 @@ class TestSingleWorkflowJSON:
         import tracemalloc
         tracemalloc.start()
         startup = speedwagon.startup.SingleWorkflowJSON()
-
         startup.load_json_string(
             json.dumps(
                 {
@@ -617,17 +616,23 @@ class TestSingleWorkflowJSON:
             MagicMock()
         )
 
-        run = MagicMock()
+        submit_job = MagicMock()
 
         monkeypatch.setattr(
-            speedwagon.startup.runner_strategies.QtRunner,
-            "run",
-            run
+            speedwagon.startup.runner_strategies.BackgroundJobManager,
+            "submit_job",
+            submit_job
+        )
+
+        monkeypatch.setattr(
+            speedwagon.startup.WorkflowProgress,
+            "exec",
+            Mock()
         )
 
         startup.workflow.validate_user_options = MagicMock()
         startup.run()
-        assert run.called is True
+        assert submit_job.called is True
 
     def test_signal_is_sent(self, qtbot):
         class Dummy(QtCore.QObject):
@@ -655,7 +660,7 @@ class TestSingleWorkflowJSON:
 
     def test_run_on_exit_is_called(self, qtbot, monkeypatch):
         startup = speedwagon.startup.SingleWorkflowJSON()
-        startup.options = Mock()
+        startup.options = {}
         workflow = Mock()
         workflow.name = "spam"
         startup.workflow = workflow
@@ -666,7 +671,16 @@ class TestSingleWorkflowJSON:
         MainWindow2.console = Mock()
         MainWindow2.show = Mock()
         qtbot.addWidget(MainWindow2)
-
+        monkeypatch.setattr(
+            speedwagon.startup.WorkflowProgress,
+            "exec",
+            Mock()
+        )
+        monkeypatch.setattr(
+            speedwagon.runner_strategies.BackgroundJobManager,
+            "run_job_on_thread",
+            lambda *args, **kwargs: Mock()
+        )
         monkeypatch.setattr(
             speedwagon.startup.speedwagon.gui,
             "MainWindow2",

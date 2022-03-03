@@ -1136,7 +1136,6 @@ class SingleWorkflowJSON(AbsStarter):
             job_manager: runner_strategies.BackgroundJobManager,
             workflow: speedwagon.job.AbsWorkflow,
             options,
-            main_app: typing.Optional[speedwagon.gui.MainWindow2] = None
     ):
 
         try:
@@ -1152,8 +1151,6 @@ class SingleWorkflowJSON(AbsStarter):
             return
 
         dialog_box = WorkflowProgress()
-        if main_app is not None:
-            dialog_box.rejected.connect(main_app.close)
 
         dialog_box.setWindowTitle(workflow.name or "Workflow")
         dialog_box.show()
@@ -1171,7 +1168,9 @@ class SingleWorkflowJSON(AbsStarter):
             )
         )
         threaded_events.started.set()
-        dialog_box.exec_()
+        dialog_box.exec()
+        if callable(self.on_exit):
+            self.on_exit()
 
     @staticmethod
     def _load_main_window(
