@@ -349,7 +349,7 @@ class TabEditorWidget(QtWidgets.QWidget):
 
     def load_ui_file(self) -> None:
         with resources.path("speedwagon.ui", "tab_editor.ui") as ui_file:
-            ui_loader.load_ui(ui_file, self)
+            ui_loader.load_ui(str(ui_file), self)
 
 
 class TabEditor(TabEditorWidget):

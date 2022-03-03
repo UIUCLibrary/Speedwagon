@@ -87,7 +87,7 @@ class ToolConsole(QtWidgets.QWidget):
         self.log_handler.setFormatter(self.log_formatter)
 
         with resources.path(speedwagon.ui, "console.ui") as ui_file:
-            ui_loader.load_ui(ui_file, self)
+            ui_loader.load_ui(str(ui_file), self)
 
         # ======================================================================
         # Type hints:
@@ -149,7 +149,7 @@ class ItemTabsWidget(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
         with resources.path(speedwagon.ui, "setup_job.ui") as ui_file:
-            ui_loader.load_ui(ui_file, self)
+            ui_loader.load_ui(str(ui_file), self)
         # ======================================================================
         # Type Hints
         self.tabs: QtWidgets.QTabWidget
@@ -595,7 +595,7 @@ class MainWindow2UI(QtWidgets.QMainWindow):
     ) -> None:
         super().__init__(parent)
         with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
-            ui_loader.load_ui(ui_file, self)
+            ui_loader.load_ui(str(ui_file), self)
 
         # ======================================================================
         # Type hints
