@@ -36,21 +36,26 @@ DEVPI_CONFIG = [
 
 
 def run_pylint(){
+    def MAX_TIME = 10
     withEnv(['PYLINTHOME=.']) {
         sh 'pylint --version'
         catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-            tee('reports/pylint_issues.txt'){
-                sh(
-                    label: 'Running pylint',
-                    script: 'pylint speedwagon -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
-                )
+            timeout(MAX_TIME){
+                tee('reports/pylint_issues.txt'){
+                    sh(
+                        label: 'Running pylint',
+                        script: 'pylint speedwagon -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
+                    )
+                }
             }
         }
-        sh(
-            label: 'Running pylint for sonarqube',
-            script: 'pylint speedwagon -d duplicate-code --output-format=parseable | tee reports/pylint.txt',
-            returnStatus: true
-        )
+        timeout(MAX_TIME){
+            sh(
+                label: 'Running pylint for sonarqube',
+                script: 'pylint speedwagon -d duplicate-code --output-format=parseable | tee reports/pylint.txt',
+                returnStatus: true
+            )
+        }
     }
 }
 
