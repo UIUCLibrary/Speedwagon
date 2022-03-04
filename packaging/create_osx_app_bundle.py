@@ -131,20 +131,25 @@ def get_default_cpack_data():
     }
 
 
-def write_cpack_config_file(source_app, destination_path, package_metadata: email.message.Message):
+def write_cpack_config_file(
+        source_app,
+        destination_path,
+        package_metadata: email.message.Message
+):
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(
             os.path.abspath(os.path.join(os.path.dirname(__file__)))),
         autoescape=jinja2.select_autoescape()
     )
     template = env.get_template("CPackConfig.cmake.in")
+    platform_info = platform.system().lower()
     data = {**get_default_cpack_data(), **{
         "CPACK_INSTALLED_DIRECTORIES": {
             "source": source_app,
             "output": "/Speedwagon.app"
         },
         "CPACK_PACKAGE_FILE_NAME":
-            f"speedwagon-{package_metadata['Version']}-{platform.system().lower()}",
+            f"speedwagon-{package_metadata['Version']}-{platform_info}",
         "CPACK_PACKAGE_VERSION": package_metadata['Version'],
         "CPACK_RESOURCE_FILE_LICENSE": os.path.join(TOP_LEVEL_DIR, "LICENSE"),
         "CPACK_PACKAGE_DESCRIPTION_FILE":
@@ -171,4 +176,3 @@ def run_cpack(
 
 if __name__ == '__main__':
     main()
-
