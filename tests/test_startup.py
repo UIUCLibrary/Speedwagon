@@ -746,7 +746,7 @@ class TestMultiWorkflowLauncher:
         startup_launcher.run()
         assert all(job.validate_user_options.called is True for job in jobs)
 
-    def test_task_failing(self):
+    def test_task_failing(self, qtbot):
         startup_launcher = speedwagon.startup.MultiWorkflowLauncher()
         mock_workflow = MagicMock()
         mock_workflow.name = 'Verify Checksum Batch [Single]'
