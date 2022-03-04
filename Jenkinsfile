@@ -1055,6 +1055,7 @@ pipeline {
                                 }
                                 stage('Building Apple Application Bundle'){
                                     steps{
+                                        unstash 'DIST-INFO'
                                         sh(label: 'Running pyinstaller script', script: 'venv/bin/python packaging/create_osx_app_bundle.py')
                                     }
                                 }
