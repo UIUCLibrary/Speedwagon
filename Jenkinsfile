@@ -1030,30 +1030,47 @@ pipeline {
                                     equals expected: true, actual: params.DEPLOY_DMG
                                 }
                             }
-                            steps{
-                                unstash 'PYTHON_PACKAGES'
-                                sh(
-                                    label: 'Creating build environment',
-                                    script: '''python3 -m venv --upgrade-deps venv
-                                                venv/bin/pip install pyinstaller
-                                    '''
-                                    )
-                                script{
-                                    findFiles(glob: 'dist/speedwagon*.whl').each{ wheel ->
-                                        sh(label: "Installing ${wheel.name}", script: "venv/bin/pip install ${wheel}")
+                            stages{
+                                stage('Create Build Environment'){
+                                    steps{
+                                        unstash 'PYTHON_PACKAGES'
+                                        sh(
+                                            label: 'Creating build environment',
+                                            script: '''python3 -m venv --upgrade-deps venv
+                                                        venv/bin/pip install pyinstaller
+                                            '''
+                                            )
+                                        script{
+                                            findFiles(glob: 'dist/speedwagon*.whl').each{ wheel ->
+                                                sh(label: "Installing ${wheel.name}", script: "venv/bin/pip install ${wheel}")
+                                            }
+                                        }
+
+                                    }
+                                    post{
+                                        success{
+                                            sh('venv/bin/pip list')
+                                        }
                                     }
                                 }
-                                sh('venv/bin/pip list')
-                                sh(label: 'Running pyinstaller script', script: 'venv/bin/python packaging/create_osx_app_bundle.py')
-                                sh(label: 'Packaging installer as .dmg file',
-                                    script:"""
-                                        mkdir -p build/appleBundle
-                                        mv \$WORKSPACE/dist/*.app build/appleBundle/
-                                        ln -s /Applications build/appleBundle/Applications
-                                        hdiutil create build/tmp.dmg -ov -volname \"SpeedwagonInstall\" -fs HFS+ -srcfolder \"\$WORKSPACE/build/appleBundle/\"
-                                        hdiutil convert build/tmp.dmg -format UDZO -o dist/Speedwagon-${props.Version}.dmg
-                                        """
-                                    )
+                                stage('Building Apple Application Bundle'){
+                                    steps{
+                                        sh(label: 'Running pyinstaller script', script: 'venv/bin/python packaging/create_osx_app_bundle.py')
+                                    }
+                                }
+                                stage('Packaging as Apple Disk Image'){
+                                    steps{
+                                        sh(label: 'Packaging installer as .dmg file',
+                                            script:"""
+                                                mkdir -p build/appleBundle
+                                                mv \$WORKSPACE/dist/*.app build/appleBundle/
+                                                ln -s /Applications build/appleBundle/Applications
+                                                hdiutil create build/tmp.dmg -ov -volname \"SpeedwagonInstall\" -fs HFS+ -srcfolder \"\$WORKSPACE/build/appleBundle/\"
+                                                hdiutil convert build/tmp.dmg -format UDZO -o dist/Speedwagon-${props.Version}.dmg
+                                                """
+                                            )
+                                    }
+                                }
                             }
                             post{
                                 success{
