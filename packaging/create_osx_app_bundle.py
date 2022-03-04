@@ -125,7 +125,9 @@ def get_default_cpack_data():
         },
         "CPACK_PACKAGE_NAME": "Speedwagon",
         "CPACK_GENERATOR": "DragNDrop",
-        "CPACK_PACKAGE_VENDOR": "UIUC Prescon",
+        "CPACK_PACKAGE_VENDOR":
+            "University Library at The University of Illinois at Urbana "
+            "Champaign: Preservation Services",
     }
 
 
