@@ -136,8 +136,7 @@ def write_cpack_config_file(source_app, destination_path, package_metadata: emai
         autoescape=jinja2.select_autoescape()
     )
     template = env.get_template("CPackConfig.cmake.in")
-    data = get_default_cpack_data()
-    data = {**data, **{
+    data = {**get_default_cpack_data(), **{
         "CPACK_INSTALLED_DIRECTORIES": {
             "source": source_app,
             "output": "/Speedwagon.app"
@@ -161,7 +160,7 @@ def run_cpack(
 ):
     cpack_cmd = shutil.which("cpack", path=cmake.CMAKE_BIN_DIR)
     args = [
-        "-C", config_file,
+        "--config", config_file,
         "-B", build_path,
         "-G", "DragNDrop"
     ]
