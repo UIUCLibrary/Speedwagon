@@ -144,7 +144,7 @@ def write_cpack_config_file(source_app, destination_path, package_metadata: emai
             "output": "/Speedwagon.app"
         },
         "CPACK_PACKAGE_FILE_NAME":
-            f"speedwagon-{package_metadata['Version']}-{platform.system()}",
+            f"speedwagon-{package_metadata['Version']}-{platform.system().lower()}",
         "CPACK_PACKAGE_VERSION": package_metadata['Version'],
         "CPACK_RESOURCE_FILE_LICENSE": os.path.join(TOP_LEVEL_DIR, "LICENSE"),
         "CPACK_PACKAGE_DESCRIPTION_FILE":
