@@ -6,7 +6,7 @@ import warnings
 from typing import Dict, Optional, List, Any, Type, Mapping
 import typing
 from collections.abc import Sized
-from PyQt5 import QtWidgets  # type: ignore
+from PySide6 import QtWidgets  # type: ignore
 from uiucprescon.packager.packages.collection import Metadata
 from uiucprescon import packager
 

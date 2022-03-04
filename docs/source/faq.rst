@@ -23,7 +23,7 @@ What Tools Are You Using in Speedwagon?
 =======================================
 
     * :term:`Python 3 <Python>`
-    * PyQt for generated the GUI
+    * PySide for generating the GUI
     * :term:`CMake` to generate standalone installable packages
     * :term:`Google Tesseract` for producing OCR
     * :term:`Exiv2` for inspecting embedded image metadata

@@ -22,7 +22,7 @@ except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
 
 
-from PyQt5.QtCore import QAbstractItemModel
+from PySide6.QtCore import QAbstractItemModel
 
 from speedwagon.job import all_required_workflow_keys
 import speedwagon.models

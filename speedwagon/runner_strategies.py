@@ -15,7 +15,7 @@ import typing
 import warnings
 from types import TracebackType
 from typing import List, Any, Dict, Optional, Type
-from PyQt5 import QtWidgets
+from PySide6 import QtWidgets
 
 import speedwagon
 import speedwagon.dialog

@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 
 import pytest
-from PyQt5 import QtCore
+from PySide6 import QtCore
 
 from speedwagon import tabs, models, job
 

@@ -11,7 +11,7 @@ from typing import List, Optional, Tuple, Dict, Iterator, NamedTuple, cast, \
 from abc import ABCMeta
 
 import yaml
-from PyQt5 import QtWidgets, QtCore  # type: ignore
+from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
 
 import speedwagon
 import speedwagon.config
@@ -96,7 +96,10 @@ class Tab:
 
     @classmethod
     def create_workspace_layout(cls, parent: QtWidgets.QWidget) \
-            -> Tuple[Dict[TabWidgets, QtWidgets.QWidget], QtWidgets.QLayout]:
+            -> Tuple[
+                Dict[TabWidgets, QtWidgets.QWidget],
+                QtWidgets.QFormLayout
+            ]:
 
         tool_config_layout = QtWidgets.QFormLayout()
 
@@ -115,7 +118,7 @@ class Tab:
                                   description_information)
         tool_config_layout.addRow(QtWidgets.QLabel("Settings"), settings)
 
-        new_widgets = {
+        new_widgets: Dict[TabWidgets, QtWidgets.QWidget] = {
             TabWidgets.NAME: name_line,
             TabWidgets.DESCRIPTION: description_information,
             TabWidgets.SETTINGS: settings,
@@ -125,8 +128,8 @@ class Tab:
 
     @classmethod
     def create_workspace(cls, title: str, parent: QtWidgets.QWidget) -> \
-            Tuple[QtWidgets.QWidget, Dict[
-                TabWidgets, QtWidgets.QWidget], QtWidgets.QLayout]:
+            Tuple[QtWidgets.QGroupBox, Dict[
+                TabWidgets, QtWidgets.QWidget], QtWidgets.QFormLayout]:
         tool_workspace = QtWidgets.QGroupBox()
 
         tool_workspace.setTitle(title)
@@ -158,7 +161,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     ) -> None:
         """Create a new item selection tab."""
         super().__init__(parent, work_manager)
-        self.export_action = QtWidgets.QAction(text="summy")
+        self.export_action = QtGui.QAction(text="summy")
         self.log_manager = log_manager
         self.item_selection_model = item_model
         self.options_model: Optional[models.ToolOptionsModel3] = None
@@ -224,7 +227,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         )
 
         cast(
-            QtCore.pyqtBoundSignal,
+            QtCore.SignalInstance,
             selector_view.selectionModel().currentChanged
         ).connect(self._update_tool_selected)
 
@@ -269,6 +272,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
         start_button.setText("Start")
         start_button.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        # pylint: disable=no-member
         start_button.clicked.connect(self._start)
 
         tool_actions_layout.addSpacerItem(
@@ -286,7 +290,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             typing.Type[Workflow],
             self.item_selection_model.data(
                 self.item_selector_view.selectedIndexes()[0],
-                QtCore.Qt.UserRole
+                role=typing.cast(int, QtCore.Qt.UserRole)
             )
         )
         if self.is_ready_to_start():
@@ -327,7 +331,9 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         """Set the current selection based on the index."""
         item = cast(
             typing.Type[Workflow],
-            self.item_selection_model.data(index, QtCore.Qt.UserRole)
+            self.item_selection_model.data(
+                index, role=typing.cast(int, QtCore.Qt.UserRole)
+            )
         )
 
         item_settings = self.workspace_widgets[TabWidgets.SETTINGS]
@@ -361,7 +367,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             warning_message_dialog.setIcon(QtWidgets.QMessageBox.Warning)
             warning_message_dialog.setText(message)
             warning_message_dialog.setDetailedText("".join(stack_trace))
-            layout = warning_message_dialog.layout()
+            layout: QtWidgets.QGridLayout = warning_message_dialog.layout()
 
             layout.addItem(
                 spanner, layout.rowCount(), 0, 1, layout.columnCount())
@@ -380,7 +386,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
 
 class WorkflowSignals(QtCore.QObject):
-    start_workflow = QtCore.pyqtSignal(str, dict)
+    start_workflow = QtCore.Signal(str, dict)
 
 
 class WorkflowsTab(ItemSelectionTab):
@@ -533,7 +539,9 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
     ) -> QtWidgets.QWidget:
 
         if index.isValid():
-            tool_settings = index.data(QtCore.Qt.UserRole)
+            tool_settings = \
+                index.data(role=typing.cast(int, QtCore.Qt.UserRole))
+
             browser_widget = tool_settings.edit_widget()
             if browser_widget:
                 assert isinstance(browser_widget, widgets.CustomItemWidget)
@@ -547,6 +555,7 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
 
     # noinspection PyUnresolvedReferences
     def update_custom_item(self) -> None:
+        # pylint: disable=no-member
         self.commitData.emit(self.sender())
 
     def setEditorData(  # pylint: disable=C0103
@@ -555,7 +564,7 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
             index: QtCore.QModelIndex
     ) -> None:
         if index.isValid():
-            i = index.data(QtCore.Qt.UserRole)
+            i = index.data(role=typing.cast(int, QtCore.Qt.UserRole))
             if isinstance(editor, widgets.CustomItemWidget):
                 editor.data = i.data
         super().setEditorData(editor, index)
@@ -571,13 +580,6 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
             model.setData(index, widget.data)
             return
         super().setModelData(widget, model, index)
-
-    def destroyEditor(  # pylint: disable=C0103
-            self,
-            widget: QtWidgets.QWidget,
-            index: QtCore.QModelIndex
-    ) -> None:
-        super().destroyEditor(widget, index)
 
 
 class TabData(NamedTuple):

@@ -36,20 +36,23 @@ DEVPI_CONFIG = [
 
 
 def run_pylint(){
+    def MAX_TIME = 10
     withEnv(['PYLINTHOME=.']) {
         sh 'pylint --version'
         catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-            tee('reports/pylint_issues.txt'){
-                sh(
-                    label: 'Running pylint',
-                    script: 'pylint speedwagon -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
-                )
+            timeout(MAX_TIME){
+                tee('reports/pylint_issues.txt'){
+                    sh(
+                        label: 'Running pylint',
+                        script: 'pylint speedwagon -j 1 -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
+                    )
+                }
             }
         }
-        tee('reports/pylint.txt'){
+        timeout(MAX_TIME){
             sh(
                 label: 'Running pylint for sonarqube',
-                script: 'pylint speedwagon -d duplicate-code --output-format=parseable',
+                script: 'pylint speedwagon -j 1 -d duplicate-code --output-format=parseable | tee reports/pylint.txt',
                 returnStatus: true
             )
         }
@@ -689,7 +692,7 @@ pipeline {
                                         stage('Run Flake8 Static Analysis') {
                                             steps{
                                                 catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: "UNSTABLE") {
-                                                    sh script: 'flake8 speedwagon --tee --output-file=logs/flake8.log'
+                                                    sh script: 'flake8 speedwagon -j 1 --tee --output-file=logs/flake8.log'
                                                 }
                                             }
                                             post {
@@ -1027,29 +1030,47 @@ pipeline {
                                     equals expected: true, actual: params.DEPLOY_DMG
                                 }
                             }
-                            steps{
-                                unstash 'PYTHON_PACKAGES'
-                                sh(
-                                    label: 'Creating build environment',
-                                    script: '''python3 -m venv --upgrade-deps venv
-                                                venv/bin/pip install pyinstaller
-                                    '''
-                                    )
-                                script{
-                                    findFiles(glob: 'dist/speedwagon*.whl').each{ wheel ->
-                                        sh(label: "Installing ${wheel.name}", script: "venv/bin/pip install ${wheel}")
+                            stages{
+                                stage('Create Build Environment'){
+                                    steps{
+                                        unstash 'PYTHON_PACKAGES'
+                                        sh(
+                                            label: 'Creating build environment',
+                                            script: '''python3 -m venv --upgrade-deps venv
+                                                        venv/bin/pip install pyinstaller
+                                            '''
+                                            )
+                                        script{
+                                            findFiles(glob: 'dist/speedwagon*.whl').each{ wheel ->
+                                                sh(label: "Installing ${wheel.name}", script: "venv/bin/pip install ${wheel}")
+                                            }
+                                        }
+
+                                    }
+                                    post{
+                                        success{
+                                            sh('venv/bin/pip list')
+                                        }
                                     }
                                 }
-                                sh(label: 'Running pyinstaller script', script: 'venv/bin/python packaging/create_osx_app_bundle.py')
-                                sh(label: 'Packaging installer as .dmg file',
-                                    script:"""
-                                        mkdir -p build/appleBundle
-                                        mv \$WORKSPACE/dist/*.app build/appleBundle/
-                                        ln -s /Applications build/appleBundle/Applications
-                                        hdiutil create build/tmp.dmg -ov -volname \"SpeedwagonInstall\" -fs HFS+ -srcfolder \"\$WORKSPACE/build/appleBundle/\"
-                                        hdiutil convert build/tmp.dmg -format UDZO -o dist/Speedwagon-${props.Version}.dmg
-                                        """
-                                    )
+                                stage('Building Apple Application Bundle'){
+                                    steps{
+                                        sh(label: 'Running pyinstaller script', script: 'venv/bin/python packaging/create_osx_app_bundle.py')
+                                    }
+                                }
+                                stage('Packaging as Apple Disk Image'){
+                                    steps{
+                                        sh(label: 'Packaging installer as .dmg file',
+                                            script:"""
+                                                mkdir -p build/appleBundle
+                                                mv \$WORKSPACE/dist/*.app build/appleBundle/
+                                                ln -s /Applications build/appleBundle/Applications
+                                                hdiutil create build/tmp.dmg -ov -volname \"SpeedwagonInstall\" -fs HFS+ -srcfolder \"\$WORKSPACE/build/appleBundle/\"
+                                                hdiutil convert build/tmp.dmg -format UDZO -o dist/Speedwagon-${props.Version}.dmg
+                                                """
+                                            )
+                                    }
+                                }
                             }
                             post{
                                 success{

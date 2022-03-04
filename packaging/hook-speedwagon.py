@@ -1,2 +1,2 @@
 from PyInstaller.utils.hooks import copy_metadata
-datas = copy_metadata('speedwagon')
+datas = copy_metadata('speedwagon', recursive=True)

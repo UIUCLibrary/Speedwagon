@@ -30,8 +30,7 @@ except ImportError:
 
 import webbrowser
 import yaml
-from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
-
+from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
 import speedwagon
 import speedwagon.config
 import speedwagon.models
@@ -239,7 +238,7 @@ class StartupDefault(AbsStarter):
         splash.setEnabled(False)
         splash.setWindowFlags(
             cast(
-                QtCore.Qt.WindowType,
+                QtCore.Qt.WindowFlags,
                 QtCore.Qt.WindowStaysOnTopHint |
                 QtCore.Qt.FramelessWindowHint
              )
@@ -373,14 +372,14 @@ class StartupDefault(AbsStarter):
 
 class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
     class WorkflowSignals(QtCore.QObject):
-        error = QtCore.pyqtSignal([object, object, object])
-        progress_changed = QtCore.pyqtSignal(int)
-        total_jobs_changed = QtCore.pyqtSignal(int)
-        cancel_complete = QtCore.pyqtSignal()
-        message = QtCore.pyqtSignal(str, int)
-        status_changed = QtCore.pyqtSignal(str)
-        started = QtCore.pyqtSignal()
-        finished = QtCore.pyqtSignal(runner_strategies.JobSuccess)
+        error = QtCore.Signal(object, object, object)
+        progress_changed = QtCore.Signal(int)
+        total_jobs_changed = QtCore.Signal(int)
+        cancel_complete = QtCore.Signal()
+        message = QtCore.Signal(str, int)
+        status_changed = QtCore.Signal(str)
+        started = QtCore.Signal()
+        finished = QtCore.Signal(runner_strategies.JobSuccess)
 
         def __init__(self, parent: WorkflowProgress) -> None:
             super().__init__(parent)
@@ -404,7 +403,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         def log(self, text: str, level: int) -> None:
             self.message.emit(text, level)
 
-        @QtCore.pyqtSlot(str)
+        @QtCore.Slot(str)
         def set_banner_text(self, text: str) -> None:
             self.dialog_box.banner.setText(text)
 
@@ -429,7 +428,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
             error.exec()
             self.dialog_box.failed()
 
-        @QtCore.pyqtSlot(object)
+        @QtCore.Slot(object)
         def _finished(self, results) -> None:
             if results in [
                 runner_strategies.JobSuccess.SUCCESS,
@@ -541,7 +540,7 @@ def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
 
 
 class QtRequestMoreInfo(QtCore.QObject):
-    request = QtCore.pyqtSignal(object, object, object, object)
+    request = QtCore.Signal(object, object, object, object)
 
     def __init__(self, parent: typing.Optional[QtWidgets.QWidget]) -> None:
         super().__init__(parent)
@@ -941,6 +940,7 @@ class StartQtThreaded(AbsStarter):
 
         dialog_box = WorkflowProgress(parent=self.windows)
         if main_app is not None:
+            # pylint: disable=no-member
             dialog_box.rejected.connect(main_app.close)
 
         dialog_box.setWindowTitle(workflow_name)
@@ -975,13 +975,8 @@ class StartQtThreaded(AbsStarter):
             parent: typing.Optional[QtWidgets.QWidget] = None,
             dialog_box_title: Optional[str] = None,
     ) -> None:
-        text = str(exc)
-        self.logger.error(text)
-        dialog_box = QtWidgets.QMessageBox(parent)
-        if dialog_box_title is not None:
-            dialog_box.setWindowTitle(dialog_box_title)
-        dialog_box.setText(text)
-        dialog_box.exec_()
+        self.logger.error(str(exc))
+        report_exception_dialog(exc, dialog_box_title, parent)
 
     def _find_invalid(
             self,
@@ -1054,6 +1049,15 @@ class SingleWorkflowLauncher(AbsStarter):
         self._active_workflow = workflow
 
 
+def report_exception_dialog(exc, dialog_box_title, parent):
+    text = str(exc)
+    dialog_box = QtWidgets.QMessageBox(parent)
+    if dialog_box_title is not None:
+        dialog_box.setWindowTitle(dialog_box_title)
+    dialog_box.setText(text)
+    dialog_box.exec_()
+
+
 class SingleWorkflowJSON(AbsStarter):
     """Start up class for loading instructions from a JSON file.
 
@@ -1117,6 +1121,60 @@ class SingleWorkflowJSON(AbsStarter):
                 app.quit()
         return 0
 
+    def report_exception(
+            self,
+            exc: BaseException,
+            parent: typing.Optional[QtWidgets.QWidget] = None,
+            dialog_box_title: Optional[str] = None,
+    ) -> None:
+        self.logger.error(str(exc))
+        report_exception_dialog(
+            exc=exc,
+            dialog_box_title=dialog_box_title,
+            parent=parent
+        )
+
+    def _run_workflow(
+            self,
+            job_manager: runner_strategies.BackgroundJobManager,
+            workflow: speedwagon.job.AbsWorkflow,
+            options,
+    ):
+
+        try:
+            if workflow.name is None:
+                raise ValueError(f"Unknown workflow: '{workflow}'")
+            workflow.validate_user_options(**options)
+        except ValueError as user_option_error:
+            self.report_exception(
+                parent=None,
+                exc=user_option_error,
+                dialog_box_title="Invalid User Options"
+            )
+            return
+
+        dialog_box = WorkflowProgress()
+
+        dialog_box.setWindowTitle(workflow.name or "Workflow")
+        dialog_box.show()
+
+        callbacks = WorkflowProgressCallbacks(dialog_box)
+        dialog_box.attach_logger(job_manager.logger)
+        threaded_events = ThreadedEvents()
+        job_manager.submit_job(
+            workflow_name=workflow.name,
+            options=options,
+            app=self,
+            liaison=runner_strategies.JobManagerLiaison(
+                callbacks=callbacks,
+                events=threaded_events
+            )
+        )
+        threaded_events.started.set()
+        dialog_box.exec()
+        if callable(self.on_exit):
+            self.on_exit()
+
     @staticmethod
     def _load_main_window(
             job_manager: "runner_strategies.BackgroundJobManager",
@@ -1127,28 +1185,6 @@ class SingleWorkflowJSON(AbsStarter):
             window.setWindowTitle(title)
 
         return window
-
-    def _run_workflow(
-            self,
-            job_manager: runner_strategies.BackgroundJobManager,
-            workflow,
-            options
-    ):
-        window = \
-            SingleWorkflowJSON._load_main_window(job_manager, workflow.name)
-
-        runner_strategy = runner_strategies.QtRunner(window)
-        window.logger = cast(logging.Logger, window.logger)
-        window.logger.setLevel(logging.INFO)
-        window.show()
-        window.console.log_handler.capacity = 1
-        runner_strategy.run(workflow,
-                            options,
-                            window.logger
-                            )
-
-        if self.on_exit is not None:
-            self.on_exit(window)
 
 
 class MultiWorkflowLauncher(AbsStarter):
@@ -1223,6 +1259,7 @@ class TabsEditorApp(QtWidgets.QDialog):
 
         self.setLayout(layout)
 
+        # pylint: disable=no-member
         self.dialog_button_box.accepted.connect(self.on_okay)
         self.dialog_button_box.rejected.connect(self.on_cancel)
         self.rejected.connect(self.on_cancel)

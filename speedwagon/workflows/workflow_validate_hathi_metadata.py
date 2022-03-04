@@ -4,7 +4,7 @@ import os
 from typing import List, Any, Optional
 from uiucprescon import imagevalidate
 
-from PyQt5 import QtWidgets  # type: ignore
+from PySide6 import QtWidgets  # type: ignore
 
 import speedwagon
 from speedwagon.job import Workflow

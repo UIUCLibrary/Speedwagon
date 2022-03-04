@@ -10,7 +10,7 @@ import sys
 import typing
 from typing import Type, Optional, Iterable, Dict, List, Any, Tuple, Set
 
-from PyQt5 import QtWidgets  # type: ignore
+from PySide6 import QtWidgets
 
 from speedwagon import tasks
 __all__ = [

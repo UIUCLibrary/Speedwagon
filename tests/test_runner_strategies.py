@@ -8,6 +8,8 @@ from speedwagon import runner_strategies, tasks
 import speedwagon
 
 
+@pytest.mark.filterwarnings(
+    "ignore:Use UsingExternalManagerForAdapter2 instead:DeprecationWarning")
 def test_job_call_order(monkeypatch):
 
     manager = Mock(name="manager")
@@ -60,13 +62,16 @@ def test_job_call_order(monkeypatch):
         'generate_report'
     ]
 
-
 @pytest.mark.parametrize("step", [
     "initial_task",
     'discover_task_metadata',
     'completion_task'
 ])
+@pytest.mark.filterwarnings(
+    "ignore:Use UsingExternalManagerForAdapter2 instead:DeprecationWarning")
 def test_task_exception_logs_error(step):
+    # with pytest.warns():
+
     manager = Mock(name="manager")
     manager.get_results = Mock(return_value=["dddd"])
     manager.open = MagicMock(name="manager.opena")
@@ -101,6 +106,8 @@ def test_task_exception_logs_error(step):
     assert logger.error.called is True
 
 
+@pytest.mark.filterwarnings(
+    "ignore:Use UsingExternalManagerForAdapter2 instead:DeprecationWarning")
 @pytest.mark.parametrize("step", [
     "initial_task",
     'discover_task_metadata',
@@ -269,6 +276,8 @@ class TestTaskGenerator:
         )
         return workflow
 
+    @pytest.mark.filterwarnings(
+        "ignore:No way to request info from user:UserWarning")
     def test_tasks_call_init_task(self, workflow):
         task_generator = runner_strategies.TaskGenerator(
             workflow=workflow,
@@ -281,6 +290,8 @@ class TestTaskGenerator:
 
         assert workflow.initial_task.called is True
 
+    @pytest.mark.filterwarnings(
+        "ignore:No way to request info from user:UserWarning")
     def test_tasks_runs_discover_metadata(self, workflow):
         task_generator = runner_strategies.TaskGenerator(
             workflow=workflow,
@@ -292,6 +303,8 @@ class TestTaskGenerator:
             assert isinstance(subtask, speedwagon.tasks.Subtask)
         assert workflow.discover_task_metadata.called is True
 
+    @pytest.mark.filterwarnings(
+        "ignore:No way to request info from user:UserWarning")
     def test_tasks_runs_create_new_task(self, workflow):
         task_generator = runner_strategies.TaskGenerator(
             workflow=workflow,
@@ -303,6 +316,8 @@ class TestTaskGenerator:
             assert isinstance(subtask, speedwagon.tasks.Subtask)
         assert workflow.create_new_task.called is True
 
+    @pytest.mark.filterwarnings(
+        "ignore:No way to request info from user:UserWarning")
     def test_tasks_runs_completion_task(self, workflow):
         task_generator = runner_strategies.TaskGenerator(
             workflow=workflow,

@@ -3,7 +3,7 @@ from unittest.mock import Mock, MagicMock
 import pytest
 from uiucprescon.packager.packages import collection
 from speedwagon.workflows import title_page_selection
-from PyQt5 import QtWidgets, QtCore
+from PySide6 import QtWidgets, QtCore
 
 
 class TestFileSelectDelegate:
@@ -18,6 +18,8 @@ class TestFileSelectDelegate:
             QtWidgets.QComboBox
         )
 
+    @pytest.mark.filterwarnings(
+        "ignore:Use get_files instead:DeprecationWarning")
     def test_set_data_to_title_page_if_already_set(self, delegate):
         combo_box = QtWidgets.QComboBox()
 
@@ -43,6 +45,8 @@ class TestFileSelectDelegate:
         delegate.setEditorData(combo_box, index)
         assert combo_box.currentText() == "file2.jp2"
 
+    @pytest.mark.filterwarnings(
+        "ignore:Use get_files instead:DeprecationWarning")
     def test_set_data_to_first_file_if_no_title_page_set(self, delegate):
         combo_box = QtWidgets.QComboBox()
 

@@ -12,9 +12,8 @@ except ImportError:  # pragma: no cover
 
 from typing import Optional, Dict, cast, Type, Union
 
-from PyQt5 import QtWidgets, QtCore  # type: ignore
-from PyQt5 import uic
-from speedwagon import config, models, tabs, job
+from PySide6 import QtWidgets, QtCore  # type: ignore
+from speedwagon import config, models, tabs, job, ui_loader
 
 
 __all__ = ['GlobalSettingsTab', 'TabsConfigurationTab', 'TabEditor']
@@ -100,6 +99,7 @@ class SettingsDialog(QtWidgets.QDialog):
         self.open_settings_path_button = QtWidgets.QPushButton(self)
         self.open_settings_path_button.setText("Open Config File Directory")
 
+        # pylint: disable=no-member
         # pylint: disable=unnecessary-lambda
         # This needs a lambda to delay execution. Otherwise Qt might segfault
         # when it tries to open the dialog box
@@ -349,7 +349,7 @@ class TabEditorWidget(QtWidgets.QWidget):
 
     def load_ui_file(self) -> None:
         with resources.path("speedwagon.ui", "tab_editor.ui") as ui_file:
-            uic.loadUi(ui_file, self)
+            ui_loader.load_ui(str(ui_file), self)
 
 
 class TabEditor(TabEditorWidget):
@@ -387,6 +387,8 @@ class TabEditor(TabEditorWidget):
         self.delete_current_tab_button.clicked.connect(self._delete_tab)
         self.add_items_button.clicked.connect(self._add_items_to_tab)
         self.remove_items_button.clicked.connect(self._remove_items)
+
+        # pylint: disable=no-member
         self.tabs_model.dataChanged.connect(self.on_modified)
         self.modified: bool = False
         self.splitter.setChildrenCollapsible(False)
@@ -418,7 +420,7 @@ class TabEditor(TabEditorWidget):
         )
         index = model.index(tab)
         if index.isValid():
-            data = model.data(index, role=QtCore.Qt.UserRole)
+            data = model.data(index, role=typing.cast(int, QtCore.Qt.UserRole))
             self.tab_workflows_list_view.setModel(data.workflows_model)
         else:
             self.tab_workflows_list_view.setModel(models.WorkflowListModel2())

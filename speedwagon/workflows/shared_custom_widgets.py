@@ -2,9 +2,8 @@
 
 import abc
 import os
-
 from typing import Type, Union, List
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PySide6 import QtWidgets, QtCore, QtGui
 
 
 class AbsCustomData2(metaclass=abc.ABCMeta):
@@ -28,7 +27,7 @@ class WidgetMeta(abc.ABCMeta, type(QtCore.QObject)):  # type: ignore
 class CustomItemWidget(QtWidgets.QWidget):
     """Custom item Widget."""
 
-    editingFinished = QtCore.pyqtSignal()
+    editingFinished = QtCore.Signal()
 
     def __init__(self, parent=None, *args, **kwargs) -> None:
         """Create a custom item widget."""
@@ -50,7 +49,7 @@ class CustomItemWidget(QtWidgets.QWidget):
         self.editingFinished.emit()
 
 
-class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
+class AbsBrowseableWidget(CustomItemWidget):
     """Abstract browsable widget."""
 
     def __init__(self, *args, **kwargs) -> None:
@@ -65,7 +64,9 @@ class AbsBrowseableWidget(CustomItemWidget, metaclass=WidgetMeta):
 
         self.action.triggered.connect(self.browse_clicked)
 
+        # pylint: disable=no-member
         self.text_line.textEdited.connect(self._change_data)
+
         self.inner_layout.addWidget(self.text_line)
 
     def get_browse_icon(self) -> QtGui.QIcon:
@@ -244,7 +245,7 @@ class UserOptionPythonDataType2(UserOption2):
         return isinstance(self.data, self.data_type)
 
 
-class ListSelectionWidget(CustomItemWidget, metaclass=WidgetMeta):
+class ListSelectionWidget(CustomItemWidget):
     """List selection widget."""
 
     def __init__(self, selections: List[str], *args, **kwargs) -> None:
@@ -256,6 +257,8 @@ class ListSelectionWidget(CustomItemWidget, metaclass=WidgetMeta):
         self._model = QtCore.QStringListModel()
         self._model.setStringList(self._selections)
         self._combobox.setModel(self._model)
+
+        # pylint: disable=no-member
         self._combobox.currentIndexChanged.connect(self._update)
         self.inner_layout.addWidget(self._combobox,
                                     alignment=QtCore.Qt.AlignBaseline)
