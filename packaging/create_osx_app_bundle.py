@@ -43,7 +43,7 @@ def package(specs_file, dest):
 def main():
     speedwagon_metadata = metadata.metadata("speedwagon")
 
-    app_build_path =os.path.join(TOP_LEVEL_DIR, "build", "MacOS App")
+    app_build_path = os.path.join(TOP_LEVEL_DIR, "build", "MacOS App")
 
     package_file = package(
         specs_file=os.path.join(os.path.dirname(__file__), SPEC_FILE),
@@ -54,6 +54,9 @@ def main():
         package_file,
         destination_path=WORKPATH,
         package_metadata=speedwagon_metadata)
+
+    with open(cpack_config_file) as f:
+        print(f.read())
 
     print(f"Running CPack with {cpack_config_file}")
     run_cpack(cpack_config_file,
