@@ -7,9 +7,8 @@ import typing
 import warnings
 from typing import Collection, Union
 
-from PyQt5 import QtWidgets, QtGui, QtCore  # type: ignore
-from PyQt5 import uic
-from PyQt5.QtWidgets import QWidget
+from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
+from speedwagon import ui_loader
 
 
 try:  # pragma: no cover
@@ -138,7 +137,7 @@ class SystemInfoDialog(QtWidgets.QDialog):
 
         self._button_box = \
             QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
-
+        # pylint: disable=no-member
         self._button_box.accepted.connect(self.accept)
         layout.addWidget(self._button_box)
 
@@ -367,7 +366,7 @@ class WorkflowProgressStateDone(AbsWorkflowProgressState):
 class WorkflowProgressGui(QtWidgets.QDialog):
     class DialogLogHandler(logging.handlers.BufferingHandler):
         class LogSignals(QtCore.QObject):
-            message = QtCore.pyqtSignal(str)
+            message = QtCore.Signal(str)
 
         def __init__(self, dialog: "WorkflowProgressGui") -> None:
             super().__init__(capacity=100)
@@ -383,7 +382,10 @@ class WorkflowProgressGui(QtWidgets.QDialog):
                 self.signals.message.emit("".join(results))
             super().flush()
 
-    def __init__(self, parent: typing.Optional[QWidget] = None) -> None:
+    def __init__(
+            self,
+            parent: typing.Optional[QtWidgets.QWidget] = None
+    ) -> None:
         super().__init__(parent)
 
         # All ui info is located in the .ui file. Any graphical changes should
@@ -392,7 +394,7 @@ class WorkflowProgressGui(QtWidgets.QDialog):
                 "speedwagon.ui",
                 "workflow_progress.ui"
         ) as ui_file:
-            uic.loadUi(ui_file, self)
+            ui_loader.load_ui(str(ui_file), self)
 
         # =====================================================================
         #  Type hints loaded to help with development after loading in the
@@ -440,9 +442,12 @@ class WorkflowProgressGui(QtWidgets.QDialog):
 
 class WorkflowProgress(WorkflowProgressGui):
 
-    aborted = QtCore.pyqtSignal()
+    aborted = QtCore.Signal()
 
-    def __init__(self, parent: typing.Optional[QWidget] = None) -> None:
+    def __init__(
+            self,
+            parent: typing.Optional[QtWidgets.QWidget] = None
+    ) -> None:
         super().__init__(parent)
 
         # =====================================================================
@@ -452,8 +457,9 @@ class WorkflowProgress(WorkflowProgressGui):
 
         self._console_data.setDefaultFont(mono_font)
 
+        # pylint: disable=no-member
         typing.cast(
-            QtCore.pyqtBoundSignal,
+            QtCore.SignalInstance,
             self._console_data.contentsChanged
         ).connect(self._follow_text)
 
@@ -529,11 +535,11 @@ class WorkflowProgress(WorkflowProgressGui):
     def success_completed(self) -> None:
         self.state = WorkflowProgressStateDone(self)
 
-    @QtCore.pyqtSlot(int)
+    @QtCore.Slot(int)
     def set_total_jobs(self, value: int) -> None:
         self.progress_bar.setMaximum(value)
 
-    @QtCore.pyqtSlot(int)
+    @QtCore.Slot(int)
     def set_current_progress(self, value: int) -> None:
         self.progress_bar.setValue(value)
 

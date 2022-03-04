@@ -1,6 +1,6 @@
 from behave import *
 from behave import runner
-from PyQt5 import QtCore
+from PySide6 import QtCore
 import speedwagon
 from speedwagon.workflows.shared_custom_widgets import  UserOptionCustomDataType
 

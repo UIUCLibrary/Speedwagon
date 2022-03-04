@@ -1,5 +1,5 @@
 HathiValidate>=0.3.4
-PyQt5
+PySide6
 ruamel.yaml
 six>=1.11
 pydocstyle

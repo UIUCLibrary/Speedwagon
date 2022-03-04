@@ -3,7 +3,7 @@ import itertools
 import os
 from typing import Mapping, List, Any, Sequence, Dict, Union, Optional
 import typing
-from PyQt5 import QtWidgets  # type: ignore
+from PySide6 import QtWidgets  # type: ignore
 
 import uiucprescon.packager.packages
 from uiucprescon.packager import PackageFactory

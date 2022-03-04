@@ -166,6 +166,8 @@ def simple_task_builder_with_2_subtasks(tmpdir_factory):
 
 
 @pytest.mark.adapter
+@pytest.mark.filterwarnings(
+    "ignore:don't use directly:DeprecationWarning")
 def test_adapter_results(simple_task_builder_with_2_subtasks):
     new_task = simple_task_builder_with_2_subtasks.build_task()
 
@@ -194,6 +196,8 @@ class LogCatcher(logging.Handler):
 
 
 @pytest.mark.adapter
+@pytest.mark.filterwarnings(
+    "ignore:don't use directly:DeprecationWarning")
 def test_adapter_logs(simple_task_builder_with_2_subtasks):
     logs = []
     log_catcher = LogCatcher(logs)
@@ -252,6 +256,7 @@ def test_posttask_builder(tmpdir):
 
 
 @pytest.mark.adapter
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_adapter_results_with_pretask(tmpdir):
     temp_path = tmpdir.mkdir("test")
     pretask = SimplePreTask("Starting")
@@ -286,6 +291,8 @@ def test_adapter_results_with_pretask(tmpdir):
 
 @pytest.mark.slow
 @pytest.mark.adapter
+@pytest.mark.filterwarnings(
+    "ignore:don't use directly:DeprecationWarning")
 def test_adapter_results_with_posttask(tmpdir):
     temp_path = tmpdir.mkdir("test")
     post_task = SimpleSubtask("Ending")

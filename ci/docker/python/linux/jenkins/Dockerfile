@@ -45,6 +45,7 @@ RUN apt-get update && apt-get install -y tzdata && \
                        locales \
                        locales-all \
                        latexmk \
+                       libegl-dev \
                        texlive-formats-extra \
                        xvfb
 RUN mkdir -p /.cache/pip && \

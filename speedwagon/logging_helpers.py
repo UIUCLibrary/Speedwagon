@@ -6,7 +6,7 @@ from logging import LogRecord
 import logging.handlers
 
 from typing import Callable
-from PyQt5 import QtCore
+from PySide6 import QtCore
 
 
 class GuiLogHandler(logging.handlers.BufferingHandler):
@@ -34,7 +34,7 @@ class SignalLogHandler(logging.handlers.BufferingHandler):
          This is problematic, the signal could be GC and cause a segfault
     """
 
-    def __init__(self, signal: QtCore.pyqtBoundSignal) -> None:
+    def __init__(self, signal: QtCore.SignalInstance) -> None:
         """Create a new log handler for Qt signals."""
         super().__init__(capacity=10)
         self._signal = signal

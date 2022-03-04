@@ -16,7 +16,7 @@ from typing import Callable, Optional, Any, Dict, Type
 from types import TracebackType
 from collections import namedtuple
 
-from PyQt5 import QtWidgets  # type: ignore
+from PySide6 import QtWidgets  # type: ignore
 
 from .dialog.dialogs import WorkProgressBar
 from .tasks import QueueAdapter
