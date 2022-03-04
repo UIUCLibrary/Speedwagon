@@ -24,6 +24,6 @@
     <file src="tools\**" target="tools" />
     <file src="[[InstallerFile]]" target="tools\[[InstallerFile]]" />
     <file src="deps\**" target="tools\dist\deps" />
-    <file src="docs\*.pdf" target="documentation" />
+    <file src="docs\*.pdf" target="tools\documentation" />
   </files>
 </package>
