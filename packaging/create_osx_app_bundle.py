@@ -54,7 +54,8 @@ def main():
         package_file,
         destination_path=WORKPATH,
         package_metadata=speedwagon_metadata)
-    print("Running CPack")
+
+    print(f"Running CPack with {cpack_config_file}")
     run_cpack(cpack_config_file,
               build_path=os.path.join(TOP_LEVEL_DIR, "dist")
               )
@@ -150,9 +151,10 @@ def write_cpack_config_file(source_app, destination_path, package_metadata: emai
         writer.write(template.render(**data))
     return os.path.abspath(config_file)
 
+
 def run_cpack(
         config_file,
-        build_path: str =os.path.join(TOP_LEVEL_DIR, "dist"),
+        build_path: str = os.path.join(TOP_LEVEL_DIR, "dist"),
 ):
     cpack_cmd = shutil.which("cpack", path=cmake.CMAKE_BIN_DIR)
     args = [
@@ -160,7 +162,8 @@ def run_cpack(
         "-B", build_path,
         "-G", "DragNDrop"
     ]
-    subprocess.call([cpack_cmd] + args)
+    subprocess.check_call([cpack_cmd] + args)
+
 
 if __name__ == '__main__':
     main()
