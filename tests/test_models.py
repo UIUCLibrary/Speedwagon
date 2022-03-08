@@ -304,6 +304,11 @@ class TestToolOptionsModel4:
 
         assert "widget_type" in json.loads(json_string)
 
+    def test_get_data_invalid_index_is_none(self, data):
+        model = models.ToolOptionsModel4(data)
+        index = model.index(len(data) + 1, 0)
+        assert model.data(index) is None
+
     def test_set_data(self, data):
         model = models.ToolOptionsModel4(data)
         index = model.index(0, 0)
