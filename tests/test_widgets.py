@@ -24,3 +24,8 @@ class TestDelegateSelection:
         editor_widget = delegate_widget.createEditor(parent, options, index)
         assert isinstance(editor_widget, QtWidgets.QWidget)
 
+
+class TestDropDownWidget:
+    def test_empty_widget_metadata(self, qtbot):
+        widget = speedwagon.widgets.DropDownWidget()
+        assert isinstance(widget, QtWidgets.QWidget)

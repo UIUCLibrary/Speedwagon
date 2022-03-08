@@ -77,21 +77,18 @@ class EditDelegateWidget(QtWidgets.QWidget):
 
 
 class DropDownWidget(EditDelegateWidget):
-    def __init__(self, widget_metadata, *args, **kwargs) -> None:
+    def __init__(self, widget_metadata=None, *args, **kwargs) -> None:
         super().__init__(widget_metadata, *args, **kwargs)
+        widget_metadata = widget_metadata or {
+            'selections': []
+        }
         self.combo_box = QtWidgets.QComboBox(self)
         model = QtCore.QStringListModel(widget_metadata['selections'])
         self.combo_box.setModel(model)
-        # model: QtGui.QStandardItemModel = self.combo_box.model()
-        # model: QtGui.Q = self.combo_box.model()
 
         self.setFocusProxy(self.combo_box)
         self.layout().addWidget(self.combo_box)
         self.combo_box.currentTextChanged.connect(self.update_data)
-        # for selection in widget_metadata['selections']:
-        #     model.appendRow(selection)
-        #     # print(model.insertRow(0, selection))
-        #     # self.combo_box.addItem(selection)
 
     def update_data(self, value):
         self.data = value
