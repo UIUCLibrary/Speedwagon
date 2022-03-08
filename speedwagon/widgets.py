@@ -23,12 +23,13 @@ class AbsOutputOptionDataType(abc.ABC):
         self.label = label
         self.value = None
 
+    def serialize(self) -> typing.Dict[str, typing.Any]:
+        return {
+            "widget_type": self.widget_name
+        }
+
     def build_json_data(self) -> str:
-        return json.dumps(
-            {
-                "widget_type": self.widget_name
-            }
-        )
+        return json.dumps(self.serialize())
 
 
 class DropDownSelection(AbsOutputOptionDataType):
@@ -41,13 +42,10 @@ class DropDownSelection(AbsOutputOptionDataType):
     def add_selection(self, label: str) -> None:
         self._selections.append(label)
 
-    def build_json_data(self) -> str:
-        return json.dumps(
-            {
-                "widget_type": self.widget_name,
-                "selections": self._selections
-            }
-        )
+    def serialize(self) -> typing.Dict[str, typing.Any]:
+        data = super().serialize()
+        data["selections"] = self._selections
+        return data
 
 
 class TextLineEditData(AbsOutputOptionDataType):
@@ -180,20 +178,14 @@ class FileSelectData(AbsOutputOptionDataType):
         super().__init__(label)
         self.filter: Optional[str] = None
 
-    def build_json_data(self) -> str:
-        data = json.loads(super().build_json_data())
+    def serialize(self) -> typing.Dict[str, typing.Any]:
+        data = super().serialize()
         data['filter'] = self.filter
-        return json.dumps(data)
+        return data
 
 
 class DirectorySelect(AbsOutputOptionDataType):
     widget_name = "DirectorySelect"
-
-
-class OptionWidgetBuilder(abc.ABC):
-    @abc.abstractmethod
-    def build(self, widget: AbsOutputOptionDataType) -> None:
-        """Build the widget in the correct format."""
 
 
 class DelegateSelection(QtWidgets.QStyledItemDelegate):
