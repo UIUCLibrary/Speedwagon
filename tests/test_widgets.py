@@ -29,3 +29,15 @@ class TestDropDownWidget:
     def test_empty_widget_metadata(self, qtbot):
         widget = speedwagon.widgets.DropDownWidget()
         assert isinstance(widget, QtWidgets.QWidget)
+
+
+class TestFileSelectWidget:
+    def test_empty_widget_metadata(self, qtbot):
+        widget = speedwagon.widgets.FileSelectWidget()
+        assert isinstance(widget, QtWidgets.QWidget)
+
+
+class TestDirectorySelectWidget:
+    def test_empty_widget_metadata(self, qtbot):
+        widget = speedwagon.widgets.DirectorySelectWidget()
+        assert isinstance(widget, QtWidgets.QWidget)

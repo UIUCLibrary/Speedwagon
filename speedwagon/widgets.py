@@ -58,10 +58,10 @@ class EditDelegateWidget(QtWidgets.QWidget):
     editingFinished = QtCore.Signal()
     dataChanged = QtCore.Signal()
 
-    def __init__(self, widget_metadata, *args, **kwargs) -> None:
+    def __init__(self, widget_metadata=None, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._data = None
-        self.widget_metadata = widget_metadata
+        self.widget_metadata = widget_metadata or {}
         inner_layout = QtWidgets.QHBoxLayout(parent=self)
         inner_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(inner_layout)
@@ -96,7 +96,7 @@ class DropDownWidget(EditDelegateWidget):
 
 class FileSystemItemSelectWidget(EditDelegateWidget):
 
-    def __init__(self, widget_metadata, *args, **kwargs):
+    def __init__(self, widget_metadata=None, *args, **kwargs):
         super().__init__(widget_metadata, *args, **kwargs)
         self.edit = QtWidgets.QLineEdit(parent=self)
         self.edit.textChanged.connect(self._update_data_from_line_edit)
@@ -141,7 +141,7 @@ class DirectorySelectWidget(FileSystemItemSelectWidget):
             self.data = data
             self.dataChanged.emit()
 
-    def __init__(self, widget_metadata, *args, **kwargs) -> None:
+    def __init__(self, widget_metadata=None, *args, **kwargs) -> None:
         super().__init__(widget_metadata, *args, **kwargs)
 
 
@@ -155,8 +155,9 @@ class FileSelectWidget(FileSystemItemSelectWidget):
         browse_file_action.triggered.connect(self.browse_file)
         return browse_file_action
 
-    def __init__(self, widget_metadata, *args, **kwargs):
+    def __init__(self, widget_metadata=None, *args, **kwargs):
         super().__init__(widget_metadata, *args, **kwargs)
+        widget_metadata = widget_metadata or {}
         self.filter = widget_metadata.get('filter')
 
     def browse_file(self):
