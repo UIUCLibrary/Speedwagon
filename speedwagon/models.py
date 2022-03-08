@@ -4,8 +4,6 @@ import sys
 import typing
 from typing import Type, Dict, List, Any, Union, Tuple, Optional, cast
 
-import PySide6.QtCore
-
 try:
     from typing import Final
 except ImportError:
@@ -462,16 +460,19 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
     ) -> int:
         return len(self._data)
 
-    def headerData(self, section: int,
+    def headerData(self,
+                   section: int,
                    orientation: QtCore.Qt.Orientation,
-                   role: int = ...) -> Any:
+                   role: int = QtCore.Qt.DisplayRole) -> Any:
         if orientation == QtCore.Qt.Vertical and \
                 role == QtCore.Qt.DisplayRole:
             return self._data[section].label
 
-    def data(self, index: Union[
-        PySide6.QtCore.QModelIndex, PySide6.QtCore.QPersistentModelIndex],
-             role: int = ...) -> Any:
+    def data(
+            self,
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+            role: int = QtCore.Qt.DisplayRole
+    ) -> Any:
         if not index.isValid():
             return None
         item = self._data[index.row()]
@@ -482,9 +483,11 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             return item.build_json_data()
         return None
 
-    def setData(self, index: Union[
-        QtCore.QModelIndex, QtCore.QPersistentModelIndex],
-                value: Any, role: int = ...) -> bool:
+    def setData(
+            self,
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+            value: Any,
+            role: int = QtCore.Qt.EditRole) -> bool:
         if role == QtCore.Qt.EditRole and value is not None:
             self._data[index.row()].value = value
             return True
