@@ -88,6 +88,7 @@ class DropDownWidget(EditDelegateWidget):
 
         self.setFocusProxy(self.combo_box)
         self.layout().addWidget(self.combo_box)
+        # pylint: disable=no-member
         self.combo_box.currentTextChanged.connect(self.update_data)
 
     def update_data(self, value):
@@ -99,6 +100,7 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
     def __init__(self, *args, widget_metadata=None, **kwargs):
         super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
         self.edit = QtWidgets.QLineEdit(parent=self)
+        # pylint: disable=no-member
         self.edit.textChanged.connect(self._update_data_from_line_edit)
         self.edit.editingFinished.connect(self.editingFinished)
         self.edit.addAction(
@@ -128,6 +130,7 @@ class DirectorySelectWidget(FileSystemItemSelectWidget):
         browse_dir_action = QtGui.QAction(
             icon, "Browse", parent=self
         )
+        # pylint: disable=no-member
         browse_dir_action.triggered.connect(self.browse_dir)
         return browse_dir_action
 
@@ -141,9 +144,6 @@ class DirectorySelectWidget(FileSystemItemSelectWidget):
             self.data = data
             self.dataChanged.emit()
 
-    def __init__(self, *args, widget_metadata=None, **kwargs) -> None:
-        super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
-
 
 class FileSelectWidget(FileSystemItemSelectWidget):
     def get_browse_action(self):
@@ -152,6 +152,7 @@ class FileSelectWidget(FileSystemItemSelectWidget):
         browse_file_action = QtGui.QAction(
             icon, "Browse", parent=self
         )
+        # pylint: disable=no-member
         browse_file_action.triggered.connect(self.browse_file)
         return browse_file_action
 
