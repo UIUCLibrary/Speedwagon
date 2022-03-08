@@ -467,6 +467,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
         if orientation == QtCore.Qt.Vertical and \
                 role == QtCore.Qt.DisplayRole:
             return self._data[section].label
+        return None
 
     def data(
             self,
