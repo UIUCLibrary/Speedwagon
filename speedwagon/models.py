@@ -431,7 +431,7 @@ class ToolOptionsModel3(ToolOptionsModel):
 
 
 class ToolOptionsModel4(QtCore.QAbstractListModel):
-    JsonDataRole = QtCore.Qt.UserRole + 1
+    JsonDataRole = cast(int, QtCore.Qt.UserRole) + 1
 
     def __init__(
             self,
@@ -456,14 +456,14 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             parent: Union[
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex
-            ] = ...
+            ] = None
     ) -> int:
         return len(self._data)
 
     def headerData(self,
                    section: int,
                    orientation: QtCore.Qt.Orientation,
-                   role: int = QtCore.Qt.DisplayRole) -> Any:
+                   role: int = cast(int, QtCore.Qt.DisplayRole)) -> Any:
         if orientation == QtCore.Qt.Vertical and \
                 role == QtCore.Qt.DisplayRole:
             return self._data[section].label
@@ -471,7 +471,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
     def data(
             self,
             index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
-            role: int = QtCore.Qt.DisplayRole
+            role: int = typing.cast(int, QtCore.Qt.DisplayRole)
     ) -> Any:
         if not index.isValid():
             return None
@@ -487,7 +487,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             self,
             index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
             value: Any,
-            role: int = QtCore.Qt.EditRole) -> bool:
+            role: int = typing.cast(int, QtCore.Qt.EditRole)) -> bool:
         if role == QtCore.Qt.EditRole and value is not None:
             self._data[index.row()].value = value
             return True
