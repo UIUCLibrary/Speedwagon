@@ -257,8 +257,8 @@ class TestToolOptionsModel4:
         qtbot.addWidget(table)
         return table
 
-
-    def test_init(self, qtbot):
+    @pytest.fixture
+    def data(self):
         checksum_select = widgets.FileSelectData('Checksum File')
         checksum_select.filter = "Checksum files (*.md5)"
 
@@ -267,29 +267,24 @@ class TestToolOptionsModel4:
         options.add_selection("Bacon eggs")
         options.add_selection("Spam")
 
-        data = [
+        return [
             checksum_select,
             options,
             widgets.DirectorySelect('Eggs')
         ]
 
+    def test_init(self, qtbot, data):
         model = models.ToolOptionsModel4(data)
-        heading = model.headerData(0, QtCore.Qt.Vertical, QtCore.Qt.DisplayRole)
-        assert heading == 'Checksum File'
-        # table_widget.setModel(model)
-        # a = widgets.DelegateSelection()
-        # table_widget.setItemDelegate(a)
-        # table_widget.edit()
-        # my_delegate: widgets.DelegateSelection = table_widget.itemDelegateForIndex(model.index(0,0))
-        # print(a)
-        # table_widget.selectRow(0)
-        # my_delegate: widgets.DelegateSelection = table_widget.itemDelegate()
-        # print(my_delegate.)
-        # qtbot.keyClicks(my_delegate.fileComboBox, '*.avi')
-        # dialog_box.exec()
-        # print("done")
+        heading = model.headerData(0,
+                                   QtCore.Qt.Vertical,
+                                   QtCore.Qt.DisplayRole)
 
-        # table.exec()
+        assert heading == data[0].label
+
+    def test_rows_match_data_size(self, qtbot,data):
+        model = models.ToolOptionsModel4(data)
+        assert model.rowCount() == len(data)
+
 
 
 class TestSettingsModel:
