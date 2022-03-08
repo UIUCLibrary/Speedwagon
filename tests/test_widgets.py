@@ -41,3 +41,10 @@ class TestDirectorySelectWidget:
     def test_empty_widget_metadata(self, qtbot):
         widget = speedwagon.widgets.DirectorySelectWidget()
         assert isinstance(widget, QtWidgets.QWidget)
+
+
+def test_AbsOutputOptionDataType_needs_widget_name():
+    with pytest.raises(TypeError):
+        class BadClass(speedwagon.widgets.AbsOutputOptionDataType):
+            pass
+        BadClass(label="Dummy")
