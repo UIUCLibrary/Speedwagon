@@ -5,7 +5,6 @@ import warnings
 from typing import Union, Optional
 
 from PySide6 import QtWidgets, QtCore, QtGui
-from speedwagon.workflows import shared_custom_widgets
 import speedwagon.models
 
 
@@ -24,10 +23,6 @@ class AbsOutputOptionDataType(abc.ABC):
         self.label = label
         self.value = None
 
-    @abc.abstractmethod
-    def build_qt_widget(self, parent) -> QtWidgets.QWidget:
-        pass
-
     def build_json_data(self) -> str:
         return json.dumps(
             {
@@ -43,12 +38,6 @@ class DropDownSelection(AbsOutputOptionDataType):
         super().__init__(label)
         self._selections: typing.List[str] = []
 
-    def build_qt_widget(self, parent) -> QtWidgets.QWidget:
-        new_widget = QtWidgets.QComboBox(parent=parent)
-        for selection in self._selections:
-            new_widget.addItem(selection)
-        return new_widget
-
     def add_selection(self, label: str) -> None:
         self._selections.append(label)
 
@@ -63,11 +52,6 @@ class DropDownSelection(AbsOutputOptionDataType):
 
 class TextLineEditWidget(AbsOutputOptionDataType):
     widget_name = "line_edit"
-
-    def build_qt_widget(self, parent) -> QtWidgets.QWidget:
-        new_widget = QtWidgets.QLineEdit(parent)
-        new_widget.setText(self.label)
-        return new_widget
 
 
 class EditDelegateWidget(QtWidgets.QWidget):
@@ -197,16 +181,6 @@ class FileSelectData(AbsOutputOptionDataType):
         super().__init__(label)
         self.filter: Optional[str] = None
 
-    def build_qt_widget(self, parent) -> QtWidgets.QWidget:
-        text_line = QtWidgets.QLineEdit(parent)
-        icon = QtWidgets.QApplication.style().standardIcon(
-            QtWidgets.QStyle.SP_DirOpenIcon)
-        text_line.addAction(
-            icon,
-            QtWidgets.QLineEdit.TrailingPosition
-        )
-        return text_line
-
     def build_json_data(self) -> str:
         data = json.loads(super().build_json_data())
         data['filter'] = self.filter
@@ -216,32 +190,11 @@ class FileSelectData(AbsOutputOptionDataType):
 class DirectorySelect(AbsOutputOptionDataType):
     widget_name = "DirectorySelect"
 
-    def build_qt_widget(self, parent) -> QtWidgets.QWidget:
-        return shared_custom_widgets.FolderBrowseWidget(parent)
-
-    def build_html_widget(self, element_id) -> str:
-        raise NotImplementedError("No way to handle directories with HTML")
-
 
 class OptionWidgetBuilder(abc.ABC):
     @abc.abstractmethod
     def build(self, widget: AbsOutputOptionDataType) -> None:
         """Build the widget in the correct format."""
-
-
-class QtOptionWidgetBuilder:
-    parent: typing.Optional[QtWidgets.QWidget]
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.parent = None
-        self.widget_created: typing.Optional[QtWidgets.QWidget] = None
-
-    def build(self, widget: AbsOutputOptionDataType) -> None:
-        self.widget_created = widget.build_qt_widget(self.parent)
-
-    def get_qt_widget(self) -> typing.Optional[QtWidgets.QWidget]:
-        return self.widget_created
 
 
 class DelegateSelection(QtWidgets.QStyledItemDelegate):
