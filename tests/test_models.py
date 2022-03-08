@@ -304,6 +304,16 @@ class TestToolOptionsModel4:
 
         assert "widget_type" in json.loads(json_string)
 
+    def test_set_data(self, data):
+        model = models.ToolOptionsModel4(data)
+        index = model.index(0, 0)
+
+        starting_value = model.data(index)
+
+        model.setData(index, "spam")
+        changed_value = model.data(index)
+        assert starting_value is None and changed_value == "spam"
+
 
 class TestSettingsModel:
     @pytest.mark.parametrize("role", [
