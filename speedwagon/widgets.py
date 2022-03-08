@@ -50,7 +50,7 @@ class DropDownSelection(AbsOutputOptionDataType):
         )
 
 
-class TextLineEditWidget(AbsOutputOptionDataType):
+class TextLineEditData(AbsOutputOptionDataType):
     widget_name = "line_edit"
 
 
