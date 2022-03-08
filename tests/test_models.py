@@ -1,9 +1,9 @@
 from unittest.mock import Mock
 
 import pytest
-from PySide6 import QtCore
+from PySide6 import QtCore, QtWidgets
 
-from speedwagon import tabs, models, job
+from speedwagon import tabs, models, job, widgets
 
 
 class TestSettingsModel:
@@ -229,6 +229,67 @@ class TestToolOptionsModel3:
         new_model = models.ToolOptionsModel3(data)
         with pytest.raises(IndexError):
             new_model["Eggs"]
+
+
+class TestToolOptionsModel4:
+    @pytest.fixture()
+    def dialog_box(self, qtbot):
+        dialog = QtWidgets.QDialog()
+        dialog.setFixedWidth(300)
+        dialog.setFixedHeight(300)
+        qtbot.addWidget(dialog)
+        return dialog
+
+    @pytest.fixture()
+    def table_widget(self, dialog_box, qtbot):
+        table = QtWidgets.QTableView(parent=dialog_box)
+        table.setEditTriggers(QtWidgets.QAbstractItemView.AllEditTriggers)
+        table.horizontalHeader().setVisible(False)
+
+        table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        table.horizontalHeader().setSectionResizeMode(
+            QtWidgets.QHeaderView.Stretch)
+        v_header = table.verticalHeader()
+        v_header.setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
+        v_header.setSectionsClickable(False)
+        v_header.setDefaultSectionSize(25)
+
+        qtbot.addWidget(table)
+        return table
+
+
+    def test_init(self, qtbot):
+        checksum_select = widgets.FileSelectData('Checksum File')
+        checksum_select.filter = "Checksum files (*.md5)"
+
+        options = widgets.DropDownSelection('Order')
+        options.add_selection("Bacon")
+        options.add_selection("Bacon eggs")
+        options.add_selection("Spam")
+
+        data = [
+            checksum_select,
+            options,
+            widgets.DirectorySelect('Eggs')
+        ]
+
+        model = models.ToolOptionsModel4(data)
+        heading = model.headerData(0, QtCore.Qt.Vertical, QtCore.Qt.DisplayRole)
+        assert heading == 'Checksum File'
+        # table_widget.setModel(model)
+        # a = widgets.DelegateSelection()
+        # table_widget.setItemDelegate(a)
+        # table_widget.edit()
+        # my_delegate: widgets.DelegateSelection = table_widget.itemDelegateForIndex(model.index(0,0))
+        # print(a)
+        # table_widget.selectRow(0)
+        # my_delegate: widgets.DelegateSelection = table_widget.itemDelegate()
+        # print(my_delegate.)
+        # qtbot.keyClicks(my_delegate.fileComboBox, '*.avi')
+        # dialog_box.exec()
+        # print("done")
+
+        # table.exec()
 
 
 class TestSettingsModel:

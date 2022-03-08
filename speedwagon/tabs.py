@@ -520,6 +520,10 @@ class WorkflowsTab2(WorkflowsTab):
     def get_item_options_model(self, workflow):
         """Get item options model."""
         new_workflow = workflow(global_settings=self.parent.user_settings)
+        if hasattr(new_workflow, "get_user_options"):
+            print("Ues")
+            a = new_workflow.get_user_options()
+            print(a)
         return models.ToolOptionsModel3(new_workflow.user_options())
 
     def start(self, item: typing.Type[Workflow]) -> None:

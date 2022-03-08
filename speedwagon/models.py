@@ -4,6 +4,8 @@ import sys
 import typing
 from typing import Type, Dict, List, Any, Union, Tuple, Optional, cast
 
+import PySide6.QtCore
+
 try:
     from typing import Final
 except ImportError:
@@ -15,7 +17,7 @@ from collections import namedtuple
 import enum
 
 from PySide6 import QtCore  # type: ignore
-from speedwagon import tabs, Workflow
+from speedwagon import tabs, Workflow, widgets
 from .job import AbsWorkflow
 from .workflows import shared_custom_widgets
 
@@ -428,6 +430,66 @@ class ToolOptionsModel3(ToolOptionsModel):
             return False
         self._data[index.row()].data = data
         return True
+
+
+class ToolOptionsModel4(QtCore.QAbstractListModel):
+    JsonDataRole = QtCore.Qt.UserRole + 1
+
+    def __init__(
+            self,
+            data: List[widgets.AbsOutputOptionDataType] = None,
+            parent: QtCore.QObject = None
+    ) -> None:
+        super().__init__(parent)
+        self._data = data or []
+
+    def flags(
+            self,
+            index: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ]) -> QtCore.Qt.ItemFlags:
+        return QtCore.Qt.ItemIsSelectable | \
+               QtCore.Qt.ItemIsEnabled | \
+               QtCore.Qt.ItemIsEditable
+
+    def rowCount(
+            self,
+            parent: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ] = ...
+    ) -> int:
+        return len(self._data)
+
+    def headerData(self, section: int,
+                   orientation: QtCore.Qt.Orientation,
+                   role: int = ...) -> Any:
+        if orientation == QtCore.Qt.Vertical and \
+                role == QtCore.Qt.DisplayRole:
+            return self._data[section].label
+
+    def data(self, index: Union[
+        PySide6.QtCore.QModelIndex, PySide6.QtCore.QPersistentModelIndex],
+             role: int = ...) -> Any:
+        if not index.isValid():
+            return None
+        item = self._data[index.row()]
+        if role in [QtCore.Qt.DisplayRole, QtCore.Qt.EditRole]:
+            return item.value
+
+        if role == self.JsonDataRole:
+            return item.build_json_data()
+        return None
+
+    def setData(self, index: Union[
+        QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+                value: Any, role: int = ...) -> bool:
+        if role == QtCore.Qt.EditRole and value is not None:
+            self._data[index.row()].value = value
+            return True
+
+        return super().setData(index, value, role)
 
 
 class SettingsModel(QtCore.QAbstractTableModel):
