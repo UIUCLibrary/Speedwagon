@@ -273,7 +273,7 @@ class TestToolOptionsModel4:
             widgets.DirectorySelect('Eggs')
         ]
 
-    def test_init(self, qtbot, data):
+    def test_headings(self, qtbot, data):
         model = models.ToolOptionsModel4(data)
         heading = model.headerData(0,
                                    QtCore.Qt.Vertical,
@@ -281,10 +281,16 @@ class TestToolOptionsModel4:
 
         assert heading == data[0].label
 
+    def test_horizontal_heading_are_empty(self, data):
+        model = models.ToolOptionsModel4(data)
+        heading = model.headerData(0,
+                                   QtCore.Qt.Horizontal,
+                                   QtCore.Qt.DisplayRole)
+        assert heading is None
+
     def test_rows_match_data_size(self, qtbot,data):
         model = models.ToolOptionsModel4(data)
         assert model.rowCount() == len(data)
-
 
 
 class TestSettingsModel:
