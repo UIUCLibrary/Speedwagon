@@ -1,3 +1,4 @@
+import json
 from unittest.mock import Mock
 
 import pytest
@@ -288,9 +289,20 @@ class TestToolOptionsModel4:
                                    QtCore.Qt.DisplayRole)
         assert heading is None
 
-    def test_rows_match_data_size(self, qtbot,data):
+    def test_rows_match_data_size(self, qtbot, data):
         model = models.ToolOptionsModel4(data)
         assert model.rowCount() == len(data)
+
+    def test_data_json_role_make_parseable_data(self, data):
+        model = models.ToolOptionsModel4(data)
+        index = model.index(0, 0)
+
+        json_string = model.data(
+            index,
+            role=models.ToolOptionsModel4.JsonDataRole
+        )
+
+        assert "widget_type" in json.loads(json_string)
 
 
 class TestSettingsModel:
