@@ -58,7 +58,7 @@ class EditDelegateWidget(QtWidgets.QWidget):
     editingFinished = QtCore.Signal()
     dataChanged = QtCore.Signal()
 
-    def __init__(self, widget_metadata=None, *args, **kwargs) -> None:
+    def __init__(self, *args, widget_metadata=None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._data = None
         self.widget_metadata = widget_metadata or {}
@@ -77,7 +77,7 @@ class EditDelegateWidget(QtWidgets.QWidget):
 
 
 class DropDownWidget(EditDelegateWidget):
-    def __init__(self, widget_metadata=None, *args, **kwargs) -> None:
+    def __init__(self, *args, widget_metadata=None, **kwargs) -> None:
         super().__init__(widget_metadata, *args, **kwargs)
         widget_metadata = widget_metadata or {
             'selections': []
@@ -96,8 +96,8 @@ class DropDownWidget(EditDelegateWidget):
 
 class FileSystemItemSelectWidget(EditDelegateWidget):
 
-    def __init__(self, widget_metadata=None, *args, **kwargs):
-        super().__init__(widget_metadata, *args, **kwargs)
+    def __init__(self, *args, widget_metadata=None, **kwargs):
+        super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
         self.edit = QtWidgets.QLineEdit(parent=self)
         self.edit.textChanged.connect(self._update_data_from_line_edit)
         self.edit.editingFinished.connect(self.editingFinished)
@@ -141,8 +141,8 @@ class DirectorySelectWidget(FileSystemItemSelectWidget):
             self.data = data
             self.dataChanged.emit()
 
-    def __init__(self, widget_metadata=None, *args, **kwargs) -> None:
-        super().__init__(widget_metadata, *args, **kwargs)
+    def __init__(self, *args, widget_metadata=None, **kwargs) -> None:
+        super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
 
 
 class FileSelectWidget(FileSystemItemSelectWidget):
@@ -155,8 +155,8 @@ class FileSelectWidget(FileSystemItemSelectWidget):
         browse_file_action.triggered.connect(self.browse_file)
         return browse_file_action
 
-    def __init__(self, widget_metadata=None, *args, **kwargs):
-        super().__init__(widget_metadata, *args, **kwargs)
+    def __init__(self, *args, widget_metadata=None, **kwargs):
+        super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
         widget_metadata = widget_metadata or {}
         self.filter = widget_metadata.get('filter')
 
@@ -221,7 +221,9 @@ class DelegateSelection(QtWidgets.QStyledItemDelegate):
         if editor_type is None:
             return super().createEditor(parent, option, index)
 
-        editor_widget: EditDelegateWidget = editor_type(json_data)
+        editor_widget: EditDelegateWidget = \
+            editor_type(widget_metadata=json_data)
+
         editor_widget.setParent(parent)
         return editor_widget
 
