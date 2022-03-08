@@ -235,7 +235,7 @@ class DelegateSelection(QtWidgets.QStyledItemDelegate):
                 QtCore.QPersistentModelIndex
             ]
     ) -> None:
-        data = index.data(QtCore.Qt.EditRole)
+        data = index.data(typing.cast(int, QtCore.Qt.EditRole))
         if data is not None:
             editor.data = data
         super().setEditorData(editor, index)
@@ -249,7 +249,11 @@ class DelegateSelection(QtWidgets.QStyledItemDelegate):
                 QtCore.QPersistentModelIndex
             ]) -> None:
         if hasattr(editor, "data") and editor.data is not None:
-            model.setData(index, editor.data, role=QtCore.Qt.EditRole)
+            model.setData(
+                index,
+                editor.data,
+                role=typing.cast(int, QtCore.Qt.EditRole)
+            )
         else:
             warnings.warn(
                 "Editor has to data. Make sure to use a widget that "
