@@ -107,6 +107,24 @@ class DropDownWidget(EditDelegateWidget):
     def update_data(self, value):
         self.data = value
 
+    @EditDelegateWidget.data.setter
+    def data(self, value):
+        self._data = value
+
+        self._update_combo_box_selected(value, self.combo_box)
+
+    @staticmethod
+    def _update_combo_box_selected(
+            expected_value: str,
+            combo_box: QtWidgets.QComboBox
+    ) -> None:
+        model: QtCore.QStringListModel = combo_box.model()
+        for i in range(model.rowCount()):
+            index = model.index(i, 0)
+            if index.data() == expected_value:
+                combo_box.setCurrentIndex(index.row())
+                break
+
 
 class FileSystemItemSelectWidget(EditDelegateWidget):
 
