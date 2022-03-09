@@ -12,17 +12,78 @@ class TestDelegateSelection:
             speedwagon.widgets.FileSelectData('Spam'),
         ])
 
+    @pytest.fixture
+    def index(
+            self,
+            qtbot,
+            model: speedwagon.models.ToolOptionsModel4):
+        return model.createIndex(0, 0)
+
+    @pytest.fixture
+    def delegate_widget(self):
+        return speedwagon.widgets.DelegateSelection()
+
+    @pytest.fixture
+    def editor(
+            self,
+            qtbot,
+            index,
+            delegate_widget,
+            model: speedwagon.models.ToolOptionsModel4
+    ) -> speedwagon.widgets.FileSelectWidget:
+
+        parent = QtWidgets.QWidget()
+        options = QtWidgets.QStyleOptionViewItem()
+        yield delegate_widget.createEditor(parent, options, index)
+
     def test_returns_a_qt_widget(
             self,
             qtbot,
-            model: speedwagon.models.ToolOptionsModel4
+            index,
     ):
         delegate_widget = speedwagon.widgets.DelegateSelection()
+        assert isinstance(
+            delegate_widget.createEditor(
+                parent=QtWidgets.QWidget(),
+                option=QtWidgets.QStyleOptionViewItem(),
+                index=index
+            ),
+            QtWidgets.QWidget
+        )
+
+    def test_setting_model_data(
+            self,
+            qtbot,
+            index,
+            editor: speedwagon.widgets.FileSelectWidget,
+            delegate_widget: speedwagon.widgets.DelegateSelection,
+            model: speedwagon.models.ToolOptionsModel4
+    ):
+        starting_value = model.data(index, role=QtCore.Qt.DisplayRole)
+
+        editor.data = "Dummy"
+        delegate_widget.setModelData(editor, model, index)
+        ending_value = model.data(index, role=QtCore.Qt.DisplayRole)
+
+        assert starting_value is None and ending_value == "Dummy"
+
+    def test_setting_editor_data(
+            self,
+            qtbot,
+            index,
+            delegate_widget: speedwagon.widgets.DelegateSelection,
+            model: speedwagon.models.ToolOptionsModel4
+    ):
+        model.setData(index, "Dummy")
         parent = QtWidgets.QWidget()
-        options = QtWidgets.QStyleOptionViewItem()
-        index = model.createIndex(0, 0)
-        editor_widget = delegate_widget.createEditor(parent, options, index)
-        assert isinstance(editor_widget, QtWidgets.QWidget)
+        new_editor: speedwagon.widgets.FileSystemItemSelectWidget = \
+            delegate_widget.createEditor(
+                parent,
+                QtWidgets.QStyleOptionViewItem(),
+                index,
+            )
+        delegate_widget.setEditorData(new_editor, index)
+        assert new_editor.data == "Dummy"
 
 
 class TestDropDownWidget:
