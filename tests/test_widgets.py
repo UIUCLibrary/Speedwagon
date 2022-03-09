@@ -85,6 +85,15 @@ class TestDelegateSelection:
         delegate_widget.setEditorData(new_editor, index)
         assert new_editor.data == "Dummy"
 
+    def test_warn_on_not_using_right_subclass(
+            self,
+            index: QtCore.QModelIndex,
+            delegate_widget: speedwagon.widgets.DelegateSelection,
+            model: speedwagon.models.ToolOptionsModel4
+    ):
+        model.setData(index, "Dummy")
+        with pytest.warns(Warning):
+            delegate_widget.setModelData(QtWidgets.QLineEdit(), model, index)
 
 class TestDropDownWidget:
     def test_empty_widget_metadata(self, qtbot):
