@@ -95,6 +95,7 @@ class TestDelegateSelection:
         with pytest.warns(Warning):
             delegate_widget.setModelData(QtWidgets.QLineEdit(), model, index)
 
+
 class TestDropDownWidget:
     def test_empty_widget_metadata(self, qtbot):
         widget = speedwagon.widgets.DropDownWidget()

@@ -267,6 +267,7 @@ class DelegateSelection(QtWidgets.QStyledItemDelegate):
         else:
             warnings.warn(
                 "Editor has to data. Make sure to use a widget that "
-                "subclaseses EditDelegateWidget"
+                "subclaseses EditDelegateWidget",
+                Warning
             )
             super().setModelData(editor, model, index)
