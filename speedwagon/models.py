@@ -14,7 +14,7 @@ from abc import abstractmethod
 from collections import namedtuple
 import enum
 
-from PySide6 import QtCore  # type: ignore
+from PySide6 import QtCore, QtGui  # type: ignore
 from speedwagon import tabs, Workflow, widgets
 from .job import AbsWorkflow
 from .workflows import shared_custom_widgets
@@ -477,9 +477,17 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
         if not index.isValid():
             return None
         item = self._data[index.row()]
-        if role in [QtCore.Qt.DisplayRole, QtCore.Qt.EditRole]:
+        if role == QtCore.Qt.DisplayRole:
+            return self._select_display_role(item)
+        if role == QtCore.Qt.EditRole:
             return item.value
 
+        if role == QtCore.Qt.FontRole:
+            if self._should_use_placeholder_text(item) is True:
+                font = QtGui.QFont()
+                font.setItalic(True)
+                return font
+            return None
         if role == self.JsonDataRole:
             return item.build_json_data()
         return None
@@ -494,6 +502,25 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             return True
 
         return super().setData(index, value, role)
+
+    @classmethod
+    def _select_display_role(
+            cls,
+            item: widgets.AbsOutputOptionDataType
+    ) -> str:
+        if cls._should_use_placeholder_text(item) is True:
+            return item.placeholder_text
+        return item.value
+
+    @staticmethod
+    def _should_use_placeholder_text(
+            item: widgets.AbsOutputOptionDataType
+    ) -> bool:
+        if item.value is not None:
+            return False
+        if item.placeholder_text is None:
+            return False
+        return True
 
 
 class SettingsModel(QtCore.QAbstractTableModel):
