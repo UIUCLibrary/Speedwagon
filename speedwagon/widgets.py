@@ -132,11 +132,20 @@ class DirectorySelectWidget(FileSystemItemSelectWidget):
         browse_dir_action.triggered.connect(self.browse_dir)
         return browse_dir_action
 
-    def browse_dir(self):
-        selection = QtWidgets.QFileDialog.getExistingDirectory(
-            parent=self,
-        )
+    def browse_dir(
+            self,
+            get_file_callback: Optional[
+                typing.Callable[[], Optional[str]]
+            ] = None
+    ) -> None:
+        get_file_callback: typing.Callable[[], Optional[str]] = \
+            get_file_callback or \
+            (
+                lambda parent=self: QtWidgets.QFileDialog.getExistingDirectory(
+                    parent=parent)
+            )
 
+        selection = get_file_callback()
         if selection:
             data = selection
             self.data = data
@@ -159,14 +168,22 @@ class FileSelectWidget(FileSystemItemSelectWidget):
         widget_metadata = widget_metadata or {}
         self.filter = widget_metadata.get('filter')
 
-    def browse_file(self):
-        selection = QtWidgets.QFileDialog.getOpenFileName(
-            parent=self,
-            filter=self.filter
-        )
+    def browse_file(
+            self,
+            get_file_callback: Optional[
+                typing.Callable[[], Optional[str]]
+            ] = None
+    ) -> None:
+        def use_qt_file_dialog():
+            result = QtWidgets.QFileDialog.getOpenFileName(parent=self,
+                                                           filter=self.filter)
+            if result:
+                return result[0]
+            return None
 
-        if selection[0]:
-            data = selection[0]
+        selection = (get_file_callback or use_qt_file_dialog)()
+        if selection:
+            data = selection
             self.data = data
             self.dataChanged.emit()
 

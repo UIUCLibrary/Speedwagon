@@ -36,11 +36,35 @@ class TestFileSelectWidget:
         widget = speedwagon.widgets.FileSelectWidget()
         assert isinstance(widget, QtWidgets.QWidget)
 
+    def test_browse_dir_valid(self, qtbot):
+        widget = speedwagon.widgets.FileSelectWidget()
+        fake_file_path = "/some/directory/file"
+        with qtbot.wait_signal(widget.dataChanged):
+            widget.browse_file(get_file_callback=lambda: fake_file_path)
+        assert widget.data == fake_file_path
+
+    def test_browse_dir_canceled(self, qtbot):
+        widget = speedwagon.widgets.FileSelectWidget()
+        widget.browse_file(get_file_callback=lambda: None)
+        assert widget.data is None
+
 
 class TestDirectorySelectWidget:
     def test_empty_widget_metadata(self, qtbot):
         widget = speedwagon.widgets.DirectorySelectWidget()
         assert isinstance(widget, QtWidgets.QWidget)
+
+    def test_browse_dir_valid(self, qtbot):
+        widget = speedwagon.widgets.DirectorySelectWidget()
+        fake_directory = "/some/directory"
+        with qtbot.wait_signal(widget.dataChanged):
+            widget.browse_dir(get_file_callback=lambda: fake_directory)
+        assert widget.data == fake_directory
+
+    def test_browse_dir_canceled(self, qtbot):
+        widget = speedwagon.widgets.DirectorySelectWidget()
+        widget.browse_dir(get_file_callback=lambda: None)
+        assert widget.data is None
 
 
 def test_AbsOutputOptionDataType_needs_widget_name():
