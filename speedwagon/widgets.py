@@ -249,9 +249,7 @@ class DelegateSelection(QtWidgets.QStyledItemDelegate):
                 QtCore.QPersistentModelIndex
             ]
     ) -> None:
-        data = index.data(typing.cast(int, QtCore.Qt.EditRole))
-        if data is not None:
-            editor.data = data
+        editor.data = index.data(typing.cast(int, QtCore.Qt.EditRole))
         super().setEditorData(editor, index)
 
     def setModelData(
