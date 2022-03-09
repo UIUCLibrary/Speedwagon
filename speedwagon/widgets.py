@@ -22,11 +22,16 @@ class AbsOutputOptionDataType(abc.ABC):
         super().__init__()
         self.label = label
         self.value = None
+        self.placeholder_text: Optional[str] = None
 
     def serialize(self) -> typing.Dict[str, typing.Any]:
-        return {
-            "widget_type": self.widget_name
+        data = {
+            "widget_type": self.widget_name,
+            "label": self.label
         }
+        if self.placeholder_text is not None:
+            data['placeholder_text'] = self.placeholder_text
+        return data
 
     def build_json_data(self) -> str:
         return json.dumps(self.serialize())
@@ -44,6 +49,8 @@ class DropDownSelection(AbsOutputOptionDataType):
 
     def serialize(self) -> typing.Dict[str, typing.Any]:
         data = super().serialize()
+        if self.placeholder_text is not None:
+            data["placeholder_text"] = self.placeholder_text
         data["selections"] = self._selections
         return data
 
