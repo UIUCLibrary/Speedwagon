@@ -507,7 +507,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
     def _select_display_role(
             cls,
             item: widgets.AbsOutputOptionDataType
-    ) -> str:
+    ) -> Optional[str]:
         if cls._should_use_placeholder_text(item) is True:
             return item.placeholder_text
         return item.value
