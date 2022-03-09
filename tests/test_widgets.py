@@ -110,6 +110,13 @@ class TestDropDownWidget:
         first_index_data = widget.data
         assert starting_data is None and first_index_data == "spam"
 
+    def test_placeholder_text(self):
+        widget = speedwagon.widgets.DropDownWidget(widget_metadata={
+            "selections": ["spam", "bacon", "eggs"],
+            "placeholder_text": "Dummy"
+        })
+        assert widget.combo_box.placeholderText() == "Dummy"
+
 
 class TestFileSelectWidget:
     def test_empty_widget_metadata(self, qtbot):
