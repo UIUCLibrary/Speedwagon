@@ -146,14 +146,10 @@ class DirectorySelectWidget(FileSystemItemSelectWidget):
                 typing.Callable[[], Optional[str]]
             ] = None
     ) -> None:
-        get_file_callback: typing.Callable[[], Optional[str]] = \
-            get_file_callback or \
-            (
-                lambda parent=self: QtWidgets.QFileDialog.getExistingDirectory(
-                    parent=parent)
-            )
+        def default_use_qt_dialog() -> Optional[str]:
+            return QtWidgets.QFileDialog.getExistingDirectory(parent=self)
 
-        selection = get_file_callback()
+        selection = (get_file_callback or default_use_qt_dialog)()
         if selection:
             data = selection
             self.data = data
