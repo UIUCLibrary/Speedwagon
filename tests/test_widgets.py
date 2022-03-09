@@ -5,6 +5,13 @@ import speedwagon.widgets
 import speedwagon.models
 
 
+class TestDropDownSelection:
+    def test_serialize_selection(self):
+        data = speedwagon.widgets.DropDownSelection("Dummy")
+        data.add_selection("Spam")
+        assert "Spam" in data.serialize()['selections']
+
+
 class TestDelegateSelection:
     @pytest.fixture
     def model(self):
