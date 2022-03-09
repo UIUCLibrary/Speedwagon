@@ -473,7 +473,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             self,
             index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
             role: int = typing.cast(int, QtCore.Qt.DisplayRole)
-    ) -> Any:
+    ) -> Optional[Any]:
         if not index.isValid():
             return None
         item = self._data[index.row()]
@@ -495,9 +495,14 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
     def setData(
             self,
             index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
-            value: Any,
-            role: int = typing.cast(int, QtCore.Qt.EditRole)) -> bool:
-        if role == QtCore.Qt.EditRole and value is not None:
+            value: Optional[Any],
+            role: int = typing.cast(int, QtCore.Qt.EditRole)
+    ) -> bool:
+
+        if value is None:
+            return False
+
+        if role == typing.cast(int, QtCore.Qt.EditRole):
             self._data[index.row()].value = value
             return True
 
@@ -510,7 +515,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
     ) -> Optional[str]:
         if cls._should_use_placeholder_text(item) is True:
             return item.placeholder_text
-        return item.value
+        return str(item.value)
 
     @staticmethod
     def _should_use_placeholder_text(
@@ -601,7 +606,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
     def setData(
             self,
             index: QtCore.QModelIndex,
-            data,
+            data: Any,
             role: Optional[QtConstant] = None
     ) -> bool:
         """Set data in model."""
@@ -617,7 +622,8 @@ class SettingsModel(QtCore.QAbstractTableModel):
             # pylint: disable=no-member
             self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
 
-        return True
+            return True
+        return False
 
 
 class TabsModel(QtCore.QAbstractListModel):
