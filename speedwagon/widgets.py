@@ -2,7 +2,7 @@ import abc
 import json
 import typing
 import warnings
-from typing import Union, Optional
+from typing import Union, Optional, Dict, List, Any
 
 from PySide6 import QtWidgets, QtCore, QtGui
 import speedwagon.models
@@ -76,13 +76,21 @@ class EditDelegateWidget(QtWidgets.QWidget):
 
 class DropDownWidget(EditDelegateWidget):
     def __init__(self, *args, widget_metadata=None, **kwargs) -> None:
-        super().__init__(widget_metadata, *args, **kwargs)
-        widget_metadata = widget_metadata or {
-            'selections': []
-        }
+        super().__init__(widget_metadata=widget_metadata, *args, **kwargs)
+        widget_metadata: Dict[str, Union[str, List[Any]]] = \
+            widget_metadata or {
+                'selections': []
+            }
+
         self.combo_box = QtWidgets.QComboBox(self)
+        place_holder_text = widget_metadata.get("placeholder_text")
+
+        if place_holder_text is not None:
+            self.combo_box.setPlaceholderText(place_holder_text)
+
         model = QtCore.QStringListModel(widget_metadata['selections'])
         self.combo_box.setModel(model)
+        self.combo_box.setCurrentIndex(-1)
 
         self.setFocusProxy(self.combo_box)
         self.layout().addWidget(self.combo_box)
