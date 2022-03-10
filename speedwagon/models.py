@@ -531,29 +531,6 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             return True
 
         return super().setData(index, value, role)
-    #
-    # @classmethod
-    # def _select_display_role(
-    #         cls,
-    #         item: speedwagon.workflow.AbsOutputOptionDataType
-    # ) -> Optional[str]:
-    #     if cls._should_use_placeholder_text(item) is True:
-    #         return item.placeholder_text
-    #     if isinstance(item.value, bool):
-    #         return "Yes" if item.value is True else "No"
-    #     if item.value is None:
-    #         return item.value
-    #     return str(item.value)
-    #
-    # @staticmethod
-    # def _should_use_placeholder_text(
-    #         item: speedwagon.workflow.AbsOutputOptionDataType
-    # ) -> bool:
-    #     if item.value is not None:
-    #         return False
-    #     if item.placeholder_text is None:
-    #         return False
-    #     return True
 
     def serialize(self):
         return {data.label: data.value for data in self._data}
