@@ -381,7 +381,7 @@ class TestWorkflowProgressState:
         ]
     )
     def test_warnings(self, state_class, command):
-        with pytest.warns(None) as record:
+        with pytest.warns(Warning) as record:
             state = state_class(context=Mock())
             getattr(state, command)()
         assert len(record) > 0
