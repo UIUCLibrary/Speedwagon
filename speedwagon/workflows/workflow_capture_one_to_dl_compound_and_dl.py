@@ -107,6 +107,9 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
     def get_user_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+
+        input_path = speedwagon.workflow.DirectorySelect(USER_INPUT_PATH)
+
         package_type_selection = \
             speedwagon.workflow.DropDownSelection(PACKAGE_TYPE)
 
@@ -121,6 +124,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
             speedwagon.workflow.DirectorySelect(OUTPUT_HATHITRUST)
 
         return [
+            input_path,
             package_type_selection,
             output_digital_library,
             output_hathi_trust
