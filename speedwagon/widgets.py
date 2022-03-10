@@ -37,6 +37,10 @@ class CheckBoxWidget(EditDelegateWidget):
         self.setFocusProxy(self.check_box)
         self._make_connections()
         self.layout().addWidget(self.check_box)
+        self.set_defaults()
+
+    def set_defaults(self) -> None:
+        self.data = False
 
     def _make_connections(self) -> None:
         # pylint: disable=no-member

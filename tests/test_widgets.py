@@ -119,6 +119,19 @@ class TestDropDownWidget:
         assert widget.combo_box.placeholderText() == "Dummy"
 
 
+class TestCheckBoxWidget:
+    def test_empty_widget_metadata(self, qtbot):
+        widget = speedwagon.widgets.CheckBoxWidget()
+        assert isinstance(widget, QtWidgets.QWidget)
+
+    def test_checking_changes_value(self, qtbot):
+        widget = speedwagon.widgets.CheckBoxWidget()
+        assert widget.data is False
+        with qtbot.wait_signal(widget.dataChanged):
+            widget.check_box.setCheckState(QtCore.Qt.Checked)
+        assert widget.data is True
+
+
 class TestFileSelectWidget:
     def test_empty_widget_metadata(self, qtbot):
         widget = speedwagon.widgets.FileSelectWidget()
