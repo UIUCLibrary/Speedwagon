@@ -490,19 +490,21 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
         if not index.isValid():
             return None
         item = self._data[index.row()]
-
-        if role == QtCore.Qt.DisplayRole:
-            return self._select_display_role(item)
-
-        if role == QtCore.Qt.EditRole:
-            return item.value
-
-        if role == QtCore.Qt.FontRole:
-            if self._should_use_placeholder_text(item) is True:
-                font = QtGui.QFont()
-                font.setItalic(True)
-                return font
-            return None
+        formatter = ModelDataFormatter(self)
+        return formatter.format(setting=item, role=role)
+        # =========
+        # if role == QtCore.Qt.DisplayRole:
+        #     return self._select_display_role(item)
+        #
+        # if role == QtCore.Qt.EditRole:
+        #     return item.value
+        #
+        # if role == QtCore.Qt.FontRole:
+        #     if self._should_use_placeholder_text(item) is True:
+        #         font = QtGui.QFont()
+        #         font.setItalic(True)
+        #         return font
+        #     return None
 
         if role == self.DataRole:
             return item
@@ -526,6 +528,41 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             return True
 
         return super().setData(index, value, role)
+    #
+    # @classmethod
+    # def _select_display_role(
+    #         cls,
+    #         item: speedwagon.workflow.AbsOutputOptionDataType
+    # ) -> Optional[str]:
+    #     if cls._should_use_placeholder_text(item) is True:
+    #         return item.placeholder_text
+    #     if isinstance(item.value, bool):
+    #         return "Yes" if item.value is True else "No"
+    #     if item.value is None:
+    #         return item.value
+    #     return str(item.value)
+    #
+    # @staticmethod
+    # def _should_use_placeholder_text(
+    #         item: speedwagon.workflow.AbsOutputOptionDataType
+    # ) -> bool:
+    #     if item.value is not None:
+    #         return False
+    #     if item.placeholder_text is None:
+    #         return False
+    #     return True
+
+    def serialize(self):
+        return {data.label: data.value for data in self._data}
+
+    def get(self) -> Dict[str, Any]:
+        """Access the key value settings for all options."""
+        return self.serialize()
+
+
+class ModelDataFormatter:
+    def __init__(self, model: ToolOptionsModel4):
+        self._model = model
 
     @classmethod
     def _select_display_role(
@@ -550,12 +587,50 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             return False
         return True
 
-    def serialize(self):
-        return {data.label: data.value for data in self._data}
+    def font_role(
+            self,
+            setting: speedwagon.workflow.AbsOutputOptionDataType
+    ):
+        if self._should_use_placeholder_text(setting) is True:
+            font = QtGui.QFont()
+            font.setItalic(True)
+            return font
+        return None
 
-    def get(self) -> Dict[str, Any]:
-        """Access the key value settings for all options."""
-        return self.serialize()
+    def display_role(
+            self,
+            setting: speedwagon.workflow.AbsOutputOptionDataType
+    ):
+        return self._select_display_role(setting)
+
+    def format(
+            self,
+            setting: speedwagon.workflow.AbsOutputOptionDataType,
+            role: QtCore.Qt.ItemDataRole
+    ):
+        formatting_roles: \
+            Dict[
+                QtCore.Qt.ItemDataRole,
+                typing.Callable[
+                    [
+                        speedwagon.workflow.AbsOutputOptionDataType
+                    ],
+                    typing.Any
+                ]
+            ] = {
+                QtCore.Qt.DisplayRole: self.display_role,
+                QtCore.Qt.EditRole: lambda setting_: setting_.value,
+                QtCore.Qt.FontRole: self.font_role,
+                self._model.JsonDataRole:
+                    lambda setting_: setting_.build_json_data(),
+                self._model.DataRole: lambda setting_: setting_
+            }
+
+        formatter = formatting_roles.get(role)
+        if formatter is not None:
+            return formatter(setting)
+
+        return None
 
 
 class SettingsModel(QtCore.QAbstractTableModel):
