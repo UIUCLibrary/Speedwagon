@@ -38,7 +38,8 @@ class CheckBoxWidget(EditDelegateWidget):
         self._make_connections()
         self.layout().addWidget(self.check_box)
 
-    def _make_connections(self) -> None:  # pylint: disable=no-member
+    def _make_connections(self) -> None:
+        # pylint: disable=no-member
         self.check_box.stateChanged.connect(self.update_data)
 
     def update_data(self, state):
@@ -81,7 +82,8 @@ class DropDownWidget(EditDelegateWidget):
         self._make_connections()
         self.layout().addWidget(self.combo_box)
 
-    def _make_connections(self):  # pylint: disable=no-member
+    def _make_connections(self):
+        # pylint: disable=no-member
         self.combo_box.currentTextChanged.connect(self.update_data)
 
     def update_data(self, value):
@@ -121,7 +123,8 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
         self.setFocusProxy(self.edit)
         self.layout().addWidget(self.edit)
 
-    def _make_connections(self) -> None:  # pylint: disable=no-member
+    def _make_connections(self) -> None:
+        # pylint: disable=no-member
         self.edit.textChanged.connect(self._update_data_from_line_edit)
         self.edit.editingFinished.connect(self.editingFinished)
 
