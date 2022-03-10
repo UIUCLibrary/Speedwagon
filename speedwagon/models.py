@@ -489,9 +489,12 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
     ) -> Optional[Any]:
         if not index.isValid():
             return None
-        item = self._data[index.row()]
+
         formatter = ModelDataFormatter(self)
-        return formatter.format(setting=item, role=role)
+        return formatter.format(
+            setting=self._data[index.row()],
+            role=typing.cast(QtCore.Qt.ItemDataRole, role)
+        )
         # =========
         # if role == QtCore.Qt.DisplayRole:
         #     return self._select_display_role(item)
@@ -505,13 +508,13 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
         #         font.setItalic(True)
         #         return font
         #     return None
-
-        if role == self.DataRole:
-            return item
-
-        if role == self.JsonDataRole:
-            return item.build_json_data()
-        return None
+        #
+        # if role == self.DataRole:
+        #     return item
+        #
+        # if role == self.JsonDataRole:
+        #     return item.build_json_data()
+        # return None
 
     def setData(
             self,
@@ -590,7 +593,7 @@ class ModelDataFormatter:
     def font_role(
             self,
             setting: speedwagon.workflow.AbsOutputOptionDataType
-    ):
+    ) -> Optional[QtGui.QFont]:
         if self._should_use_placeholder_text(setting) is True:
             font = QtGui.QFont()
             font.setItalic(True)
@@ -600,14 +603,14 @@ class ModelDataFormatter:
     def display_role(
             self,
             setting: speedwagon.workflow.AbsOutputOptionDataType
-    ):
+    ) -> Optional[str]:
         return self._select_display_role(setting)
 
     def format(
             self,
             setting: speedwagon.workflow.AbsOutputOptionDataType,
             role: QtCore.Qt.ItemDataRole
-    ):
+    ) -> Optional[Any]:
         formatting_roles: \
             Dict[
                 QtCore.Qt.ItemDataRole,
@@ -615,7 +618,7 @@ class ModelDataFormatter:
                     [
                         speedwagon.workflow.AbsOutputOptionDataType
                     ],
-                    typing.Any
+                    Optional[typing.Any]
                 ]
             ] = {
                 QtCore.Qt.DisplayRole: self.display_role,
