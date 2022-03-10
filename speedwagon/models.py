@@ -456,7 +456,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
                 item.value = value
                 break
         else:
-            raise KeyError("Key not found")
+            raise KeyError(f"Key not found: {key}")
 
     def flags(
             self,
