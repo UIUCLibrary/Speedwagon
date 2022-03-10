@@ -174,7 +174,9 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
         """
         return {}
 
-    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+    def get_user_options(  # pylint: disable=no-self-use
+            self
+    ) -> List[workflow.AbsOutputOptionDataType]:
         return []
 
     def user_options(self) -> typing.List[Any]:
