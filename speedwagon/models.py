@@ -345,6 +345,7 @@ class ToolOptionsModel3(ToolOptionsModel):
             parent: QtCore.QObject = None
     ) -> None:
         """Create a new tool options Qt model."""
+        warnings.warn("use ToolOptionsModel4 instead", DeprecationWarning)
         if data is None:
             raise NotImplementedError
         super().__init__(parent)

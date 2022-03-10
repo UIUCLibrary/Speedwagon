@@ -114,8 +114,8 @@ class TestConvertTiffPreservationToDLJp2Workflow:
 
     @pytest.fixture
     def default_options(self, workflow):
-        return models.ToolOptionsModel3(
-            workflow.user_options()
+        return models.ToolOptionsModel4(
+            workflow.get_user_options()
         ).get()
 
     def test_validate_user_options_valid(

@@ -40,8 +40,8 @@ class TestChecksumWorkflowValidArgs:
 
     @pytest.fixture
     def default_options(self, workflow):
-        return models.ToolOptionsModel3(
-            workflow.user_options()
+        return models.ToolOptionsModel4(
+            workflow.get_user_options()
         ).get()
 
     @pytest.mark.parametrize("invalid_input_value", [None, ""])
@@ -99,8 +99,8 @@ class TestChecksumWorkflowTaskGenerators:
 
     @pytest.fixture
     def default_options(self, workflow):
-        return models.ToolOptionsModel3(
-            workflow.user_options()
+        return models.ToolOptionsModel4(
+            workflow.get_user_options()
         ).get()
 
     def test_checksum_workflow_initial_task(
@@ -173,8 +173,8 @@ class TestChecksumWorkflow:
 
     @pytest.fixture
     def default_options(self, workflow):
-        return models.ToolOptionsModel3(
-            workflow.user_options()
+        return models.ToolOptionsModel4(
+            workflow.get_user_options()
         ).get()
 
     def test_discover_task_metadata(self, workflow, default_options):
@@ -323,7 +323,7 @@ class TestVerifyChecksumBatchSingleWorkflow:
 
     @pytest.fixture
     def default_options(self, workflow):
-        return models.ToolOptionsModel3(workflow.user_options()).get()
+        return models.ToolOptionsModel4(workflow.get_user_options()).get()
 
     def test_discover_task_metadata(self, workflow, default_options,
                                     monkeypatch):
