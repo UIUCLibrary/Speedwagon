@@ -588,25 +588,15 @@ class ModelDataFormatter:
             setting: speedwagon.workflow.AbsOutputOptionDataType,
             role: QtCore.Qt.ItemDataRole
     ) -> Optional[Any]:
-        formatting_roles: \
-            Dict[
-                QtCore.Qt.ItemDataRole,
-                typing.Callable[
-                    [
-                        speedwagon.workflow.AbsOutputOptionDataType
-                    ],
-                    Optional[typing.Any]
-                ]
-            ] = {
-                QtCore.Qt.DisplayRole: self.display_role,
-                QtCore.Qt.EditRole: lambda setting_: setting_.value,
-                QtCore.Qt.FontRole: self.font_role,
-                self._model.JsonDataRole:
-                    lambda setting_: setting_.build_json_data(),
-                self._model.DataRole: lambda setting_: setting_
-            }
+        formatter = {
+            QtCore.Qt.DisplayRole: self.display_role,
+            QtCore.Qt.EditRole: lambda setting_: setting_.value,
+            QtCore.Qt.FontRole: self.font_role,
+            self._model.JsonDataRole:
+                lambda setting_: setting_.build_json_data(),
+            self._model.DataRole: lambda setting_: setting_
+        }.get(role)
 
-        formatter = formatting_roles.get(role)
         if formatter is not None:
             return formatter(setting)
 
