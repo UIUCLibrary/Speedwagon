@@ -535,10 +535,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
         if cls._should_use_placeholder_text(item) is True:
             return item.placeholder_text
         if isinstance(item.value, bool):
-            if item.value is True:
-                return "Yes"
-            elif item.value is False:
-                return "No"
+            return "Yes" if item.value is True else "No"
         if item.value is None:
             return item.value
         return str(item.value)
