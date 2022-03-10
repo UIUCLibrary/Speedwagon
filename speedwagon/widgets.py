@@ -35,8 +35,11 @@ class CheckBoxWidget(EditDelegateWidget):
         super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
         self.check_box = QtWidgets.QCheckBox(self)
         self.setFocusProxy(self.check_box)
-        self.check_box.stateChanged.connect(self.update_data)
+        self._make_connections()
         self.layout().addWidget(self.check_box)
+
+    def _make_connections(self) -> None:  # pylint: disable=no-member
+        self.check_box.stateChanged.connect(self.update_data)
 
     def update_data(self, state):
 
@@ -75,8 +78,10 @@ class DropDownWidget(EditDelegateWidget):
         self.combo_box.setCurrentIndex(-1)
 
         self.setFocusProxy(self.combo_box)
+        self._make_connections()
         self.layout().addWidget(self.combo_box)
-        # pylint: disable=no-member
+
+    def _make_connections(self):  # pylint: disable=no-member
         self.combo_box.currentTextChanged.connect(self.update_data)
 
     def update_data(self, value):
@@ -106,15 +111,19 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
     def __init__(self, *args, widget_metadata=None, **kwargs):
         super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
         self.edit = QtWidgets.QLineEdit(parent=self)
-        # pylint: disable=no-member
-        self.edit.textChanged.connect(self._update_data_from_line_edit)
-        self.edit.editingFinished.connect(self.editingFinished)
+
+        self._make_connections()
+
         self.edit.addAction(
             self.get_browse_action(),
             QtWidgets.QLineEdit.TrailingPosition
         )
         self.setFocusProxy(self.edit)
         self.layout().addWidget(self.edit)
+
+    def _make_connections(self) -> None:  # pylint: disable=no-member
+        self.edit.textChanged.connect(self._update_data_from_line_edit)
+        self.edit.editingFinished.connect(self.editingFinished)
 
     def _update_data_from_line_edit(self):
         self._data = self.edit.text()
@@ -209,9 +218,8 @@ class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
                 QtCore.QPersistentModelIndex
             ]
     ) -> QtWidgets.QWidget:
-        a = index.data(role=speedwagon.models.ToolOptionsModel4.JsonDataRole)
         json_data = json.loads(
-            a
+            index.data(role=speedwagon.models.ToolOptionsModel4.JsonDataRole)
         )
 
         editor_type: Optional[typing.Type[EditDelegateWidget]] = \
