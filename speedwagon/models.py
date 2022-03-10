@@ -443,7 +443,11 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
         super().__init__(parent)
         self._data = data or []
 
-    def __setitem__(self, key, value):
+    def __setitem__(
+            self,
+            key: str,
+            value: Optional[Union[str, int, bool]]
+    ) -> None:
         if self._data is None:
             raise IndexError("No data")
 
