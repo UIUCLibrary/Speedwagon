@@ -107,9 +107,9 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
     def get_user_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
-        package_type_selection = speedwagon.workflow.DropDownSelection(
-            "Package Type"
-        )
+        package_type_selection = \
+            speedwagon.workflow.DropDownSelection(PACKAGE_TYPE)
+
         package_type_selection.placeholder_text = "Select a Package Type"
         for package_type_name in SUPPORTED_PACKAGE_SOURCES:
             package_type_selection.add_selection(package_type_name)
