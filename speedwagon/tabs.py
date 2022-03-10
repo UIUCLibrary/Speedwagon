@@ -72,7 +72,6 @@ class Tab:
         self.work_manager = work_manager
         self.tab_widget, self.tab_layout = self.create_tab()
         self.tab_widget.setSizePolicy(WORKFLOW_SIZE_POLICY)
-        self.tab_widget.setMinimumHeight(400)
         self.tab_layout.setSpacing(20)
 
     @staticmethod
@@ -98,9 +97,8 @@ class Tab:
         tool_settings.horizontalHeader().setSectionResizeMode(
             QtWidgets.QHeaderView.Stretch)
         v_header = tool_settings.verticalHeader()
-        v_header.setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
+        v_header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         v_header.setSectionsClickable(False)
-        v_header.setDefaultSectionSize(25)
         return tool_settings
 
     @classmethod
@@ -142,7 +140,6 @@ class Tab:
         tool_workspace = QtWidgets.QGroupBox()
 
         tool_workspace.setTitle(title)
-        tool_workspace.setMinimumHeight(100)
         workspace_widgets, layout = cls.create_workspace_layout(parent)
         tool_workspace.setLayout(layout)
         tool_workspace.setSizePolicy(WORKFLOW_SIZE_POLICY)
