@@ -1,22 +1,16 @@
 import pytest
 from PySide6 import QtWidgets, QtCore
 
+import speedwagon.workflow
 import speedwagon.widgets
 import speedwagon.models
-
-
-class TestDropDownSelection:
-    def test_serialize_selection(self):
-        data = speedwagon.widgets.DropDownSelection("Dummy")
-        data.add_selection("Spam")
-        assert "Spam" in data.serialize()['selections']
 
 
 class TestDelegateSelection:
     @pytest.fixture
     def model(self):
         return speedwagon.models.ToolOptionsModel4(data=[
-            speedwagon.widgets.FileSelectData('Spam'),
+            speedwagon.workflow.FileSelectData('Spam'),
         ])
 
     @pytest.fixture
@@ -28,7 +22,7 @@ class TestDelegateSelection:
 
     @pytest.fixture
     def delegate_widget(self):
-        return speedwagon.widgets.DelegateSelection()
+        return speedwagon.widgets.QtWidgetDelegateSelection()
 
     @pytest.fixture
     def editor(
@@ -48,7 +42,7 @@ class TestDelegateSelection:
             qtbot,
             index,
     ):
-        delegate_widget = speedwagon.widgets.DelegateSelection()
+        delegate_widget = speedwagon.widgets.QtWidgetDelegateSelection()
         assert isinstance(
             delegate_widget.createEditor(
                 parent=QtWidgets.QWidget(),
@@ -63,7 +57,7 @@ class TestDelegateSelection:
             qtbot,
             index,
             editor: speedwagon.widgets.FileSelectWidget,
-            delegate_widget: speedwagon.widgets.DelegateSelection,
+            delegate_widget: speedwagon.widgets.QtWidgetDelegateSelection,
             model: speedwagon.models.ToolOptionsModel4
     ):
         starting_value = model.data(index, role=QtCore.Qt.DisplayRole)
@@ -78,7 +72,7 @@ class TestDelegateSelection:
             self,
             qtbot,
             index,
-            delegate_widget: speedwagon.widgets.DelegateSelection,
+            delegate_widget: speedwagon.widgets.QtWidgetDelegateSelection,
             model: speedwagon.models.ToolOptionsModel4
     ):
         model.setData(index, "Dummy")
@@ -95,7 +89,7 @@ class TestDelegateSelection:
     def test_warn_on_not_using_right_subclass(
             self,
             index: QtCore.QModelIndex,
-            delegate_widget: speedwagon.widgets.DelegateSelection,
+            delegate_widget: speedwagon.widgets.QtWidgetDelegateSelection,
             model: speedwagon.models.ToolOptionsModel4
     ):
         model.setData(index, "Dummy")
@@ -161,8 +155,36 @@ class TestDirectorySelectWidget:
         assert widget.data is None
 
 
-def test_AbsOutputOptionDataType_needs_widget_name():
-    with pytest.raises(TypeError):
-        class BadClass(speedwagon.widgets.AbsOutputOptionDataType):
-            pass
-        BadClass(label="Dummy")
+
+#
+# def test_init(qtbot):
+#     dialog_box = QtWidgets.QDialog()
+#     table = QtWidgets.QTableView(parent=dialog_box)
+#     table.setEditTriggers(table.AllEditTriggers)
+#     layout = QtWidgets.QVBoxLayout()
+#     dialog_box.setLayout(layout)
+#     dialog_box.layout().addWidget(table)
+#     qtbot.addWidget(table)
+#     spam_dir = speedwagon.widgets.FileSelectData('Spam')
+#     spam_dir.placeholder_text = "Select a spam"
+#
+#     # user_args.append(spam_dir)
+#
+#     drop_down = speedwagon.widgets.DropDownSelection("Dummy")
+#     # drop_down.value = "Option 2"
+#     drop_down.placeholder_text = "Select an option"
+#     drop_down.add_selection("Option 1")
+#     drop_down.add_selection("Option 2")
+#
+#     # user_args.append(drop_down)
+#
+#     user_args = [
+#         spam_dir,
+#         drop_down
+#
+#     ]
+#     model = speedwagon.models.ToolOptionsModel4(data=user_args)
+#     table.setModel(model)
+#     delegate = speedwagon.widgets.QtWidgetDelegateSelection()
+#     table.setItemDelegate(delegate)
+#     dialog_box.exec()

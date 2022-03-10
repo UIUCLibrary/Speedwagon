@@ -8,6 +8,7 @@ import enum
 from uiucprescon import imagevalidate
 
 import speedwagon
+import speedwagon.workflow
 import speedwagon.tasks.validation
 from speedwagon.job import Workflow
 from . import shared_custom_widgets
@@ -61,6 +62,23 @@ class ValidateMetadataWorkflow(Workflow):
                 user_args["Profile"]
             )
         )
+
+    def get_user_options(
+            self
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        input_option = \
+            speedwagon.workflow.DirectorySelect(UserArgs.INPUT.value)
+
+        profile_type = speedwagon.workflow.DropDownSelection("Profile")
+        profile_type.placeholder_text = "Select a Profile"
+
+        for profile_name in imagevalidate.available_profiles():
+            profile_type.add_selection(profile_name)
+
+        return [
+            input_option,
+            profile_type
+        ]
 
     def user_options(self) -> List[
         Union[

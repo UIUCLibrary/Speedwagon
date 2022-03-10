@@ -15,6 +15,7 @@ from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
 
 import speedwagon
 import speedwagon.config
+import speedwagon.widgets
 from . import runner_strategies
 from . import models
 from . import worker  # pylint: disable=unused-import
@@ -81,8 +82,16 @@ class Tab:
 
         tool_settings = QtWidgets.QTableView(parent=parent)
         tool_settings.setEditTriggers(
-            QtWidgets.QAbstractItemView.AllEditTriggers)
-        tool_settings.setItemDelegate(MyDelegate(parent))
+            typing.cast(
+                QtWidgets.QAbstractItemView.EditTriggers,
+                QtWidgets.QAbstractItemView.AllEditTriggers
+            )
+        )
+
+        tool_settings.setItemDelegate(
+            speedwagon.widgets.QtWidgetDelegateSelection(parent)
+        )
+
         tool_settings.horizontalHeader().setVisible(False)
         tool_settings.setSelectionMode(
             QtWidgets.QAbstractItemView.SingleSelection)
@@ -520,10 +529,7 @@ class WorkflowsTab2(WorkflowsTab):
     def get_item_options_model(self, workflow):
         """Get item options model."""
         new_workflow = workflow(global_settings=self.parent.user_settings)
-        if hasattr(new_workflow, "get_user_options"):
-            user_options = new_workflow.get_user_options()
-            print(user_options)
-        return models.ToolOptionsModel3(new_workflow.user_options())
+        return models.ToolOptionsModel4(new_workflow.get_user_options())
 
     def start(self, item: typing.Type[Workflow]) -> None:
         if self.options_model is None:

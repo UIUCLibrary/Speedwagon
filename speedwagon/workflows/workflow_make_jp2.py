@@ -7,6 +7,7 @@ from typing import List, Any, Optional, Iterable, Union
 from uiucprescon import images
 
 import speedwagon
+import speedwagon.workflow
 from speedwagon import job
 from . import shared_custom_widgets as widgets
 
@@ -109,6 +110,20 @@ class MakeJp2Workflow(job.Workflow):
                   "    and etc...\n"
 
     active = True
+
+    def get_user_options(
+            self
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        profile = speedwagon.workflow.DropDownSelection("Profile")
+        profile.placeholder_text = "Select a profile"
+        for profile_name in ProfileFactory.profile_names():
+            profile.add_selection(profile_name)
+
+        return [
+            speedwagon.workflow.DirectorySelect("Input"),
+            speedwagon.workflow.DirectorySelect("Output"),
+            profile
+        ]
 
     def user_options(self) -> List[Union[widgets.UserOption2,
                                          widgets.UserOption3]]:

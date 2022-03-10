@@ -10,7 +10,7 @@ import hathizip.process
 import hathizip
 
 import speedwagon
-from speedwagon import reports
+from speedwagon import reports, workflow
 from speedwagon.job import Workflow
 from speedwagon.logging_helpers import GuiLogHandler
 from . import shared_custom_widgets as options
@@ -59,6 +59,15 @@ class ZipPackagesWorkflow(Workflow):
             raise ValueError("Invalid output")
 
         return True
+
+    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        source = workflow.DirectorySelect("Source")
+        output = workflow.DirectorySelect("Output")
+
+        return [
+            source,
+            output
+        ]
 
     def user_options(self) -> List[options.UserOption3]:
         return [

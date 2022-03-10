@@ -37,6 +37,7 @@ from uiucprescon.packager.packages.collection import \
     Package
 
 import speedwagon
+import speedwagon.workflow
 from speedwagon import validators
 from speedwagon.job import Workflow
 from speedwagon.workflows import shared_custom_widgets as options
@@ -102,6 +103,28 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
                   "Output Hathi is a directory to put the new packages for " \
                   "HathiTrust."
     active = True
+
+    def get_user_options(
+            self
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        package_type_selection = speedwagon.workflow.DropDownSelection(
+            "Package Type"
+        )
+        package_type_selection.placeholder_text = "Select a Package Type"
+        for package_type_name in SUPPORTED_PACKAGE_SOURCES:
+            package_type_selection.add_selection(package_type_name)
+
+        output_digital_library = \
+            speedwagon.workflow.DirectorySelect(OUTPUT_DIGITAL_LIBRARY)
+
+        output_hathi_trust = \
+            speedwagon.workflow.DirectorySelect(OUTPUT_HATHITRUST)
+
+        return [
+            package_type_selection,
+            output_digital_library,
+            output_hathi_trust
+        ]
 
     def user_options(self) -> List[Union[options.UserOption2,
                                          options.UserOption3]]:

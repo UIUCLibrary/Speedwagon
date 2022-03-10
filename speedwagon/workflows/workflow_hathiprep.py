@@ -12,9 +12,9 @@ from uiucprescon.packager.packages import collection
 import speedwagon
 import speedwagon.tasks.prep
 import speedwagon.tasks.packaging
+import speedwagon.workflow
 from speedwagon.workflows.title_page_selection import PackageBrowser
 from . import shared_custom_widgets
-
 __all__ = ['HathiPrepWorkflow']
 
 from .shared_custom_widgets import UserOption2, UserOption3
@@ -33,6 +33,24 @@ class HathiPrepWorkflow(speedwagon.Workflow):
                   "title page and associated filename in a separate image " \
                   "viewer." \
 
+
+    def get_user_options(
+            self
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+
+        package_type = speedwagon.workflow.DropDownSelection("Image File Type")
+        package_type.placeholder_text = "Select an Image Format"
+        package_type.add_selection("JPEG 2000")
+        package_type.add_selection("TIFF")
+
+        input_option = speedwagon.workflow.DirectorySelect("input")
+        # options.append(input_option)
+        options = [
+            package_type,
+            input_option
+        ]
+
+        return options
 
     def user_options(self) -> List[Union[UserOption2, UserOption3]]:
         """Get the user arguments for the workflow.

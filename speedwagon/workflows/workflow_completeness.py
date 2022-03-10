@@ -26,6 +26,8 @@ from .shared_custom_widgets import UserOption2, UserOption3
 
 __all__ = ['CompletenessWorkflow']
 
+from .. import workflow
+
 
 class CompletenessWorkflow(Workflow):
     name = "Verify HathiTrust Package Completeness"
@@ -40,6 +42,27 @@ class CompletenessWorkflow(Workflow):
                   "XML, YML, and TIFF or JP2 files are well-formed and " \
                   "valid. (This workflow provides console feedback, but " \
                   "doesn’t write new files as output)."
+
+    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        source = workflow.DirectorySelect("Source")
+
+        check_page_data_option = \
+            workflow.BooleanSelect("Check for page_data in meta.yml")
+        check_page_data_option.value = False
+
+        check_ocr_option = workflow.BooleanSelect("Check ALTO OCR xml files")
+        check_ocr_option.value = True
+
+        check_ocr_utf8_option = \
+            workflow.BooleanSelect('Check OCR xml files are utf-8')
+        check_ocr_utf8_option.value = False
+
+        return [
+            source,
+            check_page_data_option,
+            check_ocr_option,
+            check_ocr_utf8_option
+        ]
 
     def user_options(self) -> List[Union[UserOption2, UserOption3]]:
 

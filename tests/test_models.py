@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import pytest
 from PySide6 import QtCore, QtWidgets
 
-from speedwagon import tabs, models, job, widgets
+from speedwagon import tabs, models, job, widgets, workflow
 
 
 class TestSettingsModel:
@@ -260,10 +260,10 @@ class TestToolOptionsModel4:
 
     @pytest.fixture
     def data(self):
-        checksum_select = widgets.FileSelectData('Checksum File')
+        checksum_select = workflow.FileSelectData('Checksum File')
         checksum_select.filter = "Checksum files (*.md5)"
 
-        options = widgets.DropDownSelection('Order')
+        options = workflow.DropDownSelection('Order')
         options.add_selection("Bacon")
         options.add_selection("Bacon eggs")
         options.add_selection("Spam")
@@ -271,7 +271,7 @@ class TestToolOptionsModel4:
         return [
             checksum_select,
             options,
-            widgets.DirectorySelect('Eggs')
+            workflow.DirectorySelect('Eggs')
         ]
 
     def test_headings(self, qtbot, data):

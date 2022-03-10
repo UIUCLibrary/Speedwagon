@@ -12,6 +12,7 @@ from typing import List, Any, DefaultDict, Optional
 
 import speedwagon
 from speedwagon.job import Workflow
+import speedwagon.workflow
 from speedwagon.reports import add_report_borders
 from speedwagon.tasks import validation
 from .checksum_shared import ResultsValues
@@ -133,6 +134,13 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
 
         return "\n".join(report_lines)
 
+    def get_user_options(
+            self
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        return [
+            speedwagon.workflow.DirectorySelect("Input")
+        ]
+
     def user_options(self) -> List[options.UserOption3]:
         return [
             options.UserOptionCustomDataType("Input",
@@ -182,6 +190,13 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
                     }
                     jobs.append(job)
         return jobs
+
+    def get_user_options(
+            self
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        return [
+            speedwagon.workflow.DirectorySelect("Input")
+        ]
 
     def user_options(self) -> List[options.UserOption3]:
         return [

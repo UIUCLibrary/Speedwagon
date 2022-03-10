@@ -12,7 +12,8 @@ from typing import Type, Optional, Iterable, Dict, List, Any, Tuple, Set
 
 from PySide6 import QtWidgets
 
-from speedwagon import tasks
+from speedwagon import tasks, workflow
+
 __all__ = [
     "JobCancelled",
     "AbsWorkflow",
@@ -173,6 +174,9 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
         """
         return {}
 
+    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        return []
+
     def user_options(self) -> typing.List[Any]:
         """Get use options."""
         return []
@@ -297,8 +301,8 @@ def all_required_workflow_keys(
     """
     workflows = workflows or available_workflows()
     keys: Set[str] = set()
-    for workflow in workflows.values():
-        keys = keys.union(set(workflow.required_settings_keys))
+    for speedwagon_workflow in workflows.values():
+        keys = keys.union(set(speedwagon_workflow.required_settings_keys))
     return keys
 
 

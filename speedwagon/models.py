@@ -15,7 +15,8 @@ from collections import namedtuple
 import enum
 
 from PySide6 import QtCore, QtGui  # type: ignore
-from speedwagon import tabs, Workflow, widgets
+from speedwagon import tabs, Workflow
+import speedwagon.workflow
 from .job import AbsWorkflow
 from .workflows import shared_custom_widgets
 
@@ -432,14 +433,26 @@ class ToolOptionsModel3(ToolOptionsModel):
 
 class ToolOptionsModel4(QtCore.QAbstractListModel):
     JsonDataRole = cast(int, QtCore.Qt.UserRole) + 1
+    DataRole = JsonDataRole + 1
 
     def __init__(
             self,
-            data: List[widgets.AbsOutputOptionDataType] = None,
+            data: List[speedwagon.workflow.AbsOutputOptionDataType] = None,
             parent: QtCore.QObject = None
     ) -> None:
         super().__init__(parent)
         self._data = data or []
+
+    def __setitem__(self, key, value):
+        if self._data is None:
+            raise IndexError("No data")
+
+        for item in self._data:
+            if item.label == key:
+                item.value = value
+                break
+        else:
+            raise KeyError("Key not found")
 
     def flags(
             self,
@@ -477,8 +490,10 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
         if not index.isValid():
             return None
         item = self._data[index.row()]
+
         if role == QtCore.Qt.DisplayRole:
             return self._select_display_role(item)
+
         if role == QtCore.Qt.EditRole:
             return item.value
 
@@ -488,6 +503,10 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
                 font.setItalic(True)
                 return font
             return None
+
+        if role == self.DataRole:
+            return item
+
         if role == self.JsonDataRole:
             return item.build_json_data()
         return None
@@ -511,21 +530,35 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
     @classmethod
     def _select_display_role(
             cls,
-            item: widgets.AbsOutputOptionDataType
+            item: speedwagon.workflow.AbsOutputOptionDataType
     ) -> Optional[str]:
         if cls._should_use_placeholder_text(item) is True:
             return item.placeholder_text
+        if isinstance(item.value, bool):
+            if item.value is True:
+                return "Yes"
+            elif item.value is False:
+                return "No"
+        if item.value is None:
+            return item.value
         return str(item.value)
 
     @staticmethod
     def _should_use_placeholder_text(
-            item: widgets.AbsOutputOptionDataType
+            item: speedwagon.workflow.AbsOutputOptionDataType
     ) -> bool:
         if item.value is not None:
             return False
         if item.placeholder_text is None:
             return False
         return True
+
+    def serialize(self):
+        return {data.label: data.value for data in self._data}
+
+    def get(self) -> Dict[str, Any]:
+        """Access the key value settings for all options."""
+        return self.serialize()
 
 
 class SettingsModel(QtCore.QAbstractTableModel):

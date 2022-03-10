@@ -1,4 +1,3 @@
-import abc
 import json
 import typing
 import warnings
@@ -6,57 +5,6 @@ from typing import Union, Optional, Dict, List, Any
 
 from PySide6 import QtWidgets, QtCore, QtGui
 import speedwagon.models
-
-
-class AbsOutputOptionDataType(abc.ABC):
-    label: str
-    widget_name: str
-
-    def __init_subclass__(cls) -> None:
-        if not hasattr(cls, "widget_name"):
-            raise TypeError(f"Can't instantiate abstract class {cls.__name__} "
-                            f"without abstract property widget_name")
-        return super().__init_subclass__()
-
-    def __init__(self, label: str) -> None:
-        super().__init__()
-        self.label = label
-        self.value = None
-        self.placeholder_text: Optional[str] = None
-
-    def serialize(self) -> typing.Dict[str, typing.Any]:
-        data = {
-            "widget_type": self.widget_name,
-            "label": self.label
-        }
-        if self.placeholder_text is not None:
-            data['placeholder_text'] = self.placeholder_text
-        return data
-
-    def build_json_data(self) -> str:
-        return json.dumps(self.serialize())
-
-
-class DropDownSelection(AbsOutputOptionDataType):
-    widget_name: str = "DropDownSelect"
-
-    def __init__(self, label: str) -> None:
-        super().__init__(label)
-        self._selections: typing.List[str] = []
-
-    def add_selection(self, label: str) -> None:
-        self._selections.append(label)
-
-    def serialize(self) -> typing.Dict[str, typing.Any]:
-        data = super().serialize()
-        if self.placeholder_text is not None:
-            data["placeholder_text"] = self.placeholder_text
-        data["selections"] = self._selections
-        return data
-
-
-class TextLineEditData(AbsOutputOptionDataType):
-    widget_name = "line_edit"
 
 
 class EditDelegateWidget(QtWidgets.QWidget):
@@ -79,6 +27,33 @@ class EditDelegateWidget(QtWidgets.QWidget):
     @data.setter
     def data(self, value):
         self._data = value
+
+
+class CheckBoxWidget(EditDelegateWidget):
+
+    def __init__(self, *args, widget_metadata=None, **kwargs) -> None:
+        super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
+        self.check_box = QtWidgets.QCheckBox(self)
+        self.setFocusProxy(self.check_box)
+        self.check_box.stateChanged.connect(self.update_data)
+        self.layout().addWidget(self.check_box)
+
+    def update_data(self, state):
+
+        if state == QtCore.Qt.Unchecked:
+            self.data = False
+
+        if state == QtCore.Qt.Checked:
+            self.data = True
+        self.dataChanged.emit()
+
+    @EditDelegateWidget.data.setter
+    def data(self, value):
+        self._data = value
+        if value is True:
+            self.check_box.setCheckState(QtCore.Qt.Checked)
+        elif value is False:
+            self.check_box.setCheckState(QtCore.Qt.Unchecked)
 
 
 class DropDownWidget(EditDelegateWidget):
@@ -217,28 +192,12 @@ class FileSelectWidget(FileSystemItemSelectWidget):
             self.dataChanged.emit()
 
 
-class FileSelectData(AbsOutputOptionDataType):
-    widget_name: str = "FileSelect"
-
-    def __init__(self, label: str) -> None:
-        super().__init__(label)
-        self.filter: Optional[str] = None
-
-    def serialize(self) -> typing.Dict[str, typing.Any]:
-        data = super().serialize()
-        data['filter'] = self.filter
-        return data
-
-
-class DirectorySelect(AbsOutputOptionDataType):
-    widget_name = "DirectorySelect"
-
-
-class DelegateSelection(QtWidgets.QStyledItemDelegate):
+class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
     widget_types: typing.Dict[str, typing.Type[EditDelegateWidget]] = {
         "FileSelect": FileSelectWidget,
         "DirectorySelect": DirectorySelectWidget,
-        "DropDownSelect": DropDownWidget
+        "DropDownSelect": DropDownWidget,
+        "BooleanSelect": CheckBoxWidget
     }
 
     def createEditor(
@@ -250,8 +209,9 @@ class DelegateSelection(QtWidgets.QStyledItemDelegate):
                 QtCore.QPersistentModelIndex
             ]
     ) -> QtWidgets.QWidget:
+        a = index.data(role=speedwagon.models.ToolOptionsModel4.JsonDataRole)
         json_data = json.loads(
-            index.data(role=speedwagon.models.ToolOptionsModel4.JsonDataRole)
+            a
         )
 
         editor_type: Optional[typing.Type[EditDelegateWidget]] = \
@@ -285,7 +245,7 @@ class DelegateSelection(QtWidgets.QStyledItemDelegate):
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex
             ]) -> None:
-        if hasattr(editor, "data") and editor.data is not None:
+        if hasattr(editor, "data"):
             model.setData(
                 index,
                 editor.data,
@@ -293,8 +253,10 @@ class DelegateSelection(QtWidgets.QStyledItemDelegate):
             )
         else:
             warnings.warn(
-                "Editor has to data. Make sure to use a widget that "
-                "subclaseses EditDelegateWidget",
+                f"Editor [{editor.__class__.__name__}] has to have the "
+                "attribute data to display properly. "
+                "Make sure to use a widget that is a subclass of "
+                "EditDelegateWidget",
                 Warning
             )
             super().setModelData(editor, model, index)

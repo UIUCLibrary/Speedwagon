@@ -8,6 +8,7 @@ import pytest
 import speedwagon.startup
 import speedwagon.tabs
 import speedwagon.gui
+import speedwagon.workflow
 from speedwagon.workflows import shared_custom_widgets
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QAction
@@ -264,6 +265,11 @@ class TestMainWindow2:
                                        **user_args) -> List[dict]:
                 return []
 
+            def get_user_options(self) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+                return [
+                    speedwagon.workflow.TextLineEditData("Dummy")
+                ]
+                pass
             def user_options(self) -> typing.List[Any]:
                 return [
                     shared_custom_widgets.UserOptionPythonDataType2(

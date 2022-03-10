@@ -10,6 +10,7 @@ from typing import List, Dict, Optional
 import pykdu_compress
 
 import speedwagon
+import speedwagon.workflow
 from speedwagon import reports
 from speedwagon.job import Workflow
 from . import shared_custom_widgets as options
@@ -112,6 +113,13 @@ class ConvertTiffPreservationToDLJp2Workflow(Workflow):
             })
 
         return jobs
+
+    def get_user_options(
+            self
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        return [
+            speedwagon.workflow.DirectorySelect("Input"),
+        ]
 
     def user_options(self) -> List[UserOption3]:
         return [

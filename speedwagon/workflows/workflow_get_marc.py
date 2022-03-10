@@ -22,7 +22,7 @@ import requests
 
 import speedwagon
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
-from speedwagon import reports, validators
+from speedwagon import reports, validators, workflow
 from speedwagon.job import Workflow
 from . import shared_custom_widgets as options
 
@@ -93,6 +93,27 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
             value = self.global_settings.get(k)
             if value is None:
                 raise MissingConfiguration(f"Missing value for {k}")
+
+    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        user_input = workflow.DirectorySelect(OPTION_USER_INPUT)
+
+        id_type_option = workflow.DropDownSelection(IDENTIFIER_TYPE)
+        id_type_option.placeholder_text = "Select an ID Type"
+        for id_type in SUPPORTED_IDENTIFIERS:
+            id_type_option.add_selection(id_type)
+
+        add_field_955 = workflow.BooleanSelect(OPTION_955_FIELD)
+        add_field_955.value = True
+
+        add_field_035 = workflow.BooleanSelect(OPTION_035_FIELD)
+        add_field_035.value = True
+
+        return [
+            user_input,
+            id_type_option,
+            add_field_955,
+            add_field_035
+        ]
 
     def user_options(self) -> List[UserOptions]:
         """Get the settings presented to the user."""

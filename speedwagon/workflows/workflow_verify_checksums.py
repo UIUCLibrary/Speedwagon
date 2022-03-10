@@ -17,6 +17,8 @@ from . import shared_custom_widgets
 
 __all__ = ['ChecksumWorkflow', 'VerifyChecksumBatchSingleWorkflow']
 
+from .. import workflow
+
 TaskResult = Union[str, bool]
 
 
@@ -84,6 +86,12 @@ class ChecksumWorkflow(Workflow):
                 }
                 jobs.append(new_job)
         return jobs
+
+    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        input_folder = workflow.DirectorySelect(UserArgs.INPUT.value)
+        return [
+            input_folder
+        ]
 
     def user_options(self) -> List[shared_custom_widgets.UserOption3]:
         return [
@@ -359,6 +367,13 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
             }
             jobs.append(new_job)
         return jobs
+
+    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        input_file = workflow.FileSelectData(UserArgs.INPUT.value)
+        input_file.filter = "Checksum files (*.md5)"
+        return [
+            input_file
+        ]
 
     def user_options(self) -> List[shared_custom_widgets.UserOption3]:
         return [

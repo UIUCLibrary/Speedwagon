@@ -8,6 +8,7 @@ from typing import List, Any, Optional
 from uiucprescon import packager
 
 import speedwagon
+import speedwagon.workflow
 from speedwagon.job import Workflow
 from speedwagon import reports
 from speedwagon.logging_helpers import GuiLogHandler
@@ -46,6 +47,14 @@ class HathiLimitedToDLWorkflow(Workflow):
             PackageConverter(src=job_args['package'],
                              dst=job_args['destination'])
         )
+
+    def get_user_options(
+            self
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        return [
+            speedwagon.workflow.DirectorySelect("Input"),
+            speedwagon.workflow.DirectorySelect("Output"),
+        ]
 
     def user_options(self) -> List[options.UserOption3]:
         return [
