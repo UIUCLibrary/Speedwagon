@@ -495,26 +495,6 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             setting=self._data[index.row()],
             role=typing.cast(QtCore.Qt.ItemDataRole, role)
         )
-        # =========
-        # if role == QtCore.Qt.DisplayRole:
-        #     return self._select_display_role(item)
-        #
-        # if role == QtCore.Qt.EditRole:
-        #     return item.value
-        #
-        # if role == QtCore.Qt.FontRole:
-        #     if self._should_use_placeholder_text(item) is True:
-        #         font = QtGui.QFont()
-        #         font.setItalic(True)
-        #         return font
-        #     return None
-        #
-        # if role == self.DataRole:
-        #     return item
-        #
-        # if role == self.JsonDataRole:
-        #     return item.build_json_data()
-        # return None
 
     def setData(
             self,
