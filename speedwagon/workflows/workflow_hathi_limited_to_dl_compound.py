@@ -12,7 +12,6 @@ import speedwagon.workflow
 from speedwagon.job import Workflow
 from speedwagon import reports
 from speedwagon.logging_helpers import GuiLogHandler
-# from . import shared_custom_widgets as options
 __all__ = ['HathiLimitedToDLWorkflow']
 
 
@@ -55,12 +54,6 @@ class HathiLimitedToDLWorkflow(Workflow):
             speedwagon.workflow.DirectorySelect("Input"),
             speedwagon.workflow.DirectorySelect("Output"),
         ]
-
-    # def user_options(self) -> List[options.UserOption3]:
-    #     return [
-    #         options.UserOptionCustomDataType("Input", options.FolderData),
-    #         options.UserOptionCustomDataType("Output", options.FolderData)
-    #     ]
 
     @classmethod
     @reports.add_report_borders

@@ -11,13 +11,9 @@ from uiucprescon import ocr
 import speedwagon
 import speedwagon.workflow
 
-# from speedwagon.workflows import shared_custom_widgets
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 
 __all__ = ['OCRWorkflow']
-
-# from speedwagon.workflows.shared_custom_widgets import UserOption2,
-# UserOption3
 
 
 def locate_tessdata() -> Optional[str]:

@@ -21,8 +21,6 @@ import speedwagon
 import speedwagon.tasks.tasks
 from speedwagon.logging_helpers import GuiLogHandler
 from speedwagon.job import Workflow
-# from . import shared_custom_widgets as options
-# from .shared_custom_widgets import UserOption2, UserOption3
 
 __all__ = ['CompletenessWorkflow']
 
@@ -63,24 +61,6 @@ class CompletenessWorkflow(Workflow):
             check_ocr_option,
             check_ocr_utf8_option
         ]
-
-    # def user_options(self) -> List[Union[UserOption2, UserOption3]]:
-    #
-    #     check_page_data_option = options.UserOptionPythonDataType2(
-    #         "Check for page_data in meta.yml", bool)
-    #     check_page_data_option.data = False
-    #     check_ocr_option = options.UserOptionPythonDataType2(
-    #         "Check ALTO OCR xml files", bool)
-    #     check_ocr_utf8_option = options.UserOptionPythonDataType2(
-    #         'Check OCR xml files are utf-8', bool)
-    #     check_ocr_utf8_option.data = False
-    #     check_ocr_option.data = True
-    #     return [
-    #         options.UserOptionCustomDataType("Source", options.FolderData),
-    #         check_page_data_option,
-    #         check_ocr_option,
-    #         check_ocr_utf8_option
-    #     ]
 
     def discover_task_metadata(self, initial_results: List[
         speedwagon.tasks.tasks.Result],

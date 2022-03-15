@@ -16,9 +16,6 @@ import speedwagon.workflow
 from speedwagon.reports import add_report_borders
 from speedwagon.tasks import validation
 from .checksum_shared import ResultsValues
-# from . import shared_custom_widgets
-# from . import shared_custom_widgets as options
-
 
 __all__ = [
     'MakeChecksumBatchSingleWorkflow',
@@ -141,12 +138,6 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
             speedwagon.workflow.DirectorySelect("Input")
         ]
 
-    # def user_options(self) -> List[options.UserOption3]:
-    #     return [
-    #         options.UserOptionCustomDataType("Input",
-    #                                          options.FolderData),
-    #     ]
-
 
 class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
     name = "Make Checksum Batch [Multiple]"
@@ -197,12 +188,6 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
         return [
             speedwagon.workflow.DirectorySelect("Input")
         ]
-
-    # def user_options(self) -> List[options.UserOption3]:
-    #     return [
-    #         options.UserOptionCustomDataType("Input",
-    #                                          options.FolderData),
-    #     ]
 
     def create_new_task(
             self,
@@ -318,12 +303,6 @@ class RegenerateChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
 
         return "\n".join(report_lines)
 
-    # def user_options(self) -> List[options.UserOption3]:
-    #     return [
-    #         options.UserOptionCustomDataType(
-    #             "Input", shared_custom_widgets.ChecksumData),
-    #     ]
-
 
 class RegenerateChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
     name = "Regenerate Checksum Batch [Multiple]"
@@ -373,12 +352,6 @@ class RegenerateChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
                     }
                     jobs.append(job)
         return jobs
-
-    # def user_options(self) -> List[options.UserOption3]:
-    #     return [
-    #         options.UserOptionCustomDataType("Input",
-    #                                          options.FolderData),
-    #     ]
 
     def completion_task(self,
                         task_builder: "speedwagon.tasks.TaskBuilder",

@@ -16,7 +16,6 @@ import speedwagon
 from speedwagon import validators
 from speedwagon.job import Workflow
 from speedwagon.logging_helpers import GuiLogHandler
-# from . import shared_custom_widgets as options
 
 __all__ = ['CaptureOneToDlCompoundWorkflow']
 
@@ -42,17 +41,6 @@ class CaptureOneToDlCompoundWorkflow(Workflow):
             "Library Compound Object",
             DeprecationWarning
         )
-
-    # def user_options(self) -> List[options.UserOptionCustomDataType]:
-    #     """Get the options types need to configuring the workflow.
-    #
-    #     Returns:
-    #         Returns a list of user option types
-    #     """
-    #     return [
-    #         options.UserOptionCustomDataType("Input", options.FolderData),
-    #         options.UserOptionCustomDataType("Output", options.FolderData)
-    #             ]
 
     def discover_task_metadata(self,
                                initial_results: List[Any],

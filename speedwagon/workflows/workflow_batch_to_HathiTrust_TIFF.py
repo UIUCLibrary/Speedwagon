@@ -87,14 +87,6 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                      }
                 )
         return tasks_metadata
-    # def get_user_options(  # pylint: disable=no-self-use
-    #         self
-    # ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
-    #     id_type = speedwagon.workflow.DropDownSelection('Identifier type')
-    #     id_type.add_selection()
-    #     return [
-    #         id_type
-    #     ]
 
     def user_options(self) -> List[UserOptions]:
         suppoted_identifer_types: List[str] = [

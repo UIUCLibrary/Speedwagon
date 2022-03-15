@@ -11,7 +11,6 @@ import speedwagon
 import speedwagon.workflow
 import speedwagon.tasks.validation
 from speedwagon.job import Workflow
-# from . import shared_custom_widgets
 
 __all__ = ['ValidateMetadataWorkflow']
 
@@ -79,33 +78,6 @@ class ValidateMetadataWorkflow(Workflow):
             input_option,
             profile_type
         ]
-
-    # def user_options(self) -> List[
-    #     Union[
-    #         shared_custom_widgets.UserOption2,
-    #         shared_custom_widgets.UserOption3
-    #     ]
-    # ]:
-    #     options: List[
-    #         Union[
-    #             shared_custom_widgets.UserOption2,
-    #             shared_custom_widgets.UserOption3
-    #         ]
-    #     ] = []
-    #
-    #     input_option = \
-    #         shared_custom_widgets.UserOptionCustomDataType(
-    #             UserArgs.INPUT.value, shared_custom_widgets.FolderData)
-    #
-    #     profile_type = shared_custom_widgets.ListSelection("Profile")
-    #
-    #     for profile_name in imagevalidate.available_profiles():
-    #         profile_type.add_selection(profile_name)
-    #
-    #     options.append(input_option)
-    #     options.append(profile_type)
-    #
-    #     return options
 
     @staticmethod
     def validate_user_options(**user_args: str) -> bool:
