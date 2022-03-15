@@ -1,3 +1,5 @@
+"""Specialize widgets."""
+
 import json
 import typing
 import warnings
@@ -213,6 +215,12 @@ class FileSelectWidget(FileSystemItemSelectWidget):
 
 
 class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
+    """Special delegate selector.
+
+    Uses data in widget_type field to dynamically select the correct editor
+    widget.
+    """
+
     widget_types: typing.Dict[str, typing.Type[EditDelegateWidget]] = {
         "FileSelect": FileSelectWidget,
         "DirectorySelect": DirectorySelectWidget,
@@ -229,6 +237,7 @@ class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
                 QtCore.QPersistentModelIndex
             ]
     ) -> QtWidgets.QWidget:
+        """Create the correct editor widget for editing the data."""
         json_data = json.loads(
             index.data(role=speedwagon.models.ToolOptionsModel4.JsonDataRole)
         )
@@ -253,6 +262,7 @@ class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
                 QtCore.QPersistentModelIndex
             ]
     ) -> None:
+        """Update the editor delegate widget with the model's data."""
         editor.data = index.data(typing.cast(int, QtCore.Qt.EditRole))
         super().setEditorData(editor, index)
 
@@ -264,6 +274,7 @@ class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex
             ]) -> None:
+        """Set data from editor widget to the model."""
         if hasattr(editor, "data"):
             model.setData(
                 index,
