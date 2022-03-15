@@ -35,7 +35,7 @@ class HathiPrepWorkflow(speedwagon.Workflow):
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
 
-        package_type = speedwagon.workflow.DropDownSelection("Image File Type")
+        package_type = speedwagon.workflow.ChoiceSelection("Image File Type")
         package_type.placeholder_text = "Select an Image Format"
         package_type.add_selection("JPEG 2000")
         package_type.add_selection("TIFF")

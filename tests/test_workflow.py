@@ -4,7 +4,7 @@ import pytest
 
 class TestDropDownSelection:
     def test_serialize_selection(self):
-        data = speedwagon.workflow.DropDownSelection("Dummy")
+        data = speedwagon.workflow.ChoiceSelection("Dummy")
         data.add_selection("Spam")
         assert "Spam" in data.serialize()['selections']
 

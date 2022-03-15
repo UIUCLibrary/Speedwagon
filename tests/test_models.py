@@ -265,7 +265,7 @@ class TestToolOptionsModel4:
         checksum_select = workflow.FileSelectData('Checksum File')
         checksum_select.filter = "Checksum files (*.md5)"
 
-        options = workflow.DropDownSelection('Order')
+        options = workflow.ChoiceSelection('Order')
         options.add_selection("Bacon")
         options.add_selection("Bacon eggs")
         options.add_selection("Spam")

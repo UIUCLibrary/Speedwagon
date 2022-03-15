@@ -168,12 +168,12 @@ class OCRWorkflow(speedwagon.Workflow):
     def get_user_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
-        package_type = speedwagon.workflow.DropDownSelection("Image File Type")
+        package_type = speedwagon.workflow.ChoiceSelection("Image File Type")
         package_type.placeholder_text = "Select Image Format"
         for file_type in OCRWorkflow.SUPPORTED_IMAGE_TYPES:
             package_type.add_selection(file_type)
 
-        language_type = speedwagon.workflow.DropDownSelection("Language")
+        language_type = speedwagon.workflow.ChoiceSelection("Language")
         language_type.placeholder_text = "Select Language"
         tessdata_path = self.get_tesseract_path()
 

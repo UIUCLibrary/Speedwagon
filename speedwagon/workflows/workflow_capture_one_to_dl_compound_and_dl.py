@@ -110,7 +110,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
         input_path = speedwagon.workflow.DirectorySelect(USER_INPUT_PATH)
 
         package_type_selection = \
-            speedwagon.workflow.DropDownSelection(PACKAGE_TYPE)
+            speedwagon.workflow.ChoiceSelection(PACKAGE_TYPE)
 
         package_type_selection.placeholder_text = "Select a Package Type"
         for package_type_name in SUPPORTED_PACKAGE_SOURCES:

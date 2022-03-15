@@ -68,7 +68,7 @@ class ValidateMetadataWorkflow(Workflow):
         input_option = \
             speedwagon.workflow.DirectorySelect(UserArgs.INPUT.value)
 
-        profile_type = speedwagon.workflow.DropDownSelection("Profile")
+        profile_type = speedwagon.workflow.ChoiceSelection("Profile")
         profile_type.placeholder_text = "Select a Profile"
 
         for profile_name in imagevalidate.available_profiles():

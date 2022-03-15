@@ -212,7 +212,7 @@ class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
     widget_types: typing.Dict[str, typing.Type[EditDelegateWidget]] = {
         "FileSelect": FileSelectWidget,
         "DirectorySelect": DirectorySelectWidget,
-        "DropDownSelect": ComboWidget,
+        "ChoiceSelection": ComboWidget,
         "BooleanSelect": CheckBoxWidget
     }
 

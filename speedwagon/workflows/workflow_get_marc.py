@@ -97,7 +97,7 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
     def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
         user_input = workflow.DirectorySelect(OPTION_USER_INPUT)
 
-        id_type_option = workflow.DropDownSelection(IDENTIFIER_TYPE)
+        id_type_option = workflow.ChoiceSelection(IDENTIFIER_TYPE)
         id_type_option.placeholder_text = "Select an ID Type"
         for id_type in SUPPORTED_IDENTIFIERS:
             id_type_option.add_selection(id_type)

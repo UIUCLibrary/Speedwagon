@@ -113,7 +113,7 @@ class MakeJp2Workflow(job.Workflow):
     def get_user_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
-        profile = speedwagon.workflow.DropDownSelection("Profile")
+        profile = speedwagon.workflow.ChoiceSelection("Profile")
         profile.placeholder_text = "Select a profile"
         for profile_name in ProfileFactory.profile_names():
             profile.add_selection(profile_name)
