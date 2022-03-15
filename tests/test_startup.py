@@ -17,6 +17,7 @@ import speedwagon.logging_helpers
 import speedwagon.startup
 import speedwagon.config
 import speedwagon.job
+import speedwagon.gui
 import speedwagon.runner_strategies
 from speedwagon.dialog.settings import SettingsDialog
 import speedwagon.dialog
@@ -576,7 +577,6 @@ class TestStartupDefault:
         )
 
 
-
 class TestSingleWorkflowJSON:
     def test_run_without_json_raises_exception(self):
         with pytest.raises(ValueError) as error:
@@ -597,6 +597,12 @@ class TestSingleWorkflowJSON:
     def test_runner_strategies_called(self, monkeypatch, qtbot):
         import tracemalloc
         tracemalloc.start()
+        monkeypatch.setattr(
+            speedwagon.startup.WorkflowProgress,
+            "show",
+            lambda *args, **kwargs: None
+        )
+
         startup = speedwagon.startup.SingleWorkflowJSON()
         startup.load_json_string(
             json.dumps(
@@ -686,6 +692,13 @@ class TestSingleWorkflowJSON:
             "MainWindow2",
             lambda _: MainWindow2
         )
+
+        monkeypatch.setattr(
+            speedwagon.startup.WorkflowProgress,
+            "show",
+            lambda *args, **kwargs: None
+        )
+
         startup.run()
         assert startup.on_exit.called is True
 
@@ -768,6 +781,12 @@ class TestWorkflowProgressCallbacks:
 
     @pytest.fixture()
     def dialog_box(self, qtbot, monkeypatch):
+        monkeypatch.setattr(
+            speedwagon.startup.WorkflowProgress,
+            "show",
+            lambda *args, **kwargs: None
+        )
+
         widget = speedwagon.dialog.dialogs.WorkflowProgress()
         monkeypatch.setattr(
             speedwagon.dialog.dialogs.WorkflowProgressStateWorking,
@@ -856,6 +875,7 @@ class TestWorkflowProgressCallbacks:
         assert QMessageBox.called is True
 
     def test_start_calls_start_signal(self, dialog_box, qtbot):
+
         callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
         with qtbot.waitSignal(callbacks.signals.started):
             callbacks.start()
@@ -1143,6 +1163,12 @@ class TestStartQtThreaded:
     ):
         starter.load_custom_tabs = Mock()
         starter.load_all_workflows_tab = Mock()
+        monkeypatch.setattr(
+            speedwagon.gui.MainWindow2,
+            "show",
+            lambda *args, **kwargs: None
+        )
+
         starter.run()
         loader = Mock()
         loader.get_settings = Mock(return_value={})
@@ -1229,6 +1255,12 @@ class TestStartQtThreaded:
             "available_workflows",
             lambda: {"spam": spam_workflow}
         )
+        monkeypatch.setattr(
+            speedwagon.startup.WorkflowProgress,
+            "show",
+            lambda *args, **kwargs: None
+        )
+
         WorkflowProgress = speedwagon.startup.WorkflowProgress
         dummy = None
 
