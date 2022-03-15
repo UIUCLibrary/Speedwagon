@@ -2,6 +2,7 @@
 
 import abc
 import os
+import warnings
 from typing import Type, Union, List
 from PySide6 import QtWidgets, QtCore, QtGui
 
@@ -31,6 +32,10 @@ class CustomItemWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None, *args, **kwargs) -> None:
         """Create a custom item widget."""
+        warnings.warn(
+            "Use workflow.AbsOutputOptionDataType instead",
+            DeprecationWarning
+        )
         super().__init__(parent, *args, **kwargs)
         self._data = ""
         self.inner_layout = QtWidgets.QHBoxLayout(parent)
@@ -54,6 +59,10 @@ class AbsBrowseableWidget(CustomItemWidget):
 
     def __init__(self, *args, **kwargs) -> None:
         """Create the base structure for a browseable widget."""
+        warnings.warn(
+            "Use workflow.AbsOutputOptionDataType instead",
+            DeprecationWarning
+        )
         super().__init__()
         self.text_line = QtWidgets.QLineEdit(self)
         self.action = \

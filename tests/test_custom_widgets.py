@@ -9,6 +9,8 @@ from speedwagon.tabs import WorkflowsTab, MyDelegate
 from speedwagon.workflows import shared_custom_widgets
 
 
+@pytest.mark.filterwarnings(
+    "ignore:Use workflow.AbsOutputOptionDataType instead:DeprecationWarning")
 def test_folder_browse_widget(qtbot, monkeypatch):
     widget = shared_custom_widgets.FolderBrowseWidget()
 
@@ -26,6 +28,8 @@ def test_folder_browse_widget(qtbot, monkeypatch):
     assert widget.text_line.text() == "/sample/path"
 
 
+@pytest.mark.filterwarnings(
+    "ignore:Use workflow.AbsOutputOptionDataType instead:DeprecationWarning")
 def test_browse_checksumfile(qtbot, monkeypatch):
     widget = shared_custom_widgets.ChecksumFile()
 
@@ -109,6 +113,8 @@ def test_boolean_delegate_is_combobox(qtbot, monkeypatch):
     assert isinstance(table.indexWidget(index), QtWidgets.QComboBox)
 
 
+@pytest.mark.filterwarnings(
+    "ignore:Use workflow.AbsOutputOptionDataType instead:DeprecationWarning")
 @pytest.mark.filterwarnings(
     "ignore:use ToolOptionsModel4 instead:DeprecationWarning")
 def test_folder_delegate_is_browsable(qtbot, monkeypatch):
