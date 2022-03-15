@@ -6,6 +6,10 @@ from typing import Union, Optional, Dict, List, Any
 from PySide6 import QtWidgets, QtCore, QtGui
 import speedwagon.models
 
+__all__ = [
+    "QtWidgetDelegateSelection"
+]
+
 
 class EditDelegateWidget(QtWidgets.QWidget):
     editingFinished = QtCore.Signal()
