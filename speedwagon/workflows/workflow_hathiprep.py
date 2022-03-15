@@ -1,7 +1,7 @@
 """Hathi Prep Workflow."""
 import itertools
 import os
-from typing import Mapping, List, Any, Sequence, Dict, Union, Optional
+from typing import Mapping, List, Any, Sequence, Dict, Optional
 import typing
 from PySide6 import QtWidgets  # type: ignore
 
@@ -14,10 +14,7 @@ import speedwagon.tasks.prep
 import speedwagon.tasks.packaging
 import speedwagon.workflow
 from speedwagon.workflows.title_page_selection import PackageBrowser
-from . import shared_custom_widgets
 __all__ = ['HathiPrepWorkflow']
-
-from .shared_custom_widgets import UserOption2, UserOption3
 
 
 class HathiPrepWorkflow(speedwagon.Workflow):
@@ -44,30 +41,11 @@ class HathiPrepWorkflow(speedwagon.Workflow):
         package_type.add_selection("TIFF")
 
         input_option = speedwagon.workflow.DirectorySelect("input")
-        # options.append(input_option)
-        options = [
+
+        return [
+            input_option,
             package_type,
-            input_option
         ]
-
-        return options
-
-    def user_options(self) -> List[Union[UserOption2, UserOption3]]:
-        """Get the user arguments for the workflow.
-
-        Returns:
-            Returns information about the package type and the source directory
-        """
-        options: List[Union[UserOption2, UserOption3]] = []
-        package_type = shared_custom_widgets.ListSelection("Image File Type")
-        package_type.add_selection("JPEG 2000")
-        package_type.add_selection("TIFF")
-        input_option = shared_custom_widgets.UserOptionCustomDataType(
-            "input", shared_custom_widgets.FolderData)
-
-        options.append(input_option)
-        options.append(package_type)
-        return options
 
     def initial_task(self,
                      task_builder: "speedwagon.tasks.tasks.TaskBuilder",

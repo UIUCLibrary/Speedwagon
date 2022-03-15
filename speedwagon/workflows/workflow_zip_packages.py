@@ -13,7 +13,6 @@ import speedwagon
 from speedwagon import reports, workflow
 from speedwagon.job import Workflow
 from speedwagon.logging_helpers import GuiLogHandler
-from . import shared_custom_widgets as options
 
 __all__ = ['ZipPackagesWorkflow']
 
@@ -67,15 +66,6 @@ class ZipPackagesWorkflow(Workflow):
         return [
             source,
             output
-        ]
-
-    def user_options(self) -> List[options.UserOption3]:
-        return [
-            options.UserOptionCustomDataType("Source",
-                                             options.FolderData),
-
-            options.UserOptionCustomDataType("Output",
-                                             options.FolderData),
         ]
 
     def create_new_task(
