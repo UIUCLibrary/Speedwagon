@@ -1,8 +1,10 @@
 from unittest.mock import Mock
-
+import pytest
 from PySide6 import QtWidgets
 from typing import List, Any
 from speedwagon.job import AbsWorkflow
+import speedwagon.tabs
+import speedwagon.models
 from speedwagon.tabs import WorkflowsTab, MyDelegate
 from speedwagon.workflows import shared_custom_widgets
 
@@ -59,7 +61,9 @@ class MyWidget(QtWidgets.QDialog):
         self.layout().addWidget(self.tabs)
 
 
-def test_boolean_delegate_is_combobox(qtbot):
+@pytest.mark.filterwarnings(
+    "ignore:use ToolOptionsModel4 instead:DeprecationWarning")
+def test_boolean_delegate_is_combobox(qtbot, monkeypatch):
     widget = MyWidget()
 
     def user_options(self):
@@ -73,6 +77,20 @@ def test_boolean_delegate_is_combobox(qtbot):
     Spam.user_options = user_options
     mock_work_manager = Mock()
     mock_work_manager.user_settings = {}
+
+
+    def get_item_options_model(self, workflow):
+        new_workflow = workflow(
+            global_settings=dict(self.work_manager.user_settings)
+        )
+        return speedwagon.models.ToolOptionsModel3(new_workflow.user_options())
+
+    monkeypatch.setattr(
+        WorkflowsTab,
+        "get_item_options_model",
+        get_item_options_model
+    )
+
 
     workflow_tab = WorkflowsTab(parent=None, workflows={"spam": Spam},
                                 work_manager=mock_work_manager)
@@ -91,7 +109,9 @@ def test_boolean_delegate_is_combobox(qtbot):
     assert isinstance(table.indexWidget(index), QtWidgets.QComboBox)
 
 
-def test_folder_delegate_is_browsable(qtbot):
+@pytest.mark.filterwarnings(
+    "ignore:use ToolOptionsModel4 instead:DeprecationWarning")
+def test_folder_delegate_is_browsable(qtbot, monkeypatch):
     widget = MyWidget()
 
     def user_options(self):
@@ -104,6 +124,18 @@ def test_folder_delegate_is_browsable(qtbot):
     Spam.user_options = user_options
     mock_work_manager = Mock()
     mock_work_manager.user_settings = {}
+
+    def get_item_options_model(self, workflow):
+        new_workflow = workflow(
+            global_settings=dict(self.work_manager.user_settings)
+        )
+        return speedwagon.models.ToolOptionsModel3(new_workflow.user_options())
+
+    monkeypatch.setattr(
+        WorkflowsTab,
+        "get_item_options_model",
+        get_item_options_model
+    )
 
     workflow_tab = WorkflowsTab(parent=None, workflows={"spam": Spam},
                                 work_manager=mock_work_manager)

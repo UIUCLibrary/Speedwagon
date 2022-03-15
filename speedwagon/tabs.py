@@ -504,14 +504,14 @@ class WorkflowsTab(ItemSelectionTab):
     def get_item_options_model(
             self,
             workflow: typing.Type[Workflow]
-    ) -> "models.ToolOptionsModel3":
+    ) -> "models.ToolOptionsModel4":
         """Get item options model."""
         if self.work_manager.user_settings is None:
             raise ValueError("user_settings not set")
         new_workflow = workflow(
             global_settings=dict(self.work_manager.user_settings)
         )
-        return models.ToolOptionsModel3(new_workflow.user_options())
+        return models.ToolOptionsModel4(new_workflow.get_user_options())
 
 
 class WorkflowsTab2(WorkflowsTab):

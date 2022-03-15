@@ -160,6 +160,8 @@ class TestWorkflowListModel2:
         ) == "Spam"
 
 
+@pytest.mark.filterwarnings(
+    "ignore:use ToolOptionsModel4 instead:DeprecationWarning")
 class TestToolOptionsModel3:
     def test_model_data_user_role(self):
         data = [Mock(data="Spam")]
