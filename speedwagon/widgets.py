@@ -3,7 +3,7 @@
 import json
 import typing
 import warnings
-from typing import Union, Optional, Dict, List, Any
+from typing import Union, Optional, Dict, Any
 
 from PySide6 import QtWidgets, QtCore, QtGui
 import speedwagon.models
@@ -71,12 +71,16 @@ class CheckBoxWidget(EditDelegateWidget):
 
 
 class ComboWidget(EditDelegateWidget):
-    def __init__(self, *args, widget_metadata=None, **kwargs) -> None:
+    def __init__(
+            self,
+            *args,
+            widget_metadata: Optional[Dict[str, Any]] = None,
+            **kwargs
+    ) -> None:
         super().__init__(widget_metadata=widget_metadata, *args, **kwargs)
-        widget_metadata: Dict[str, Union[str, List[Any]]] = \
-            widget_metadata or {
-                'selections': []
-            }
+        widget_metadata = widget_metadata or {
+            'selections': []
+        }
 
         self.combo_box = QtWidgets.QComboBox(self)
         place_holder_text = widget_metadata.get("placeholder_text")
