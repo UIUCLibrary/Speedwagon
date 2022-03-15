@@ -11,6 +11,7 @@ from uiucprescon.packager.packages.collection import Metadata
 from uiucprescon import packager
 
 import speedwagon
+import speedwagon.workflow
 import speedwagon.tasks.packaging
 import speedwagon.tasks.prep
 from speedwagon.workflows import shared_custom_widgets, workflow_get_marc
@@ -86,6 +87,14 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                      }
                 )
         return tasks_metadata
+    # def get_user_options(  # pylint: disable=no-self-use
+    #         self
+    # ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+    #     id_type = speedwagon.workflow.DropDownSelection('Identifier type')
+    #     id_type.add_selection()
+    #     return [
+    #         id_type
+    #     ]
 
     def user_options(self) -> List[UserOptions]:
         suppoted_identifer_types: List[str] = [

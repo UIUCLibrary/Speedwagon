@@ -178,10 +178,10 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
             self
     ) -> List[workflow.AbsOutputOptionDataType]:
         return []
-
-    def user_options(self) -> typing.List[Any]:
-        """Get use options."""
-        return []
+    #
+    # def user_options(self) -> typing.List[Any]:
+    #     """Get use options."""
+    #     return []
 
 
 class NullWorkflow(Workflow):
@@ -195,9 +195,9 @@ class NullWorkflow(Workflow):
         """Discover task metadata."""
         return []
 
-    def user_options(self) -> typing.List[Any]:
-        """User options."""
-        return []
+    # def user_options(self) -> typing.List[Any]:
+    #     """User options."""
+    #     return []
 
 
 class AbsDynamicFinder(metaclass=abc.ABCMeta):

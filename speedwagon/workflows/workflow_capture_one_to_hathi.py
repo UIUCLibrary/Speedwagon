@@ -11,11 +11,11 @@ from uiucprescon.packager.packages.collection_builder import Metadata
 import speedwagon.tasks.tasks
 from speedwagon.job import Workflow
 from speedwagon.logging_helpers import GuiLogHandler
-from . import shared_custom_widgets as options
+# from . import shared_custom_widgets as options
 
 __all__ = ['CaptureOneToHathiTiffPackageWorkflow']
 
-from .shared_custom_widgets import UserOption3
+# from .shared_custom_widgets import UserOption3
 
 
 class CaptureOneToHathiTiffPackageWorkflow(Workflow):
@@ -61,11 +61,11 @@ class CaptureOneToHathiTiffPackageWorkflow(Workflow):
             )
         return jobs
 
-    def user_options(self) -> List[UserOption3]:
-        return [
-            options.UserOptionCustomDataType("Input", options.FolderData),
-            options.UserOptionCustomDataType("Output", options.FolderData)
-            ]
+    # def user_options(self) -> List[UserOption3]:
+    #     return [
+    #         options.UserOptionCustomDataType("Input", options.FolderData),
+    #         options.UserOptionCustomDataType("Output", options.FolderData)
+    #         ]
 
     def create_new_task(
             self,

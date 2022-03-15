@@ -13,11 +13,11 @@ import speedwagon
 import speedwagon.workflow
 from speedwagon import reports
 from speedwagon.job import Workflow
-from . import shared_custom_widgets as options
+# from . import shared_custom_widgets as options
 
 __all__ = ['ConvertTiffPreservationToDLJp2Workflow']
 
-from .shared_custom_widgets import UserOption3
+# from .shared_custom_widgets import UserOption3
 
 
 class AbsProcessStrategy(metaclass=abc.ABCMeta):
@@ -121,10 +121,10 @@ class ConvertTiffPreservationToDLJp2Workflow(Workflow):
             speedwagon.workflow.DirectorySelect("Input"),
         ]
 
-    def user_options(self) -> List[UserOption3]:
-        return [
-            options.UserOptionCustomDataType("Input", options.FolderData)
-            ]
+    # def user_options(self) -> List[UserOption3]:
+    #     return [
+    #         options.UserOptionCustomDataType("Input", options.FolderData)
+    #         ]
 
     def create_new_task(self,
                         task_builder: "speedwagon.tasks.TaskBuilder",

@@ -40,7 +40,7 @@ import speedwagon
 import speedwagon.workflow
 from speedwagon import validators
 from speedwagon.job import Workflow
-from speedwagon.workflows import shared_custom_widgets as options
+# from speedwagon.workflows import shared_custom_widgets as options
 from speedwagon.logging_helpers import GuiLogHandler
 import speedwagon.exceptions
 
@@ -130,30 +130,31 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
             output_hathi_trust
         ]
 
-    def user_options(self) -> List[Union[options.UserOption2,
-                                         options.UserOption3]]:
-        """Get the options types need to configuring the workflow.
-
-        Returns:
-            Returns a list of user option types
-
-        """
-        user_options: List[Union[options.UserOption2, options.UserOption3]] = [
-            options.UserOptionCustomDataType(USER_INPUT_PATH,
-                                             options.FolderData),
-            ]
-        package_type_selection = options.ListSelection(
-            PACKAGE_TYPE)
-        for package_type_name in SUPPORTED_PACKAGE_SOURCES:
-            package_type_selection.add_selection(package_type_name)
-        user_options.append(package_type_selection)
-        user_options += [
-            options.UserOptionCustomDataType(
-                OUTPUT_DIGITAL_LIBRARY, options.FolderData),
-            options.UserOptionCustomDataType(
-                OUTPUT_HATHITRUST, options.FolderData),
-                ]
-        return user_options
+    # def user_options(self) -> List[Union[options.UserOption2,
+    #                                      options.UserOption3]]:
+    #     """Get the options types need to configuring the workflow.
+    #
+    #     Returns:
+    #         Returns a list of user option types
+    #
+    #     """
+    #     user_options: List[Union[options.UserOption2,  \
+    #       options.UserOption3]] = [
+    #         options.UserOptionCustomDataType(USER_INPUT_PATH,
+    #                                          options.FolderData),
+    #         ]
+    #     package_type_selection = options.ListSelection(
+    #         PACKAGE_TYPE)
+    #     for package_type_name in SUPPORTED_PACKAGE_SOURCES:
+    #         package_type_selection.add_selection(package_type_name)
+    #     user_options.append(package_type_selection)
+    #     user_options += [
+    #         options.UserOptionCustomDataType(
+    #             OUTPUT_DIGITAL_LIBRARY, options.FolderData),
+    #         options.UserOptionCustomDataType(
+    #             OUTPUT_HATHITRUST, options.FolderData),
+    #             ]
+    #     return user_options
 
     def discover_task_metadata(
             self,

@@ -13,7 +13,7 @@ import hathi_validate.process
 import speedwagon
 from speedwagon.job import Workflow
 from speedwagon.reports import add_report_borders
-from . import shared_custom_widgets
+# from . import shared_custom_widgets
 
 __all__ = ['ChecksumWorkflow', 'VerifyChecksumBatchSingleWorkflow']
 
@@ -93,11 +93,11 @@ class ChecksumWorkflow(Workflow):
             input_folder
         ]
 
-    def user_options(self) -> List[shared_custom_widgets.UserOption3]:
-        return [
-            shared_custom_widgets.UserOptionCustomDataType(
-                UserArgs.INPUT.value, shared_custom_widgets.FolderData)
-        ]
+    # def user_options(self) -> List[shared_custom_widgets.UserOption3]:
+    #     return [
+    #         shared_custom_widgets.UserOptionCustomDataType(
+    #             UserArgs.INPUT.value, shared_custom_widgets.FolderData)
+    #     ]
 
     @staticmethod
     def validate_user_options(**user_args: str) -> bool:
@@ -375,11 +375,11 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
             input_file
         ]
 
-    def user_options(self) -> List[shared_custom_widgets.UserOption3]:
-        return [
-            shared_custom_widgets.UserOptionCustomDataType(
-                UserArgs.INPUT.value, shared_custom_widgets.ChecksumData),
-        ]
+    # def user_options(self) -> List[shared_custom_widgets.UserOption3]:
+    #     return [
+    #         shared_custom_widgets.UserOptionCustomDataType(
+    #             UserArgs.INPUT.value, shared_custom_widgets.ChecksumData),
+    #     ]
 
     def create_new_task(
             self,

@@ -75,11 +75,11 @@ class ValidateImageMetadataWorkflow(Workflow):
             workflow.DirectorySelect("Input")
         ]
 
-    def user_options(self) -> List[options.UserOption3]:
-        return [
-            options.UserOptionCustomDataType("Input",
-                                             TiffFileCheckData),
-        ]
+    # def user_options(self) -> List[options.UserOption3]:
+    #     return [
+    #         options.UserOptionCustomDataType("Input",
+    #                                          TiffFileCheckData),
+    #     ]
 
     def create_new_task(
             self,

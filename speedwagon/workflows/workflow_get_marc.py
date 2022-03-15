@@ -115,29 +115,29 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
             add_field_035
         ]
 
-    def user_options(self) -> List[UserOptions]:
-        """Get the settings presented to the user."""
-        workflow_options: List[UserOptions] = [
-            options.UserOptionCustomDataType(OPTION_USER_INPUT,
-                                             options.FolderData)
-        ]
-        id_type_option = options.ListSelection(IDENTIFIER_TYPE)
-        for id_type in SUPPORTED_IDENTIFIERS:
-            id_type_option.add_selection(id_type)
-        workflow_options.append(id_type_option)
-
-        # These options will all default to True
-        enhancement_field_options = [
-            OPTION_955_FIELD,
-            OPTION_035_FIELD,
-        ]
-        for enhancement_field in enhancement_field_options:
-            field_option = \
-                options.UserOptionPythonDataType2(enhancement_field, bool)
-            field_option.data = True
-            workflow_options.append(field_option)
-
-        return workflow_options
+    # def user_options(self) -> List[UserOptions]:
+    #     """Get the settings presented to the user."""
+    #     workflow_options: List[UserOptions] = [
+    #         options.UserOptionCustomDataType(OPTION_USER_INPUT,
+    #                                          options.FolderData)
+    #     ]
+    #     id_type_option = options.ListSelection(IDENTIFIER_TYPE)
+    #     for id_type in SUPPORTED_IDENTIFIERS:
+    #         id_type_option.add_selection(id_type)
+    #     workflow_options.append(id_type_option)
+    #
+    #     # These options will all default to True
+    #     enhancement_field_options = [
+    #         OPTION_955_FIELD,
+    #         OPTION_035_FIELD,
+    #     ]
+    #     for enhancement_field in enhancement_field_options:
+    #         field_option = \
+    #             options.UserOptionPythonDataType2(enhancement_field, bool)
+    #         field_option.data = True
+    #         workflow_options.append(field_option)
+    #
+    #     return workflow_options
 
     @classmethod
     def filter_bib_id_folders(cls, item: os.DirEntry) -> bool:
