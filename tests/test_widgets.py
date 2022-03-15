@@ -99,11 +99,11 @@ class TestDelegateSelection:
 
 class TestDropDownWidget:
     def test_empty_widget_metadata(self, qtbot):
-        widget = speedwagon.widgets.DropDownWidget()
+        widget = speedwagon.widgets.ComboWidget()
         assert isinstance(widget, QtWidgets.QWidget)
 
     def test_data_updating(self, qtbot):
-        widget = speedwagon.widgets.DropDownWidget(widget_metadata={
+        widget = speedwagon.widgets.ComboWidget(widget_metadata={
             "selections": ["spam", "bacon", "eggs"]
         })
         starting_data = widget.data
@@ -112,7 +112,7 @@ class TestDropDownWidget:
         assert starting_data is None and first_index_data == "spam"
 
     def test_placeholder_text(self):
-        widget = speedwagon.widgets.DropDownWidget(widget_metadata={
+        widget = speedwagon.widgets.ComboWidget(widget_metadata={
             "selections": ["spam", "bacon", "eggs"],
             "placeholder_text": "Dummy"
         })

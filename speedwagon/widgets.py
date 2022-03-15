@@ -64,7 +64,7 @@ class CheckBoxWidget(EditDelegateWidget):
             self.check_box.setCheckState(QtCore.Qt.Unchecked)
 
 
-class DropDownWidget(EditDelegateWidget):
+class ComboWidget(EditDelegateWidget):
     def __init__(self, *args, widget_metadata=None, **kwargs) -> None:
         super().__init__(widget_metadata=widget_metadata, *args, **kwargs)
         widget_metadata: Dict[str, Union[str, List[Any]]] = \
@@ -212,7 +212,7 @@ class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
     widget_types: typing.Dict[str, typing.Type[EditDelegateWidget]] = {
         "FileSelect": FileSelectWidget,
         "DirectorySelect": DirectorySelectWidget,
-        "DropDownSelect": DropDownWidget,
+        "DropDownSelect": ComboWidget,
         "BooleanSelect": CheckBoxWidget
     }
 
