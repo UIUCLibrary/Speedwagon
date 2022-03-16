@@ -2,15 +2,15 @@
 
 import os
 import typing
-from typing import Optional, List, Any, Union
+from typing import Optional, List, Any
 import enum
 
 from uiucprescon import imagevalidate
 
 import speedwagon
+import speedwagon.workflow
 import speedwagon.tasks.validation
 from speedwagon.job import Workflow
-from . import shared_custom_widgets
 
 __all__ = ['ValidateMetadataWorkflow']
 
@@ -62,32 +62,22 @@ class ValidateMetadataWorkflow(Workflow):
             )
         )
 
-    def user_options(self) -> List[
-        Union[
-            shared_custom_widgets.UserOption2,
-            shared_custom_widgets.UserOption3
-        ]
-    ]:
-        options: List[
-            Union[
-                shared_custom_widgets.UserOption2,
-                shared_custom_widgets.UserOption3
-            ]
-        ] = []
-
+    def get_user_options(
+            self
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
         input_option = \
-            shared_custom_widgets.UserOptionCustomDataType(
-                UserArgs.INPUT.value, shared_custom_widgets.FolderData)
+            speedwagon.workflow.DirectorySelect(UserArgs.INPUT.value)
 
-        profile_type = shared_custom_widgets.ListSelection("Profile")
+        profile_type = speedwagon.workflow.ChoiceSelection("Profile")
+        profile_type.placeholder_text = "Select a Profile"
 
         for profile_name in imagevalidate.available_profiles():
             profile_type.add_selection(profile_name)
 
-        options.append(input_option)
-        options.append(profile_type)
-
-        return options
+        return [
+            input_option,
+            profile_type
+        ]
 
     @staticmethod
     def validate_user_options(**user_args: str) -> bool:

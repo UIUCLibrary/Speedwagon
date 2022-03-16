@@ -14,8 +14,9 @@ from abc import abstractmethod
 from collections import namedtuple
 import enum
 
-from PySide6 import QtCore  # type: ignore
+from PySide6 import QtCore, QtGui  # type: ignore
 from speedwagon import tabs, Workflow
+import speedwagon.workflow
 from .job import AbsWorkflow
 from .workflows import shared_custom_widgets
 
@@ -344,6 +345,7 @@ class ToolOptionsModel3(ToolOptionsModel):
             parent: QtCore.QObject = None
     ) -> None:
         """Create a new tool options Qt model."""
+        warnings.warn("use ToolOptionsModel4 instead", DeprecationWarning)
         if data is None:
             raise NotImplementedError
         super().__init__(parent)
@@ -430,6 +432,162 @@ class ToolOptionsModel3(ToolOptionsModel):
         return True
 
 
+class ToolOptionsModel4(QtCore.QAbstractListModel):
+    JsonDataRole = cast(int, QtCore.Qt.UserRole) + 1
+    DataRole = JsonDataRole + 1
+
+    def __init__(
+            self,
+            data: List[speedwagon.workflow.AbsOutputOptionDataType] = None,
+            parent: QtCore.QObject = None
+    ) -> None:
+        super().__init__(parent)
+        self._data = data or []
+
+    def __setitem__(
+            self,
+            key: str,
+            value: Optional[Union[str, int, bool]]
+    ) -> None:
+        if self._data is None:
+            raise IndexError("No data")
+
+        for item in self._data:
+            if item.label == key:
+                item.value = value
+                break
+        else:
+            raise KeyError(f"Key not found: {key}")
+
+    def flags(
+            self,
+            index: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ]) -> QtCore.Qt.ItemFlags:
+        return QtCore.Qt.ItemIsSelectable | \
+               QtCore.Qt.ItemIsEnabled | \
+               QtCore.Qt.ItemIsEditable
+
+    def rowCount(
+            self,
+            parent: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ] = None
+    ) -> int:
+        return len(self._data)
+
+    def headerData(self,
+                   section: int,
+                   orientation: QtCore.Qt.Orientation,
+                   role: int = cast(int, QtCore.Qt.DisplayRole)) -> Any:
+        if orientation == QtCore.Qt.Vertical and \
+                role == QtCore.Qt.DisplayRole:
+            return self._data[section].label
+        return None
+
+    def data(
+            self,
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+            role: int = typing.cast(int, QtCore.Qt.DisplayRole)
+    ) -> Optional[Any]:
+        if not index.isValid():
+            return None
+
+        formatter = ModelDataFormatter(self)
+        return formatter.format(
+            setting=self._data[index.row()],
+            role=typing.cast(QtCore.Qt.ItemDataRole, role)
+        )
+
+    def setData(
+            self,
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+            value: Optional[Any],
+            role: int = typing.cast(int, QtCore.Qt.EditRole)
+    ) -> bool:
+
+        if value is None:
+            return False
+
+        if role == typing.cast(int, QtCore.Qt.EditRole):
+            self._data[index.row()].value = value
+            return True
+
+        return super().setData(index, value, role)
+
+    def serialize(self):
+        return {data.label: data.value for data in self._data}
+
+    def get(self) -> Dict[str, Any]:
+        """Access the key value settings for all options."""
+        return self.serialize()
+
+
+class ModelDataFormatter:
+    def __init__(self, model: ToolOptionsModel4):
+        self._model = model
+
+    @classmethod
+    def _select_display_role(
+            cls,
+            item: speedwagon.workflow.AbsOutputOptionDataType
+    ) -> Optional[str]:
+        if cls._should_use_placeholder_text(item) is True:
+            return item.placeholder_text
+        if isinstance(item.value, bool):
+            return "Yes" if item.value is True else "No"
+        if item.value is None:
+            return item.value
+        return str(item.value)
+
+    @staticmethod
+    def _should_use_placeholder_text(
+            item: speedwagon.workflow.AbsOutputOptionDataType
+    ) -> bool:
+        if item.value is not None:
+            return False
+        if item.placeholder_text is None:
+            return False
+        return True
+
+    def font_role(
+            self,
+            setting: speedwagon.workflow.AbsOutputOptionDataType
+    ) -> Optional[QtGui.QFont]:
+        if self._should_use_placeholder_text(setting) is True:
+            font = QtGui.QFont()
+            font.setItalic(True)
+            return font
+        return None
+
+    def display_role(
+            self,
+            setting: speedwagon.workflow.AbsOutputOptionDataType
+    ) -> Optional[str]:
+        return self._select_display_role(setting)
+
+    def format(
+            self,
+            setting: speedwagon.workflow.AbsOutputOptionDataType,
+            role: QtCore.Qt.ItemDataRole
+    ) -> Optional[Any]:
+        formatter = {
+            QtCore.Qt.DisplayRole: self.display_role,
+            QtCore.Qt.EditRole: lambda setting_: setting_.value,
+            QtCore.Qt.FontRole: self.font_role,
+            self._model.JsonDataRole:
+                lambda setting_: setting_.build_json_data(),
+            self._model.DataRole: lambda setting_: setting_
+        }.get(role)
+
+        if formatter is not None:
+            return formatter(setting)
+
+        return None
+
+
 class SettingsModel(QtCore.QAbstractTableModel):
     """Settings Qt table model."""
 
@@ -508,7 +666,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
     def setData(
             self,
             index: QtCore.QModelIndex,
-            data,
+            data: Any,
             role: Optional[QtConstant] = None
     ) -> bool:
         """Set data in model."""
@@ -524,7 +682,8 @@ class SettingsModel(QtCore.QAbstractTableModel):
             # pylint: disable=no-member
             self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
 
-        return True
+            return True
+        return False
 
 
 class TabsModel(QtCore.QAbstractListModel):

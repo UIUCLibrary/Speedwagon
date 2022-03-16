@@ -37,9 +37,9 @@ from uiucprescon.packager.packages.collection import \
     Package
 
 import speedwagon
+import speedwagon.workflow
 from speedwagon import validators
 from speedwagon.job import Workflow
-from speedwagon.workflows import shared_custom_widgets as options
 from speedwagon.logging_helpers import GuiLogHandler
 import speedwagon.exceptions
 
@@ -103,30 +103,31 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
                   "HathiTrust."
     active = True
 
-    def user_options(self) -> List[Union[options.UserOption2,
-                                         options.UserOption3]]:
-        """Get the options types need to configuring the workflow.
+    def get_user_options(
+            self
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
 
-        Returns:
-            Returns a list of user option types
+        input_path = speedwagon.workflow.DirectorySelect(USER_INPUT_PATH)
 
-        """
-        user_options: List[Union[options.UserOption2, options.UserOption3]] = [
-            options.UserOptionCustomDataType(USER_INPUT_PATH,
-                                             options.FolderData),
-            ]
-        package_type_selection = options.ListSelection(
-            PACKAGE_TYPE)
+        package_type_selection = \
+            speedwagon.workflow.ChoiceSelection(PACKAGE_TYPE)
+
+        package_type_selection.placeholder_text = "Select a Package Type"
         for package_type_name in SUPPORTED_PACKAGE_SOURCES:
             package_type_selection.add_selection(package_type_name)
-        user_options.append(package_type_selection)
-        user_options += [
-            options.UserOptionCustomDataType(
-                OUTPUT_DIGITAL_LIBRARY, options.FolderData),
-            options.UserOptionCustomDataType(
-                OUTPUT_HATHITRUST, options.FolderData),
-                ]
-        return user_options
+
+        output_digital_library = \
+            speedwagon.workflow.DirectorySelect(OUTPUT_DIGITAL_LIBRARY)
+
+        output_hathi_trust = \
+            speedwagon.workflow.DirectorySelect(OUTPUT_HATHITRUST)
+
+        return [
+            input_path,
+            package_type_selection,
+            output_digital_library,
+            output_hathi_trust
+        ]
 
     def discover_task_metadata(
             self,

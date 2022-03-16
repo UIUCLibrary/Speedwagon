@@ -6,6 +6,7 @@ import shutil
 
 import speedwagon
 from speedwagon.workflows import workflow_batch_to_HathiTrust_TIFF as wf
+from speedwagon.workflows import workflow_hathi_limited_to_dl_compound
 import speedwagon.tasks.prep
 from speedwagon.workflows import workflow_get_marc
 import os
@@ -14,17 +15,16 @@ from uiucprescon.packager.common import Metadata as PackageMetadata
 
 
 @pytest.mark.parametrize("index,label", [
-    (0, "Source"),
-    (1, "Destination"),
-    (2, "Identifier type")
+    (0, "Input"),
+    (1, "Output"),
 ])
 def test_hathi_limited_to_dl_compound_has_options(index, label):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        workflow = wf.CaptureOneBatchToHathiComplete()
-    user_options = workflow.user_options()
+        workflow = workflow_hathi_limited_to_dl_compound.HathiLimitedToDLWorkflow()
+    user_options = workflow.get_user_options()
     assert len(user_options) > 0
-    assert user_options[index].label_text == label
+    assert user_options[index].label == label
 
 
 def test_initial_task_creates_task():
@@ -170,8 +170,8 @@ def unconfigured_workflow():
                 "getmarc_server_url": "http://fake.com"
             }
         )
-    user_options = {i.label_text: i.data for i in workflow.user_options()}
-
+    user_options = {i.label: i.value for i in workflow.get_user_options()}
+    user_options['Identifier type'] = None
     return workflow, user_options
 
 

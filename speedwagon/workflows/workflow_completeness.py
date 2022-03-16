@@ -21,10 +21,10 @@ import speedwagon
 import speedwagon.tasks.tasks
 from speedwagon.logging_helpers import GuiLogHandler
 from speedwagon.job import Workflow
-from . import shared_custom_widgets as options
-from .shared_custom_widgets import UserOption2, UserOption3
 
 __all__ = ['CompletenessWorkflow']
+
+from .. import workflow
 
 
 class CompletenessWorkflow(Workflow):
@@ -41,19 +41,22 @@ class CompletenessWorkflow(Workflow):
                   "valid. (This workflow provides console feedback, but " \
                   "doesn’t write new files as output)."
 
-    def user_options(self) -> List[Union[UserOption2, UserOption3]]:
+    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        source = workflow.DirectorySelect("Source")
 
-        check_page_data_option = options.UserOptionPythonDataType2(
-            "Check for page_data in meta.yml", bool)
-        check_page_data_option.data = False
-        check_ocr_option = options.UserOptionPythonDataType2(
-            "Check ALTO OCR xml files", bool)
-        check_ocr_utf8_option = options.UserOptionPythonDataType2(
-            'Check OCR xml files are utf-8', bool)
-        check_ocr_utf8_option.data = False
-        check_ocr_option.data = True
+        check_page_data_option = \
+            workflow.BooleanSelect("Check for page_data in meta.yml")
+        check_page_data_option.value = False
+
+        check_ocr_option = workflow.BooleanSelect("Check ALTO OCR xml files")
+        check_ocr_option.value = True
+
+        check_ocr_utf8_option = \
+            workflow.BooleanSelect('Check OCR xml files are utf-8')
+        check_ocr_utf8_option.value = False
+
         return [
-            options.UserOptionCustomDataType("Source", options.FolderData),
+            source,
             check_page_data_option,
             check_ocr_option,
             check_ocr_utf8_option

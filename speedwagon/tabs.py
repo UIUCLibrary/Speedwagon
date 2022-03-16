@@ -15,6 +15,7 @@ from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
 
 import speedwagon
 import speedwagon.config
+import speedwagon.widgets
 from . import runner_strategies
 from . import models
 from . import worker  # pylint: disable=unused-import
@@ -71,7 +72,6 @@ class Tab:
         self.work_manager = work_manager
         self.tab_widget, self.tab_layout = self.create_tab()
         self.tab_widget.setSizePolicy(WORKFLOW_SIZE_POLICY)
-        self.tab_widget.setMinimumHeight(400)
         self.tab_layout.setSpacing(20)
 
     @staticmethod
@@ -81,17 +81,24 @@ class Tab:
 
         tool_settings = QtWidgets.QTableView(parent=parent)
         tool_settings.setEditTriggers(
-            QtWidgets.QAbstractItemView.AllEditTriggers)
-        tool_settings.setItemDelegate(MyDelegate(parent))
+            typing.cast(
+                QtWidgets.QAbstractItemView.EditTriggers,
+                QtWidgets.QAbstractItemView.AllEditTriggers
+            )
+        )
+
+        tool_settings.setItemDelegate(
+            speedwagon.widgets.QtWidgetDelegateSelection(parent)
+        )
+
         tool_settings.horizontalHeader().setVisible(False)
         tool_settings.setSelectionMode(
             QtWidgets.QAbstractItemView.SingleSelection)
         tool_settings.horizontalHeader().setSectionResizeMode(
             QtWidgets.QHeaderView.Stretch)
         v_header = tool_settings.verticalHeader()
-        v_header.setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
+        v_header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         v_header.setSectionsClickable(False)
-        v_header.setDefaultSectionSize(25)
         return tool_settings
 
     @classmethod
@@ -133,7 +140,6 @@ class Tab:
         tool_workspace = QtWidgets.QGroupBox()
 
         tool_workspace.setTitle(title)
-        tool_workspace.setMinimumHeight(100)
         workspace_widgets, layout = cls.create_workspace_layout(parent)
         tool_workspace.setLayout(layout)
         tool_workspace.setSizePolicy(WORKFLOW_SIZE_POLICY)
@@ -498,14 +504,14 @@ class WorkflowsTab(ItemSelectionTab):
     def get_item_options_model(
             self,
             workflow: typing.Type[Workflow]
-    ) -> "models.ToolOptionsModel3":
+    ) -> "models.ToolOptionsModel4":
         """Get item options model."""
         if self.work_manager.user_settings is None:
             raise ValueError("user_settings not set")
         new_workflow = workflow(
             global_settings=dict(self.work_manager.user_settings)
         )
-        return models.ToolOptionsModel3(new_workflow.user_options())
+        return models.ToolOptionsModel4(new_workflow.get_user_options())
 
 
 class WorkflowsTab2(WorkflowsTab):
@@ -520,7 +526,7 @@ class WorkflowsTab2(WorkflowsTab):
     def get_item_options_model(self, workflow):
         """Get item options model."""
         new_workflow = workflow(global_settings=self.parent.user_settings)
-        return models.ToolOptionsModel3(new_workflow.user_options())
+        return models.ToolOptionsModel4(new_workflow.get_user_options())
 
     def start(self, item: typing.Type[Workflow]) -> None:
         if self.options_model is None:

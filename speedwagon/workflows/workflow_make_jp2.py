@@ -2,13 +2,13 @@
 
 import os
 import abc
-from typing import List, Any, Optional, Iterable, Union
+from typing import List, Any, Optional, Iterable
 
 from uiucprescon import images
 
 import speedwagon
+import speedwagon.workflow
 from speedwagon import job
-from . import shared_custom_widgets as widgets
 
 __all__ = ['MakeJp2Workflow']
 
@@ -110,24 +110,19 @@ class MakeJp2Workflow(job.Workflow):
 
     active = True
 
-    def user_options(self) -> List[Union[widgets.UserOption2,
-                                         widgets.UserOption3]]:
-        """Workflow parameters presented to the user."""
-        options: List[Union[widgets.UserOption2, widgets.UserOption3]] = []
-        input_option = widgets.UserOptionCustomDataType(
-            "Input", widgets.FolderData)
-
-        options.append(input_option)
-
-        output_option = widgets.UserOptionCustomDataType(
-            "Output", widgets.FolderData)
-
-        options.append(output_option)
-        profile_type = widgets.ListSelection("Profile")
+    def get_user_options(
+            self
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        profile = speedwagon.workflow.ChoiceSelection("Profile")
+        profile.placeholder_text = "Select a profile"
         for profile_name in ProfileFactory.profile_names():
-            profile_type.add_selection(profile_name)
-        options.append(profile_type)
-        return options
+            profile.add_selection(profile_name)
+
+        return [
+            speedwagon.workflow.DirectorySelect("Input"),
+            speedwagon.workflow.DirectorySelect("Output"),
+            profile
+        ]
 
     def discover_task_metadata(self,
                                initial_results: List[Any],

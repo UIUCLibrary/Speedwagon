@@ -19,7 +19,7 @@ def unconfigured_workflow():
             "getmarc_server_url": "http://fake.com"
         }
     )
-    user_options = {i.label_text: i.data for i in workflow.user_options()}
+    user_options = {i.label: i.value for i in workflow.get_user_options()}
     user_options['Identifier type'] = "Bibid"
     return workflow, user_options
 

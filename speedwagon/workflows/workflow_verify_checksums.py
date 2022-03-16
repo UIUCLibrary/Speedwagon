@@ -1,5 +1,6 @@
 """Workflow for verifying checksums."""
 
+
 import abc
 import collections
 import itertools
@@ -13,9 +14,10 @@ import hathi_validate.process
 import speedwagon
 from speedwagon.job import Workflow
 from speedwagon.reports import add_report_borders
-from . import shared_custom_widgets
 
 __all__ = ['ChecksumWorkflow', 'VerifyChecksumBatchSingleWorkflow']
+
+from .. import workflow
 
 TaskResult = Union[str, bool]
 
@@ -85,10 +87,10 @@ class ChecksumWorkflow(Workflow):
                 jobs.append(new_job)
         return jobs
 
-    def user_options(self) -> List[shared_custom_widgets.UserOption3]:
+    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        input_folder = workflow.DirectorySelect(UserArgs.INPUT.value)
         return [
-            shared_custom_widgets.UserOptionCustomDataType(
-                UserArgs.INPUT.value, shared_custom_widgets.FolderData)
+            input_folder
         ]
 
     @staticmethod
@@ -360,10 +362,11 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
             jobs.append(new_job)
         return jobs
 
-    def user_options(self) -> List[shared_custom_widgets.UserOption3]:
+    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        input_file = workflow.FileSelectData(UserArgs.INPUT.value)
+        input_file.filter = "Checksum files (*.md5)"
         return [
-            shared_custom_widgets.UserOptionCustomDataType(
-                UserArgs.INPUT.value, shared_custom_widgets.ChecksumData),
+            input_file
         ]
 
     def create_new_task(

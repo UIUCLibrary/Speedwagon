@@ -1,9 +1,10 @@
+import json
 from unittest.mock import Mock
 
 import pytest
-from PySide6 import QtCore
+from PySide6 import QtCore, QtWidgets
 
-from speedwagon import tabs, models, job
+from speedwagon import tabs, models, job, widgets, workflow
 
 
 class TestSettingsModel:
@@ -159,6 +160,8 @@ class TestWorkflowListModel2:
         ) == "Spam"
 
 
+@pytest.mark.filterwarnings(
+    "ignore:use ToolOptionsModel4 instead:DeprecationWarning")
 class TestToolOptionsModel3:
     def test_model_data_user_role(self):
         data = [Mock(data="Spam")]
@@ -229,6 +232,94 @@ class TestToolOptionsModel3:
         new_model = models.ToolOptionsModel3(data)
         with pytest.raises(IndexError):
             new_model["Eggs"]
+
+
+class TestToolOptionsModel4:
+    @pytest.fixture()
+    def dialog_box(self, qtbot):
+        dialog = QtWidgets.QDialog()
+        dialog.setFixedWidth(300)
+        dialog.setFixedHeight(300)
+        qtbot.addWidget(dialog)
+        return dialog
+
+    @pytest.fixture()
+    def table_widget(self, dialog_box, qtbot):
+        table = QtWidgets.QTableView(parent=dialog_box)
+        table.setEditTriggers(QtWidgets.QAbstractItemView.AllEditTriggers)
+        table.horizontalHeader().setVisible(False)
+
+        table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        table.horizontalHeader().setSectionResizeMode(
+            QtWidgets.QHeaderView.Stretch)
+        v_header = table.verticalHeader()
+        v_header.setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
+        v_header.setSectionsClickable(False)
+        v_header.setDefaultSectionSize(25)
+
+        qtbot.addWidget(table)
+        return table
+
+    @pytest.fixture
+    def data(self):
+        checksum_select = workflow.FileSelectData('Checksum File')
+        checksum_select.filter = "Checksum files (*.md5)"
+
+        options = workflow.ChoiceSelection('Order')
+        options.add_selection("Bacon")
+        options.add_selection("Bacon eggs")
+        options.add_selection("Spam")
+
+        return [
+            checksum_select,
+            options,
+            workflow.DirectorySelect('Eggs')
+        ]
+
+    def test_headings(self, qtbot, data):
+        model = models.ToolOptionsModel4(data)
+        heading = model.headerData(0,
+                                   QtCore.Qt.Vertical,
+                                   QtCore.Qt.DisplayRole)
+
+        assert heading == data[0].label
+
+    def test_horizontal_heading_are_empty(self, data):
+        model = models.ToolOptionsModel4(data)
+        heading = model.headerData(0,
+                                   QtCore.Qt.Horizontal,
+                                   QtCore.Qt.DisplayRole)
+        assert heading is None
+
+    def test_rows_match_data_size(self, qtbot, data):
+        model = models.ToolOptionsModel4(data)
+        assert model.rowCount() == len(data)
+
+    def test_data_json_role_make_parseable_data(self, data):
+        model = models.ToolOptionsModel4(data)
+        index = model.index(0, 0)
+
+        json_string = model.data(
+            index,
+            role=models.ToolOptionsModel4.JsonDataRole
+        )
+
+        assert "widget_type" in json.loads(json_string)
+
+    def test_get_data_invalid_index_is_none(self, data):
+        model = models.ToolOptionsModel4(data)
+        index = model.index(len(data) + 1, 0)
+        assert model.data(index) is None
+
+    def test_set_data(self, data):
+        model = models.ToolOptionsModel4(data)
+        index = model.index(0, 0)
+
+        starting_value = model.data(index)
+
+        model.setData(index, "spam")
+        changed_value = model.data(index)
+        assert starting_value is None and changed_value == "spam"
 
 
 class TestSettingsModel:

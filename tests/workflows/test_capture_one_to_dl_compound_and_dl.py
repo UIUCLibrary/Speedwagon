@@ -35,6 +35,8 @@ def test_input_must_exist(monkeypatch):
 def test_discover_task_metadata(monkeypatch, user_options):
     additional_data = {}
     initial_results = []
+
+    user_options['Package Type'] = "Capture One"
     user_options["Input"] = "some_real_source_folder"
     user_options["Output Digital Library"] = "./some_real_dl_folder/"
     user_options["Output HathiTrust"] = "./some_real_ht_folder/"
@@ -130,6 +132,7 @@ class TestWorkflow:
         ("some/real/output/dl", None),
     ])
     def test_output(self, user_options, monkeypatch, dl_outpath, ht_outpath):
+        user_options['Package Type'] = "Capture One"
         user_options['Input'] = "some/real/path"
         user_options['Output Digital Library'] = dl_outpath
         user_options['Output HathiTrust'] = ht_outpath
@@ -197,7 +200,8 @@ class TestWorkflow:
 @pytest.fixture()
 def user_options():
     workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
-    return models.ToolOptionsModel3(workflow.user_options()).get()
+    return models.ToolOptionsModel4(workflow.get_user_options()).get()
+    # return models.ToolOptionsModel3(workflow.user_options()).get()
 
 
 class TestValidateUserArgs:
@@ -391,7 +395,7 @@ def test_failed_to_locate_files_throws_speedwagon_exception(
         "locate_packages",
         Mock(side_effect=FileNotFoundError)
     )
-
+    user_options['Package Type'] = "Capture One"
     with pytest.raises(speedwagon.exceptions.SpeedwagonException):
         workflow.discover_task_metadata(
             initial_results=[],

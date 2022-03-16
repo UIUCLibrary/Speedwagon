@@ -10,10 +10,9 @@ import hathizip.process
 import hathizip
 
 import speedwagon
-from speedwagon import reports
+from speedwagon import reports, workflow
 from speedwagon.job import Workflow
 from speedwagon.logging_helpers import GuiLogHandler
-from . import shared_custom_widgets as options
 
 __all__ = ['ZipPackagesWorkflow']
 
@@ -60,13 +59,13 @@ class ZipPackagesWorkflow(Workflow):
 
         return True
 
-    def user_options(self) -> List[options.UserOption3]:
-        return [
-            options.UserOptionCustomDataType("Source",
-                                             options.FolderData),
+    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        source = workflow.DirectorySelect("Source")
+        output = workflow.DirectorySelect("Output")
 
-            options.UserOptionCustomDataType("Output",
-                                             options.FolderData),
+        return [
+            source,
+            output
         ]
 
     def create_new_task(

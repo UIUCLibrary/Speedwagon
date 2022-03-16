@@ -12,11 +12,8 @@ import pykdu_compress
 from py3exiv2bind.core import set_dpi
 import speedwagon
 from speedwagon.job import Workflow
-from . import shared_custom_widgets as options
 
 __all__ = ['ConvertTiffToHathiJp2Workflow']
-
-from .shared_custom_widgets import UserOption3
 
 
 class TaskType(enum.Enum):
@@ -143,12 +140,6 @@ class ConvertTiffToHathiJp2Workflow(Workflow):
                 })
 
         return jobs
-
-    def user_options(self) -> List[UserOption3]:
-        return [
-            options.UserOptionCustomDataType("Input", options.FolderData),
-            options.UserOptionCustomDataType("Output", options.FolderData)
-        ]
 
     def create_new_task(self,
                         task_builder: "speedwagon.tasks.TaskBuilder",

@@ -11,6 +11,7 @@ from uiucprescon.packager.packages.collection import Metadata
 from uiucprescon import packager
 
 import speedwagon
+import speedwagon.workflow
 import speedwagon.tasks.packaging
 import speedwagon.tasks.prep
 from speedwagon.workflows import shared_custom_widgets, workflow_get_marc

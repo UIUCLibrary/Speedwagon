@@ -143,9 +143,9 @@ options = [
 @pytest.mark.parametrize("index,label", options)
 def test_hathi_limited_to_dl_compound_has_options(index, label):
     workflow = HathiLimitedToDLWorkflow()
-    user_options = workflow.user_options()
+    user_options = workflow.get_user_options()
     assert len(user_options) > 0
-    assert user_options[index].label_text == label
+    assert user_options[index].label == label
 
 
 class TestHathiLimitedToDLWorkflow:

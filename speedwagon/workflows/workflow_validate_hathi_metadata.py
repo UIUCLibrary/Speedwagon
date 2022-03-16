@@ -12,6 +12,8 @@ from . import shared_custom_widgets as options
 
 __all__ = ['ValidateImageMetadataWorkflow']
 
+from .. import workflow
+
 
 class ImageFile(options.AbsBrowseableWidget):
     def browse_clicked(self) -> None:
@@ -68,10 +70,9 @@ class ValidateImageMetadataWorkflow(Workflow):
         })
         return jobs
 
-    def user_options(self) -> List[options.UserOption3]:
+    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
         return [
-            options.UserOptionCustomDataType("Input",
-                                             TiffFileCheckData),
+            workflow.DirectorySelect("Input")
         ]
 
     def create_new_task(

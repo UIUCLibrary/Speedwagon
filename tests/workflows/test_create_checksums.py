@@ -25,7 +25,7 @@ def test_singleChecksum(qtbot, tool_job_manager_spy, tmpdir):
 
 def test_singleChecksum_has_options():
     workflow = MakeChecksumBatchSingleWorkflow()
-    user_options = workflow.user_options()
+    user_options = workflow.get_user_options()
     assert len(user_options) > 0
 
 
@@ -50,5 +50,5 @@ def test_mutipleChecksum(qtbot, tool_job_manager_spy, tmpdir):
 
 def test_multipleChecksum_has_options():
     workflow = MakeChecksumBatchMultipleWorkflow()
-    user_options = workflow.user_options()
+    user_options = workflow.get_user_options()
     assert len(user_options) > 0

@@ -141,3 +141,10 @@ class TestJobConfigSerialization:
         )
         serializer.load()
         assert mock_strategy.load.called is True
+
+#
+# class TestUserOption:
+#     def test_s(self):
+#         factory = speedwagon.job.UserOptions()
+#         option = factory.create("file_selection")
+#         pass

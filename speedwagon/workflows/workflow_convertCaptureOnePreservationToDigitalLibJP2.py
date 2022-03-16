@@ -10,13 +10,11 @@ from typing import List, Dict, Optional
 import pykdu_compress
 
 import speedwagon
+import speedwagon.workflow
 from speedwagon import reports
 from speedwagon.job import Workflow
-from . import shared_custom_widgets as options
 
 __all__ = ['ConvertTiffPreservationToDLJp2Workflow']
-
-from .shared_custom_widgets import UserOption3
 
 
 class AbsProcessStrategy(metaclass=abc.ABCMeta):
@@ -113,10 +111,12 @@ class ConvertTiffPreservationToDLJp2Workflow(Workflow):
 
         return jobs
 
-    def user_options(self) -> List[UserOption3]:
+    def get_user_options(
+            self
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
         return [
-            options.UserOptionCustomDataType("Input", options.FolderData)
-            ]
+            speedwagon.workflow.DirectorySelect("Input"),
+        ]
 
     def create_new_task(self,
                         task_builder: "speedwagon.tasks.TaskBuilder",

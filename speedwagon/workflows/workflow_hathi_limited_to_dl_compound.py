@@ -8,10 +8,10 @@ from typing import List, Any, Optional
 from uiucprescon import packager
 
 import speedwagon
+import speedwagon.workflow
 from speedwagon.job import Workflow
 from speedwagon import reports
 from speedwagon.logging_helpers import GuiLogHandler
-from . import shared_custom_widgets as options
 __all__ = ['HathiLimitedToDLWorkflow']
 
 
@@ -47,10 +47,12 @@ class HathiLimitedToDLWorkflow(Workflow):
                              dst=job_args['destination'])
         )
 
-    def user_options(self) -> List[options.UserOption3]:
+    def get_user_options(
+            self
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
         return [
-            options.UserOptionCustomDataType("Input", options.FolderData),
-            options.UserOptionCustomDataType("Output", options.FolderData)
+            speedwagon.workflow.DirectorySelect("Input"),
+            speedwagon.workflow.DirectorySelect("Output"),
         ]
 
     @classmethod

@@ -5,17 +5,15 @@ import os
 import sys
 import typing
 
-from typing import List, Any, Optional, Iterator, Dict, Union
+from typing import List, Any, Optional, Iterator, Dict
 import contextlib
 from uiucprescon import ocr
 import speedwagon
+import speedwagon.workflow
 
-from speedwagon.workflows import shared_custom_widgets
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 
 __all__ = ['OCRWorkflow']
-
-from speedwagon.workflows.shared_custom_widgets import UserOption2, UserOption3
 
 
 def locate_tessdata() -> Optional[str]:
@@ -167,7 +165,35 @@ class OCRWorkflow(speedwagon.Workflow):
     def get_file_extension(cls, file_type: str) -> str:
         return cls.SUPPORTED_IMAGE_TYPES[file_type]
 
-    def user_options(self) -> List[Union[UserOption2, UserOption3]]:
+    def get_user_options(
+            self
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        package_type = speedwagon.workflow.ChoiceSelection("Image File Type")
+        package_type.placeholder_text = "Select Image Format"
+        for file_type in OCRWorkflow.SUPPORTED_IMAGE_TYPES:
+            package_type.add_selection(file_type)
+
+        language_type = speedwagon.workflow.ChoiceSelection("Language")
+        language_type.placeholder_text = "Select Language"
+        tessdata_path = self.get_tesseract_path()
+
+        for lang in self.get_available_languages(
+                path=typing.cast(str, tessdata_path)
+        ):
+            fullname = ocr.LANGUAGE_CODES.get(lang)
+            if fullname is None:
+                continue
+            language_type.add_selection(fullname)
+
+        package_root_option = speedwagon.workflow.DirectorySelect("Path")
+
+        return [
+            package_type,
+            language_type,
+            package_root_option
+        ]
+
+    def get_tesseract_path(self):
         def valid_tessdata_path(item: Optional[str]) -> bool:
 
             if item is None:
@@ -177,18 +203,6 @@ class OCRWorkflow(speedwagon.Workflow):
                 return False
 
             return path_contains_traineddata(item)
-
-        options: List[Union[UserOption2, UserOption3]] = []
-
-        package_type = shared_custom_widgets.ListSelection("Image File Type")
-
-        for file_type in OCRWorkflow.SUPPORTED_IMAGE_TYPES:
-            package_type.add_selection(file_type)
-        options.append(package_type)
-
-        language_type = shared_custom_widgets.ListSelection(
-                "Language")
-
         self.tessdata_path = self.global_settings.get("tessdata")
 
         if not valid_tessdata_path(self.tessdata_path):
@@ -202,23 +216,7 @@ class OCRWorkflow(speedwagon.Workflow):
             )
         else:
             tessdata_path = self.tessdata_path
-
-        for lang in self.get_available_languages(
-                path=typing.cast(str, tessdata_path)
-        ):
-            fullname = ocr.LANGUAGE_CODES.get(lang)
-            if fullname is None:
-                continue
-            language_type.add_selection(fullname)
-        options.append(language_type)
-
-        package_root_option = \
-            shared_custom_widgets.UserOptionCustomDataType(
-                "Path", shared_custom_widgets.FolderData)
-
-        options.append(package_root_option)
-
-        return options
+        return tessdata_path
 
     @staticmethod
     def get_available_languages(path: str) -> Iterator[str]:

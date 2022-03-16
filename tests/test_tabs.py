@@ -99,6 +99,9 @@ class TestWorkflowsTab:
                     self, initial_results, additional_data, **user_args):
                 pass
 
+            def get_user_options(self):
+                return []
+
             def user_options(self):
                 return []
 
@@ -136,6 +139,8 @@ class TestWorkflowsTab:
                     **user_args):
                 pass
 
+            def get_user_options(self):
+                return []
             def user_options(self):
                 return []
 

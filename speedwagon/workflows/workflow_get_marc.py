@@ -22,7 +22,7 @@ import requests
 
 import speedwagon
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
-from speedwagon import reports, validators
+from speedwagon import reports, validators, workflow
 from speedwagon.job import Workflow
 from . import shared_custom_widgets as options
 
@@ -94,29 +94,26 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
             if value is None:
                 raise MissingConfiguration(f"Missing value for {k}")
 
-    def user_options(self) -> List[UserOptions]:
-        """Get the settings presented to the user."""
-        workflow_options: List[UserOptions] = [
-            options.UserOptionCustomDataType(OPTION_USER_INPUT,
-                                             options.FolderData)
-        ]
-        id_type_option = options.ListSelection(IDENTIFIER_TYPE)
+    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        user_input = workflow.DirectorySelect(OPTION_USER_INPUT)
+
+        id_type_option = workflow.ChoiceSelection(IDENTIFIER_TYPE)
+        id_type_option.placeholder_text = "Select an ID Type"
         for id_type in SUPPORTED_IDENTIFIERS:
             id_type_option.add_selection(id_type)
-        workflow_options.append(id_type_option)
 
-        # These options will all default to True
-        enhancement_field_options = [
-            OPTION_955_FIELD,
-            OPTION_035_FIELD,
+        add_field_955 = workflow.BooleanSelect(OPTION_955_FIELD)
+        add_field_955.value = True
+
+        add_field_035 = workflow.BooleanSelect(OPTION_035_FIELD)
+        add_field_035.value = True
+
+        return [
+            user_input,
+            id_type_option,
+            add_field_955,
+            add_field_035
         ]
-        for enhancement_field in enhancement_field_options:
-            field_option = \
-                options.UserOptionPythonDataType2(enhancement_field, bool)
-            field_option.data = True
-            workflow_options.append(field_option)
-
-        return workflow_options
 
     @classmethod
     def filter_bib_id_folders(cls, item: os.DirEntry) -> bool:
