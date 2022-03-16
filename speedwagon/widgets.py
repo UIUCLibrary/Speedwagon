@@ -12,14 +12,21 @@ __all__ = [
     "QtWidgetDelegateSelection"
 ]
 
+WidgetMetadata = Dict[str, Any]
+
 
 class EditDelegateWidget(QtWidgets.QWidget):
     editingFinished = QtCore.Signal()
     dataChanged = QtCore.Signal()
 
-    def __init__(self, *args, widget_metadata=None, **kwargs) -> None:
+    def __init__(
+            self,
+            *args,
+            widget_metadata: Optional[WidgetMetadata] = None,
+            **kwargs
+    ) -> None:
         super().__init__(*args, **kwargs)
-        self._data = None
+        self._data: Optional[Any] = None
         self.widget_metadata = widget_metadata or {}
         inner_layout = QtWidgets.QHBoxLayout(parent=self)
         inner_layout.setContentsMargins(0, 0, 0, 0)
@@ -27,17 +34,22 @@ class EditDelegateWidget(QtWidgets.QWidget):
         self.setAutoFillBackground(True)
 
     @property
-    def data(self):
+    def data(self) -> Optional[Any]:
         return self._data
 
     @data.setter
-    def data(self, value):
+    def data(self, value: Any) -> None:
         self._data = value
 
 
 class CheckBoxWidget(EditDelegateWidget):
 
-    def __init__(self, *args, widget_metadata=None, **kwargs) -> None:
+    def __init__(
+            self,
+            *args,
+            widget_metadata: Optional[WidgetMetadata] = None,
+            **kwargs
+    ) -> None:
         super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
         self.check_box = QtWidgets.QCheckBox(self)
         self.setFocusProxy(self.check_box)
@@ -52,7 +64,7 @@ class CheckBoxWidget(EditDelegateWidget):
         # pylint: disable=no-member
         self.check_box.stateChanged.connect(self.update_data)
 
-    def update_data(self, state):
+    def update_data(self, state: QtCore.Qt.CheckState) -> None:
 
         if state == QtCore.Qt.Unchecked:
             self.data = False
@@ -62,11 +74,11 @@ class CheckBoxWidget(EditDelegateWidget):
         self.dataChanged.emit()
 
     @EditDelegateWidget.data.setter
-    def data(self, value):
+    def data(self, value: bool) -> None:
         self._data = value
-        if value is True:
+        if value:
             self.check_box.setCheckState(QtCore.Qt.Checked)
-        elif value is False:
+        else:
             self.check_box.setCheckState(QtCore.Qt.Unchecked)
 
 
@@ -74,7 +86,7 @@ class ComboWidget(EditDelegateWidget):
     def __init__(
             self,
             *args,
-            widget_metadata: Optional[Dict[str, Any]] = None,
+            widget_metadata: Optional[WidgetMetadata] = None,
             **kwargs
     ) -> None:
         super().__init__(widget_metadata=widget_metadata, *args, **kwargs)
@@ -96,15 +108,15 @@ class ComboWidget(EditDelegateWidget):
         self._make_connections()
         self.layout().addWidget(self.combo_box)
 
-    def _make_connections(self):
+    def _make_connections(self) -> None:
         # pylint: disable=no-member
         self.combo_box.currentTextChanged.connect(self.update_data)
 
-    def update_data(self, value):
+    def update_data(self, value: str) -> None:
         self.data = value
 
     @EditDelegateWidget.data.setter
-    def data(self, value):
+    def data(self, value) -> None:
         self._data = value
 
         self._update_combo_box_selected(value, self.combo_box)
@@ -124,7 +136,12 @@ class ComboWidget(EditDelegateWidget):
 
 class FileSystemItemSelectWidget(EditDelegateWidget):
 
-    def __init__(self, *args, widget_metadata=None, **kwargs):
+    def __init__(
+            self,
+            *args,
+            widget_metadata: Optional[WidgetMetadata] = None,
+            **kwargs
+    ) -> None:
         super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
         self.edit = QtWidgets.QLineEdit(parent=self)
 
@@ -142,21 +159,21 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
         self.edit.textChanged.connect(self._update_data_from_line_edit)
         self.edit.editingFinished.connect(self.editingFinished)
 
-    def _update_data_from_line_edit(self):
+    def _update_data_from_line_edit(self) -> None:
         self._data = self.edit.text()
         self.dataChanged.emit()
 
-    def get_browse_action(self):
+    def get_browse_action(self) -> QtGui.QAction:
         return QtGui.QAction("Browse", parent=self)
 
     @EditDelegateWidget.data.setter
-    def data(self, value):
+    def data(self, value: str) -> None:
         self._data = value
         self.edit.setText(value)
 
 
 class DirectorySelectWidget(FileSystemItemSelectWidget):
-    def get_browse_action(self):
+    def get_browse_action(self) -> QtGui.QAction:
         icon = QtWidgets.QApplication.style().standardIcon(
             QtWidgets.QStyle.SP_DialogOpenButton)
         browse_dir_action = QtGui.QAction(
@@ -183,7 +200,7 @@ class DirectorySelectWidget(FileSystemItemSelectWidget):
 
 
 class FileSelectWidget(FileSystemItemSelectWidget):
-    def get_browse_action(self):
+    def get_browse_action(self) -> QtGui.QAction:
         icon = QtWidgets.QApplication.style().standardIcon(
             QtWidgets.QStyle.SP_DialogOpenButton)
         browse_file_action = QtGui.QAction(
@@ -193,7 +210,12 @@ class FileSelectWidget(FileSystemItemSelectWidget):
         browse_file_action.triggered.connect(self.browse_file)
         return browse_file_action
 
-    def __init__(self, *args, widget_metadata=None, **kwargs):
+    def __init__(
+            self,
+            *args,
+            widget_metadata: Optional[WidgetMetadata] = None,
+            **kwargs
+    ) -> None:
         super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
         widget_metadata = widget_metadata or {}
         self.filter = widget_metadata.get('filter')
@@ -204,9 +226,14 @@ class FileSelectWidget(FileSystemItemSelectWidget):
                 typing.Callable[[], Optional[str]]
             ] = None
     ) -> None:
-        def use_qt_file_dialog():
-            result = QtWidgets.QFileDialog.getOpenFileName(parent=self,
-                                                           filter=self.filter)
+        def use_qt_file_dialog() -> Optional[str]:
+            if self.filter is None:
+                result = QtWidgets.QFileDialog.getOpenFileName(parent=self)
+            else:
+                result = QtWidgets.QFileDialog.getOpenFileName(
+                    parent=self,
+                    filter=self.filter
+                )
             if result:
                 return result[0]
             return None
