@@ -1037,7 +1037,7 @@ pipeline {
                                         sh(
                                             label: 'Creating build environment',
                                             script: '''python3 -m venv --upgrade-deps venv
-                                                        venv/bin/pip install pyinstaller
+                                                       venv/bin/pip install pyinstaller cmake jinja2
                                             '''
                                             )
                                         script{
@@ -1055,20 +1055,8 @@ pipeline {
                                 }
                                 stage('Building Apple Application Bundle'){
                                     steps{
+                                        unstash 'DIST-INFO'
                                         sh(label: 'Running pyinstaller script', script: 'venv/bin/python packaging/create_osx_app_bundle.py')
-                                    }
-                                }
-                                stage('Packaging as Apple Disk Image'){
-                                    steps{
-                                        sh(label: 'Packaging installer as .dmg file',
-                                            script:"""
-                                                mkdir -p build/appleBundle
-                                                mv \$WORKSPACE/dist/*.app build/appleBundle/
-                                                ln -s /Applications build/appleBundle/Applications
-                                                hdiutil create build/tmp.dmg -ov -volname \"SpeedwagonInstall\" -fs HFS+ -srcfolder \"\$WORKSPACE/build/appleBundle/\"
-                                                hdiutil convert build/tmp.dmg -format UDZO -o dist/Speedwagon-${props.Version}.dmg
-                                                """
-                                            )
                                     }
                                 }
                             }
