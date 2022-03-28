@@ -31,6 +31,9 @@ class AbsOutputOptionDataType(abc.ABC):
             "widget_type": self.widget_name,
             "label": self.label
         }
+        if self.value is not None:
+            data['value'] = self.value
+
         if self.placeholder_text is not None:
             data['placeholder_text'] = self.placeholder_text
         return data
