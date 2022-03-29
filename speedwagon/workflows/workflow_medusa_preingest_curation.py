@@ -25,6 +25,12 @@ class MedusaPreingestCuration(speedwagon.Workflow):
         task_builder.add_subtask(FindOffendingFiles(**user_args))
         super().initial_task(task_builder, **user_args)
 
+    @staticmethod
+    def validate_user_options(**user_args) -> bool:
+        if user_args["Path"] is None:
+            raise ValueError("Missing Value")
+        return True
+
     def discover_task_metadata(
             self,
             initial_results: List[Any],
