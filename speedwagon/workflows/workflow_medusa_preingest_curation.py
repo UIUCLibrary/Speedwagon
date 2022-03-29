@@ -170,7 +170,7 @@ class FindOffendingFiles(tasks.Subtask):
             recursive: bool = True
     ) -> typing.Iterable[str]:
         if not recursive:
-            item: os.DirEntry[str]
+            item: 'os.DirEntry[str]'
             for item in filter(lambda x: x.is_dir(), os.scandir(starting_dir)):
                 yield item.path
         else:
@@ -274,9 +274,7 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         )
         self.setWindowTitle("Delete the Following Items?")
         self.setFixedWidth(500)
-        self.button_box.accepted.connect(self.accept)
-        self.button_box.rejected.connect(self.reject)
-
+        self._make_connections()
         self.package_view = QtWidgets.QListView(self)
 
         layout.addWidget(self.package_view)
@@ -285,6 +283,11 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
 
         self.model = ConfirmListModel(items=items, parent=self)
         self.package_view.setModel(self.model)
+
+    def _make_connections(self):
+        # pylint: disable=E1101
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
 
     def data(self) -> List[str]:
         return self.model.selected()
