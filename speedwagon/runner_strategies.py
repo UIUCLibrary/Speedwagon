@@ -1164,6 +1164,16 @@ class BackgroundJobManager(AbsJobManager2):
                         liaison.callbacks.status(task.name)
 
                     self.logger.info(task.task_description())
+
+                    # HACK: pass the task logger
+                    task.parent_task_log_q = \
+                        type(
+                            "logger",
+                            (object, ), {
+                                "append": self.logger.info
+                            }
+                        )
+
                     task.exec()
                     liaison.callbacks.update_progress(
                         current=task_scheduler.current_task_progress,
