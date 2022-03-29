@@ -268,7 +268,7 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
     def __init__(
             self,
             items: typing.List[str],
-            parent: typing.Optional[QtWidgets.QWidget],
+            parent: typing.Optional[QtWidgets.QWidget] = None,
             flags: typing.Union[
                 Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
     ) -> None:
