@@ -31,21 +31,21 @@ class MedusaPreingestCuration(speedwagon.Workflow):
             additional_data: Dict[str, Any],
             **user_args
     ) -> List[dict]:
-        tasks: List[Dict[str, str]] = []
+        new_tasks: List[Dict[str, str]] = []
 
         for file_path in additional_data["files"]:
-            tasks.append({
+            new_tasks.append({
                 "type": "file",
                 "path": file_path
             })
 
         for directory_path in additional_data['directories']:
-            tasks.append({
+            new_tasks.append({
                 "type": "directory",
                 "path": directory_path
             })
 
-        return tasks
+        return new_tasks
 
     def get_additional_info(self, parent: typing.Optional[QtWidgets.QWidget],
                             options: dict, pretask_results: list) -> dict:
@@ -54,12 +54,10 @@ class MedusaPreingestCuration(speedwagon.Workflow):
             items=list(pretask_results[0].data),
             parent=parent
         )
-
-        def cancel() -> None:
+        results = dialog.exec()
+        if results == QtWidgets.QDialog.Rejected:
             raise speedwagon.JobCancelled()
 
-        dialog.rejected.connect(cancel)
-        dialog.exec()
         resulting_data: List[str] = dialog.data()
         return self.sort_item_data(resulting_data)
 
@@ -115,6 +113,29 @@ class MedusaPreingestCuration(speedwagon.Workflow):
             delete_capture_one
         ]
 
+    @classmethod
+    def generate_report(
+            cls,
+            results: List[tasks.Result],
+            **user_args
+    ) -> Optional[str]:
+        items_deleted = [
+            result.data for result in results if result.source in [
+                DeleteFile,
+                DeleteDirectory
+            ]
+        ]
+
+        report_lines = [
+            "*" * 80,
+            "Deleted the following files and/or folders",
+            "------------------------------------------",
+            "\n",
+            "\n".join([f"* {item}" for item in items_deleted]),
+            "*" * 80,
+        ]
+        return "\n".join(report_lines)
+
     def create_new_task(self, task_builder: tasks.TaskBuilder,
                         **job_args) -> None:
         if job_args['type'] == "file":
@@ -149,11 +170,13 @@ class FindOffendingFiles(tasks.Subtask):
             recursive: bool = True
     ) -> typing.Iterable[str]:
         if not recursive:
-            return starting_dir
-
-        for root, dirs, files in os.walk(starting_dir):
-            for dir_name in dirs:
-                yield os.path.join(root, dir_name)
+            item: os.DirEntry[str]
+            for item in filter(lambda x: x.is_dir(), os.scandir(starting_dir)):
+                yield item.path
+        else:
+            for root, dirs, _ in os.walk(starting_dir):
+                for dir_name in dirs:
+                    yield os.path.join(root, dir_name)
 
     def work(self) -> bool:
         offending_item: Set[str] = set()
@@ -165,10 +188,8 @@ class FindOffendingFiles(tasks.Subtask):
                 )
             self.log(f"Searching {relative_dir_to_root}")
 
-            for f in self.locate_offending_files_and_folders(
-                    directory=dir_name
-            ):
-                offending_item.add(f)
+            for item in self.locate_offending_files_and_folders(dir_name):
+                offending_item.add(item)
 
         self.set_results(offending_item)
         return True
@@ -194,7 +215,8 @@ class FindOffendingFiles(tasks.Subtask):
             ]):
                 yield item.path
 
-    def find_capture_one_data(self, directory: str) -> Iterator[str]:
+    @staticmethod
+    def find_capture_one_data(directory: str) -> Iterator[str]:
         potential_capture_one_dir_name = \
             os.path.join(directory, "CaptureOne")
 
@@ -221,6 +243,7 @@ class DeleteFile(DeleteFileSystemItem):
 
     def work(self) -> bool:
         self.log(f"Deleting {self.path}")
+        self.set_results(self.path)
         return True
 
 
@@ -228,6 +251,7 @@ class DeleteDirectory(DeleteFileSystemItem):
 
     def work(self) -> bool:
         self.log(f"Removing {self.path} directory")
+        self.set_results(self.path)
         return True
 
     def task_description(self) -> Optional[str]:
@@ -248,7 +272,8 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
         )
-
+        self.setWindowTitle("Delete the Following Items?")
+        self.setFixedWidth(500)
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
@@ -277,7 +302,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
 
         self.items = [{
                 "name": i,
-                "checked": Qt.Unchecked
+                "checked": Qt.Checked
             } for i in items
         ]
 
@@ -292,9 +317,9 @@ class ConfirmListModel(QtCore.QAbstractListModel):
                 selected.append(self.data(index, Qt.DisplayRole))
         return selected
 
-    def rowCount(
+    def rowCount(  # pylint: disable=invalid-name
             self,
-            parent: Union[
+            parent: Union[  # pylint: disable=unused-argument
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex
             ] = None
@@ -315,7 +340,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
             return self.items[index.row()]['name']
         return None
 
-    def setData(
+    def setData(  # pylint: disable=invalid-name
             self,
             index: Union[
                 QtCore.QModelIndex,
