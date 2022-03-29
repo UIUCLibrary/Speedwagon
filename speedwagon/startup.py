@@ -903,6 +903,7 @@ class StartQtThreaded(AbsStarter):
             pre_results: List[typing.Any],
             wait_condition: Optional[threading.Condition] = None
     ) -> Optional[Dict[str, typing.Any]]:
+        self._request_window.exc = None
         waiter = wait_condition or threading.Condition()
         with waiter:
             self._request_window.request.emit(
