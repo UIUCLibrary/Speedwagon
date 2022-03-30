@@ -76,6 +76,25 @@ class TestMedusaPreingestCuration:
         assert dialog_box.exec.called is True
 
 
+@pytest.fixture()
+def default_user_args():
+    workflow = workflow_medusa_preingest_curation.MedusaPreingestCuration()
+    return ToolOptionsModel4(
+        workflow.get_user_options()
+    ).get()
+
+
+def test_validate_missing_values():
+    with pytest.raises(ValueError):
+        workflow_medusa_preingest_curation.validate_missing_values({})
+
+
+def test_validate_no_missing_values(default_user_args):
+    values = default_user_args.copy()
+    values["Path"] = "something"
+    workflow_medusa_preingest_curation.validate_missing_values(values)
+
+
 def test_validate_path_valid(monkeypatch):
     supposed_to_be_real_path = "./some/valid/path"
 
