@@ -76,6 +76,35 @@ class TestMedusaPreingestCuration:
         )
         assert dialog_box.exec.called is True
 
+    @pytest.mark.parametrize(
+        "job_args, expected_class",
+        [
+            (
+                {
+                    "type": "file",
+                    "path": "somefile"
+                },
+                workflow_medusa_preingest.DeleteFile
+            ),
+            (
+                {
+                    "type": "directory",
+                    "path": "someDirectory"
+                },
+                workflow_medusa_preingest.DeleteDirectory
+            ),
+        ]
+    )
+    def test_create_new_task(self, workflow, job_args, expected_class):
+        task_builder = Mock(name="task_builder")
+        task_builder.add_subtask = Mock(name="add_subtask")
+        workflow.create_new_task(task_builder, **job_args)
+
+        assert isinstance(
+            task_builder.add_subtask.call_args.args[0],
+            expected_class
+        )
+
 
 @pytest.fixture()
 def default_user_args():
