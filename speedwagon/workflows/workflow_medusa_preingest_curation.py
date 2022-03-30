@@ -22,6 +22,41 @@ def validate_path_valid(user_args: Dict[str, Union[str, bool]]) -> None:
         raise ValueError(f"Unable to locate {path}")
 
 
+class ConfirmDeleteDialog(QtWidgets.QDialog):
+    def __init__(
+            self,
+            items: typing.List[str],
+            parent: typing.Optional[QtWidgets.QWidget] = None,
+            flags: typing.Union[
+                Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
+    ) -> None:
+        """Create a package browser dialog window."""
+        super().__init__(parent, flags)
+        layout = QtWidgets.QGridLayout(self)
+        self.button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+        )
+        self.setWindowTitle("Delete the Following Items?")
+        self.setFixedWidth(500)
+        self._make_connections()
+        self.package_view = QtWidgets.QListView(self)
+
+        layout.addWidget(self.package_view)
+        layout.addWidget(self.button_box)
+        self.setLayout(layout)
+
+        self.model = ConfirmListModel(items=items, parent=self)
+        self.package_view.setModel(self.model)
+
+    def _make_connections(self):
+        # pylint: disable=E1101
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+
+    def data(self) -> List[str]:
+        return self.model.selected()
+
+
 class MedusaPreingestCuration(speedwagon.Workflow):
     name = "Medusa Preingest Curation"
     description = \
@@ -36,6 +71,7 @@ class MedusaPreingestCuration(speedwagon.Workflow):
         validate_missing_values,
         validate_path_valid
     ]
+    dialog_box_type = ConfirmDeleteDialog
 
     def initial_task(self, task_builder: tasks.TaskBuilder,
                      **user_args) -> None:
@@ -73,7 +109,7 @@ class MedusaPreingestCuration(speedwagon.Workflow):
     def get_additional_info(self, parent: typing.Optional[QtWidgets.QWidget],
                             options: dict, pretask_results: list) -> dict:
 
-        dialog = ConfirmDeleteDialog(
+        dialog = self.dialog_box_type(
             items=list(pretask_results[0].data),
             parent=parent
         )
@@ -279,41 +315,6 @@ class DeleteDirectory(DeleteFileSystemItem):
 
     def task_description(self) -> Optional[str]:
         return "Removing directory"
-
-
-class ConfirmDeleteDialog(QtWidgets.QDialog):
-    def __init__(
-            self,
-            items: typing.List[str],
-            parent: typing.Optional[QtWidgets.QWidget] = None,
-            flags: typing.Union[
-                Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
-    ) -> None:
-        """Create a package browser dialog window."""
-        super().__init__(parent, flags)
-        layout = QtWidgets.QGridLayout(self)
-        self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
-        )
-        self.setWindowTitle("Delete the Following Items?")
-        self.setFixedWidth(500)
-        self._make_connections()
-        self.package_view = QtWidgets.QListView(self)
-
-        layout.addWidget(self.package_view)
-        layout.addWidget(self.button_box)
-        self.setLayout(layout)
-
-        self.model = ConfirmListModel(items=items, parent=self)
-        self.package_view.setModel(self.model)
-
-    def _make_connections(self):
-        # pylint: disable=E1101
-        self.button_box.accepted.connect(self.accept)
-        self.button_box.rejected.connect(self.reject)
-
-    def data(self) -> List[str]:
-        return self.model.selected()
 
 
 class ConfirmListModel(QtCore.QAbstractListModel):

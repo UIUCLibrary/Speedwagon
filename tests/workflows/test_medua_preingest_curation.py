@@ -1,3 +1,5 @@
+from unittest.mock import Mock, MagicMock
+
 import pytest
 from PySide6 import QtWidgets,  QtCore
 
@@ -54,6 +56,24 @@ class TestMedusaPreingestCuration:
             "files": ["./some/file.txt"],
             "directories": ["./some/directory/"],
         }
+
+    def test_get_additional_info_opens_dialog(
+            self,
+            workflow,
+            default_args,
+            qtbot
+    ):
+
+        dialog_box = Mock()
+        dialog_box.data = Mock(return_value=[])
+
+        workflow.dialog_box_type = Mock(return_value=dialog_box)
+        workflow.get_additional_info(
+            parent=None,
+            options=default_args,
+            pretask_results=[MagicMock()]
+        )
+        assert dialog_box.exec.called is True
 
 
 def test_validate_path_valid(monkeypatch):
