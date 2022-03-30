@@ -26,6 +26,35 @@ class TestMedusaPreingestCuration:
 
         assert workflow.validate_user_options(**default_args) is True
 
+    def test_sort_item_data_unknown_throw(self, workflow, monkeypatch):
+        data = [
+            "somebaddata",
+        ]
+        with pytest.raises(ValueError):
+            workflow.sort_item_data(data)
+
+    def test_sort_item_data(self, workflow, monkeypatch):
+        data = [
+            "./some/file.txt",
+            "./some/directory/",
+
+        ]
+        monkeypatch.setattr(
+            workflow_medusa_preingest_curation.os.path,
+            "isdir",
+            lambda path: path == "./some/directory/"
+        )
+        monkeypatch.setattr(
+            workflow_medusa_preingest_curation.os.path,
+            "isfile",
+            lambda path: path == "./some/file.txt"
+        )
+        results = workflow.sort_item_data(data)
+        assert results == {
+            "files": ["./some/file.txt"],
+            "directories": ["./some/directory/"],
+        }
+
 
 def test_validate_path_valid(monkeypatch):
     supposed_to_be_real_path = "./some/valid/path"
