@@ -1,9 +1,10 @@
+import os.path
 from unittest.mock import Mock, MagicMock
 
 import pytest
 from PySide6 import QtWidgets,  QtCore
 
-from speedwagon.workflows import workflow_medusa_preingest_curation
+from speedwagon.workflows import workflow_medusa_preingest
 from speedwagon.models import ToolOptionsModel4
 
 
@@ -16,14 +17,14 @@ class TestMedusaPreingestCuration:
 
     @pytest.fixture
     def workflow(self):
-        return workflow_medusa_preingest_curation.MedusaPreingestCuration()
+        return workflow_medusa_preingest.MedusaPreingestCuration()
 
     def test_default_user_args_are_invalidate(self, workflow, default_args):
         with pytest.raises(ValueError):
             workflow.validate_user_options(**default_args)
 
     def test_valid_user_args_returns_true(self, workflow, default_args):
-        workflow_medusa_preingest_curation\
+        workflow_medusa_preingest\
             .MedusaPreingestCuration.validation_checks = []
 
         assert workflow.validate_user_options(**default_args) is True
@@ -42,12 +43,12 @@ class TestMedusaPreingestCuration:
 
         ]
         monkeypatch.setattr(
-            workflow_medusa_preingest_curation.os.path,
+            workflow_medusa_preingest.os.path,
             "isdir",
             lambda path: path == "./some/directory/"
         )
         monkeypatch.setattr(
-            workflow_medusa_preingest_curation.os.path,
+            workflow_medusa_preingest.os.path,
             "isfile",
             lambda path: path == "./some/file.txt"
         )
@@ -78,7 +79,7 @@ class TestMedusaPreingestCuration:
 
 @pytest.fixture()
 def default_user_args():
-    workflow = workflow_medusa_preingest_curation.MedusaPreingestCuration()
+    workflow = workflow_medusa_preingest.MedusaPreingestCuration()
     return ToolOptionsModel4(
         workflow.get_user_options()
     ).get()
@@ -86,25 +87,25 @@ def default_user_args():
 
 def test_validate_missing_values():
     with pytest.raises(ValueError):
-        workflow_medusa_preingest_curation.validate_missing_values({})
+        workflow_medusa_preingest.validate_missing_values({})
 
 
 def test_validate_no_missing_values(default_user_args):
     values = default_user_args.copy()
     values["Path"] = "something"
-    workflow_medusa_preingest_curation.validate_missing_values(values)
+    workflow_medusa_preingest.validate_missing_values(values)
 
 
 def test_validate_path_valid(monkeypatch):
     supposed_to_be_real_path = "./some/valid/path"
 
     monkeypatch.setattr(
-        workflow_medusa_preingest_curation.os.path,
+        workflow_medusa_preingest.os.path,
         "exists",
         lambda path: path == supposed_to_be_real_path
     )
 
-    workflow_medusa_preingest_curation.validate_path_valid(
+    workflow_medusa_preingest.validate_path_valid(
         {
             'Path':  supposed_to_be_real_path
         }
@@ -115,13 +116,13 @@ def test_validate_path_invalid(monkeypatch):
     invalid_path = "./some/valid/path"
 
     monkeypatch.setattr(
-        workflow_medusa_preingest_curation.os.path,
+        workflow_medusa_preingest.os.path,
         "exists",
         lambda path: False
     )
 
     with pytest.raises(ValueError):
-        workflow_medusa_preingest_curation.validate_path_valid(
+        workflow_medusa_preingest.validate_path_valid(
             {
                 'Path':  invalid_path
             }
@@ -132,7 +133,7 @@ class TestConfirmDeleteDialog:
     def test_okay_button_accepts(self, qtbot):
         items = []
         dialog_box = \
-            workflow_medusa_preingest_curation.ConfirmDeleteDialog(items)
+            workflow_medusa_preingest.ConfirmDeleteDialog(items)
 
         okay_button = \
             dialog_box.button_box.button(QtWidgets.QDialogButtonBox.Ok)
@@ -143,7 +144,7 @@ class TestConfirmDeleteDialog:
     def test_cancel_button_rejects(self, qtbot):
         items = []
         dialog_box = \
-            workflow_medusa_preingest_curation.ConfirmDeleteDialog(items)
+            workflow_medusa_preingest.ConfirmDeleteDialog(items)
 
         cancel_button = \
             dialog_box.button_box.button(QtWidgets.QDialogButtonBox.Cancel)
@@ -158,7 +159,7 @@ class TestConfirmListModel:
             "./file1.txt",
             "/directory/"
         ]
-        model = workflow_medusa_preingest_curation.ConfirmListModel(items)
+        model = workflow_medusa_preingest.ConfirmListModel(items)
         qtmodeltester.check(model)
 
     def test_all_data_defaults_to_checked(self):
@@ -166,7 +167,7 @@ class TestConfirmListModel:
             "./file1.txt",
             "/directory/"
         ]
-        model = workflow_medusa_preingest_curation.ConfirmListModel(items)
+        model = workflow_medusa_preingest.ConfirmListModel(items)
         assert model.selected() == items
 
     def test_unchecking_item(self):
@@ -174,7 +175,7 @@ class TestConfirmListModel:
             "./file1.txt",
             "/directory/"
         ]
-        model = workflow_medusa_preingest_curation.ConfirmListModel(items)
+        model = workflow_medusa_preingest.ConfirmListModel(items)
 
         model.setData(
             index=model.index(0),
@@ -188,7 +189,7 @@ class TestConfirmListModel:
 class TestFindOffendingFiles:
     def test_description(self):
         search_path = "./some/path"
-        task = workflow_medusa_preingest_curation.FindOffendingFiles(
+        task = workflow_medusa_preingest.FindOffendingFiles(
             **{
                 "Path": search_path,
                 "Include Subdirectories": True,
@@ -198,3 +199,33 @@ class TestFindOffendingFiles:
             }
         )
         assert search_path in task.task_description()
+
+    def test_locate_folders(self, monkeypatch):
+        def scandir(*args, **kwargs):
+            return [
+                Mock(path="dummy")
+            ]
+
+        monkeypatch.setattr(workflow_medusa_preingest.os, "scandir", scandir)
+        result = list(
+            workflow_medusa_preingest.FindOffendingFiles.locate_folders(
+                    starting_dir="start",
+                    recursive=False
+                )
+        )
+        assert "dummy" in result
+
+    def test_locate_folders_recursive(self, monkeypatch):
+        def walk(top, *args, **kwargs):
+            return [
+                [top, (["dummy"]), ()]
+            ]
+
+        monkeypatch.setattr(workflow_medusa_preingest.os, "walk", walk)
+        result = list(
+            workflow_medusa_preingest.FindOffendingFiles.locate_folders(
+                    starting_dir="start",
+                    recursive=True
+                )
+        )
+        assert os.path.join("start", "dummy") in result
