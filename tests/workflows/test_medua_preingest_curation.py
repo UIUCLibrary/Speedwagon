@@ -230,6 +230,94 @@ class TestFindOffendingFiles:
         )
         assert os.path.join("start", "dummy") in result
 
+    def test_locate_offending_subdirectories_calls_find_capture_one_data(
+            self,
+            monkeypatch
+    ):
+        search_path = "./some/path"
+        task = workflow_medusa_preingest.FindOffendingFiles(
+            **{
+                "Path": search_path,
+                "Include Subdirectories": True,
+                "Locate and delete dot underscore files": True,
+                "Locate and delete .DS_Store files": True,
+                "Locate and delete Capture One files": True,
+            }
+        )
+
+        find_capture_one_data = MagicMock()
+        monkeypatch.setattr(workflow_medusa_preingest,
+                            "find_capture_one_data",
+                            find_capture_one_data)
+        list(task.locate_offending_subdirectories(search_path))
+        assert find_capture_one_data.called is True
+
+    @pytest.fixture()
+    def offending_files(self):
+        def _make_mock_offending_files(search_path):
+            ds_store_file = Mock(
+                path=os.path.join(search_path, ".DS_Store"),
+                is_file=Mock(return_value=True)
+            )
+            ds_store_file.name = ".DS_Store"
+
+            dot_under_score_file = Mock(
+                path=os.path.join(search_path, "._cache"),
+                is_file=Mock(return_value=True)
+            )
+            dot_under_score_file.name = "._cache"
+
+            return [
+                ds_store_file,
+                dot_under_score_file
+            ]
+        return _make_mock_offending_files
+
+    @pytest.mark.parametrize(
+        "underscore, ds_store, expected_file, expected_excluded_file",
+        [
+            (False, True, ".DS_Store", None),
+            (True, True, ".DS_Store", None),
+            (False, False, None, ".DS_Store"),
+            (True, False, "._cache", None),
+            (True, True, "._cache", None),
+            (False, False, None, "._cache"),
+        ]
+    )
+    def test_locate_offending_files(
+            self,
+            monkeypatch,
+            offending_files,
+            underscore,
+            ds_store,
+            expected_file,
+            expected_excluded_file
+    ):
+        search_path = os.path.join(".", "some", "path")
+        offending_files(search_path)
+        task = workflow_medusa_preingest.FindOffendingFiles(
+            **{
+                "Path": search_path,
+                "Include Subdirectories": True,
+                "Locate and delete dot underscore files": underscore,
+                "Locate and delete .DS_Store files": ds_store,
+                "Locate and delete Capture One files": True,
+            }
+        )
+
+        def scandir(*args, **kwargs):
+            return offending_files(search_path)
+
+        monkeypatch.setattr(workflow_medusa_preingest.os, "scandir", scandir)
+        if expected_file:
+            assert \
+                os.path.join(search_path, expected_file) \
+                in list(task.locate_offending_files(search_path))
+        if expected_excluded_file:
+            assert \
+                os.path.join(search_path, expected_excluded_file) \
+                not in list(task.locate_offending_files(search_path))
+
 
 def test_find_capture_one_data_nothing_found(monkeypatch):
     monkeypatch.setattr(

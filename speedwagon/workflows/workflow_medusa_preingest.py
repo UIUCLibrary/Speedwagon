@@ -253,14 +253,12 @@ class FindOffendingFiles(tasks.Subtask):
         self.set_results(offending_item)
         return True
 
-    def locate_offending_files_and_folders(
-            self,
-            directory: str
-    ) -> Iterator[str]:
+    def locate_offending_subdirectories(self, root_dir: str) -> Iterator[str]:
         if self._locate_capture_one is True:
-            yield from find_capture_one_data(directory)
+            yield from find_capture_one_data(root_dir)
 
-        for item in filter(lambda i: i.is_file(), os.scandir(directory)):
+    def locate_offending_files(self, root_dir: str) -> Iterator[str]:
+        for item in filter(lambda i: i.is_file(), os.scandir(root_dir)):
             if all([
                 self._locate_dot_underscore,
                 item.name.startswith("._")
@@ -273,6 +271,13 @@ class FindOffendingFiles(tasks.Subtask):
                 item.name == ".DS_Store"
             ]):
                 yield item.path
+
+    def locate_offending_files_and_folders(
+            self,
+            directory: str
+    ) -> Iterator[str]:
+        yield from self.locate_offending_subdirectories(directory)
+        yield from self.locate_offending_files(directory)
 
 
 def find_capture_one_data(directory: str) -> Iterator[str]:
