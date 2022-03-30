@@ -1,5 +1,5 @@
 import pytest
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets,  QtCore
 
 from speedwagon.workflows import workflow_medusa_preingest_curation
 from speedwagon.models import ToolOptionsModel4
@@ -44,3 +44,35 @@ class TestConfirmDeleteDialog:
         with qtbot.wait_signal(dialog_box.rejected):
             cancel_button.click()
 
+
+class TestConfirmListModel:
+    def test_model_check(self, qtmodeltester):
+        items = [
+            "./file1.txt",
+            "/directory/"
+        ]
+        model = workflow_medusa_preingest_curation.ConfirmListModel(items)
+        qtmodeltester.check(model)
+
+    def test_all_data_defaults_to_checked(self):
+        items = [
+            "./file1.txt",
+            "/directory/"
+        ]
+        model = workflow_medusa_preingest_curation.ConfirmListModel(items)
+        assert model.selected() == items
+
+    def test_unchecking_item(self):
+        items = [
+            "./file1.txt",
+            "/directory/"
+        ]
+        model = workflow_medusa_preingest_curation.ConfirmListModel(items)
+
+        model.setData(
+            index=model.index(0),
+            value=QtCore.Qt.Unchecked,
+            role=QtCore.Qt.CheckStateRole
+        )
+
+        assert model.selected() == ["/directory/"]
