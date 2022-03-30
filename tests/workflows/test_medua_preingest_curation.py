@@ -229,3 +229,48 @@ class TestFindOffendingFiles:
                 )
         )
         assert os.path.join("start", "dummy") in result
+
+
+def test_find_capture_one_data_nothing_found(monkeypatch):
+    monkeypatch.setattr(
+        workflow_medusa_preingest.os.path,
+        "exists",
+        lambda path: False
+    )
+    items_found = list(
+        workflow_medusa_preingest.find_capture_one_data(directory=".")
+    )
+    assert not items_found
+
+
+def test_find_capture_one_data_found(monkeypatch):
+    starting_point = "."
+    monkeypatch.setattr(
+        workflow_medusa_preingest.os.path,
+        "exists",
+        lambda path: path == os.path.join(starting_point, "CaptureOne")
+    )
+
+    def walk(top, *args, **kwargs):
+        return [
+            [top, (["Cache", "Settings91"]), ([])],
+            [os.path.join(top, "Cache"), (), (["someFile"])]
+        ]
+
+    monkeypatch.setattr(
+        workflow_medusa_preingest.os,
+        "walk",
+        walk
+    )
+    items_found = list(
+        workflow_medusa_preingest.find_capture_one_data(
+            directory=starting_point
+        )
+    )
+    assert items_found == [
+        os.path.join(starting_point, "CaptureOne", "Cache"),
+        os.path.join(starting_point, "CaptureOne", "Settings91"),
+        os.path.join(starting_point, "CaptureOne", "Cache", "someFile"),
+        os.path.join(starting_point, "CaptureOne"),
+    ]
+

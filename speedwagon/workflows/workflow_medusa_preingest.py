@@ -258,7 +258,7 @@ class FindOffendingFiles(tasks.Subtask):
             directory: str
     ) -> Iterator[str]:
         if self._locate_capture_one is True:
-            yield from self.find_capture_one_data(directory)
+            yield from find_capture_one_data(directory)
 
         for item in filter(lambda i: i.is_file(), os.scandir(directory)):
             if all([
@@ -274,18 +274,18 @@ class FindOffendingFiles(tasks.Subtask):
             ]):
                 yield item.path
 
-    @staticmethod
-    def find_capture_one_data(directory: str) -> Iterator[str]:
-        potential_capture_one_dir_name = \
-            os.path.join(directory, "CaptureOne")
 
-        if os.path.exists(potential_capture_one_dir_name):
-            for root, dirs, files in os.walk(potential_capture_one_dir_name):
-                for file_name in files:
-                    yield os.path.join(root, file_name)
-                for dir_name in dirs:
-                    yield os.path.join(root, dir_name)
-            yield potential_capture_one_dir_name
+def find_capture_one_data(directory: str) -> Iterator[str]:
+    potential_capture_one_dir_name = \
+        os.path.join(directory, "CaptureOne")
+
+    if os.path.exists(potential_capture_one_dir_name):
+        for root, dirs, files in os.walk(potential_capture_one_dir_name):
+            for file_name in files:
+                yield os.path.join(root, file_name)
+            for dir_name in dirs:
+                yield os.path.join(root, dir_name)
+        yield potential_capture_one_dir_name
 
 
 class DeleteFileSystemItem(tasks.Subtask, abc.ABC):
