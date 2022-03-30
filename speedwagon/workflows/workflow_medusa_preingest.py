@@ -1,3 +1,8 @@
+"""Workflow for Medusa Preingest.
+
+Added on 3/30/2022
+"""
+
 import abc
 import os
 import typing
@@ -8,6 +13,8 @@ from PySide6.QtGui import Qt
 
 import speedwagon
 from speedwagon import workflow, tasks
+
+__all__ = ['MedusaPreingestCuration']
 
 
 def validate_missing_values(user_args: Dict[str, Union[str, bool]]) -> None:
@@ -58,6 +65,8 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
 
 
 class MedusaPreingestCuration(speedwagon.Workflow):
+    """Medusa Preingest curation Workflow."""
+
     name = "Medusa Preingest Curation"
     description = \
         """
@@ -75,11 +84,13 @@ class MedusaPreingestCuration(speedwagon.Workflow):
 
     def initial_task(self, task_builder: tasks.TaskBuilder,
                      **user_args) -> None:
+        """Add task to search for files to be removed."""
         task_builder.add_subtask(FindOffendingFiles(**user_args))
         super().initial_task(task_builder, **user_args)
 
     @staticmethod
     def validate_user_options(**user_args) -> bool:
+        """Validate user args."""
         for check in MedusaPreingestCuration.validation_checks:
             check(user_args)
         return True
@@ -90,6 +101,7 @@ class MedusaPreingestCuration(speedwagon.Workflow):
             additional_data: Dict[str, Any],
             **user_args
     ) -> List[dict]:
+        """Organize the order the files & directories should be removed."""
         new_tasks: List[Dict[str, str]] = []
 
         for file_path in additional_data["files"]:
@@ -108,7 +120,7 @@ class MedusaPreingestCuration(speedwagon.Workflow):
 
     def get_additional_info(self, parent: typing.Optional[QtWidgets.QWidget],
                             options: dict, pretask_results: list) -> dict:
-
+        """Request confirmation about which files should be removed."""
         dialog = self.dialog_box_type(
             items=list(pretask_results[0].data),
             parent=parent
@@ -122,6 +134,7 @@ class MedusaPreingestCuration(speedwagon.Workflow):
 
     @staticmethod
     def sort_item_data(data: List[str]) -> Dict[str, List[str]]:
+        """Sort list of file contents into a dictionary based on type."""
         dirs: List[str] = []
         files: List[str] = []
 
@@ -140,6 +153,7 @@ class MedusaPreingestCuration(speedwagon.Workflow):
         }
 
     def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        """Get which types of files to search for."""
         root_directory = speedwagon.workflow.DirectorySelect("Path")
 
         include_subdirectories = \
@@ -178,6 +192,12 @@ class MedusaPreingestCuration(speedwagon.Workflow):
             results: List[tasks.Result],
             **user_args
     ) -> Optional[str]:
+        """Generate a report about what files and directories were removed.
+
+        Args:
+            results:
+            **user_args:
+        """
         items_deleted = [
             result.data for result in results if result.source in [
                 DeleteFile,
@@ -197,6 +217,12 @@ class MedusaPreingestCuration(speedwagon.Workflow):
 
     def create_new_task(self, task_builder: tasks.TaskBuilder,
                         **job_args) -> None:
+        """Add a delete file or delete directory task to the task list.
+
+        Args:
+            task_builder:
+            **job_args:
+        """
         if job_args['type'] == "file":
             task_builder.add_subtask(DeleteFile(job_args["path"]))
         elif job_args['type'] == "directory":
