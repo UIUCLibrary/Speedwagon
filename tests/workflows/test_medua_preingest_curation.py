@@ -58,6 +58,30 @@ class TestMedusaPreingestCuration:
             "directories": ["./some/directory/"],
         }
 
+    def test_discover_task_metadata(self, workflow, default_args):
+        initial_results = []
+        new_tasks = workflow.discover_task_metadata(
+            initial_results,
+            additional_data={
+                "files": ["somefile.txt"],
+                "directories": ["somedir"]
+            },
+            **default_args
+        )
+
+        assert all(
+            new_task in new_tasks for new_task in [
+                {
+                    "type": "file",
+                    "path": "somefile.txt"
+                },
+                {
+                    "type": "directory",
+                    "path": "somedir"
+                }
+            ]
+        )
+
     def test_get_additional_info_opens_dialog(
             self,
             workflow,
