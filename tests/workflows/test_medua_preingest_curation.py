@@ -76,3 +76,18 @@ class TestConfirmListModel:
         )
 
         assert model.selected() == ["/directory/"]
+
+
+class TestFindOffendingFiles:
+    def test_description(self):
+        search_path = "./some/path"
+        task = workflow_medusa_preingest_curation.FindOffendingFiles(
+            **{
+                "Path": search_path,
+                "Include Subdirectories": True,
+                "Locate and delete dot underscore files": True,
+                "Locate and delete .DS_Store files": True,
+                "Locate and delete Capture One files": True,
+            }
+        )
+        assert search_path in task.task_description()
