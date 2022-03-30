@@ -1,13 +1,25 @@
 import abc
 import os
 import typing
-from typing import List, Any, Dict, Optional, Set, Iterator, Union
+from typing import List, Any, Dict, Optional, Set, Iterator, Union, Callable
 
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtGui import Qt
 
 import speedwagon
 from speedwagon import workflow, tasks
+
+
+def validate_missing_values(user_args: Dict[str, Union[str, bool]]) -> None:
+    path = user_args.get("Path")
+    if path is None:
+        raise ValueError("Missing Value")
+
+
+def validate_path_valid(user_args: Dict[str, Union[str, bool]]) -> None:
+    path = user_args["Path"]
+    if not os.path.exists(path):
+        raise ValueError(f"Unable to locate {path}")
 
 
 class MedusaPreingestCuration(speedwagon.Workflow):
@@ -20,6 +32,11 @@ class MedusaPreingestCuration(speedwagon.Workflow):
 -  Verifies that contents are structured in standard package format
     """.strip()
 
+    validation_checks: List[Callable[[Dict[str, Union[str, bool]]], None]] = [
+        validate_missing_values,
+        validate_path_valid
+    ]
+
     def initial_task(self, task_builder: tasks.TaskBuilder,
                      **user_args) -> None:
         task_builder.add_subtask(FindOffendingFiles(**user_args))
@@ -27,8 +44,8 @@ class MedusaPreingestCuration(speedwagon.Workflow):
 
     @staticmethod
     def validate_user_options(**user_args) -> bool:
-        if user_args["Path"] is None:
-            raise ValueError("Missing Value")
+        for check in MedusaPreingestCuration.validation_checks:
+            check(user_args)
         return True
 
     def discover_task_metadata(

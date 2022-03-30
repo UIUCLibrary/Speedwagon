@@ -20,6 +20,45 @@ class TestMedusaPreingestCuration:
         with pytest.raises(ValueError):
             workflow.validate_user_options(**default_args)
 
+    def test_valid_user_args_returns_true(self, workflow, default_args):
+        workflow_medusa_preingest_curation\
+            .MedusaPreingestCuration.validation_checks = []
+
+        assert workflow.validate_user_options(**default_args) is True
+
+
+def test_validate_path_valid(monkeypatch):
+    supposed_to_be_real_path = "./some/valid/path"
+
+    monkeypatch.setattr(
+        workflow_medusa_preingest_curation.os.path,
+        "exists",
+        lambda path: path == supposed_to_be_real_path
+    )
+
+    workflow_medusa_preingest_curation.validate_path_valid(
+        {
+            'Path':  supposed_to_be_real_path
+        }
+    )
+
+
+def test_validate_path_invalid(monkeypatch):
+    invalid_path = "./some/valid/path"
+
+    monkeypatch.setattr(
+        workflow_medusa_preingest_curation.os.path,
+        "exists",
+        lambda path: False
+    )
+
+    with pytest.raises(ValueError):
+        workflow_medusa_preingest_curation.validate_path_valid(
+            {
+                'Path':  invalid_path
+            }
+        )
+
 
 class TestConfirmDeleteDialog:
     def test_okay_button_accepts(self, qtbot):
