@@ -364,7 +364,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex
             ],
-            role: int = Qt.DisplayRole
+            role: int = typing.cast(int, Qt.DisplayRole)
     ) -> Any:
         if role == Qt.CheckStateRole:
             return self.items[index.row()].get("checked", Qt.Unchecked)
@@ -379,7 +379,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
                 QtCore.QPersistentModelIndex
             ],
             value: Any,
-            role: int = Qt.DisplayRole
+            role: int = typing.cast(int, Qt.DisplayRole)
     ) -> bool:
         if role == Qt.CheckStateRole:
             self.items[index.row()]['checked'] = value
