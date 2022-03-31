@@ -1,19 +1,17 @@
 """Hathi Prep Workflow."""
 import itertools
 import os
-from typing import Mapping, List, Any, Sequence, Dict, Optional
+from typing import List, Any, Sequence, Dict, Optional
 import typing
-from PySide6 import QtWidgets  # type: ignore
 
-import uiucprescon.packager.packages
-from uiucprescon.packager import PackageFactory
 from uiucprescon.packager.packages import collection
 
 import speedwagon
 import speedwagon.tasks.prep
 import speedwagon.tasks.packaging
 import speedwagon.workflow
-from speedwagon.workflows.title_page_selection import PackageBrowser
+from speedwagon.frontend.interaction import UserRequestFactory
+
 __all__ = ['HathiPrepWorkflow']
 
 
@@ -128,46 +126,14 @@ class HathiPrepWorkflow(speedwagon.Workflow):
             )
         )
 
-    def get_additional_info(self,
-                            parent: typing.Optional[QtWidgets.QWidget],
-                            options: Mapping[str, str],
-                            pretask_results: list
-                            ) -> Dict[str, List[collection.Package]]:
-        """Request information from user about the title page.
-
-        Args:
-            parent:
-            options:
-            pretask_results:
-
-        Returns:
-            Returns the title page information
-
-        """
-        image_type = options['Image File Type']
-
-        root_dir = options['input']
-        if image_type == "TIFF":
-            package_factory = PackageFactory(
-                uiucprescon.packager.packages.HathiTiff())
-        elif image_type == "JPEG 2000":
-            package_factory = PackageFactory(
-                uiucprescon.packager.packages.HathiJp2())
-        else:
-            raise ValueError(f"Unknown type {image_type}")
-
-        browser = PackageBrowser(
-            list(package_factory.locate_packages(root_dir)),
-            parent
-        )
-        browser.exec()
-        result = browser.result()
-        if result != browser.Accepted:
-            raise speedwagon.JobCancelled()
-        # List[collection.Package]
-        return {
-            'packages': browser.data()
-        }
+    def get_additional_info(
+            self,
+            user_request_factory: UserRequestFactory,
+            options: dict,
+            pretask_results: list
+    ) -> dict:
+        package_browser = user_request_factory.package_browser()
+        return package_browser.get_user_response(options, pretask_results)
 
     @classmethod
     def generate_report(cls, results: List[speedwagon.tasks.tasks.Result],

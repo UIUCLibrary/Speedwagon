@@ -8,6 +8,7 @@ import enum
 
 import logging
 import queue
+import sys
 import tempfile
 import threading
 import traceback
@@ -19,12 +20,15 @@ from PySide6 import QtWidgets
 
 import speedwagon
 import speedwagon.dialog
+import speedwagon.frontend.interaction
+import speedwagon.frontend.cli.user_interaction
 from speedwagon import worker
 from .job import AbsWorkflow, Workflow, JobCancelled, available_workflows
 
 __all__ = [
     "RunRunner",
-    "UsingExternalManagerForAdapter"
+    "UsingExternalManagerForAdapter",
+    "simple_api_run_workflow"
 ]
 
 USER_ABORTED_MESSAGE = "User Aborted"
@@ -1250,3 +1254,65 @@ class ThreadedEvents(AbsEvents):
 
     def is_done(self) -> bool:
         return self._done.is_set()
+
+
+def simple_api_run_workflow(
+        workflow: Workflow,
+        workflow_options,
+        logger: Optional[logging.Logger] = None,
+        request_factory: Optional[
+            speedwagon.frontend.interaction.UserRequestFactory
+        ] = None
+) -> None:
+    """Run a workflow and block until finished.
+
+    This is the simplest API for running a workflow.
+
+    Args:
+        workflow: Workflow
+        workflow_options: dictionary of options
+        logger: file stream handle for logging data
+        request_factory: factory for generating the user input mid-job
+    """
+
+    task_scheduler = speedwagon.runner_strategies.TaskScheduler(".")
+    log_handler = None
+
+    if logger is None:
+        logger = logging.getLogger()
+        log_handler = logging.StreamHandler(stream=sys.stdout)
+        logger.addHandler(log_handler)
+    try:
+        task_scheduler.logger = logger
+        logging.StreamHandler(stream=sys.stdout)
+        task_scheduler.logger.setLevel(logging.INFO)
+
+        def request_more_info(
+                workflow: Workflow,
+                options: Dict[str, Any],
+                pretask_results: List[Any]
+        ) -> typing.Optional[Dict[str, Any]]:
+
+            factory = \
+                request_factory or \
+                speedwagon.frontend.cli.user_interaction.CLIFactory()
+
+            return workflow.get_additional_info(
+                factory,
+                options,
+                pretask_results
+            )
+
+        setattr(task_scheduler, "request_more_info", request_more_info)
+        for task in task_scheduler.iter_tasks(
+                workflow=workflow,
+                options=workflow_options
+        ):
+            task.parent_task_log_q = type('reporter', (object,), {
+                "append": logger.info
+            })
+            logger.info("%s\n", task.task_description())
+            task.exec()
+    finally:
+        if log_handler is not None:
+            task_scheduler.logger.removeHandler(log_handler)

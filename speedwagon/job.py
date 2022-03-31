@@ -8,10 +8,17 @@ import logging
 import os
 import sys
 import typing
-from typing import Type, Optional, Iterable, Dict, List, Any, Tuple, Set
+from typing import \
+    Any, \
+    Dict, \
+    Iterable, \
+    List, \
+    Optional, \
+    Set, \
+    Tuple, \
+    Type
 
-from PySide6 import QtWidgets
-
+from speedwagon.frontend import interaction
 from speedwagon import tasks, workflow
 
 __all__ = [
@@ -156,15 +163,18 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
     Notes:
         You need to implement the discover_task_metadata() method.
     """
-
-    def get_additional_info(self, parent: typing.Optional[QtWidgets.QWidget],
-                            options: dict, pretask_results: list) -> dict:
+    def get_additional_info(
+            self,
+            user_request_factory: "interaction.UserRequestFactory",
+            options: dict,
+            pretask_results: list
+    ) -> dict:
         """Request additional information from the user.
 
         If a user needs to be prompted for more information, run this
 
         Args:
-            parent: QtWidget to build off of
+            user_request_factory: factory needed
             options:  Dictionary of existing user settings
             pretask_results: results of the pretask, if any
 

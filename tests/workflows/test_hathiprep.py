@@ -4,6 +4,7 @@ from unittest.mock import Mock, MagicMock
 import pytest
 
 import speedwagon
+from speedwagon.frontend import interaction
 from speedwagon.workflows import workflow_hathiprep
 
 
@@ -56,23 +57,21 @@ def test_get_additional_info_opens_dialog_box(monkeypatch):
     package_browser.result = Mock(return_value=PackageBrowser.Accepted)
     package_browser.Accepted = PackageBrowser.Accepted
 
-    def mock_package_browser(_, __):
-        return package_browser
     with monkeypatch.context() as mp:
         mp.setattr(os, "scandir", mock_scandir)
-        mp.setattr(
-            workflow_hathiprep,
-            "PackageBrowser",
-            mock_package_browser
+        mock_package_browser = Mock(name="mock_package_browser")
+        mock_package_browser.get_user_response = Mock(return_value={"packages"})
+        user_request_factory = Mock(
+            spec=interaction.UserRequestFactory,
         )
+        user_request_factory.package_browser.return_value = mock_package_browser
 
         extra_info = workflow.get_additional_info(
-            None,
+            user_request_factory,
             options=user_args,
             pretask_results=[]
         )
-    assert package_browser.exec.called is True and \
-           "packages" in extra_info
+        assert "packages" in extra_info
 
 
 @pytest.fixture
