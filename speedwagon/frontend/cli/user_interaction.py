@@ -77,7 +77,7 @@ class CLIPackageBrowserWidget(interaction.AbstractPackageBrowser):
                 raise speedwagon.JobCancelled from escape_exception
 
     @staticmethod
-    def get_package_files(package):
+    def get_package_files(package) -> List[str]:
         """Locate files in a package."""
         files: List[str] = []
         for i in package:

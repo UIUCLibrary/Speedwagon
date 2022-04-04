@@ -1,10 +1,11 @@
 """Interacting with the user."""
 
 import abc
-from typing import Dict, Any
+from typing import Dict, Any, List
 import enum
 import uiucprescon.packager.packages
 from uiucprescon.packager import PackageFactory
+from uiucprescon.packager.packages import collection
 
 
 class SupportedImagePackageFormats(enum.Enum):
@@ -26,7 +27,10 @@ class AbstractPackageBrowser(abc.ABC):
         """Get a response from the user."""
 
     @staticmethod
-    def get_packages(root_dir, image_type: SupportedImagePackageFormats):
+    def get_packages(
+            root_dir: str,
+            image_type: SupportedImagePackageFormats
+    ) -> List[collection.Package]:
         """Locate packages at a given directory."""
         image_types = {
             SupportedImagePackageFormats.TIFF:
