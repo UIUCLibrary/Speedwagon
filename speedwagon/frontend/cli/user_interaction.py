@@ -1,3 +1,5 @@
+"""Commandline interface for interacting to the user."""
+
 import os
 import sys
 from typing import Dict, Any, Optional, List, Callable
@@ -9,12 +11,14 @@ from speedwagon.frontend import interaction
 
 
 class CLIPackageBrowserWidget(interaction.AbstractPackageBrowser):
+    """Commandline interface for selecting package title pages."""
 
     def get_user_response(
             self,
             options: dict,
             pretask_results: list
     ) -> Dict[str, Any]:
+        """Get user response of which is the title page for a package."""
         root_dir = options['input']
 
         image_type: Optional[interaction.SupportedImagePackageFormats] = {
@@ -51,6 +55,7 @@ class CLIPackageBrowserWidget(interaction.AbstractPackageBrowser):
                 Callable[[None], int]
             ] = None
     ) -> str:
+        """Request user input on which file represents the title page."""
         while True:
             for i, file_name in enumerate(files):
                 print(f"{i + 1}) {file_name}")
@@ -73,6 +78,7 @@ class CLIPackageBrowserWidget(interaction.AbstractPackageBrowser):
 
     @staticmethod
     def get_package_files(package):
+        """Locate files in a package."""
         files: List[str] = []
         for i in package:
             for instance in i.instantiations.values():
@@ -81,5 +87,8 @@ class CLIPackageBrowserWidget(interaction.AbstractPackageBrowser):
 
 
 class CLIFactory(interaction.UserRequestFactory):
+    """Command line interface  factory."""
+
     def package_browser(self) -> interaction.AbstractPackageBrowser:
+        """Command line interface select title pages of for packages."""
         return CLIPackageBrowserWidget()
