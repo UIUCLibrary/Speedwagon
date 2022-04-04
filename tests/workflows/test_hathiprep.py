@@ -60,11 +60,15 @@ def test_get_additional_info_opens_dialog_box(monkeypatch):
     with monkeypatch.context() as mp:
         mp.setattr(os, "scandir", mock_scandir)
         mock_package_browser = Mock(name="mock_package_browser")
-        mock_package_browser.get_user_response = Mock(return_value={"packages"})
+
+        mock_package_browser.get_user_response = \
+            Mock(return_value={"packages"})
+
         user_request_factory = Mock(
             spec=interaction.UserRequestFactory,
         )
-        user_request_factory.package_browser.return_value = mock_package_browser
+        user_request_factory.package_browser.return_value = \
+            mock_package_browser
 
         extra_info = workflow.get_additional_info(
             user_request_factory,
