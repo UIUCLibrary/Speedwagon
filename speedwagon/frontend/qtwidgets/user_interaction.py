@@ -1,13 +1,15 @@
 """User interaction when using a QtWidget backend."""
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from speedwagon.frontend import interaction
 from speedwagon.workflows.title_page_selection import PackageBrowser
+from uiucprescon.packager.packages import collection
+from PySide6 import QtWidgets
 
 
 class QtWidgetFactory(interaction.UserRequestFactory):
     """Factory for generating Qt Widget."""
 
-    def __init__(self, parent) -> None:
+    def __init__(self, parent: Optional[QtWidgets.QWidget]) -> None:
         """Create a new QtWidgetFactory factory."""
         super().__init__()
         self.parent = parent
@@ -20,7 +22,7 @@ class QtWidgetFactory(interaction.UserRequestFactory):
 class QtWidgetPackageBrowserWidget(interaction.AbstractPackageBrowser):
     """QtWidget-based widget for selecting packages title pages."""
 
-    def __init__(self, parent) -> None:
+    def __init__(self, parent: Optional[QtWidgets.QWidget]) -> None:
         """Create a new package browser."""
         super().__init__()
         self.parent = parent
@@ -31,7 +33,7 @@ class QtWidgetPackageBrowserWidget(interaction.AbstractPackageBrowser):
             pretask_results: list
     ) -> Dict[str, Any]:
         """Generate the dialog for selecting title pages."""
-        root_dir = options['input']
+        root_dir: str = options['input']
 
         image_type: Optional[interaction.SupportedImagePackageFormats] = {
             "TIFF": interaction.SupportedImagePackageFormats.TIFF,
@@ -49,7 +51,11 @@ class QtWidgetPackageBrowserWidget(interaction.AbstractPackageBrowser):
 
         }
 
-    def get_data_with_dialog_box(self, root_dir, image_type):
+    def get_data_with_dialog_box(
+            self,
+            root_dir: str,
+            image_type: interaction.SupportedImagePackageFormats
+    ) -> List[collection.Package]:
         """Open a Qt dialog box for selecting package title pages."""
         browser = PackageBrowser(
             self.get_packages(root_dir, image_type),
