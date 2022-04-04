@@ -1,9 +1,9 @@
 """User interaction when using a QtWidget backend."""
 from typing import Dict, Any, Optional, List
+from PySide6 import QtWidgets
+from uiucprescon.packager.packages import collection
 from speedwagon.frontend import interaction
 from speedwagon.workflows.title_page_selection import PackageBrowser
-from uiucprescon.packager.packages import collection
-from PySide6 import QtWidgets
 
 
 class QtWidgetFactory(interaction.UserRequestFactory):
