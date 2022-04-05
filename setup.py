@@ -24,6 +24,9 @@ if __name__ == "__main__":
         packages=[
             "speedwagon",
             "speedwagon.dialog",
+            "speedwagon.frontend",
+            "speedwagon.frontend.cli",
+            "speedwagon.frontend.qtwidgets",
             "speedwagon.tasks",
             "speedwagon.workflows",
             "speedwagon.workflows.tessdata",

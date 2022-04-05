@@ -37,6 +37,7 @@ import speedwagon.models
 import speedwagon.tabs
 import speedwagon.exceptions
 from speedwagon import worker, job, runner_strategies
+from speedwagon.frontend.qtwidgets.user_interaction import QtWidgetFactory
 from speedwagon.dialog.settings import TabEditor
 from speedwagon.dialog.dialogs import WorkflowProgress
 from speedwagon.logging_helpers import SignalLogHandler
@@ -558,8 +559,9 @@ class QtRequestMoreInfo(QtCore.QObject):
     ) -> None:
         with user_is_interacting:
             try:
+                factory = QtWidgetFactory(self._parent)
                 self.results = workflow.get_additional_info(
-                    self._parent,
+                    factory,
                     options=options,
                     pretask_results=pre_results
                 )
