@@ -1274,7 +1274,6 @@ def simple_api_run_workflow(
         logger: file stream handle for logging data
         request_factory: factory for generating the user input mid-job
     """
-
     task_scheduler = speedwagon.runner_strategies.TaskScheduler(".")
     log_handler = None
 

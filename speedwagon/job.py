@@ -163,6 +163,7 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
     Notes:
         You need to implement the discover_task_metadata() method.
     """
+
     def get_additional_info(
             self,
             user_request_factory: "interaction.UserRequestFactory",
