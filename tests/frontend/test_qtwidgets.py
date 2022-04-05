@@ -1,10 +1,30 @@
 from unittest.mock import MagicMock, Mock
 
+import pytest
+
 from speedwagon.frontend import qtwidgets, interaction
 from speedwagon.workflows import title_page_selection
 
 
 class TestQtWidgetPackageBrowserWidget:
+    def test_get_user_response_invalid_file_format_raises(
+            self,
+            qtbot,
+            monkeypatch
+    ):
+        package_widget = \
+            qtwidgets.user_interaction.QtWidgetPackageBrowserWidget(None)
+
+        with pytest.raises(KeyError) as error:
+            package_widget.get_user_response(
+                options={
+                    'input': "somepath",
+                    "Image File Type": "some bonkers non-supported format"
+                },
+                pretask_results=[]
+            )
+        assert "some bonkers non-supported format" in str(error.value)
+
     def test_get_user_response(self, qtbot, monkeypatch):
         package_data = MagicMock()
         package_widget = \
