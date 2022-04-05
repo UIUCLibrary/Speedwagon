@@ -758,3 +758,47 @@ class TestThreadedEvents:
         assert events.has_started() is False
         events.started.set()
         assert events.has_started() is True
+
+
+@pytest.mark.parametrize("method_name", [
+    'create_new_task',
+    'discover_task_metadata',
+    'generate_report',
+    'get_additional_info',
+    'create_new_task'
+])
+def test_simple_api_run_workflow_calls_methods(method_name):
+    mock_workflow = Mock(
+        spec=speedwagon.Workflow,
+        name="Workflow",
+        get_additional_info=Mock()
+    )
+    mock_workflow.discover_task_metadata = Mock(return_value=[{}])
+    mock_workflow.request_more_info = Mock(return_value={})
+    runner_strategies.simple_api_run_workflow(
+        mock_workflow, workflow_options={}
+    )
+
+    assert getattr(mock_workflow, method_name).called is True
+
+
+def test_simple_api_calls_exec_on_task(monkeypatch):
+    mock_workflow = Mock(
+        spec=speedwagon.Workflow,
+        name="Workflow",
+        get_additional_info=Mock()
+    )
+    mock_task = Mock(spec=speedwagon.tasks.Subtask)
+    mock_workflow.discover_task_metadata = Mock(return_value=[{}])
+    mock_workflow.request_more_info = Mock(return_value={})
+
+    monkeypatch.setattr(
+        runner_strategies.TaskGenerator,
+        "get_main_tasks",
+        lambda self, task_builder, **job_args: [mock_task]
+    )
+
+    runner_strategies.simple_api_run_workflow(
+        mock_workflow, workflow_options={}
+    )
+    assert mock_task.exec.called is True
