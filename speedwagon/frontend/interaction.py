@@ -45,6 +45,7 @@ class AbstractPackageBrowser(abc.ABC):
 
     @staticmethod
     def image_str_to_enum(value: str) -> SupportedImagePackageFormats:
+        """Convert an image string to an enum value."""
         image_type: Optional[SupportedImagePackageFormats] = {
             "TIFF": SupportedImagePackageFormats.TIFF,
             'JPEG 2000': SupportedImagePackageFormats.JP2
