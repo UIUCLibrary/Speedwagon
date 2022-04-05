@@ -8,11 +8,9 @@ import os
 import typing
 from typing import List, Any, Dict, Optional, Set, Iterator, Union, Callable
 
-from PySide6 import QtWidgets, QtCore
-from PySide6.QtGui import Qt
-
 import speedwagon
 from speedwagon import workflow, tasks
+from speedwagon.frontend import interaction
 
 __all__ = ['MedusaPreingestCuration']
 
@@ -27,41 +25,6 @@ def validate_path_valid(user_args: Dict[str, Union[str, bool]]) -> None:
     path = user_args["Path"]
     if not os.path.exists(path):
         raise ValueError(f"Unable to locate {path}")
-
-
-class ConfirmDeleteDialog(QtWidgets.QDialog):
-    def __init__(
-            self,
-            items: typing.List[str],
-            parent: typing.Optional[QtWidgets.QWidget] = None,
-            flags: typing.Union[
-                Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
-    ) -> None:
-        """Create a package browser dialog window."""
-        super().__init__(parent, flags)
-        layout = QtWidgets.QGridLayout(self)
-        self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
-        )
-        self.setWindowTitle("Delete the Following Items?")
-        self.setFixedWidth(500)
-        self._make_connections()
-        self.package_view = QtWidgets.QListView(self)
-
-        layout.addWidget(self.package_view)
-        layout.addWidget(self.button_box)
-        self.setLayout(layout)
-
-        self.model = ConfirmListModel(items=items, parent=self)
-        self.package_view.setModel(self.model)
-
-    def _make_connections(self):
-        # pylint: disable=E1101
-        self.button_box.accepted.connect(self.accept)
-        self.button_box.rejected.connect(self.reject)
-
-    def data(self) -> List[str]:
-        return self.model.selected()
 
 
 class MedusaPreingestCuration(speedwagon.Workflow):
@@ -80,7 +43,6 @@ class MedusaPreingestCuration(speedwagon.Workflow):
         validate_missing_values,
         validate_path_valid
     ]
-    dialog_box_type = ConfirmDeleteDialog
 
     def initial_task(self, task_builder: tasks.TaskBuilder,
                      **user_args) -> None:
@@ -118,19 +80,18 @@ class MedusaPreingestCuration(speedwagon.Workflow):
 
         return new_tasks
 
-    def get_additional_info(self, parent: typing.Optional[QtWidgets.QWidget],
-                            options: dict, pretask_results: list) -> dict:
-        """Request confirmation about which files should be removed."""
-        dialog = self.dialog_box_type(
-            items=list(pretask_results[0].data),
-            parent=parent
-        )
-        results = dialog.exec()
-        if results == QtWidgets.QDialog.Rejected:
-            raise speedwagon.JobCancelled()
+    def get_additional_info(
+            self,
+            user_request_factory: "interaction.UserRequestFactory",
+            options: dict,
+            pretask_results: list
+    ) -> dict:
+        confirm = \
+            user_request_factory.confirm_removal()
 
-        resulting_data: List[str] = dialog.data()
-        return self.sort_item_data(resulting_data)
+        return self.sort_item_data(
+            confirm.get_user_response(options, pretask_results)['items']
+        )
 
     @staticmethod
     def sort_item_data(data: List[str]) -> Dict[str, List[str]]:
@@ -333,6 +294,7 @@ class DeleteFile(DeleteFileSystemItem):
 
     def work(self) -> bool:
         self.log(f"Deleting {self.path}")
+        os.remove(self.path)
         self.set_results(self.path)
         return True
 
@@ -341,84 +303,9 @@ class DeleteDirectory(DeleteFileSystemItem):
 
     def work(self) -> bool:
         self.log(f"Removing {self.path} directory")
+        os.rmdir(self.path)
         self.set_results(self.path)
         return True
 
     def task_description(self) -> Optional[str]:
         return "Removing directory"
-
-
-class ConfirmListModel(QtCore.QAbstractListModel):
-
-    def __init__(
-            self,
-            items: List[str],
-            parent: Optional[QtCore.QObject] = None
-    ) -> None:
-
-        super().__init__(parent)
-
-        self.items = [{
-                "name": i,
-                "checked": Qt.Checked
-            } for i in items
-        ]
-
-    def selected(self) -> List[str]:
-        selected: List[str] = []
-        for i in range(self.rowCount()):
-            index = self.index(i)
-            checked: QtCore.Qt.ItemDataRole = \
-                self.data(index, Qt.CheckStateRole)
-
-            if checked == Qt.Checked:
-                selected.append(self.data(index, Qt.DisplayRole))
-        return selected
-
-    def rowCount(  # pylint: disable=invalid-name
-            self,
-            parent: Union[  # pylint: disable=unused-argument
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ] = None
-    ) -> int:
-        return len(self.items)
-
-    def data(
-            self,
-            index: Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ],
-            role: int = typing.cast(int, Qt.DisplayRole)
-    ) -> Any:
-        if role == Qt.CheckStateRole:
-            return self.items[index.row()].get("checked", Qt.Unchecked)
-        if role == Qt.DisplayRole:
-            return self.items[index.row()]['name']
-        return None
-
-    def setData(  # pylint: disable=invalid-name
-            self,
-            index: Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ],
-            value: Any,
-            role: int = typing.cast(int, Qt.DisplayRole)
-    ) -> bool:
-        if role == Qt.CheckStateRole:
-            self.items[index.row()]['checked'] = value
-            return True
-
-        return super().setData(index, value, role)
-
-    def flags(
-            self,
-            index: Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ]) -> QtCore.Qt.ItemFlags:
-        if index.isValid():
-            return super().flags(index) | Qt.ItemIsUserCheckable
-        return super().flags(index)

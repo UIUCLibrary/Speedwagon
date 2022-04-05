@@ -15,6 +15,16 @@ class SupportedImagePackageFormats(enum.Enum):
     JP2 = 1
 
 
+class AbstractConfirmFilesystemItemRemoval(abc.ABC):
+    @abc.abstractmethod
+    def get_user_response(
+            self,
+            options: dict,
+            pretask_results: list
+    ) -> Dict[str, Any]:
+        """Get a response from the user."""
+
+
 class AbstractPackageBrowser(abc.ABC):
     """Base class for creating package browsers."""
 
@@ -65,3 +75,7 @@ class UserRequestFactory(abc.ABC):
     @abc.abstractmethod
     def package_browser(self) -> AbstractPackageBrowser:
         """Select the title page for packages."""
+
+    @abc.abstractmethod
+    def confirm_removal(self) -> AbstractConfirmFilesystemItemRemoval:
+        """Get the correct type of removal dialog"""

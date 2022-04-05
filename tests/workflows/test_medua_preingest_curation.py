@@ -2,10 +2,10 @@ import os.path
 from unittest.mock import Mock, MagicMock
 
 import pytest
-from PySide6 import QtWidgets,  QtCore
 
 from speedwagon.workflows import workflow_medusa_preingest
 from speedwagon.models import ToolOptionsModel4
+from speedwagon.frontend import interaction
 
 
 class TestMedusaPreingestCuration:
@@ -86,19 +86,17 @@ class TestMedusaPreingestCuration:
             self,
             workflow,
             default_args,
-            qtbot
     ):
 
-        dialog_box = Mock()
-        dialog_box.data = Mock(return_value=[])
+        user_request_factory = Mock(spec=interaction.UserRequestFactory)
+        user_request_factory.confirm_removal = MagicMock()
 
-        workflow.dialog_box_type = Mock(return_value=dialog_box)
         workflow.get_additional_info(
-            parent=None,
+            user_request_factory=user_request_factory,
             options=default_args,
             pretask_results=[MagicMock()]
         )
-        assert dialog_box.exec.called is True
+        assert user_request_factory.confirm_removal.called is True
 
     @pytest.mark.parametrize(
         "job_args, expected_class",
@@ -180,63 +178,6 @@ def test_validate_path_invalid(monkeypatch):
                 'Path':  invalid_path
             }
         )
-
-
-class TestConfirmDeleteDialog:
-    def test_okay_button_accepts(self, qtbot):
-        items = []
-        dialog_box = \
-            workflow_medusa_preingest.ConfirmDeleteDialog(items)
-
-        okay_button = \
-            dialog_box.button_box.button(QtWidgets.QDialogButtonBox.Ok)
-
-        with qtbot.wait_signal(dialog_box.accepted):
-            okay_button.click()
-
-    def test_cancel_button_rejects(self, qtbot):
-        items = []
-        dialog_box = \
-            workflow_medusa_preingest.ConfirmDeleteDialog(items)
-
-        cancel_button = \
-            dialog_box.button_box.button(QtWidgets.QDialogButtonBox.Cancel)
-
-        with qtbot.wait_signal(dialog_box.rejected):
-            cancel_button.click()
-
-
-class TestConfirmListModel:
-    def test_model_check(self, qtmodeltester):
-        items = [
-            "./file1.txt",
-            "/directory/"
-        ]
-        model = workflow_medusa_preingest.ConfirmListModel(items)
-        qtmodeltester.check(model)
-
-    def test_all_data_defaults_to_checked(self):
-        items = [
-            "./file1.txt",
-            "/directory/"
-        ]
-        model = workflow_medusa_preingest.ConfirmListModel(items)
-        assert model.selected() == items
-
-    def test_unchecking_item(self):
-        items = [
-            "./file1.txt",
-            "/directory/"
-        ]
-        model = workflow_medusa_preingest.ConfirmListModel(items)
-
-        model.setData(
-            index=model.index(0),
-            value=QtCore.Qt.Unchecked,
-            role=QtCore.Qt.CheckStateRole
-        )
-
-        assert model.selected() == ["/directory/"]
 
 
 class TestFindOffendingFiles:

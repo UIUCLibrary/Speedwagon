@@ -1,5 +1,5 @@
 """Commandline interface for interacting to the user."""
-
+import enum
 import os
 import sys
 from typing import Dict, Any, Optional, List, Callable
@@ -8,6 +8,8 @@ from uiucprescon.packager.packages import collection
 
 import speedwagon
 from speedwagon.frontend import interaction
+from speedwagon.frontend.interaction import \
+    AbstractConfirmFilesystemItemRemoval
 
 
 class CLIPackageBrowserWidget(interaction.AbstractPackageBrowser):
@@ -77,9 +79,71 @@ class CLIPackageBrowserWidget(interaction.AbstractPackageBrowser):
         return files
 
 
+class CLIConfirmFilesystemItemRemoval(
+    interaction.AbstractConfirmFilesystemItemRemoval
+):
+    class Confirm(enum.Enum):
+        NO = 0
+        YES = 1
+        YES_ALL = 2
+
+    def get_user_response(
+            self,
+            options: dict,
+            pretask_results: list
+    ) -> Dict[str, Any]:
+        data = pretask_results[0].data
+        print("\nFound the following files/folder to delete:")
+        for i, item in enumerate(data):
+            print(f"   {i+1}) {item}")
+        print()
+        items_to_remove = []
+        for item in data:
+            response = self.user_confirm_removal(item)
+            if response == CLIConfirmFilesystemItemRemoval.Confirm.NO:
+                continue
+            if response == CLIConfirmFilesystemItemRemoval.Confirm.YES:
+                items_to_remove.append(item)
+            elif response == CLIConfirmFilesystemItemRemoval.Confirm.YES_ALL:
+                return {
+                    "items": data
+                }
+        return {
+            "items": items_to_remove
+        }
+
+    def user_confirm_removal(
+            self,
+            item: str,
+            strategy: Optional[
+                Callable[[None], str]
+            ] = None
+    ) -> Confirm:
+        while True:
+            prompt_strategy = strategy or (
+                lambda: input(f'Do you want to remove "{item}"? [Y/N/A]: ')
+            )
+
+            valid_responses = {
+                "Y": CLIConfirmFilesystemItemRemoval.Confirm.YES,
+                "N": CLIConfirmFilesystemItemRemoval.Confirm.NO,
+                "A": CLIConfirmFilesystemItemRemoval.Confirm.YES_ALL,
+            }
+            result = valid_responses.get(prompt_strategy().upper())
+            if result is not None:
+                return result
+            print(
+                f"Invalid response. "
+                f"Expecting: {list(valid_responses.keys())}\n"
+            )
+
+
 class CLIFactory(interaction.UserRequestFactory):
     """Command line interface  factory."""
 
     def package_browser(self) -> interaction.AbstractPackageBrowser:
         """Command line interface select title pages of for packages."""
         return CLIPackageBrowserWidget()
+
+    def confirm_removal(self) -> AbstractConfirmFilesystemItemRemoval:
+        return CLIConfirmFilesystemItemRemoval()

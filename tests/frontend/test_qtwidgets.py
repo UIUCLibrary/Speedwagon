@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, Mock
 
 import pytest
-
+from PySide6 import QtWidgets, QtCore
 from speedwagon.frontend import qtwidgets, interaction
 from speedwagon.workflows import title_page_selection
 
@@ -83,3 +83,61 @@ class TestQtWidgetPackageBrowserWidget:
         )
         assert mock_dialog_box_type.called is True and \
                mock_dialog_box.exec.called is True
+
+
+class TestConfirmListModel:
+    def test_model_check(self, qtmodeltester):
+        items = [
+            "./file1.txt",
+            "/directory/"
+        ]
+        model = qtwidgets.user_interaction.ConfirmListModel(items)
+        qtmodeltester.check(model)
+
+    def test_all_data_defaults_to_checked(self):
+        items = [
+            "./file1.txt",
+            "/directory/"
+        ]
+        model = qtwidgets.user_interaction.ConfirmListModel(items)
+        assert model.selected() == items
+
+    def test_unchecking_item(self):
+        items = [
+            "./file1.txt",
+            "/directory/"
+        ]
+        model = qtwidgets.user_interaction.ConfirmListModel(items)
+
+        model.setData(
+            index=model.index(0),
+            value=QtCore.Qt.Unchecked,
+            role=QtCore.Qt.CheckStateRole
+        )
+
+        assert model.selected() == ["/directory/"]
+
+
+class TestConfirmDeleteDialog:
+    def test_okay_button_accepts(self, qtbot):
+        items = []
+        dialog_box = \
+            qtwidgets.user_interaction.ConfirmDeleteDialog(items)
+
+        okay_button = \
+            dialog_box.button_box.button(QtWidgets.QDialogButtonBox.Ok)
+
+        with qtbot.wait_signal(dialog_box.accepted):
+            okay_button.setEnabled(True)
+            okay_button.click()
+
+    def test_cancel_button_rejects(self, qtbot):
+        items = []
+        dialog_box = \
+            qtwidgets.user_interaction.ConfirmDeleteDialog(items)
+
+        cancel_button = \
+            dialog_box.button_box.button(QtWidgets.QDialogButtonBox.Cancel)
+
+        with qtbot.wait_signal(dialog_box.rejected):
+            cancel_button.click()
