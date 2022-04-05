@@ -34,21 +34,12 @@ class QtWidgetPackageBrowserWidget(interaction.AbstractPackageBrowser):
             pretask_results: list
     ) -> Dict[str, Any]:
         """Generate the dialog for selecting title pages."""
-        root_dir: str = options['input']
-
-        image_type: Optional[interaction.SupportedImagePackageFormats] = {
-            "TIFF": interaction.SupportedImagePackageFormats.TIFF,
-            'JPEG 2000': interaction.SupportedImagePackageFormats.JP2
-        }.get(options['Image File Type'])
-
-        if image_type is None:
-            raise KeyError(
-                f'Unknown value for '
-                f'"Image File Type": {options["Image File Type"]}'
-            )
-
         return {
-            "packages": self.get_data_with_dialog_box(root_dir, image_type)
+            "packages":
+                self.get_data_with_dialog_box(
+                    options['input'],
+                    self.image_str_to_enum(options["Image File Type"])
+                )
 
         }
 

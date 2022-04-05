@@ -1,7 +1,7 @@
 """Interacting with the user."""
 
 import abc
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import enum
 import uiucprescon.packager.packages
 from uiucprescon.packager import PackageFactory
@@ -42,6 +42,20 @@ class AbstractPackageBrowser(abc.ABC):
             image_types[image_type]
         )
         return list(package_factory.locate_packages(root_dir))
+
+    @staticmethod
+    def image_str_to_enum(value: str) -> SupportedImagePackageFormats:
+        image_type: Optional[SupportedImagePackageFormats] = {
+            "TIFF": SupportedImagePackageFormats.TIFF,
+            'JPEG 2000': SupportedImagePackageFormats.JP2
+        }.get(value)
+
+        if image_type is None:
+            raise KeyError(
+                f'Unknown value for '
+                f'"Image File Type": {value}'
+            )
+        return image_type
 
 
 class UserRequestFactory(abc.ABC):

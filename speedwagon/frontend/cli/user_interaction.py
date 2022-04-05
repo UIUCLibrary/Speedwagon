@@ -19,20 +19,11 @@ class CLIPackageBrowserWidget(interaction.AbstractPackageBrowser):
             pretask_results: list
     ) -> Dict[str, Any]:
         """Get user response of which is the title page for a package."""
-        root_dir = options['input']
-
-        image_type: Optional[interaction.SupportedImagePackageFormats] = {
-            "TIFF": interaction.SupportedImagePackageFormats.TIFF,
-            'JPEG 2000': interaction.SupportedImagePackageFormats.JP2
-        }.get(options['Image File Type'])
-
-        if image_type is None:
-            raise KeyError(
-                f'Unknown value for '
-                f'"Image File Type": {options["Image File Type"]}'
-            )
         packages = []
-        for package in self.get_packages(root_dir, image_type):
+        for package in self.get_packages(
+                options['input'],
+                self.image_str_to_enum(options['Image File Type'])
+        ):
             files: List[str] = self.get_package_files(package)
             files.sort()
 
