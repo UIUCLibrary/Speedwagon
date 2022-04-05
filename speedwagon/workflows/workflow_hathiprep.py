@@ -132,6 +132,7 @@ class HathiPrepWorkflow(speedwagon.Workflow):
             options: dict,
             pretask_results: list
     ) -> dict:
+        """Request title pages information for the packages from the user."""
         package_browser = user_request_factory.package_browser()
         return package_browser.get_user_response(options, pretask_results)
 
