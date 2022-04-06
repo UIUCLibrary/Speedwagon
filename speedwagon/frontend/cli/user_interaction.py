@@ -82,7 +82,11 @@ class CLIPackageBrowserWidget(interaction.AbstractPackageBrowser):
 class CLIConfirmFilesystemItemRemoval(
     interaction.AbstractConfirmFilesystemItemRemoval
 ):
+    """CLI interface for confirming removal of items on the file system."""
+
     class Confirm(enum.Enum):
+        """Confirm options."""
+
         NO = 0
         YES = 1
         YES_ALL = 2
@@ -92,6 +96,7 @@ class CLIConfirmFilesystemItemRemoval(
             options: dict,
             pretask_results: list
     ) -> Dict[str, Any]:
+        """Request user input for deletion."""
         data: List[str] = pretask_results[0].data
 
         if len(data) > 0:
@@ -157,6 +162,7 @@ def user_confirm_removal_stdin(
             Callable[[], str]
         ] = None
 ) -> CLIConfirmFilesystemItemRemoval.Confirm:
+    """Confirm with stdin."""
     while True:
         prompt_strategy = stdin_request_strategy or (
             lambda: input(f'Do you want to remove "{item}"? [Y/N/A]: ')
@@ -184,4 +190,5 @@ class CLIFactory(interaction.UserRequestFactory):
         return CLIPackageBrowserWidget()
 
     def confirm_removal(self) -> AbstractConfirmFilesystemItemRemoval:
+        """Create a new cli confirm object."""
         return CLIConfirmFilesystemItemRemoval()

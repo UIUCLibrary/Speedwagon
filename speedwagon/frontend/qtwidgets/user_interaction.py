@@ -113,6 +113,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
 
 
 class ConfirmDeleteDialog(QtWidgets.QDialog):
+    """Confirm deletion dialog box."""
 
     def __init__(
             self,
@@ -157,9 +158,11 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.package_view.setModel(self.model)
 
     def update_view_label(self) -> None:
+        """Update the label on top of the list view widget."""
         self.nothing_found_label.setVisible(len(self.model.items) <= 0)
 
     def update_buttons(self) -> None:
+        """Update the dialog box button states."""
         ok_button = self.button_box.button(QtWidgets.QDialogButtonBox.Ok)
         if len(self.model.items) > 0:
             ok_button.setEnabled(True)
@@ -172,15 +175,23 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.button_box.rejected.connect(self.reject)
 
     def data(self) -> List[str]:
+        """Get the files and folders selected by the user in the dialog box."""
         return self.model.selected()
 
 
 class QtWidgetConfirmFileSystemRemoval(
     interaction.AbstractConfirmFilesystemItemRemoval
 ):
+    """Qt Based widget for confirming items from the file system."""
+
     dialog_box_type = ConfirmDeleteDialog
 
     def __init__(self, parent: Optional[QtWidgets.QWidget]) -> None:
+        """Create a new file system removal.
+
+        Args:
+            parent: Qt widget to use a parent.
+        """
         super().__init__()
         self.parent = parent
 
@@ -203,6 +214,7 @@ class QtWidgetConfirmFileSystemRemoval(
             dialog_box: Optional[Type[ConfirmDeleteDialog]] = None,
             parent: Optional[QtWidgets.QWidget] = None
     ) -> List[str]:
+        """Open dialog box and return with user response."""
         widget = dialog_box or QtWidgetConfirmFileSystemRemoval.dialog_box_type
         dialog = widget(
             items=items,
