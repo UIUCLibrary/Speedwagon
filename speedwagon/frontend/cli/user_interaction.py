@@ -109,7 +109,7 @@ class CLIConfirmFilesystemItemRemoval(
 
     @staticmethod
     def user_resolve_items(
-            items: list[str],
+            items: List[str],
             confirm_strategy: Optional[
                 Callable[[str], 'CLIConfirmFilesystemItemRemoval.Confirm']
             ] = None
