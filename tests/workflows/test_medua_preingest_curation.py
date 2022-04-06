@@ -6,7 +6,7 @@ import pytest
 from speedwagon.workflows import workflow_medusa_preingest
 from speedwagon.models import ToolOptionsModel4
 from speedwagon.frontend import interaction
-
+from speedwagon.tasks import filesystem as filesystem_tasks
 
 class TestMedusaPreingestCuration:
     @pytest.fixture
@@ -106,14 +106,14 @@ class TestMedusaPreingestCuration:
                     "type": "file",
                     "path": "somefile"
                 },
-                workflow_medusa_preingest.DeleteFile
+                filesystem_tasks.DeleteFile
             ),
             (
                 {
                     "type": "directory",
                     "path": "someDirectory"
                 },
-                workflow_medusa_preingest.DeleteDirectory
+                filesystem_tasks.DeleteDirectory
             ),
         ]
     )

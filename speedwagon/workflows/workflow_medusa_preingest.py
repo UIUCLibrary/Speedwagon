@@ -3,7 +3,6 @@
 Added on 3/30/2022
 """
 
-import abc
 import os
 import typing
 from typing import List, Any, Dict, Optional, Set, Iterator, Union, Callable
@@ -11,6 +10,7 @@ from typing import List, Any, Dict, Optional, Set, Iterator, Union, Callable
 import speedwagon
 from speedwagon import workflow, tasks
 from speedwagon.frontend import interaction
+from speedwagon.tasks import filesystem as filesystem_tasks
 
 __all__ = ['MedusaPreingestCuration']
 
@@ -161,8 +161,8 @@ class MedusaPreingestCuration(speedwagon.Workflow):
         """
         items_deleted = [
             result.data for result in results if result.source in [
-                DeleteFile,
-                DeleteDirectory
+                filesystem_tasks.DeleteFile,
+                filesystem_tasks.DeleteDirectory
             ]
         ]
 
@@ -185,9 +185,13 @@ class MedusaPreingestCuration(speedwagon.Workflow):
             **job_args:
         """
         if job_args['type'] == "file":
-            task_builder.add_subtask(DeleteFile(job_args["path"]))
+            task_builder.add_subtask(
+                filesystem_tasks.DeleteFile(job_args["path"])
+            )
         elif job_args['type'] == "directory":
-            task_builder.add_subtask(DeleteDirectory(job_args["path"]))
+            task_builder.add_subtask(
+                filesystem_tasks.DeleteDirectory(job_args["path"])
+            )
 
 
 class FindOffendingFiles(tasks.Subtask):
@@ -279,33 +283,43 @@ def find_capture_one_data(directory: str) -> Iterator[str]:
                 yield os.path.join(root, dir_name)
         yield potential_capture_one_dir_name
 
-
-class DeleteFileSystemItem(tasks.Subtask, abc.ABC):
-
-    def __init__(self, path: str) -> None:
-        super().__init__()
-        self.path = path
-
-
-class DeleteFile(DeleteFileSystemItem):
-
-    def task_description(self) -> Optional[str]:
-        return "Deleting file"
-
-    def work(self) -> bool:
-        self.log(f"Deleting {self.path}")
-        os.remove(self.path)
-        self.set_results(self.path)
-        return True
-
-
-class DeleteDirectory(DeleteFileSystemItem):
-
-    def work(self) -> bool:
-        self.log(f"Removing {self.path} directory")
-        os.rmdir(self.path)
-        self.set_results(self.path)
-        return True
-
-    def task_description(self) -> Optional[str]:
-        return "Removing directory"
+#
+# class DeleteFileSystemItem(tasks.Subtask, abc.ABC):
+#
+#     def __init__(self, path: str) -> None:
+#         super().__init__()
+#         self.path = path
+#
+#     @abc.abstractmethod
+#     def remove(self) -> None:
+#         """Remove the item."""
+#
+#     def work(self) -> bool:
+#         self.log(f"Removing {self.path}")
+#         self.remove()
+#         self.set_results(self.path)
+#         return True
+#
+#
+# class DeleteFile(DeleteFileSystemItem):
+#
+#     def task_description(self) -> Optional[str]:
+#         return "Deleting file"
+#
+#     def remove(self) -> None:
+#         os.remove(self.path)
+#
+#     def work(self) -> bool:
+#         self.log(f"Deleting {self.path}")
+#         self.remove()
+#         self.set_results(self.path)
+#         return True
+#
+#
+# class DeleteDirectory(DeleteFileSystemItem):
+#
+#     def remove(self) -> None:
+#         os.rmdir(self.path)
+#
+#     def task_description(self) -> Optional[str]:
+#         return "Removing directory"
