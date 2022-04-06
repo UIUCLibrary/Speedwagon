@@ -229,7 +229,14 @@ class FindOffendingFiles(tasks.Subtask):
                     yield os.path.join(root, dir_name)
 
     def work(self) -> bool:
+        self.set_results(self.locate_results())
+        return True
+
+    def locate_results(self) -> Set[str]:
         offending_item: Set[str] = set()
+        if not os.path.exists(self.root):
+            raise FileNotFoundError(f"Could not find {self.root}")
+
         for dir_name in self.locate_folders(self.root):
             relative_dir_to_root = \
                 os.path.relpath(
@@ -240,9 +247,7 @@ class FindOffendingFiles(tasks.Subtask):
 
             for item in self.locate_offending_files_and_folders(dir_name):
                 offending_item.add(item)
-
-        self.set_results(offending_item)
-        return True
+        return offending_item
 
     def locate_offending_subdirectories(self, root_dir: str) -> Iterator[str]:
         if self._locate_capture_one is True:

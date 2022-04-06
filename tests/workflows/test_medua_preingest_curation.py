@@ -219,6 +219,60 @@ class TestFindOffendingFiles:
         )
         assert "dummy" in result
 
+    def test_work_calls_locate_results(self, monkeypatch):
+        search_path = "./some/path"
+        task = workflow_medusa_preingest.FindOffendingFiles(
+            **{
+                "Path": search_path,
+                "Include Subdirectories": True,
+                "Locate and delete dot underscore files": True,
+                "Locate and delete .DS_Store files": True,
+                "Locate and delete Capture One files": True,
+            }
+        )
+        locate_results = Mock()
+        monkeypatch.setattr(task, "locate_results", locate_results)
+        task.work()
+
+        assert locate_results.called is True
+
+    def test_locate_results_calls_locate_folders(self, monkeypatch):
+        search_path = os.path.join("some", "path")
+        task = workflow_medusa_preingest.FindOffendingFiles(
+            **{
+                "Path": search_path,
+                "Include Subdirectories": True,
+                "Locate and delete dot underscore files": True,
+                "Locate and delete .DS_Store files": True,
+                "Locate and delete Capture One files": True,
+            }
+        )
+        monkeypatch.setattr(
+            workflow_medusa_preingest.os.path,
+            "exists", lambda path: path == search_path
+        )
+
+        locate_folders = Mock(return_value=[os.path.join(search_path, "more")])
+        monkeypatch.setattr(task, "locate_folders", locate_folders)
+
+        locate_offending_files_and_folders = Mock(
+            return_value=[os.path.join(search_path, "more", "more.txt")]
+        )
+
+        monkeypatch.setattr(
+            task,
+            "locate_offending_files_and_folders",
+            locate_offending_files_and_folders
+        )
+
+        task.locate_results()
+        assert all(
+            [
+                locate_offending_files_and_folders.called,
+                locate_folders.called
+            ],
+        )
+
     def test_locate_folders_recursive(self, monkeypatch):
         def walk(top, *args, **kwargs):
             return [
