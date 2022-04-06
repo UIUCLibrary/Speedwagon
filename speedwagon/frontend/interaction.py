@@ -17,6 +17,8 @@ class SupportedImagePackageFormats(enum.Enum):
 
 
 class AbsUserWidget(abc.ABC):
+    """Base class for creating user widgets."""
+
     @abc.abstractmethod
     def get_user_response(
             self,
@@ -27,6 +29,8 @@ class AbsUserWidget(abc.ABC):
 
 
 class AbstractConfirmFilesystemItemRemoval(AbsUserWidget, ABC):
+    """Base class for creating confirming item removal from the filesystem."""
+
     NO_FILES_LOCATED_MESSAGE = "No files found based on search criteria"
 
 
@@ -83,4 +87,4 @@ class UserRequestFactory(abc.ABC):
 
     @abc.abstractmethod
     def confirm_removal(self) -> AbstractConfirmFilesystemItemRemoval:
-        """Get the correct type of removal dialog"""
+        """Get the correct type of removal dialog."""
