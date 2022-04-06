@@ -125,7 +125,7 @@ class TestMedusaPreingestCuration:
         workflow.create_new_task(task_builder, **job_args)
 
         assert isinstance(
-            task_builder.add_subtask.call_args.args[0],
+            task_builder.add_subtask.call_args[0][0],
             expected_class
         )
 
@@ -134,7 +134,7 @@ class TestMedusaPreingestCuration:
         workflow.initial_task(task_builder, **default_args)
 
         assert \
-            task_builder.add_subtask.call_args.args[0].__class__.__name__ == \
+            task_builder.add_subtask.call_args[0][0].__class__.__name__ == \
             "FindOffendingFiles"
 
     def test_generate_report_mentions_file_name(self, workflow, default_args):
