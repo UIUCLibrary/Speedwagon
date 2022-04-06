@@ -82,7 +82,7 @@ class MedusaPreingestCuration(speedwagon.Workflow):
 
     def get_additional_info(
             self,
-            user_request_factory: "interaction.UserRequestFactory",
+            user_request_factory: interaction.UserRequestFactory,
             options: dict,
             pretask_results: list
     ) -> dict:

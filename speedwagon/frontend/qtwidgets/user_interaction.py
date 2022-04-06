@@ -1,6 +1,6 @@
 """User interaction when using a QtWidget backend."""
 import typing
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional, List, Union, Type
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtGui import Qt
 from uiucprescon.packager.packages import collection
@@ -190,18 +190,28 @@ class QtWidgetConfirmFileSystemRemoval(
             pretask_results: list
     ) -> Dict[str, Any]:
         """Request confirmation about which files should be removed."""
-        dialog = self.dialog_box_type(
-            items=list(pretask_results[0].data),
-            parent=self.parent
+        return {
+            "items": self.use_dialog_box(
+                items=list(pretask_results[0].data),
+                parent=self.parent
+            )
+        }
+
+    @staticmethod
+    def use_dialog_box(
+            items: List[str],
+            dialog_box: Optional[Type[ConfirmDeleteDialog]] = None,
+            parent: Optional[QtWidgets.QWidget] = None
+    ) -> List[str]:
+        widget = dialog_box or QtWidgetConfirmFileSystemRemoval.dialog_box_type
+        dialog = widget(
+            items=items,
+            parent=parent
         )
         results = dialog.exec()
         if results == QtWidgets.QDialog.Rejected:
             raise speedwagon.JobCancelled()
-
-        resulting_data: List[str] = dialog.data()
-        return {
-            "items": resulting_data
-        }
+        return dialog.data()
 
 
 class QtWidgetPackageBrowserWidget(interaction.AbstractPackageBrowser):

@@ -2,6 +2,8 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 from PySide6 import QtWidgets, QtCore
+
+import speedwagon
 from speedwagon.frontend import qtwidgets, interaction
 from speedwagon.workflows import title_page_selection
 
@@ -141,3 +143,38 @@ class TestConfirmDeleteDialog:
 
         with qtbot.wait_signal(dialog_box.rejected):
             cancel_button.click()
+
+
+class TestQtWidgetConfirmFileSystemRemoval:
+    @pytest.fixture()
+    def widget(self, qtbot):
+        parent = QtWidgets.QWidget()
+        return \
+            qtwidgets.user_interaction.QtWidgetConfirmFileSystemRemoval(parent)
+
+    def test_get_user_response(self, widget, monkeypatch):
+        monkeypatch.setattr(widget, "use_dialog_box", lambda *_, **__: [
+            ".DS_Store"
+        ])
+        result = widget.get_user_response({}, pretask_results=[MagicMock()])
+        assert result == {
+            "items": ['.DS_Store']
+        }
+
+    def test_use_dialog_box(self, widget):
+        dialog_box = Mock(spec=qtwidgets.user_interaction.ConfirmDeleteDialog)
+        dialog_box.data = Mock(return_value=[".DS_Store"])
+        assert widget.use_dialog_box(
+            [".DS_Store"],
+            dialog_box=Mock(return_value=dialog_box)
+        ) == [".DS_Store"]
+
+    def test_use_dialog_box_abort_throw_cancel_job(self, widget):
+        dialog_box = Mock(spec=qtwidgets.user_interaction.ConfirmDeleteDialog)
+        dialog_box.data = Mock(return_value=[".DS_Store"])
+        dialog_box.exec = Mock(side_effect=speedwagon.JobCancelled("cancel"))
+        with pytest.raises(speedwagon.JobCancelled):
+            widget.use_dialog_box(
+                [".DS_Store"],
+                dialog_box=Mock(return_value=dialog_box)
+            )
