@@ -7,6 +7,8 @@ from speedwagon.workflows import workflow_medusa_preingest
 from speedwagon.models import ToolOptionsModel4
 from speedwagon.frontend import interaction
 from speedwagon.tasks import filesystem as filesystem_tasks
+import speedwagon.tasks
+
 
 class TestMedusaPreingestCuration:
     @pytest.fixture
@@ -126,6 +128,14 @@ class TestMedusaPreingestCuration:
             task_builder.add_subtask.call_args.args[0],
             expected_class
         )
+
+    def test_initial_task_adds_finding_task(self, workflow, default_args):
+        task_builder = Mock(spec=speedwagon.tasks.TaskBuilder)
+        workflow.initial_task(task_builder, **default_args)
+
+        assert \
+            task_builder.add_subtask.call_args.args[0].__class__.__name__ == \
+            "FindOffendingFiles"
 
 
 @pytest.fixture()
