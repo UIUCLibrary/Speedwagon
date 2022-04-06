@@ -137,6 +137,21 @@ class TestMedusaPreingestCuration:
             task_builder.add_subtask.call_args.args[0].__class__.__name__ == \
             "FindOffendingFiles"
 
+    def test_generate_report_mentions_file_name(self, workflow, default_args):
+        results = [
+            Mock(
+                spec=speedwagon.tasks.Result,
+                source=filesystem_tasks.DeleteFile,
+                data="some_file"
+
+            )
+        ]
+        report = workflow.generate_report(
+            results=results,
+            **default_args
+        )
+        assert "some_file" in report
+
 
 @pytest.fixture()
 def default_user_args():
