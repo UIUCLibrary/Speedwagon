@@ -45,7 +45,7 @@ class CLIPackageBrowserWidget(interaction.AbstractPackageBrowser):
     def ask_user_to_select_title_page(
             files: List[str],
             strategy: Optional[
-                Callable[[None], int]
+                Callable[[], int]
             ] = None
     ) -> str:
         """Request user input on which file represents the title page."""
@@ -92,7 +92,7 @@ class CLIConfirmFilesystemItemRemoval(
             options: dict,
             pretask_results: list
     ) -> Dict[str, Any]:
-        data = pretask_results[0].data
+        data: List[str] = pretask_results[0].data
 
         if len(data) > 0:
             print("\nFound the following files/folder to delete:")
@@ -152,7 +152,7 @@ class CLIConfirmFilesystemItemRemoval(
 def user_confirm_removal_stdin(
         item: str,
         stdin_request_strategy: Optional[
-            Callable[[None], str]
+            Callable[[], str]
         ] = None
 ) -> CLIConfirmFilesystemItemRemoval.Confirm:
     while True:
