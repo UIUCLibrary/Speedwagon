@@ -222,6 +222,7 @@ class TestCLIConfirmFilesystemItemRemoval:
                 confirm_strategy=lambda _: "invalid"
             )
 
+
 @pytest.mark.parametrize(
     "key_press, expected_response",
     [
