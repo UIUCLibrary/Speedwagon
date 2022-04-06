@@ -3,6 +3,7 @@ from unittest.mock import Mock, MagicMock
 import pytest
 from uiucprescon.packager.packages import collection
 from speedwagon.frontend import cli
+from speedwagon.frontend import interaction
 from speedwagon.frontend.cli.user_interaction import \
     CLIConfirmFilesystemItemRemoval
 import speedwagon
@@ -241,3 +242,18 @@ def test_user_confirm_removal_stdin(key_press, expected_response):
         stdin_request_strategy=stdin_request_strategy
     )
     assert result == expected_response
+
+
+@pytest.mark.parametrize(
+    "method_name",
+    [
+        'package_browser',
+        'confirm_removal'
+    ]
+)
+def test_factor_produce_user_widget( method_name):
+    factory = cli.user_interaction.CLIFactory()
+    assert isinstance(
+        getattr(factory, method_name)(),
+        interaction.AbsUserWidget
+    )
