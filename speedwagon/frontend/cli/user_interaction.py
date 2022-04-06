@@ -140,13 +140,13 @@ class CLIConfirmFilesystemItemRemoval(
 
         for item in items:
             response = confirm_strategy(item)
+            if response == CLIConfirmFilesystemItemRemoval.Confirm.YES_ALL:
+                return items
             if response == CLIConfirmFilesystemItemRemoval.Confirm.NO:
                 continue
             if response == CLIConfirmFilesystemItemRemoval.Confirm.YES:
                 items_to_remove.append(item)
                 continue
-            elif response == CLIConfirmFilesystemItemRemoval.Confirm.YES_ALL:
-                return items
             raise TypeError("Unknown response")
         return items_to_remove
 
