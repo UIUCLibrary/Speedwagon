@@ -139,7 +139,7 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.nothing_found_label = QtWidgets.QLabel()
 
         self.nothing_found_label.setText(
-            "No files found based on search criteria"
+            QtWidgetConfirmFileSystemRemoval.NO_FILES_LOCATED_MESSAGE
         )
 
         self.nothing_found_label.setVisible(False)

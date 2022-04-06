@@ -16,6 +16,8 @@ class SupportedImagePackageFormats(enum.Enum):
 
 
 class AbstractConfirmFilesystemItemRemoval(abc.ABC):
+    NO_FILES_LOCATED_MESSAGE = "No files found based on search criteria"
+
     @abc.abstractmethod
     def get_user_response(
             self,

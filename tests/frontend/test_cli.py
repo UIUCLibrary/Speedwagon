@@ -3,6 +3,8 @@ from unittest.mock import Mock, MagicMock
 import pytest
 from uiucprescon.packager.packages import collection
 from speedwagon.frontend import cli
+from speedwagon.frontend.cli.user_interaction import \
+    CLIConfirmFilesystemItemRemoval
 import speedwagon
 
 
@@ -20,7 +22,7 @@ class TestCLIPackageBrowserWidget:
             "file2.jp2",
         ]
         item.instantiations.values.return_value = [
-                instance
+            instance
         ]
 
         package_object.__iter__.return_value = [
@@ -106,3 +108,124 @@ class TestCLIPackageBrowserWidget:
         pretask_result = []
         response = package_widget.get_user_response(options, pretask_result)
         assert "packages" in response
+
+
+class TestCLIConfirmFilesystemItemRemoval:
+    def test_get_user_response_for_no_results(self):
+        widget = CLIConfirmFilesystemItemRemoval()
+        pretask_results = [
+            Mock(spec=speedwagon.tasks.Result, data=[])
+        ]
+        response = widget.get_user_response(
+            options={},
+            pretask_results=pretask_results
+        )
+        assert len(response['items']) == 0
+
+    def test_get_user_response_returns_files(self, monkeypatch):
+        def accept_all_items(self, items, *args, **kwargs):
+            return items
+
+        monkeypatch.setattr(
+            CLIConfirmFilesystemItemRemoval,
+            "user_resolve_items",
+            accept_all_items
+        )
+
+        widget = CLIConfirmFilesystemItemRemoval()
+
+        pretask_results = [
+            Mock(
+                spec=speedwagon.tasks.Result,
+                data=[
+                    ".DS_Store"
+                ]
+            )
+        ]
+
+        response = widget.get_user_response(
+            options={},
+            pretask_results=pretask_results
+        )
+        items = response['items']
+        assert len(items) == 1 and items[0] == ".DS_Store"
+
+    def test_get_user_response_calls_resolve_items(self, monkeypatch):
+        user_resolve_items = Mock()
+
+        monkeypatch.setattr(CLIConfirmFilesystemItemRemoval,
+            "user_resolve_items",
+            user_resolve_items
+        )
+
+        widget = CLIConfirmFilesystemItemRemoval()
+        pretask_results = [
+            Mock(
+                spec=speedwagon.tasks.Result,
+                data=[
+                    ".DS_Store"
+                ]
+            )
+        ]
+        widget.get_user_response(
+            options={},
+            pretask_results=pretask_results
+        )
+        assert user_resolve_items.called is True
+
+    def test_user_resolve_items_resolves_yes(self):
+        user_resolve_items = cli.user_interaction\
+            .CLIConfirmFilesystemItemRemoval \
+            .user_resolve_items
+
+        files_tests = [
+            "file1.txt"
+        ]
+
+        yes = CLIConfirmFilesystemItemRemoval.Confirm.YES
+
+        assert user_resolve_items(
+            files_tests,
+            confirm_strategy=lambda _: yes
+        ) == files_tests
+
+    def test_user_resolve_items_resolves_no(self):
+        confirm = CLIConfirmFilesystemItemRemoval.Confirm
+        user_resolve_items = CLIConfirmFilesystemItemRemoval.user_resolve_items
+
+        assert user_resolve_items(
+            items=["file1.txt"],
+            confirm_strategy=lambda _: confirm.NO
+        ) == []
+
+    def test_user_resolve_items_resolves_all(self):
+        confirm = CLIConfirmFilesystemItemRemoval.Confirm
+        user_resolve_items = CLIConfirmFilesystemItemRemoval.user_resolve_items
+        files = [
+            "file1.txt",
+            "file2.txt"
+        ]
+        assert user_resolve_items(
+            items=files,
+            confirm_strategy=lambda _: confirm.YES_ALL
+        ) == files
+
+
+@pytest.mark.parametrize(
+    "key_press, expected_response",
+    [
+        ("y", CLIConfirmFilesystemItemRemoval.Confirm.YES),
+        ("Y", CLIConfirmFilesystemItemRemoval.Confirm.YES),
+        ("n", CLIConfirmFilesystemItemRemoval.Confirm.NO),
+        ("N", CLIConfirmFilesystemItemRemoval.Confirm.NO),
+        ("a", CLIConfirmFilesystemItemRemoval.Confirm.YES_ALL),
+        ("A", CLIConfirmFilesystemItemRemoval.Confirm.YES_ALL),
+    ]
+)
+def test_user_confirm_removal_stdin(key_press, expected_response):
+    stdin_request_strategy = lambda: key_press
+    result = cli.user_interaction.user_confirm_removal_stdin(
+        "file.txt",
+        stdin_request_strategy=stdin_request_strategy
+    )
+    assert result == expected_response

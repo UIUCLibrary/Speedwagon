@@ -93,49 +93,85 @@ class CLIConfirmFilesystemItemRemoval(
             pretask_results: list
     ) -> Dict[str, Any]:
         data = pretask_results[0].data
-        print("\nFound the following files/folder to delete:")
-        for i, item in enumerate(data):
-            print(f"   {i+1}) {item}")
-        print()
+
+        if len(data) > 0:
+            print("\nFound the following files/folder to delete:")
+            for i, item in enumerate(data):
+                print(f"   {i + 1}) {item}")
+            print()
+            items_to_remove = self.user_resolve_items(data)
+        else:
+            print(CLIConfirmFilesystemItemRemoval.NO_FILES_LOCATED_MESSAGE)
+            items_to_remove = []
+        return {
+            "items": items_to_remove
+        }
+
+    @staticmethod
+    def user_resolve_items(
+            items: list[str],
+            confirm_strategy: Optional[
+                Callable[[str], 'CLIConfirmFilesystemItemRemoval.Confirm']
+            ] = None
+    ) -> List[str]:
+        """Go through a list of file names and confirm each file or folder.
+
+        The confirm_strategy asks if the user wants to accept one, accept all,
+        or reject one file or folder for removal. The files or folders selected
+        for removal are returned from this method.
+
+        Notes:
+            If the users selects to accept all to any item, every item is
+            returned for removal. This includes any files that were originally
+            rejected.
+
+        Args:
+            items: List of file or directory names, as strings.
+            confirm_strategy:
+                callback to request verification the removal of a single item.
+
+        Returns:
+            Returns the list of files and directories requested to be removed.
+
+        """
+        confirm_strategy = confirm_strategy or user_confirm_removal_stdin
+
         items_to_remove = []
-        for item in data:
-            response = self.user_confirm_removal(item)
+
+        for item in items:
+            response = confirm_strategy(item)
             if response == CLIConfirmFilesystemItemRemoval.Confirm.NO:
                 continue
             if response == CLIConfirmFilesystemItemRemoval.Confirm.YES:
                 items_to_remove.append(item)
             elif response == CLIConfirmFilesystemItemRemoval.Confirm.YES_ALL:
-                return {
-                    "items": data
-                }
-        return {
-            "items": items_to_remove
+                return items
+        return items_to_remove
+
+
+def user_confirm_removal_stdin(
+        item: str,
+        stdin_request_strategy: Optional[
+            Callable[[None], str]
+        ] = None
+) -> CLIConfirmFilesystemItemRemoval.Confirm:
+    while True:
+        prompt_strategy = stdin_request_strategy or (
+            lambda: input(f'Do you want to remove "{item}"? [Y/N/A]: ')
+        )
+
+        valid_responses = {
+            "Y": CLIConfirmFilesystemItemRemoval.Confirm.YES,
+            "N": CLIConfirmFilesystemItemRemoval.Confirm.NO,
+            "A": CLIConfirmFilesystemItemRemoval.Confirm.YES_ALL,
         }
-
-    def user_confirm_removal(
-            self,
-            item: str,
-            strategy: Optional[
-                Callable[[None], str]
-            ] = None
-    ) -> Confirm:
-        while True:
-            prompt_strategy = strategy or (
-                lambda: input(f'Do you want to remove "{item}"? [Y/N/A]: ')
-            )
-
-            valid_responses = {
-                "Y": CLIConfirmFilesystemItemRemoval.Confirm.YES,
-                "N": CLIConfirmFilesystemItemRemoval.Confirm.NO,
-                "A": CLIConfirmFilesystemItemRemoval.Confirm.YES_ALL,
-            }
-            result = valid_responses.get(prompt_strategy().upper())
-            if result is not None:
-                return result
-            print(
-                f"Invalid response. "
-                f"Expecting: {list(valid_responses.keys())}\n"
-            )
+        result = valid_responses.get(prompt_strategy().upper())
+        if result is not None:
+            return result
+        print(
+            f"Invalid response. "
+            f"Expecting: {list(valid_responses.keys())}\n"
+        )
 
 
 class CLIFactory(interaction.UserRequestFactory):
