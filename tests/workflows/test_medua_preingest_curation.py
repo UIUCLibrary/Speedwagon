@@ -448,4 +448,3 @@ def test_find_capture_one_data_found(monkeypatch):
         os.path.join(starting_point, "CaptureOne", "Cache", "someFile"),
         os.path.join(starting_point, "CaptureOne"),
     ]
-

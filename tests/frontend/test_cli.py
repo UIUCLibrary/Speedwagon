@@ -154,7 +154,8 @@ class TestCLIConfirmFilesystemItemRemoval:
     def test_get_user_response_calls_resolve_items(self, monkeypatch):
         user_resolve_items = Mock()
 
-        monkeypatch.setattr(CLIConfirmFilesystemItemRemoval,
+        monkeypatch.setattr(
+            CLIConfirmFilesystemItemRemoval,
             "user_resolve_items",
             user_resolve_items
         )
@@ -236,10 +237,9 @@ class TestCLIConfirmFilesystemItemRemoval:
     ]
 )
 def test_user_confirm_removal_stdin(key_press, expected_response):
-    stdin_request_strategy = lambda: key_press
     result = cli.user_interaction.user_confirm_removal_stdin(
         "file.txt",
-        stdin_request_strategy=stdin_request_strategy
+        stdin_request_strategy=lambda: key_press
     )
     assert result == expected_response
 
@@ -251,7 +251,7 @@ def test_user_confirm_removal_stdin(key_press, expected_response):
         'confirm_removal'
     ]
 )
-def test_factor_produce_user_widget( method_name):
+def test_factor_produce_user_widget(method_name):
     factory = cli.user_interaction.CLIFactory()
     assert isinstance(
         getattr(factory, method_name)(),
