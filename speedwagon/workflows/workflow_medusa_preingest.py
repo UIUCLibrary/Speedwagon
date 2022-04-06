@@ -86,6 +86,7 @@ class MedusaPreingestCuration(speedwagon.Workflow):
             options: dict,
             pretask_results: list
     ) -> dict:
+        """Confirm which files should be deleted or removed."""
         confirm = \
             user_request_factory.confirm_removal()
 
