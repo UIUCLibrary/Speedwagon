@@ -133,7 +133,23 @@ class TestConfirmDeleteDialog:
             okay_button.setEnabled(True)
             okay_button.click()
 
-    def test_cancel_button_rejects(self, qtbot):
+    @pytest.mark.parametrize(
+        "items, expected_enabled",
+        [
+            ([], False),
+            ([Mock()], True)
+        ]
+    )
+    def test_active_okay_button(self, qtbot, items, expected_enabled):
+        dialog_box = \
+            qtwidgets.user_interaction.ConfirmDeleteDialog(items)
+        dialog_box.update_buttons()
+        ok_button = \
+            dialog_box.button_box.button(QtWidgets.QDialogButtonBox.Ok)
+        assert ok_button.isEnabled() is expected_enabled
+
+
+def test_cancel_button_rejects(self, qtbot):
         items = []
         dialog_box = \
             qtwidgets.user_interaction.ConfirmDeleteDialog(items)
@@ -179,3 +195,4 @@ class TestQtWidgetConfirmFileSystemRemoval:
                 [".DS_Store"],
                 dialog_box=Mock(return_value=dialog_box)
             )
+
