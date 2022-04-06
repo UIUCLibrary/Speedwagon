@@ -1,6 +1,7 @@
 """Interacting with the user."""
 
 import abc
+from abc import ABC
 from typing import Dict, Any, List, Optional
 import enum
 import uiucprescon.packager.packages
@@ -15,7 +16,25 @@ class SupportedImagePackageFormats(enum.Enum):
     JP2 = 1
 
 
-class AbstractPackageBrowser(abc.ABC):
+class AbsUserWidget(abc.ABC):
+    """Base class for creating user widgets."""
+
+    @abc.abstractmethod
+    def get_user_response(
+            self,
+            options: dict,
+            pretask_results: list
+    ) -> Dict[str, Any]:
+        """Get response from the user."""
+
+
+class AbstractConfirmFilesystemItemRemoval(AbsUserWidget, ABC):
+    """Base class for creating confirming item removal from the filesystem."""
+
+    NO_FILES_LOCATED_MESSAGE = "No files found based on search criteria"
+
+
+class AbstractPackageBrowser(AbsUserWidget, ABC):
     """Base class for creating package browsers."""
 
     @abc.abstractmethod
@@ -65,3 +84,7 @@ class UserRequestFactory(abc.ABC):
     @abc.abstractmethod
     def package_browser(self) -> AbstractPackageBrowser:
         """Select the title page for packages."""
+
+    @abc.abstractmethod
+    def confirm_removal(self) -> AbstractConfirmFilesystemItemRemoval:
+        """Get the correct type of removal dialog."""
