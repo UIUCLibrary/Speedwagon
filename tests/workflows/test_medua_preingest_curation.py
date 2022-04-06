@@ -236,6 +236,20 @@ class TestFindOffendingFiles:
 
         assert locate_results.called is True
 
+    def test_locate_results_throws_file_not_found_if_not_exists(self):
+        search_path = "./some/path"
+        task = workflow_medusa_preingest.FindOffendingFiles(
+            **{
+                "Path": search_path,
+                "Include Subdirectories": True,
+                "Locate and delete dot underscore files": True,
+                "Locate and delete .DS_Store files": True,
+                "Locate and delete Capture One files": True,
+            }
+        )
+        with pytest.raises(FileNotFoundError):
+            task.locate_results()
+
     def test_locate_results_calls_locate_folders(self, monkeypatch):
         search_path = os.path.join("some", "path")
         task = workflow_medusa_preingest.FindOffendingFiles(
