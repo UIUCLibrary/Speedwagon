@@ -172,7 +172,8 @@ class TestQtWidgetConfirmFileSystemRemoval:
     def test_use_dialog_box_abort_throw_cancel_job(self, widget):
         dialog_box = Mock(spec=qtwidgets.user_interaction.ConfirmDeleteDialog)
         dialog_box.data = Mock(return_value=[".DS_Store"])
-        dialog_box.exec = Mock(side_effect=speedwagon.JobCancelled("cancel"))
+        dialog_box.exec = Mock(return_value=QtWidgets.QDialog.Rejected)
+
         with pytest.raises(speedwagon.JobCancelled):
             widget.use_dialog_box(
                 [".DS_Store"],
