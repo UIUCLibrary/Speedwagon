@@ -210,6 +210,17 @@ class TestCLIConfirmFilesystemItemRemoval:
             confirm_strategy=lambda _: confirm.YES_ALL
         ) == files
 
+    def test_user_resolve_items_throw_if_bad_user_option(self):
+        user_resolve_items = CLIConfirmFilesystemItemRemoval.user_resolve_items
+        files = [
+            "file1.txt",
+            "file2.txt"
+        ]
+        with pytest.raises(TypeError):
+            user_resolve_items(
+                items=files,
+                confirm_strategy=lambda _: "invalid"
+            )
 
 @pytest.mark.parametrize(
     "key_press, expected_response",
