@@ -24,10 +24,13 @@ class QtWidgetFactory(interaction.UserRequestFactory):
         return QtWidgetPackageBrowserWidget(self.parent)
 
     def confirm_removal(self) -> AbstractConfirmFilesystemItemRemoval:
+        """Generate widget for selecting which files or folders to remove."""
         return QtWidgetConfirmFileSystemRemoval(parent=self.parent)
 
 
 class ConfirmListModel(QtCore.QAbstractListModel):
+    """Confirm list model to be used to select items."""
+
     itemsChanged = QtCore.Signal()
 
     def __init__(
@@ -35,12 +38,13 @@ class ConfirmListModel(QtCore.QAbstractListModel):
             items: List[str] = None,
             parent: Optional[QtCore.QObject] = None
     ) -> None:
-
+        """Create a new confirm list model."""
         super().__init__(parent)
         self.items = items or []
 
     @property
     def items(self):
+        """Get the items."""
         return self._items
 
     @items.setter
@@ -53,6 +57,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
         self.itemsChanged.emit()
 
     def selected(self) -> List[str]:
+        """Get items in the model that have been checked."""
         selected: List[str] = []
         for i in range(self.rowCount()):
             index = self.index(i)
@@ -70,6 +75,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
                 QtCore.QPersistentModelIndex
             ] = None
     ) -> int:
+        """Get the number of items."""
         return len(self._items)
 
     def data(
@@ -80,6 +86,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
             ],
             role: int = typing.cast(int, Qt.DisplayRole)
     ) -> Any:
+        """Get data from the model."""
         if role == Qt.CheckStateRole:
             return self._items[index.row()].get("checked", Qt.Unchecked)
         if role == Qt.DisplayRole:
@@ -95,6 +102,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
             value: Any,
             role: int = typing.cast(int, Qt.DisplayRole)
     ) -> bool:
+        """Set model data."""
         if role == Qt.CheckStateRole:
             self._items[index.row()]['checked'] = value
             return True
@@ -107,6 +115,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex
             ]) -> QtCore.Qt.ItemFlags:
+        """Set the flags needed."""
         if index.isValid():
             return super().flags(index) | Qt.ItemIsUserCheckable
         return super().flags(index)
