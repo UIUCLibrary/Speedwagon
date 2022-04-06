@@ -148,17 +148,16 @@ class TestConfirmDeleteDialog:
             dialog_box.button_box.button(QtWidgets.QDialogButtonBox.Ok)
         assert ok_button.isEnabled() is expected_enabled
 
+    def test_cancel_button_rejects(self, qtbot):
+            items = []
+            dialog_box = \
+                qtwidgets.user_interaction.ConfirmDeleteDialog(items)
 
-def test_cancel_button_rejects(self, qtbot):
-        items = []
-        dialog_box = \
-            qtwidgets.user_interaction.ConfirmDeleteDialog(items)
+            cancel_button = \
+                dialog_box.button_box.button(QtWidgets.QDialogButtonBox.Cancel)
 
-        cancel_button = \
-            dialog_box.button_box.button(QtWidgets.QDialogButtonBox.Cancel)
-
-        with qtbot.wait_signal(dialog_box.rejected):
-            cancel_button.click()
+            with qtbot.wait_signal(dialog_box.rejected):
+                cancel_button.click()
 
 
 class TestQtWidgetConfirmFileSystemRemoval:
