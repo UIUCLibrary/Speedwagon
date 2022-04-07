@@ -23,6 +23,7 @@ except ImportError:  # pragma: no cover
 
 import speedwagon
 import speedwagon.logging_helpers
+import speedwagon.frontend.qtwidgets.ui
 
 __all__ = [
     "SystemInfoDialog",
@@ -391,7 +392,7 @@ class WorkflowProgressGui(QtWidgets.QDialog):
         # All ui info is located in the .ui file. Any graphical changes should
         # be make in there.
         with resources.path(
-                "speedwagon.ui",
+                "speedwagon.frontend.qtwidgets.ui",
                 "workflow_progress.ui"
         ) as ui_file:
             ui_loader.load_ui(str(ui_file), self)

@@ -27,10 +27,10 @@ if __name__ == "__main__":
             "speedwagon.frontend.cli",
             "speedwagon.frontend.qtwidgets",
             "speedwagon.frontend.qtwidgets.dialog",
+            "speedwagon.frontend.qtwidgets.ui",
             "speedwagon.tasks",
             "speedwagon.workflows",
             "speedwagon.workflows.tessdata",
-            "speedwagon.ui",
 
         ],
         setup_requires=['pytest-runner'],

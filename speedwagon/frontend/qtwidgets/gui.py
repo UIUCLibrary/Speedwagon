@@ -34,10 +34,10 @@ from speedwagon.frontend.qtwidgets.dialog.settings import \
     TabsConfigurationTab, \
     SettingsDialog, \
     GlobalSettingsTab
-
 from speedwagon import tabs, worker, ui_loader
 import speedwagon
-import speedwagon.ui
+import speedwagon.frontend.qtwidgets
+from speedwagon.frontend import qtwidgets
 import speedwagon.config
 import speedwagon.runner_strategies
 from speedwagon.logging_helpers import ConsoleFormatter
@@ -92,7 +92,7 @@ class ToolConsole(QtWidgets.QWidget):
         self.log_formatter = ConsoleFormatter()
         self.log_handler.setFormatter(self.log_formatter)
 
-        with resources.path(speedwagon.ui, "console.ui") as ui_file:
+        with resources.path(qtwidgets.ui, "console.ui") as ui_file:
             ui_loader.load_ui(str(ui_file), self)
 
         # ======================================================================
@@ -154,7 +154,7 @@ class ItemTabsWidget(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
-        with resources.path(speedwagon.ui, "setup_job.ui") as ui_file:
+        with resources.path(qtwidgets.ui, "setup_job.ui") as ui_file:
             ui_loader.load_ui(str(ui_file), self)
         # ======================================================================
         # Type Hints
@@ -349,7 +349,7 @@ class MainWindow1(MainProgram):
     ) -> None:
 
         super().__init__(work_manager, debug)
-        with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
+        with resources.path(qtwidgets.ui, "main_window2.ui") as ui_file:
             self.load_ui_file(str(ui_file))
 
         # ======================================================================
@@ -600,7 +600,7 @@ class MainWindow2UI(QtWidgets.QMainWindow):
             parent: typing.Optional[QtWidgets.QWidget] = None
     ) -> None:
         super().__init__(parent)
-        with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
+        with resources.path(qtwidgets.ui, "main_window2.ui") as ui_file:
             ui_loader.load_ui(str(ui_file), self)
 
         # ======================================================================
