@@ -45,7 +45,7 @@ if __name__ == "__main__":
         include_package_data=True,
         package_data={
             'speedwagon': ["favicon.ico", "logo.png"],
-            'speedwagon.ui': [
+            'speedwagon.frontend.qtwidgets.ui': [
                 "tab_editor.ui",
                 "main_window_shell.ui",
                 "main_window2.ui",
