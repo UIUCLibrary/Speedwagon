@@ -124,7 +124,7 @@ def runTox(){
                 'Linux':{
                     linuxJobs = tox.getToxTestsParallel(
                             envNamePrefix: 'Tox Linux',
-                            label: 'linux && docker',
+                            label: 'linux && docker && x64',
                             dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
                             dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         )
@@ -132,7 +132,7 @@ def runTox(){
                 'Windows':{
                     windowsJobs = tox.getToxTestsParallel(
                             envNamePrefix: 'Tox Windows',
-                            label: 'windows && docker',
+                            label: 'windows && docker && x64',
                             dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
                             dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
                      )
@@ -339,11 +339,11 @@ def testPythonPackages(){
         }
         def windowsTests = [:]
         SUPPORTED_WINDOWS_VERSIONS.each{ pythonVersion ->
-            windowsTests["Windows - Python ${pythonVersion}: sdist"] = {
+            windowsTests["Windows - Python ${pythonVersion}-x64: sdist"] = {
                 packages.testPkg(
                     agent: [
                         dockerfile: [
-                            label: 'windows && docker',
+                            label: 'windows && docker && x64',
                             filename: 'ci/docker/python/windows/tox/Dockerfile',
                             additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
                         ]
@@ -354,11 +354,11 @@ def testPythonPackages(){
                     retry: 3,
                 )
             }
-            windowsTests["Windows - Python ${pythonVersion}: wheel"] = {
+            windowsTests["Windows - Python ${pythonVersion}-x64: wheel"] = {
                 packages.testPkg(
                     agent: [
                         dockerfile: [
-                            label: 'windows && docker',
+                            label: 'windows && docker && x64',
                             filename: 'ci/docker/python/windows/tox/Dockerfile',
                             additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
                         ]
@@ -372,11 +372,11 @@ def testPythonPackages(){
         }
         def linuxTests = [:]
         SUPPORTED_LINUX_VERSIONS.each{ pythonVersion ->
-            linuxTests["Linux - Python ${pythonVersion}: sdist"] = {
+            linuxTests["Linux - Python ${pythonVersion}-x64: sdist"] = {
                 packages.testPkg(
                     agent: [
                         dockerfile: [
-                            label: 'linux && docker',
+                            label: 'linux && docker && x64',
                             filename: 'ci/docker/python/linux/tox/Dockerfile',
                             additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         ]
@@ -391,7 +391,7 @@ def testPythonPackages(){
                 packages.testPkg(
                     agent: [
                         dockerfile: [
-                            label: 'linux && docker',
+                            label: 'linux && docker && x64',
                             filename: 'ci/docker/python/linux/tox/Dockerfile',
                             additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         ]
@@ -407,11 +407,11 @@ def testPythonPackages(){
         def macTests = [:]
 
         SUPPORTED_MAC_VERSIONS.each{ pythonVersion ->
-            macTests["Mac - Python ${pythonVersion}: sdist"] = {
+            macTests["Mac - Python ${pythonVersion}-x64 : sdist"] = {
                 withEnv(['QT_QPA_PLATFORM=offscreen']) {
                     packages.testPkg(
                         agent: [
-                            label: "mac && python${pythonVersion}",
+                            label: "mac && python${pythonVersion} && x64",
                         ],
                         glob: 'dist/*.tar.gz,dist/*.zip',
                         stash: 'PYTHON_PACKAGES',
@@ -435,11 +435,11 @@ def testPythonPackages(){
                     )
                 }
             }
-            macTests["Mac - Python ${pythonVersion}: wheel"] = {
+            macTests["Mac - Python ${pythonVersion}-x64: wheel"] = {
                 withEnv(['QT_QPA_PLATFORM=offscreen']) {
                     packages.testPkg(
                         agent: [
-                            label: "mac && python${pythonVersion}",
+                            label: "mac && python${pythonVersion} && x64",
                         ],
                         glob: 'dist/*.whl',
                         stash: 'PYTHON_PACKAGES',
@@ -844,7 +844,7 @@ pipeline {
                             agent {
                                 dockerfile {
                                     filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                                    label 'linux && docker'
+                                    label 'linux && docker && x64'
                                     additionalBuildArgs ' --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                   }
                             }
@@ -1022,7 +1022,7 @@ pipeline {
                     parallel{
                         stage('Mac Application Bundle'){
                             agent{
-                                label 'mac && python3'
+                                label 'mac && python3 && x64'
                             }
                             when{
                                 anyOf{
@@ -1095,7 +1095,7 @@ pipeline {
                                     agent {
                                         dockerfile {
                                             filename 'ci/docker/chocolatey_package/Dockerfile'
-                                            label 'windows && docker'
+                                            label 'windows && docker && x64'
                                             additionalBuildArgs '--build-arg CHOCOLATEY_SOURCE'
                                           }
                                     }
@@ -1145,7 +1145,7 @@ pipeline {
                                     agent {
                                         dockerfile {
                                             filename 'ci/docker/chocolatey_package/Dockerfile'
-                                            label 'windows && docker'
+                                            label 'windows && docker && x64'
                                             additionalBuildArgs '--build-arg CHOCOLATEY_SOURCE'
                                           }
                                     }
@@ -1174,7 +1174,7 @@ pipeline {
                                     agent {
                                         dockerfile {
                                             filename 'ci/docker/windows_standalone/Dockerfile'
-                                            label 'Windows&&Docker'
+                                            label 'Windows && Docker && x64'
                                             args '-u ContainerAdministrator'
                                             additionalBuildArgs '--build-arg CHOCOLATEY_SOURCE'
                                           }
@@ -1217,7 +1217,7 @@ pipeline {
                                       docker {
                                         args '-u ContainerAdministrator'
                                         image 'mcr.microsoft.com/windows/servercore:ltsc2019'
-                                        label 'Windows && Docker'
+                                        label 'Windows && Docker && x64'
                                       }
                                     }
                                     when{
@@ -1273,7 +1273,7 @@ pipeline {
                     agent {
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label 'linux && docker && devpi-access'
+                            label 'linux && docker && x64 && devpi-access'
                             additionalBuildArgs ' --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                           }
                     }
@@ -1303,7 +1303,7 @@ pipeline {
                                     withEnv(['QT_QPA_PLATFORM=offscreen']) {
                                         devpi.testDevpiPackage(
                                             agent: [
-                                                label: "mac && python${pythonVersion} && devpi-access"
+                                                label: "mac && python${pythonVersion} && x64 && devpi-access"
                                             ],
                                             devpi: [
                                                 index: DEVPI_CONFIG.index,
@@ -1338,7 +1338,7 @@ pipeline {
                                     withEnv(['QT_QPA_PLATFORM=offscreen']) {
                                         devpi.testDevpiPackage(
                                             agent: [
-                                                label: "mac && python${pythonVersion} && devpi-access"
+                                                label: "mac && python${pythonVersion} && x64 && devpi-access"
                                             ],
                                             devpi: [
                                                 index: DEVPI_CONFIG.index,
@@ -1379,7 +1379,7 @@ pipeline {
                                             dockerfile: [
                                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
                                                 additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE",
-                                                label: 'windows && docker && devpi-access'
+                                                label: 'windows && docker && x64 && devpi-access'
                                             ]
                                         ],
                                         devpi: DEVPI_CONFIG,
@@ -1399,7 +1399,7 @@ pipeline {
                                             dockerfile: [
                                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
                                                 additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE",
-                                                label: 'windows && docker && devpi-access'
+                                                label: 'windows && docker && x64 && devpi-access'
                                             ]
                                         ],
                                         devpi: DEVPI_CONFIG,
@@ -1422,7 +1422,7 @@ pipeline {
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
                                                 additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL",
-                                                label: 'linux && docker && devpi-access'
+                                                label: 'linux && docker && x64 && devpi-access'
                                             ]
                                         ],
                                         devpi: DEVPI_CONFIG,
@@ -1442,7 +1442,7 @@ pipeline {
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
                                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                label: 'linux && docker && devpi-access'
+                                                label: 'linux && docker && x64 && devpi-access'
                                             ]
                                         ],
                                         devpi: DEVPI_CONFIG,
@@ -1477,7 +1477,7 @@ pipeline {
                     agent {
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label 'linux && docker && devpi-access'
+                            label 'linux && docker && x64 && devpi-access'
                             additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                           }
                     }
@@ -1500,7 +1500,7 @@ pipeline {
             }
             post{
                 success{
-                    node('linux && docker && devpi-access') {
+                    node('linux && docker && x64 && devpi-access') {
                        script{
                             if (!env.TAG_NAME?.trim()){
                                 docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
@@ -1519,7 +1519,7 @@ pipeline {
                     }
                 }
                 cleanup{
-                    node('linux && docker && devpi-access') {
+                    node('linux && docker && x64 && devpi-access') {
                        script{
                             docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
                                 checkout scm
