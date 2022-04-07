@@ -7,6 +7,7 @@ import shutil
 import speedwagon.config
 import pytest
 
+import speedwagon.frontend.qtwidgets.models
 from speedwagon.frontend.qtwidgets.models import SettingsModel
 from speedwagon.job import all_required_workflow_keys
 
@@ -97,7 +98,7 @@ def test_serialize_settings_model():
         my_model.add_setting(k, v)
 
     # Serialize the model to ini file format
-    data = speedwagon.config.serialize_settings_model(my_model)
+    data = speedwagon.frontend.qtwidgets.models.serialize_settings_model(my_model)
     assert data is not None
 
     # Check that the new data is the same as original
@@ -219,7 +220,7 @@ def test_generate_default_contains_global(default_config_file):
 def test_build_setting_model_missing_file(tmpdir):
     dummy = str(os.path.join(tmpdir, "config.ini"))
     with pytest.raises(FileNotFoundError):
-        speedwagon.config.build_setting_model(dummy)
+        speedwagon.frontend.qtwidgets.models.build_setting_model(dummy)
 
 
 def test_build_setting_model(tmpdir):
@@ -229,7 +230,7 @@ debug: False
         """
     with open(dummy, "w") as wf:
         wf.write(empty_config_data)
-    model = speedwagon.config.build_setting_model(dummy)
+    model = speedwagon.frontend.qtwidgets.models.build_setting_model(dummy)
     assert isinstance(model, SettingsModel)
 
     assert model is not None

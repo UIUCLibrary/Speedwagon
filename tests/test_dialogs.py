@@ -68,10 +68,10 @@ class TestGlobalSettingsTab:
     def test_on_okay_modified(self, qtbot, monkeypatch, config_file,
                               expect_file_written):
         from PySide6 import QtWidgets
-        from speedwagon import config
+        from speedwagon.frontend.qtwidgets import models
         mock_exec = Mock()
         monkeypatch.setattr(QtWidgets.QMessageBox, "exec", mock_exec)
-        monkeypatch.setattr(config, "serialize_settings_model", Mock())
+        monkeypatch.setattr(models, "serialize_settings_model", Mock())
         settings_tab = settings.GlobalSettingsTab()
         qtbot.addWidget(settings_tab)
         settings_tab.on_modified()

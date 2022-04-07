@@ -13,7 +13,7 @@ except ImportError:  # pragma: no cover
 from typing import Optional, Dict, cast, Type, Union
 
 from PySide6 import QtWidgets, QtCore  # type: ignore
-from speedwagon import config, job
+from speedwagon import job
 from speedwagon.frontend.qtwidgets import ui_loader, tabs, models
 
 __all__ = ['GlobalSettingsTab', 'TabsConfigurationTab', 'TabEditor']
@@ -184,7 +184,7 @@ class GlobalSettingsTab(QtWidgets.QWidget):
             raise FileNotFoundError("Invalid Configuration file set")
 
         self.settings_table.setModel(
-            config.build_setting_model(self.config_file)
+            models.build_setting_model(self.config_file)
         )
 
         self.settings_table.model().dataChanged.connect(self.on_modified)
@@ -205,7 +205,7 @@ class GlobalSettingsTab(QtWidgets.QWidget):
             return
 
         print("Saving changes")
-        data = config.serialize_settings_model(self.settings_table.model())
+        data = models.serialize_settings_model(self.settings_table.model())
         with open(self.config_file, "w", encoding="utf-8") as file_writer:
             file_writer.write(data)
 
