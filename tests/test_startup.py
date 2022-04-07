@@ -1,8 +1,6 @@
 import argparse
 import os.path
-import threading
 import io
-from unittest import mock
 from unittest.mock import Mock, MagicMock, mock_open, patch, ANY
 
 import json
@@ -19,8 +17,8 @@ import speedwagon.config
 import speedwagon.job
 import speedwagon.gui
 import speedwagon.runner_strategies
-from speedwagon.dialog.settings import SettingsDialog
-import speedwagon.dialog
+from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog
+import speedwagon.frontend.qtwidgets.dialog
 
 def test_version_exits_after_being_called(monkeypatch):
 
@@ -787,9 +785,9 @@ class TestWorkflowProgressCallbacks:
             lambda *args, **kwargs: None
         )
 
-        widget = speedwagon.dialog.dialogs.WorkflowProgress()
+        widget = speedwagon.frontend.qtwidgets.dialog.dialogs.WorkflowProgress()
         monkeypatch.setattr(
-            speedwagon.dialog.dialogs.WorkflowProgressStateWorking,
+            speedwagon.frontend.qtwidgets.dialog.dialogs.WorkflowProgressStateWorking,
             "close_dialog", lambda self, event: None)
         qtbot.add_widget(widget)
         yield widget
@@ -1009,11 +1007,11 @@ class TestStartQtThreaded:
 
         assert QMessageBox.called is True
 
-    def test_request_system_info(self, monkeypatch):
+    def test_request_system_info(self, monkeypatch, qtbot):
         SystemInfoDialog = Mock()
 
         monkeypatch.setattr(
-            speedwagon.startup.speedwagon.dialog.dialogs,
+            speedwagon.startup,
             "SystemInfoDialog",
             SystemInfoDialog
         )
@@ -1026,13 +1024,13 @@ class TestStartQtThreaded:
         monkeypatch.setattr(SettingsDialog, "exec_", exec_)
 
         monkeypatch.setattr(
-            speedwagon.dialog.settings.GlobalSettingsTab,
+            speedwagon.frontend.qtwidgets.dialog.settings.GlobalSettingsTab,
             "read_config_data",
             Mock()
         )
 
         monkeypatch.setattr(
-            speedwagon.dialog.settings.TabsConfigurationTab,
+            speedwagon.frontend.qtwidgets.dialog.settings.TabsConfigurationTab,
             "load",
             Mock()
         )

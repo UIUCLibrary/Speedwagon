@@ -3,7 +3,7 @@ import logging
 from unittest.mock import Mock, patch, mock_open
 import pytest
 from PySide6 import QtWidgets,  QtCore
-from speedwagon.dialog import settings, dialogs
+from speedwagon.frontend.qtwidgets.dialog import settings, dialogs
 
 
 def test_settings_open_dir_if_location_is_set(qtbot, monkeypatch):

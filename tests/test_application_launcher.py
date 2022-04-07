@@ -2,7 +2,8 @@ from unittest.mock import Mock, MagicMock
 import pytest
 
 
-from speedwagon import startup, job, dialog
+from speedwagon import startup, job
+from speedwagon.frontend.qtwidgets import dialog
 
 
 class TestSingleWorkflowLauncher:

@@ -18,7 +18,7 @@ from collections import namedtuple
 
 from PySide6 import QtWidgets  # type: ignore
 
-from .dialog.dialogs import WorkProgressBar
+from speedwagon.frontend.qtwidgets.dialog import WorkProgressBar
 from .tasks import QueueAdapter
 from .tasks.tasks import AbsSubtask, Result
 

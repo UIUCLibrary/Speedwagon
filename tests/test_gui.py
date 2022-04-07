@@ -7,6 +7,7 @@ import pytest
 
 import speedwagon.startup
 import speedwagon.tabs
+import speedwagon.frontend.qtwidgets.dialog
 import speedwagon.gui
 import speedwagon.workflow
 from speedwagon.workflows import shared_custom_widgets
@@ -39,7 +40,7 @@ def test_exit_button(qtbot, monkeypatch):
 
 
 def test_system_info_menu(qtbot, monkeypatch):
-    from speedwagon.dialog import dialogs
+    from speedwagon.frontend.qtwidgets.dialog import dialogs
     mock_work_manager = Mock()
     main_window = speedwagon.gui.MainWindow1(mock_work_manager)
     qtbot.addWidget(main_window)
@@ -75,7 +76,7 @@ def test_show_configuration_menu(qtbot, monkeypatch):
         assert False, "settingsAction not found"
 
     import os
-    from speedwagon.dialog import settings
+    from speedwagon.frontend.qtwidgets.dialog import settings
     monkeypatch.setattr(os.path, "exists", lambda x: True)
     read_config_data = Mock()
     monkeypatch.setattr(
@@ -139,7 +140,7 @@ class TestMainWindow:
         qtbot.add_widget(window)
         about_dialog_box = Mock()
         monkeypatch.setattr(
-            speedwagon.dialog.dialogs,
+            speedwagon.gui,
             "about_dialog_box",
             about_dialog_box
         )
@@ -153,7 +154,7 @@ class TestMainWindow:
         qtbot.add_widget(window)
         exec_ = Mock()
         monkeypatch.setattr(
-            speedwagon.dialog.dialogs.SystemInfoDialog,
+            speedwagon.frontend.qtwidgets.dialog.dialogs.SystemInfoDialog,
             "exec",
             exec_
         )
@@ -171,7 +172,7 @@ class TestMainWindow:
         qtbot.add_widget(window)
         exec_ = Mock()
         monkeypatch.setattr(
-            speedwagon.dialog.settings.SettingsDialog,
+            speedwagon.frontend.qtwidgets.dialog.settings.SettingsDialog,
             "exec",
             exec_
         )

@@ -38,8 +38,15 @@ import speedwagon.tabs
 import speedwagon.exceptions
 from speedwagon import worker, job, runner_strategies
 from speedwagon.frontend.qtwidgets.user_interaction import QtWidgetFactory
-from speedwagon.dialog.settings import TabEditor
-from speedwagon.dialog.dialogs import WorkflowProgress
+
+from speedwagon.frontend.qtwidgets.dialog.settings import \
+    TabEditor, \
+    SettingsBuilder
+
+from speedwagon.frontend.qtwidgets.dialog.dialogs import \
+    WorkflowProgress, \
+    SystemInfoDialog
+
 from speedwagon.logging_helpers import SignalLogHandler
 from speedwagon.runner_strategies import ThreadedEvents, JobSuccess
 from speedwagon.tabs import extract_tab_information
@@ -820,15 +827,14 @@ class StartQtThreaded(AbsStarter):
     def request_system_info(
             parent: Optional[QtWidgets.QWidget] = None
     ) -> None:
-        speedwagon.dialog.dialogs.SystemInfoDialog(parent).exec()
+        SystemInfoDialog(parent).exec()
 
     @staticmethod
     def request_settings(parent: QtWidgets.QWidget = None) -> None:
         platform_settings = speedwagon.config.get_platform_settings()
         settings_path = platform_settings.get_app_data_directory()
 
-        dialog_builder = \
-            speedwagon.dialog.settings.SettingsBuilder(parent=parent)
+        dialog_builder = SettingsBuilder(parent=parent)
 
         dialog_builder.add_open_settings(
             platform_settings.get_app_data_directory()

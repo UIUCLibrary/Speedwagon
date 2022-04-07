@@ -19,7 +19,7 @@ from typing import List, Any, Dict, Optional, Type
 from PySide6 import QtWidgets
 
 import speedwagon
-import speedwagon.dialog
+from speedwagon.frontend.qtwidgets.dialog import WorkProgressBar
 import speedwagon.frontend.interaction
 import speedwagon.frontend.cli.user_interaction
 from speedwagon import worker
@@ -616,7 +616,7 @@ class QtDialogProgress(RunnerDisplay):
             parent: typing.Optional[QtWidgets.QWidget] = None
     ) -> None:
         super().__init__()
-        self.dialog = speedwagon.dialog.WorkProgressBar(parent=parent)
+        self.dialog = WorkProgressBar(parent=parent)
         self.dialog.setMaximum(0)
         self.dialog.setValue(0)
 
