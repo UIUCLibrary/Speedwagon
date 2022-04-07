@@ -8,8 +8,6 @@ import warnings
 from typing import Collection, Union
 
 from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
-from speedwagon import ui_loader
-
 
 try:  # pragma: no cover
     from importlib import metadata
@@ -22,7 +20,7 @@ except ImportError:  # pragma: no cover
     import importlib_resources as resources  # type: ignore
 
 import speedwagon
-from speedwagon.frontend.qtwidgets import logging_helpers
+from speedwagon.frontend.qtwidgets import logging_helpers, ui_loader
 import speedwagon.frontend.qtwidgets.ui
 
 __all__ = [

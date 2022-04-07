@@ -34,7 +34,8 @@ from speedwagon.frontend.qtwidgets.dialog.settings import \
     TabsConfigurationTab, \
     SettingsDialog, \
     GlobalSettingsTab
-from speedwagon import tabs, worker, ui_loader
+from speedwagon import tabs, worker
+from speedwagon.frontend.qtwidgets import ui_loader
 import speedwagon
 import speedwagon.frontend.qtwidgets
 from speedwagon.frontend import qtwidgets

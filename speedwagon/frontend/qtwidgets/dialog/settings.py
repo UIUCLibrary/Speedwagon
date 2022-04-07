@@ -13,8 +13,8 @@ except ImportError:  # pragma: no cover
 from typing import Optional, Dict, cast, Type, Union
 
 from PySide6 import QtWidgets, QtCore  # type: ignore
-from speedwagon import config, models, tabs, job, ui_loader
-
+from speedwagon import config, models, tabs, job
+from speedwagon.frontend.qtwidgets import ui_loader
 
 __all__ = ['GlobalSettingsTab', 'TabsConfigurationTab', 'TabEditor']
 
