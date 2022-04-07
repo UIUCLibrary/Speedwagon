@@ -34,7 +34,7 @@ from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
 import speedwagon
 import speedwagon.config
 import speedwagon.models
-import speedwagon.tabs
+import speedwagon.frontend.qtwidgets.tabs
 import speedwagon.exceptions
 from speedwagon import worker, job, runner_strategies
 from speedwagon.frontend.qtwidgets.user_interaction import QtWidgetFactory
@@ -49,7 +49,7 @@ from speedwagon.frontend.qtwidgets.dialog.dialogs import \
 
 from speedwagon.frontend.qtwidgets.logging_helpers import SignalLogHandler
 from speedwagon.runner_strategies import ThreadedEvents, JobSuccess
-from speedwagon.tabs import extract_tab_information
+from speedwagon.frontend.qtwidgets.tabs import extract_tab_information
 import speedwagon.frontend.qtwidgets.gui
 
 
@@ -1294,7 +1294,7 @@ class TabsEditorApp(QtWidgets.QDialog):
         if self.editor.modified is True:
             if self.tabs_file is None:
                 return
-            speedwagon.tabs.write_tabs_yaml(
+            speedwagon.frontend.qtwidgets.tabs.write_tabs_yaml(
                 self.tabs_file,
                 extract_tab_information(
                     cast(

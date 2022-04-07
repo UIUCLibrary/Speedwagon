@@ -15,7 +15,8 @@ from collections import namedtuple
 import enum
 
 from PySide6 import QtCore, QtGui  # type: ignore
-from speedwagon import tabs, Workflow
+from speedwagon import Workflow
+from .frontend.qtwidgets import tabs
 import speedwagon.workflow
 from .job import AbsWorkflow
 from .workflows import shared_custom_widgets

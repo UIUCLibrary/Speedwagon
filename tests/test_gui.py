@@ -6,7 +6,7 @@ import webbrowser
 import pytest
 
 import speedwagon.startup
-import speedwagon.tabs
+import speedwagon.frontend.qtwidgets.tabs
 import speedwagon.frontend.qtwidgets.dialog
 import speedwagon.frontend.qtwidgets.gui
 import speedwagon.workflow
@@ -200,12 +200,12 @@ class TestMainWindow2:
     def test_set_current_tab(self, qtbot, tab_name):
         manager = Mock()
         main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(manager)
-        workflows_tab1 = speedwagon.tabs.WorkflowsTab2(
+        workflows_tab1 = speedwagon.frontend.qtwidgets.tabs.WorkflowsTab2(
             parent=main_window.tab_widget,
             workflows=MagicMock(),
         )
         main_window.tab_widget.add_tab(workflows_tab1.tab_widget, "Dummy")
-        workflows_tab2 = speedwagon.tabs.WorkflowsTab2(
+        workflows_tab2 = speedwagon.frontend.qtwidgets.tabs.WorkflowsTab2(
             parent=main_window.tab_widget,
             workflows=MagicMock(),
         )
@@ -221,7 +221,7 @@ class TestMainWindow2:
     def test_set_current_tab_invalid_throws(self, qtbot):
         main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
         main_window.tab_widget.add_tab(
-            speedwagon.tabs.WorkflowsTab2(
+            speedwagon.frontend.qtwidgets.tabs.WorkflowsTab2(
                 parent=main_window.tab_widget,
                 workflows=MagicMock(),
             ).tab_widget,
@@ -248,7 +248,7 @@ class TestMainWindow2:
             }
         )
         main_window.tab_widget.add_tab(
-            speedwagon.tabs.WorkflowsTab2(
+            speedwagon.frontend.qtwidgets.tabs.WorkflowsTab2(
                 parent=main_window.tab_widget,
                 workflows=MagicMock(),
             ).tab_widget,

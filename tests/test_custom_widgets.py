@@ -3,9 +3,9 @@ import pytest
 from PySide6 import QtWidgets
 from typing import List, Any
 from speedwagon.job import AbsWorkflow
-import speedwagon.tabs
+import speedwagon.frontend.qtwidgets.tabs
 import speedwagon.models
-from speedwagon.tabs import WorkflowsTab, MyDelegate
+from speedwagon.frontend.qtwidgets.tabs import WorkflowsTab, MyDelegate
 from speedwagon.workflows import shared_custom_widgets
 
 

@@ -103,7 +103,7 @@ class TestTabsConfigurationTab:
         config_tab = settings.TabsConfigurationTab()
         config_tab.settings_location = settings_location
         config_tab.editor.on_modified()
-        from speedwagon import tabs
+        from speedwagon.frontend.qtwidgets import tabs
         write_tabs_yaml = Mock()
         mock_exec = Mock(name="message box exec")
         with monkeypatch.context() as mp:
@@ -164,15 +164,15 @@ class TestTabEditor:
             editor
     ):
         qtbot.addWidget(editor)
-        from speedwagon.tabs import TabData
+        from speedwagon.frontend.qtwidgets import tabs
         from speedwagon import models
         with monkeypatch.context() as mp:
             def read_tabs_yaml(*args, **kwargs):
                 return [
-                    TabData("existing tab", models.WorkflowListModel2())
+                    tabs.TabData("existing tab", models.WorkflowListModel2())
                 ]
 
-            mp.setattr(settings.tabs, "read_tabs_yaml", read_tabs_yaml)
+            mp.setattr(tabs, "read_tabs_yaml", read_tabs_yaml)
             editor.tabs_file = "dummy.yml"
 
         with monkeypatch.context() as mp:

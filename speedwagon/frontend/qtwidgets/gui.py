@@ -34,8 +34,8 @@ from speedwagon.frontend.qtwidgets.dialog.settings import \
     TabsConfigurationTab, \
     SettingsDialog, \
     GlobalSettingsTab
-from speedwagon import tabs, worker
-from speedwagon.frontend.qtwidgets import ui_loader
+from speedwagon import worker
+from speedwagon.frontend.qtwidgets import ui_loader, tabs
 import speedwagon
 import speedwagon.frontend.qtwidgets
 from speedwagon.frontend import qtwidgets
@@ -482,7 +482,7 @@ class MainWindow1(MainProgram):
     def _create_tabs_widget(self) -> None:
         self.tab_widget = ItemTabsWidget(self.main_splitter)
         self.tab_widget.setVisible(False)
-        self._tabs: List[speedwagon.tabs.ItemSelectionTab] = []
+        self._tabs: List[tabs.ItemSelectionTab] = []
         # Add the tabs widget as the first widget
         self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
         self.main_splitter.addWidget(self.tab_widget)
@@ -780,7 +780,7 @@ class MainWindow2(MainWindow2UI):
     def _create_tabs_widget(self) -> None:
         self.tab_widget = ItemTabsWidget(self.main_splitter)
         self.tab_widget.setVisible(False)
-        self._tabs: List[speedwagon.tabs.ItemSelectionTab] = []
+        self._tabs: List[tabs.ItemSelectionTab] = []
 
         # Add the tabs widget as the first widget
         self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)

@@ -4,7 +4,8 @@ from unittest.mock import Mock
 import pytest
 from PySide6 import QtCore, QtWidgets
 
-from speedwagon import tabs, models, job, workflow
+from speedwagon import models, job, workflow
+from speedwagon.frontend.qtwidgets import tabs
 
 
 class TestSettingsModel:
@@ -363,7 +364,7 @@ class TestSettingsModel:
 
 class TestTabsModel:
     def test_model_contains(self):
-        from speedwagon.tabs import TabData
+        from speedwagon.frontend.qtwidgets.tabs import TabData
         model = models.TabsModel()
         model.add_tab(TabData("dummy", Mock()))
         assert ("dummy" in model) is True
@@ -373,13 +374,13 @@ class TestTabsModel:
         assert ("dummy" in model) is False
 
     def test_model_iadd_operator(self):
-        from speedwagon.tabs import TabData
+        from speedwagon.frontend.qtwidgets.tabs import TabData
         model = models.TabsModel()
         model += TabData("dummy", Mock())
         assert ("dummy" in model) is True
 
     def test_model_isub_operator(self):
-        from speedwagon.tabs import TabData
+        from speedwagon.frontend.qtwidgets.tabs import TabData
         tab = TabData("dummy", Mock())
         model = models.TabsModel()
         model += tab
@@ -388,7 +389,7 @@ class TestTabsModel:
         assert ("dummy" in model) is False
 
     def test_model_data(self):
-        from speedwagon.tabs import TabData
+        from speedwagon.frontend.qtwidgets.tabs import TabData
         tab = TabData("dummy", Mock())
         model = models.TabsModel()
         model.add_tab(tab)
