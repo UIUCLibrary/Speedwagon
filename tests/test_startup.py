@@ -878,7 +878,7 @@ class TestWorkflowProgressCallbacks:
         with qtbot.waitSignal(callbacks.signals.started):
             callbacks.start()
 
-    def test_refresh_calls_process_events(self, dialog_box, monkeypatch):
+    def test_refresh_calls_process_events(self, dialog_box, monkeypatch, qtbot):
         callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
         processEvents = Mock()
         monkeypatch.setattr(
