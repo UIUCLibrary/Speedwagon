@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import pytest
 from PySide6 import QtCore, QtWidgets
 
-from speedwagon import tabs, models, job, widgets, workflow
+from speedwagon import tabs, models, job, workflow
 
 
 class TestSettingsModel:

@@ -11,7 +11,7 @@ import yaml
 import pytest
 from PySide6 import QtWidgets, QtCore
 
-import speedwagon.logging_helpers
+import speedwagon.frontend.qtwidgets.logging_helpers
 import speedwagon.startup
 import speedwagon.config
 import speedwagon.job
@@ -652,7 +652,7 @@ class TestSingleWorkflowJSON:
         dummy = Dummy()
 
         signal_log_handler = \
-            speedwagon.logging_helpers.SignalLogHandler(dummy.dummy_signal)
+            speedwagon.frontend.qtwidgets.logging_helpers.SignalLogHandler(dummy.dummy_signal)
 
         logger = logging.getLogger()
         logger.setLevel(logging.INFO)

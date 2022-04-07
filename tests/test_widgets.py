@@ -2,7 +2,7 @@ import pytest
 from PySide6 import QtWidgets, QtCore
 
 import speedwagon.workflow
-import speedwagon.widgets
+import speedwagon.frontend.qtwidgets.widgets
 import speedwagon.models
 
 
@@ -22,7 +22,7 @@ class TestDelegateSelection:
 
     @pytest.fixture
     def delegate_widget(self):
-        return speedwagon.widgets.QtWidgetDelegateSelection()
+        return speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection()
 
     @pytest.fixture
     def editor(
@@ -31,7 +31,7 @@ class TestDelegateSelection:
             index,
             delegate_widget,
             model: speedwagon.models.ToolOptionsModel4
-    ) -> speedwagon.widgets.FileSelectWidget:
+    ) -> speedwagon.frontend.qtwidgets.widgets.FileSelectWidget:
 
         parent = QtWidgets.QWidget()
         options = QtWidgets.QStyleOptionViewItem()
@@ -42,7 +42,7 @@ class TestDelegateSelection:
             qtbot,
             index,
     ):
-        delegate_widget = speedwagon.widgets.QtWidgetDelegateSelection()
+        delegate_widget = speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection()
         assert isinstance(
             delegate_widget.createEditor(
                 parent=QtWidgets.QWidget(),
@@ -56,8 +56,8 @@ class TestDelegateSelection:
             self,
             qtbot,
             index,
-            editor: speedwagon.widgets.FileSelectWidget,
-            delegate_widget: speedwagon.widgets.QtWidgetDelegateSelection,
+            editor: speedwagon.frontend.qtwidgets.widgets.FileSelectWidget,
+            delegate_widget: speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection,
             model: speedwagon.models.ToolOptionsModel4
     ):
         starting_value = model.data(index, role=QtCore.Qt.DisplayRole)
@@ -72,12 +72,12 @@ class TestDelegateSelection:
             self,
             qtbot,
             index,
-            delegate_widget: speedwagon.widgets.QtWidgetDelegateSelection,
+            delegate_widget: speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection,
             model: speedwagon.models.ToolOptionsModel4
     ):
         model.setData(index, "Dummy")
         parent = QtWidgets.QWidget()
-        new_editor: speedwagon.widgets.FileSystemItemSelectWidget = \
+        new_editor: speedwagon.frontend.qtwidgets.widgets.FileSystemItemSelectWidget = \
             delegate_widget.createEditor(
                 parent,
                 QtWidgets.QStyleOptionViewItem(),
@@ -89,7 +89,7 @@ class TestDelegateSelection:
     def test_warn_on_not_using_right_subclass(
             self,
             index: QtCore.QModelIndex,
-            delegate_widget: speedwagon.widgets.QtWidgetDelegateSelection,
+            delegate_widget: speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection,
             model: speedwagon.models.ToolOptionsModel4
     ):
         model.setData(index, "Dummy")
@@ -99,11 +99,11 @@ class TestDelegateSelection:
 
 class TestDropDownWidget:
     def test_empty_widget_metadata(self, qtbot):
-        widget = speedwagon.widgets.ComboWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.ComboWidget()
         assert isinstance(widget, QtWidgets.QWidget)
 
     def test_data_updating(self, qtbot):
-        widget = speedwagon.widgets.ComboWidget(widget_metadata={
+        widget = speedwagon.frontend.qtwidgets.widgets.ComboWidget(widget_metadata={
             "selections": ["spam", "bacon", "eggs"]
         })
         starting_data = widget.data
@@ -112,7 +112,7 @@ class TestDropDownWidget:
         assert starting_data is None and first_index_data == "spam"
 
     def test_placeholder_text(self, qtbot):
-        widget = speedwagon.widgets.ComboWidget(widget_metadata={
+        widget = speedwagon.frontend.qtwidgets.widgets.ComboWidget(widget_metadata={
             "selections": ["spam", "bacon", "eggs"],
             "placeholder_text": "Dummy"
         })
@@ -122,11 +122,11 @@ class TestDropDownWidget:
 
 class TestCheckBoxWidget:
     def test_empty_widget_metadata(self, qtbot):
-        widget = speedwagon.widgets.CheckBoxWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget()
         assert isinstance(widget, QtWidgets.QWidget)
 
     def test_checking_changes_value(self, qtbot):
-        widget = speedwagon.widgets.CheckBoxWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget()
         assert widget.data is False
         with qtbot.wait_signal(widget.dataChanged):
             widget.check_box.setCheckState(QtCore.Qt.Checked)
@@ -135,36 +135,36 @@ class TestCheckBoxWidget:
 
 class TestFileSelectWidget:
     def test_empty_widget_metadata(self, qtbot):
-        widget = speedwagon.widgets.FileSelectWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.FileSelectWidget()
         assert isinstance(widget, QtWidgets.QWidget)
 
     def test_browse_dir_valid(self, qtbot):
-        widget = speedwagon.widgets.FileSelectWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.FileSelectWidget()
         fake_file_path = "/some/directory/file"
         with qtbot.wait_signal(widget.dataChanged):
             widget.browse_file(get_file_callback=lambda: fake_file_path)
         assert widget.data == fake_file_path
 
     def test_browse_dir_canceled(self, qtbot):
-        widget = speedwagon.widgets.FileSelectWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.FileSelectWidget()
         widget.browse_file(get_file_callback=lambda: None)
         assert widget.data is None
 
 
 class TestDirectorySelectWidget:
     def test_empty_widget_metadata(self, qtbot):
-        widget = speedwagon.widgets.DirectorySelectWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget()
         assert isinstance(widget, QtWidgets.QWidget)
 
     def test_browse_dir_valid(self, qtbot):
-        widget = speedwagon.widgets.DirectorySelectWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget()
         fake_directory = "/some/directory"
         with qtbot.wait_signal(widget.dataChanged):
             widget.browse_dir(get_file_callback=lambda: fake_directory)
         assert widget.data == fake_directory
 
     def test_browse_dir_canceled(self, qtbot):
-        widget = speedwagon.widgets.DirectorySelectWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget()
         widget.browse_dir(get_file_callback=lambda: None)
         assert widget.data is None
 

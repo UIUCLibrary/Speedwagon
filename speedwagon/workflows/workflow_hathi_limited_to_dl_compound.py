@@ -11,7 +11,7 @@ import speedwagon
 import speedwagon.workflow
 from speedwagon.job import Workflow
 from speedwagon import reports
-from speedwagon.logging_helpers import GuiLogHandler
+from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
 __all__ = ['HathiLimitedToDLWorkflow']
 
 

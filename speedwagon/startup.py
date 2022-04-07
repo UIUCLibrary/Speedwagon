@@ -47,7 +47,7 @@ from speedwagon.frontend.qtwidgets.dialog.dialogs import \
     WorkflowProgress, \
     SystemInfoDialog
 
-from speedwagon.logging_helpers import SignalLogHandler
+from speedwagon.frontend.qtwidgets.logging_helpers import SignalLogHandler
 from speedwagon.runner_strategies import ThreadedEvents, JobSuccess
 from speedwagon.tabs import extract_tab_information
 import speedwagon.frontend.qtwidgets.gui

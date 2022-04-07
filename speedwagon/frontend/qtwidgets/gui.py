@@ -40,7 +40,7 @@ import speedwagon.frontend.qtwidgets
 from speedwagon.frontend import qtwidgets
 import speedwagon.config
 import speedwagon.runner_strategies
-from speedwagon.logging_helpers import ConsoleFormatter
+from speedwagon.frontend.qtwidgets.logging_helpers import ConsoleFormatter
 
 __all__ = [
     "MainWindow1",

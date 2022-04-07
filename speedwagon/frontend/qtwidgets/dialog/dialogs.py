@@ -22,7 +22,7 @@ except ImportError:  # pragma: no cover
     import importlib_resources as resources  # type: ignore
 
 import speedwagon
-import speedwagon.logging_helpers
+from speedwagon.frontend.qtwidgets import logging_helpers
 import speedwagon.frontend.qtwidgets.ui
 
 __all__ = [
@@ -425,7 +425,7 @@ class WorkflowProgressGui(QtWidgets.QDialog):
     def attach_logger(self, logger: logging.Logger) -> None:
         self._parent_logger = logger
         self._log_handler = WorkflowProgressGui.DialogLogHandler(self)
-        formatter = speedwagon.logging_helpers.ConsoleFormatter()
+        formatter = logging_helpers.ConsoleFormatter()
         self._log_handler.setFormatter(formatter)
         self._parent_logger.addHandler(self._log_handler)
 

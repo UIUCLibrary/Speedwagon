@@ -15,7 +15,8 @@ from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
 
 import speedwagon
 import speedwagon.config
-import speedwagon.widgets
+from speedwagon.frontend.qtwidgets.widgets import QtWidgetDelegateSelection
+
 from . import runner_strategies
 from . import models
 from . import worker  # pylint: disable=unused-import
@@ -87,9 +88,7 @@ class Tab:
             )
         )
 
-        tool_settings.setItemDelegate(
-            speedwagon.widgets.QtWidgetDelegateSelection(parent)
-        )
+        tool_settings.setItemDelegate(QtWidgetDelegateSelection(parent))
 
         tool_settings.horizontalHeader().setVisible(False)
         tool_settings.setSelectionMode(

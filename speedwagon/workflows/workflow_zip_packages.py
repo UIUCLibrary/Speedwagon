@@ -12,7 +12,7 @@ import hathizip
 import speedwagon
 from speedwagon import reports, workflow
 from speedwagon.job import Workflow
-from speedwagon.logging_helpers import GuiLogHandler
+from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
 
 __all__ = ['ZipPackagesWorkflow']
 
