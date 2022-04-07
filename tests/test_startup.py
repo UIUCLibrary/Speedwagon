@@ -15,7 +15,7 @@ import speedwagon.logging_helpers
 import speedwagon.startup
 import speedwagon.config
 import speedwagon.job
-import speedwagon.gui
+import speedwagon.frontend.qtwidgets.gui
 import speedwagon.runner_strategies
 from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog
 import speedwagon.frontend.qtwidgets.dialog
@@ -65,7 +65,7 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
 
     monkeypatch.setattr(QtWidgets, "QSplashScreen", MagicMock())
     monkeypatch.setattr(
-        speedwagon.startup.speedwagon.gui,
+        speedwagon.frontend.qtwidgets.gui,
         "MainWindow1",
         MagicMock()
     )
@@ -615,7 +615,7 @@ class TestSingleWorkflowJSON:
         )
 
         monkeypatch.setattr(
-            speedwagon.startup.speedwagon.gui,
+            speedwagon.frontend.qtwidgets.gui,
             "MainWindow2",
             MagicMock()
         )
@@ -686,7 +686,7 @@ class TestSingleWorkflowJSON:
             lambda *args, **kwargs: Mock()
         )
         monkeypatch.setattr(
-            speedwagon.startup.speedwagon.gui,
+            speedwagon.frontend.qtwidgets.gui,
             "MainWindow2",
             lambda _: MainWindow2
         )
@@ -744,7 +744,7 @@ class TestMultiWorkflowLauncher:
         jobs = []
 
         monkeypatch.setattr(
-            speedwagon.gui.MainWindow1,
+            speedwagon.frontend.qtwidgets.gui.MainWindow1,
             "show", lambda self: None
         )
 
@@ -1054,7 +1054,7 @@ class TestStartQtThreaded:
         show = Mock()
 
         monkeypatch.setattr(
-            speedwagon.startup.speedwagon.gui.MainWindow2,
+            speedwagon.frontend.qtwidgets.gui.MainWindow2,
             "show",
             show
         )
@@ -1101,7 +1101,7 @@ class TestStartQtThreaded:
         show = Mock()
 
         monkeypatch.setattr(
-            speedwagon.startup.speedwagon.gui.MainWindow2,
+            speedwagon.frontend.qtwidgets.gui.MainWindow2,
             "show",
             show
         )
@@ -1128,7 +1128,7 @@ class TestStartQtThreaded:
         show = Mock()
 
         monkeypatch.setattr(
-            speedwagon.startup.speedwagon.gui.MainWindow2,
+            speedwagon.frontend.qtwidgets.gui.MainWindow2,
             "show",
             show
         )
@@ -1162,7 +1162,7 @@ class TestStartQtThreaded:
         starter.load_custom_tabs = Mock()
         starter.load_all_workflows_tab = Mock()
         monkeypatch.setattr(
-            speedwagon.gui.MainWindow2,
+            speedwagon.frontend.qtwidgets.gui.MainWindow2,
             "show",
             lambda *args, **kwargs: None
         )
