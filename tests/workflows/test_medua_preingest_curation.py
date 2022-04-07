@@ -4,7 +4,7 @@ from unittest.mock import Mock, MagicMock
 import pytest
 
 from speedwagon.workflows import workflow_medusa_preingest
-from speedwagon.models import ToolOptionsModel4
+from speedwagon.frontend.qtwidgets.models import ToolOptionsModel4
 from speedwagon.frontend import interaction
 from speedwagon.tasks import filesystem as filesystem_tasks
 import speedwagon.tasks

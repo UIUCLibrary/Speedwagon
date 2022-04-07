@@ -3,7 +3,7 @@ from unittest.mock import Mock, ANY
 
 import pytest
 from speedwagon.workflows import workflow_convertTifftoHathiTrustJP2
-from speedwagon import models
+from speedwagon.frontend.qtwidgets import models
 
 
 class TestConvertTiffToHathiJp2Workflow:

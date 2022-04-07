@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import pytest
 
 import speedwagon
-from speedwagon import models
+from speedwagon.frontend.qtwidgets import models
 from speedwagon.workflows import workflow_verify_checksums
 
 

@@ -16,10 +16,10 @@ import enum
 
 from PySide6 import QtCore, QtGui  # type: ignore
 from speedwagon import Workflow
-from .frontend.qtwidgets import tabs
+from speedwagon.frontend.qtwidgets import tabs
 import speedwagon.workflow
-from .job import AbsWorkflow
-from .workflows import shared_custom_widgets
+from speedwagon.job import AbsWorkflow
+from speedwagon.workflows import shared_custom_widgets
 
 __all__ = [
     "ItemListModel",

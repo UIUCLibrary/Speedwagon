@@ -25,7 +25,7 @@ except ImportError:  # pragma: no cover
 from PySide6.QtCore import QAbstractItemModel
 
 from speedwagon.job import all_required_workflow_keys
-import speedwagon.models
+import speedwagon.frontend.qtwidgets.models
 
 __all__ = [
     "ConfigManager",
@@ -218,7 +218,7 @@ def build_setting_model(config_file: str) -> "speedwagon.models.SettingsModel":
     config = configparser.ConfigParser()
     config.read(config_file)
     global_settings = config["GLOBAL"]
-    my_model = speedwagon.models.SettingsModel()
+    my_model = speedwagon.frontend.qtwidgets.models.SettingsModel()
     for key, value in global_settings.items():
         my_model.add_setting(key, value)
     return my_model

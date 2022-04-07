@@ -18,7 +18,7 @@ import speedwagon.config
 from speedwagon.frontend.qtwidgets.widgets import QtWidgetDelegateSelection
 
 from speedwagon import runner_strategies
-from speedwagon import models
+from speedwagon.frontend.qtwidgets import models
 from speedwagon import worker  # pylint: disable=unused-import
 from speedwagon.exceptions import MissingConfiguration
 from speedwagon.workflows import shared_custom_widgets as widgets

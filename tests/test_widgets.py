@@ -3,13 +3,13 @@ from PySide6 import QtWidgets, QtCore
 
 import speedwagon.workflow
 import speedwagon.frontend.qtwidgets.widgets
-import speedwagon.models
+import speedwagon.frontend.qtwidgets.models
 
 
 class TestDelegateSelection:
     @pytest.fixture
     def model(self):
-        return speedwagon.models.ToolOptionsModel4(data=[
+        return speedwagon.frontend.qtwidgets.models.ToolOptionsModel4(data=[
             speedwagon.workflow.FileSelectData('Spam'),
         ])
 
@@ -17,7 +17,7 @@ class TestDelegateSelection:
     def index(
             self,
             qtbot,
-            model: speedwagon.models.ToolOptionsModel4):
+            model: speedwagon.frontend.qtwidgets.models.ToolOptionsModel4):
         return model.createIndex(0, 0)
 
     @pytest.fixture
@@ -30,7 +30,7 @@ class TestDelegateSelection:
             qtbot,
             index,
             delegate_widget,
-            model: speedwagon.models.ToolOptionsModel4
+            model: speedwagon.frontend.qtwidgets.models.ToolOptionsModel4
     ) -> speedwagon.frontend.qtwidgets.widgets.FileSelectWidget:
 
         parent = QtWidgets.QWidget()
@@ -58,7 +58,7 @@ class TestDelegateSelection:
             index,
             editor: speedwagon.frontend.qtwidgets.widgets.FileSelectWidget,
             delegate_widget: speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection,
-            model: speedwagon.models.ToolOptionsModel4
+            model: speedwagon.frontend.qtwidgets.models.ToolOptionsModel4
     ):
         starting_value = model.data(index, role=QtCore.Qt.DisplayRole)
 
@@ -73,7 +73,7 @@ class TestDelegateSelection:
             qtbot,
             index,
             delegate_widget: speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection,
-            model: speedwagon.models.ToolOptionsModel4
+            model: speedwagon.frontend.qtwidgets.models.ToolOptionsModel4
     ):
         model.setData(index, "Dummy")
         parent = QtWidgets.QWidget()
@@ -90,7 +90,7 @@ class TestDelegateSelection:
             self,
             index: QtCore.QModelIndex,
             delegate_widget: speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection,
-            model: speedwagon.models.ToolOptionsModel4
+            model: speedwagon.frontend.qtwidgets.models.ToolOptionsModel4
     ):
         model.setData(index, "Dummy")
         with pytest.warns(Warning):

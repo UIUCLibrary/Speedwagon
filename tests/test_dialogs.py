@@ -165,7 +165,7 @@ class TestTabEditor:
     ):
         qtbot.addWidget(editor)
         from speedwagon.frontend.qtwidgets import tabs
-        from speedwagon import models
+        from speedwagon.frontend.qtwidgets import models
         with monkeypatch.context() as mp:
             def read_tabs_yaml(*args, **kwargs):
                 return [

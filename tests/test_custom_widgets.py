@@ -4,7 +4,7 @@ from PySide6 import QtWidgets
 from typing import List, Any
 from speedwagon.job import AbsWorkflow
 import speedwagon.frontend.qtwidgets.tabs
-import speedwagon.models
+import speedwagon.frontend.qtwidgets.models
 from speedwagon.frontend.qtwidgets.tabs import WorkflowsTab, MyDelegate
 from speedwagon.workflows import shared_custom_widgets
 
@@ -87,7 +87,7 @@ def test_boolean_delegate_is_combobox(qtbot, monkeypatch):
         new_workflow = workflow(
             global_settings=dict(self.work_manager.user_settings)
         )
-        return speedwagon.models.ToolOptionsModel3(new_workflow.user_options())
+        return speedwagon.frontend.qtwidgets.models.ToolOptionsModel3(new_workflow.user_options())
 
     monkeypatch.setattr(
         WorkflowsTab,
@@ -135,7 +135,7 @@ def test_folder_delegate_is_browsable(qtbot, monkeypatch):
         new_workflow = workflow(
             global_settings=dict(self.work_manager.user_settings)
         )
-        return speedwagon.models.ToolOptionsModel3(new_workflow.user_options())
+        return speedwagon.frontend.qtwidgets.models.ToolOptionsModel3(new_workflow.user_options())
 
     monkeypatch.setattr(
         WorkflowsTab,

@@ -5,7 +5,7 @@ import pytest
 
 import speedwagon
 from speedwagon.workflows import workflow_make_checksum
-from speedwagon import models
+from speedwagon.frontend.qtwidgets import models
 
 
 class TestZipPackagesWorkflow:

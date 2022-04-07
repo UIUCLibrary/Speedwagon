@@ -8,7 +8,7 @@ import speedwagon
 from speedwagon.workflows import workflow_ocr
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from uiucprescon.ocr import reader, tesseractwrap
-from speedwagon import models
+from speedwagon.frontend.qtwidgets import models
 
 
 def test_no_config():

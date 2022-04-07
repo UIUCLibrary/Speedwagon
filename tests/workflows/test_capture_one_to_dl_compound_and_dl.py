@@ -4,7 +4,7 @@ import pytest
 from uiucprescon import packager
 import speedwagon
 import speedwagon.exceptions
-from speedwagon import models
+from speedwagon.frontend.qtwidgets import models
 from speedwagon.workflows \
     import workflow_capture_one_to_dl_compound_and_dl as ht_wf
 

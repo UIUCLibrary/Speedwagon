@@ -33,7 +33,7 @@ import yaml
 from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
 import speedwagon
 import speedwagon.config
-import speedwagon.models
+import speedwagon.frontend.qtwidgets.models
 import speedwagon.frontend.qtwidgets.tabs
 import speedwagon.exceptions
 from speedwagon import worker, job, runner_strategies
@@ -1298,7 +1298,7 @@ class TabsEditorApp(QtWidgets.QDialog):
                 self.tabs_file,
                 extract_tab_information(
                     cast(
-                        speedwagon.models.TabsModel,
+                        speedwagon.frontend.qtwidgets.models.TabsModel,
                         self.editor.selectedTabComboBox.model()
                     )
                 )
