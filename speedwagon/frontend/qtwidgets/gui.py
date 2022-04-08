@@ -791,3 +791,14 @@ class MainWindow2(MainWindow2UI):
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
         self.console.attach_logger(self.logger)
+
+
+def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
+    with resources.open_binary(speedwagon.__name__, "favicon.ico") as icon:
+        app.setWindowIcon(QtGui.QIcon(icon.name))
+    try:
+        app.setApplicationVersion(metadata.version(__package__))
+    except metadata.PackageNotFoundError:
+        pass
+    app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
+    QtWidgets.QApplication.processEvents()

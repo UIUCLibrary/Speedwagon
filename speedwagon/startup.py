@@ -33,7 +33,7 @@ except ImportError:
 import webbrowser
 import yaml
 
-from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
+from PySide6 import QtWidgets, QtCore  # type: ignore
 import speedwagon.frontend.qtwidgets.runners
 from speedwagon.frontend import qtwidgets
 import speedwagon
@@ -45,10 +45,8 @@ from speedwagon.runner_strategies import ThreadedEvents, JobSuccess
 
 try:  # pragma: no cover
     from importlib import metadata
-    from importlib import resources  # type: ignore
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
-    import importlib_resources as resources  # type: ignore
 
 __all__ = [
     "ApplicationLauncher",
@@ -240,9 +238,9 @@ class StartupDefault(AbsStarter):
             splash_message_handler.setLevel(logging.INFO)
 
         splash.show()
-        QtWidgets.QApplication.processEvents(QtCore.QEventLoop.AllEvents)
+        QtWidgets.QApplication.processEvents()
 
-        set_app_display_metadata(self.app)
+        qtwidgets.gui.set_app_display_metadata(self.app)
 
         with worker.ToolJobManager() as work_manager:
 
@@ -528,17 +526,6 @@ class WorkflowNullCallbacks(runner_strategies.AbsJobCallbacks):
         """No-op."""
 
 
-def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
-    with resources.open_binary(speedwagon.__name__, "favicon.ico") as icon:
-        app.setWindowIcon(QtGui.QIcon(icon.name))
-    try:
-        app.setApplicationVersion(metadata.version(__package__))
-    except metadata.PackageNotFoundError:
-        pass
-    app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
-    QtWidgets.QApplication.processEvents()
-
-
 class QtRequestMoreInfo(QtCore.QObject):
     request = QtCore.Signal(object, object, object, object)
 
@@ -603,7 +590,7 @@ class StartQtThreaded(AbsStarter):
         self.logger.setLevel(logging.DEBUG)
 
         self.load_settings()
-        set_app_display_metadata(self.app)
+        qtwidgets.gui.set_app_display_metadata(self.app)
         self._request_window = QtRequestMoreInfo(self.windows)
 
     @staticmethod
