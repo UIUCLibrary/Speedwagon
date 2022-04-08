@@ -1,3 +1,4 @@
+"""Reporters of jobs."""
 
 import contextlib
 import abc
@@ -8,8 +9,10 @@ import speedwagon
 
 
 class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
+    """Runner display."""
 
     def __init__(self) -> None:
+        """Create a new runner display object."""
         super().__init__()
 
         self.task_runner: typing.Optional[
@@ -25,6 +28,7 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
 
     @property
     def title(self) -> typing.Optional[str]:
+        """Get the title."""
         return self._title
 
     @title.setter
@@ -33,6 +37,7 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
 
     @property
     def total_tasks_amount(self) -> typing.Optional[int]:
+        """Get total number of tasks."""
         return self._total_tasks_amount
 
     @total_tasks_amount.setter
@@ -45,6 +50,7 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
 
     @property
     def current_task_progress(self) -> typing.Optional[int]:
+        """Get the current task progress."""
         return self._current_task_progress
 
     @current_task_progress.setter
@@ -58,6 +64,7 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
 
     @property
     def details(self) -> typing.Optional[str]:
+        """Get the details."""
         return self._details
 
     @details.setter
