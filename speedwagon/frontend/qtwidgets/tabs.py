@@ -18,8 +18,8 @@ import speedwagon.config
 from speedwagon.frontend.qtwidgets.widgets import QtWidgetDelegateSelection
 
 from speedwagon import runner_strategies, JobCancelled
-from speedwagon.frontend.qtwidgets import models, \
-    shared_custom_widgets as widgets
+from speedwagon.frontend import qtwidgets
+
 from speedwagon import worker  # pylint: disable=unused-import
 from speedwagon.exceptions import MissingConfiguration
 from speedwagon.job import AbsWorkflow, NullWorkflow, Workflow
@@ -159,7 +159,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             self,
             name: str,
             parent: QtWidgets.QWidget,
-            item_model: "models.WorkflowListModel",
+            item_model: qtwidgets.models.WorkflowListModel,
             work_manager: "worker.ToolJobManager",
             log_manager: logging.Logger
     ) -> None:
@@ -168,7 +168,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         self.export_action = QtGui.QAction(text="summy")
         self.log_manager = log_manager
         self.item_selection_model = item_model
-        self.options_model: Optional[models.ToolOptionsModel3] = None
+        self.options_model: Optional[qtwidgets.models.ToolOptionsModel3] = None
         self.tab_name = name
 
         self.item_selector_view = self._create_selector_view(
@@ -241,7 +241,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     def create_form(
             parent: QtWidgets.QWidget,
             config_widgets: Dict[TabWidgets, QtWidgets.QWidget],
-            model: "models.WorkflowListModel"
+            model: qtwidgets.models.WorkflowListModel
     ) -> QtWidgets.QDataWidgetMapper:
         """Generate form for the selected item."""
         tool_mapper = QtWidgets.QDataWidgetMapper(parent)
@@ -264,7 +264,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     def get_item_options_model(
             self,
             workflow: Type[Workflow]
-    ) -> "models.ToolOptionsModel3":
+    ) -> qtwidgets.models.ToolOptionsModel3:
         """Get item options model."""
 
     def create_actions(self) -> Tuple[Dict[str, QtWidgets.QWidget],
@@ -404,7 +404,8 @@ class WorkflowsTab(ItemSelectionTab):
             log_manager=None) -> None:
         """Create a new workflow tab."""
         super().__init__("Workflow", parent,
-                         models.WorkflowListModel(workflows), work_manager,
+                         qtwidgets.models.WorkflowListModel(workflows),
+                         work_manager,
                          log_manager)
         self.workflows = workflows
 
@@ -502,14 +503,15 @@ class WorkflowsTab(ItemSelectionTab):
     def get_item_options_model(
             self,
             workflow: typing.Type[Workflow]
-    ) -> "models.ToolOptionsModel4":
+    ) -> qtwidgets.models.ToolOptionsModel4:
         """Get item options model."""
         if self.work_manager.user_settings is None:
             raise ValueError("user_settings not set")
         new_workflow = workflow(
             global_settings=dict(self.work_manager.user_settings)
         )
-        return models.ToolOptionsModel4(new_workflow.get_user_options())
+        return \
+            qtwidgets.models.ToolOptionsModel4(new_workflow.get_user_options())
 
 
 class WorkflowsTab2(WorkflowsTab):
@@ -524,7 +526,8 @@ class WorkflowsTab2(WorkflowsTab):
     def get_item_options_model(self, workflow):
         """Get item options model."""
         new_workflow = workflow(global_settings=self.parent.user_settings)
-        return models.ToolOptionsModel4(new_workflow.get_user_options())
+        return \
+            qtwidgets.models.ToolOptionsModel4(new_workflow.get_user_options())
 
     def start(self, item: typing.Type[Workflow]) -> None:
         if self.options_model is None:
@@ -548,7 +551,10 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
 
             browser_widget = tool_settings.edit_widget()
             if browser_widget:
-                assert isinstance(browser_widget, widgets.CustomItemWidget)
+                assert isinstance(
+                    browser_widget,
+                    qtwidgets.shared_custom_widgets.CustomItemWidget
+                )
                 browser_widget.editingFinished.connect(self.update_custom_item)
                 browser_widget.setParent(parent)
 
@@ -569,7 +575,10 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
     ) -> None:
         if index.isValid():
             i = index.data(role=typing.cast(int, QtCore.Qt.UserRole))
-            if isinstance(editor, widgets.CustomItemWidget):
+            if isinstance(
+                    editor,
+                    qtwidgets.shared_custom_widgets.CustomItemWidget
+            ):
                 editor.data = i.data
         super().setEditorData(editor, index)
 
@@ -580,7 +589,10 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
             index: QtCore.QModelIndex
     ) -> None:
 
-        if isinstance(widget, widgets.CustomItemWidget):
+        if isinstance(
+                widget,
+                qtwidgets.shared_custom_widgets.CustomItemWidget
+        ):
             model.setData(index, widget.data)
             return
         super().setModelData(widget, model, index)
@@ -590,7 +602,7 @@ class TabData(NamedTuple):
     """Tab data."""
 
     tab_name: str
-    workflows_model: "models.WorkflowListModel2"
+    workflows_model: qtwidgets.models.WorkflowListModel2
 
 
 def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
@@ -605,7 +617,7 @@ def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
                 raise Exception("Failed to parse file")
 
             for tab_name in tabs_config_data:
-                model = models.WorkflowListModel2()
+                model = qtwidgets.models.WorkflowListModel2()
                 for workflow_name in tabs_config_data.get(tab_name, []):
                     empty_workflow = \
                         cast(
@@ -658,7 +670,7 @@ def write_tabs_yaml(yaml_file: str, tabs: List[TabData]) -> None:
 
 
 def extract_tab_information(
-        model: "speedwagon.models.TabsModel"
+        model: qtwidgets.models.TabsModel
 ) -> List[TabData]:
     """Get tab information."""
     tabs = []
