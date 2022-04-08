@@ -22,28 +22,12 @@ from speedwagon.frontend import interaction
 from speedwagon import tasks, workflow
 
 __all__ = [
-    "JobCancelled",
     "AbsWorkflow",
     "Workflow",
     "NullWorkflow",
     "available_workflows",
     "all_required_workflow_keys"
 ]
-
-
-class JobCancelled(Exception):
-    """Job cancelled exception."""
-
-    def __init__(self, *args: object, expected: bool = False) -> None:
-        """Indicate a job was cancelled.
-
-        Args:
-            *args:
-            expected: If the job was cancelled on purpose or not, such as a
-                failure.
-        """
-        super().__init__(*args)
-        self.expected = expected
 
 
 class AbsWorkflow(metaclass=abc.ABCMeta):

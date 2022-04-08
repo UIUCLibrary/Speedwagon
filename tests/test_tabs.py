@@ -171,7 +171,7 @@ class TestWorkflowsTab:
         assert mock_message_box_exec.called is True
 
     @pytest.mark.parametrize("exception_type", [
-        speedwagon.job.JobCancelled,
+        speedwagon.exceptions.JobCancelled,
         ValueError,
         TypeError
     ])

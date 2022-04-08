@@ -6,6 +6,7 @@ from unittest.mock import Mock, MagicMock
 from typing import List, Any, Dict
 
 # import speedwagon.frontend.qtwidgets.runners
+import speedwagon.exceptions
 from speedwagon import runner_strategies, tasks
 import speedwagon
 
@@ -496,7 +497,7 @@ class TestTaskScheduler:
         subtask = speedwagon.tasks.Subtask()
         subtask.exec = Mock()
         subtask._task_queue = Mock(unfinished_tasks=1)
-        with pytest.raises(speedwagon.job.JobCancelled):
+        with pytest.raises(speedwagon.exceptions.JobCancelled):
             scheduler.run_workflow_jobs(workflow, options, scheduler.reporter)
 
 

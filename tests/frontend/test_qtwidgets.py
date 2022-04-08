@@ -4,6 +4,7 @@ import pytest
 from PySide6 import QtWidgets, QtCore
 
 import speedwagon
+import speedwagon.exceptions
 from speedwagon.frontend import qtwidgets, interaction
 from speedwagon.workflows import title_page_selection
 
@@ -189,7 +190,7 @@ class TestQtWidgetConfirmFileSystemRemoval:
         dialog_box.data = Mock(return_value=[".DS_Store"])
         dialog_box.exec = Mock(return_value=QtWidgets.QDialog.Rejected)
 
-        with pytest.raises(speedwagon.JobCancelled):
+        with pytest.raises(speedwagon.exceptions.JobCancelled):
             widget.use_dialog_box(
                 [".DS_Store"],
                 dialog_box=Mock(return_value=dialog_box)

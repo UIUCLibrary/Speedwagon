@@ -11,6 +11,7 @@ import yaml
 import pytest
 from PySide6 import QtWidgets, QtCore
 
+import speedwagon.exceptions
 import speedwagon.frontend.qtwidgets.logging_helpers
 import speedwagon.frontend.qtwidgets.runners
 import speedwagon.startup
@@ -772,7 +773,7 @@ class TestMultiWorkflowLauncher:
                     "Input": os.path.join("somepath", "checksum.md5")
                 }
          )
-        with pytest.raises(speedwagon.job.JobCancelled):
+        with pytest.raises(speedwagon.exceptions.JobCancelled):
             startup_launcher.run()
 
 
@@ -1292,7 +1293,7 @@ class TestQtRequestMoreInfo:
 
         user_is_interacting = MagicMock()
         workflow = Mock()
-        exc = speedwagon.job.JobCancelled()
+        exc = speedwagon.exceptions.JobCancelled()
         workflow.get_additional_info = Mock(
             side_effect=exc
         )

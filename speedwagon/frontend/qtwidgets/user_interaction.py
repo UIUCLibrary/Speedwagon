@@ -4,6 +4,8 @@ from typing import Dict, Any, Optional, List, Union, Type
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtGui import Qt
 from uiucprescon.packager.packages import collection
+
+import speedwagon.exceptions
 from speedwagon.frontend import interaction
 from speedwagon.frontend.interaction import \
     AbstractConfirmFilesystemItemRemoval
@@ -231,7 +233,7 @@ class QtWidgetConfirmFileSystemRemoval(
         )
         results = dialog.exec()
         if results == QtWidgets.QDialog.Rejected:
-            raise speedwagon.JobCancelled()
+            raise speedwagon.exceptions.JobCancelled()
         return dialog.data()
 
 

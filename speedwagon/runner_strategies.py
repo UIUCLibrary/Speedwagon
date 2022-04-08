@@ -18,11 +18,12 @@ from types import TracebackType
 from typing import List, Any, Dict, Optional, Type
 
 import speedwagon
+import speedwagon.exceptions
 import speedwagon.frontend.interaction
 from speedwagon.frontend import reporter
 import speedwagon.frontend.cli.user_interaction
-from speedwagon import runner
-from .job import AbsWorkflow, Workflow, JobCancelled
+from speedwagon import runner, JobCancelled
+from .job import AbsWorkflow, Workflow
 
 __all__ = [
     "RunRunner",
@@ -638,7 +639,7 @@ class BackgroundJobManager(AbsJobManager2):
                         total=task_scheduler.total_tasks
                     )
                 liaison.callbacks.finished(JobSuccess.SUCCESS)
-            except speedwagon.job.JobCancelled as job_cancelled:
+            except speedwagon.exceptions.JobCancelled as job_cancelled:
                 liaison.callbacks.finished(JobSuccess.ABORTED)
                 logging.debug("Job canceled: %s", job_cancelled)
 

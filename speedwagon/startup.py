@@ -579,7 +579,7 @@ class QtRequestMoreInfo(QtCore.QObject):
                     options=options,
                     pretask_results=pre_results
                 )
-            except job.JobCancelled as exc:
+            except speedwagon.exceptions.JobCancelled as exc:
                 self.exc = exc
             except BaseException as exc:
                 self.exc = exc
@@ -1251,7 +1251,8 @@ class MultiWorkflowLauncher(AbsStarter):
 
                 self._pending_tasks.task_done()
         except speedwagon.frontend.qtwidgets.runners.TaskFailed as task_error:
-            raise job.JobCancelled(task_error) from task_error
+            raise \
+                speedwagon.exceptions.JobCancelled(task_error) from task_error
 
         finally:
             window.log_manager.handlers.clear()

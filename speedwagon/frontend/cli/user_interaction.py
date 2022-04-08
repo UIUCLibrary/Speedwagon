@@ -7,6 +7,7 @@ from typing import Dict, Any, Optional, List, Callable
 from uiucprescon.packager.packages import collection
 
 import speedwagon
+import speedwagon.exceptions
 from speedwagon.frontend import interaction
 from speedwagon.frontend.interaction import \
     AbstractConfirmFilesystemItemRemoval
@@ -67,7 +68,7 @@ class CLIPackageBrowserWidget(interaction.AbstractPackageBrowser):
                 print("Not a valid selection, try again", file=sys.stderr)
                 continue
             except KeyboardInterrupt as escape_exception:
-                raise speedwagon.JobCancelled from escape_exception
+                raise speedwagon.exceptions.JobCancelled from escape_exception
 
     @staticmethod
     def get_package_files(package) -> List[str]:

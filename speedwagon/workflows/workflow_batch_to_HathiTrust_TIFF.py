@@ -11,6 +11,7 @@ from uiucprescon.packager.packages.collection import Metadata
 from uiucprescon import packager
 
 import speedwagon
+import speedwagon.exceptions
 import speedwagon.workflow
 import speedwagon.tasks.packaging
 import speedwagon.tasks.prep
@@ -178,7 +179,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
             browser.exec()
 
             if browser.result() != browser.Accepted:
-                raise speedwagon.JobCancelled()
+                raise speedwagon.exceptions.JobCancelled()
             data = browser.data()
             for package in data:
                 bib_id = typing.cast(str, package.metadata[Metadata.ID])

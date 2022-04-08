@@ -2,6 +2,8 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 from uiucprescon.packager.packages import collection
+
+import speedwagon.exceptions
 from speedwagon.frontend import cli
 from speedwagon.frontend import interaction
 from speedwagon.frontend.cli.user_interaction import \
@@ -58,7 +60,7 @@ class TestCLIPackageBrowserWidget:
         def user_hits_control_c():
             raise KeyboardInterrupt()
 
-        with pytest.raises(speedwagon.JobCancelled):
+        with pytest.raises(speedwagon.exceptions.JobCancelled):
             package_widget.ask_user_to_select_title_page(
                 files,
                 strategy=user_hits_control_c
