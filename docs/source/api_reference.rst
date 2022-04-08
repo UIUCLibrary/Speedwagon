@@ -10,10 +10,7 @@ API Reference
     speedwagon.reports
     speedwagon.runner_strategies
     speedwagon.startup
-    speedwagon.gui
-    speedwagon.tabs
     speedwagon.tasks
-    speedwagon.ui
     speedwagon.worker
     speedwagon.workflows
 
