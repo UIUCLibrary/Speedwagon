@@ -1,3 +1,5 @@
+"""Splash screen."""
+
 try:  # pragma: no cover
     from importlib import resources  # type: ignore
 except ImportError:  # pragma: no cover
@@ -10,6 +12,7 @@ import speedwagon
 
 
 def create_splash():
+    """Create a splash screen."""
     with resources.open_binary(speedwagon.__name__, "logo.png") as logo:
         splash = QtWidgets.QSplashScreen(
             QtGui.QPixmap(logo.name).scaled(400, 400))
