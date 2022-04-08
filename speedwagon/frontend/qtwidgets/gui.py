@@ -32,8 +32,7 @@ import speedwagon.config
 import speedwagon.runner_strategies
 
 __all__ = [
-    "MainWindow1",
-    "SplashScreenLogHandler"
+    "MainWindow1"
 ]
 
 DEBUG_LOGGING_FORMAT = logging.Formatter(
@@ -792,18 +791,3 @@ class MainWindow2(MainWindow2UI):
         self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
         self.main_splitter.addWidget(self.console)
         self.console.attach_logger(self.logger)
-
-
-class SplashScreenLogHandler(logging.Handler):
-    def __init__(self,
-                 widget: QtWidgets.QWidget,
-                 level: int = logging.NOTSET) -> None:
-
-        super().__init__(level)
-        self.widget = widget
-
-    def emit(self, record: logging.LogRecord) -> None:
-        self.widget.showMessage(
-            self.format(record),
-            QtCore.Qt.AlignCenter,
-        )

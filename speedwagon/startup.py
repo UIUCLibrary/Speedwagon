@@ -24,6 +24,8 @@ import time
 import typing
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
 
+import speedwagon.frontend.qtwidgets.logging_helpers
+
 try:
     from typing import Final
 except ImportError:
@@ -31,11 +33,12 @@ except ImportError:
 
 import webbrowser
 import yaml
+
 from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
 import speedwagon.frontend.qtwidgets.runners
+from speedwagon.frontend import qtwidgets
 import speedwagon
 import speedwagon.config
-import speedwagon.frontend.qtwidgets.models
 import speedwagon.frontend.qtwidgets.tabs
 import speedwagon.exceptions
 from speedwagon import worker, job, runner_strategies
@@ -241,20 +244,9 @@ class StartupDefault(AbsStarter):
 
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         # Display a splash screen until the app is loaded
-        with resources.open_binary(speedwagon.__name__, "logo.png") as logo:
-            splash = QtWidgets.QSplashScreen(
-                QtGui.QPixmap(logo.name).scaled(400, 400))
-
-        splash.setEnabled(False)
-        splash.setWindowFlags(
-            cast(
-                QtCore.Qt.WindowFlags,
-                QtCore.Qt.WindowStaysOnTopHint |
-                QtCore.Qt.FramelessWindowHint
-             )
-        )
+        splash = qtwidgets.splashscreen.create_splash()
         splash_message_handler = \
-            speedwagon.frontend.qtwidgets.gui.SplashScreenLogHandler(splash)
+            qtwidgets.logging_helpers.SplashScreenLogHandler(splash)
 
         # If debug mode, print the log messages directly on the splash screen
         if self._debug:
@@ -1055,8 +1047,7 @@ class SingleWorkflowLauncher(AbsStarter):
         window.show()
         if self._active_workflow.name is not None:
             window.setWindowTitle(self._active_workflow.name)
-        runner_strategy = \
-            speedwagon.frontend.qtwidgets.runners.QtRunner(window)
+        runner_strategy = qtwidgets.runners.QtRunner(window)
 
         self._active_workflow.validate_user_options(**self.options)
         # runner_strategy.additional_info_callback
@@ -1238,7 +1229,7 @@ class MultiWorkflowLauncher(AbsStarter):
                 if active_workflow.name is not None:
                     window.setWindowTitle(active_workflow.name)
                 runner_strategy = \
-                    speedwagon.frontend.qtwidgets.runners.QtRunner(window)
+                    qtwidgets.runners.QtRunner(window)
 
                 active_workflow.validate_user_options(**options)
 
@@ -1249,7 +1240,7 @@ class MultiWorkflowLauncher(AbsStarter):
                 )
 
                 self._pending_tasks.task_done()
-        except speedwagon.frontend.qtwidgets.runners.TaskFailed as task_error:
+        except qtwidgets.runners.TaskFailed as task_error:
             raise \
                 speedwagon.exceptions.JobCancelled(task_error) from task_error
 
@@ -1297,11 +1288,11 @@ class TabsEditorApp(QtWidgets.QDialog):
         if self.editor.modified is True:
             if self.tabs_file is None:
                 return
-            speedwagon.frontend.qtwidgets.tabs.write_tabs_yaml(
+            qtwidgets.tabs.write_tabs_yaml(
                 self.tabs_file,
                 extract_tab_information(
                     cast(
-                        speedwagon.frontend.qtwidgets.models.TabsModel,
+                        qtwidgets.models.TabsModel,
                         self.editor.selectedTabComboBox.model()
                     )
                 )

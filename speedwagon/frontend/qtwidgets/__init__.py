@@ -7,6 +7,8 @@ from . import runners
 from . import tabs
 from . import ui_loader
 from . import logging_helpers
+from . import splashscreen
+
 __all__ = [
     "user_interaction",
     "ui",
@@ -14,5 +16,6 @@ __all__ = [
     "tabs",
     "ui_loader",
     "dialog",
-    "logging_helpers"
+    "logging_helpers",
+    "splashscreen"
 ]
