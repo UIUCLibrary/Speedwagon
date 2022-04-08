@@ -20,7 +20,6 @@ from typing import List, Any, Dict, Optional, Type
 import speedwagon
 import speedwagon.exceptions
 from speedwagon import runner
-# from speedwagon import frontend
 from speedwagon.job import AbsWorkflow, Workflow
 
 __all__ = [
