@@ -2,8 +2,7 @@
 
 from speedwagon.job import Workflow, JobCancelled, available_workflows
 from speedwagon.runner_strategies import simple_api_run_workflow
-from speedwagon import tasks, startup
-
+from speedwagon import tasks, startup, worker
 
 __all__ = [
     "Workflow",
@@ -11,5 +10,6 @@ __all__ = [
     "JobCancelled",
     "tasks",
     "startup",
-    "simple_api_run_workflow"
+    "simple_api_run_workflow",
+    "worker"
 ]

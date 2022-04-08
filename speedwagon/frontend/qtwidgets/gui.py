@@ -34,7 +34,6 @@ from speedwagon.frontend.qtwidgets.dialog.settings import \
     TabsConfigurationTab, \
     SettingsDialog, \
     GlobalSettingsTab
-from speedwagon import worker
 from speedwagon.frontend.qtwidgets import ui_loader, tabs
 import speedwagon
 import speedwagon.frontend.qtwidgets
@@ -170,7 +169,7 @@ class ItemTabsWidget(QtWidgets.QWidget):
 class MainProgram(QtWidgets.QMainWindow):
     def __init__(
             self,
-            work_manager: "worker.ToolJobManager",
+            work_manager: "speedwagon.worker.ToolJobManager",
             debug: bool = False
     ) -> None:
         super().__init__()
@@ -345,7 +344,7 @@ class MainWindowMenuBuilder:
 class MainWindow1(MainProgram):
     def __init__(
             self,
-            work_manager: "worker.ToolJobManager",
+            work_manager: speedwagon.worker.ToolJobManager,
             debug: bool = False
     ) -> None:
 
