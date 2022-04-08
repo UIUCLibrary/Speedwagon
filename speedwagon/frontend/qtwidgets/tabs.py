@@ -432,7 +432,7 @@ class WorkflowsTab(ItemSelectionTab):
         try:
             workflow.validate_user_options(**options)
 
-            manager_strat = runner_strategies.QtRunner(
+            manager_strat = speedwagon.frontend.qtwidgets.runners.QtRunner(
                 parent=self.parent)
             runner = runner_strategies.RunRunner(manager_strat)
             runner.run(workflow, options, self.work_manager.logger)

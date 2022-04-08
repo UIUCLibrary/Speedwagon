@@ -192,7 +192,7 @@ class TestWorkflowsTab:
             raise exception_type
 
         monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.tabs.runner_strategies.QtRunner,
+            speedwagon.frontend.qtwidgets.runners.QtRunner,
             "run",
             cause_chaos
         )

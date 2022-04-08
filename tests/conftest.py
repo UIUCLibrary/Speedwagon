@@ -1,6 +1,7 @@
 import contextlib
 import pytest
 from speedwagon import runner_strategies
+import speedwagon.frontend.qtwidgets
 from speedwagon.worker import ToolJobManager
 
 
@@ -67,7 +68,7 @@ class SpyToolJobManager(ToolJobManager):
 def tool_job_manager_spy():
 
     with SpyToolJobManager() as e:
-        manager_strat = runner_strategies.QtRunner(parent=None)
+        manager_strat = speedwagon.frontend.qtwidgets.runners.QtRunner(parent=None)
 
         runner = runner_strategies.RunRunner(manager_strat)
 

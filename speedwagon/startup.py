@@ -23,6 +23,9 @@ import threading
 import time
 import typing
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
+
+import speedwagon.frontend.qtwidgets.runners
+
 try:
     from typing import Final
 except ImportError:
@@ -1054,7 +1057,7 @@ class SingleWorkflowLauncher(AbsStarter):
         if self._active_workflow.name is not None:
             window.setWindowTitle(self._active_workflow.name)
         runner_strategy = \
-            runner_strategies.QtRunner(window)
+            speedwagon.frontend.qtwidgets.runners.QtRunner(window)
 
         self._active_workflow.validate_user_options(**self.options)
         # runner_strategy.additional_info_callback
@@ -1236,7 +1239,7 @@ class MultiWorkflowLauncher(AbsStarter):
                 if active_workflow.name is not None:
                     window.setWindowTitle(active_workflow.name)
                 runner_strategy = \
-                    runner_strategies.QtRunner(window)
+                    speedwagon.frontend.qtwidgets.runners.QtRunner(window)
 
                 active_workflow.validate_user_options(**options)
 
@@ -1247,7 +1250,7 @@ class MultiWorkflowLauncher(AbsStarter):
                 )
 
                 self._pending_tasks.task_done()
-        except runner_strategies.TaskFailed as task_error:
+        except speedwagon.frontend.qtwidgets.runners.TaskFailed as task_error:
             raise job.JobCancelled(task_error) from task_error
 
         finally:

@@ -5,6 +5,7 @@ import logging
 from unittest.mock import Mock, MagicMock
 
 from speedwagon import runner_strategies
+from speedwagon.frontend.qtwidgets import runners
 from speedwagon.workflows.workflow_make_checksum import \
     MakeChecksumBatchSingleWorkflow, MakeChecksumBatchMultipleWorkflow
 
@@ -16,7 +17,7 @@ def test_singleChecksum(qtbot, tool_job_manager_spy, tmpdir, monkeypatch):
     sample_file.write_text("", encoding="utf8")
     my_logger = logging.getLogger()
 
-    monkeypatch.setattr(runner_strategies, "QtDialogProgress", MagicMock())
+    monkeypatch.setattr(runners, "QtDialogProgress", MagicMock())
     tool_job_manager_spy.run(
                MakeChecksumBatchSingleWorkflow(),
                options={
@@ -35,7 +36,7 @@ def test_singleChecksum_has_options():
 
 def test_mutipleChecksum(qtbot, tool_job_manager_spy, tmpdir, monkeypatch):
     number_of_test_packages = 2
-    monkeypatch.setattr(runner_strategies, "QtDialogProgress", MagicMock())
+    monkeypatch.setattr(runners, "QtDialogProgress", MagicMock())
     for p_i in range(number_of_test_packages):
         sample_pkg_dir = tmpdir / f"sample_{p_i+1}"
         sample_pkg_dir.mkdir()

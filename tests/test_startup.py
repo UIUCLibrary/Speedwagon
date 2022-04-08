@@ -12,6 +12,7 @@ import pytest
 from PySide6 import QtWidgets, QtCore
 
 import speedwagon.frontend.qtwidgets.logging_helpers
+import speedwagon.frontend.qtwidgets.runners
 import speedwagon.startup
 import speedwagon.config
 import speedwagon.job
@@ -763,7 +764,7 @@ class TestMultiWorkflowLauncher:
         mock_workflow.name = 'Verify Checksum Batch [Single]'
         mock_workflow.__class__ = speedwagon.job.Workflow
         mock_workflow.initial_task = \
-            Mock(side_effect=speedwagon.runner_strategies.TaskFailed())
+            Mock(side_effect=speedwagon.frontend.qtwidgets.runners.TaskFailed())
 
         startup_launcher.add_job(
             mock_workflow,
