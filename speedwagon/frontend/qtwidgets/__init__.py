@@ -8,6 +8,7 @@ from . import tabs
 from . import ui_loader
 from . import logging_helpers
 from . import splashscreen
+from . import gui
 
 __all__ = [
     "user_interaction",
@@ -17,5 +18,6 @@ __all__ = [
     "ui_loader",
     "dialog",
     "logging_helpers",
-    "splashscreen"
+    "splashscreen",
+    "gui"
 ]

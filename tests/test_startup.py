@@ -598,7 +598,7 @@ class TestSingleWorkflowJSON:
         import tracemalloc
         tracemalloc.start()
         monkeypatch.setattr(
-            speedwagon.startup.WorkflowProgress,
+            speedwagon.startup.qtwidgets.dialog.dialogs.WorkflowProgress,
             "show",
             lambda *args, **kwargs: None
         )
@@ -631,7 +631,7 @@ class TestSingleWorkflowJSON:
         )
 
         monkeypatch.setattr(
-            speedwagon.startup.WorkflowProgress,
+            speedwagon.startup.qtwidgets.dialog.dialogs.WorkflowProgress,
             "exec",
             Mock()
         )
@@ -678,7 +678,8 @@ class TestSingleWorkflowJSON:
         MainWindow2.show = Mock()
         qtbot.addWidget(MainWindow2)
         monkeypatch.setattr(
-            speedwagon.startup.WorkflowProgress,
+            # speedwagon.frontend.qtwidgets.dialog.dialogs.WorkflowProgress,
+            speedwagon.startup.qtwidgets.dialog.dialogs.WorkflowProgress,
             "exec",
             Mock()
         )
@@ -694,7 +695,7 @@ class TestSingleWorkflowJSON:
         )
 
         monkeypatch.setattr(
-            speedwagon.startup.WorkflowProgress,
+            speedwagon.startup.qtwidgets.dialog.dialogs.WorkflowProgress,
             "show",
             lambda *args, **kwargs: None
         )
@@ -782,7 +783,7 @@ class TestWorkflowProgressCallbacks:
     @pytest.fixture()
     def dialog_box(self, qtbot, monkeypatch):
         monkeypatch.setattr(
-            speedwagon.startup.WorkflowProgress,
+            speedwagon.startup.qtwidgets.dialog.dialogs.WorkflowProgress,
             "show",
             lambda *args, **kwargs: None
         )
@@ -1013,7 +1014,7 @@ class TestStartQtThreaded:
         SystemInfoDialog = Mock()
 
         monkeypatch.setattr(
-            speedwagon.startup,
+            speedwagon.frontend.qtwidgets.dialog.dialogs,
             "SystemInfoDialog",
             SystemInfoDialog
         )
@@ -1256,22 +1257,9 @@ class TestStartQtThreaded:
             lambda: {"spam": spam_workflow}
         )
         monkeypatch.setattr(
-            speedwagon.startup.WorkflowProgress,
+            speedwagon.frontend.qtwidgets.dialog.dialogs.WorkflowProgress,
             "show",
             lambda *args, **kwargs: None
-        )
-
-        WorkflowProgress = speedwagon.startup.WorkflowProgress
-        dummy = None
-
-        def create_workflow(*args, **kwargs):
-            nonlocal dummy
-            dummy = WorkflowProgress(*args, **kwargs)
-            return dummy
-        monkeypatch.setattr(
-            speedwagon.startup,
-            "WorkflowProgress",
-            create_workflow
         )
 
         starter.submit_job(
@@ -1279,11 +1267,7 @@ class TestStartQtThreaded:
             workflow_name,
             options
         )
-        try:
-            assert job_manager.submit_job.called is True
-        finally:
-            if dummy is not None:
-                dummy.remove_log_handles()
+        assert job_manager.submit_job.called is True
 
 
 class TestQtRequestMoreInfo:
