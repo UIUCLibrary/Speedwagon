@@ -22,7 +22,7 @@ import speedwagon.frontend.interaction
 from speedwagon.frontend import reporter
 import speedwagon.frontend.cli.user_interaction
 from speedwagon import runner
-from .job import AbsWorkflow, Workflow, JobCancelled, available_workflows
+from .job import AbsWorkflow, Workflow, JobCancelled
 
 __all__ = [
     "RunRunner",
@@ -567,7 +567,7 @@ class Run(TaskScheduler):
 
         else:
             workflow_class = \
-                available_workflows().get(workflow_name)
+                speedwagon.job.available_workflows().get(workflow_name)
         if workflow_class is None:
             raise AssertionError(f"Workflow not found: {workflow_name}")
         return workflow_class
