@@ -167,7 +167,7 @@ class MainProgram(QtWidgets.QMainWindow):
 
         self.work_manager = work_manager
 
-        self.log_manager = self.work_manager.logger
+        self.log_manager: logging.Logger = self.work_manager.logger
         self.log_manager.setLevel(logging.DEBUG)
 
     def debug_mode(self, debug: bool) -> None:
