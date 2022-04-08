@@ -13,7 +13,7 @@ from PySide6 import QtWidgets, QtCore
 
 import speedwagon
 from speedwagon import frontend
-from speedwagon import worker, runner_strategies
+from speedwagon import runner_strategies
 from speedwagon.frontend import qtwidgets
 from speedwagon.job import AbsWorkflow
 
@@ -140,7 +140,7 @@ class AbsRunner(metaclass=abc.ABCMeta):
 class UsingExternalManagerForAdapter(AbsRunner):
     """Runner that uses external manager."""
 
-    def __init__(self, manager: "worker.ToolJobManager") -> None:
+    def __init__(self, manager: speedwagon.worker.ToolJobManager) -> None:
         """Create a new runner."""
         warnings.warn(
             "Use UsingExternalManagerForAdapter2 instead",
@@ -150,7 +150,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
 
     @staticmethod
     def _update_progress(
-            runner: "worker.WorkRunnerExternal3",
+            runner: WorkRunnerExternal3,
             current: int,
             total: int) -> None:
         if runner.dialog is not None:
@@ -263,10 +263,8 @@ class UsingExternalManagerForAdapter(AbsRunner):
                         logger: logging.Logger
                         ) -> list:
 
-        with self._manager.open(
-                parent=parent,
-                runner=frontend.qtwidgets.runners.WorkRunnerExternal3
-        ) as runner:
+        with self._manager.open(parent=parent,
+                                runner=WorkRunnerExternal3) as runner:
 
             runner.abort_callback = self._manager.abort
             i = -1
@@ -380,7 +378,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
 
         with self._manager.open(
                 parent=parent,
-                runner=frontend.qtwidgets.runners.WorkRunnerExternal3
+                runner=WorkRunnerExternal3
         ) as runner:
 
             runner.dialog.setRange(0, 0)
@@ -438,7 +436,7 @@ class QtRunner(speedwagon.runner.AbsRunner2):
 
     @staticmethod
     def update_progress(
-            runner: "worker.WorkRunnerExternal3",
+            runner: WorkRunnerExternal3,
             current: int,
             total: int) -> None:
 
@@ -682,7 +680,7 @@ class WorkRunnerExternal3(contextlib.AbstractContextManager):
     ) -> None:
         self._dialog = value
 
-    def __enter__(self) -> "WorkRunnerExternal3":
+    def __enter__(self) -> WorkRunnerExternal3:
         """Start worker."""
         self.dialog = \
             speedwagon.frontend.qtwidgets.dialog.WorkProgressBar(self._parent)
