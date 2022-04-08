@@ -780,3 +780,23 @@ def simple_api_run_workflow(
     finally:
         if log_handler is not None:
             task_scheduler.logger.removeHandler(log_handler)
+
+
+class WorkflowNullCallbacks(AbsJobCallbacks):
+
+    def error(self, message: Optional[str] = None,
+              exc: Optional[BaseException] = None,
+              traceback_string: Optional[str] = None) -> None:
+        """No-op."""
+
+    def status(self, text: str) -> None:
+        """No-op."""
+
+    def log(self, text: str, level: int = logging.INFO) -> None:
+        """No-op."""
+
+    def cancelling_complete(self) -> None:
+        """No-op."""
+
+    def finished(self, result: JobSuccess) -> None:
+        """No-op."""

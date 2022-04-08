@@ -797,12 +797,12 @@ class TestWorkflowProgressCallbacks:
         widget.close()
 
     def test_job_changed_signal(self, dialog_box, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
         with qtbot.waitSignal(callbacks.signals.total_jobs_changed) as blocker:
             callbacks.update_progress(1, 10)
 
     def test_job_progress_none_total_does_not_trigger(self, dialog_box, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
         with qtbot.assertNotEmitted(
                 callbacks.signals.total_jobs_changed
         ) as blocker:
@@ -813,28 +813,28 @@ class TestWorkflowProgressCallbacks:
             dialog_box,
             qtbot
     ):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
         with qtbot.assertNotEmitted(callbacks.signals.progress_changed) as \
                 blocker:
             callbacks.update_progress(None, 10)
 
     def test_job_log_signal(self, dialog_box, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
         with qtbot.waitSignal(callbacks.signals.message) as blocker:
             callbacks.log("dummy", logging.INFO)
 
     def test_job_cancel_completed_signal(self, dialog_box, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
         with qtbot.waitSignal(callbacks.signals.cancel_complete) as blocker:
             callbacks.cancelling_complete()
 
     def test_job_finished_signal(self, dialog_box, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
         with qtbot.waitSignal(callbacks.signals.finished) as blocker:
             callbacks.finished(speedwagon.runner_strategies.JobSuccess.SUCCESS)
 
     def test_job_status_signal(self, dialog_box, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
         with qtbot.waitSignal(callbacks.signals.status_changed) as blocker:
             blocker.connect(callbacks.signals.status_changed)
             callbacks.status("some_other_status")
@@ -843,7 +843,7 @@ class TestWorkflowProgressCallbacks:
 
     def test_set_banner_text(self, dialog_box, qtbot):
         dialog_box.banner.setText = Mock()
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
         callbacks.set_banner_text("something new")
         dialog_box.banner.setText.assert_called_with("something new")
 
@@ -861,7 +861,7 @@ class TestWorkflowProgressCallbacks:
             exc,
             traceback
     ):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
         QMessageBox = Mock()
 
         monkeypatch.setattr(
@@ -877,12 +877,12 @@ class TestWorkflowProgressCallbacks:
 
     def test_start_calls_start_signal(self, dialog_box, qtbot):
 
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
         with qtbot.waitSignal(callbacks.signals.started):
             callbacks.start()
 
     def test_refresh_calls_process_events(self, dialog_box, monkeypatch, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
         processEvents = Mock()
         monkeypatch.setattr(
             speedwagon.startup.QtCore.QCoreApplication,
