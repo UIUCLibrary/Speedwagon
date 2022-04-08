@@ -9,8 +9,9 @@ from speedwagon import available_workflows
 def test_all_workflow_have_valid_user_options(workflow_type, monkeypatch):
     import speedwagon.workflows.workflow_ocr
     monkeypatch.setattr(
-        speedwagon.workflows.workflow_ocr,
-        "path_contains_traineddata", lambda path: False
+        speedwagon.workflows.workflow_ocr.os,
+        "scandir",
+        lambda _: []
     )
 
     workflow = workflow_type(global_settings=MagicMock())
