@@ -24,8 +24,6 @@ import time
 import typing
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
 
-import speedwagon.frontend.qtwidgets.runners
-
 try:
     from typing import Final
 except ImportError:
@@ -34,6 +32,7 @@ except ImportError:
 import webbrowser
 import yaml
 from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
+import speedwagon.frontend.qtwidgets.runners
 import speedwagon
 import speedwagon.config
 import speedwagon.frontend.qtwidgets.models
