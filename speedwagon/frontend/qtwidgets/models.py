@@ -21,10 +21,9 @@ from PySide6.QtCore import QAbstractItemModel
 from PySide6 import QtCore, QtGui  # type: ignore
 
 import speedwagon.frontend
-from speedwagon.frontend.qtwidgets import tabs
+from speedwagon.frontend.qtwidgets import tabs, shared_custom_widgets
 import speedwagon.workflow
 from speedwagon.job import AbsWorkflow, Workflow
-from speedwagon.workflows import shared_custom_widgets
 
 __all__ = [
     "ItemListModel",

@@ -6,7 +6,7 @@ from speedwagon.job import AbsWorkflow
 import speedwagon.frontend.qtwidgets.tabs
 import speedwagon.frontend.qtwidgets.models
 from speedwagon.frontend.qtwidgets.tabs import WorkflowsTab, MyDelegate
-from speedwagon.workflows import shared_custom_widgets
+from speedwagon.frontend.qtwidgets import shared_custom_widgets
 
 
 @pytest.mark.filterwarnings(

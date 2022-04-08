@@ -10,7 +10,7 @@ import speedwagon.frontend.qtwidgets.tabs
 import speedwagon.frontend.qtwidgets.dialog
 import speedwagon.frontend.qtwidgets.gui
 import speedwagon.workflow
-from speedwagon.workflows import shared_custom_widgets
+from speedwagon.frontend.qtwidgets import shared_custom_widgets
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QAction
 

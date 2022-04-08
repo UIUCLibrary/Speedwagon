@@ -15,7 +15,8 @@ import speedwagon.exceptions
 import speedwagon.workflow
 import speedwagon.tasks.packaging
 import speedwagon.tasks.prep
-from speedwagon.workflows import shared_custom_widgets, workflow_get_marc
+from speedwagon.workflows import workflow_get_marc
+from ..frontend.qtwidgets import shared_custom_widgets
 from . title_page_selection import PackageBrowser
 from .workflow_get_marc import UserOptions
 

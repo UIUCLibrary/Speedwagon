@@ -8,7 +8,7 @@ from PySide6 import QtWidgets  # type: ignore
 
 import speedwagon
 from speedwagon.job import Workflow
-from . import shared_custom_widgets as options
+from ..frontend.qtwidgets import shared_custom_widgets as options
 
 __all__ = ['ValidateImageMetadataWorkflow']
 

@@ -1,7 +1,7 @@
 from behave import *
 
 import speedwagon.frontend.qtwidgets.models
-import speedwagon.workflows.shared_custom_widgets
+import speedwagon.frontend.qtwidgets.shared_custom_widgets
 
 use_step_matcher("re")
 
@@ -30,7 +30,7 @@ def step_impl(context):
     Args:
         context (behave.runner.Context):
     """
-    my_option = speedwagon.workflows.shared_custom_widgets.UserOptionPythonDataType2("my_option", str)
+    my_option = speedwagon.frontend.qtwidgets.shared_custom_widgets.UserOptionPythonDataType2("my_option", str)
     my_option.data = ""
     data = [my_option]
     context.data_model = speedwagon.frontend.qtwidgets.models.ToolOptionsModel3(data)
