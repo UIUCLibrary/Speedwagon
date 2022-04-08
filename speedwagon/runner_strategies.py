@@ -19,11 +19,9 @@ from typing import List, Any, Dict, Optional, Type
 
 import speedwagon
 import speedwagon.exceptions
-import speedwagon.frontend.interaction
 from speedwagon import frontend
-import speedwagon.frontend.cli.user_interaction
-from speedwagon import runner, JobCancelled
-from .job import AbsWorkflow, Workflow
+from speedwagon import runner
+from speedwagon.job import AbsWorkflow, Workflow
 
 __all__ = [
     "RunRunner",
@@ -486,7 +484,7 @@ class TaskScheduler:
                 if reporter is not None:
                     reporter.refresh()
                     if reporter.user_canceled is True:
-                        raise JobCancelled(
+                        raise speedwagon.exceptions.JobCancelled(
                             USER_ABORTED_MESSAGE,
                             expected=True
                         )
@@ -726,7 +724,7 @@ def simple_api_run_workflow(
         workflow_options,
         logger: Optional[logging.Logger] = None,
         request_factory: Optional[
-            speedwagon.frontend.interaction.UserRequestFactory
+            frontend.interaction.UserRequestFactory
         ] = None
 ) -> None:
     """Run a workflow and block until finished.
@@ -759,7 +757,7 @@ def simple_api_run_workflow(
 
             factory = \
                 request_factory or \
-                speedwagon.frontend.cli.user_interaction.CLIFactory()
+                frontend.cli.user_interaction.CLIFactory()
 
             return workflow.get_additional_info(
                 factory,
