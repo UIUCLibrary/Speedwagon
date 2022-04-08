@@ -1,5 +1,8 @@
 """Data models for displaying data to user in the user interface."""
+import abc
+from collections import namedtuple, OrderedDict
 import configparser
+import enum
 import io
 import os
 
@@ -7,25 +10,20 @@ import sys
 import typing
 from typing import Type, Dict, List, Any, Union, Tuple, Optional, cast
 
-from PySide6.QtCore import QAbstractItemModel
-
-import speedwagon.frontend
-
 try:
     from typing import Final
 except ImportError:
     from typing_extensions import Final  # type: ignore
 
 import warnings
-from abc import abstractmethod
-from collections import namedtuple, OrderedDict
-import enum
 
+from PySide6.QtCore import QAbstractItemModel
 from PySide6 import QtCore, QtGui  # type: ignore
-from speedwagon import Workflow
+
+import speedwagon.frontend
 from speedwagon.frontend.qtwidgets import tabs
 import speedwagon.workflow
-from speedwagon.job import AbsWorkflow
+from speedwagon.job import AbsWorkflow, Workflow
 from speedwagon.workflows import shared_custom_widgets
 
 __all__ = [
@@ -253,7 +251,7 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
             return 1
         return 0
 
-    @abstractmethod
+    @abc.abstractmethod
     def get(self):
         raise NotImplementedError
 
