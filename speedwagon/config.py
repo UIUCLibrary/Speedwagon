@@ -21,7 +21,6 @@ except ImportError:  # pragma: no cover
 
 from speedwagon.job import all_required_workflow_keys
 import speedwagon
-# import speedwagon.frontend.qtwidgets.models
 
 __all__ = [
     "ConfigManager",
