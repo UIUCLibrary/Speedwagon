@@ -164,14 +164,17 @@ class ConsoleFormatter(logging.Formatter):
 
 
 class SplashScreenLogHandler(logging.Handler):
+    """Log handler for splash screen."""
+
     def __init__(self,
                  widget: QtWidgets.QWidget,
                  level: int = logging.NOTSET) -> None:
-
+        """Create a new splash screen log handler."""
         super().__init__(level)
         self.widget = widget
 
     def emit(self, record: logging.LogRecord) -> None:
+        """Write logging message on the splash screen widget."""
         self.widget.showMessage(
             self.format(record),
             QtCore.Qt.AlignCenter,
