@@ -9,6 +9,7 @@ from . import ui_loader
 from . import logging_helpers
 from . import splashscreen
 from . import gui
+from . import shared_custom_widgets
 
 __all__ = [
     "user_interaction",
@@ -19,5 +20,6 @@ __all__ = [
     "dialog",
     "logging_helpers",
     "splashscreen",
+    "shared_custom_widgets",
     "gui"
 ]

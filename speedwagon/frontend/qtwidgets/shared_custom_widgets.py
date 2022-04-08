@@ -6,6 +6,10 @@ import warnings
 from typing import Type, Union, List
 from PySide6 import QtWidgets, QtCore, QtGui
 
+__all__ = [
+    'CustomItemWidget'
+]
+
 
 class AbsCustomData2(metaclass=abc.ABCMeta):
     """Base class for custom data types."""
