@@ -20,7 +20,7 @@ from typing import List, Any, Dict, Optional, Type
 import speedwagon
 import speedwagon.exceptions
 import speedwagon.frontend.interaction
-from speedwagon.frontend import reporter
+from speedwagon import frontend
 import speedwagon.frontend.cli.user_interaction
 from speedwagon import runner, JobCancelled
 from .job import AbsWorkflow, Workflow
@@ -407,7 +407,7 @@ class TaskScheduler:
     def __init__(self, working_directory: str) -> None:
         self.logger = logging.getLogger(__name__)
         self.working_directory = working_directory
-        self.reporter: Optional[reporter.RunnerDisplay] = None
+        self.reporter: Optional[frontend.reporter.RunnerDisplay] = None
 
         self.current_task_progress: typing.Optional[int] = None
         self.total_tasks: typing.Optional[int] = None
@@ -469,7 +469,7 @@ class TaskScheduler:
             self,
             workflow: Workflow,
             options: typing.Dict[str, Any],
-            reporter: Optional[reporter.RunnerDisplay] = None
+            reporter: Optional[frontend.reporter.RunnerDisplay] = None
     ) -> None:
         """Add job tasks to queue.
 
