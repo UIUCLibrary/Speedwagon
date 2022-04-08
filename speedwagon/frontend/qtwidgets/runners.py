@@ -1,19 +1,19 @@
 from __future__ import annotations
 
+import abc
 import logging
 import tempfile
 import typing
 import warnings
 from types import TracebackType
 from typing import Optional, Type, Dict, Any, List
-import abc
+
 from PySide6 import QtWidgets, QtCore
 
 import speedwagon
-from speedwagon import worker, JobCancelled, Workflow, runner_strategies
 from speedwagon import frontend
+from speedwagon import worker, JobCancelled, Workflow, runner_strategies
 from speedwagon.frontend import qtwidgets
-from speedwagon.frontend.qtwidgets import dialog
 from speedwagon.job import AbsWorkflow
 
 
@@ -24,7 +24,7 @@ class QtDialogProgress(frontend.reporter.RunnerDisplay):
             parent: typing.Optional[QtWidgets.QWidget] = None
     ) -> None:
         super().__init__()
-        self.dialog = dialog.WorkProgressBar(parent=parent)
+        self.dialog = qtwidgets.dialog.WorkProgressBar(parent=parent)
         self.dialog.setMaximum(0)
         self.dialog.setValue(0)
 
