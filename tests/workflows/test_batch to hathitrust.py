@@ -10,7 +10,7 @@ from speedwagon.workflows import workflow_hathi_limited_to_dl_compound
 import speedwagon.tasks.prep
 from speedwagon.workflows import workflow_get_marc
 import os
-import speedwagon.workflows.title_page_selection
+import speedwagon.frontend.qtwidgets.dialog.title_page_selection
 from uiucprescon.packager.common import Metadata as PackageMetadata
 
 
@@ -95,7 +95,7 @@ def test_package_browser(qtbot):
     mock_package.__len__ = lambda x: 1
 
     widget = \
-        speedwagon.workflows.title_page_selection.PackageBrowser(
+        speedwagon.frontend.qtwidgets.dialog.title_page_selection.PackageBrowser(
             [mock_package], None)
 
     with qtbot.waitSignal(widget.finished) as blocker:
@@ -131,7 +131,7 @@ def test_get_additional_info(qtbot, monkeypatch):
 
     def patched_package_browser(packages, parent):
         patched_browser = \
-            speedwagon.workflows.title_page_selection.PackageBrowser(
+            speedwagon.frontend.qtwidgets.dialog.title_page_selection.PackageBrowser(
                 packages, parent
             )
 

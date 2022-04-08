@@ -52,7 +52,7 @@ def test_get_additional_info_opens_dialog_box(monkeypatch):
             file_mock.name = f"99423682912205899-{str(i_number).zfill(8)}"
             yield file_mock
 
-    from speedwagon.workflows.title_page_selection import PackageBrowser
+    from speedwagon.frontend.qtwidgets.dialog.title_page_selection import PackageBrowser
     package_browser = Mock()
     package_browser.result = Mock(return_value=PackageBrowser.Accepted)
     package_browser.Accepted = PackageBrowser.Accepted

@@ -6,7 +6,7 @@ from PySide6 import QtWidgets, QtCore
 import speedwagon
 import speedwagon.exceptions
 from speedwagon.frontend import qtwidgets, interaction
-from speedwagon.workflows import title_page_selection
+from speedwagon.frontend.qtwidgets.dialog import title_page_selection
 
 
 class TestQtWidgetPackageBrowserWidget:

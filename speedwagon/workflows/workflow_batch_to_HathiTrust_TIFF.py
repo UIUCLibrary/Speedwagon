@@ -17,7 +17,8 @@ import speedwagon.tasks.packaging
 import speedwagon.tasks.prep
 from speedwagon.workflows import workflow_get_marc
 from speedwagon.frontend.qtwidgets import shared_custom_widgets
-from . title_page_selection import PackageBrowser
+from speedwagon.frontend.qtwidgets.dialog.title_page_selection import \
+    PackageBrowser
 from .workflow_get_marc import UserOptions
 
 __all__ = ['CaptureOneBatchToHathiComplete']

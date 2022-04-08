@@ -18,10 +18,8 @@ from typing import \
     Tuple, \
     Type
 
-# from speedwagon.frontend import interaction
-# from speedwagon import tasks, workflow
-import speedwagon
 import speedwagon.workflow
+import speedwagon.frontend
 __all__ = [
     "AbsWorkflow",
     "Workflow",

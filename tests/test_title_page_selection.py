@@ -2,7 +2,7 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 from uiucprescon.packager.packages import collection
-from speedwagon.workflows import title_page_selection
+from speedwagon.frontend.qtwidgets.dialog import title_page_selection
 from PySide6 import QtWidgets, QtCore
 
 

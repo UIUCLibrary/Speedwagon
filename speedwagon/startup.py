@@ -33,11 +33,11 @@ import webbrowser
 import yaml
 
 from PySide6 import QtWidgets  # type: ignore
-# from speedwagon.frontend import qtwidgets
 import speedwagon
 import speedwagon.config
 import speedwagon.exceptions
-from speedwagon import worker, job, runner_strategies, frontend
+from speedwagon import frontend
+from speedwagon import worker, job, runner_strategies
 
 try:  # pragma: no cover
     from importlib import metadata

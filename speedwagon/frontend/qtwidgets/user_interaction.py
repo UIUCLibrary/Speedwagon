@@ -7,10 +7,9 @@ from PySide6.QtGui import Qt
 from uiucprescon.packager.packages import collection
 
 import speedwagon.exceptions
-from speedwagon.frontend import interaction, qtwidgets
-from speedwagon.frontend.interaction import \
-    AbstractConfirmFilesystemItemRemoval
-from speedwagon.workflows.title_page_selection import PackageBrowser
+from speedwagon.frontend import interaction
+from speedwagon.frontend.qtwidgets.dialog.title_page_selection import \
+    PackageBrowser
 import speedwagon
 
 
@@ -26,7 +25,9 @@ class QtWidgetFactory(interaction.UserRequestFactory):
         """Generate widget for browsing packages."""
         return QtWidgetPackageBrowserWidget(self.parent)
 
-    def confirm_removal(self) -> AbstractConfirmFilesystemItemRemoval:
+    def confirm_removal(
+            self
+    ) -> interaction.AbstractConfirmFilesystemItemRemoval:
         """Generate widget for selecting which files or folders to remove."""
         return QtWidgetConfirmFileSystemRemoval(parent=self.parent)
 
@@ -289,14 +290,13 @@ class QtRequestMoreInfo(QtCore.QObject):
     def request_more_info(
             self,
             user_is_interacting: threading.Condition,
-            workflow: speedwagon.job.Workflow,
+            workflow: 'speedwagon.job.Workflow',
             options: Dict[str, typing.Any],
             pre_results: List[typing.Any]
     ) -> None:
         with user_is_interacting:
             try:
-                factory = \
-                    qtwidgets.user_interaction.QtWidgetFactory(self._parent)
+                factory = QtWidgetFactory(self._parent)
 
                 self.results = workflow.get_additional_info(
                     factory,
