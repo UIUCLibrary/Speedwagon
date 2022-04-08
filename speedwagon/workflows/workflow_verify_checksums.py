@@ -17,7 +17,7 @@ from speedwagon.reports import add_report_borders
 
 __all__ = ['ChecksumWorkflow', 'VerifyChecksumBatchSingleWorkflow']
 
-from .. import workflow
+from speedwagon import workflow
 
 TaskResult = Union[str, bool]
 
@@ -88,7 +88,9 @@ class ChecksumWorkflow(Workflow):
         return jobs
 
     def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
-        input_folder = workflow.DirectorySelect(UserArgs.INPUT.value)
+        input_folder = \
+            speedwagon.workflow.DirectorySelect(UserArgs.INPUT.value)
+
         return [
             input_folder
         ]
