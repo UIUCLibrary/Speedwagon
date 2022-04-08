@@ -14,6 +14,7 @@ from PySide6 import QtWidgets, QtCore
 import speedwagon.exceptions
 import speedwagon.frontend.qtwidgets.logging_helpers
 import speedwagon.frontend.qtwidgets.runners
+import speedwagon.frontend.qtwidgets.user_interaction
 import speedwagon.startup
 import speedwagon.config
 import speedwagon.job
@@ -885,7 +886,7 @@ class TestWorkflowProgressCallbacks:
         callbacks = speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
         processEvents = Mock()
         monkeypatch.setattr(
-            speedwagon.startup.QtCore.QCoreApplication,
+            QtCore.QCoreApplication,
             "processEvents",
             processEvents
         )
@@ -1273,7 +1274,7 @@ class TestStartQtThreaded:
 class TestQtRequestMoreInfo:
     def test_job_cancelled(self, qtbot):
         info_request = \
-            speedwagon.startup.QtRequestMoreInfo(QtWidgets.QWidget())
+            speedwagon.frontend.qtwidgets.user_interaction.QtRequestMoreInfo(QtWidgets.QWidget())
 
         user_is_interacting = MagicMock()
         workflow = Mock()
@@ -1294,7 +1295,7 @@ class TestQtRequestMoreInfo:
 
     def test_job_exception_passes_on(self, qtbot):
         info_request = \
-            speedwagon.startup.QtRequestMoreInfo(QtWidgets.QWidget())
+            speedwagon.frontend.qtwidgets.user_interaction.QtRequestMoreInfo(QtWidgets.QWidget())
 
         user_is_interacting = MagicMock()
         workflow = Mock()

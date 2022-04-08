@@ -1,4 +1,5 @@
 """User interaction when using a QtWidget backend."""
+import threading
 import typing
 from typing import Dict, Any, Optional, List, Union, Type
 from PySide6 import QtWidgets, QtCore
@@ -6,7 +7,7 @@ from PySide6.QtGui import Qt
 from uiucprescon.packager.packages import collection
 
 import speedwagon.exceptions
-from speedwagon.frontend import interaction
+from speedwagon.frontend import interaction, qtwidgets
 from speedwagon.frontend.interaction import \
     AbstractConfirmFilesystemItemRemoval
 from speedwagon.workflows.title_page_selection import PackageBrowser
@@ -273,3 +274,39 @@ class QtWidgetPackageBrowserWidget(interaction.AbstractPackageBrowser):
         )
         browser.exec()
         return browser.data()
+
+
+class QtRequestMoreInfo(QtCore.QObject):
+    request = QtCore.Signal(object, object, object, object)
+
+    def __init__(self, parent: typing.Optional[QtWidgets.QWidget]) -> None:
+        super().__init__(parent)
+        self.results: Optional[Dict[str, typing.Any]] = None
+        self._parent = parent
+        self.exc: Optional[BaseException] = None
+        self.request.connect(self.request_more_info)
+
+    def request_more_info(
+            self,
+            user_is_interacting: threading.Condition,
+            workflow: speedwagon.Workflow,
+            options: Dict[str, typing.Any],
+            pre_results: List[typing.Any]
+    ) -> None:
+        with user_is_interacting:
+            try:
+                factory = \
+                    qtwidgets.user_interaction.QtWidgetFactory(self._parent)
+
+                self.results = workflow.get_additional_info(
+                    factory,
+                    options=options,
+                    pretask_results=pre_results
+                )
+            except speedwagon.exceptions.JobCancelled as exc:
+                self.exc = exc
+            except BaseException as exc:
+                self.exc = exc
+                raise
+            finally:
+                user_is_interacting.notify()

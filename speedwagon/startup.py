@@ -24,8 +24,6 @@ import time
 import typing
 from typing import Dict, Union, Iterator, Tuple, List, cast, Optional, Type
 
-from speedwagon.frontend.qtwidgets.runners import WorkflowProgressCallbacks
-
 try:
     from typing import Final
 except ImportError:
@@ -34,14 +32,13 @@ except ImportError:
 import webbrowser
 import yaml
 
-from PySide6 import QtWidgets, QtCore  # type: ignore
+from PySide6 import QtWidgets  # type: ignore
 import speedwagon.frontend.qtwidgets.runners
 from speedwagon.frontend import qtwidgets
 import speedwagon
 import speedwagon.config
 import speedwagon.exceptions
 from speedwagon import worker, job, runner_strategies
-from speedwagon.runner_strategies import ThreadedEvents
 
 try:  # pragma: no cover
     from importlib import metadata
@@ -359,42 +356,6 @@ class StartupDefault(AbsStarter):
         speedwagon.config.ensure_settings_files(self, self._logger)
 
 
-class QtRequestMoreInfo(QtCore.QObject):
-    request = QtCore.Signal(object, object, object, object)
-
-    def __init__(self, parent: typing.Optional[QtWidgets.QWidget]) -> None:
-        super().__init__(parent)
-        self.results: Optional[Dict[str, typing.Any]] = None
-        self._parent = parent
-        self.exc: Optional[BaseException] = None
-        self.request.connect(self.request_more_info)
-
-    def request_more_info(
-            self,
-            user_is_interacting: threading.Condition,
-            workflow: speedwagon.Workflow,
-            options: Dict[str, typing.Any],
-            pre_results: List[typing.Any]
-    ) -> None:
-        with user_is_interacting:
-            try:
-                factory = \
-                    qtwidgets.user_interaction.QtWidgetFactory(self._parent)
-
-                self.results = workflow.get_additional_info(
-                    factory,
-                    options=options,
-                    pretask_results=pre_results
-                )
-            except speedwagon.exceptions.JobCancelled as exc:
-                self.exc = exc
-            except BaseException as exc:
-                self.exc = exc
-                raise
-            finally:
-                user_is_interacting.notify()
-
-
 class StartQtThreaded(AbsStarter):
 
     def __init__(self, app: QtWidgets.QApplication = None) -> None:
@@ -424,7 +385,8 @@ class StartQtThreaded(AbsStarter):
 
         self.load_settings()
         qtwidgets.gui.set_app_display_metadata(self.app)
-        self._request_window = QtRequestMoreInfo(self.windows)
+        self._request_window = \
+            qtwidgets.user_interaction.QtRequestMoreInfo(self.windows)
 
     @staticmethod
     def import_workflow_config(
@@ -777,12 +739,12 @@ class StartQtThreaded(AbsStarter):
 
         dialog_box.setWindowTitle(workflow_name)
         dialog_box.show()
-        threaded_events = ThreadedEvents()
+        threaded_events = runner_strategies.ThreadedEvents()
 
         dialog_box.aborted.connect(
             lambda: self.abort_job(dialog_box, threaded_events)
         )
-        callbacks = WorkflowProgressCallbacks(dialog_box)
+        callbacks = qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
         if main_app is not None:
             callbacks.signals.finished.connect(
                 main_app.console.log_handler.flush
@@ -992,9 +954,9 @@ class SingleWorkflowJSON(AbsStarter):
         dialog_box.setWindowTitle(workflow.name or "Workflow")
         dialog_box.show()
 
-        callbacks = WorkflowProgressCallbacks(dialog_box)
+        callbacks = qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
         dialog_box.attach_logger(job_manager.logger)
-        threaded_events = ThreadedEvents()
+        threaded_events = runner_strategies.ThreadedEvents()
         job_manager.submit_job(
             workflow_name=workflow.name,
             options=options,
