@@ -278,9 +278,12 @@ class QtWidgetPackageBrowserWidget(interaction.AbstractPackageBrowser):
 
 
 class QtRequestMoreInfo(QtCore.QObject):
+    """Requesting info from user with a Qt widget."""
+
     request = QtCore.Signal(object, object, object, object)
 
     def __init__(self, parent: typing.Optional[QtWidgets.QWidget]) -> None:
+        """Create a new qt object."""
         super().__init__(parent)
         self.results: Optional[Dict[str, typing.Any]] = None
         self._parent = parent
@@ -294,6 +297,7 @@ class QtRequestMoreInfo(QtCore.QObject):
             options: Dict[str, typing.Any],
             pre_results: List[typing.Any]
     ) -> None:
+        """Open new request widget."""
         with user_is_interacting:
             try:
                 factory = QtWidgetFactory(self._parent)
