@@ -786,7 +786,7 @@ class TabsModel(QtCore.QAbstractListModel):
         return True
 
 
-def build_setting_model(config_file: str) -> "speedwagon.models.SettingsModel":
+def build_setting_model(config_file: str) -> SettingsModel:
     """Read a configuration file and generate a SettingsModel."""
     if not os.path.exists(config_file):
         raise FileNotFoundError(f"No existing Configuration in ${config_file}")
@@ -794,7 +794,7 @@ def build_setting_model(config_file: str) -> "speedwagon.models.SettingsModel":
     config = configparser.ConfigParser()
     config.read(config_file)
     global_settings = config["GLOBAL"]
-    my_model = speedwagon.frontend.qtwidgets.models.SettingsModel()
+    my_model = SettingsModel()
     for key, value in global_settings.items():
         my_model.add_setting(key, value)
     return my_model
