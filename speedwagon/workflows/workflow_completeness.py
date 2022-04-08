@@ -20,7 +20,6 @@ from hathi_validate import validator
 import speedwagon
 import speedwagon.tasks.tasks
 from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
-# from speedwagon.job import Workflow
 
 __all__ = ['CompletenessWorkflow']
 
