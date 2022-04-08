@@ -30,7 +30,7 @@ class CustomItemWidget(QtWidgets.QWidget):
 
     editingFinished = QtCore.Signal()
 
-    def __init__(self, parent=None, *args, **kwargs) -> None:
+    def __init__(self, *args, parent=None, **kwargs) -> None:
         """Create a custom item widget."""
         warnings.warn(
             "Use workflow.AbsOutputOptionDataType instead",
