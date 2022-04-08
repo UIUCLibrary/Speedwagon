@@ -30,8 +30,6 @@ if __name__ == "__main__":
             "speedwagon.frontend.qtwidgets.ui",
             "speedwagon.tasks",
             "speedwagon.workflows",
-            "speedwagon.workflows.tessdata",
-
         ],
         setup_requires=['pytest-runner'],
         tests_require=['pytest', "behave", "pytest-qt"],
