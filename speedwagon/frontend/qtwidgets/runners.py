@@ -7,9 +7,9 @@ import warnings
 from types import TracebackType
 from typing import Optional, Type, Dict, Any, List
 import abc
-import speedwagon
 from PySide6 import QtWidgets, QtCore
 
+import speedwagon
 from speedwagon import worker, JobCancelled, Workflow, runner_strategies
 from speedwagon import frontend
 from speedwagon.frontend import qtwidgets
