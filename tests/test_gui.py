@@ -140,7 +140,7 @@ class TestMainWindow:
         qtbot.add_widget(window)
         about_dialog_box = Mock()
         monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.gui,
+            speedwagon.frontend.qtwidgets.dialog,
             "about_dialog_box",
             about_dialog_box
         )

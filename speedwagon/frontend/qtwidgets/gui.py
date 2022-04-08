@@ -26,21 +26,10 @@ from collections import namedtuple
 
 from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
 
-import speedwagon.frontend.qtwidgets.dialog
-from speedwagon.frontend.qtwidgets.dialog.dialogs import \
-    about_dialog_box, \
-    SystemInfoDialog
-from speedwagon.frontend.qtwidgets.dialog.settings import \
-    TabsConfigurationTab, \
-    SettingsDialog, \
-    GlobalSettingsTab
-from speedwagon.frontend.qtwidgets import ui_loader, tabs
 import speedwagon
-import speedwagon.frontend.qtwidgets
 from speedwagon.frontend import qtwidgets
 import speedwagon.config
 import speedwagon.runner_strategies
-from speedwagon.frontend.qtwidgets.logging_helpers import ConsoleFormatter
 
 __all__ = [
     "MainWindow1",
@@ -89,11 +78,11 @@ class ToolConsole(QtWidgets.QWidget):
         super().__init__(parent)
         self.log_handler = ToolConsole.ConsoleLogHandler(self)
 
-        self.log_formatter = ConsoleFormatter()
+        self.log_formatter = qtwidgets.logging_helpers.ConsoleFormatter()
         self.log_handler.setFormatter(self.log_formatter)
 
         with resources.path(qtwidgets.ui, "console.ui") as ui_file:
-            ui_loader.load_ui(str(ui_file), self)
+            qtwidgets.ui_loader.load_ui(str(ui_file), self)
 
         # ======================================================================
         # Type hints:
@@ -155,7 +144,7 @@ class ItemTabsWidget(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
         with resources.path(qtwidgets.ui, "setup_job.ui") as ui_file:
-            ui_loader.load_ui(str(ui_file), self)
+            qtwidgets.ui_loader.load_ui(str(ui_file), self)
         # ======================================================================
         # Type Hints
         self.tabs: QtWidgets.QTabWidget
@@ -384,13 +373,13 @@ class MainWindow1(MainProgram):
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
     def load_ui_file(self, ui_file: str) -> None:
-        ui_loader.load_ui(ui_file, self)
+        qtwidgets.ui_loader.load_ui(ui_file, self)
 
     def show_about_window(self) -> None:
-        about_dialog_box(parent=self)
+        qtwidgets.dialog.about_dialog_box(parent=self)
 
     def show_system_info(self) -> None:
-        system_info_dialog = SystemInfoDialog(self)
+        system_info_dialog = qtwidgets.dialog.SystemInfoDialog(self)
         system_info_dialog.exec()
 
     def show_help(self) -> None:
@@ -481,7 +470,7 @@ class MainWindow1(MainProgram):
     def _create_tabs_widget(self) -> None:
         self.tab_widget = ItemTabsWidget(self.main_splitter)
         self.tab_widget.setVisible(False)
-        self._tabs: List[tabs.ItemSelectionTab] = []
+        self._tabs: List[qtwidgets.tabs.ItemSelectionTab] = []
         # Add the tabs widget as the first widget
         self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
         self.main_splitter.addWidget(self.tab_widget)
@@ -518,7 +507,7 @@ class MainWindow1(MainProgram):
             workflows: typing.Dict[str, typing.Type[speedwagon.Workflow]]
     ) -> None:
 
-        workflows_tab = tabs.WorkflowsTab(
+        workflows_tab = qtwidgets.tabs.WorkflowsTab(
             parent=self,
             workflows=workflows,
             work_manager=self.work_manager,
@@ -532,12 +521,12 @@ class MainWindow1(MainProgram):
 
     def show_configuration(self) -> None:
 
-        config_dialog = SettingsDialog(parent=self)
+        config_dialog = qtwidgets.dialog.settings.SettingsDialog(parent=self)
 
         if self.work_manager.settings_path is not None:
             config_dialog.settings_location = self.work_manager.settings_path
 
-        global_settings_tab = GlobalSettingsTab()
+        global_settings_tab = qtwidgets.dialog.GlobalSettingsTab()
 
         if self.work_manager.settings_path is not None:
             global_settings_tab.config_file = \
@@ -551,7 +540,7 @@ class MainWindow1(MainProgram):
         # pylint: disable=no-member
         config_dialog.accepted.connect(global_settings_tab.on_okay)
 
-        tabs_tab = TabsConfigurationTab()
+        tabs_tab = qtwidgets.dialog.TabsConfigurationTab()
 
         if self.work_manager.settings_path is not None:
             tabs_tab.settings_location = \
@@ -601,7 +590,7 @@ class MainWindow2UI(QtWidgets.QMainWindow):
     ) -> None:
         super().__init__(parent)
         with resources.path(qtwidgets.ui, "main_window2.ui") as ui_file:
-            ui_loader.load_ui(str(ui_file), self)
+            qtwidgets.ui_loader.load_ui(str(ui_file), self)
 
         # ======================================================================
         # Type hints
@@ -678,7 +667,10 @@ class MainWindow2(MainWindow2UI):
         if tab_index is None:
             raise AssertionError("Missing All tab")
         all_tab = self._tabs[tab_index]
-        model = all_tab.workspace_widgets[tabs.TabWidgets.SETTINGS].model()
+        model = all_tab.workspace_widgets[
+            qtwidgets.tabs.TabWidgets.SETTINGS
+        ].model()
+
         for key, value in data.items():
             model[key] = value
 
@@ -753,7 +745,7 @@ class MainWindow2(MainWindow2UI):
             ]
     ) -> None:
 
-        workflows_tab = tabs.WorkflowsTab2(
+        workflows_tab = qtwidgets.tabs.WorkflowsTab2(
             parent=self,
             workflows=workflows,
         )
@@ -771,7 +763,7 @@ class MainWindow2(MainWindow2UI):
         self.submit_job.emit(workflow, options)
 
     def show_about_window(self) -> None:
-        about_dialog_box(parent=self)
+        qtwidgets.dialog.about_dialog_box(parent=self)
 
     def save_log(self) -> None:
         self.save_logs_requested.emit(self)
@@ -779,7 +771,7 @@ class MainWindow2(MainWindow2UI):
     def _create_tabs_widget(self) -> None:
         self.tab_widget = ItemTabsWidget(self.main_splitter)
         self.tab_widget.setVisible(False)
-        self._tabs: List[tabs.ItemSelectionTab] = []
+        self._tabs: List[qtwidgets.tabs.ItemSelectionTab] = []
 
         # Add the tabs widget as the first widget
         self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
