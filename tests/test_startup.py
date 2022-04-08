@@ -599,7 +599,7 @@ class TestSingleWorkflowJSON:
         import tracemalloc
         tracemalloc.start()
         monkeypatch.setattr(
-            speedwagon.startup.qtwidgets.dialog.dialogs.WorkflowProgress,
+            speedwagon.startup.frontend.qtwidgets.dialog.dialogs.WorkflowProgress,
             "show",
             lambda *args, **kwargs: None
         )
@@ -632,7 +632,7 @@ class TestSingleWorkflowJSON:
         )
 
         monkeypatch.setattr(
-            speedwagon.startup.qtwidgets.dialog.dialogs.WorkflowProgress,
+            speedwagon.startup.frontend.qtwidgets.dialog.dialogs.WorkflowProgress,
             "exec",
             Mock()
         )
@@ -680,7 +680,7 @@ class TestSingleWorkflowJSON:
         qtbot.addWidget(MainWindow2)
         monkeypatch.setattr(
             # speedwagon.frontend.qtwidgets.dialog.dialogs.WorkflowProgress,
-            speedwagon.startup.qtwidgets.dialog.dialogs.WorkflowProgress,
+            speedwagon.startup.frontend.qtwidgets.dialog.dialogs.WorkflowProgress,
             "exec",
             Mock()
         )
@@ -696,7 +696,7 @@ class TestSingleWorkflowJSON:
         )
 
         monkeypatch.setattr(
-            speedwagon.startup.qtwidgets.dialog.dialogs.WorkflowProgress,
+            speedwagon.startup.frontend.qtwidgets.dialog.dialogs.WorkflowProgress,
             "show",
             lambda *args, **kwargs: None
         )
@@ -784,7 +784,7 @@ class TestWorkflowProgressCallbacks:
     @pytest.fixture()
     def dialog_box(self, qtbot, monkeypatch):
         monkeypatch.setattr(
-            speedwagon.startup.qtwidgets.dialog.dialogs.WorkflowProgress,
+            speedwagon.startup.frontend.qtwidgets.dialog.dialogs.WorkflowProgress,
             "show",
             lambda *args, **kwargs: None
         )

@@ -33,12 +33,11 @@ import webbrowser
 import yaml
 
 from PySide6 import QtWidgets  # type: ignore
-import speedwagon.frontend.qtwidgets.runners
-from speedwagon.frontend import qtwidgets
+# from speedwagon.frontend import qtwidgets
 import speedwagon
 import speedwagon.config
 import speedwagon.exceptions
-from speedwagon import worker, job, runner_strategies
+from speedwagon import worker, job, runner_strategies, frontend
 
 try:  # pragma: no cover
     from importlib import metadata
@@ -70,7 +69,9 @@ class CustomTabsFileReader:
     """Reads the tab file data."""
 
     def __init__(
-            self, all_workflows: Dict[str, Type[speedwagon.Workflow]]) -> None:
+            self,
+            all_workflows: Dict[str, Type[speedwagon.job.Workflow]]
+    ) -> None:
         """Load all workflows supported.
 
         Args:
@@ -157,7 +158,7 @@ class CustomTabsFileReader:
 
 
 def get_custom_tabs(
-        all_workflows: Dict[str, Type[speedwagon.Workflow]],
+        all_workflows: Dict[str, Type[speedwagon.job.Workflow]],
         yaml_file: str
 ) -> Iterator[Tuple[str, dict]]:
     """Load custom tab yaml file."""
@@ -224,9 +225,9 @@ class StartupDefault(AbsStarter):
 
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         # Display a splash screen until the app is loaded
-        splash = qtwidgets.splashscreen.create_splash()
+        splash = frontend.qtwidgets.splashscreen.create_splash()
         splash_message_handler = \
-            qtwidgets.logging_helpers.SplashScreenLogHandler(splash)
+            frontend.qtwidgets.logging_helpers.SplashScreenLogHandler(splash)
 
         # If debug mode, print the log messages directly on the splash screen
         if self._debug:
@@ -237,14 +238,14 @@ class StartupDefault(AbsStarter):
         splash.show()
         QtWidgets.QApplication.processEvents()
 
-        qtwidgets.gui.set_app_display_metadata(self.app)
+        frontend.qtwidgets.gui.set_app_display_metadata(self.app)
 
         with worker.ToolJobManager() as work_manager:
 
             work_manager.settings_path = \
                 self.platform_settings.get_app_data_directory()
 
-            windows = qtwidgets.gui.MainWindow1(
+            windows = frontend.qtwidgets.gui.MainWindow1(
                 work_manager=work_manager,
                 debug=cast(bool, self.startup_settings['debug'])
             )
@@ -293,7 +294,7 @@ class StartupDefault(AbsStarter):
 
     def _load_workflows(
             self,
-            application: qtwidgets.gui.MainWindow1
+            application: frontend.qtwidgets.gui.MainWindow1
     ) -> None:
         self._logger.debug("Loading Workflows")
         loading_workflows_stream = io.StringIO()
@@ -364,7 +365,7 @@ class StartQtThreaded(AbsStarter):
         }
 
         self.windows: Optional[
-            qtwidgets.gui.MainWindow2
+            frontend.qtwidgets.gui.MainWindow2
         ] = None
         self.logger = logging.getLogger()
 
@@ -384,13 +385,13 @@ class StartQtThreaded(AbsStarter):
         self.logger.setLevel(logging.DEBUG)
 
         self.load_settings()
-        qtwidgets.gui.set_app_display_metadata(self.app)
+        frontend.qtwidgets.gui.set_app_display_metadata(self.app)
         self._request_window = \
-            qtwidgets.user_interaction.QtRequestMoreInfo(self.windows)
+            frontend.qtwidgets.user_interaction.QtRequestMoreInfo(self.windows)
 
     @staticmethod
     def import_workflow_config(
-            parent: qtwidgets.gui.MainWindow2,
+            parent: frontend.qtwidgets.gui.MainWindow2,
             dialog_box: typing.Optional[QtWidgets.QFileDialog] = None,
             serialization_strategy: typing.Optional[
                 job.AbsJobConfigSerializationStrategy
@@ -513,7 +514,7 @@ class StartQtThreaded(AbsStarter):
 
     def _load_workflows(
             self,
-            application: qtwidgets.gui.MainWindow2
+            application: frontend.qtwidgets.gui.MainWindow2
     ) -> None:
         tabs_file = os.path.join(
             self.platform_settings.get_app_data_directory(),
@@ -547,8 +548,8 @@ class StartQtThreaded(AbsStarter):
 
     def load_all_workflows_tab(
             self,
-            application: qtwidgets.gui.MainWindow2,
-            loaded_workflows: typing.Dict[str, Type[speedwagon.Workflow]]
+            application: frontend.qtwidgets.gui.MainWindow2,
+            loaded_workflows: typing.Dict[str, Type[speedwagon.job.Workflow]]
     ) -> None:
         self.logger.debug("Loading Tab All")
         application.add_tab(
@@ -560,9 +561,9 @@ class StartQtThreaded(AbsStarter):
 
     def load_custom_tabs(
             self,
-            main_window: qtwidgets.gui.MainWindow2,
+            main_window: frontend.qtwidgets.gui.MainWindow2,
             tabs_file: str,
-            loaded_workflows: typing.Dict[str, Type[speedwagon.Workflow]]
+            loaded_workflows: typing.Dict[str, Type[speedwagon.job.Workflow]]
     ) -> None:
         tabs_file_size = os.path.getsize(tabs_file)
         if tabs_file_size > 0:
@@ -608,7 +609,7 @@ class StartQtThreaded(AbsStarter):
     def request_system_info(
             parent: Optional[QtWidgets.QWidget] = None
     ) -> None:
-        qtwidgets.dialog.dialogs.SystemInfoDialog(parent).exec()
+        frontend.qtwidgets.dialog.dialogs.SystemInfoDialog(parent).exec()
 
     @staticmethod
     def request_settings(parent: QtWidgets.QWidget = None) -> None:
@@ -616,7 +617,7 @@ class StartQtThreaded(AbsStarter):
         settings_path = platform_settings.get_app_data_directory()
 
         dialog_builder = \
-            qtwidgets.dialog.settings.SettingsBuilder(parent=parent)
+            frontend.qtwidgets.dialog.settings.SettingsBuilder(parent=parent)
 
         dialog_builder.add_open_settings(
             platform_settings.get_app_data_directory()
@@ -637,7 +638,7 @@ class StartQtThreaded(AbsStarter):
 
         with runner_strategies.BackgroundJobManager() as job_manager:
             job_manager.global_settings = self.startup_settings
-            self.windows = qtwidgets.gui.MainWindow2(
+            self.windows = frontend.qtwidgets.gui.MainWindow2(
                 job_manager=job_manager,
                 settings=self.startup_settings
             )
@@ -680,7 +681,7 @@ class StartQtThreaded(AbsStarter):
 
     @staticmethod
     def abort_job(
-            dialog: qtwidgets.dialog.dialogs.WorkflowProgress,
+            dialog: frontend.qtwidgets.dialog.dialogs.WorkflowProgress,
             events: runner_strategies.AbsEvents
     ) -> None:
         dialog.stop()
@@ -688,7 +689,7 @@ class StartQtThreaded(AbsStarter):
 
     def request_more_info(
             self,
-            workflow: speedwagon.Workflow,
+            workflow: speedwagon.job.Workflow,
             options: Dict[str, typing.Any],
             pre_results: List[typing.Any],
             wait_condition: Optional[threading.Condition] = None
@@ -713,7 +714,8 @@ class StartQtThreaded(AbsStarter):
             workflow_name: str,
             options: Dict[str, typing.Any],
             main_app: typing.Optional[
-                qtwidgets.gui.MainWindow2] = None,
+                frontend.qtwidgets.gui.MainWindow2
+            ] = None,
     ) -> None:
 
         workflow_class = \
@@ -731,7 +733,9 @@ class StartQtThreaded(AbsStarter):
             return
 
         dialog_box = \
-            qtwidgets.dialog.dialogs.WorkflowProgress(parent=self.windows)
+            frontend.qtwidgets.dialog.dialogs.WorkflowProgress(
+                parent=self.windows
+            )
 
         if main_app is not None:
             # pylint: disable=no-member
@@ -744,7 +748,9 @@ class StartQtThreaded(AbsStarter):
         dialog_box.aborted.connect(
             lambda: self.abort_job(dialog_box, threaded_events)
         )
-        callbacks = qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
+        callbacks = \
+            frontend.qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
+
         if main_app is not None:
             callbacks.signals.finished.connect(
                 main_app.console.log_handler.flush
@@ -774,7 +780,7 @@ class StartQtThreaded(AbsStarter):
 
     def _find_invalid(
             self,
-            workflows: typing.Dict[str, typing.Type[speedwagon.Workflow]]
+            workflows: typing.Dict[str, typing.Type[speedwagon.job.Workflow]]
     ) -> typing.Iterable[
             typing.Tuple[str, str]
     ]:
@@ -801,7 +807,7 @@ class SingleWorkflowLauncher(AbsStarter):
         """Set up window for running a single workflow."""
         super().__init__()
         self.window: Optional[
-            qtwidgets.gui.MainWindow1
+            frontend.qtwidgets.gui.MainWindow1
         ] = None
         self._active_workflow: Optional[job.AbsWorkflow] = None
         self.options: Dict[str, Union[str, bool]] = {}
@@ -821,14 +827,14 @@ class SingleWorkflowLauncher(AbsStarter):
         if self._active_workflow is None:
             raise ValueError("No active workflow set")
 
-        window = qtwidgets.gui.MainWindow1(
+        window = frontend.qtwidgets.gui.MainWindow1(
             work_manager=work_manager,
             debug=False)
 
         window.show()
         if self._active_workflow.name is not None:
             window.setWindowTitle(self._active_workflow.name)
-        runner_strategy = qtwidgets.runners.QtRunner(window)
+        runner_strategy = frontend.qtwidgets.runners.QtRunner(window)
 
         self._active_workflow.validate_user_options(**self.options)
         # runner_strategy.additional_info_callback
@@ -871,7 +877,7 @@ class SingleWorkflowJSON(AbsStarter):
         self.global_settings = None
         self.on_exit: typing.Optional[
             typing.Callable[
-                [qtwidgets.gui.MainWindow2], None]
+                [frontend.qtwidgets.gui.MainWindow2], None]
         ] = None
         self.options: typing.Optional[typing.Dict[str, typing.Any]] = None
         self.workflow: typing.Optional[job.AbsWorkflow] = None
@@ -949,12 +955,14 @@ class SingleWorkflowJSON(AbsStarter):
             )
             return
 
-        dialog_box = qtwidgets.dialog.dialogs.WorkflowProgress()
+        dialog_box = frontend.qtwidgets.dialog.dialogs.WorkflowProgress()
 
         dialog_box.setWindowTitle(workflow.name or "Workflow")
         dialog_box.show()
 
-        callbacks = qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
+        callbacks = \
+            frontend.qtwidgets.runners.WorkflowProgressCallbacks(dialog_box)
+
         dialog_box.attach_logger(job_manager.logger)
         threaded_events = runner_strategies.ThreadedEvents()
         job_manager.submit_job(
@@ -975,8 +983,8 @@ class SingleWorkflowJSON(AbsStarter):
     def _load_main_window(
             job_manager: "runner_strategies.BackgroundJobManager",
             title: Optional[str]
-    ) -> speedwagon.frontend.qtwidgets.gui.MainWindow2:
-        window = speedwagon.frontend.qtwidgets.gui.MainWindow2(job_manager)
+    ) -> frontend.qtwidgets.gui.MainWindow2:
+        window = frontend.qtwidgets.gui.MainWindow2(job_manager)
         if title is not None:
             window.setWindowTitle(title)
 
@@ -999,7 +1007,7 @@ class MultiWorkflowLauncher(AbsStarter):
         return 0
 
     def _run(self, work_manager: worker.ToolJobManager) -> None:
-        window = speedwagon.frontend.qtwidgets.gui.MainWindow1(
+        window = frontend.qtwidgets.gui.MainWindow1(
             work_manager=work_manager,
             debug=False)
 
@@ -1010,7 +1018,7 @@ class MultiWorkflowLauncher(AbsStarter):
                 if active_workflow.name is not None:
                     window.setWindowTitle(active_workflow.name)
                 runner_strategy = \
-                    qtwidgets.runners.QtRunner(window)
+                    frontend.qtwidgets.runners.QtRunner(window)
 
                 active_workflow.validate_user_options(**options)
 
@@ -1021,7 +1029,7 @@ class MultiWorkflowLauncher(AbsStarter):
                 )
 
                 self._pending_tasks.task_done()
-        except qtwidgets.runners.TaskFailed as task_error:
+        except frontend.qtwidgets.runners.TaskFailed as task_error:
             raise \
                 speedwagon.exceptions.JobCancelled(task_error) from task_error
 
@@ -1041,7 +1049,7 @@ class TabsEditorApp(QtWidgets.QDialog):
         super().__init__(*args, **kwargs)
         self.setWindowTitle("Speedwagon Tabs Editor")
         layout = QtWidgets.QVBoxLayout()
-        self.editor = speedwagon.frontend.qtwidgets.dialog.settings.TabEditor()
+        self.editor = frontend.qtwidgets.dialog.settings.TabEditor()
         layout.addWidget(self.editor)
         self.dialog_button_box = QtWidgets.QDialogButtonBox(self)
         layout.addWidget(self.dialog_button_box)
@@ -1069,11 +1077,11 @@ class TabsEditorApp(QtWidgets.QDialog):
         if self.editor.modified is True:
             if self.tabs_file is None:
                 return
-            qtwidgets.tabs.write_tabs_yaml(
+            frontend.qtwidgets.tabs.write_tabs_yaml(
                 self.tabs_file,
-                qtwidgets.tabs.extract_tab_information(
+                frontend.qtwidgets.tabs.extract_tab_information(
                     cast(
-                        qtwidgets.models.TabsModel,
+                        frontend.qtwidgets.models.TabsModel,
                         self.editor.selectedTabComboBox.model()
                     )
                 )

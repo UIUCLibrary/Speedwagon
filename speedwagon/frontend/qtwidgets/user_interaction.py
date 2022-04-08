@@ -289,7 +289,7 @@ class QtRequestMoreInfo(QtCore.QObject):
     def request_more_info(
             self,
             user_is_interacting: threading.Condition,
-            workflow: speedwagon.Workflow,
+            workflow: speedwagon.job.Workflow,
             options: Dict[str, typing.Any],
             pre_results: List[typing.Any]
     ) -> None:

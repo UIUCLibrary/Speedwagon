@@ -19,7 +19,7 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
 
-from speedwagon.job import all_required_workflow_keys
+# from speedwagon.job import all_required_workflow_keys
 import speedwagon
 
 __all__ = [
@@ -181,7 +181,7 @@ def generate_default(config_file: str) -> None:
 
     with open(config_file, "w", encoding="utf-8") as file:
         config.write(file)
-    ensure_keys(config_file, all_required_workflow_keys())
+    ensure_keys(config_file, speedwagon.job.all_required_workflow_keys())
 
 
 def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \

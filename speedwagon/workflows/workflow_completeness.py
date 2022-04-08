@@ -20,14 +20,14 @@ from hathi_validate import validator
 import speedwagon
 import speedwagon.tasks.tasks
 from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
-from speedwagon.job import Workflow
+# from speedwagon.job import Workflow
 
 __all__ = ['CompletenessWorkflow']
 
-from .. import workflow
+from speedwagon import workflow
 
 
-class CompletenessWorkflow(Workflow):
+class CompletenessWorkflow(speedwagon.job.Workflow):
     name = "Verify HathiTrust Package Completeness"
     description = "This workflow takes as its input a directory of " \
                   "HathiTrust packages. It evaluates each subfolder as a " \

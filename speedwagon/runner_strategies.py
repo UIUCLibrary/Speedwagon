@@ -19,8 +19,8 @@ from typing import List, Any, Dict, Optional, Type
 
 import speedwagon
 import speedwagon.exceptions
-from speedwagon import frontend
 from speedwagon import runner
+# from speedwagon import frontend
 from speedwagon.job import AbsWorkflow, Workflow
 
 __all__ = [
@@ -405,7 +405,9 @@ class TaskScheduler:
     def __init__(self, working_directory: str) -> None:
         self.logger = logging.getLogger(__name__)
         self.working_directory = working_directory
-        self.reporter: Optional[frontend.reporter.RunnerDisplay] = None
+        self.reporter: Optional[
+            speedwagon.frontend.reporter.RunnerDisplay
+        ] = None
 
         self.current_task_progress: typing.Optional[int] = None
         self.total_tasks: typing.Optional[int] = None
@@ -467,7 +469,9 @@ class TaskScheduler:
             self,
             workflow: Workflow,
             options: typing.Dict[str, Any],
-            reporter: Optional[frontend.reporter.RunnerDisplay] = None
+            reporter: Optional[
+                speedwagon.frontend.reporter.RunnerDisplay
+            ] = None
     ) -> None:
         """Add job tasks to queue.
 
@@ -724,7 +728,7 @@ def simple_api_run_workflow(
         workflow_options,
         logger: Optional[logging.Logger] = None,
         request_factory: Optional[
-            frontend.interaction.UserRequestFactory
+            speedwagon.frontend.interaction.UserRequestFactory
         ] = None
 ) -> None:
     """Run a workflow and block until finished.
@@ -757,7 +761,7 @@ def simple_api_run_workflow(
 
             factory = \
                 request_factory or \
-                frontend.cli.user_interaction.CLIFactory()
+                speedwagon.frontend.cli.user_interaction.CLIFactory()
 
             return workflow.get_additional_info(
                 factory,

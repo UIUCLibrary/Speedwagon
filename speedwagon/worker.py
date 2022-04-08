@@ -17,13 +17,11 @@ from types import TracebackType
 from collections import namedtuple
 
 from PySide6 import QtWidgets  # type: ignore
-
-from speedwagon.frontend.qtwidgets.dialog import WorkProgressBar
+import speedwagon
 from .tasks import QueueAdapter
-from .tasks.tasks import AbsSubtask, Result
+from .tasks.tasks import AbsSubtask
 
 __all__ = [
-    "WorkRunnerExternal3",
     "ToolJobManager",
     "SubtaskJobAdapter"
 ]
@@ -224,54 +222,6 @@ class AbsSubject(metaclass=abc.ABCMeta):
                     observer.emit(value)
 
 
-class WorkRunnerExternal3(contextlib.AbstractContextManager):
-    """Work runner that uses external manager."""
-
-    def __init__(
-            self,
-            parent: typing.Optional[QtWidgets.QWidget] = None
-    ) -> None:
-        """Create a work runner."""
-        self.results: typing.List[Result] = []
-        self._parent = parent
-        self.abort_callback: Optional[Callable[[], None]] = None
-        self.was_aborted = False
-        self._dialog: Optional[WorkProgressBar] = None
-        # self.progress_dialog_box_handler: \
-        #     Optional[ProgressMessageBoxLogHandler] = None
-
-    @property
-    def dialog(self) -> Optional[WorkProgressBar]:
-        warnings.warn("Don't use the dialog", DeprecationWarning)
-        return self._dialog
-
-    @dialog.setter
-    def dialog(self, value: Optional[WorkProgressBar]) -> None:
-        self._dialog = value
-
-    def __enter__(self) -> "WorkRunnerExternal3":
-        """Start worker."""
-        self.dialog = WorkProgressBar(self._parent)
-        self.dialog.close()
-        return self
-
-    def abort(self) -> None:
-        """Abort on any running tasks."""
-        self.was_aborted = True
-        if callable(self.abort_callback):
-            self.abort_callback()  # pylint: disable=not-callable
-
-    def __exit__(self,
-                 exc_type: Optional[Type[BaseException]],
-                 exc_value: Optional[BaseException],
-                 exc_tb: Optional[TracebackType]) -> None:
-        """Close runner."""
-        if self.dialog is None:
-            raise AttributeError("dialog was set to None before closing")
-
-        self.dialog.close()
-
-
 class AbsJobManager(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def add_job(self,
@@ -409,7 +359,12 @@ class ToolJobManager(contextlib.AbstractContextManager, AbsJobManager):
         """Abort jobs."""
         still_running: typing.List[concurrent.futures.Future] = []
 
-        dialog_box = WorkProgressBar("Canceling", None, 0, 0)
+        dialog_box = \
+            speedwagon.frontend.qtwidgets.dialog.WorkProgressBar(
+                "Canceling",
+                None,
+                0, 0
+            )
         self._job_runtime.abort()
 
         dialog_box.setRange(0, len(still_running))

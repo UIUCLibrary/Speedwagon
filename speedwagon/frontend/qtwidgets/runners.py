@@ -6,13 +6,14 @@ import tempfile
 import typing
 import warnings
 from types import TracebackType
-from typing import Optional, Type, Dict, Any, List
+from typing import Optional, Type, Dict, Any, List, Callable
+import contextlib
 
 from PySide6 import QtWidgets, QtCore
 
 import speedwagon
 from speedwagon import frontend
-from speedwagon import worker, JobCancelled, Workflow, runner_strategies
+from speedwagon import worker, runner_strategies
 from speedwagon.frontend import qtwidgets
 from speedwagon.job import AbsWorkflow
 
@@ -189,7 +190,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                     if additional_data:
                         options = {**options, **additional_data}
 
-                except JobCancelled:
+                except speedwagon.exceptions.JobCancelled:
                     return
 
                 except TaskFailed as error:
@@ -242,7 +243,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
             parent: QtWidgets.QWidget,
             pre_results: typing.List[speedwagon.tasks.Result]
     ) -> Dict[str, Any]:
-        if isinstance(job, Workflow):
+        if isinstance(job, speedwagon.job.Workflow):
             return self._get_additional_options(
                 parent,
                 job,
@@ -262,8 +263,10 @@ class UsingExternalManagerForAdapter(AbsRunner):
                         logger: logging.Logger
                         ) -> list:
 
-        with self._manager.open(parent=parent,
-                                runner=worker.WorkRunnerExternal3) as runner:
+        with self._manager.open(
+                parent=parent,
+                runner=frontend.qtwidgets.runners.WorkRunnerExternal3
+        ) as runner:
 
             runner.abort_callback = self._manager.abort
             i = -1
@@ -329,7 +332,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
                         logger: logging.Logger) -> list:
         _results = []
         with self._manager.open(parent=parent,
-                                runner=worker.WorkRunnerExternal3) as runner:
+                                runner=frontend.qtwidgets.runners) as runner:
 
             runner.dialog.setRange(0, 0)
             try:
@@ -377,7 +380,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
 
         with self._manager.open(
                 parent=parent,
-                runner=worker.WorkRunnerExternal3
+                runner=frontend.qtwidgets.runners.WorkRunnerExternal3
         ) as runner:
 
             runner.dialog.setRange(0, 0)
@@ -419,7 +422,7 @@ class UsingExternalManagerForAdapter(AbsRunner):
     @staticmethod
     def _get_additional_options(
             parent: QtWidgets.QWidget,
-            job: Workflow,
+            job: speedwagon.job.Workflow,
             options: Dict[str, Any],
             pretask_results: typing.List[speedwagon.tasks.Result]
     ) -> Dict[str, Any]:
@@ -453,7 +456,7 @@ class QtRunner(speedwagon.runner.AbsRunner2):
 
     def request_more_info(
             self,
-            workflow: Workflow,
+            workflow: speedwagon.job.Workflow,
             options: Dict[str, Any],
             pretask_results: typing.List[speedwagon.tasks.Result]
     ) -> Dict[str, Any]:
@@ -481,7 +484,7 @@ class QtRunner(speedwagon.runner.AbsRunner2):
 
             task_scheduler.logger = logger or logging.getLogger(__name__)
 
-            if isinstance(job, Workflow):
+            if isinstance(job, speedwagon.job.Workflow):
                 self.run_abs_workflow(
                     task_scheduler=task_scheduler,
                     job=job,
@@ -492,7 +495,7 @@ class QtRunner(speedwagon.runner.AbsRunner2):
     def run_abs_workflow(
         self,
         task_scheduler: speedwagon.runner_strategies.TaskScheduler,
-        job: Workflow,
+        job: speedwagon.job.Workflow,
         options: typing.Dict[str, Any],
         logger: logging.Logger = None
     ) -> None:
@@ -647,3 +650,58 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
 
     def status(self, text: str) -> None:
         self.signals.set_status(text)
+
+
+class WorkRunnerExternal3(contextlib.AbstractContextManager):
+    """Work runner that uses external manager."""
+
+    def __init__(
+            self,
+            parent: typing.Optional[QtWidgets.QWidget] = None
+    ) -> None:
+        """Create a work runner."""
+        self.results: typing.List[speedwagon.tasks.Result] = []
+        self._parent = parent
+        self.abort_callback: Optional[Callable[[], None]] = None
+        self.was_aborted = False
+        self._dialog: Optional[
+            frontend.qtwidgets.dialog.WorkProgressBar
+        ] = None
+        # self.progress_dialog_box_handler: \
+        #     Optional[ProgressMessageBoxLogHandler] = None
+
+    @property
+    def dialog(self) -> Optional[frontend.qtwidgets.dialog.WorkProgressBar]:
+        warnings.warn("Don't use the dialog", DeprecationWarning)
+        return self._dialog
+
+    @dialog.setter
+    def dialog(
+            self,
+            value: Optional[frontend.qtwidgets.dialog.WorkProgressBar]
+    ) -> None:
+        self._dialog = value
+
+    def __enter__(self) -> "WorkRunnerExternal3":
+        """Start worker."""
+        self.dialog = \
+            speedwagon.frontend.qtwidgets.dialog.WorkProgressBar(self._parent)
+
+        self.dialog.close()
+        return self
+
+    def abort(self) -> None:
+        """Abort on any running tasks."""
+        self.was_aborted = True
+        if callable(self.abort_callback):
+            self.abort_callback()  # pylint: disable=not-callable
+
+    def __exit__(self,
+                 exc_type: Optional[Type[BaseException]],
+                 exc_value: Optional[BaseException],
+                 exc_tb: Optional[TracebackType]) -> None:
+        """Close runner."""
+        if self.dialog is None:
+            raise AttributeError("dialog was set to None before closing")
+
+        self.dialog.close()

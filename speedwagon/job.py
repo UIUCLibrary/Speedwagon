@@ -18,9 +18,10 @@ from typing import \
     Tuple, \
     Type
 
-from speedwagon.frontend import interaction
-from speedwagon import tasks, workflow
-
+# from speedwagon.frontend import interaction
+# from speedwagon import tasks, workflow
+import speedwagon
+import speedwagon.workflow
 __all__ = [
     "AbsWorkflow",
     "Workflow",
@@ -58,11 +59,15 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
         """
 
-    def completion_task(self, task_builder: tasks.TaskBuilder, results,
-                        **user_args) -> None:
+    def completion_task(
+            self,
+            task_builder: speedwagon.tasks.TaskBuilder,
+            results,
+            **user_args
+    ) -> None:
         """Last task after Job is completed."""
 
-    def initial_task(self, task_builder: tasks.TaskBuilder,
+    def initial_task(self, task_builder: speedwagon.tasks.TaskBuilder,
                      **user_args) -> None:
         """Create a task to run before the main tasks start.
 
@@ -79,7 +84,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
     def create_new_task(
             self,
-            task_builder: tasks.TaskBuilder,
+            task_builder: speedwagon.tasks.TaskBuilder,
             **job_args
     ) -> None:
         """Add a new task to be accomplished when the workflow is started.
@@ -100,8 +105,11 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
         """
 
     @classmethod
-    def generate_report(cls, results: List[tasks.Result], **user_args) \
-            -> Optional[str]:
+    def generate_report(
+            cls,
+            results: List[speedwagon.tasks.Result],
+            **user_args
+    ) -> Optional[str]:
         r"""Generate a text report for the results of the workflow.
 
         Example:
@@ -150,7 +158,8 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
 
     def get_additional_info(
             self,
-            user_request_factory: "interaction.UserRequestFactory",
+            user_request_factory:
+            'speedwagon.frontend.interaction.UserRequestFactory',
             options: dict,
             pretask_results: list
     ) -> dict:
@@ -171,7 +180,7 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
 
     def get_user_options(  # pylint: disable=no-self-use
             self
-    ) -> List[workflow.AbsOutputOptionDataType]:
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
         return []
 
 

@@ -332,7 +332,7 @@ class MainWindowMenuBuilder:
 class MainWindow1(MainProgram):
     def __init__(
             self,
-            work_manager: speedwagon.worker.ToolJobManager,
+            work_manager: "speedwagon.worker.ToolJobManager",
             debug: bool = False
     ) -> None:
 
@@ -503,7 +503,7 @@ class MainWindow1(MainProgram):
     def add_tab(
             self,
             workflow_name: str,
-            workflows: typing.Dict[str, typing.Type[speedwagon.Workflow]]
+            workflows: typing.Dict[str, typing.Type[speedwagon.job.Workflow]]
     ) -> None:
 
         workflows_tab = qtwidgets.tabs.WorkflowsTab(

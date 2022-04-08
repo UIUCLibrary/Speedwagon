@@ -1,9 +1,9 @@
 """Speedwagon."""
 
-from speedwagon.job import Workflow, available_workflows
+from speedwagon import tasks, startup, worker
 from speedwagon.exceptions import JobCancelled
 from speedwagon.runner_strategies import simple_api_run_workflow
-from speedwagon import tasks, startup, worker
+from speedwagon.job import Workflow, available_workflows
 
 __all__ = [
     "Workflow",

@@ -17,7 +17,7 @@ import speedwagon
 import speedwagon.config
 from speedwagon.frontend.qtwidgets.widgets import QtWidgetDelegateSelection
 
-from speedwagon import runner_strategies, JobCancelled
+from speedwagon import runner_strategies
 from speedwagon.frontend import qtwidgets
 
 from speedwagon import worker  # pylint: disable=unused-import
@@ -441,7 +441,7 @@ class WorkflowsTab(ItemSelectionTab):
             msg = self._create_error_message_box_from_exception(exc)
             msg.exec_()
 
-        except JobCancelled as job_cancel_exception:
+        except speedwagon.exceptions.JobCancelled as job_cancel_exception:
             msg = self._create_error_message_box_from_exception(
                 job_cancel_exception,
                 window_title="Job Cancelled"
