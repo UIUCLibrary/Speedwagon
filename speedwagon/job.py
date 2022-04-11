@@ -38,6 +38,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
     global_settings: Dict[str, str] = {}
     required_settings_keys: Set[str] = set()
 
+    # pylint: disable=unused-argument
     def __init__(self, *args, **kwargs) -> None:
         """Populate the base structure of a workflow class."""
         super().__init__()
@@ -127,6 +128,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
         """
 
+    # pylint: disable=unused-argument
     @staticmethod
     def validate_user_options(**user_args) -> bool:
         """Make sure that the options the user provided is valid.
@@ -154,12 +156,13 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
         You need to implement the discover_task_metadata() method.
     """
 
+    # pylint: disable=no-self-use
     def get_additional_info(
             self,
-            user_request_factory:
+            user_request_factory:  # pylint: disable=unused-argument
             'speedwagon.frontend.interaction.UserRequestFactory',
-            options: dict,
-            pretask_results: list
+            options: dict,  # pylint: disable=unused-argument
+            pretask_results: list  # pylint: disable=unused-argument
     ) -> dict:
         """Request additional information from the user.
 
