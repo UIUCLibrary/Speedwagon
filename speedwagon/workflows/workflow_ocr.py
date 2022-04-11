@@ -193,11 +193,13 @@ class OCRWorkflow(speedwagon.Workflow):
         ]
 
     def get_tesseract_path(self):
+        """Get the path to the tesseract data files."""
         self.tessdata_path = self.global_settings.get("tessdata")
         return self.tessdata_path
 
     @staticmethod
     def get_available_languages(path: str) -> Iterator[str]:
+        """Get languages accessible based on the available data files."""
 
         def filter_only_trainingdata(item: os.DirEntry) -> bool:
             if not item.is_file():
