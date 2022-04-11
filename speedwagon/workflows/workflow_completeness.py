@@ -27,6 +27,8 @@ from speedwagon import workflow
 
 
 class CompletenessWorkflow(speedwagon.job.Workflow):
+    """Workflow for testing package completeness."""
+
     name = "Verify HathiTrust Package Completeness"
     description = "This workflow takes as its input a directory of " \
                   "HathiTrust packages. It evaluates each subfolder as a " \
