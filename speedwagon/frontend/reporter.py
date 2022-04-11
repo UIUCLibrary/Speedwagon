@@ -72,9 +72,11 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
         self._details = value
 
     def __enter__(self) -> "RunnerDisplay":
+        """Open."""
         return self
 
     def __exit__(self, __exc_type: Optional[Type[BaseException]],
                  __exc_value: Optional[BaseException],
                  __traceback: Optional[TracebackType]) -> Optional[bool]:
+        """Clean up."""
         return None
