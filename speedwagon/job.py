@@ -179,6 +179,10 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
     def get_user_options(  # pylint: disable=no-self-use
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        """Get user options.
+
+        Defaults to no args.
+        """
         return []
 
 
