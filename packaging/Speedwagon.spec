@@ -8,7 +8,7 @@ a = Analysis(['../speedwagon/__main__.py'],
              datas=[
                 ('../speedwagon/favicon.ico', 'speedwagon'),
                 ('../speedwagon/logo.png', 'speedwagon'),
-                ('../speedwagon/ui/*.ui', 'speedwagon/ui'),
+                ('../speedwagon/frontend/qtwidgets/ui/*.ui', 'speedwagon/frontend/qtwidgets/ui'),
              ],
              hiddenimports=[],
              hookspath=[os.path.join(workpath, ".."), SPECPATH],
