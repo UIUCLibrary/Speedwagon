@@ -2,7 +2,8 @@
 import os
 
 block_cipher = None
-a = Analysis(['../speedwagon/__main__.py'],
+# a = Analysis(['../speedwagon/__main__.py'],
+a = Analysis(['./speedwagon-bootstrap.py'],
              pathex=[],
              binaries=[],
              datas=[
