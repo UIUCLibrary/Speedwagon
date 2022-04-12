@@ -2,7 +2,8 @@ from behave import *
 from behave import runner
 from PySide6 import QtCore
 from speedwagon.frontend.qtwidgets import models
-from speedwagon.frontend.qtwidgets.shared_custom_widgets import  UserOptionCustomDataType
+from speedwagon.frontend.qtwidgets.shared_custom_widgets import \
+    UserOptionCustomDataType
 
 # use_step_matcher("re")
 
