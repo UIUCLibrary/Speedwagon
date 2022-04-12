@@ -388,4 +388,3 @@ class TestToolOptionsModel4:
         model.setData(index, "spam")
         changed_value = model.data(index)
         assert starting_value is None and changed_value == "spam"
-
