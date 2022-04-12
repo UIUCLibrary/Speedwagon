@@ -224,12 +224,18 @@ class TestTabsYaml:
     def test_read_tabs_yaml_errors(self, monkeypatch,
                                    exception_type):
         import os.path
-        with patch('speedwagon.frontend.qtwidgets.tabs.open', mock.mock_open()):
+        with patch(
+                'speedwagon.frontend.qtwidgets.tabs.open',
+                mock.mock_open()
+        ):
             monkeypatch.setattr(os.path, "getsize", lambda x: 1)
             monkeypatch.setattr(yaml, "load", Mock(side_effect=exception_type))
             with pytest.raises(exception_type) as e:
                 list(
-                    speedwagon.frontend.qtwidgets.tabs.read_tabs_yaml('tabs.yml'))
+                    speedwagon.frontend.qtwidgets.tabs.read_tabs_yaml(
+                        'tabs.yml'
+                    )
+                )
             assert e.type == exception_type
 
     def test_read_tabs_yaml(self, monkeypatch):
@@ -251,10 +257,19 @@ class TestTabsYaml:
 
     def test_write_tabs_yaml(self):
         sample_tab_data = [
-            speedwagon.frontend.qtwidgets.tabs.TabData("dummy_tab", MagicMock())
+            speedwagon.frontend.qtwidgets.tabs.TabData(
+                "dummy_tab",
+                MagicMock()
+            )
         ]
-        with patch('speedwagon.frontend.qtwidgets.tabs.open', mock.mock_open()) as m:
-            speedwagon.frontend.qtwidgets.tabs.write_tabs_yaml("tabs.yml", sample_tab_data)
+        with patch(
+                'speedwagon.frontend.qtwidgets.tabs.open',
+                mock.mock_open()
+        ) as m:
+            speedwagon.frontend.qtwidgets.tabs.write_tabs_yaml(
+                "tabs.yml",
+                sample_tab_data
+            )
             assert m.called is True
         handle = m()
         handle.write.assert_has_calls([call('dummy_tab')])
