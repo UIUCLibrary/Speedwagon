@@ -98,7 +98,9 @@ def test_serialize_settings_model():
         my_model.add_setting(k, v)
 
     # Serialize the model to ini file format
-    data = speedwagon.frontend.qtwidgets.models.serialize_settings_model(my_model)
+    data = \
+        speedwagon.frontend.qtwidgets.models.serialize_settings_model(my_model)
+
     assert data is not None
 
     # Check that the new data is the same as original

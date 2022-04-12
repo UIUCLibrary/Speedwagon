@@ -161,6 +161,7 @@ class TestQtRunner:
             total=10
         )
 
+
 class TestWorkRunnerExternal3:
     @pytest.mark.filterwarnings(
         "ignore:Don't use the dialog:DeprecationWarning")
