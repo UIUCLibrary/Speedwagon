@@ -5,7 +5,6 @@ import pytest
 from unittest.mock import Mock, MagicMock
 from typing import List, Any, Dict
 
-# import speedwagon.frontend.qtwidgets.runners
 import speedwagon.exceptions
 from speedwagon import runner_strategies, tasks
 import speedwagon
@@ -20,7 +19,11 @@ def test_job_call_order(monkeypatch):
     manager.open = MagicMock(name="manager.opena")
 
     manager.open.return_value.__enter__.return_value = Mock(was_aborted=False)
-    runner = speedwagon.frontend.qtwidgets.runners.UsingExternalManagerForAdapter(manager)
+    runner = \
+        speedwagon.frontend.qtwidgets.runners.UsingExternalManagerForAdapter(
+            manager
+        )
+
     parent = Mock()
     parent.name = "parent"
     job = Mock()
@@ -83,7 +86,11 @@ def test_task_exception_logs_error(step):
         was_aborted=False
     )
 
-    runner = speedwagon.frontend.qtwidgets.runners.UsingExternalManagerForAdapter(manager)
+    runner = \
+        speedwagon.frontend.qtwidgets.runners.UsingExternalManagerForAdapter(
+            manager
+        )
+
     parent = Mock()
     parent.name = "parent"
     job = Mock()
@@ -96,7 +103,9 @@ def test_task_exception_logs_error(step):
         job,
         step,
         Mock(
-            side_effect=speedwagon.frontend.qtwidgets.runners.TaskFailed("error")
+            side_effect=speedwagon.frontend.qtwidgets.runners.TaskFailed(
+                "error"
+            )
         )
     )
 
@@ -124,7 +133,11 @@ def test_task_aborted(caplog, step, monkeypatch):
     runner.progress_dialog_box_handler = logging.StreamHandler()
     manager.open.return_value.__enter__.return_value = runner
 
-    runner_strategy = speedwagon.frontend.qtwidgets.runners.UsingExternalManagerForAdapter(manager)
+    runner_strategy = \
+        speedwagon.frontend.qtwidgets.runners.UsingExternalManagerForAdapter(
+            manager
+        )
+
     parent = Mock(name="parent")
     job = Mock(name="job")
     job.__class__ = speedwagon.job.AbsWorkflow
