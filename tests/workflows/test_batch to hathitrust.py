@@ -10,7 +10,8 @@ from speedwagon.workflows import workflow_hathi_limited_to_dl_compound
 import speedwagon.tasks.prep
 from speedwagon.workflows import workflow_get_marc
 import os
-import speedwagon.frontend.qtwidgets.dialog.title_page_selection
+# import speedwagon.frontend.qtwidgets.dialog.title_page_selection
+from speedwagon.frontend.qtwidgets.dialog import title_page_selection
 from uiucprescon.packager.common import Metadata as PackageMetadata
 
 
@@ -21,7 +22,9 @@ from uiucprescon.packager.common import Metadata as PackageMetadata
 def test_hathi_limited_to_dl_compound_has_options(index, label):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        workflow = workflow_hathi_limited_to_dl_compound.HathiLimitedToDLWorkflow()
+        workflow = \
+            workflow_hathi_limited_to_dl_compound.HathiLimitedToDLWorkflow()
+
     user_options = workflow.get_user_options()
     assert len(user_options) > 0
     assert user_options[index].label == label
@@ -94,9 +97,7 @@ def test_package_browser(qtbot):
     mock_package.metadata.__getitem__ = mock_get_item
     mock_package.__len__ = lambda x: 1
 
-    widget = \
-        speedwagon.frontend.qtwidgets.dialog.title_page_selection.PackageBrowser(
-            [mock_package], None)
+    widget = title_page_selection.PackageBrowser([mock_package], None)
 
     with qtbot.waitSignal(widget.finished) as blocker:
         widget.ok_button.click()
@@ -131,9 +132,7 @@ def test_get_additional_info(qtbot, monkeypatch):
 
     def patched_package_browser(packages, parent):
         patched_browser = \
-            speedwagon.frontend.qtwidgets.dialog.title_page_selection.PackageBrowser(
-                packages, parent
-            )
+            title_page_selection.PackageBrowser(packages, parent)
 
         patched_browser.exec = Mock()
         patched_browser.result = Mock(return_value=patched_browser.Accepted)
