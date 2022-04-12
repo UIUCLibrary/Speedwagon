@@ -1037,7 +1037,7 @@ pipeline {
                                         sh(
                                             label: 'Creating build environment',
                                             script: '''python3 -m venv --upgrade-deps venv
-                                                       venv/bin/pip install pyinstaller cmake jinja2
+                                                       venv/bin/pip install -r requirements-freeze.txt
                                             '''
                                             )
                                         script{
