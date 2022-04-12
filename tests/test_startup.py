@@ -20,8 +20,11 @@ import speedwagon.config
 import speedwagon.job
 import speedwagon.frontend.qtwidgets.gui
 import speedwagon.runner_strategies
+
 from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog
-import speedwagon.frontend.qtwidgets.dialog
+# import speedwagon.frontend.qtwidgets.dialog
+from speedwagon.frontend.qtwidgets.dialog import dialogs
+
 
 def test_version_exits_after_being_called(monkeypatch):
 
@@ -599,7 +602,7 @@ class TestSingleWorkflowJSON:
         import tracemalloc
         tracemalloc.start()
         monkeypatch.setattr(
-            speedwagon.startup.frontend.qtwidgets.dialog.dialogs.WorkflowProgress,
+            dialogs.WorkflowProgress,
             "show",
             lambda *args, **kwargs: None
         )
@@ -632,7 +635,7 @@ class TestSingleWorkflowJSON:
         )
 
         monkeypatch.setattr(
-            speedwagon.startup.frontend.qtwidgets.dialog.dialogs.WorkflowProgress,
+            dialogs.WorkflowProgress,
             "exec",
             Mock()
         )
@@ -681,8 +684,7 @@ class TestSingleWorkflowJSON:
         MainWindow2.show = Mock()
         qtbot.addWidget(MainWindow2)
         monkeypatch.setattr(
-            # speedwagon.frontend.qtwidgets.dialog.dialogs.WorkflowProgress,
-            speedwagon.startup.frontend.qtwidgets.dialog.dialogs.WorkflowProgress,
+            dialogs.WorkflowProgress,
             "exec",
             Mock()
         )
@@ -698,7 +700,7 @@ class TestSingleWorkflowJSON:
         )
 
         monkeypatch.setattr(
-            speedwagon.startup.frontend.qtwidgets.dialog.dialogs.WorkflowProgress,
+            dialogs.WorkflowProgress,
             "show",
             lambda *args, **kwargs: None
         )
@@ -788,14 +790,14 @@ class TestWorkflowProgressCallbacks:
     @pytest.fixture()
     def dialog_box(self, qtbot, monkeypatch):
         monkeypatch.setattr(
-            speedwagon.startup.frontend.qtwidgets.dialog.dialogs.WorkflowProgress,
+            dialogs.WorkflowProgress,
             "show",
             lambda *args, **kwargs: None
         )
 
-        widget = speedwagon.frontend.qtwidgets.dialog.dialogs.WorkflowProgress()
+        widget = dialogs.WorkflowProgress()
         monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.dialog.dialogs.WorkflowProgressStateWorking,
+            dialogs.WorkflowProgressStateWorking,
             "close_dialog", lambda self, event: None)
         qtbot.add_widget(widget)
         yield widget
@@ -926,7 +928,12 @@ class TestWorkflowProgressCallbacks:
         with qtbot.waitSignal(callbacks.signals.started):
             callbacks.start()
 
-    def test_refresh_calls_process_events(self, dialog_box, monkeypatch, qtbot):
+    def test_refresh_calls_process_events(
+            self,
+            dialog_box,
+            monkeypatch,
+            qtbot
+    ):
         callbacks = \
             speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
                 dialog_box
