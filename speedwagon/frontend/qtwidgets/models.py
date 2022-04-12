@@ -801,7 +801,7 @@ def build_setting_model(config_file: str) -> SettingsModel:
 
 
 def serialize_settings_model(model: QAbstractItemModel) -> str:
-    """Convert a SettingsModel into a data format that can be written to a file.
+    """Convert a SettingsModel into a format that can be written to a file.
 
     Note:
         This only generates and returns a string. You are still responsible to
