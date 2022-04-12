@@ -22,7 +22,8 @@ class TestDelegateSelection:
 
     @pytest.fixture
     def delegate_widget(self):
-        return speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection()
+        return \
+            speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection()
 
     @pytest.fixture
     def editor(
@@ -42,7 +43,9 @@ class TestDelegateSelection:
             qtbot,
             index,
     ):
-        delegate_widget = speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection()
+        delegate_widget = \
+            speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection()
+
         assert isinstance(
             delegate_widget.createEditor(
                 parent=QtWidgets.QWidget(),
@@ -57,7 +60,7 @@ class TestDelegateSelection:
             qtbot,
             index,
             editor: speedwagon.frontend.qtwidgets.widgets.FileSelectWidget,
-            delegate_widget: speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection,
+            delegate_widget,
             model: speedwagon.frontend.qtwidgets.models.ToolOptionsModel4
     ):
         starting_value = model.data(index, role=QtCore.Qt.DisplayRole)
@@ -72,12 +75,12 @@ class TestDelegateSelection:
             self,
             qtbot,
             index,
-            delegate_widget: speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection,
+            delegate_widget,
             model: speedwagon.frontend.qtwidgets.models.ToolOptionsModel4
     ):
         model.setData(index, "Dummy")
         parent = QtWidgets.QWidget()
-        new_editor: speedwagon.frontend.qtwidgets.widgets.FileSystemItemSelectWidget = \
+        new_editor = \
             delegate_widget.createEditor(
                 parent,
                 QtWidgets.QStyleOptionViewItem(),
@@ -89,7 +92,8 @@ class TestDelegateSelection:
     def test_warn_on_not_using_right_subclass(
             self,
             index: QtCore.QModelIndex,
-            delegate_widget: speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection,
+            delegate_widget:
+            speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection,
             model: speedwagon.frontend.qtwidgets.models.ToolOptionsModel4
     ):
         model.setData(index, "Dummy")
@@ -103,19 +107,23 @@ class TestDropDownWidget:
         assert isinstance(widget, QtWidgets.QWidget)
 
     def test_data_updating(self, qtbot):
-        widget = speedwagon.frontend.qtwidgets.widgets.ComboWidget(widget_metadata={
-            "selections": ["spam", "bacon", "eggs"]
-        })
+        widget = speedwagon.frontend.qtwidgets.widgets.ComboWidget(
+            widget_metadata={
+                "selections": ["spam", "bacon", "eggs"]
+            }
+        )
         starting_data = widget.data
         widget.combo_box.setCurrentIndex(0)
         first_index_data = widget.data
         assert starting_data is None and first_index_data == "spam"
 
     def test_placeholder_text(self, qtbot):
-        widget = speedwagon.frontend.qtwidgets.widgets.ComboWidget(widget_metadata={
-            "selections": ["spam", "bacon", "eggs"],
-            "placeholder_text": "Dummy"
-        })
+        widget = speedwagon.frontend.qtwidgets.widgets.ComboWidget(
+            widget_metadata={
+                "selections": ["spam", "bacon", "eggs"],
+                "placeholder_text": "Dummy"
+            }
+        )
         qtbot.addWidget(widget)
         assert widget.combo_box.placeholderText() == "Dummy"
 
