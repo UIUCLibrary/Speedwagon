@@ -7,7 +7,7 @@ from speedwagon.workflows import \
     workflow_convertCaptureOnePreservationToDigitalLibJP2 as \
     capture_one_workflow
 
-from speedwagon import models
+from speedwagon.frontend.qtwidgets import models
 
 
 def test_package_image_task_success(monkeypatch):

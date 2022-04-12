@@ -7,9 +7,7 @@ import os
 import pathlib
 import sys
 import typing
-from collections import OrderedDict
 from pathlib import Path
-import io
 import abc
 import collections.abc
 from typing import Optional, Dict, Type, Set, Iterator, Iterable, Union, List
@@ -21,18 +19,12 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
 
-
-from PySide6.QtCore import QAbstractItemModel
-
-from speedwagon.job import all_required_workflow_keys
-import speedwagon.models
+import speedwagon
 
 __all__ = [
     "ConfigManager",
     "generate_default",
-    "get_platform_settings",
-    "build_setting_model",
-    "serialize_settings_model"
+    "get_platform_settings"
 ]
 
 
@@ -188,7 +180,7 @@ def generate_default(config_file: str) -> None:
 
     with open(config_file, "w", encoding="utf-8") as file:
         config.write(file)
-    ensure_keys(config_file, all_required_workflow_keys())
+    ensure_keys(config_file, speedwagon.job.all_required_workflow_keys())
 
 
 def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
@@ -208,43 +200,6 @@ def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
             raise ValueError(f"Platform {platform.system()} not supported")
         return system_config()
     return configuration
-
-
-def build_setting_model(config_file: str) -> "speedwagon.models.SettingsModel":
-    """Read a configuration file and generate a SettingsModel."""
-    if not os.path.exists(config_file):
-        raise FileNotFoundError(f"No existing Configuration in ${config_file}")
-
-    config = configparser.ConfigParser()
-    config.read(config_file)
-    global_settings = config["GLOBAL"]
-    my_model = speedwagon.models.SettingsModel()
-    for key, value in global_settings.items():
-        my_model.add_setting(key, value)
-    return my_model
-
-
-def serialize_settings_model(model: QAbstractItemModel) -> str:
-    """Convert a SettingsModel into a data format that can be written to a file.
-
-    Note:
-        This only generates and returns a string. You are still responsible to
-        write that data to a file.
-
-    """
-    config_data = configparser.ConfigParser()
-    config_data["GLOBAL"] = {}
-    global_data: Dict[str, str] = OrderedDict()
-
-    for i in range(model.rowCount()):
-        key = model.index(i, 0).data()
-        value = model.index(i, 1).data()
-        global_data[key] = value
-    config_data["GLOBAL"] = global_data
-
-    with io.StringIO() as string_writer:
-        config_data.write(string_writer)
-        return string_writer.getvalue()
 
 
 def find_missing_global_entries(

@@ -8,7 +8,7 @@ except ImportError:
     import importlib_metadata as metadata  # type: ignore
     from importlib_metadata import PackageNotFoundError
 
-from speedwagon.dialog import dialogs
+from speedwagon.frontend.qtwidgets.dialog import dialogs
 
 
 def test_about_dialog_box(qtbot, monkeypatch):

@@ -5,7 +5,7 @@ import pytest
 import speedwagon
 import speedwagon.tasks.validation
 from speedwagon.workflows import workflow_validate_metadata
-from speedwagon import models
+from speedwagon.frontend.qtwidgets import models
 import os
 
 options = [

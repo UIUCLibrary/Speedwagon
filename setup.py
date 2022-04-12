@@ -23,15 +23,13 @@ if __name__ == "__main__":
         ],
         packages=[
             "speedwagon",
-            "speedwagon.dialog",
             "speedwagon.frontend",
             "speedwagon.frontend.cli",
             "speedwagon.frontend.qtwidgets",
+            "speedwagon.frontend.qtwidgets.dialog",
+            "speedwagon.frontend.qtwidgets.ui",
             "speedwagon.tasks",
             "speedwagon.workflows",
-            "speedwagon.workflows.tessdata",
-            "speedwagon.ui",
-
         ],
         setup_requires=['pytest-runner'],
         tests_require=['pytest', "behave", "pytest-qt"],
@@ -45,7 +43,7 @@ if __name__ == "__main__":
         include_package_data=True,
         package_data={
             'speedwagon': ["favicon.ico", "logo.png"],
-            'speedwagon.ui': [
+            'speedwagon.frontend.qtwidgets.ui': [
                 "tab_editor.ui",
                 "main_window_shell.ui",
                 "main_window2.ui",

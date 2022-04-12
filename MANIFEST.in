@@ -2,8 +2,8 @@ include LICENSE README.rst requirements.txt requirements-dev.txt tox.ini
 include .pylintrc
 include speedwagon/logo.png
 include speedwagon/favicon.ico
-recursive-include speedwagon/ui *.ui
-include speedwagon/ui/__init__.py
+recursive-include speedwagon/frontend/qtwidgets/ui *.ui
+include speedwagon/frontend/qtwidgets/ui/__init__.py
 recursive-include tests *.py
 recursive-include features/steps *.py
 recursive-include features *.feature

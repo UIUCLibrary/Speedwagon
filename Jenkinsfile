@@ -44,7 +44,7 @@ def run_pylint(){
                 tee('reports/pylint_issues.txt'){
                     sh(
                         label: 'Running pylint',
-                        script: 'pylint speedwagon -j 1 -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
+                        script: 'pylint speedwagon -j 2 -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
                     )
                 }
             }
@@ -52,7 +52,7 @@ def run_pylint(){
         timeout(MAX_TIME){
             sh(
                 label: 'Running pylint for sonarqube',
-                script: 'pylint speedwagon -j 1 -d duplicate-code --output-format=parseable | tee reports/pylint.txt',
+                script: 'pylint speedwagon -j 2 -d duplicate-code --output-format=parseable | tee reports/pylint.txt',
                 returnStatus: true
             )
         }
@@ -1037,7 +1037,7 @@ pipeline {
                                         sh(
                                             label: 'Creating build environment',
                                             script: '''python3 -m venv --upgrade-deps venv
-                                                       venv/bin/pip install pyinstaller cmake jinja2
+                                                       venv/bin/pip install -r requirements-freeze.txt
                                             '''
                                             )
                                         script{

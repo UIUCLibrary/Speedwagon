@@ -8,7 +8,7 @@ import speedwagon
 from speedwagon.workflows import workflow_ocr
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from uiucprescon.ocr import reader, tesseractwrap
-from speedwagon import models
+from speedwagon.frontend.qtwidgets import models, runners
 
 
 def test_no_config():
@@ -97,7 +97,9 @@ class MockGenerateOCRFileTask(workflow_ocr.GenerateOCRFileTask):
     engine = Mock(get_reader=mock_reader)
 
 
-def test_runs(qtbot, tool_job_manager_spy, tmpdir):
+def test_runs(qtbot, tool_job_manager_spy, tmpdir, monkeypatch):
+    monkeypatch.setattr(runners, "QtDialogProgress", MagicMock())
+
     class MockOCRWorkflow(workflow_ocr.OCRWorkflow):
         def create_new_task(self, task_builder, **job_args):
             image_file = job_args["source_file_path"]

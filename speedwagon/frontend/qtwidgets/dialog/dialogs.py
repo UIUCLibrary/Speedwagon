@@ -8,8 +8,6 @@ import warnings
 from typing import Collection, Union
 
 from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
-from speedwagon import ui_loader
-
 
 try:  # pragma: no cover
     from importlib import metadata
@@ -22,7 +20,8 @@ except ImportError:  # pragma: no cover
     import importlib_resources as resources  # type: ignore
 
 import speedwagon
-import speedwagon.logging_helpers
+from speedwagon.frontend.qtwidgets import logging_helpers, ui_loader
+import speedwagon.frontend.qtwidgets.ui
 
 __all__ = [
     "SystemInfoDialog",
@@ -391,7 +390,7 @@ class WorkflowProgressGui(QtWidgets.QDialog):
         # All ui info is located in the .ui file. Any graphical changes should
         # be make in there.
         with resources.path(
-                "speedwagon.ui",
+                "speedwagon.frontend.qtwidgets.ui",
                 "workflow_progress.ui"
         ) as ui_file:
             ui_loader.load_ui(str(ui_file), self)
@@ -424,7 +423,7 @@ class WorkflowProgressGui(QtWidgets.QDialog):
     def attach_logger(self, logger: logging.Logger) -> None:
         self._parent_logger = logger
         self._log_handler = WorkflowProgressGui.DialogLogHandler(self)
-        formatter = speedwagon.logging_helpers.ConsoleFormatter()
+        formatter = logging_helpers.ConsoleFormatter()
         self._log_handler.setFormatter(formatter)
         self._parent_logger.addHandler(self._log_handler)
 

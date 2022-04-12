@@ -1,0 +1,5 @@
+-r requirements.txt
+-r requirements-vendor.txt
+cmake
+Jinja2
+pyinstaller

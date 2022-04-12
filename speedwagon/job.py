@@ -18,32 +18,15 @@ from typing import \
     Tuple, \
     Type
 
-from speedwagon.frontend import interaction
-from speedwagon import tasks, workflow
-
+import speedwagon.workflow
+import speedwagon.frontend
 __all__ = [
-    "JobCancelled",
     "AbsWorkflow",
     "Workflow",
     "NullWorkflow",
     "available_workflows",
     "all_required_workflow_keys"
 ]
-
-
-class JobCancelled(Exception):
-    """Job cancelled exception."""
-
-    def __init__(self, *args: object, expected: bool = False) -> None:
-        """Indicate a job was cancelled.
-
-        Args:
-            *args:
-            expected: If the job was cancelled on purpose or not, such as a
-                failure.
-        """
-        super().__init__(*args)
-        self.expected = expected
 
 
 class AbsWorkflow(metaclass=abc.ABCMeta):
@@ -55,6 +38,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
     global_settings: Dict[str, str] = {}
     required_settings_keys: Set[str] = set()
 
+    # pylint: disable=unused-argument
     def __init__(self, *args, **kwargs) -> None:
         """Populate the base structure of a workflow class."""
         super().__init__()
@@ -74,11 +58,15 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
         """
 
-    def completion_task(self, task_builder: tasks.TaskBuilder, results,
-                        **user_args) -> None:
+    def completion_task(
+            self,
+            task_builder: speedwagon.tasks.TaskBuilder,
+            results,
+            **user_args
+    ) -> None:
         """Last task after Job is completed."""
 
-    def initial_task(self, task_builder: tasks.TaskBuilder,
+    def initial_task(self, task_builder: speedwagon.tasks.TaskBuilder,
                      **user_args) -> None:
         """Create a task to run before the main tasks start.
 
@@ -95,7 +83,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
     def create_new_task(
             self,
-            task_builder: tasks.TaskBuilder,
+            task_builder: speedwagon.tasks.TaskBuilder,
             **job_args
     ) -> None:
         """Add a new task to be accomplished when the workflow is started.
@@ -116,8 +104,11 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
         """
 
     @classmethod
-    def generate_report(cls, results: List[tasks.Result], **user_args) \
-            -> Optional[str]:
+    def generate_report(
+            cls,
+            results: List[speedwagon.tasks.Result],
+            **user_args
+    ) -> Optional[str]:
         r"""Generate a text report for the results of the workflow.
 
         Example:
@@ -137,6 +128,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
         """
 
+    # pylint: disable=unused-argument
     @staticmethod
     def validate_user_options(**user_args) -> bool:
         """Make sure that the options the user provided is valid.
@@ -164,11 +156,13 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
         You need to implement the discover_task_metadata() method.
     """
 
+    # pylint: disable=no-self-use
     def get_additional_info(
             self,
-            user_request_factory: "interaction.UserRequestFactory",
-            options: dict,
-            pretask_results: list
+            user_request_factory:  # pylint: disable=unused-argument
+            'speedwagon.frontend.interaction.UserRequestFactory',
+            options: dict,  # pylint: disable=unused-argument
+            pretask_results: list  # pylint: disable=unused-argument
     ) -> dict:
         """Request additional information from the user.
 
@@ -187,7 +181,11 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
 
     def get_user_options(  # pylint: disable=no-self-use
             self
-    ) -> List[workflow.AbsOutputOptionDataType]:
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        """Get user options.
+
+        Defaults to no args.
+        """
         return []
 
 

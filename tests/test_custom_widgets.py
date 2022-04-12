@@ -3,10 +3,10 @@ import pytest
 from PySide6 import QtWidgets
 from typing import List, Any
 from speedwagon.job import AbsWorkflow
-import speedwagon.tabs
-import speedwagon.models
-from speedwagon.tabs import WorkflowsTab, MyDelegate
-from speedwagon.workflows import shared_custom_widgets
+import speedwagon.frontend.qtwidgets.tabs
+import speedwagon.frontend.qtwidgets.models
+from speedwagon.frontend.qtwidgets.tabs import WorkflowsTab, MyDelegate
+from speedwagon.frontend.qtwidgets import shared_custom_widgets
 
 
 @pytest.mark.filterwarnings(
@@ -21,7 +21,7 @@ def test_folder_browse_widget(qtbot, monkeypatch):
     )
 
     qtbot.addWidget(widget)
-    assert len( widget.text_line.actions()) == 1
+    assert len(widget.text_line.actions()) == 1
     x = widget.text_line.actions()[0]
     x.triggered.emit()
     assert widget.data == "/sample/path"
@@ -36,10 +36,12 @@ def test_browse_checksumfile(qtbot, monkeypatch):
     monkeypatch.setattr(
         QtWidgets.QFileDialog,
         "getOpenFileName",
-        lambda *args, **kwargs: ("/sample/path/sample.md5", 'Checksum files (*.md5)')
+        lambda *args, **kwargs: (
+            "/sample/path/sample.md5", 'Checksum files (*.md5)'
+        )
     )
     qtbot.addWidget(widget)
-    assert len( widget.text_line.actions()) == 1
+    assert len(widget.text_line.actions()) == 1
     x = widget.text_line.actions()[0]
     x.triggered.emit()
     assert widget.data == "/sample/path/sample.md5"
@@ -82,12 +84,13 @@ def test_boolean_delegate_is_combobox(qtbot, monkeypatch):
     mock_work_manager = Mock()
     mock_work_manager.user_settings = {}
 
-
     def get_item_options_model(self, workflow):
         new_workflow = workflow(
             global_settings=dict(self.work_manager.user_settings)
         )
-        return speedwagon.models.ToolOptionsModel3(new_workflow.user_options())
+        return speedwagon.frontend.qtwidgets.models.ToolOptionsModel3(
+            new_workflow.user_options()
+        )
 
     monkeypatch.setattr(
         WorkflowsTab,
@@ -135,7 +138,10 @@ def test_folder_delegate_is_browsable(qtbot, monkeypatch):
         new_workflow = workflow(
             global_settings=dict(self.work_manager.user_settings)
         )
-        return speedwagon.models.ToolOptionsModel3(new_workflow.user_options())
+
+        return speedwagon.frontend.qtwidgets.models.ToolOptionsModel3(
+            new_workflow.user_options()
+        )
 
     monkeypatch.setattr(
         WorkflowsTab,

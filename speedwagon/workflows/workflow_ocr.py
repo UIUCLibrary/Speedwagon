@@ -2,7 +2,6 @@
 
 import io
 import os
-import sys
 import typing
 
 from typing import List, Any, Optional, Iterator, Dict
@@ -194,32 +193,13 @@ class OCRWorkflow(speedwagon.Workflow):
         ]
 
     def get_tesseract_path(self):
-        def valid_tessdata_path(item: Optional[str]) -> bool:
-
-            if item is None:
-                return False
-
-            if not os.path.exists(item):
-                return False
-
-            return path_contains_traineddata(item)
+        """Get the path to the tesseract data files."""
         self.tessdata_path = self.global_settings.get("tessdata")
-
-        if not valid_tessdata_path(self.tessdata_path):
-
-            tessdata_path = locate_tessdata()
-
-            print(
-                "Note: Invalid setting for tessdata. "
-                f"Using path {tessdata_path}",
-                file=sys.stderr
-            )
-        else:
-            tessdata_path = self.tessdata_path
-        return tessdata_path
+        return self.tessdata_path
 
     @staticmethod
     def get_available_languages(path: str) -> Iterator[str]:
+        """Get languages accessible based on the available data files."""
 
         def filter_only_trainingdata(item: os.DirEntry) -> bool:
             if not item.is_file():

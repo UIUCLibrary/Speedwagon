@@ -1,4 +1,10 @@
 """Data models for displaying data to user in the user interface."""
+import abc
+from collections import namedtuple, OrderedDict
+import configparser
+import enum
+import io
+import os
 
 import sys
 import typing
@@ -10,15 +16,14 @@ except ImportError:
     from typing_extensions import Final  # type: ignore
 
 import warnings
-from abc import abstractmethod
-from collections import namedtuple
-import enum
 
+from PySide6.QtCore import QAbstractItemModel
 from PySide6 import QtCore, QtGui  # type: ignore
-from speedwagon import tabs, Workflow
+
+import speedwagon.frontend
+from speedwagon.frontend.qtwidgets import tabs, shared_custom_widgets
 import speedwagon.workflow
-from .job import AbsWorkflow
-from .workflows import shared_custom_widgets
+from speedwagon.job import AbsWorkflow, Workflow
 
 __all__ = [
     "ItemListModel",
@@ -245,7 +250,7 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
             return 1
         return 0
 
-    @abstractmethod
+    @abc.abstractmethod
     def get(self):
         raise NotImplementedError
 
@@ -779,3 +784,40 @@ class TabsModel(QtCore.QAbstractListModel):
         # pylint: disable=no-member
         self.dataChanged.emit(index, index, [role])
         return True
+
+
+def build_setting_model(config_file: str) -> SettingsModel:
+    """Read a configuration file and generate a SettingsModel."""
+    if not os.path.exists(config_file):
+        raise FileNotFoundError(f"No existing Configuration in ${config_file}")
+
+    config = configparser.ConfigParser()
+    config.read(config_file)
+    global_settings = config["GLOBAL"]
+    my_model = SettingsModel()
+    for key, value in global_settings.items():
+        my_model.add_setting(key, value)
+    return my_model
+
+
+def serialize_settings_model(model: QAbstractItemModel) -> str:
+    """Convert a SettingsModel into a format that can be written to a file.
+
+    Note:
+        This only generates and returns a string. You are still responsible to
+        write that data to a file.
+
+    """
+    config_data = configparser.ConfigParser()
+    config_data["GLOBAL"] = {}
+    global_data: Dict[str, str] = OrderedDict()
+
+    for i in range(model.rowCount()):
+        key = model.index(i, 0).data()
+        value = model.index(i, 1).data()
+        global_data[key] = value
+    config_data["GLOBAL"] = global_data
+
+    with io.StringIO() as string_writer:
+        config_data.write(string_writer)
+        return string_writer.getvalue()

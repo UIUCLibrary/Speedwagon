@@ -13,12 +13,6 @@ Configuration Profiles
 .. autoclass:: WindowsConfig
     :show-inheritance:
 
-Saving and Loading Configurations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: build_setting_model
-.. autofunction:: serialize_settings_model
-
 
 
 Other Functions

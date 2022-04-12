@@ -3,7 +3,7 @@ import logging
 from unittest.mock import Mock, patch, mock_open
 import pytest
 from PySide6 import QtWidgets,  QtCore
-from speedwagon.dialog import settings, dialogs
+from speedwagon.frontend.qtwidgets.dialog import settings, dialogs
 
 
 def test_settings_open_dir_if_location_is_set(qtbot, monkeypatch):
@@ -68,10 +68,10 @@ class TestGlobalSettingsTab:
     def test_on_okay_modified(self, qtbot, monkeypatch, config_file,
                               expect_file_written):
         from PySide6 import QtWidgets
-        from speedwagon import config
+        from speedwagon.frontend.qtwidgets import models
         mock_exec = Mock()
         monkeypatch.setattr(QtWidgets.QMessageBox, "exec", mock_exec)
-        monkeypatch.setattr(config, "serialize_settings_model", Mock())
+        monkeypatch.setattr(models, "serialize_settings_model", Mock())
         settings_tab = settings.GlobalSettingsTab()
         qtbot.addWidget(settings_tab)
         settings_tab.on_modified()
@@ -103,7 +103,7 @@ class TestTabsConfigurationTab:
         config_tab = settings.TabsConfigurationTab()
         config_tab.settings_location = settings_location
         config_tab.editor.on_modified()
-        from speedwagon import tabs
+        from speedwagon.frontend.qtwidgets import tabs
         write_tabs_yaml = Mock()
         mock_exec = Mock(name="message box exec")
         with monkeypatch.context() as mp:
@@ -164,15 +164,15 @@ class TestTabEditor:
             editor
     ):
         qtbot.addWidget(editor)
-        from speedwagon.tabs import TabData
-        from speedwagon import models
+        from speedwagon.frontend.qtwidgets import tabs
+        from speedwagon.frontend.qtwidgets import models
         with monkeypatch.context() as mp:
             def read_tabs_yaml(*args, **kwargs):
                 return [
-                    TabData("existing tab", models.WorkflowListModel2())
+                    tabs.TabData("existing tab", models.WorkflowListModel2())
                 ]
 
-            mp.setattr(settings.tabs, "read_tabs_yaml", read_tabs_yaml)
+            mp.setattr(tabs, "read_tabs_yaml", read_tabs_yaml)
             editor.tabs_file = "dummy.yml"
 
         with monkeypatch.context() as mp:

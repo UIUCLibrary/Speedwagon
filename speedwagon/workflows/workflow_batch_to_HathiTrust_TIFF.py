@@ -11,11 +11,14 @@ from uiucprescon.packager.packages.collection import Metadata
 from uiucprescon import packager
 
 import speedwagon
+import speedwagon.exceptions
 import speedwagon.workflow
 import speedwagon.tasks.packaging
 import speedwagon.tasks.prep
-from speedwagon.workflows import shared_custom_widgets, workflow_get_marc
-from . title_page_selection import PackageBrowser
+from speedwagon.workflows import workflow_get_marc
+from speedwagon.frontend.qtwidgets import shared_custom_widgets
+from speedwagon.frontend.qtwidgets.dialog.title_page_selection import \
+    PackageBrowser
 from .workflow_get_marc import UserOptions
 
 __all__ = ['CaptureOneBatchToHathiComplete']
@@ -178,7 +181,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
             browser.exec()
 
             if browser.result() != browser.Accepted:
-                raise speedwagon.JobCancelled()
+                raise speedwagon.exceptions.JobCancelled()
             data = browser.data()
             for package in data:
                 bib_id = typing.cast(str, package.metadata[Metadata.ID])

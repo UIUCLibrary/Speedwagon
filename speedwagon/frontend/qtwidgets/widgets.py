@@ -6,7 +6,7 @@ import warnings
 from typing import Union, Optional, Dict, Any
 
 from PySide6 import QtWidgets, QtCore, QtGui
-import speedwagon.models
+from speedwagon.frontend.qtwidgets import models
 
 __all__ = [
     "QtWidgetDelegateSelection"
@@ -270,7 +270,7 @@ class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
     ) -> QtWidgets.QWidget:
         """Create the correct editor widget for editing the data."""
         json_data = json.loads(
-            index.data(role=speedwagon.models.ToolOptionsModel4.JsonDataRole)
+            index.data(role=models.ToolOptionsModel4.JsonDataRole)
         )
 
         editor_type: Optional[typing.Type[EditDelegateWidget]] = \

@@ -6,17 +6,20 @@ import webbrowser
 import pytest
 
 import speedwagon.startup
-import speedwagon.tabs
-import speedwagon.gui
+import speedwagon.frontend.qtwidgets.tabs
+import speedwagon.frontend.qtwidgets.dialog
+import speedwagon.frontend.qtwidgets.gui
 import speedwagon.workflow
-from speedwagon.workflows import shared_custom_widgets
+from speedwagon.frontend.qtwidgets import shared_custom_widgets
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QAction
 
 
 def test_show_help_open_web(qtbot, monkeypatch):
     mock_work_manager = Mock()
-    main_window = speedwagon.gui.MainWindow1(mock_work_manager)
+    main_window = \
+        speedwagon.frontend.qtwidgets.gui.MainWindow1(mock_work_manager)
+
     qtbot.addWidget(main_window)
 
     def mock_open_new(url, *args, **kwargs):
@@ -31,7 +34,9 @@ def test_exit_button(qtbot, monkeypatch):
     exit_calls = []
     monkeypatch.setattr(QApplication, "exit", lambda: exit_calls.append(1))
     mock_work_manager = Mock()
-    main_window = speedwagon.gui.MainWindow1(mock_work_manager)
+    main_window = \
+        speedwagon.frontend.qtwidgets.gui.MainWindow1(mock_work_manager)
+
     qtbot.addWidget(main_window)
     exit_button = main_window.findChild(QAction, name="exitAction")
     exit_button.trigger()
@@ -39,9 +44,11 @@ def test_exit_button(qtbot, monkeypatch):
 
 
 def test_system_info_menu(qtbot, monkeypatch):
-    from speedwagon.dialog import dialogs
+    from speedwagon.frontend.qtwidgets.dialog import dialogs
     mock_work_manager = Mock()
-    main_window = speedwagon.gui.MainWindow1(mock_work_manager)
+    main_window = \
+        speedwagon.frontend.qtwidgets.gui.MainWindow1(mock_work_manager)
+
     qtbot.addWidget(main_window)
     from PySide6 import QtWidgets
     system_menu = main_window.menuBar().findChild(QtWidgets.QMenu,
@@ -61,7 +68,9 @@ def test_system_info_menu(qtbot, monkeypatch):
 
 def test_show_configuration_menu(qtbot, monkeypatch):
     mock_work_manager = MagicMock(settings_path="some-path")
-    main_window = speedwagon.gui.MainWindow1(mock_work_manager)
+    main_window = \
+        speedwagon.frontend.qtwidgets.gui.MainWindow1(mock_work_manager)
+
     qtbot.addWidget(main_window)
     from PySide6 import QtWidgets
     system_menu = main_window.menuBar().findChild(QtWidgets.QMenu,
@@ -75,7 +84,7 @@ def test_show_configuration_menu(qtbot, monkeypatch):
         assert False, "settingsAction not found"
 
     import os
-    from speedwagon.dialog import settings
+    from speedwagon.frontend.qtwidgets.dialog import settings
     monkeypatch.setattr(os.path, "exists", lambda x: True)
     read_config_data = Mock()
     monkeypatch.setattr(
@@ -94,7 +103,7 @@ def test_show_configuration_menu(qtbot, monkeypatch):
 
 class TestToolConsole:
     def test_add_message(self, qtbot):
-        console = speedwagon.gui.ToolConsole(None)
+        console = speedwagon.frontend.qtwidgets.gui.ToolConsole(None)
         qtbot.addWidget(console)
         console.add_message("I'm a message")
         assert "I'm a message" in console.text
@@ -102,11 +111,12 @@ class TestToolConsole:
 
 def test_window_save_log(qtbot, monkeypatch):
     mock_work_manager = MagicMock(settings_path="some-path")
-    main_window = speedwagon.gui.MainWindow1(mock_work_manager)
+    main_window = \
+        speedwagon.frontend.qtwidgets.gui.MainWindow1(mock_work_manager)
 
     qtbot.addWidget(main_window)
     monkeypatch.setattr(
-        speedwagon.gui.QtWidgets.QFileDialog,
+        speedwagon.frontend.qtwidgets.gui.QtWidgets.QFileDialog,
         "getSaveFileName",
         lambda *args, **kwargs: ("spam.log", None)
     )
@@ -120,7 +130,8 @@ def test_window_save_log(qtbot, monkeypatch):
 
 def test_set_current_tab(qtbot):
     mock_work_manager = MagicMock(settings_path="some-path")
-    main_window = speedwagon.gui.MainWindow1(mock_work_manager)
+    main_window = \
+        speedwagon.frontend.qtwidgets.gui.MainWindow1(mock_work_manager)
 
     qtbot.addWidget(main_window)
     main_window.tab_widget.tabs.count = Mock(return_value=1)
@@ -135,11 +146,11 @@ class TestMainWindow:
     def test_about_dialog_box(self, qtbot, monkeypatch):
         work_manager = Mock()
         work_manager.settings_path = None
-        window = speedwagon.gui.MainWindow1(work_manager)
+        window = speedwagon.frontend.qtwidgets.gui.MainWindow1(work_manager)
         qtbot.add_widget(window)
         about_dialog_box = Mock()
         monkeypatch.setattr(
-            speedwagon.dialog.dialogs,
+            speedwagon.frontend.qtwidgets.dialog,
             "about_dialog_box",
             about_dialog_box
         )
@@ -149,11 +160,11 @@ class TestMainWindow:
     def test_show_system_info(self, qtbot, monkeypatch):
         work_manager = Mock()
         work_manager.settings_path = None
-        window = speedwagon.gui.MainWindow1(work_manager)
+        window = speedwagon.frontend.qtwidgets.gui.MainWindow1(work_manager)
         qtbot.add_widget(window)
         exec_ = Mock()
         monkeypatch.setattr(
-            speedwagon.dialog.dialogs.SystemInfoDialog,
+            speedwagon.frontend.qtwidgets.dialog.dialogs.SystemInfoDialog,
             "exec",
             exec_
         )
@@ -167,11 +178,11 @@ class TestMainWindow:
     ):
         work_manager = Mock()
         work_manager.settings_path = None
-        window = speedwagon.gui.MainWindow1(work_manager)
+        window = speedwagon.frontend.qtwidgets.gui.MainWindow1(work_manager)
         qtbot.add_widget(window)
         exec_ = Mock()
         monkeypatch.setattr(
-            speedwagon.dialog.settings.SettingsDialog,
+            speedwagon.frontend.qtwidgets.dialog.settings.SettingsDialog,
             "exec",
             exec_
         )
@@ -185,12 +196,12 @@ class TestMainWindow2:
         manager = Mock()
 
         monkeypatch.setattr(
-            speedwagon.gui.QtWidgets.QWidget,
+            speedwagon.frontend.qtwidgets.gui.QtWidgets.QWidget,
             "close",
             exit_called
         )
 
-        main_window = speedwagon.gui.MainWindow2(manager)
+        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(manager)
         qtbot.addWidget(main_window)
         main_window.findChild(QAction, name="exitAction").trigger()
         assert exit_called.called is True
@@ -198,13 +209,13 @@ class TestMainWindow2:
     @pytest.mark.parametrize("tab_name", ["Spam", "Dummy"])
     def test_set_current_tab(self, qtbot, tab_name):
         manager = Mock()
-        main_window = speedwagon.gui.MainWindow2(manager)
-        workflows_tab1 = speedwagon.tabs.WorkflowsTab2(
+        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(manager)
+        workflows_tab1 = speedwagon.frontend.qtwidgets.tabs.WorkflowsTab2(
             parent=main_window.tab_widget,
             workflows=MagicMock(),
         )
         main_window.tab_widget.add_tab(workflows_tab1.tab_widget, "Dummy")
-        workflows_tab2 = speedwagon.tabs.WorkflowsTab2(
+        workflows_tab2 = speedwagon.frontend.qtwidgets.tabs.WorkflowsTab2(
             parent=main_window.tab_widget,
             workflows=MagicMock(),
         )
@@ -218,9 +229,9 @@ class TestMainWindow2:
         assert current_tab_name == tab_name
 
     def test_set_current_tab_invalid_throws(self, qtbot):
-        main_window = speedwagon.gui.MainWindow2(Mock())
+        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
         main_window.tab_widget.add_tab(
-            speedwagon.tabs.WorkflowsTab2(
+            speedwagon.frontend.qtwidgets.tabs.WorkflowsTab2(
                 parent=main_window.tab_widget,
                 workflows=MagicMock(),
             ).tab_widget,
@@ -232,7 +243,7 @@ class TestMainWindow2:
             main_window.set_current_tab("eggs")
 
     def test_set_active_workflow(self, qtbot):
-        main_window = speedwagon.gui.MainWindow2(Mock())
+        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
 
         bacon = MagicMock()
         bacon.name = "Bacon"
@@ -247,7 +258,7 @@ class TestMainWindow2:
             }
         )
         main_window.tab_widget.add_tab(
-            speedwagon.tabs.WorkflowsTab2(
+            speedwagon.frontend.qtwidgets.tabs.WorkflowsTab2(
                 parent=main_window.tab_widget,
                 workflows=MagicMock(),
             ).tab_widget,
@@ -257,7 +268,7 @@ class TestMainWindow2:
         assert main_window.get_current_workflow_name() == "Eggs"
 
     def test_set_current_workflow_settings(self, qtbot):
-        main_window = speedwagon.gui.MainWindow2(Mock())
+        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
 
         class Eggs(speedwagon.Workflow):
             def discover_task_metadata(self, initial_results: List[Any],
@@ -265,7 +276,9 @@ class TestMainWindow2:
                                        **user_args) -> List[dict]:
                 return []
 
-            def get_user_options(self) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+            def get_user_options(self) -> List[
+                speedwagon.workflow.AbsOutputOptionDataType
+            ]:
                 return [
                     speedwagon.workflow.TextLineEditData("Dummy")
                 ]

@@ -1,8 +1,6 @@
 import argparse
 import os.path
-import threading
 import io
-from unittest import mock
 from unittest.mock import Mock, MagicMock, mock_open, patch, ANY
 
 import json
@@ -13,14 +11,20 @@ import yaml
 import pytest
 from PySide6 import QtWidgets, QtCore
 
-import speedwagon.logging_helpers
+import speedwagon.exceptions
+import speedwagon.frontend.qtwidgets.logging_helpers
+import speedwagon.frontend.qtwidgets.runners
+import speedwagon.frontend.qtwidgets.user_interaction
 import speedwagon.startup
 import speedwagon.config
 import speedwagon.job
-import speedwagon.gui
+import speedwagon.frontend.qtwidgets.gui
 import speedwagon.runner_strategies
-from speedwagon.dialog.settings import SettingsDialog
-import speedwagon.dialog
+
+from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog
+# import speedwagon.frontend.qtwidgets.dialog
+from speedwagon.frontend.qtwidgets.dialog import dialogs
+
 
 def test_version_exits_after_being_called(monkeypatch):
 
@@ -67,7 +71,7 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
 
     monkeypatch.setattr(QtWidgets, "QSplashScreen", MagicMock())
     monkeypatch.setattr(
-        speedwagon.startup.speedwagon.gui,
+        speedwagon.frontend.qtwidgets.gui,
         "MainWindow1",
         MagicMock()
     )
@@ -598,7 +602,7 @@ class TestSingleWorkflowJSON:
         import tracemalloc
         tracemalloc.start()
         monkeypatch.setattr(
-            speedwagon.startup.WorkflowProgress,
+            dialogs.WorkflowProgress,
             "show",
             lambda *args, **kwargs: None
         )
@@ -617,7 +621,7 @@ class TestSingleWorkflowJSON:
         )
 
         monkeypatch.setattr(
-            speedwagon.startup.speedwagon.gui,
+            speedwagon.frontend.qtwidgets.gui,
             "MainWindow2",
             MagicMock()
         )
@@ -631,7 +635,7 @@ class TestSingleWorkflowJSON:
         )
 
         monkeypatch.setattr(
-            speedwagon.startup.WorkflowProgress,
+            dialogs.WorkflowProgress,
             "exec",
             Mock()
         )
@@ -654,7 +658,9 @@ class TestSingleWorkflowJSON:
         dummy = Dummy()
 
         signal_log_handler = \
-            speedwagon.logging_helpers.SignalLogHandler(dummy.dummy_signal)
+            speedwagon.frontend.qtwidgets.logging_helpers.SignalLogHandler(
+                dummy.dummy_signal
+            )
 
         logger = logging.getLogger()
         logger.setLevel(logging.INFO)
@@ -678,7 +684,7 @@ class TestSingleWorkflowJSON:
         MainWindow2.show = Mock()
         qtbot.addWidget(MainWindow2)
         monkeypatch.setattr(
-            speedwagon.startup.WorkflowProgress,
+            dialogs.WorkflowProgress,
             "exec",
             Mock()
         )
@@ -688,13 +694,13 @@ class TestSingleWorkflowJSON:
             lambda *args, **kwargs: Mock()
         )
         monkeypatch.setattr(
-            speedwagon.startup.speedwagon.gui,
+            speedwagon.frontend.qtwidgets.gui,
             "MainWindow2",
             lambda _: MainWindow2
         )
 
         monkeypatch.setattr(
-            speedwagon.startup.WorkflowProgress,
+            dialogs.WorkflowProgress,
             "show",
             lambda *args, **kwargs: None
         )
@@ -746,7 +752,7 @@ class TestMultiWorkflowLauncher:
         jobs = []
 
         monkeypatch.setattr(
-            speedwagon.gui.MainWindow1,
+            speedwagon.frontend.qtwidgets.gui.MainWindow1,
             "show", lambda self: None
         )
 
@@ -765,7 +771,9 @@ class TestMultiWorkflowLauncher:
         mock_workflow.name = 'Verify Checksum Batch [Single]'
         mock_workflow.__class__ = speedwagon.job.Workflow
         mock_workflow.initial_task = \
-            Mock(side_effect=speedwagon.runner_strategies.TaskFailed())
+            Mock(
+                side_effect=speedwagon.frontend.qtwidgets.runners.TaskFailed()
+            )
 
         startup_launcher.add_job(
             mock_workflow,
@@ -773,7 +781,7 @@ class TestMultiWorkflowLauncher:
                     "Input": os.path.join("somepath", "checksum.md5")
                 }
          )
-        with pytest.raises(speedwagon.job.JobCancelled):
+        with pytest.raises(speedwagon.exceptions.JobCancelled):
             startup_launcher.run()
 
 
@@ -782,26 +790,34 @@ class TestWorkflowProgressCallbacks:
     @pytest.fixture()
     def dialog_box(self, qtbot, monkeypatch):
         monkeypatch.setattr(
-            speedwagon.startup.WorkflowProgress,
+            dialogs.WorkflowProgress,
             "show",
             lambda *args, **kwargs: None
         )
 
-        widget = speedwagon.dialog.dialogs.WorkflowProgress()
+        widget = dialogs.WorkflowProgress()
         monkeypatch.setattr(
-            speedwagon.dialog.dialogs.WorkflowProgressStateWorking,
+            dialogs.WorkflowProgressStateWorking,
             "close_dialog", lambda self, event: None)
         qtbot.add_widget(widget)
         yield widget
         widget.close()
 
     def test_job_changed_signal(self, dialog_box, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = \
+            speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
+                dialog_box
+            )
+
         with qtbot.waitSignal(callbacks.signals.total_jobs_changed) as blocker:
             callbacks.update_progress(1, 10)
 
     def test_job_progress_none_total_does_not_trigger(self, dialog_box, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = \
+            speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
+                dialog_box
+            )
+
         with qtbot.assertNotEmitted(
                 callbacks.signals.total_jobs_changed
         ) as blocker:
@@ -812,28 +828,48 @@ class TestWorkflowProgressCallbacks:
             dialog_box,
             qtbot
     ):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = \
+            speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
+                dialog_box
+            )
+
         with qtbot.assertNotEmitted(callbacks.signals.progress_changed) as \
                 blocker:
             callbacks.update_progress(None, 10)
 
     def test_job_log_signal(self, dialog_box, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = \
+            speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
+                dialog_box
+            )
+
         with qtbot.waitSignal(callbacks.signals.message) as blocker:
             callbacks.log("dummy", logging.INFO)
 
     def test_job_cancel_completed_signal(self, dialog_box, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = \
+            speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
+                dialog_box
+            )
+
         with qtbot.waitSignal(callbacks.signals.cancel_complete) as blocker:
             callbacks.cancelling_complete()
 
     def test_job_finished_signal(self, dialog_box, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = \
+            speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
+                dialog_box
+            )
+
         with qtbot.waitSignal(callbacks.signals.finished) as blocker:
             callbacks.finished(speedwagon.runner_strategies.JobSuccess.SUCCESS)
 
     def test_job_status_signal(self, dialog_box, qtbot):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = \
+            speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
+                dialog_box
+            )
+
         with qtbot.waitSignal(callbacks.signals.status_changed) as blocker:
             blocker.connect(callbacks.signals.status_changed)
             callbacks.status("some_other_status")
@@ -842,7 +878,11 @@ class TestWorkflowProgressCallbacks:
 
     def test_set_banner_text(self, dialog_box, qtbot):
         dialog_box.banner.setText = Mock()
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = \
+            speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
+                dialog_box
+            )
+
         callbacks.set_banner_text("something new")
         dialog_box.banner.setText.assert_called_with("something new")
 
@@ -860,7 +900,11 @@ class TestWorkflowProgressCallbacks:
             exc,
             traceback
     ):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = \
+            speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
+                dialog_box
+            )
+
         QMessageBox = Mock()
 
         monkeypatch.setattr(
@@ -876,15 +920,28 @@ class TestWorkflowProgressCallbacks:
 
     def test_start_calls_start_signal(self, dialog_box, qtbot):
 
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+        callbacks = \
+            speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
+                dialog_box
+            )
+
         with qtbot.waitSignal(callbacks.signals.started):
             callbacks.start()
 
-    def test_refresh_calls_process_events(self, dialog_box, monkeypatch):
-        callbacks = speedwagon.startup.WorkflowProgressCallbacks(dialog_box)
+    def test_refresh_calls_process_events(
+            self,
+            dialog_box,
+            monkeypatch,
+            qtbot
+    ):
+        callbacks = \
+            speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
+                dialog_box
+            )
+
         processEvents = Mock()
         monkeypatch.setattr(
-            speedwagon.startup.QtCore.QCoreApplication,
+            QtCore.QCoreApplication,
             "processEvents",
             processEvents
         )
@@ -1009,11 +1066,11 @@ class TestStartQtThreaded:
 
         assert QMessageBox.called is True
 
-    def test_request_system_info(self, monkeypatch):
+    def test_request_system_info(self, monkeypatch, qtbot):
         SystemInfoDialog = Mock()
 
         monkeypatch.setattr(
-            speedwagon.startup.speedwagon.dialog.dialogs,
+            speedwagon.frontend.qtwidgets.dialog.dialogs,
             "SystemInfoDialog",
             SystemInfoDialog
         )
@@ -1026,13 +1083,13 @@ class TestStartQtThreaded:
         monkeypatch.setattr(SettingsDialog, "exec_", exec_)
 
         monkeypatch.setattr(
-            speedwagon.dialog.settings.GlobalSettingsTab,
+            speedwagon.frontend.qtwidgets.dialog.settings.GlobalSettingsTab,
             "read_config_data",
             Mock()
         )
 
         monkeypatch.setattr(
-            speedwagon.dialog.settings.TabsConfigurationTab,
+            speedwagon.frontend.qtwidgets.dialog.settings.TabsConfigurationTab,
             "load",
             Mock()
         )
@@ -1056,7 +1113,7 @@ class TestStartQtThreaded:
         show = Mock()
 
         monkeypatch.setattr(
-            speedwagon.startup.speedwagon.gui.MainWindow2,
+            speedwagon.frontend.qtwidgets.gui.MainWindow2,
             "show",
             show
         )
@@ -1103,7 +1160,7 @@ class TestStartQtThreaded:
         show = Mock()
 
         monkeypatch.setattr(
-            speedwagon.startup.speedwagon.gui.MainWindow2,
+            speedwagon.frontend.qtwidgets.gui.MainWindow2,
             "show",
             show
         )
@@ -1130,7 +1187,7 @@ class TestStartQtThreaded:
         show = Mock()
 
         monkeypatch.setattr(
-            speedwagon.startup.speedwagon.gui.MainWindow2,
+            speedwagon.frontend.qtwidgets.gui.MainWindow2,
             "show",
             show
         )
@@ -1164,7 +1221,7 @@ class TestStartQtThreaded:
         starter.load_custom_tabs = Mock()
         starter.load_all_workflows_tab = Mock()
         monkeypatch.setattr(
-            speedwagon.gui.MainWindow2,
+            speedwagon.frontend.qtwidgets.gui.MainWindow2,
             "show",
             lambda *args, **kwargs: None
         )
@@ -1256,22 +1313,9 @@ class TestStartQtThreaded:
             lambda: {"spam": spam_workflow}
         )
         monkeypatch.setattr(
-            speedwagon.startup.WorkflowProgress,
+            speedwagon.frontend.qtwidgets.dialog.dialogs.WorkflowProgress,
             "show",
             lambda *args, **kwargs: None
-        )
-
-        WorkflowProgress = speedwagon.startup.WorkflowProgress
-        dummy = None
-
-        def create_workflow(*args, **kwargs):
-            nonlocal dummy
-            dummy = WorkflowProgress(*args, **kwargs)
-            return dummy
-        monkeypatch.setattr(
-            speedwagon.startup,
-            "WorkflowProgress",
-            create_workflow
         )
 
         starter.submit_job(
@@ -1279,21 +1323,19 @@ class TestStartQtThreaded:
             workflow_name,
             options
         )
-        try:
-            assert job_manager.submit_job.called is True
-        finally:
-            if dummy is not None:
-                dummy.remove_log_handles()
+        assert job_manager.submit_job.called is True
 
 
 class TestQtRequestMoreInfo:
     def test_job_cancelled(self, qtbot):
         info_request = \
-            speedwagon.startup.QtRequestMoreInfo(QtWidgets.QWidget())
+            speedwagon.frontend.qtwidgets.user_interaction.QtRequestMoreInfo(
+                QtWidgets.QWidget()
+            )
 
         user_is_interacting = MagicMock()
         workflow = Mock()
-        exc = speedwagon.job.JobCancelled()
+        exc = speedwagon.exceptions.JobCancelled()
         workflow.get_additional_info = Mock(
             side_effect=exc
         )
@@ -1310,7 +1352,9 @@ class TestQtRequestMoreInfo:
 
     def test_job_exception_passes_on(self, qtbot):
         info_request = \
-            speedwagon.startup.QtRequestMoreInfo(QtWidgets.QWidget())
+            speedwagon.frontend.qtwidgets.user_interaction.QtRequestMoreInfo(
+                QtWidgets.QWidget()
+            )
 
         user_is_interacting = MagicMock()
         workflow = Mock()

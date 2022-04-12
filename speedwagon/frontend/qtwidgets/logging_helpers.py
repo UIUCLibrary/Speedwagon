@@ -6,7 +6,7 @@ from logging import LogRecord
 import logging.handlers
 
 from typing import Callable
-from PySide6 import QtCore
+from PySide6 import QtCore, QtWidgets
 
 
 class GuiLogHandler(logging.handlers.BufferingHandler):
@@ -161,3 +161,21 @@ class ConsoleFormatter(logging.Formatter):
             return formatter.format_error(text, record)
 
         return formatter.format_info(text, record)
+
+
+class SplashScreenLogHandler(logging.Handler):
+    """Log handler for splash screen."""
+
+    def __init__(self,
+                 widget: QtWidgets.QWidget,
+                 level: int = logging.NOTSET) -> None:
+        """Create a new splash screen log handler."""
+        super().__init__(level)
+        self.widget = widget
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """Write logging message on the splash screen widget."""
+        self.widget.showMessage(
+            self.format(record),
+            QtCore.Qt.AlignCenter,
+        )

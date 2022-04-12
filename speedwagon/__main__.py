@@ -9,7 +9,7 @@ from typing import List
 import speedwagon
 import speedwagon.config
 import speedwagon.startup
-import speedwagon.gui
+import speedwagon.frontend.qtwidgets.gui
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())

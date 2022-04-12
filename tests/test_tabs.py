@@ -4,7 +4,7 @@ from unittest.mock import Mock, MagicMock, patch, call
 import yaml
 import pytest
 # from speedwagon import tabs, exceptions, job
-import speedwagon.tabs
+import speedwagon.frontend.qtwidgets.tabs
 import speedwagon.exceptions
 import speedwagon.job
 
@@ -15,7 +15,7 @@ class TestWorkflowsTab:
         mock_log_manager = Mock()
         workflows = MagicMock()
 
-        selection_tab = speedwagon.tabs.WorkflowsTab(
+        selection_tab = speedwagon.frontend.qtwidgets.tabs.WorkflowsTab(
             None, workflows=workflows, log_manager=mock_log_manager
         )
         selection_tab.get_item_options_model = \
@@ -55,7 +55,7 @@ class TestWorkflowsTab:
     ):
         log_manager = Mock()
         work_manager = Mock()
-        selection_tab = speedwagon.tabs.WorkflowsTab(
+        selection_tab = speedwagon.frontend.qtwidgets.tabs.WorkflowsTab(
             parent=None,
             workflows=MagicMock(),
             log_manager=log_manager,
@@ -77,7 +77,7 @@ class TestWorkflowsTab:
         workflows["Bacon"] = MagicMock()
         from PySide6 import QtWidgets
         base_widget = QtWidgets.QWidget()
-        selection_tab = speedwagon.tabs.WorkflowsTab(
+        selection_tab = speedwagon.frontend.qtwidgets.tabs.WorkflowsTab(
             parent=base_widget,
             workflows=workflows,
             log_manager=log_manager,
@@ -107,7 +107,7 @@ class TestWorkflowsTab:
 
         workflows["Spam"] = MockWorkflow
 
-        selection_tab = speedwagon.tabs.WorkflowsTab(
+        selection_tab = speedwagon.frontend.qtwidgets.tabs.WorkflowsTab(
             parent=None,
             workflows=workflows,
             log_manager=log_manager,
@@ -131,7 +131,7 @@ class TestWorkflowsTab:
         work_manager = MagicMock(user_settings={})
         workflows = OrderedDict()
 
-        class MockWorkflow(speedwagon.tabs.AbsWorkflow):
+        class MockWorkflow(speedwagon.frontend.qtwidgets.tabs.AbsWorkflow):
             def discover_task_metadata(
                     self,
                     initial_results,
@@ -146,7 +146,7 @@ class TestWorkflowsTab:
 
         workflows["Spam"] = MockWorkflow
 
-        selection_tab = speedwagon.tabs.WorkflowsTab(
+        selection_tab = speedwagon.frontend.qtwidgets.tabs.WorkflowsTab(
             parent=None,
             workflows=workflows,
             work_manager=work_manager
@@ -161,7 +161,7 @@ class TestWorkflowsTab:
         mock_message_box_exec = Mock()
 
         monkeypatch.setattr(
-            speedwagon.tabs.WorkflowsTab,
+            speedwagon.frontend.qtwidgets.tabs.WorkflowsTab,
             "_create_error_message_box_from_exception",
             mock_message_box_exec
         )
@@ -171,7 +171,7 @@ class TestWorkflowsTab:
         assert mock_message_box_exec.called is True
 
     @pytest.mark.parametrize("exception_type", [
-        speedwagon.job.JobCancelled,
+        speedwagon.exceptions.JobCancelled,
         ValueError,
         TypeError
     ])
@@ -192,7 +192,7 @@ class TestWorkflowsTab:
             raise exception_type
 
         monkeypatch.setattr(
-            speedwagon.tabs.runner_strategies.QtRunner,
+            speedwagon.frontend.qtwidgets.runners.QtRunner,
             "run",
             cause_chaos
         )
@@ -200,12 +200,12 @@ class TestWorkflowsTab:
         exec_ = Mock()
 
         monkeypatch.setattr(
-            speedwagon.tabs.QtWidgets.QMessageBox,
+            speedwagon.frontend.qtwidgets.tabs.QtWidgets.QMessageBox,
             "exec_",
             exec_
         )
 
-        selection_tab = speedwagon.tabs.WorkflowsTab(
+        selection_tab = speedwagon.frontend.qtwidgets.tabs.WorkflowsTab(
             parent=None,
             workflows=workflows,
             log_manager=log_manager,
@@ -224,11 +224,18 @@ class TestTabsYaml:
     def test_read_tabs_yaml_errors(self, monkeypatch,
                                    exception_type):
         import os.path
-        with patch('speedwagon.tabs.open', mock.mock_open()):
+        with patch(
+                'speedwagon.frontend.qtwidgets.tabs.open',
+                mock.mock_open()
+        ):
             monkeypatch.setattr(os.path, "getsize", lambda x: 1)
             monkeypatch.setattr(yaml, "load", Mock(side_effect=exception_type))
             with pytest.raises(exception_type) as e:
-                list(speedwagon.tabs.read_tabs_yaml('tabs.yml'))
+                list(
+                    speedwagon.frontend.qtwidgets.tabs.read_tabs_yaml(
+                        'tabs.yml'
+                    )
+                )
             assert e.type == exception_type
 
     def test_read_tabs_yaml(self, monkeypatch):
@@ -240,19 +247,29 @@ class TestTabsYaml:
         """
         import os
         monkeypatch.setattr(os.path, 'getsize', lambda x: 1)
-        with patch('speedwagon.tabs.open',
+        with patch('speedwagon.frontend.qtwidgets.tabs.open',
                    mock.mock_open(read_data=sample_text)):
 
-            tab_data = list(speedwagon.tabs.read_tabs_yaml('tabs.yml'))
+            tab_data = list(
+                speedwagon.frontend.qtwidgets.tabs.read_tabs_yaml('tabs.yml'))
             assert len(tab_data) == 1 and \
                    len(tab_data[0][1].workflows) == 4
 
     def test_write_tabs_yaml(self):
         sample_tab_data = [
-            speedwagon.tabs.TabData("dummy_tab", MagicMock())
+            speedwagon.frontend.qtwidgets.tabs.TabData(
+                "dummy_tab",
+                MagicMock()
+            )
         ]
-        with patch('speedwagon.tabs.open', mock.mock_open()) as m:
-            speedwagon.tabs.write_tabs_yaml("tabs.yml", sample_tab_data)
+        with patch(
+                'speedwagon.frontend.qtwidgets.tabs.open',
+                mock.mock_open()
+        ) as m:
+            speedwagon.frontend.qtwidgets.tabs.write_tabs_yaml(
+                "tabs.yml",
+                sample_tab_data
+            )
             assert m.called is True
         handle = m()
         handle.write.assert_has_calls([call('dummy_tab')])

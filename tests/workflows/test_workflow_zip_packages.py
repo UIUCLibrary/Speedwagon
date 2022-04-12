@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 from speedwagon.workflows import workflow_zip_packages
-from speedwagon import models
+from speedwagon.frontend.qtwidgets import models
 
 
 class TestZipPackagesWorkflow:

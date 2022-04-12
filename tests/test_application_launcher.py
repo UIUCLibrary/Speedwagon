@@ -2,7 +2,9 @@ from unittest.mock import Mock, MagicMock
 import pytest
 
 
-from speedwagon import startup, job, dialog
+from speedwagon import startup, job
+from speedwagon.frontend.qtwidgets import dialog
+import speedwagon.frontend.qtwidgets.gui
 
 
 class TestSingleWorkflowLauncher:
@@ -12,7 +14,7 @@ class TestSingleWorkflowLauncher:
             single_item_launcher = startup.SingleWorkflowLauncher()
 
             monkeypatch.setattr(
-                startup.speedwagon.gui.MainWindow1,
+                speedwagon.frontend.qtwidgets.gui.MainWindow1,
                 "show",
                 Mock()
             )

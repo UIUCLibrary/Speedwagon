@@ -26,19 +26,13 @@ from collections import namedtuple
 
 from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
 
-import speedwagon.dialog
-import speedwagon.dialog.dialogs
-import speedwagon.dialog.settings
-from speedwagon import tabs, worker, ui_loader
 import speedwagon
-import speedwagon.ui
+from speedwagon.frontend import qtwidgets
 import speedwagon.config
 import speedwagon.runner_strategies
-from speedwagon.logging_helpers import ConsoleFormatter
 
 __all__ = [
-    "MainWindow1",
-    "SplashScreenLogHandler"
+    "MainWindow1"
 ]
 
 DEBUG_LOGGING_FORMAT = logging.Formatter(
@@ -83,11 +77,11 @@ class ToolConsole(QtWidgets.QWidget):
         super().__init__(parent)
         self.log_handler = ToolConsole.ConsoleLogHandler(self)
 
-        self.log_formatter = ConsoleFormatter()
+        self.log_formatter = qtwidgets.logging_helpers.ConsoleFormatter()
         self.log_handler.setFormatter(self.log_formatter)
 
-        with resources.path(speedwagon.ui, "console.ui") as ui_file:
-            ui_loader.load_ui(str(ui_file), self)
+        with resources.path(qtwidgets.ui, "console.ui") as ui_file:
+            qtwidgets.ui_loader.load_ui(str(ui_file), self)
 
         # ======================================================================
         # Type hints:
@@ -148,8 +142,8 @@ class ItemTabsWidget(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
-        with resources.path(speedwagon.ui, "setup_job.ui") as ui_file:
-            ui_loader.load_ui(str(ui_file), self)
+        with resources.path(qtwidgets.ui, "setup_job.ui") as ui_file:
+            qtwidgets.ui_loader.load_ui(str(ui_file), self)
         # ======================================================================
         # Type Hints
         self.tabs: QtWidgets.QTabWidget
@@ -163,7 +157,7 @@ class ItemTabsWidget(QtWidgets.QWidget):
 class MainProgram(QtWidgets.QMainWindow):
     def __init__(
             self,
-            work_manager: "worker.ToolJobManager",
+            work_manager: "speedwagon.worker.ToolJobManager",
             debug: bool = False
     ) -> None:
         super().__init__()
@@ -173,7 +167,7 @@ class MainProgram(QtWidgets.QMainWindow):
 
         self.work_manager = work_manager
 
-        self.log_manager = self.work_manager.logger
+        self.log_manager: logging.Logger = self.work_manager.logger
         self.log_manager.setLevel(logging.DEBUG)
 
     def debug_mode(self, debug: bool) -> None:
@@ -338,12 +332,12 @@ class MainWindowMenuBuilder:
 class MainWindow1(MainProgram):
     def __init__(
             self,
-            work_manager: "worker.ToolJobManager",
+            work_manager: "speedwagon.worker.ToolJobManager",
             debug: bool = False
     ) -> None:
 
         super().__init__(work_manager, debug)
-        with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
+        with resources.path(qtwidgets.ui, "main_window2.ui") as ui_file:
             self.load_ui_file(str(ui_file))
 
         # ======================================================================
@@ -378,13 +372,13 @@ class MainWindow1(MainProgram):
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
     def load_ui_file(self, ui_file: str) -> None:
-        ui_loader.load_ui(ui_file, self)
+        qtwidgets.ui_loader.load_ui(ui_file, self)
 
     def show_about_window(self) -> None:
-        speedwagon.dialog.dialogs.about_dialog_box(parent=self)
+        qtwidgets.dialog.about_dialog_box(parent=self)
 
     def show_system_info(self) -> None:
-        system_info_dialog = speedwagon.dialog.dialogs.SystemInfoDialog(self)
+        system_info_dialog = qtwidgets.dialog.SystemInfoDialog(self)
         system_info_dialog.exec()
 
     def show_help(self) -> None:
@@ -475,7 +469,7 @@ class MainWindow1(MainProgram):
     def _create_tabs_widget(self) -> None:
         self.tab_widget = ItemTabsWidget(self.main_splitter)
         self.tab_widget.setVisible(False)
-        self._tabs: List[speedwagon.tabs.ItemSelectionTab] = []
+        self._tabs: List[qtwidgets.tabs.ItemSelectionTab] = []
         # Add the tabs widget as the first widget
         self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
         self.main_splitter.addWidget(self.tab_widget)
@@ -509,10 +503,10 @@ class MainWindow1(MainProgram):
     def add_tab(
             self,
             workflow_name: str,
-            workflows: typing.Dict[str, typing.Type[speedwagon.Workflow]]
+            workflows: typing.Dict[str, typing.Type[speedwagon.job.Workflow]]
     ) -> None:
 
-        workflows_tab = tabs.WorkflowsTab(
+        workflows_tab = qtwidgets.tabs.WorkflowsTab(
             parent=self,
             workflows=workflows,
             work_manager=self.work_manager,
@@ -526,12 +520,12 @@ class MainWindow1(MainProgram):
 
     def show_configuration(self) -> None:
 
-        config_dialog = speedwagon.dialog.settings.SettingsDialog(parent=self)
+        config_dialog = qtwidgets.dialog.settings.SettingsDialog(parent=self)
 
         if self.work_manager.settings_path is not None:
             config_dialog.settings_location = self.work_manager.settings_path
 
-        global_settings_tab = speedwagon.dialog.settings.GlobalSettingsTab()
+        global_settings_tab = qtwidgets.dialog.GlobalSettingsTab()
 
         if self.work_manager.settings_path is not None:
             global_settings_tab.config_file = \
@@ -545,7 +539,7 @@ class MainWindow1(MainProgram):
         # pylint: disable=no-member
         config_dialog.accepted.connect(global_settings_tab.on_okay)
 
-        tabs_tab = speedwagon.dialog.settings.TabsConfigurationTab()
+        tabs_tab = qtwidgets.dialog.TabsConfigurationTab()
 
         if self.work_manager.settings_path is not None:
             tabs_tab.settings_location = \
@@ -594,8 +588,8 @@ class MainWindow2UI(QtWidgets.QMainWindow):
             parent: typing.Optional[QtWidgets.QWidget] = None
     ) -> None:
         super().__init__(parent)
-        with resources.path(speedwagon.ui, "main_window2.ui") as ui_file:
-            ui_loader.load_ui(str(ui_file), self)
+        with resources.path(qtwidgets.ui, "main_window2.ui") as ui_file:
+            qtwidgets.ui_loader.load_ui(str(ui_file), self)
 
         # ======================================================================
         # Type hints
@@ -672,7 +666,10 @@ class MainWindow2(MainWindow2UI):
         if tab_index is None:
             raise AssertionError("Missing All tab")
         all_tab = self._tabs[tab_index]
-        model = all_tab.workspace_widgets[tabs.TabWidgets.SETTINGS].model()
+        model = all_tab.workspace_widgets[
+            qtwidgets.tabs.TabWidgets.SETTINGS
+        ].model()
+
         for key, value in data.items():
             model[key] = value
 
@@ -747,7 +744,7 @@ class MainWindow2(MainWindow2UI):
             ]
     ) -> None:
 
-        workflows_tab = tabs.WorkflowsTab2(
+        workflows_tab = qtwidgets.tabs.WorkflowsTab2(
             parent=self,
             workflows=workflows,
         )
@@ -765,7 +762,7 @@ class MainWindow2(MainWindow2UI):
         self.submit_job.emit(workflow, options)
 
     def show_about_window(self) -> None:
-        speedwagon.dialog.dialogs.about_dialog_box(parent=self)
+        qtwidgets.dialog.about_dialog_box(parent=self)
 
     def save_log(self) -> None:
         self.save_logs_requested.emit(self)
@@ -773,7 +770,7 @@ class MainWindow2(MainWindow2UI):
     def _create_tabs_widget(self) -> None:
         self.tab_widget = ItemTabsWidget(self.main_splitter)
         self.tab_widget.setVisible(False)
-        self._tabs: List[speedwagon.tabs.ItemSelectionTab] = []
+        self._tabs: List[qtwidgets.tabs.ItemSelectionTab] = []
 
         # Add the tabs widget as the first widget
         self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
@@ -796,16 +793,12 @@ class MainWindow2(MainWindow2UI):
         self.console.attach_logger(self.logger)
 
 
-class SplashScreenLogHandler(logging.Handler):
-    def __init__(self,
-                 widget: QtWidgets.QWidget,
-                 level: int = logging.NOTSET) -> None:
-
-        super().__init__(level)
-        self.widget = widget
-
-    def emit(self, record: logging.LogRecord) -> None:
-        self.widget.showMessage(
-            self.format(record),
-            QtCore.Qt.AlignCenter,
-        )
+def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
+    with resources.open_binary(speedwagon.__name__, "favicon.ico") as icon:
+        app.setWindowIcon(QtGui.QIcon(icon.name))
+    try:
+        app.setApplicationVersion(metadata.version(__package__))
+    except metadata.PackageNotFoundError:
+        pass
+    app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
+    QtWidgets.QApplication.processEvents()

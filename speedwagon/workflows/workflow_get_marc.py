@@ -24,8 +24,7 @@ import speedwagon
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from speedwagon import reports, validators, workflow
 from speedwagon.job import Workflow
-from . import shared_custom_widgets as options
-
+from speedwagon.frontend.qtwidgets import shared_custom_widgets as options
 
 __all__ = ['GenerateMarcXMLFilesWorkflow']
 

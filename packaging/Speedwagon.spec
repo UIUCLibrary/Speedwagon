@@ -2,13 +2,14 @@
 import os
 
 block_cipher = None
-a = Analysis(['../speedwagon/__main__.py'],
+# a = Analysis(['../speedwagon/__main__.py'],
+a = Analysis(['./speedwagon-bootstrap.py'],
              pathex=[],
              binaries=[],
              datas=[
                 ('../speedwagon/favicon.ico', 'speedwagon'),
                 ('../speedwagon/logo.png', 'speedwagon'),
-                ('../speedwagon/ui/*.ui', 'speedwagon/ui'),
+                ('../speedwagon/frontend/qtwidgets/ui/*.ui', 'speedwagon/frontend/qtwidgets/ui'),
              ],
              hiddenimports=[],
              hookspath=[os.path.join(workpath, ".."), SPECPATH],
