@@ -68,7 +68,8 @@ class SpyToolJobManager(ToolJobManager):
 def tool_job_manager_spy():
 
     with SpyToolJobManager() as e:
-        manager_strat = speedwagon.frontend.qtwidgets.runners.QtRunner(parent=None)
+        manager_strat = \
+            speedwagon.frontend.qtwidgets.runners.QtRunner(parent=None)
 
         runner = runner_strategies.RunRunner(manager_strat)
 

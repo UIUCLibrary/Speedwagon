@@ -181,7 +181,8 @@ class TestWorkRunnerExternal3:
         "ignore:Don't use the dialog:DeprecationWarning")
     def test_someone_resetting_dialog_throws_error(self, qtbot):
         with pytest.raises(AttributeError) as e:
-            work_runner = qtwidgets.runners.WorkRunnerExternal3(QtWidgets.QWidget())
+            work_runner = \
+                qtwidgets.runners.WorkRunnerExternal3(QtWidgets.QWidget())
             with work_runner as r:
                 r.dialog = None
         assert "dialog" in str(e.value)

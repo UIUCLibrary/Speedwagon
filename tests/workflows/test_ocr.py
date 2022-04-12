@@ -11,7 +11,6 @@ from uiucprescon.ocr import reader, tesseractwrap
 from speedwagon.frontend.qtwidgets import models, runners
 
 
-
 def test_no_config():
     with pytest.raises(MissingConfiguration):
         workflow_ocr.OCRWorkflow()
@@ -100,6 +99,7 @@ class MockGenerateOCRFileTask(workflow_ocr.GenerateOCRFileTask):
 
 def test_runs(qtbot, tool_job_manager_spy, tmpdir, monkeypatch):
     monkeypatch.setattr(runners, "QtDialogProgress", MagicMock())
+
     class MockOCRWorkflow(workflow_ocr.OCRWorkflow):
         def create_new_task(self, task_builder, **job_args):
             image_file = job_args["source_file_path"]

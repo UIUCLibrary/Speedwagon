@@ -2,9 +2,8 @@
 import os
 
 import logging
-from unittest.mock import Mock, MagicMock
+from unittest.mock import MagicMock
 
-from speedwagon import runner_strategies
 from speedwagon.frontend.qtwidgets import runners
 from speedwagon.workflows.workflow_make_checksum import \
     MakeChecksumBatchSingleWorkflow, MakeChecksumBatchMultipleWorkflow
