@@ -56,8 +56,10 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
         self.setSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
-        text_edit: Optional[QtWidgets.QTextEdit] = \
+        text_edit = typing.cast(
+            Optional[QtWidgets.QTextEdit],
             self.findChild(QtWidgets.QTextEdit)
+        )
 
         if text_edit is not None:
             text_edit.setMinimumHeight(100)
