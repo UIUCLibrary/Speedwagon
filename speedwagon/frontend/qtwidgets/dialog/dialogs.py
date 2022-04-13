@@ -5,7 +5,7 @@ import logging.handlers
 import sys
 import typing
 import warnings
-from typing import Collection, Union
+from typing import Collection, Union, Optional
 
 from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
 
@@ -56,7 +56,9 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
         self.setSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
-        text_edit = self.findChild(QtWidgets.QTextEdit)
+        text_edit: Optional[QtWidgets.QTextEdit] = \
+            self.findChild(QtWidgets.QTextEdit)
+
         if text_edit is not None:
             text_edit.setMinimumHeight(100)
             text_edit.setMaximumHeight(16777215)
