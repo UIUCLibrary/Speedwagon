@@ -97,7 +97,11 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
 def about_dialog_box(parent: typing.Optional[QtWidgets.QWidget]) -> None:
     """Launch the about speedwagon dialog box."""
     try:
-        pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
+        pkg_metadata: typing.Dict[str, str] = \
+            dict(
+                metadata.metadata(speedwagon.__name__)
+            )
+
         summary = pkg_metadata['Summary']
         version = pkg_metadata['Version']
         message = f"{speedwagon.__name__.title()}: {version}" \
