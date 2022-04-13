@@ -5,7 +5,7 @@ import logging.handlers
 import sys
 import typing
 import warnings
-from typing import Collection, Union
+from typing import Collection, Union, Optional
 
 from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
 
@@ -56,7 +56,11 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
         self.setSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
-        text_edit = self.findChild(QtWidgets.QTextEdit)
+        text_edit = typing.cast(
+            Optional[QtWidgets.QTextEdit],
+            self.findChild(QtWidgets.QTextEdit)
+        )
+
         if text_edit is not None:
             text_edit.setMinimumHeight(100)
             text_edit.setMaximumHeight(16777215)
@@ -70,9 +74,12 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
 class WorkProgressBar(QtWidgets.QProgressDialog):
     """Use this for showing progress."""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(
+            self,
+            parent: Optional[QtWidgets.QWidget] = None,
+            flags: QtCore.Qt.WindowFlags = QtCore.Qt.WindowFlags()) -> None:
         """Create a work progress dialog window."""
-        super().__init__(*args, **kwargs)
+        super().__init__(parent, flags)
         self.setModal(True)
         self.setMinimumHeight(100)
         self.setMinimumWidth(250)
@@ -90,7 +97,11 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
 def about_dialog_box(parent: typing.Optional[QtWidgets.QWidget]) -> None:
     """Launch the about speedwagon dialog box."""
     try:
-        pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
+        pkg_metadata: typing.Dict[str, str] = \
+            dict(
+                metadata.metadata(speedwagon.__name__)
+            )
+
         summary = pkg_metadata['Summary']
         version = pkg_metadata['Version']
         message = f"{speedwagon.__name__.title()}: {version}" \
@@ -408,7 +419,7 @@ class WorkflowProgressGui(QtWidgets.QDialog):
         self._parent_logger: typing.Optional[logging.Logger] = None
 
         self._console_data = QtGui.QTextDocument(parent=self)
-        self.cursor = QtGui.QTextCursor(self._console_data)
+        self.cursor: QtGui.QTextCursor = QtGui.QTextCursor(self._console_data)
         self.cursor.movePosition(self.cursor.End)
 
     def write_html_block_to_console(self, html: str) -> None:

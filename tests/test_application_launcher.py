@@ -1,8 +1,8 @@
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 import pytest
 
 
-from speedwagon import startup, job
+from speedwagon import startup, job, Workflow
 from speedwagon.frontend.qtwidgets import dialog
 import speedwagon.frontend.qtwidgets.gui
 
@@ -14,13 +14,18 @@ class TestSingleWorkflowLauncher:
             single_item_launcher = startup.SingleWorkflowLauncher()
 
             monkeypatch.setattr(
-                speedwagon.frontend.qtwidgets.gui.MainWindow1,
-                "show",
-                Mock()
+                speedwagon.frontend.qtwidgets.gui,
+                "MainWindow1",
+                Mock(speedwagon.frontend.qtwidgets.gui.MainWindow1)
             )
 
-            monkeypatch.setattr(dialog.WorkProgressBar, "show", Mock())
-            workflow = MagicMock()
+            monkeypatch.setattr(
+                dialog,
+                "WorkProgressBar",
+                Mock(spec=dialog.dialogs.WorkProgressBar)
+            )
+            workflow = Mock(spec=Workflow)
+            workflow.discover_task_metadata = Mock(return_value=[])
             workflow.name = "job"
             workflow.__class__ = job.Workflow
             workflow.validate_user_options = Mock(return_value=True)

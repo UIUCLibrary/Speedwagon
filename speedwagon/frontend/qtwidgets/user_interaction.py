@@ -1,16 +1,20 @@
 """User interaction when using a QtWidget backend."""
+from __future__ import annotations
+
 import threading
 import typing
 from typing import Dict, Any, Optional, List, Union, Type
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtGui import Qt
-from uiucprescon.packager.packages import collection
 
 import speedwagon.exceptions
 from speedwagon.frontend import interaction
 from speedwagon.frontend.qtwidgets.dialog.title_page_selection import \
     PackageBrowser
-import speedwagon
+
+if typing.TYPE_CHECKING:
+    from uiucprescon.packager.packages import collection
+    from speedwagon.job import Workflow
 
 
 class QtWidgetFactory(interaction.UserRequestFactory):
@@ -293,7 +297,7 @@ class QtRequestMoreInfo(QtCore.QObject):
     def request_more_info(
             self,
             user_is_interacting: threading.Condition,
-            workflow: 'speedwagon.job.Workflow',
+            workflow: Workflow,
             options: Dict[str, typing.Any],
             pre_results: List[typing.Any]
     ) -> None:

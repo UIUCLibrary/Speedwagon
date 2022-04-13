@@ -37,8 +37,7 @@ import speedwagon
 import speedwagon.config
 import speedwagon.exceptions
 from speedwagon import frontend
-from speedwagon import worker, job, runner_strategies
-
+from speedwagon import job, runner_strategies
 try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
@@ -240,7 +239,7 @@ class StartupDefault(AbsStarter):
 
         frontend.qtwidgets.gui.set_app_display_metadata(self.app)
 
-        with worker.ToolJobManager() as work_manager:
+        with frontend.qtwidgets.worker.ToolJobManager() as work_manager:
 
             work_manager.settings_path = \
                 self.platform_settings.get_app_data_directory()
@@ -285,8 +284,10 @@ class StartupDefault(AbsStarter):
             self._logger.removeHandler(splash_message_handler)
             return self.app.exec_()
 
-    def load_configurations(self,
-                            work_manager: "worker.ToolJobManager") -> None:
+    def load_configurations(
+            self,
+            work_manager: "frontend.qtwidgets.worker.ToolJobManager"
+    ) -> None:
 
         self._logger.debug("Applying settings to Speedwagon")
         work_manager.user_settings = self.platform_settings
@@ -818,12 +819,15 @@ class SingleWorkflowLauncher(AbsStarter):
         if self._active_workflow is None:
             raise AttributeError("Workflow has not been set")
 
-        with worker.ToolJobManager() as work_manager:
+        with frontend.qtwidgets.worker.ToolJobManager() as work_manager:
             work_manager.logger = self.logger
             self._run(work_manager)
         return 0
 
-    def _run(self, work_manager: worker.ToolJobManager) -> None:
+    def _run(
+            self,
+            work_manager: frontend.qtwidgets.worker.ToolJobManager
+    ) -> None:
         if self._active_workflow is None:
             raise ValueError("No active workflow set")
 
@@ -1001,12 +1005,15 @@ class MultiWorkflowLauncher(AbsStarter):
             = queue.Queue()
 
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
-        with worker.ToolJobManager() as work_manager:
+        with frontend.qtwidgets.worker.ToolJobManager() as work_manager:
             work_manager.logger = self.logger
             self._run(work_manager)
         return 0
 
-    def _run(self, work_manager: worker.ToolJobManager) -> None:
+    def _run(
+            self,
+            work_manager: frontend.qtwidgets.worker.ToolJobManager
+    ) -> None:
         window = frontend.qtwidgets.gui.MainWindow1(
             work_manager=work_manager,
             debug=False)

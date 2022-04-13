@@ -2,7 +2,7 @@ import contextlib
 import pytest
 from speedwagon import runner_strategies
 import speedwagon.frontend.qtwidgets
-from speedwagon.worker import ToolJobManager
+from speedwagon.frontend.qtwidgets.worker import ToolJobManager
 
 
 class SpyDialogBox:

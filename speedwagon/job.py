@@ -1,4 +1,5 @@
 """Define how various jobs are described."""
+from __future__ import annotations
 
 import abc
 import importlib
@@ -18,8 +19,11 @@ from typing import \
     Tuple, \
     Type
 
-import speedwagon.workflow
-import speedwagon.frontend
+if typing.TYPE_CHECKING:
+    from speedwagon.workflow import AbsOutputOptionDataType
+    from speedwagon.frontend.interaction import UserRequestFactory
+    from speedwagon.tasks import TaskBuilder, Result
+
 __all__ = [
     "AbsWorkflow",
     "Workflow",
@@ -60,13 +64,13 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
     def completion_task(
             self,
-            task_builder: speedwagon.tasks.TaskBuilder,
+            task_builder: TaskBuilder,
             results,
             **user_args
     ) -> None:
         """Last task after Job is completed."""
 
-    def initial_task(self, task_builder: speedwagon.tasks.TaskBuilder,
+    def initial_task(self, task_builder: TaskBuilder,
                      **user_args) -> None:
         """Create a task to run before the main tasks start.
 
@@ -83,7 +87,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
     def create_new_task(
             self,
-            task_builder: speedwagon.tasks.TaskBuilder,
+            task_builder: TaskBuilder,
             **job_args
     ) -> None:
         """Add a new task to be accomplished when the workflow is started.
@@ -106,7 +110,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
     @classmethod
     def generate_report(
             cls,
-            results: List[speedwagon.tasks.Result],
+            results: List[Result],
             **user_args
     ) -> Optional[str]:
         r"""Generate a text report for the results of the workflow.
@@ -160,7 +164,7 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
     def get_additional_info(
             self,
             user_request_factory:  # pylint: disable=unused-argument
-            'speedwagon.frontend.interaction.UserRequestFactory',
+            UserRequestFactory,
             options: dict,  # pylint: disable=unused-argument
             pretask_results: list  # pylint: disable=unused-argument
     ) -> dict:
@@ -181,7 +185,7 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
 
     def get_user_options(  # pylint: disable=no-self-use
             self
-    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+    ) -> List[AbsOutputOptionDataType]:
         """Get user options.
 
         Defaults to no args.

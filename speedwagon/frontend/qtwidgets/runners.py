@@ -128,7 +128,7 @@ class QtDialogProgress(frontend.reporter.RunnerDisplay):
     def _update_progress(
             self,
             task_scheduler:
-            "speedwagon.runner_strategies.TaskScheduler"
+            runner_strategies.TaskScheduler
     ) -> None:
         self.total_tasks_amount = task_scheduler.total_tasks
         self.current_task_progress = task_scheduler.current_task_progress
@@ -153,7 +153,7 @@ class AbsRunner(metaclass=abc.ABCMeta):
 class UsingExternalManagerForAdapter(AbsRunner):
     """Runner that uses external manager."""
 
-    def __init__(self, manager: speedwagon.worker.ToolJobManager) -> None:
+    def __init__(self, manager: qtwidgets.worker.ToolJobManager) -> None:
         """Create a new runner."""
         warnings.warn(
             "Use UsingExternalManagerForAdapter2 instead",

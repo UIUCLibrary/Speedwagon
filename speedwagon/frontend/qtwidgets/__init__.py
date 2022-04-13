@@ -10,6 +10,7 @@ from . import logging_helpers
 from . import splashscreen
 from . import gui
 from . import shared_custom_widgets
+from . import worker
 
 __all__ = [
     "user_interaction",
@@ -21,5 +22,6 @@ __all__ = [
     "logging_helpers",
     "splashscreen",
     "shared_custom_widgets",
-    "gui"
+    "gui",
+    "worker"
 ]
