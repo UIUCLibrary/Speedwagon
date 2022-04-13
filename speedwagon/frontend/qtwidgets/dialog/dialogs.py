@@ -413,7 +413,7 @@ class WorkflowProgressGui(QtWidgets.QDialog):
         self._parent_logger: typing.Optional[logging.Logger] = None
 
         self._console_data = QtGui.QTextDocument(parent=self)
-        self.cursor = QtGui.QTextCursor(self._console_data)
+        self.cursor: QtGui.QTextCursor = QtGui.QTextCursor(self._console_data)
         self.cursor.movePosition(self.cursor.End)
 
     def write_html_block_to_console(self, html: str) -> None:
