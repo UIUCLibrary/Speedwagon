@@ -153,7 +153,7 @@ class AbsRunner(metaclass=abc.ABCMeta):
 class UsingExternalManagerForAdapter(AbsRunner):
     """Runner that uses external manager."""
 
-    def __init__(self, manager: speedwagon.worker.ToolJobManager) -> None:
+    def __init__(self, manager: qtwidgets.worker.ToolJobManager) -> None:
         """Create a new runner."""
         warnings.warn(
             "Use UsingExternalManagerForAdapter2 instead",

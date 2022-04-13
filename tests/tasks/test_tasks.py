@@ -7,7 +7,7 @@ import concurrent.futures
 import pytest
 import speedwagon
 import speedwagon.worker
-from speedwagon import worker
+from speedwagon.frontend.qtwidgets import worker
 
 
 class SimpleSubtask(speedwagon.tasks.Subtask):

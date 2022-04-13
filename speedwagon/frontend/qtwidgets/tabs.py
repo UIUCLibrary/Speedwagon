@@ -20,7 +20,7 @@ from speedwagon.frontend.qtwidgets.widgets import QtWidgetDelegateSelection
 from speedwagon import runner_strategies
 from speedwagon.frontend import qtwidgets
 
-from speedwagon import worker  # pylint: disable=unused-import
+from speedwagon.frontend.qtwidgets import worker
 from speedwagon.exceptions import MissingConfiguration
 from speedwagon.job import AbsWorkflow, NullWorkflow, Workflow
 
@@ -65,7 +65,7 @@ class Tab:
 
     def __init__(self,
                  parent: QtWidgets.QWidget,
-                 work_manager: "worker.ToolJobManager"
+                 work_manager: worker.ToolJobManager
                  ) -> None:
         """Create a new tab."""
         self.parent = parent

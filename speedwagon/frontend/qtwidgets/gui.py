@@ -157,7 +157,7 @@ class ItemTabsWidget(QtWidgets.QWidget):
 class MainProgram(QtWidgets.QMainWindow):
     def __init__(
             self,
-            work_manager: "speedwagon.worker.ToolJobManager",
+            work_manager: qtwidgets.worker.ToolJobManager,
             debug: bool = False
     ) -> None:
         super().__init__()
@@ -332,7 +332,7 @@ class MainWindowMenuBuilder:
 class MainWindow1(MainProgram):
     def __init__(
             self,
-            work_manager: "speedwagon.worker.ToolJobManager",
+            work_manager: qtwidgets.worker.ToolJobManager,
             debug: bool = False
     ) -> None:
 
