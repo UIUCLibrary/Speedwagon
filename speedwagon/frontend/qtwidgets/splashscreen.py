@@ -11,7 +11,7 @@ from PySide6 import QtWidgets, QtGui, QtCore
 import speedwagon
 
 
-def create_splash():
+def create_splash() -> QtWidgets.QSplashScreen:
     """Create a splash screen."""
     with resources.open_binary(speedwagon.__name__, "logo.png") as logo:
         splash = QtWidgets.QSplashScreen(

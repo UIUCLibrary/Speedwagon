@@ -72,9 +72,12 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
 class WorkProgressBar(QtWidgets.QProgressDialog):
     """Use this for showing progress."""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(
+            self,
+            parent: Optional[QtWidgets.QWidget] = None,
+            flags: QtCore.Qt.WindowFlags = QtCore.Qt.WindowFlags()) -> None:
         """Create a work progress dialog window."""
-        super().__init__(*args, **kwargs)
+        super().__init__(parent, flags)
         self.setModal(True)
         self.setMinimumHeight(100)
         self.setMinimumWidth(250)
