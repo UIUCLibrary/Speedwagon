@@ -1,3 +1,11 @@
+"""Workers for Qt widgets.
+
+Refactored and extracted from speedwagon/worker.py.
+
+Notes:
+    This is intended to be removed. Use at own risk!!!
+
+"""
 from __future__ import annotations
 
 import abc
@@ -135,7 +143,11 @@ class ToolJobManager(
 
 
 class JobProcessor:
+    """Job processor for Qt Widgets."""
+
     def __init__(self, parent: "ToolJobManager"):
+        """Create a Job Processor object."""
+        warnings.warn("Don't use", DeprecationWarning)
         self._parent = parent
         self.completed = 0
         self._total_jobs = None
@@ -143,6 +155,7 @@ class JobProcessor:
 
     @staticmethod
     def report_results_from_future(futures):
+        """Get the results from the futures."""
         for i, (future, reported) in enumerate(futures):
 
             if not reported and future.done():
@@ -151,6 +164,7 @@ class JobProcessor:
                 futures[i] = future, True
 
     def process(self):
+        """Process job in queue."""
         self._total_jobs = len(self._parent.futures)
         total_jobs = self._total_jobs
         futures = [(i, False) for i in self._parent.futures]
@@ -195,6 +209,8 @@ class JobProcessor:
 
 
 class UIWorker(speedwagon.worker.Worker, ABC):
+    """QtWidgets base class for making workers."""
+
     def __init__(self, parent) -> None:
         """Interface for managing jobs.
 
@@ -209,11 +225,14 @@ class UIWorker(speedwagon.worker.Worker, ABC):
 
 
 class ProcessWorker(UIWorker):
+    """Process based worker for QtWidgets."""
+
     executor = concurrent.futures.ProcessPoolExecutor(max_workers=1)
 
     def __init__(self, *args, **kwargs) -> None:
         """Create a process worker."""
         super().__init__(*args, **kwargs)
+        warnings.warn("Don't use", DeprecationWarning)
         self.manager = multiprocessing.Manager()
         self._message_queue = self.manager.Queue()
         self._results = None
@@ -221,12 +240,13 @@ class ProcessWorker(UIWorker):
 
     @classmethod
     def initialize_worker(cls, max_workers: int = 1) -> None:
-
+        """Initialize the work pool."""
         cls.executor = concurrent.futures.ProcessPoolExecutor(
             max_workers=max_workers
         )  # TODO: Fix this
 
     def cancel(self) -> None:
+        """Cancel the job."""
         self.executor.shutdown()
 
     @classmethod
@@ -241,6 +261,7 @@ class ProcessWorker(UIWorker):
             job: speedwagon.worker.ProcessJobWorker,
             **job_args
     ) -> None:
+        """Add job to job queue."""
         new_job = speedwagon.worker.JobPair(job, args=job_args)
         self._jobs_queue.put(new_job)
 
@@ -256,7 +277,7 @@ class ProcessWorker(UIWorker):
 
     @abc.abstractmethod
     def complete_task(self, fut: concurrent.futures.Future) -> None:
-        pass
+        """Complete task."""
 
     @abc.abstractmethod
     def on_completion(self, *args, **kwargs) -> None:
