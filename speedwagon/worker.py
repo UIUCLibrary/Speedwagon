@@ -12,7 +12,8 @@ from typing import Optional, Any, Dict
 from collections import namedtuple
 
 from speedwagon.tasks import QueueAdapter
-from speedwagon.tasks.tasks import AbsSubtask
+if typing.TYPE_CHECKING:
+    from speedwagon.tasks.tasks import AbsSubtask
 
 __all__ = [
     "SubtaskJobAdapter"

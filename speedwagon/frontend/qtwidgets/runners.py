@@ -128,7 +128,7 @@ class QtDialogProgress(frontend.reporter.RunnerDisplay):
     def _update_progress(
             self,
             task_scheduler:
-            "speedwagon.runner_strategies.TaskScheduler"
+            runner_strategies.TaskScheduler
     ) -> None:
         self.total_tasks_amount = task_scheduler.total_tasks
         self.current_task_progress = task_scheduler.current_task_progress

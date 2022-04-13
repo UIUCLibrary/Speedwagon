@@ -1,15 +1,18 @@
 """Logging related stuff."""
+from __future__ import annotations
+
 import abc
 import logging
 import typing
-from logging import LogRecord
-import logging.handlers
+from logging import handlers
 
 from typing import Callable
-from PySide6 import QtCore, QtWidgets
+if typing.TYPE_CHECKING:
+    from logging import LogRecord
+    from PySide6 import QtCore, QtWidgets
 
 
-class GuiLogHandler(logging.handlers.BufferingHandler):
+class GuiLogHandler(handlers.BufferingHandler):
     """Logger designed for gui."""
 
     def __init__(
@@ -20,12 +23,12 @@ class GuiLogHandler(logging.handlers.BufferingHandler):
         super().__init__(capacity=5)
         self.callback = callback
 
-    def emit(self, record: logging.LogRecord) -> None:
+    def emit(self, record: LogRecord) -> None:
         """Emit logged message to callback function."""
         self.callback(logging.Formatter().format(record))
 
 
-class SignalLogHandler(logging.handlers.BufferingHandler):
+class SignalLogHandler(handlers.BufferingHandler):
     """Qt Signal based log handler.
 
     Emits the log as a signal.

@@ -3,6 +3,7 @@
 Mainly for connecting GUI elements, such as buttons, to functions and methods
 that do the work
 """
+from __future__ import annotations
 import io
 import logging
 import logging.handlers
@@ -28,8 +29,11 @@ from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
 
 import speedwagon
 from speedwagon.frontend import qtwidgets
-import speedwagon.config
 import speedwagon.runner_strategies
+
+from speedwagon.job import Workflow
+if typing.TYPE_CHECKING:
+    from speedwagon.frontend.qtwidgets.worker import ToolJobManager
 
 __all__ = [
     "MainWindow1"
@@ -157,7 +161,7 @@ class ItemTabsWidget(QtWidgets.QWidget):
 class MainProgram(QtWidgets.QMainWindow):
     def __init__(
             self,
-            work_manager: qtwidgets.worker.ToolJobManager,
+            work_manager: ToolJobManager,
             debug: bool = False
     ) -> None:
         super().__init__()
@@ -332,7 +336,7 @@ class MainWindowMenuBuilder:
 class MainWindow1(MainProgram):
     def __init__(
             self,
-            work_manager: qtwidgets.worker.ToolJobManager,
+            work_manager: ToolJobManager,
             debug: bool = False
     ) -> None:
 
@@ -503,7 +507,7 @@ class MainWindow1(MainProgram):
     def add_tab(
             self,
             workflow_name: str,
-            workflows: typing.Dict[str, typing.Type[speedwagon.job.Workflow]]
+            workflows: typing.Dict[str, typing.Type[Workflow]]
     ) -> None:
 
         workflows_tab = qtwidgets.tabs.WorkflowsTab(
@@ -716,7 +720,7 @@ class MainWindow2(MainWindow2UI):
             ].item_selector_view.selectedIndexes()[0]
 
         current_workflow = typing.cast(
-                speedwagon.Workflow,
+                Workflow,
                 self._tabs[
                     current_tab_index
                 ].item_selection_model.data(
@@ -740,7 +744,7 @@ class MainWindow2(MainWindow2UI):
             tab_name: str,
             workflows: typing.Mapping[
                 str,
-                typing.Type[speedwagon.job.Workflow]
+                typing.Type[Workflow]
             ]
     ) -> None:
 

@@ -1,4 +1,5 @@
 """Data models for displaying data to user in the user interface."""
+from __future__ import annotations
 import abc
 from collections import namedtuple, OrderedDict
 import configparser
@@ -20,10 +21,11 @@ import warnings
 from PySide6.QtCore import QAbstractItemModel
 from PySide6 import QtCore, QtGui  # type: ignore
 
-import speedwagon.frontend
-from speedwagon.frontend.qtwidgets import tabs, shared_custom_widgets
-import speedwagon.workflow
-from speedwagon.job import AbsWorkflow, Workflow
+if typing.TYPE_CHECKING:
+    from speedwagon.frontend.qtwidgets import shared_custom_widgets, tabs
+    from speedwagon.job import AbsWorkflow, Workflow
+    from speedwagon.workflow import AbsOutputOptionDataType
+
 
 __all__ = [
     "ItemListModel",
@@ -393,7 +395,7 @@ class ToolOptionsModel3(ToolOptionsModel):
         for i in range(self.rowCount()):
             index = self.index(i, 0)
             if typing.cast(
-                shared_custom_widgets.UserOption2,
+                'shared_custom_widgets.UserOption2',
                 self.data(index, role=QtCore.Qt.UserRole)
             ).label_text == key:
                 return index
@@ -443,7 +445,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
 
     def __init__(
             self,
-            data: List[speedwagon.workflow.AbsOutputOptionDataType] = None,
+            data: List[AbsOutputOptionDataType] = None,
             parent: QtCore.QObject = None
     ) -> None:
         super().__init__(parent)
@@ -537,7 +539,7 @@ class ModelDataFormatter:
     @classmethod
     def _select_display_role(
             cls,
-            item: speedwagon.workflow.AbsOutputOptionDataType
+            item: AbsOutputOptionDataType
     ) -> Optional[str]:
         if cls._should_use_placeholder_text(item) is True:
             return item.placeholder_text
@@ -549,7 +551,7 @@ class ModelDataFormatter:
 
     @staticmethod
     def _should_use_placeholder_text(
-            item: speedwagon.workflow.AbsOutputOptionDataType
+            item: AbsOutputOptionDataType
     ) -> bool:
         if item.value is not None:
             return False
@@ -559,7 +561,7 @@ class ModelDataFormatter:
 
     def font_role(
             self,
-            setting: speedwagon.workflow.AbsOutputOptionDataType
+            setting: AbsOutputOptionDataType
     ) -> Optional[QtGui.QFont]:
         if self._should_use_placeholder_text(setting) is True:
             font = QtGui.QFont()
@@ -569,13 +571,13 @@ class ModelDataFormatter:
 
     def display_role(
             self,
-            setting: speedwagon.workflow.AbsOutputOptionDataType
+            setting: AbsOutputOptionDataType
     ) -> Optional[str]:
         return self._select_display_role(setting)
 
     def format(
             self,
-            setting: speedwagon.workflow.AbsOutputOptionDataType,
+            setting: AbsOutputOptionDataType,
             role: QtCore.Qt.ItemDataRole
     ) -> Optional[Any]:
         formatter = {
@@ -703,12 +705,12 @@ class TabsModel(QtCore.QAbstractListModel):
         """Check if a tab is in the model."""
         return any(tab.tab_name == value for tab in self.tabs)
 
-    def __iadd__(self, other: "tabs.TabData") -> "TabsModel":
+    def __iadd__(self, other: tabs.TabData) -> "TabsModel":
         """Add a tab to the model."""
         self.add_tab(other)
         return self
 
-    def __isub__(self, other: "tabs.TabData") -> "TabsModel":
+    def __isub__(self, other: tabs.TabData) -> "TabsModel":
         """Remove a tab from the model."""
         self.remove_tab(other)
         return self
@@ -716,7 +718,7 @@ class TabsModel(QtCore.QAbstractListModel):
     def data(self,
              index: QtCore.QModelIndex,
              role: Optional[QtConstant] = None
-             ) -> Optional[Union[str, "tabs.TabData"]]:
+             ) -> Optional[Union[str, tabs.TabData]]:
         """Get data about a tab for an index."""
         if not index.isValid():
             return None
@@ -740,7 +742,7 @@ class TabsModel(QtCore.QAbstractListModel):
         """Get the number of tabs loaded in the model."""
         return len(self.tabs)
 
-    def add_tab(self, tab: "tabs.TabData") -> None:
+    def add_tab(self, tab: tabs.TabData) -> None:
         """Add a new tab to the model."""
         row = len(self.tabs)
         index = self.createIndex(row, 0)
@@ -751,7 +753,7 @@ class TabsModel(QtCore.QAbstractListModel):
         self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
         self.endInsertRows()
 
-    def remove_tab(self, tab: "tabs.TabData") -> None:
+    def remove_tab(self, tab: tabs.TabData) -> None:
         """Remove a tab from the model."""
         index = QtCore.QModelIndex()
         if tab in self.tabs:
@@ -765,7 +767,7 @@ class TabsModel(QtCore.QAbstractListModel):
     def setData(
             self,
             index: QtCore.QModelIndex,
-            tab: "tabs.TabData",
+            tab: tabs.TabData,
             role: Optional[QtConstant] = None
     ) -> bool:
         """Set tab data."""

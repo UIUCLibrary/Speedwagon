@@ -24,6 +24,8 @@ from speedwagon.job import AbsWorkflow, Workflow
 
 __all__ = [
     "RunRunner",
+    "TaskDispatcher",
+    "TaskScheduler",
     "simple_api_run_workflow"
 ]
 

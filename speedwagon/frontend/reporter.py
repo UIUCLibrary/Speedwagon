@@ -1,11 +1,12 @@
 """Reporters of jobs."""
-
+from __future__ import annotations
 import contextlib
 import abc
 import typing
 from types import TracebackType
 from typing import Optional, Type
-import speedwagon
+if typing.TYPE_CHECKING:
+    from speedwagon.runner_strategies import TaskDispatcher, TaskScheduler
 
 
 class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
@@ -15,12 +16,8 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
         """Create a new runner display object."""
         super().__init__()
 
-        self.task_runner: typing.Optional[
-            speedwagon.runner_strategies.TaskDispatcher
-        ] = None
-        self.task_scheduler: typing.Optional[
-            speedwagon.runner_strategies.TaskScheduler
-        ] = None
+        self.task_runner: typing.Optional[TaskDispatcher] = None
+        self.task_scheduler: typing.Optional[TaskScheduler] = None
         self._total_tasks_amount: typing.Optional[int] = None
         self._current_task_progress: typing.Optional[int] = None
         self._details: typing.Optional[str] = None
