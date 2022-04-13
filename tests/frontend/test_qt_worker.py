@@ -1,6 +1,8 @@
 import concurrent.futures
 from unittest.mock import Mock
 
+import pytest
+
 from speedwagon.frontend.qtwidgets import worker
 from speedwagon.frontend.qtwidgets import dialog
 
@@ -18,6 +20,7 @@ class TestToolJobManager:
         assert work_progress_bar.show.called is True
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestProcessWorker:
     class DummyProcessWorker(worker.ProcessWorker):
 
@@ -34,6 +37,7 @@ class TestProcessWorker:
         assert process_worker.on_completion.called is True
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestJobProcessor:
     def test_process_flushes_buffer(self):
         parent = Mock(spec=worker.ToolJobManager)
