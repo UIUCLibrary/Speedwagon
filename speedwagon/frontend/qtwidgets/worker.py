@@ -93,12 +93,8 @@ class ToolJobManager(
         """Abort jobs."""
         still_running: typing.List[concurrent.futures.Future] = []
 
-        dialog_box = \
-            speedwagon.frontend.qtwidgets.dialog.WorkProgressBar(
-                "Canceling",
-                None,
-                0, 0
-            )
+        dialog_box = speedwagon.frontend.qtwidgets.dialog.WorkProgressBar()
+        dialog_box.setWindowTitle("Canceling")
         self._job_runtime.abort()
 
         dialog_box.setRange(0, len(still_running))
