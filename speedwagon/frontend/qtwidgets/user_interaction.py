@@ -7,14 +7,14 @@ from typing import Dict, Any, Optional, List, Union, Type
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtGui import Qt
 
-if typing.TYPE_CHECKING:
-    from uiucprescon.packager.packages import collection
-    from speedwagon.job import Workflow
-
 import speedwagon.exceptions
 from speedwagon.frontend import interaction
 from speedwagon.frontend.qtwidgets.dialog.title_page_selection import \
     PackageBrowser
+
+if typing.TYPE_CHECKING:
+    from uiucprescon.packager.packages import collection
+    from speedwagon.job import Workflow
 
 
 class QtWidgetFactory(interaction.UserRequestFactory):
