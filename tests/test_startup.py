@@ -1110,17 +1110,24 @@ class TestStartQtThreaded:
         assert exec_.called is True
 
     def test_run_opens_window(self, qtbot, monkeypatch, starter):
-        show = Mock()
 
-        monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.gui.MainWindow2,
-            "show",
-            show
+        main_window2 = Mock(spec=speedwagon.frontend.qtwidgets.gui.MainWindow2)
+        main_window2.show = Mock()
+        main_window2.console = Mock()
+        MainWindow2 = Mock(
+            name="MainWindow2",
+            return_value=main_window2,
         )
+        monkeypatch.setattr(
+            speedwagon.frontend.qtwidgets.gui,
+            "MainWindow2",
+            MainWindow2
+        )
+
         starter.load_custom_tabs = Mock()
         starter.load_all_workflows_tab = Mock()
         starter.run()
-        assert show.called is True
+        assert main_window2.show.called is True
 
     def test_load_custom_tabs(self, qtbot, monkeypatch, starter):
         tabs_file = "somefile.yml"
