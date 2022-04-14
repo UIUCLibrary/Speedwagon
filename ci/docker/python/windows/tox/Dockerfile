@@ -26,7 +26,6 @@ RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
     }; `
     Write-Host "Disabling Showing Download Progress" ; `
     choco feature disable -n=showDownloadProgress ; `
-    Remove-Item C:\ProgramData\chocolatey\bin\cpack.exe ; `
     Remove-Item -Force -Recurse ${Env:TEMP}\*
 
 
