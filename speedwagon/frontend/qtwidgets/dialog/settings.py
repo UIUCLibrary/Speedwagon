@@ -1,9 +1,14 @@
 """Configuration settings."""
 
-import abc
 import os
 import platform
 import typing
+
+from speedwagon.config import \
+    AbsOpenSettings, \
+    DarwinOpenSettings, \
+    WindowsOpenSettings, \
+    OpenSettingsDirectory
 
 try:  # pragma: no cover
     from importlib import resources
@@ -17,24 +22,6 @@ from speedwagon import job
 from speedwagon.frontend import qtwidgets
 
 __all__ = ['GlobalSettingsTab', 'TabsConfigurationTab', 'TabEditor']
-
-
-class AbsOpenSettings(abc.ABC):
-
-    def __init__(self, settings_directory: str) -> None:
-        super().__init__()
-        self.settings_dir = settings_directory
-
-    @abc.abstractmethod
-    def system_open_directory(self, settings_directory: str) -> None:
-        """Open the directory in os's file browser.
-
-        Args:
-            settings_directory: Path to the directory
-        """
-
-    def open(self) -> None:
-        self.system_open_directory(self.settings_dir)
 
 
 class UnsupportedOpenSettings(AbsOpenSettings):
@@ -54,30 +41,6 @@ class UnsupportedOpenSettings(AbsOpenSettings):
         )
 
         msg.show()
-
-
-class DarwinOpenSettings(AbsOpenSettings):
-    def system_open_directory(self, settings_directory: str) -> None:
-        os.system(f"open {settings_directory}")
-
-
-class WindowsOpenSettings(AbsOpenSettings):
-
-    def system_open_directory(self, settings_directory: str) -> None:
-        # pylint: disable=no-member
-        os.startfile(settings_directory)  # type: ignore
-
-
-class OpenSettingsDirectory:
-
-    def __init__(self, strategy: AbsOpenSettings) -> None:
-        self.strategy = strategy
-
-    def system_open_directory(self, settings_directory: str) -> None:
-        self.strategy.system_open_directory(settings_directory)
-
-    def open(self) -> None:
-        self.strategy.open()
 
 
 class SettingsDialog(QtWidgets.QDialog):
