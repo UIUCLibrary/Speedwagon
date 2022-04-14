@@ -12,8 +12,7 @@ RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
     { `
         Write-Host "Adding $env:CHOCOLATEY_SOURCE to chocolatey sources" ; `
         choco source add -n=CHOCOLATEY_SOURCE --priority=1 -s=\"$env:CHOCOLATEY_SOURCE\" ; `
-    }; `
-    Remove-Item C:\ProgramData\chocolatey\bin\cpack.exe
+    }
 
 COPY ci/docker/chocolatey_package/choco_package_template/pythonscript/ C:/ProgramData/chocolatey/templates/pythonscript/
 #===============================
