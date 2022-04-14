@@ -1,4 +1,6 @@
 """Creating and managing tabs in the UI display."""
+from __future__ import annotations
+
 import abc
 import logging
 import os
@@ -14,15 +16,18 @@ import yaml
 from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
 
 import speedwagon
-import speedwagon.config
 from speedwagon.frontend.qtwidgets.widgets import QtWidgetDelegateSelection
 
 from speedwagon import runner_strategies
 from speedwagon.frontend import qtwidgets
 
-from speedwagon import worker  # pylint: disable=unused-import
 from speedwagon.exceptions import MissingConfiguration
 from speedwagon.job import AbsWorkflow, NullWorkflow, Workflow
+
+if typing.TYPE_CHECKING:
+    from speedwagon.frontend.qtwidgets.worker import ToolJobManager
+    from speedwagon.frontend.qtwidgets import models
+
 
 __all__ = [
     "ItemSelectionTab",
@@ -65,7 +70,7 @@ class Tab:
 
     def __init__(self,
                  parent: QtWidgets.QWidget,
-                 work_manager: "worker.ToolJobManager"
+                 work_manager: ToolJobManager
                  ) -> None:
         """Create a new tab."""
         self.parent = parent
@@ -159,8 +164,8 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             self,
             name: str,
             parent: QtWidgets.QWidget,
-            item_model: qtwidgets.models.WorkflowListModel,
-            work_manager: "worker.ToolJobManager",
+            item_model: models.WorkflowListModel,
+            work_manager: ToolJobManager,
             log_manager: logging.Logger
     ) -> None:
         """Create a new item selection tab."""
@@ -168,7 +173,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         self.export_action = QtGui.QAction(text="summy")
         self.log_manager = log_manager
         self.item_selection_model = item_model
-        self.options_model: Optional[qtwidgets.models.ToolOptionsModel3] = None
+        self.options_model: Optional[models.ToolOptionsModel3] = None
         self.tab_name = name
 
         self.item_selector_view = self._create_selector_view(
@@ -241,7 +246,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     def create_form(
             parent: QtWidgets.QWidget,
             config_widgets: Dict[TabWidgets, QtWidgets.QWidget],
-            model: qtwidgets.models.WorkflowListModel
+            model: models.WorkflowListModel
     ) -> QtWidgets.QDataWidgetMapper:
         """Generate form for the selected item."""
         tool_mapper = QtWidgets.QDataWidgetMapper(parent)
@@ -264,7 +269,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     def get_item_options_model(
             self,
             workflow: Type[Workflow]
-    ) -> qtwidgets.models.ToolOptionsModel3:
+    ) -> models.ToolOptionsModel3:
         """Get item options model."""
 
     def create_actions(self) -> Tuple[Dict[str, QtWidgets.QWidget],
@@ -503,7 +508,7 @@ class WorkflowsTab(ItemSelectionTab):
     def get_item_options_model(
             self,
             workflow: typing.Type[Workflow]
-    ) -> qtwidgets.models.ToolOptionsModel4:
+    ) -> models.ToolOptionsModel4:
         """Get item options model."""
         if self.work_manager.user_settings is None:
             raise ValueError("user_settings not set")
@@ -602,7 +607,7 @@ class TabData(NamedTuple):
     """Tab data."""
 
     tab_name: str
-    workflows_model: qtwidgets.models.WorkflowListModel2
+    workflows_model: models.WorkflowListModel2
 
 
 def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:

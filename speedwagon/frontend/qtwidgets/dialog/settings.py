@@ -20,6 +20,7 @@ from typing import Optional, Dict, cast, Type, Union
 from PySide6 import QtWidgets, QtCore  # type: ignore
 from speedwagon import job
 from speedwagon.frontend import qtwidgets
+from speedwagon.frontend.qtwidgets import models
 
 __all__ = ['GlobalSettingsTab', 'TabsConfigurationTab', 'TabEditor']
 
@@ -147,7 +148,7 @@ class GlobalSettingsTab(QtWidgets.QWidget):
             raise FileNotFoundError("Invalid Configuration file set")
 
         self.settings_table.setModel(
-            qtwidgets.models.build_setting_model(self.config_file)
+            models.build_setting_model(self.config_file)
         )
 
         self.settings_table.model().dataChanged.connect(self.on_modified)
@@ -169,7 +170,7 @@ class GlobalSettingsTab(QtWidgets.QWidget):
 
         print("Saving changes")
 
-        data = qtwidgets.models.serialize_settings_model(
+        data = models.serialize_settings_model(
             self.settings_table.model()
         )
 
@@ -216,7 +217,7 @@ class TabsConfigurationTab(QtWidgets.QWidget):
             self.settings_location,
             qtwidgets.tabs.extract_tab_information(
                 cast(
-                    qtwidgets.models.TabsModel,
+                    models.TabsModel,
                     self.editor.selected_tab_combo_box.model()
                 )
             )
@@ -333,17 +334,17 @@ class TabEditor(TabEditorWidget):
     ) -> None:
         """Create a tab editor widget."""
         super().__init__(parent, flags)
-        self.tabs_model = qtwidgets.models.TabsModel()
+        self.tabs_model = models.TabsModel()
         self.selected_tab_combo_box.setModel(self.tabs_model)
 
         self._tabs_file: Optional[str] = None
 
-        self._all_workflows_model: qtwidgets.models.WorkflowListModel2 = \
-            qtwidgets.models.WorkflowListModel2()
+        self._all_workflows_model: models.WorkflowListModel2 = \
+            models.WorkflowListModel2()
 
         self._active_tab_workflows_model: \
-            qtwidgets.models.WorkflowListModel2 = \
-            qtwidgets.models.WorkflowListModel2()
+            models.WorkflowListModel2 = \
+            models.WorkflowListModel2()
 
         self.tab_workflows_list_view.setModel(
             self._active_tab_workflows_model
@@ -386,7 +387,7 @@ class TabEditor(TabEditorWidget):
 
     def _changed_tab(self, tab: int) -> None:
         model: QtCore.QAbstractListModel = cast(
-            qtwidgets.models.TabsModel,
+            models.TabsModel,
             self.selected_tab_combo_box.model()
         )
         index = model.index(tab)
@@ -395,7 +396,7 @@ class TabEditor(TabEditorWidget):
             self.tab_workflows_list_view.setModel(data.workflows_model)
         else:
             self.tab_workflows_list_view.setModel(
-                qtwidgets.models.WorkflowListModel2()
+                models.WorkflowListModel2()
             )
 
     def _create_new_tab(self) -> None:
@@ -420,7 +421,7 @@ class TabEditor(TabEditorWidget):
 
             new_tab = qtwidgets.tabs.TabData(
                 new_tab_name,
-                qtwidgets.models.WorkflowListModel2()
+                models.WorkflowListModel2()
             )
 
             self.tabs_model.add_tab(new_tab)
@@ -435,7 +436,7 @@ class TabEditor(TabEditorWidget):
 
     def _add_items_to_tab(self) -> None:
         model = cast(
-            qtwidgets.models.WorkflowListModel2,
+            models.WorkflowListModel2,
             self.tab_workflows_list_view.model()
         )
         for i in self.all_workflows_list_view.selectedIndexes():
@@ -445,7 +446,7 @@ class TabEditor(TabEditorWidget):
 
     def _remove_items(self) -> None:
         model = cast(
-            qtwidgets.models.WorkflowListModel2,
+            models.WorkflowListModel2,
             self.tab_workflows_list_view.model()
         )
         items_to_remove = [

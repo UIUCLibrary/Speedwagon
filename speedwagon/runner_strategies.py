@@ -24,6 +24,8 @@ from speedwagon.job import AbsWorkflow, Workflow
 
 __all__ = [
     "RunRunner",
+    "TaskDispatcher",
+    "TaskScheduler",
     "simple_api_run_workflow"
 ]
 
@@ -366,10 +368,12 @@ class TaskDispatcherStopping(AbsTaskDispatcherState):
 
 
 class TaskDispatcher:
+    """Task dispatcher for threading."""
 
     def __init__(self,
                  job_queue: queue.Queue,
                  logger: typing.Optional[logging.Logger] = None) -> None:
+        """Create a new task dispatcher object."""
         super().__init__()
         self.job_queue = job_queue
         self.signals: typing.Mapping[str, threading.Event] = {
@@ -383,25 +387,32 @@ class TaskDispatcher:
 
     @property
     def active(self) -> bool:
+        """Get if currently active."""
         return self.current_state.active()
 
     def stop(self) -> None:
+        """Stop dispatching tasks."""
         self.current_state.stop()
 
     def __enter__(self) -> "TaskDispatcher":
+        """Start dispatching tasks."""
         self.start()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Stop dispatching tasks on exiting."""
         self.stop()
 
     def start(self) -> None:
+        """Start the task."""
         self.current_state.start()
 
 
 class TaskScheduler:
+    """Task scheduler."""
 
     def __init__(self, working_directory: str) -> None:
+        """Create a new task scheduler."""
         self.logger = logging.getLogger(__name__)
         self.working_directory = working_directory
         self.reporter: Optional[
@@ -420,6 +431,7 @@ class TaskScheduler:
     def request_more_info(self) -> typing.Callable[
         [Workflow, Any, Any], typing.Optional[Dict[str, Any]]
     ]:
+        """Request more info from the user about the task."""
         return self._request_more_info
 
     @request_more_info.setter
@@ -493,7 +505,7 @@ class TaskScheduler:
                         )
 
     def run(self, workflow: Workflow, options: Dict[str, Any]) -> None:
-
+        """Run workflow with given options."""
         task_dispatcher = TaskDispatcher(
             self._task_queue,
             self.logger

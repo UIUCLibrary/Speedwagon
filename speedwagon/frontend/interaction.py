@@ -1,12 +1,16 @@
 """Interacting with the user."""
+from __future__ import annotations
 
 import abc
+import typing
 from abc import ABC
 from typing import Dict, Any, List, Optional
 import enum
 import uiucprescon.packager.packages
 from uiucprescon.packager import PackageFactory
-from uiucprescon.packager.packages import collection
+
+if typing.TYPE_CHECKING:
+    from uiucprescon.packager.packages import collection
 
 
 class SupportedImagePackageFormats(enum.Enum):

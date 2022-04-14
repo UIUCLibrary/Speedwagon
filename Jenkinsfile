@@ -307,7 +307,7 @@ def create_wheels(){
     def wheelCreatorTasks = [:]
     ['3.7', '3.8', '3.9', '3.10'].each{ pythonVersion ->
         wheelCreatorTasks["Packaging wheels for ${pythonVersion}"] = {
-            node('windows && docker') {
+            node('windows && docker && x86') {
                 ws{
                     checkout scm
                     try{
@@ -588,11 +588,11 @@ pipeline {
             }
         }
         stage('Checks'){
-            when{
-                equals expected: true, actual: params.RUN_CHECKS
-            }
             stages{
                 stage('Code Quality'){
+                    when{
+                        equals expected: true, actual: params.RUN_CHECKS
+                    }
                     agent {
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
@@ -1273,7 +1273,7 @@ pipeline {
                     agent {
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label 'linux && docker && x86 && devpi-access'
+                            label 'linux && docker && devpi-access'
                             additionalBuildArgs ' --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                           }
                     }
@@ -1477,7 +1477,7 @@ pipeline {
                     agent {
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label 'linux && docker && x86 && devpi-access'
+                            label 'linux && docker && devpi-access'
                             additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                           }
                     }
@@ -1500,7 +1500,7 @@ pipeline {
             }
             post{
                 success{
-                    node('linux && docker && x86 && devpi-access') {
+                    node('linux && docker && devpi-access') {
                        script{
                             if (!env.TAG_NAME?.trim()){
                                 docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
@@ -1543,7 +1543,7 @@ pipeline {
                     agent {
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label 'linux && docker'
+                            label 'linux && docker && devpi-access'
                             additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                         }
                     }
@@ -1605,7 +1605,7 @@ pipeline {
                     agent {
                         dockerfile {
                             filename 'ci/docker/chocolatey_package/Dockerfile'
-                            label 'windows && docker'
+                            label 'windows && docker && x86'
                             additionalBuildArgs '--build-arg CHOCOLATEY_SOURCE'
                           }
                     }
