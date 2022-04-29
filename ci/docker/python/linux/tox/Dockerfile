@@ -8,39 +8,6 @@ RUN apt update && \
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 
-FROM wheel_builder_base as WHEEL_BUILDER_PY36
-ARG PIP_EXTRA_INDEX_URL
-ARG PIP_INDEX_URL
-
-COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt /tmp/
-ENV PYTHON=python3.6
-RUN $PYTHON -m pip install pip --upgrade pip && \
-    $PYTHON -m pip install wheel && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v \
-        -r /tmp/requirements.txt \
-        -r /tmp/requirements-dev.txt \
-        -r /tmp/requirements-vendor.txt \
-        -r /tmp/requirements-ci.txt \
-        -r /tmp/requirements-extra.txt
-RUN $PYTHON -m pip wheel -w /wheels --no-cache-dir -v devpi_client
-
-# ==============================================================================
-FROM wheel_builder_base as WHEEL_BUILDER_PY37
-ARG PIP_EXTRA_INDEX_URL
-ARG PIP_INDEX_URL
-
-COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt /tmp/
-ENV PYTHON=python3.7
-RUN $PYTHON -m pip install pip --upgrade pip && \
-    $PYTHON -m pip install wheel && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v \
-        -r /tmp/requirements.txt \
-        -r /tmp/requirements-dev.txt \
-        -r /tmp/requirements-vendor.txt \
-        -r /tmp/requirements-ci.txt \
-        -r /tmp/requirements-extra.txt
-RUN $PYTHON -m pip wheel -w /wheels --no-cache-dir -v devpi_client
-
 # ==============================================================================
 FROM wheel_builder_base as WHEEL_BUILDER_PY38
 ARG PIP_EXTRA_INDEX_URL
@@ -98,12 +65,11 @@ FROM wheel_builder_base
 RUN mkdir -p /.cache/pip && \
     chmod -R 777 /.cache
 ENV QT_QPA_PLATFORM="offscreen"
-RUN pip3 install tox
+RUN pip3 install pip --upgrade && \
+    pip3 install tox
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 RUN pip3 wheel -w /wheels --no-cache-dir wheel
-COPY --from=WHEEL_BUILDER_PY36 /wheels/* /wheels/
-COPY --from=WHEEL_BUILDER_PY37 /wheels/* /wheels/
 COPY --from=WHEEL_BUILDER_PY38 /wheels/* /wheels/
 COPY --from=WHEEL_BUILDER_PY39 /wheels/* /wheels/
 COPY --from=WHEEL_BUILDER_PY310 /wheels/* /wheels/
