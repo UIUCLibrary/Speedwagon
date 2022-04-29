@@ -2,7 +2,7 @@
 import static groovy.json.JsonOutput.* // For pretty printing json data
 
 SUPPORTED_MAC_VERSIONS = ['3.8', '3.9', '3.10']
-SUPPORTED_LINUX_VERSIONS = ['3.7', '3.8', '3.9', '3.10']
+SUPPORTED_LINUX_VERSIONS = ['3.8', '3.9', '3.10']
 SUPPORTED_WINDOWS_VERSIONS = ['3.7', '3.8', '3.9', '3.10']
 DOCKER_PLATFORM_BUILD_ARGS = [
     linux: '',
