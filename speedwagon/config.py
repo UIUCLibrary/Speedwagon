@@ -466,7 +466,7 @@ class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
 
     def __init__(
             self,
-            app: "speedwagon.startup.AbsStarter",
+            app: "speedwagon.startup.AbsGuiStarter",
             logger: Optional[logging.Logger] = None
     ) -> None:
         super().__init__(logger)
@@ -521,7 +521,7 @@ class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
 
 
 def ensure_settings_files(
-        starter: "speedwagon.startup.AbsStarter",
+        starter: "speedwagon.startup.AbsGuiStarter",
         logger: Optional[logging.Logger] = None,
         strategy: Optional[AbsEnsureConfigFile] = None
 ) -> None:

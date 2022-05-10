@@ -11,6 +11,7 @@ import yaml
 import pytest
 from PySide6 import QtWidgets, QtCore
 
+from speedwagon.frontend.qtwidgets import gui_startup
 import speedwagon.exceptions
 import speedwagon.frontend.qtwidgets.logging_helpers
 import speedwagon.frontend.qtwidgets.runners
@@ -59,7 +60,7 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
         lambda _: '~'
     )
 
-    standard_startup = speedwagon.startup.StartupDefault(app=app)
+    standard_startup = gui_startup.StartupGuiDefault(app=app)
 
     standard_startup.startup_settings['debug'] = True
     tabs_file = tmpdir / "tabs.yaml"
@@ -82,7 +83,7 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
 
 class TestTabsEditorApp:
     def test_on_okay_closes(self, qtbot):
-        editor = speedwagon.startup.TabsEditorApp()
+        editor = gui_startup.TabsEditorApp()
         qtbot.addWidget(editor)
         editor.close = Mock()
         editor.on_okay()
@@ -102,7 +103,7 @@ def test_start_up_tab_editor(monkeypatch):
     standalone_tab_editor = Mock()
 
     with monkeypatch.context() as mp:
-        mp.setattr(speedwagon.startup,
+        mp.setattr(speedwagon.frontend.qtwidgets.gui_startup,
                    "standalone_tab_editor",
                    standalone_tab_editor)
 
@@ -209,7 +210,7 @@ def test_get_custom_tabs_loads_workflows_from_file(monkeypatch):
 
 def test_standalone_tab_editor_loads(qtbot, monkeypatch):
     TabsEditorApp = MagicMock()
-    monkeypatch.setattr(speedwagon.startup, "TabsEditorApp", TabsEditorApp)
+    monkeypatch.setattr(speedwagon.startup.frontend.qtwidgets.gui_startup, "TabsEditorApp", TabsEditorApp)
     app = Mock()
     settings = Mock()
     get_platform_settings = Mock(return_value=settings)
@@ -221,7 +222,7 @@ def test_standalone_tab_editor_loads(qtbot, monkeypatch):
         get_platform_settings
     )
 
-    speedwagon.startup.standalone_tab_editor(app)
+    gui_startup.standalone_tab_editor(app)
     assert app.exec.called is True
 
 
@@ -309,7 +310,7 @@ class TestStartupDefault:
             "get_app_data_directory",
             lambda *_: "app_data_dir"
         )
-        startup_worker = speedwagon.startup.StartupDefault(app=Mock())
+        startup_worker = gui_startup.StartupGuiDefault(app=Mock())
         resolution = Mock(FRIENDLY_NAME="dummy")
         resolution.update = lambda _: update()
 
@@ -346,7 +347,7 @@ class TestStartupDefault:
             parse_args
         )
 
-        startup_worker = speedwagon.startup.StartupDefault(app=Mock())
+        startup_worker = gui_startup.StartupGuiDefault(app=Mock())
         resolution = Mock(FRIENDLY_NAME="dummy")
         resolution.__class__ = speedwagon.config.ConfigFileSetter
         resolution.update = lambda _: update()
@@ -365,7 +366,7 @@ class TestStartupDefault:
             lambda *_: "app_data_dir"
         )
 
-        startup_worker = speedwagon.startup.StartupDefault(app=Mock())
+        startup_worker = gui_startup.StartupGuiDefault(app=Mock())
         startup_worker.startup_settings = {"sss": "dd"}
 
         monkeypatch.setattr(
@@ -414,7 +415,7 @@ class TestStartupDefault:
         )
 
         startup_worker = \
-            speedwagon.startup.StartupDefault(app=Mock(name="app"))
+            gui_startup.StartupGuiDefault(app=Mock(name="app"))
 
         resolution = Mock(friendly_name="dummy")
         resolution.update = lambda _: update()
@@ -449,7 +450,7 @@ class TestStartupDefault:
             "get_app_data_directory",
             lambda *_: "app_data_dir"
         )
-        startup_worker = speedwagon.startup.StartupDefault(app=Mock())
+        startup_worker = gui_startup.StartupGuiDefault(app=Mock())
         startup_worker.config_file = "dummy.yml"
         startup_worker.tabs_file = "tabs.yml"
         startup_worker.app_data_dir = \
@@ -493,7 +494,7 @@ class TestStartupDefault:
             "get_app_data_directory",
             lambda *_: "app_data_dir"
         )
-        startup_worker = speedwagon.startup.StartupDefault(app=Mock())
+        startup_worker = gui_startup.StartupGuiDefault(app=Mock())
         startup_worker.config_file = "dummy.yml"
         startup_worker.tabs_file = "tabs.yml"
         startup_worker.app_data_dir = os.path.join("some", "path")
@@ -584,7 +585,7 @@ class TestStartupDefault:
 class TestSingleWorkflowJSON:
     def test_run_without_json_raises_exception(self):
         with pytest.raises(ValueError) as error:
-            startup = speedwagon.startup.SingleWorkflowJSON()
+            startup = gui_startup.SingleWorkflowJSON()
             startup.options = Mock()
             startup.workflow = None
             startup.run()
@@ -592,7 +593,7 @@ class TestSingleWorkflowJSON:
 
     def test_run_without_options_raises_exception(self):
         with pytest.raises(ValueError) as error:
-            startup = speedwagon.startup.SingleWorkflowJSON()
+            startup = gui_startup.SingleWorkflowJSON()
             startup.options = None
             startup.workflow = Mock()
             startup.run()
@@ -607,7 +608,7 @@ class TestSingleWorkflowJSON:
             lambda *args, **kwargs: None
         )
 
-        startup = speedwagon.startup.SingleWorkflowJSON()
+        startup = gui_startup.SingleWorkflowJSON()
         startup.load_json_string(
             json.dumps(
                 {
@@ -623,13 +624,13 @@ class TestSingleWorkflowJSON:
         monkeypatch.setattr(
             speedwagon.frontend.qtwidgets.gui,
             "MainWindow2",
-            MagicMock()
+            Mock()
         )
 
         submit_job = MagicMock()
 
         monkeypatch.setattr(
-            speedwagon.startup.runner_strategies.BackgroundJobManager,
+            speedwagon.frontend.qtwidgets.gui_startup.runner_strategies.BackgroundJobManager,
             "submit_job",
             submit_job
         )
@@ -640,7 +641,7 @@ class TestSingleWorkflowJSON:
             Mock()
         )
 
-        startup.workflow.validate_user_options = MagicMock()
+        startup.workflow.validate_user_options = Mock(return_value=True)
         startup.run()
         assert submit_job.called is True
 
@@ -671,7 +672,7 @@ class TestSingleWorkflowJSON:
         logger.removeHandler(signal_log_handler)
 
     def test_run_on_exit_is_called(self, qtbot, monkeypatch):
-        startup = speedwagon.startup.SingleWorkflowJSON()
+        startup = speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON()
         startup.options = {}
         workflow = Mock()
         workflow.name = "spam"
@@ -689,7 +690,11 @@ class TestSingleWorkflowJSON:
             Mock()
         )
         monkeypatch.setattr(
-            speedwagon.runner_strategies.BackgroundJobManager,
+            speedwagon.frontend
+                .qtwidgets
+                .gui_startup
+                .runner_strategies
+                .BackgroundJobManager,
             "run_job_on_thread",
             lambda *args, **kwargs: Mock()
         )
@@ -709,7 +714,7 @@ class TestSingleWorkflowJSON:
         assert startup.on_exit.called is True
 
     def test_load_json(self):
-        startup = speedwagon.startup.SingleWorkflowJSON()
+        startup = gui_startup.SingleWorkflowJSON()
 
         startup.load_json_string(
             json.dumps(
@@ -730,7 +735,7 @@ class TestSingleWorkflowJSON:
 
 class TestMultiWorkflowLauncher:
     def test_all_workflows_validate_user_options(self, qtbot, monkeypatch):
-        startup_launcher = speedwagon.startup.MultiWorkflowLauncher()
+        startup_launcher = gui_startup.MultiWorkflowLauncher()
         workflow_tasks = [
 
             (
@@ -766,7 +771,7 @@ class TestMultiWorkflowLauncher:
         assert all(job.validate_user_options.called is True for job in jobs)
 
     def test_task_failing(self, qtbot):
-        startup_launcher = speedwagon.startup.MultiWorkflowLauncher()
+        startup_launcher = gui_startup.MultiWorkflowLauncher()
         mock_workflow = MagicMock()
         mock_workflow.name = 'Verify Checksum Batch [Single]'
         mock_workflow.__class__ = speedwagon.job.Workflow
@@ -908,7 +913,7 @@ class TestWorkflowProgressCallbacks:
         QMessageBox = Mock()
 
         monkeypatch.setattr(
-            speedwagon.startup.QtWidgets,
+            QtWidgets,
             "QMessageBox",
             QMessageBox
         )
@@ -965,7 +970,7 @@ class TestStartQtThreaded:
         )
 
         app = Mock()
-        startup = speedwagon.startup.StartQtThreaded(app)
+        startup = gui_startup.StartQtThreaded(app)
         yield startup
         if startup.windows is not None:
             startup.windows.close()
@@ -975,7 +980,7 @@ class TestStartQtThreaded:
         message_box = Mock(name="QMessageBox")
 
         monkeypatch.setattr(
-            speedwagon.startup.QtWidgets,
+            QtWidgets,
             "QMessageBox",
             Mock(return_value=message_box)
         )
@@ -1019,12 +1024,12 @@ class TestStartQtThreaded:
         )
 
         monkeypatch.setattr(
-            speedwagon.startup.QtWidgets.QFileDialog,
+            QtWidgets.QFileDialog,
             "getSaveFileName",
             getSaveFileName
         )
         parent = Mock()
-        with patch('speedwagon.startup.open', mock_open()) as w:
+        with patch('speedwagon.startup.frontend.qtwidgets.gui_startup', mock_open()) as w:
             starter.save_log(parent)
         assert getSaveFileName.called is True
 
@@ -1038,7 +1043,7 @@ class TestStartQtThreaded:
             return save_file_return_name, None
 
         monkeypatch.setattr(
-            speedwagon.startup.QtWidgets.QFileDialog,
+            QtWidgets.QFileDialog,
             "getSaveFileName",
             getSaveFileName
         )
@@ -1055,12 +1060,11 @@ class TestStartQtThreaded:
             raise OSError("nope")
 
         monkeypatch.setattr(
-            speedwagon.startup.QtWidgets,
+            QtWidgets,
             "QMessageBox",
             QMessageBox
         )
-
-        with patch('speedwagon.startup.open', mock_open()) as mock:
+        with patch('speedwagon.frontend.qtwidgets.gui_startup.open', mock_open()) as mock:
             mock.side_effect = side_effect_for_saving
             starter.save_log(None)
 
@@ -1075,7 +1079,7 @@ class TestStartQtThreaded:
             SystemInfoDialog
         )
 
-        speedwagon.startup.StartQtThreaded.request_system_info()
+        gui_startup.StartQtThreaded.request_system_info()
         assert SystemInfoDialog.called is True
 
     def test_request_settings_opens_setting_dialog(self, qtbot, monkeypatch):
@@ -1106,7 +1110,7 @@ class TestStartQtThreaded:
             lambda *_: "app_data_dir"
         )
 
-        speedwagon.startup.StartQtThreaded.request_settings()
+        gui_startup.StartQtThreaded.request_settings()
         assert exec_.called is True
 
     def test_run_opens_window(self, qtbot, monkeypatch, starter):
@@ -1210,7 +1214,7 @@ class TestStartQtThreaded:
         monkeypatch.setattr(speedwagon.startup.metadata, "metadata", metadata)
 
         monkeypatch.setattr(
-            speedwagon.startup.webbrowser,
+            speedwagon.startup.frontend.qtwidgets.gui_startup.webbrowser,
             "open_new",
             open_new
         )

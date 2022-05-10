@@ -559,7 +559,7 @@ class AbsJobManager2(contextlib.AbstractContextManager):
     def submit_job(
             self,
             workflow_name: str,
-            app: "speedwagon.startup.AbsStarter",
+            app: "speedwagon.startup.AbsGuiStarter",
             liaison: JobManagerLiaison,
             options: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -688,7 +688,7 @@ class BackgroundJobManager(AbsJobManager2):
     def submit_job(
             self,
             workflow_name: str,
-            app: "speedwagon.startup.AbsStarter",
+            app: speedwagon.frontend.qtwidgets.gui_startup.AbsGuiStarter,
             liaison: JobManagerLiaison,
             options: Optional[Dict[str, Any]] = None,
     ) -> None:

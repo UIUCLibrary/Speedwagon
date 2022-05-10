@@ -9,6 +9,7 @@ from . import ui_loader
 from . import logging_helpers
 from . import splashscreen
 from . import gui
+from . import gui_startup
 from . import shared_custom_widgets
 from . import worker
 
@@ -23,5 +24,6 @@ __all__ = [
     "splashscreen",
     "shared_custom_widgets",
     "gui",
+    "gui_startup",
     "worker"
 ]
