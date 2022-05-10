@@ -630,7 +630,7 @@ class TestSingleWorkflowJSON:
         submit_job = MagicMock()
 
         monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.gui_startup.runner_strategies.BackgroundJobManager,
+            speedwagon.runner_strategies.BackgroundJobManager,
             "submit_job",
             submit_job
         )
@@ -690,11 +690,7 @@ class TestSingleWorkflowJSON:
             Mock()
         )
         monkeypatch.setattr(
-            speedwagon.frontend
-                .qtwidgets
-                .gui_startup
-                .runner_strategies
-                .BackgroundJobManager,
+            speedwagon.runner_strategies.BackgroundJobManager,
             "run_job_on_thread",
             lambda *args, **kwargs: Mock()
         )
@@ -1181,10 +1177,10 @@ class TestStartQtThreaded:
         starter.run()
 
         monkeypatch.setattr(
-            speedwagon.startup.metadata,
+            speedwagon.frontend.qtwidgets.gui_startup.metadata,
             "metadata",
             Mock(
-                side_effect=speedwagon.startup.metadata.PackageNotFoundError(
+                side_effect=speedwagon.frontend.qtwidgets.gui_startup.metadata.PackageNotFoundError(
                     "Not found yet"
                 )
             )
@@ -1211,7 +1207,7 @@ class TestStartQtThreaded:
         def metadata(*args, **kwargs):
             return {'Home-page': "https://www.fake.com"}
 
-        monkeypatch.setattr(speedwagon.startup.metadata, "metadata", metadata)
+        monkeypatch.setattr(speedwagon.frontend.qtwidgets.gui_startup.metadata, "metadata", metadata)
 
         monkeypatch.setattr(
             speedwagon.startup.frontend.qtwidgets.gui_startup.webbrowser,

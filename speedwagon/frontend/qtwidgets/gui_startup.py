@@ -22,7 +22,6 @@ if TYPE_CHECKING:
 
 
 from PySide6 import QtWidgets
-import runner_strategies
 import speedwagon
 import abc
 
@@ -590,7 +589,7 @@ class StartQtThreaded(AbsGuiStarter):
 
     def submit_job(
             self,
-            job_manager: runner_strategies.BackgroundJobManager,
+            job_manager: speedwagon.runner_strategies.BackgroundJobManager,
             workflow_name: str,
             options: Dict[str, typing.Any],
             main_app: typing.Optional[
@@ -891,7 +890,8 @@ class SingleWorkflowJSON(AbsGuiStarter):
             raise ValueError("no data loaded")
         if self.workflow is None:
             raise ValueError("no workflow loaded")
-        with runner_strategies.BackgroundJobManager() as job_manager:
+        with speedwagon.runner_strategies.BackgroundJobManager() \
+                as job_manager:
             self._run_workflow(job_manager, self.workflow, self.options)
             if app is not None:
                 app.quit()
@@ -912,7 +912,7 @@ class SingleWorkflowJSON(AbsGuiStarter):
 
     def _run_workflow(
             self,
-            job_manager: runner_strategies.BackgroundJobManager,
+            job_manager: speedwagon.runner_strategies.BackgroundJobManager,
             workflow: AbsWorkflow,
             options,
     ):
@@ -941,12 +941,12 @@ class SingleWorkflowJSON(AbsGuiStarter):
             )
 
         dialog_box.attach_logger(job_manager.logger)
-        threaded_events = runner_strategies.ThreadedEvents()
+        threaded_events = speedwagon.runner_strategies.ThreadedEvents()
         job_manager.submit_job(
             workflow_name=workflow.name,
             options=options,
             app=self,
-            liaison=runner_strategies.JobManagerLiaison(
+            liaison=speedwagon.runner_strategies.JobManagerLiaison(
                 callbacks=callbacks,
                 events=threaded_events
             )
@@ -958,7 +958,7 @@ class SingleWorkflowJSON(AbsGuiStarter):
 
     @staticmethod
     def _load_main_window(
-            job_manager: runner_strategies.BackgroundJobManager,
+            job_manager: speedwagon.runner_strategies.BackgroundJobManager,
             title: Optional[str]
     ) -> gui.MainWindow2:
         window = speedwagon.frontend.qtwidgets.gui.MainWindow2(job_manager)
