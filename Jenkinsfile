@@ -562,7 +562,7 @@ pipeline {
                   }
             }
             steps {
-                catchError(buildResult: 'SUCCESS', message: 'Sphinx has warnings', stageResult: "UNSTABLE") {
+                catchError(buildResult: 'UNSTABLE', message: 'Sphinx has warnings', stageResult: "UNSTABLE") {
                     buildSphinx()
                 }
             }
