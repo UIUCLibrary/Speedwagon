@@ -15,20 +15,17 @@ import argparse
 import os
 import sys
 from typing import Dict, Iterator, Tuple, List, cast, Type, TYPE_CHECKING
+import yaml
+
 if TYPE_CHECKING:
     import speedwagon.frontend.qtwidgets.gui_startup
     from speedwagon.frontend.qtwidgets import gui_startup
-# from frontend.qtwidgets.gui_startup import report_exception_dialog
-# from frontend.qtwidgets.gui_startup import SingleWorkflowJSON
 
 try:
     from typing import Final
 except ImportError:
     from typing_extensions import Final  # type: ignore
 
-import yaml
-
-# from PySide6 import QtWidgets  # type: ignore
 import speedwagon
 import speedwagon.config
 import speedwagon.exceptions
@@ -208,9 +205,8 @@ class ApplicationLauncher:
             strategy: Starter strategy class.
         """
         super().__init__()
-        self.strategy = \
-            strategy or \
-            speedwagon.frontend.qtwidgets.gui_startup.StartQtThreaded()
+        from speedwagon.frontend.qtwidgets.gui_startup import StartQtThreaded
+        self.strategy = strategy or StartQtThreaded()
 
     def initialize(self) -> None:
         """Initialize anything that needs to done prior to running."""

@@ -318,7 +318,7 @@ class TestStartupDefault:
         loader.resolution_strategy_order = [resolution]
 
         startup_worker.resolve_settings(
-            resolution_strategy_order=[resolution],
+            resolution_order=[resolution],
             loader=loader
         )
 
@@ -351,7 +351,7 @@ class TestStartupDefault:
         resolution = Mock(FRIENDLY_NAME="dummy")
         resolution.__class__ = speedwagon.config.ConfigFileSetter
         resolution.update = lambda _: update()
-        startup_worker.resolve_settings(resolution_strategy_order=[resolution])
+        startup_worker.resolve_settings(resolution_order=[resolution])
         assert any("contains an invalid setting" in m for m in caplog.messages)
 
     def test_missing_debug_setting(self, caplog, monkeypatch, parse_args):
@@ -380,7 +380,7 @@ class TestStartupDefault:
         loader.startup_settings = {"sss": "dd"}
 
         startup_worker.resolve_settings(
-            resolution_strategy_order=[],
+            resolution_order=[],
             loader=loader
         )
 
@@ -1243,7 +1243,7 @@ class TestStartQtThreaded:
         loader = Mock()
         loader.get_settings = Mock(return_value={})
         loader.read_settings_file = Mock(return_value={})
-        starter.resolve_settings(resolution_strategy_order=[], loader=loader)
+        starter.resolve_settings(resolution_order=[], loader=loader)
         try:
             assert loader.get_settings.called is True
         finally:

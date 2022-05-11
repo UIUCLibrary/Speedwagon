@@ -1,4 +1,5 @@
 from __future__ import annotations
+import abc
 import collections
 import contextlib
 import io
@@ -10,20 +11,27 @@ import sys
 import threading
 import time
 import typing
+from typing import Dict, Union, Optional, cast, List, Type
 import webbrowser
-from importlib import metadata
-from typing import Dict, Union, Optional, cast, List, Type, Tuple, \
-    TYPE_CHECKING
-if TYPE_CHECKING:
-    from speedwagon.frontend import worker
-    from speedwagon.frontend.qtwidgets import gui
-    from speedwagon.frontend.qtwidgets.dialog import dialogs
-    from speedwagon.job import AbsWorkflow
-
-
+try:  # pragma: no cover
+    from importlib import metadata
+except ImportError:  # pragma: no cover
+    import importlib_metadata as metadata  # type: ignore
 from PySide6 import QtWidgets
+
 import speedwagon
-import abc
+from speedwagon import config
+from . import logging_helpers
+from . import user_interaction
+from . import splashscreen
+from . import dialog
+
+if typing.TYPE_CHECKING:
+    from typing import Tuple
+    from speedwagon import runner_strategies
+    from speedwagon.frontend.qtwidgets import gui, worker
+    from speedwagon.frontend.qtwidgets.dialog import dialogs
+    from speedwagon.job import AbsWorkflow, AbsJobConfigSerializationStrategy
 
 
 class AbsGuiStarter(metaclass=abc.ABCMeta):
@@ -54,7 +62,7 @@ class StartupGuiDefault(AbsGuiStarter):
 
         self.handler = logging.StreamHandler(stream=sys.stderr)
         self.handler.setLevel(logging.DEBUG)
-        self.platform_settings = speedwagon.config.get_platform_settings()
+        self.platform_settings = config.get_platform_settings()
 
         self.config_file = os.path.join(
             self.platform_settings.get_app_data_directory(),
@@ -67,9 +75,8 @@ class StartupGuiDefault(AbsGuiStarter):
         )
 
         # Make sure required directories exists
-        self.user_data_dir = typing.cast(
-            str, self.platform_settings.get("user_data_directory")
-        )
+        self.user_data_dir = \
+            typing.cast(str, self.platform_settings.get("user_data_directory"))
 
         self.startup_settings: Dict[str, Union[str, bool]] = {}
         self._debug = False
@@ -85,11 +92,8 @@ class StartupGuiDefault(AbsGuiStarter):
 
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         # Display a splash screen until the app is loaded
-        splash = speedwagon.frontend.qtwidgets.splashscreen.create_splash()
-        splash_message_handler = speedwagon.frontend\
-            .qtwidgets\
-            .logging_helpers\
-            .SplashScreenLogHandler(splash)
+        splash = splashscreen.create_splash()
+        splash_message_handler = logging_helpers.SplashScreenLogHandler(splash)
 
         # If debug mode, print the log messages directly on the splash screen
         if self._debug:
@@ -131,9 +135,7 @@ class StartupGuiDefault(AbsGuiStarter):
 
             self.load_configurations(work_manager)
             self._load_workflows(windows)
-
             self._logger.debug("Loading User Interface")
-
             windows.show()
 
             if "starting-tab" in self.startup_settings:
@@ -148,19 +150,12 @@ class StartupGuiDefault(AbsGuiStarter):
             self._logger.removeHandler(splash_message_handler)
             return self.app.exec_()
 
-    def load_configurations(
-            self,
-            work_manager: worker.ToolJobManager
-    ) -> None:
-
+    def load_configurations(self, work_manager: worker.ToolJobManager) -> None:
         self._logger.debug("Applying settings to Speedwagon")
         work_manager.user_settings = self.platform_settings
         work_manager.configuration_file = self.config_file
 
-    def _load_workflows(
-            self,
-            application: gui.MainWindow1
-    ) -> None:
+    def _load_workflows(self, application: gui.MainWindow1) -> None:
         self._logger.debug("Loading Workflows")
         loading_workflows_stream = io.StringIO()
         with contextlib.redirect_stderr(loading_workflows_stream):
@@ -193,19 +188,17 @@ class StartupGuiDefault(AbsGuiStarter):
 
     def resolve_settings(
             self,
-            resolution_strategy_order: Optional[List[
-                speedwagon.config.AbsSetting]
-            ] = None,
-            loader: typing.Optional[speedwagon.config.ConfigLoader] = None
+            resolution_order: Optional[List[config.AbsSetting]] = None,
+            loader: typing.Optional[config.ConfigLoader] = None
     ) -> None:
-        loader = loader or speedwagon.config.ConfigLoader(self.config_file)
+        loader = loader or config.ConfigLoader(self.config_file)
 
         self.platform_settings._data.update(
             loader.read_settings_file(self.config_file)
         )
         loader.logger = self._logger
-        if resolution_strategy_order:
-            loader.resolution_strategy_order = resolution_strategy_order
+        if resolution_order:
+            loader.resolution_strategy_order = resolution_order
         results = loader.get_settings()
 
         self.startup_settings = results
@@ -222,24 +215,21 @@ class StartupGuiDefault(AbsGuiStarter):
         return bool(debug)
 
     def ensure_settings_files(self) -> None:
-        speedwagon.config.ensure_settings_files(self, self._logger)
+        config.ensure_settings_files(self, self._logger)
 
 
 class StartQtThreaded(AbsGuiStarter):
 
     def __init__(self, app: QtWidgets.QApplication = None) -> None:
-        self.startup_settings: Dict[str, Union[str, bool]] = {
-            'debug': False
-        }
+        self.startup_settings: Dict[str, Union[str, bool]] = {'debug': False}
 
         self.windows: Optional[gui.MainWindow2] = None
         self.logger = logging.getLogger()
 
-        formatter = logging.Formatter(
-            '%(asctime)-15s %(threadName)s %(message)s'
-        )
+        formatter = \
+            logging.Formatter('%(asctime)-15s %(threadName)s %(message)s')
 
-        self.platform_settings = speedwagon.config.get_platform_settings()
+        self.platform_settings = config.get_platform_settings()
         self.app = app or QtWidgets.QApplication(sys.argv)
         self._log_data = io.StringIO()
 
@@ -252,18 +242,14 @@ class StartQtThreaded(AbsGuiStarter):
 
         self.load_settings()
         speedwagon.frontend.qtwidgets.gui.set_app_display_metadata(self.app)
-        self._request_window = \
-            speedwagon.frontend.qtwidgets.user_interaction.QtRequestMoreInfo(
-                self.windows
-            )
+        self._request_window = user_interaction.QtRequestMoreInfo(self.windows)
 
     @staticmethod
     def import_workflow_config(
             parent: gui.MainWindow2,
             dialog_box: typing.Optional[QtWidgets.QFileDialog] = None,
             serialization_strategy: typing.Optional[
-                speedwagon.job.AbsJobConfigSerializationStrategy
-            ] = None
+                AbsJobConfigSerializationStrategy] = None
     ) -> None:
         serialization_strategy = \
             serialization_strategy or speedwagon.job.ConfigJSONSerialize()
@@ -340,36 +326,31 @@ class StartQtThreaded(AbsGuiStarter):
                 "No help link available. Reason: %s", error)
 
     def ensure_settings_files(self) -> None:
-        speedwagon.config.ensure_settings_files(
-            self,
-            logger=self.logger
-        )
+        config.ensure_settings_files(self, logger=self.logger)
 
     @staticmethod
-    def read_settings_file(
-            settings_file: str
-    ) -> Dict[str, Union[str, bool]]:
+    def read_settings_file(settings_file: str) -> Dict[str, Union[str, bool]]:
 
-        with speedwagon.config.ConfigManager(settings_file) as config:
-            return config.global_settings
+        with config.ConfigManager(settings_file) as current_config:
+            return current_config.global_settings
 
     def resolve_settings(
             self,
-            resolution_strategy_order: Optional[
-                List[speedwagon.config.AbsSetting]
+            resolution_order: Optional[
+                List[config.AbsSetting]
             ] = None,
-            loader: speedwagon.config.ConfigLoader = None
+            loader: config.ConfigLoader = None
     ) -> Dict[str, Union[str, bool]]:
 
-        loader = loader or speedwagon.config.ConfigLoader(self.config_file)
+        loader = loader or config.ConfigLoader(self.config_file)
 
         self.platform_settings._data.update(
             loader.read_settings_file(self.config_file)
         )
 
         loader.logger = self.logger
-        if resolution_strategy_order:
-            loader.resolution_strategy_order = resolution_strategy_order
+        if resolution_order:
+            loader.resolution_strategy_order = resolution_order
 
         results = loader.get_settings()
 
@@ -480,19 +461,14 @@ class StartQtThreaded(AbsGuiStarter):
     def request_system_info(
             parent: Optional[QtWidgets.QWidget] = None
     ) -> None:
-        speedwagon.frontend.qtwidgets.dialog.dialogs.SystemInfoDialog(
-            parent
-        ).exec()
+        dialog.dialogs.SystemInfoDialog(parent).exec()
 
     @staticmethod
     def request_settings(parent: QtWidgets.QWidget = None) -> None:
-        platform_settings = speedwagon.config.get_platform_settings()
+        platform_settings = config.get_platform_settings()
         settings_path = platform_settings.get_app_data_directory()
 
-        dialog_builder = \
-            speedwagon.frontend.qtwidgets.dialog.settings.SettingsBuilder(
-                parent=parent
-            )
+        dialog_builder = dialog.settings.SettingsBuilder(parent=parent)
 
         dialog_builder.add_open_settings(
             platform_settings.get_app_data_directory()
@@ -560,10 +536,10 @@ class StartQtThreaded(AbsGuiStarter):
 
     @staticmethod
     def abort_job(
-            dialog: dialogs.WorkflowProgress,
-            events: speedwagon.runner_strategies.AbsEvents
+            dialog_box: dialogs.WorkflowProgress,
+            events: runner_strategies.AbsEvents
     ) -> None:
-        dialog.stop()
+        dialog_box.stop()
         events.stop()
 
     def request_more_info(
@@ -589,7 +565,7 @@ class StartQtThreaded(AbsGuiStarter):
 
     def submit_job(
             self,
-            job_manager: speedwagon.runner_strategies.BackgroundJobManager,
+            job_manager: runner_strategies.BackgroundJobManager,
             workflow_name: str,
             options: Dict[str, typing.Any],
             main_app: typing.Optional[
@@ -742,11 +718,11 @@ class TabsEditorApp(QtWidgets.QDialog):
 def standalone_tab_editor(app: QtWidgets.QApplication = None) -> None:
     """Launch standalone tab editor app."""
     print("Loading settings")
-    settings = speedwagon.config.get_platform_settings()
+    settings = config.get_platform_settings()
 
     app = app or QtWidgets.QApplication(sys.argv)
     print("Loading tab editor")
-    editor = speedwagon.frontend.qtwidgets.gui_startup.TabsEditorApp()
+    editor = TabsEditorApp()
     editor.load_all_workflows()
 
     tabs_file = \
@@ -794,7 +770,7 @@ class SingleWorkflowLauncher(AbsGuiStarter):
 
     def _run(
             self,
-            work_manager: "speedwagon.frontend.qtwidgets.worker.ToolJobManager"
+            work_manager: speedwagon.frontend.qtwidgets.worker.ToolJobManager
     ) -> None:
         if self._active_workflow is None:
             raise ValueError("No active workflow set")
@@ -904,7 +880,7 @@ class SingleWorkflowJSON(AbsGuiStarter):
             dialog_box_title: Optional[str] = None,
     ) -> None:
         self.logger.error(str(exc))
-        speedwagon.frontend.qtwidgets.gui_startup.report_exception_dialog(
+        report_exception_dialog(
             exc=exc,
             dialog_box_title=dialog_box_title,
             parent=parent
@@ -912,7 +888,7 @@ class SingleWorkflowJSON(AbsGuiStarter):
 
     def _run_workflow(
             self,
-            job_manager: speedwagon.runner_strategies.BackgroundJobManager,
+            job_manager: runner_strategies.BackgroundJobManager,
             workflow: AbsWorkflow,
             options,
     ):
@@ -958,7 +934,7 @@ class SingleWorkflowJSON(AbsGuiStarter):
 
     @staticmethod
     def _load_main_window(
-            job_manager: speedwagon.runner_strategies.BackgroundJobManager,
+            job_manager: runner_strategies.BackgroundJobManager,
             title: Optional[str]
     ) -> gui.MainWindow2:
         window = speedwagon.frontend.qtwidgets.gui.MainWindow2(job_manager)
