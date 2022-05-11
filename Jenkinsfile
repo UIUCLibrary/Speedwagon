@@ -562,7 +562,9 @@ pipeline {
                   }
             }
             steps {
-                buildSphinx()
+                catchError(buildResult: 'UNSTABLE', message: 'Sphinx has warnings', stageResult: "UNSTABLE") {
+                    buildSphinx()
+                }
             }
             post{
                 always{
