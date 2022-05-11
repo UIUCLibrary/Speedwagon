@@ -166,7 +166,8 @@ class ApplicationLauncher:
 
         .. testsetup::
 
-            from speedwagon.startup import ApplicationLauncher, StartupDefault
+            from speedwagon.startup import ApplicationLauncher
+            from speedwagon.frontend.qtwidgets.gui_startup import StartupGuiDefault
             from unittest.mock import Mock
 
         .. doctest::
@@ -180,6 +181,7 @@ class ApplicationLauncher:
         .. testsetup::
 
             from speedwagon.workflows.workflow_capture_one_to_dl_compound_and_dl import CaptureOneToDlCompoundAndDLWorkflow  # noqa: E501 pylint: disable=line-too-long
+            from speedwagon.frontend.qtwidgets.gui_startup import SingleWorkflowLauncher  # noqa: E501 pylint: disable=line-too-long
 
 
         .. testcode::
