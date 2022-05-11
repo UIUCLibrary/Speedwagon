@@ -221,8 +221,7 @@ class ApplicationLauncher:
         """Run Speedwagon."""
         if app:
             return self.strategy.start_gui(app)
-        else:
-            return self.strategy.run()
+        return self.strategy.run()
 
 
 class SubCommand(abc.ABC):
