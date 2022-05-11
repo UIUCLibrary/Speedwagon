@@ -24,7 +24,8 @@ import speedwagon
 __all__ = [
     "ConfigManager",
     "generate_default",
-    "get_platform_settings"
+    "get_platform_settings",
+    "AbsConfig"
 ]
 
 

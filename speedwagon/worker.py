@@ -3,17 +3,22 @@ from __future__ import annotations
 
 import abc
 import concurrent.futures
+import contextlib
 import logging
 import multiprocessing
 import queue
 import sys
 import typing
+import warnings
+from types import TracebackType
 from typing import Optional, Any, Dict
 from collections import namedtuple
-
+import speedwagon
 from speedwagon.tasks import QueueAdapter
+
 if typing.TYPE_CHECKING:
     from speedwagon.tasks.tasks import AbsSubtask
+    from speedwagon.config import AbsConfig
 
 __all__ = [
     "SubtaskJobAdapter"
@@ -285,3 +290,78 @@ class SubtaskJobAdapter(AbsJobAdapter,
     def name(self) -> str:  # type: ignore
         """Get name of adaptee."""
         return self.adaptee.name
+
+
+class AbsToolJobManager(
+    contextlib.AbstractContextManager,
+    AbsJobManager,
+    abc.ABC
+):
+    """Tool job manager."""
+
+    def __init__(self) -> None:
+        """Create a tool job manager."""
+        self.settings_path: Optional[str] = None
+        self._job_runtime = speedwagon.worker.JobExecutor()
+        self.logger = logging.getLogger(__name__)
+        self.user_settings: Optional[AbsConfig] = None
+        self.configuration_file: Optional[str] = None
+
+    @property
+    def active(self) -> bool:
+        """Check if a job is active."""
+        return self._job_runtime.active
+
+    @active.setter
+    def active(self, value: bool) -> None:
+        warnings.warn("don't use directly", DeprecationWarning)
+        self._job_runtime.active = value
+
+    @property
+    def futures(self) -> typing.List[concurrent.futures.Future]:
+        """Get the futures."""
+        return self._job_runtime.futures
+
+    def __enter__(self) -> "AbsToolJobManager":
+        """Startup job management and load a worker pool."""
+        self._job_runtime._message_queue = self._job_runtime.manager.Queue()
+
+        self._job_runtime._executor = concurrent.futures.ProcessPoolExecutor(1)
+
+        return self
+
+    def __exit__(self,
+                 exc_type: Optional[typing.Type[BaseException]],
+                 exc_value: Optional[BaseException],
+                 exc_tb: Optional[TracebackType]) -> None:
+        """Clean up manager and show down the executor."""
+        self._job_runtime.cleanup(self.logger)
+        self._job_runtime.shutdown()
+
+    def open(self, parent, runner, *args, **kwargs):
+        """Open a runner with the a given job arguments."""
+        return runner(*args, **kwargs, parent=parent)
+
+    def add_job(self,
+                new_job: speedwagon.worker.ProcessJobWorker,
+                settings: Dict[str, Any]) -> None:
+        """Add job to the run queue."""
+        self._job_runtime.add_job(new_job, settings)
+
+    def start(self) -> None:
+        """Start jobs."""
+        self._job_runtime.start()
+
+    @abc.abstractmethod
+    def abort(self) -> None:
+        """Abort jobs."""
+
+    @abc.abstractmethod
+    def get_results(
+            self,
+            timeout_callback: typing.Callable[[int, int], None] = None
+    ) -> typing.Generator[typing.Any, None, None]:
+        """Process jobs and return results."""
+
+    def _cleanup(self) -> None:
+        self._job_runtime.cleanup(self.logger)
