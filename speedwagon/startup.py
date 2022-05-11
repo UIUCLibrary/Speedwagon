@@ -17,20 +17,21 @@ import sys
 from typing import Dict, Iterator, Tuple, List, cast, Type, TYPE_CHECKING
 import yaml
 
-if TYPE_CHECKING:
-    import speedwagon.frontend.qtwidgets.gui_startup
-    from speedwagon.frontend.qtwidgets import gui_startup
+import speedwagon
+import speedwagon.config
+import speedwagon.exceptions
+from speedwagon import frontend
+from speedwagon import job
+
 
 try:
     from typing import Final
 except ImportError:
     from typing_extensions import Final  # type: ignore
 
-import speedwagon
-import speedwagon.config
-import speedwagon.exceptions
-from speedwagon import frontend
-from speedwagon import job
+if TYPE_CHECKING:
+    import speedwagon.frontend.qtwidgets.gui_startup
+    from speedwagon.frontend.qtwidgets import gui_startup
 
 
 __all__ = [
