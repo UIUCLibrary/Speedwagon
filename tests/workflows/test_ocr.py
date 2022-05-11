@@ -96,45 +96,6 @@ class MockGenerateOCRFileTask(workflow_ocr.GenerateOCRFileTask):
     engine = Mock(get_reader=mock_reader)
 
 
-# def test_runs(qtbot, tool_job_manager_spy, tmpdir, monkeypatch):
-#     monkeypatch.setattr(runners, "QtDialogProgress", MagicMock())
-#
-#     class MockOCRWorkflow(workflow_ocr.OCRWorkflow):
-#         def create_new_task(self, task_builder, **job_args):
-#             image_file = job_args["source_file_path"]
-#             destination_path = job_args["destination_path"]
-#             ocr_file_name = job_args["output_file_name"]
-#             lang_code = job_args["lang_code"]
-#
-#             ocr_generation_task = MockGenerateOCRFileTask(
-#                 source_image=image_file,
-#                 out_text_file=os.path.join(destination_path, ocr_file_name),
-#                 lang=lang_code,
-#                 tesseract_path=self.tessdata_path
-#             )
-#             task_builder.add_subtask(ocr_generation_task)
-#
-#     my_logger = logging.getLogger(__file__)
-#     image_path = tmpdir / "images"
-#     tessdata_dir = tmpdir / "sample"
-#
-#     (image_path / "00000001.jp2").ensure()
-#     tool_job_manager_spy.run(
-#         MockOCRWorkflow(global_settings={
-#             "tessdata": tessdata_dir.strpath
-#         }),
-#         options={
-#             "Path": image_path.strpath,
-#             'Image File Type': 'JPEG 2000',
-#             'Language': 'English',
-#         },
-#         logger=my_logger
-#     )
-#     expected_ocr_file = image_path / "00000001.txt"
-#     with open(expected_ocr_file) as f:
-#         assert f.read() == "Spam bacon eggs"
-
-
 class TestOCRWorkflow:
     @pytest.fixture
     def workflow(self, monkeypatch):

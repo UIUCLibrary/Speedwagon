@@ -4,11 +4,11 @@ import logging
 import typing
 import warnings
 from typing import List, Any, Dict, Optional
-from contextlib import contextmanager
 from uiucprescon import packager
 from uiucprescon.packager.packages.collection_builder import Metadata
 
 import speedwagon.tasks.tasks
+from speedwagon import utils
 from speedwagon.job import Workflow
 
 
@@ -82,16 +82,6 @@ class CaptureOneToHathiTiffPackageWorkflow(Workflow):
 class PackageConverter(speedwagon.tasks.tasks.Subtask):
     name = "Convert Package"
 
-    @contextmanager
-    def log_config(self, logger: logging.Logger):
-        from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
-        gui_logger = GuiLogHandler(self.log)
-        try:
-            logger.addHandler(gui_logger)
-            yield
-        finally:
-            logger.removeHandler(gui_logger)
-
     def __init__(
             self,
             source_path: str,
@@ -112,7 +102,7 @@ class PackageConverter(speedwagon.tasks.tasks.Subtask):
     def work(self) -> bool:
         my_logger = logging.getLogger(packager.__name__)
         my_logger.setLevel(logging.INFO)
-        with self.log_config(my_logger):
+        with utils.log_config(my_logger, self.log):
             self.log(f"Converting {self.packaging_id} from "
                      f"{self.source_path} to a Hathi Trust Tiff "
                      f"package at {self.new_package_root}")

@@ -145,7 +145,6 @@ class TestZipPackagesWorkflow:
 
 class TestZipTask:
     def test_work(self, monkeypatch):
-        pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
         source_path = "source"
         destination_path = "destination"
         task = workflow_zip_packages.ZipTask(

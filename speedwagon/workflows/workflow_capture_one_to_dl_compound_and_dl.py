@@ -24,11 +24,10 @@ except ImportError:  # pragma: no cover
     from typing_extensions import Final  # type: ignore
 
 
-from typing import List, Any, Dict, Callable, Iterator, Optional, Union, \
+from typing import List, Any, Dict, Callable, Optional, Union, \
     Iterable
 
 
-from contextlib import contextmanager
 from uiucprescon import packager
 from uiucprescon.packager.packages.abs_package_builder import AbsPackageBuilder
 from uiucprescon.packager.packages.collection_builder import Metadata
@@ -38,7 +37,7 @@ from uiucprescon.packager.packages.collection import \
 
 import speedwagon
 import speedwagon.workflow
-from speedwagon import validators
+from speedwagon import validators, utils
 from speedwagon.job import Workflow
 
 import speedwagon.exceptions
@@ -348,22 +347,6 @@ class PackageConverter(speedwagon.tasks.Subtask):
         "HathiTrust jp2": packager.packages.HathiJp2()
     }
 
-    @contextmanager
-    def log_config(self, logger: logging.Logger) -> Iterator[None]:
-        """Configure logs so they get forwarded to the speedwagon console.
-
-        Args:
-            logger:
-
-        """
-        from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
-        gui_logger = GuiLogHandler(self.log)
-        try:
-            logger.addHandler(gui_logger)
-            yield
-        finally:
-            logger.removeHandler(gui_logger)
-
     def __init__(self,
                  source_path: str,
                  packaging_id: str,
@@ -404,7 +387,7 @@ class PackageConverter(speedwagon.tasks.Subtask):
         """
         my_logger = logging.getLogger(packager.__name__)
         my_logger.setLevel(logging.INFO)
-        with self.log_config(my_logger):
+        with utils.log_config(my_logger, self.log):
             self.log(
                 f"Converting {self.packaging_id} from {self.source_path} "
                 f"to a {self.package_format} package at "

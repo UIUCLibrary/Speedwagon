@@ -127,7 +127,6 @@ def test_input_must_exist(tmpdir):
 
 class TestPackageConverter:
     def test_transform_is_called(self):
-        pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
         source = Package("some_source")
         task = PackageConverter(source, "out")
         task.output_packager.transform = Mock()

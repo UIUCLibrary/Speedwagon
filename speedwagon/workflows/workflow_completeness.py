@@ -6,9 +6,8 @@ import re
 import sys
 import typing
 from typing import Mapping, Any, Dict, List, Type, Union, Optional, \
-    Iterator, Tuple, Generator
+    Iterator, Tuple
 import itertools
-from contextlib import contextmanager
 
 import hathi_validate
 from hathi_validate import manifest as validate_manifest
@@ -22,7 +21,7 @@ import speedwagon.tasks.tasks
 
 __all__ = ['CompletenessWorkflow']
 
-from speedwagon import workflow
+from speedwagon import workflow, utils
 
 
 class CompletenessWorkflow(speedwagon.job.Workflow):
@@ -165,18 +164,6 @@ class CompletenessWorkflow(speedwagon.job.Workflow):
 
 
 class CompletenessSubTask(speedwagon.tasks.Subtask):
-    @contextmanager
-    def log_config(self,
-                   logger: logging.Logger
-                   ) -> Generator[None, None, None]:
-        from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
-        gui_logger = GuiLogHandler(self.log)
-        try:
-            logger.addHandler(gui_logger)
-            yield
-        finally:
-            logger.removeHandler(gui_logger)
-
     def work(self) -> bool:
         raise NotImplementedError()
 
@@ -196,7 +183,7 @@ class HathiCheckMissingPackageFilesTask(CompletenessSubTask):
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
 
-        with self.log_config(my_logger):
+        with utils.log_config(my_logger, self.log):
 
             missing_files_errors: List[hathi_result.Result] = \
                 validate_process.run_validation(
@@ -227,7 +214,7 @@ class HathiCheckMissingComponentsTask(CompletenessSubTask):
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
 
-        with self.log_config(my_logger):
+        with utils.log_config(my_logger, self.log):
             if self.check_ocr:
                 extensions.append(".xml")
             try:
@@ -287,7 +274,7 @@ class ValidateExtraSubdirectoriesTask(CompletenessSubTask):
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
 
-        with self.log_config(my_logger):
+        with utils.log_config(my_logger, self.log):
             try:
                 extra_subdirectories_errors: List[hathi_result.Result] = \
                     validate_process.run_validation(
@@ -336,7 +323,7 @@ class ValidateChecksumsTask(CompletenessSubTask):
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
 
-        with self.log_config(my_logger):
+        with utils.log_config(my_logger, self.log):
             report_builder = hathi_result.SummaryDirector(
                 source=checksum_report
             )
@@ -408,7 +395,7 @@ class ValidateMarcTask(CompletenessSubTask):
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
 
-        with self.log_config(my_logger):
+        with utils.log_config(my_logger, self.log):
             try:
                 if not os.path.exists(marc_file):
                     self.log(f"Skipping \'{marc_file}\' due to file not found")
@@ -460,7 +447,7 @@ class ValidateOCRFilesTask(CompletenessSubTask):
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
 
-        with self.log_config(my_logger):
+        with utils.log_config(my_logger, self.log):
             print("Running ocr Validation")
             try:
                 ocr_errors = validate_process.run_validation(
@@ -507,7 +494,7 @@ class ValidateYMLTask(CompletenessSubTask):
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
 
-        with self.log_config(my_logger):
+        with utils.log_config(my_logger, self.log):
             report_builder = hathi_result.SummaryDirector(source=yml_file)
 
             try:
@@ -567,7 +554,7 @@ class ValidateOCFilesUTF8Task(CompletenessSubTask):
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
 
-        with self.log_config(my_logger):
+        with utils.log_config(my_logger, self.log):
             errors: List[hathi_result.Result] = []
 
             ocr_file: 'os.DirEntry[str]'
@@ -602,7 +589,7 @@ class HathiManifestGenerationTask(CompletenessSubTask):
         my_logger = logging.getLogger(hathi_validate.__name__)
         my_logger.setLevel(logging.INFO)
 
-        with self.log_config(my_logger):
+        with utils.log_config(my_logger, self.log):
 
             batch_manifest_builder = \
                 validate_manifest.PackageManifestDirector()

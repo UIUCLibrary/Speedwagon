@@ -142,7 +142,7 @@ checksum_results = [
 @pytest.mark.parametrize("errors_found,throw_exception", checksum_results)
 def test_hathi_missing_checksum_task_calls_validator(
         monkeypatch, errors_found, throw_exception):
-    pytest.importorskip('speedwagon.frontend.qtwidgets.logging_helpers')
+    # pytest.importorskip('speedwagon.frontend.qtwidgets.logging_helpers')
     package_path = "./sample_path/package1"
     check_ocr = False
     task = workflow_completeness.HathiCheckMissingComponentsTask(
@@ -182,7 +182,6 @@ validation_tasks = [
                          validation_tasks)
 def test_validator_task_calls_validator(monkeypatch, validator_task,
                                         validator_process):
-    pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
     package_path = "./sample_path/package1"
 
     task = validator_task(package_path=package_path)
@@ -199,7 +198,6 @@ def test_validator_task_calls_validator(monkeypatch, validator_task,
 
 
 def test_hathi_checksum_task_calls_validator(monkeypatch):
-    pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
     package_path = "./sample_path/package1"
     from hathi_validate import process, validator
 
@@ -224,7 +222,7 @@ def test_hathi_checksum_task_calls_validator(monkeypatch):
 
 
 def test_validate_marc_task_calls_validator(monkeypatch):
-    pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
+    # pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
     package_path = os.path.join("sample_path", "package1")
     marc_file = os.path.join(package_path, "marc.xml")
     from hathi_validate import process, validator
@@ -248,7 +246,6 @@ def test_validate_marc_task_calls_validator(monkeypatch):
 
 class TestValidateYMLTask:
     def test_validate_yml_task_calls_validator(self, monkeypatch):
-        pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
         package_path = os.path.join("sample_path", "package1")
         yaml_file = os.path.join(package_path, "meta.yml")
         from hathi_validate import process, validator
@@ -271,7 +268,6 @@ class TestValidateYMLTask:
                )
 
     def test_yaml_file_not_found_error(self, monkeypatch):
-        pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
         package_path = os.path.join("sample_path", "package1")
         yaml_file = os.path.join(package_path, "meta.yml")
         task = workflow_completeness.ValidateYMLTask(package_path=package_path)
@@ -288,7 +284,6 @@ class TestValidateYMLTask:
 
 
 def test_validate_ocr_utf8_task_calls_validator(monkeypatch):
-    pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
     package_path = os.path.join("sample_path", "package1")
     from hathi_validate import process, validator
 
@@ -319,7 +314,6 @@ def test_validate_ocr_utf8_task_calls_validator(monkeypatch):
 
 
 def test_manifest_generations_task(monkeypatch):
-    pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
     package_path = os.path.join("sample_path", "package1")
 
     task = \
@@ -362,7 +356,6 @@ def test_package_naming_convention_task(monkeypatch):
 
 
 def test_extra_subdirectory_permission_issues(monkeypatch, caplog):
-    pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
     task = workflow_completeness.ValidateExtraSubdirectoriesTask("some_path")
     monkeypatch.setattr(
         workflow_completeness.validate_process,

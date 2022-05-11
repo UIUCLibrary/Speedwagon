@@ -81,7 +81,6 @@ class TestCaptureOneToHathiTiffPackageWorkflow:
 
 class TestPackageConverter:
     def test_work(self, monkeypatch):
-        pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
         source_path = ""
         packaging_id = ""
         existing_package = Mock()

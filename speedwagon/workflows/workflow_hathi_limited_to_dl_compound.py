@@ -2,7 +2,6 @@
 
 import logging
 import os
-from contextlib import contextmanager
 from typing import List, Any, Optional
 
 from uiucprescon import packager
@@ -10,7 +9,7 @@ from uiucprescon import packager
 import speedwagon
 import speedwagon.workflow
 from speedwagon.job import Workflow
-from speedwagon import reports
+from speedwagon import reports, utils
 
 __all__ = ['HathiLimitedToDLWorkflow']
 
@@ -86,16 +85,6 @@ class HathiLimitedToDLWorkflow(Workflow):
 class PackageConverter(speedwagon.tasks.Subtask):
     name = "Convert Package"
 
-    @contextmanager
-    def log_config(self, logger: logging.Logger):
-        from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
-        gui_logger = GuiLogHandler(self.log)
-        try:
-            logger.addHandler(gui_logger)
-            yield
-        finally:
-            logger.removeHandler(gui_logger)
-
     def __init__(
             self,
             src: packager.package.collection.Package,
@@ -115,7 +104,7 @@ class PackageConverter(speedwagon.tasks.Subtask):
         my_logger = logging.getLogger(packager.__name__)
         my_logger.setLevel(logging.INFO)
 
-        with self.log_config(my_logger):
+        with utils.log_config(my_logger, self.log):
             self.log(f"Converting package from {self.src}")
             self.output_packager.transform(self.src, self.dst)
             self.set_results({
