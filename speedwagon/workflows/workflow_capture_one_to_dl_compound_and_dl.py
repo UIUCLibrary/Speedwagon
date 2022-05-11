@@ -40,7 +40,7 @@ import speedwagon
 import speedwagon.workflow
 from speedwagon import validators
 from speedwagon.job import Workflow
-from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
+
 import speedwagon.exceptions
 
 __all__ = ['CaptureOneToDlCompoundAndDLWorkflow']
@@ -356,6 +356,7 @@ class PackageConverter(speedwagon.tasks.Subtask):
             logger:
 
         """
+        from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
         gui_logger = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)

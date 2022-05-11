@@ -8,7 +8,6 @@ import speedwagon
 from speedwagon.workflows import workflow_ocr
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from uiucprescon.ocr import reader, tesseractwrap
-from speedwagon.frontend.qtwidgets import models, runners
 
 
 def test_no_config():
@@ -152,6 +151,7 @@ class TestOCRWorkflow:
 
     @pytest.fixture
     def default_options(self, workflow):
+        models = pytest.importorskip('speedwagon.frontend.qtwidgets.models')
         return models.ToolOptionsModel4(
             workflow.get_user_options()
         ).get()

@@ -2,8 +2,11 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 from uiucprescon.packager.packages import collection
+
+QtCore = pytest.importorskip("PySide6.QtCore")
+QtWidgets = pytest.importorskip("PySide6.QtWidgets")
+
 from speedwagon.frontend.qtwidgets.dialog import title_page_selection
-from PySide6 import QtWidgets, QtCore
 
 
 class TestFileSelectDelegate:

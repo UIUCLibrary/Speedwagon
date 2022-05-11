@@ -7,7 +7,7 @@ from speedwagon.workflows import \
     workflow_convertCaptureOnePreservationToDigitalLibJP2 as \
     capture_one_workflow
 
-from speedwagon.frontend.qtwidgets import models
+
 
 
 def test_package_image_task_success(monkeypatch):
@@ -114,6 +114,8 @@ class TestConvertTiffPreservationToDLJp2Workflow:
 
     @pytest.fixture
     def default_options(self, workflow):
+        models = pytest.importorskip('speedwagon.frontend.qtwidgets.models')
+        # from speedwagon.frontend.qtwidgets import models
         return models.ToolOptionsModel4(
             workflow.get_user_options()
         ).get()

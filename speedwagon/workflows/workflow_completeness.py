@@ -19,7 +19,6 @@ from hathi_validate import validator
 
 import speedwagon
 import speedwagon.tasks.tasks
-from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
 
 __all__ = ['CompletenessWorkflow']
 
@@ -170,7 +169,7 @@ class CompletenessSubTask(speedwagon.tasks.Subtask):
     def log_config(self,
                    logger: logging.Logger
                    ) -> Generator[None, None, None]:
-
+        from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
         gui_logger = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)

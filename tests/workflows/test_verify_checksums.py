@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import pytest
 
 import speedwagon
-from speedwagon.frontend.qtwidgets import models
+# from speedwagon.frontend.qtwidgets import models
 from speedwagon.workflows import workflow_verify_checksums
 
 
@@ -40,6 +40,7 @@ class TestChecksumWorkflowValidArgs:
 
     @pytest.fixture
     def default_options(self, workflow):
+        models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
         return models.ToolOptionsModel4(
             workflow.get_user_options()
         ).get()
@@ -99,6 +100,7 @@ class TestChecksumWorkflowTaskGenerators:
 
     @pytest.fixture
     def default_options(self, workflow):
+        models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
         return models.ToolOptionsModel4(
             workflow.get_user_options()
         ).get()
@@ -173,6 +175,7 @@ class TestChecksumWorkflow:
 
     @pytest.fixture
     def default_options(self, workflow):
+        models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
         return models.ToolOptionsModel4(
             workflow.get_user_options()
         ).get()
@@ -323,6 +326,7 @@ class TestVerifyChecksumBatchSingleWorkflow:
 
     @pytest.fixture
     def default_options(self, workflow):
+        models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
         return models.ToolOptionsModel4(workflow.get_user_options()).get()
 
     def test_discover_task_metadata(self, workflow, default_options,

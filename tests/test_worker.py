@@ -2,7 +2,7 @@ import time
 from unittest.mock import Mock
 
 import pytest
-from PySide6 import QtWidgets
+QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 
 from speedwagon import worker, frontend
 

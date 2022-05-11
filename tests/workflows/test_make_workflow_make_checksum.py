@@ -5,7 +5,7 @@ import pytest
 
 import speedwagon
 from speedwagon.workflows import workflow_make_checksum
-from speedwagon.frontend.qtwidgets import models
+# from speedwagon.frontend.qtwidgets import models
 
 
 class TestZipPackagesWorkflow:
@@ -16,9 +16,8 @@ class TestZipPackagesWorkflow:
 
     @pytest.fixture
     def default_options(self, workflow):
-        return models.ToolOptionsModel4(
-            workflow.get_user_options()
-        ).get()
+        models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
+        return models.ToolOptionsModel4(workflow.get_user_options()).get()
 
     def test_discover_task_metadata(
             self,
@@ -138,9 +137,8 @@ class TestRegenerateChecksumBatchSingleWorkflow:
 
     @pytest.fixture
     def default_options(self, workflow):
-        return models.ToolOptionsModel4(
-            workflow.get_user_options()
-        ).get()
+        models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
+        return models.ToolOptionsModel4(workflow.get_user_options()).get()
 
     def test_discover_task_metadata(
             self,
@@ -275,9 +273,8 @@ class TestRegenerateChecksumBatchMultipleWorkflow:
 
     @pytest.fixture
     def default_options(self, workflow):
-        return models.ToolOptionsModel4(
-            workflow.get_user_options()
-        ).get()
+        models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
+        return models.ToolOptionsModel4(workflow.get_user_options()).get()
 
     def test_discover_task_metadata(
             self,

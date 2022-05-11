@@ -4,11 +4,11 @@ from unittest.mock import Mock, MagicMock, patch, call
 import yaml
 import pytest
 # from speedwagon import tabs, exceptions, job
-import speedwagon.frontend.qtwidgets.tabs
+# import speedwagon.frontend.qtwidgets.tabs
 import speedwagon.exceptions
 import speedwagon.job
 
-
+QtCore = pytest.importorskip("PySide6.QtCore")
 class TestWorkflowsTab:
     def test_exception_calls_message_box(self, qtbot, monkeypatch):
         from PySide6 import QtWidgets

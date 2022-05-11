@@ -2,7 +2,6 @@ from unittest.mock import Mock
 
 import pytest
 from speedwagon.workflows import workflow_validate_hathi_metadata
-from speedwagon.frontend.qtwidgets import models
 
 
 class TestValidateImageMetadataWorkflow:
@@ -13,6 +12,7 @@ class TestValidateImageMetadataWorkflow:
 
     @pytest.fixture
     def default_options(self, workflow):
+        models = pytest.importorskip('speedwagon.frontend.qtwidgets.models')
         return models.ToolOptionsModel4(
             workflow.get_user_options()
         ).get()

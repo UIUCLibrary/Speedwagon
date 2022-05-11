@@ -6,13 +6,14 @@ import webbrowser
 import pytest
 
 import speedwagon.startup
-import speedwagon.frontend.qtwidgets.tabs
-import speedwagon.frontend.qtwidgets.dialog
-import speedwagon.frontend.qtwidgets.gui
+# import speedwagon.frontend.qtwidgets.tabs
+# import speedwagon.frontend.qtwidgets.dialog
+# import speedwagon.frontend.qtwidgets.gui
+
 import speedwagon.workflow
+QtWidgets = pytest.importorskip("PySide6.QtWidgets")
+QtGui = pytest.importorskip("PySide6.QtGui")
 from speedwagon.frontend.qtwidgets import shared_custom_widgets
-from PySide6.QtWidgets import QApplication
-from PySide6.QtGui import QAction
 
 
 def test_show_help_open_web(qtbot, monkeypatch):
@@ -32,13 +33,13 @@ def test_show_help_open_web(qtbot, monkeypatch):
 
 def test_exit_button(qtbot, monkeypatch):
     exit_calls = []
-    monkeypatch.setattr(QApplication, "exit", lambda: exit_calls.append(1))
+    monkeypatch.setattr(QtWidgets.QApplication, "exit", lambda: exit_calls.append(1))
     mock_work_manager = Mock()
     main_window = \
         speedwagon.frontend.qtwidgets.gui.MainWindow1(mock_work_manager)
 
     qtbot.addWidget(main_window)
-    exit_button = main_window.findChild(QAction, name="exitAction")
+    exit_button = main_window.findChild(QtGui.QAction, name="exitAction")
     exit_button.trigger()
     assert exit_calls == [1]
 
@@ -203,7 +204,7 @@ class TestMainWindow2:
 
         main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(manager)
         qtbot.addWidget(main_window)
-        main_window.findChild(QAction, name="exitAction").trigger()
+        main_window.findChild(QtGui.QAction, name="exitAction").trigger()
         assert exit_called.called is True
 
     @pytest.mark.parametrize("tab_name", ["Spam", "Dummy"])

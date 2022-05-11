@@ -3,7 +3,6 @@ from unittest.mock import Mock, ANY
 
 import pytest
 from speedwagon.workflows import workflow_convertTifftoHathiTrustJP2
-from speedwagon.frontend.qtwidgets import models
 
 
 class TestConvertTiffToHathiJp2Workflow:
@@ -16,6 +15,7 @@ class TestConvertTiffToHathiJp2Workflow:
 
     @pytest.fixture
     def default_options(self, workflow):
+        models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
         return models.ToolOptionsModel4(
             workflow.get_user_options()
         ).get()

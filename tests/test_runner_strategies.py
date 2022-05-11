@@ -13,16 +13,14 @@ import speedwagon
 @pytest.mark.filterwarnings(
     "ignore:Use UsingExternalManagerForAdapter2 instead:DeprecationWarning")
 def test_job_call_order(monkeypatch):
-
+    runners = pytest.importorskip("speedwagon.frontend.qtwidgets.runners")
     manager = Mock(name="manager")
     manager.get_results = Mock(return_value=["dddd"])
     manager.open = MagicMock(name="manager.opena")
 
     manager.open.return_value.__enter__.return_value = Mock(was_aborted=False)
     runner = \
-        speedwagon.frontend.qtwidgets.runners.UsingExternalManagerForAdapter(
-            manager
-        )
+        runners.UsingExternalManagerForAdapter(manager)
 
     parent = Mock()
     parent.name = "parent"
@@ -77,6 +75,7 @@ def test_job_call_order(monkeypatch):
     "ignore:Use UsingExternalManagerForAdapter2 instead:DeprecationWarning")
 def test_task_exception_logs_error(step):
     # with pytest.warns():
+    runners = pytest.importorskip("speedwagon.frontend.qtwidgets.runners")
 
     manager = Mock(name="manager")
     manager.get_results = Mock(return_value=["dddd"])
@@ -86,10 +85,7 @@ def test_task_exception_logs_error(step):
         was_aborted=False
     )
 
-    runner = \
-        speedwagon.frontend.qtwidgets.runners.UsingExternalManagerForAdapter(
-            manager
-        )
+    runner = runners.UsingExternalManagerForAdapter(manager)
 
     parent = Mock()
     parent.name = "parent"
@@ -126,6 +122,7 @@ def test_task_exception_logs_error(step):
     'completion_task'
 ])
 def test_task_aborted(caplog, step, monkeypatch):
+    runners = pytest.importorskip("speedwagon.frontend.qtwidgets.runners")
     manager = Mock(name="manager")
     manager.get_results = Mock(return_value=[])
     manager.open = MagicMock(name="manager.open")
@@ -133,10 +130,7 @@ def test_task_aborted(caplog, step, monkeypatch):
     runner.progress_dialog_box_handler = logging.StreamHandler()
     manager.open.return_value.__enter__.return_value = runner
 
-    runner_strategy = \
-        speedwagon.frontend.qtwidgets.runners.UsingExternalManagerForAdapter(
-            manager
-        )
+    runner_strategy = runners.UsingExternalManagerForAdapter(manager)
 
     parent = Mock(name="parent")
     job = Mock(name="job")

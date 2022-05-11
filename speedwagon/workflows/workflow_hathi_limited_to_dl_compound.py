@@ -11,7 +11,7 @@ import speedwagon
 import speedwagon.workflow
 from speedwagon.job import Workflow
 from speedwagon import reports
-from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
+
 __all__ = ['HathiLimitedToDLWorkflow']
 
 
@@ -88,6 +88,7 @@ class PackageConverter(speedwagon.tasks.Subtask):
 
     @contextmanager
     def log_config(self, logger: logging.Logger):
+        from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
         gui_logger = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)

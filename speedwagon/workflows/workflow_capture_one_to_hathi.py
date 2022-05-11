@@ -10,7 +10,7 @@ from uiucprescon.packager.packages.collection_builder import Metadata
 
 import speedwagon.tasks.tasks
 from speedwagon.job import Workflow
-from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
+
 
 __all__ = ['CaptureOneToHathiTiffPackageWorkflow']
 
@@ -84,6 +84,7 @@ class PackageConverter(speedwagon.tasks.tasks.Subtask):
 
     @contextmanager
     def log_config(self, logger: logging.Logger):
+        from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
         gui_logger = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)

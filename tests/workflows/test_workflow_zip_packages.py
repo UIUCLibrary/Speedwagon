@@ -1,8 +1,9 @@
 from unittest.mock import Mock
 
 import pytest
+
 from speedwagon.workflows import workflow_zip_packages
-from speedwagon.frontend.qtwidgets import models
+
 
 
 class TestZipPackagesWorkflow:
@@ -13,6 +14,7 @@ class TestZipPackagesWorkflow:
 
     @pytest.fixture
     def default_options(self, workflow):
+        models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
         return models.ToolOptionsModel4(
             workflow.get_user_options()
         ).get()
@@ -143,6 +145,7 @@ class TestZipPackagesWorkflow:
 
 class TestZipTask:
     def test_work(self, monkeypatch):
+        pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
         source_path = "source"
         destination_path = "destination"
         task = workflow_zip_packages.ZipTask(

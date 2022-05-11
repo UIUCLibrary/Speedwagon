@@ -2,7 +2,9 @@ import platform
 import logging
 from unittest.mock import Mock, patch, mock_open
 import pytest
-from PySide6 import QtWidgets,  QtCore
+QtCore = pytest.importorskip("PySide6.QtCore")
+QtWidgets = pytest.importorskip("PySide6.QtWidgets")
+
 from speedwagon.frontend.qtwidgets.dialog import settings, dialogs
 
 

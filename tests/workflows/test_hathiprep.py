@@ -52,12 +52,13 @@ def test_get_additional_info_opens_dialog_box(monkeypatch):
             file_mock.name = f"99423682912205899-{str(i_number).zfill(8)}"
             yield file_mock
 
-    from speedwagon.frontend.qtwidgets.dialog.title_page_selection import \
-        PackageBrowser
+    title_page_selection = pytest.importorskip("speedwagon.frontend.qtwidgets.dialog.title_page_selection")
+    # from speedwagon.frontend.qtwidgets.dialog.title_page_selection import \
+    #     PackageBrowser
 
     package_browser = Mock()
-    package_browser.result = Mock(return_value=PackageBrowser.Accepted)
-    package_browser.Accepted = PackageBrowser.Accepted
+    package_browser.result = Mock(return_value=title_page_selection.PackageBrowser.Accepted)
+    package_browser.Accepted = title_page_selection.PackageBrowser.Accepted
 
     with monkeypatch.context() as mp:
         mp.setattr(os, "scandir", mock_scandir)

@@ -1,5 +1,8 @@
 import pytest
-from PySide6 import QtWidgets, QtCore
+QtWidgets = pytest.importorskip("PySide6.QtWidgets")
+QtCore = pytest.importorskip("PySide6.QtCore")
+
+# from PySide6 import QtWidgets, QtCore
 
 import speedwagon.workflow
 import speedwagon.frontend.qtwidgets.widgets

@@ -191,6 +191,7 @@ def test_create_new_task_dl(monkeypatch):
 
 
 def test_package_converter(tmpdir):
+    pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
     output_ht = tmpdir / "ht"
     output_ht.ensure_dir()
 

@@ -3,7 +3,6 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 from speedwagon.workflows import workflow_capture_one_to_hathi
-from speedwagon.frontend.qtwidgets import models
 
 
 class TestCaptureOneToHathiTiffPackageWorkflow:
@@ -16,6 +15,7 @@ class TestCaptureOneToHathiTiffPackageWorkflow:
 
     @pytest.fixture
     def default_options(self, workflow):
+        models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
         return models.ToolOptionsModel4(
             workflow.get_user_options()
         ).get()
@@ -81,6 +81,7 @@ class TestCaptureOneToHathiTiffPackageWorkflow:
 
 class TestPackageConverter:
     def test_work(self, monkeypatch):
+        pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
         source_path = ""
         packaging_id = ""
         existing_package = Mock()

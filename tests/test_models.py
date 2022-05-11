@@ -2,10 +2,12 @@ import json
 from unittest.mock import Mock
 
 import pytest
-from PySide6 import QtCore, QtWidgets
+QtWidgets = pytest.importorskip("PySide6.QtWidgets")
+QtCore = pytest.importorskip("PySide6.QtCore")
 
 from speedwagon import job, workflow
 from speedwagon.frontend.qtwidgets import tabs, models
+
 
 
 class TestSettingsModel:

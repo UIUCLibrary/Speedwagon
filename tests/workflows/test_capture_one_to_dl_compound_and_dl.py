@@ -4,7 +4,7 @@ import pytest
 from uiucprescon import packager
 import speedwagon
 import speedwagon.exceptions
-from speedwagon.frontend.qtwidgets import models
+
 from speedwagon.workflows \
     import workflow_capture_one_to_dl_compound_and_dl as ht_wf
 
@@ -95,6 +95,7 @@ def test_create_new_task_hathi_and_dl(monkeypatch):
 
 
 def test_package_converter(tmpdir):
+    pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
     output_ht = tmpdir / "ht"
     output_ht.ensure_dir()
 
@@ -199,6 +200,8 @@ class TestWorkflow:
 
 @pytest.fixture()
 def user_options():
+    # from speedwagon.frontend.qtwidgets import models
+    models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
     workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
     return models.ToolOptionsModel4(workflow.get_user_options()).get()
     # return models.ToolOptionsModel3(workflow.user_options()).get()

@@ -1,3 +1,4 @@
+import pytest
 import os
 from io import StringIO
 from unittest.mock import MagicMock, Mock, mock_open, patch
@@ -5,11 +6,9 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 import requests
 
 import speedwagon
-from speedwagon.workflows import workflow_get_marc
-import pytest
 import speedwagon.exceptions
-from speedwagon.workflows.workflow_get_marc import MarcGeneratorTask
 import xml.etree.ElementTree as ET
+workflow_get_marc = pytest.importorskip("speedwagon.workflows.workflow_get_marc")
 
 
 @pytest.fixture
@@ -97,7 +96,7 @@ def test_task_creates_file(tmp_path, monkeypatch, identifier_type,
                            subdirectory):
     expected_file = str(tmp_path / "MARC.XML")
 
-    task = MarcGeneratorTask(
+    task = workflow_get_marc.MarcGeneratorTask(
         identifier=subdirectory,
         identifier_type=identifier_type,
         output_name=expected_file,
@@ -210,7 +209,7 @@ def test_generate_report_failure(unconfigured_workflow):
 def test_task_logging_mentions_identifer(monkeypatch, identifier_type,
                                          subdirectory):
 
-    task = MarcGeneratorTask(
+    task = workflow_get_marc.MarcGeneratorTask(
         identifier=subdirectory,
         identifier_type=identifier_type,
         output_name="sample_record/MARC.xml",
@@ -268,7 +267,7 @@ def test_create_new_task(unconfigured_workflow, identifier_type,
     assert mock_task_builder.add_subtask.call_count == 1
     call_args = mock_task_builder.add_subtask.call_args[0]
     task_generated = call_args[0]
-    assert isinstance(task_generated, MarcGeneratorTask)
+    assert isinstance(task_generated, workflow_get_marc.MarcGeneratorTask)
 
     assert task_generated.identifier_type == identifier_type and \
            task_generated.identifier == identifier
@@ -314,7 +313,7 @@ def test_955_added_to_tasks(unconfigured_workflow, identifier_type,
 
     assert \
         isinstance(
-            retrieval_task, MarcGeneratorTask), f"tasks_generated = " \
+            retrieval_task, workflow_get_marc.MarcGeneratorTask), f"tasks_generated = " \
                                                 f"{retrieval_task}"
 
     assert retrieval_task.identifier_type == identifier_type and \
@@ -551,7 +550,7 @@ def test_995_enhancement_task_formats_without_namespace_tags(
 
 
 def test_fail_on_server_connection(monkeypatch):
-    task = MarcGeneratorTask(
+    task = workflow_get_marc.MarcGeneratorTask(
         identifier="99101026212205899",
         identifier_type="MMS ID",
         output_name="dummy.xml",
@@ -846,8 +845,8 @@ def test_failing_to_parse_provides_input(monkeypatch):
 
 
 def test_reflow(monkeypatch):
-    task = MarcGeneratorTask("12345", "MMS ID", "sample.xml", "fake.com")
-    MarcGeneratorTask.log = Mock()
+    task = workflow_get_marc.MarcGeneratorTask("12345", "MMS ID", "sample.xml", "fake.com")
+    workflow_get_marc.MarcGeneratorTask.log = Mock()
     task.write_file = Mock()
 
     def mock_get(*args, **kwargs):
@@ -863,8 +862,8 @@ def test_reflow(monkeypatch):
 
 
 def test_catching_unicode_error(monkeypatch):
-    task = MarcGeneratorTask("12345", "MMS ID", "sample.xml", "fake.com")
-    MarcGeneratorTask.log = Mock()
+    task = workflow_get_marc.MarcGeneratorTask("12345", "MMS ID", "sample.xml", "fake.com")
+    workflow_get_marc.MarcGeneratorTask.log = Mock()
 
     def mock_get(*args, **kwargs):
         sample_requests = Mock()

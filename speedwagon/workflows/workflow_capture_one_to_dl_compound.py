@@ -15,7 +15,6 @@ from uiucprescon.packager.packages.collection_builder import Metadata
 import speedwagon
 from speedwagon import validators
 from speedwagon.job import Workflow
-from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
 
 __all__ = ['CaptureOneToDlCompoundWorkflow']
 
@@ -149,6 +148,7 @@ class PackageConverter(speedwagon.tasks.Subtask):
             logger:
 
         """
+        from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
         gui_logger: logging.Handler = GuiLogHandler(self.log)
         try:
             logger.addHandler(gui_logger)

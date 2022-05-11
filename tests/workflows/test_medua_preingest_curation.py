@@ -4,8 +4,8 @@ from unittest.mock import Mock, MagicMock
 import pytest
 
 from speedwagon.workflows import workflow_medusa_preingest
-from speedwagon.frontend.qtwidgets.models import ToolOptionsModel4
 from speedwagon.frontend import interaction
+import speedwagon
 from speedwagon.tasks import filesystem as filesystem_tasks
 import speedwagon.tasks
 
@@ -13,9 +13,8 @@ import speedwagon.tasks
 class TestMedusaPreingestCuration:
     @pytest.fixture
     def default_args(self, workflow):
-        return ToolOptionsModel4(
-            workflow.get_user_options()
-        ).get()
+        models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
+        return models.ToolOptionsModel4(workflow.get_user_options()).get()
 
     @pytest.fixture
     def workflow(self):
@@ -155,8 +154,9 @@ class TestMedusaPreingestCuration:
 
 @pytest.fixture()
 def default_user_args():
+    models = pytest.importorskip('speedwagon.frontend.qtwidgets.models')
     workflow = workflow_medusa_preingest.MedusaPreingestCuration()
-    return ToolOptionsModel4(
+    return models.ToolOptionsModel4(
         workflow.get_user_options()
     ).get()
 

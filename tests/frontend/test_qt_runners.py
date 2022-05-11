@@ -1,26 +1,29 @@
 from unittest.mock import Mock, MagicMock
 
 import pytest
-from speedwagon.frontend import qtwidgets
-from speedwagon.frontend.qtwidgets.runners import QtDialogProgress
+
+
 import speedwagon
-from PySide6 import QtWidgets
+QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 
 
 class TestQtDialogProgress:
     def test_initialized(self, qtbot):
+        from speedwagon.frontend.qtwidgets.runners import QtDialogProgress
         dialog_box = QtDialogProgress()
 
         assert dialog_box.dialog.value() == 0 and \
                dialog_box.dialog.maximum() == 0
 
     def test_total_tasks_amount_affects_dialog(self, qtbot):
+        from speedwagon.frontend.qtwidgets.runners import QtDialogProgress
         dialog_box = QtDialogProgress()
         dialog_box.total_tasks_amount = 10
         assert dialog_box.dialog.maximum() == 10 and \
                dialog_box.total_tasks_amount == 10
 
     def test_current_tasks_progress_affects_dialog(self, qtbot):
+        from speedwagon.frontend.qtwidgets.runners import QtDialogProgress
         dialog_box = QtDialogProgress()
         dialog_box.total_tasks_amount = 10
         dialog_box.current_task_progress = 5
@@ -28,12 +31,14 @@ class TestQtDialogProgress:
                dialog_box.current_task_progress == 5
 
     def test_title_affects_dialog(self, qtbot):
+        from speedwagon.frontend.qtwidgets.runners import QtDialogProgress
         dialog_box = QtDialogProgress()
         dialog_box.title = "spam"
         assert dialog_box.dialog.windowTitle() == "spam" and \
                dialog_box.title == "spam"
 
     def test_details_affects_dialog(self, qtbot):
+        from speedwagon.frontend.qtwidgets.runners import QtDialogProgress
         dialog_box = QtDialogProgress()
         dialog_box.details = "spam"
         assert dialog_box.dialog.labelText() == "spam" and \
@@ -51,7 +56,7 @@ class TestQtDialogProgress:
     )
     def test_refresh_calls_process_events(
             self, qtbot, task_scheduler, monkeypatch):
-
+        from speedwagon.frontend.qtwidgets.runners import QtDialogProgress
         dialog_box = QtDialogProgress()
         dialog_box.task_scheduler = task_scheduler
         processEvents = Mock()
@@ -71,7 +76,7 @@ class TestQtDialogProgress:
 
 class TestQtRunner:
     def test_run_abstract_workflow_calls_run_abs_workflow(self, qtbot):
-        runner = qtwidgets.runners.QtRunner(None)
+        runner = speedwagon.frontend.qtwidgets.runners.QtRunner(None)
         job = Mock()
         job.__class__ = speedwagon.job.Workflow
         runner.run_abs_workflow = Mock()
@@ -85,7 +90,7 @@ class TestQtRunner:
     def test_run_non_abstract_workflow_doesnt_call_run_abs_workflow(
             self, qtbot):
 
-        runner = qtwidgets.runners.QtRunner(None)
+        runner = speedwagon.frontend.qtwidgets.runners.QtRunner(None)
         job = Mock()
         # NOTE: job.__class__ != speedwagon.job.AbsWorkflow
         runner.run_abs_workflow = Mock()
@@ -98,7 +103,7 @@ class TestQtRunner:
 
     def test_run_abs_workflow_calls_task_runner(self):
         manager = Mock()
-        runner = qtwidgets.runners.QtRunner(manager)
+        runner = speedwagon.frontend.qtwidgets.runners.QtRunner(manager)
         job = Mock()
         job.__class__ = speedwagon.job.AbsWorkflow
 
@@ -113,16 +118,16 @@ class TestQtRunner:
 
     def test_run_abs_workflow_fails_with_task_failed_exception(self):
         manager = Mock()
-        runner = qtwidgets.runners.QtRunner(manager)
+        runner = speedwagon.frontend.qtwidgets.runners.QtRunner(manager)
         job = Mock()
         job.__class__ = speedwagon.job.AbsWorkflow
 
         task_runner = MagicMock()
 
         task_runner.run = Mock(
-            side_effect=qtwidgets.runners.TaskFailed("my bad")
+            side_effect=speedwagon.frontend.qtwidgets.runners.TaskFailed("my bad")
         )
-        with pytest.raises(qtwidgets.runners.TaskFailed) as error:
+        with pytest.raises(speedwagon.frontend.qtwidgets.runners.TaskFailed) as error:
             runner.run_abs_workflow(
                 task_scheduler=task_runner,
                 job=job,
@@ -134,7 +139,7 @@ class TestQtRunner:
     def test_update_progress(self):
         runner = Mock()
 
-        qtwidgets.runners.QtRunner.update_progress(
+        speedwagon.frontend.qtwidgets.runners.QtRunner.update_progress(
             runner=runner,
             current=3,
             total=10
@@ -145,7 +150,7 @@ class TestQtRunner:
     def test_update_progress_accepted_on_finish(self):
         runner = Mock()
 
-        qtwidgets.runners.QtRunner.update_progress(
+        speedwagon.frontend.qtwidgets.runners.QtRunner.update_progress(
             runner=runner,
             current=10,
             total=10
@@ -155,7 +160,7 @@ class TestQtRunner:
     def test_update_progress_no_dialog(self):
         runner = Mock()
         runner.dialog = None
-        qtwidgets.runners.QtRunner.update_progress(
+        speedwagon.frontend.qtwidgets.runners.QtRunner.update_progress(
             runner=runner,
             current=3,
             total=10
@@ -166,7 +171,7 @@ class TestWorkRunnerExternal3:
     @pytest.mark.filterwarnings(
         "ignore:Don't use the dialog:DeprecationWarning")
     def test_abort_calls_callback(self, qtbot):
-        with qtwidgets.runners.WorkRunnerExternal3(QtWidgets.QWidget()) as r:
+        with speedwagon.frontend.qtwidgets.runners.WorkRunnerExternal3(QtWidgets.QWidget()) as r:
             r.abort_callback = Mock()
             r.abort()
         assert r.abort_callback.called is True
@@ -174,7 +179,7 @@ class TestWorkRunnerExternal3:
     @pytest.mark.filterwarnings(
         "ignore:Don't use the dialog:DeprecationWarning")
     def test_abort_worth_with_no_callback(self, qtbot):
-        with qtwidgets.runners.WorkRunnerExternal3(QtWidgets.QWidget()) as r:
+        with speedwagon.frontend.qtwidgets.runners.WorkRunnerExternal3(QtWidgets.QWidget()) as r:
             r.abort_callback = None
             r.abort()
 
@@ -183,7 +188,7 @@ class TestWorkRunnerExternal3:
     def test_someone_resetting_dialog_throws_error(self, qtbot):
         with pytest.raises(AttributeError) as e:
             work_runner = \
-                qtwidgets.runners.WorkRunnerExternal3(QtWidgets.QWidget())
+                speedwagon.frontend.qtwidgets.runners.WorkRunnerExternal3(QtWidgets.QWidget())
             with work_runner as r:
                 r.dialog = None
         assert "dialog" in str(e.value)

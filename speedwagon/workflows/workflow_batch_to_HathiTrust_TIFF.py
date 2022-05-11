@@ -1,12 +1,14 @@
 """Workflow for batch converting HathiTrust tiff files."""
-
+from __future__ import annotations
 import itertools
 import os
 import warnings
-from typing import Dict, Optional, List, Any, Type, Mapping
+from typing import Dict, Optional, List, Any, Type, Mapping, TYPE_CHECKING
 import typing
 from collections.abc import Sized
-from PySide6 import QtWidgets  # type: ignore
+if TYPE_CHECKING:
+    from PySide6 import QtWidgets  # type: ignore
+
 from uiucprescon.packager.packages.collection import Metadata
 from uiucprescon import packager
 
@@ -19,7 +21,7 @@ from speedwagon.workflows import workflow_get_marc
 from speedwagon.frontend.qtwidgets import shared_custom_widgets
 from speedwagon.frontend.qtwidgets.dialog.title_page_selection import \
     PackageBrowser
-from .workflow_get_marc import UserOptions
+
 
 __all__ = ['CaptureOneBatchToHathiComplete']
 
@@ -91,12 +93,12 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                 )
         return tasks_metadata
 
-    def user_options(self) -> List[UserOptions]:
+    def user_options(self) -> List[workflow_get_marc.UserOptions]:
         suppoted_identifer_types: List[str] = [
             "Bibid",
             "MMS ID"
         ]
-        workflow_options: List[UserOptions] = [
+        workflow_options: List[workflow_get_marc.UserOptions] = [
             shared_custom_widgets.UserOptionCustomDataType(
                 "Source", shared_custom_widgets.FolderData
             ),

@@ -2,9 +2,11 @@ import concurrent.futures
 from unittest.mock import Mock
 
 import pytest
+worker = pytest.importorskip("speedwagon.frontend.qtwidgets.worker")
+dialog = pytest.importorskip("speedwagon.frontend.qtwidgets.dialog")
 
-from speedwagon.frontend.qtwidgets import worker
-from speedwagon.frontend.qtwidgets import dialog
+# from speedwagon.frontend.qtwidgets import worker
+# from speedwagon.frontend.qtwidgets import dialog
 
 
 class TestToolJobManager:

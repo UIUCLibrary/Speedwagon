@@ -5,7 +5,7 @@ import pytest
 import speedwagon
 import speedwagon.tasks.validation
 from speedwagon.workflows import workflow_validate_metadata
-from speedwagon.frontend.qtwidgets import models
+
 import os
 
 options = [
@@ -29,6 +29,7 @@ class TestValidateMetadataWorkflow:
 
     @pytest.fixture
     def default_options(self, workflow):
+        models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
         return models.ToolOptionsModel4(
             workflow.get_user_options()
         ).get()

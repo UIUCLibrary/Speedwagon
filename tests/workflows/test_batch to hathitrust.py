@@ -5,7 +5,8 @@ import pytest
 import shutil
 
 import speedwagon
-from speedwagon.workflows import workflow_batch_to_HathiTrust_TIFF as wf
+wf = pytest.importorskip("speedwagon.workflows.workflow_batch_to_HathiTrust_TIFF")
+# from speedwagon.workflows import workflow_batch_to_HathiTrust_TIFF as wf
 from speedwagon.workflows import workflow_hathi_limited_to_dl_compound
 import speedwagon.tasks.prep
 from speedwagon.workflows import workflow_get_marc

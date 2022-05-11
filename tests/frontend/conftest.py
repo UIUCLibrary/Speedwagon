@@ -1,8 +1,5 @@
 import contextlib
 import pytest
-from speedwagon import runner_strategies
-import speedwagon.frontend.qtwidgets
-from speedwagon.frontend.qtwidgets.worker import ToolJobManager
 
 
 class SpyDialogBox:
@@ -56,17 +53,18 @@ class SpyWorkRunner(contextlib.AbstractContextManager):
         pass
 
 
-class SpyToolJobManager(ToolJobManager):
-    def open(self, parent, runner, *args, **kwargs):
-        return SpyWorkRunner(*args, **kwargs, parent=parent)
-
-    def flush_message_buffer(self):
-        pass
-
-
 @pytest.fixture()
 def tool_job_manager_spy():
+    worker = pytest.importorskip("speedwagon.frontend.qtwidgets.worker")
+    class SpyToolJobManager(worker.ToolJobManager):
+        def open(self, parent, runner, *args, **kwargs):
+            return SpyWorkRunner(*args, **kwargs, parent=parent)
 
+        def flush_message_buffer(self):
+            pass
+
+    from speedwagon import runner_strategies
+    import speedwagon.frontend.qtwidgets
     with SpyToolJobManager() as e:
         manager_strat = \
             speedwagon.frontend.qtwidgets.runners.QtRunner(parent=None)

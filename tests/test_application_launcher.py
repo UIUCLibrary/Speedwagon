@@ -1,16 +1,16 @@
 from unittest.mock import Mock
 import pytest
-
-# import frontend.qtwidgets.gui_startup
 from speedwagon import startup, job, Workflow, frontend
-from speedwagon.frontend.qtwidgets import dialog
-import speedwagon.frontend.qtwidgets.gui
-import speedwagon.frontend.qtwidgets.gui_startup
+
+QtCore = pytest.importorskip("PySide6.QtCore")
 
 
 class TestSingleWorkflowLauncher:
     @pytest.mark.parametrize("times_run_in_a_row", [1, 2, 5])
     def test_commands_called(self, qtbot, monkeypatch, times_run_in_a_row):
+        from speedwagon.frontend.qtwidgets import dialog
+        import speedwagon.frontend.qtwidgets.gui_startup
+
         for _ in range(times_run_in_a_row):
             single_item_launcher = frontend.qtwidgets.gui_startup.SingleWorkflowLauncher()
 
@@ -45,6 +45,7 @@ class TestSingleWorkflowLauncher:
                    workflow.generate_report.called is True
 
     def test_workflow_not_set_throw_exception_when_run(self):
+        pytest.importorskip("speedwagon.frontend.qtwidgets")
         single_item_launcher = frontend.qtwidgets.gui_startup.SingleWorkflowLauncher()
         with pytest.raises(AttributeError):
             single_item_launcher.run()

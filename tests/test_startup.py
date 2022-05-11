@@ -9,9 +9,8 @@ import os
 import importlib
 import yaml
 import pytest
-from PySide6 import QtWidgets, QtCore
+gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 
-from speedwagon.frontend.qtwidgets import gui_startup
 import speedwagon.exceptions
 import speedwagon.frontend.qtwidgets.logging_helpers
 import speedwagon.frontend.qtwidgets.runners
@@ -40,6 +39,7 @@ def test_version_exits_after_being_called(monkeypatch):
 
 
 def test_run_loads_window(qtbot, monkeypatch, tmpdir):
+    from PySide6 import QtWidgets
     app = Mock()
     app.exec_ = MagicMock()
 
@@ -646,6 +646,7 @@ class TestSingleWorkflowJSON:
         assert submit_job.called is True
 
     def test_signal_is_sent(self, qtbot):
+        from PySide6 import QtCore
         class Dummy(QtCore.QObject):
             dummy_signal = QtCore.Signal(str, int)
 
@@ -672,6 +673,7 @@ class TestSingleWorkflowJSON:
         logger.removeHandler(signal_log_handler)
 
     def test_run_on_exit_is_called(self, qtbot, monkeypatch):
+        from PySide6 import QtWidgets
         startup = speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON()
         startup.options = {}
         workflow = Mock()
@@ -901,6 +903,7 @@ class TestWorkflowProgressCallbacks:
             exc,
             traceback
     ):
+        from PySide6 import QtWidgets
         callbacks = \
             speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
                 dialog_box
@@ -935,6 +938,7 @@ class TestWorkflowProgressCallbacks:
             monkeypatch,
             qtbot
     ):
+        from PySide6 import QtCore
         callbacks = \
             speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
                 dialog_box
@@ -973,6 +977,7 @@ class TestStartQtThreaded:
         startup.app.closeAllWindows()
 
     def test_report_exception(self, qtbot, monkeypatch, starter):
+        from PySide6 import QtWidgets
         message_box = Mock(name="QMessageBox")
 
         monkeypatch.setattr(
@@ -1014,7 +1019,7 @@ class TestStartQtThreaded:
         assert serialization_strategy.load.called is True
 
     def test_save_log_opens_dialog(self, qtbot, monkeypatch, starter):
-
+        from PySide6 import QtWidgets
         getSaveFileName = Mock(
             return_value=("dummy", None)
         )
@@ -1038,6 +1043,7 @@ class TestStartQtThreaded:
         def getSaveFileName(*args, **kwargs):
             return save_file_return_name, None
 
+        from PySide6 import QtWidgets
         monkeypatch.setattr(
             QtWidgets.QFileDialog,
             "getSaveFileName",
@@ -1274,6 +1280,7 @@ class TestStartQtThreaded:
             monkeypatch,
             starter
     ):
+        from PySide6 import QtWidgets
         main_app = QtWidgets.QWidget()
         job_manager = Mock()
         workflow_name = "unknown_workflow"
@@ -1335,6 +1342,7 @@ class TestStartQtThreaded:
 
 class TestQtRequestMoreInfo:
     def test_job_cancelled(self, qtbot):
+        from PySide6 import QtWidgets
         info_request = \
             speedwagon.frontend.qtwidgets.user_interaction.QtRequestMoreInfo(
                 QtWidgets.QWidget()
@@ -1358,6 +1366,7 @@ class TestQtRequestMoreInfo:
         assert info_request.exc == exc
 
     def test_job_exception_passes_on(self, qtbot):
+        from PySide6 import QtWidgets
         info_request = \
             speedwagon.frontend.qtwidgets.user_interaction.QtRequestMoreInfo(
                 QtWidgets.QWidget()
