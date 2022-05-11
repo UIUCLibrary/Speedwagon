@@ -4,6 +4,7 @@ import logging
 import os
 
 import pytest
+gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 from unittest.mock import Mock, MagicMock, patch, mock_open, ANY
 from PySide6 import QtWidgets
 import speedwagon.config
@@ -12,7 +13,6 @@ import io
 from speedwagon.frontend.qtwidgets.dialog import dialogs
 from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog
 
-gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 
 
 def test_standalone_tab_editor_loads(qtbot, monkeypatch):
