@@ -13,7 +13,7 @@ pluggy==0.13.1
 py3exiv2bind>=0.1.9b1
 pyhathiprep>=0.1.7
 pyqt-distutils>=0.7.3
-PySide6
+# PySide6
 pytz==2020.1
 PyYAML==5.4
 ruamel.yaml>=0.17.17
