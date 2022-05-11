@@ -25,6 +25,7 @@ from . import logging_helpers
 from . import user_interaction
 from . import splashscreen
 from . import dialog
+from . import runners
 
 if typing.TYPE_CHECKING:
     from typing import Tuple
@@ -487,9 +488,6 @@ class StartQtThreaded(AbsGuiStarter):
         config_dialog = dialog_builder.build()
         config_dialog.exec_()
 
-    def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
-        return self.start_gui(app)
-
     def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
 
         with speedwagon.runner_strategies.BackgroundJobManager() \
@@ -589,10 +587,7 @@ class StartQtThreaded(AbsGuiStarter):
             )
             return
 
-        dialog_box = \
-            speedwagon.frontend.qtwidgets.dialog.dialogs.WorkflowProgress(
-                parent=self.windows
-            )
+        dialog_box = dialog.dialogs.WorkflowProgress(parent=self.windows)
 
         if main_app is not None:
             # pylint: disable=no-member
@@ -605,10 +600,7 @@ class StartQtThreaded(AbsGuiStarter):
         dialog_box.aborted.connect(
             lambda: self.abort_job(dialog_box, threaded_events)
         )
-        callbacks = \
-            speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
-                dialog_box
-            )
+        callbacks = runners.WorkflowProgressCallbacks(dialog_box)
 
         if main_app is not None:
             callbacks.signals.finished.connect(
@@ -763,9 +755,6 @@ class SingleWorkflowLauncher(AbsGuiStarter):
         self.options: Dict[str, Union[str, bool]] = {}
         self.logger = logger or logging.getLogger(__name__)
 
-    def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
-        self.start_gui(app)
-
     def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         """Run the workflow configured with the options given."""
         if self._active_workflow is None:
@@ -869,9 +858,6 @@ class SingleWorkflowJSON(AbsGuiStarter):
             global_settings=self.global_settings or {}
         )
 
-    def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
-        return self.start_gui(app)
-
     def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         """Launch Speedwagon."""
         if self.options is None:
@@ -917,8 +903,7 @@ class SingleWorkflowJSON(AbsGuiStarter):
             )
             return
 
-        dialog_box = \
-            speedwagon.frontend.qtwidgets.dialog.dialogs.WorkflowProgress()
+        dialog_box = dialog.dialogs.WorkflowProgress()
 
         dialog_box.setWindowTitle(workflow.name or "Workflow")
         dialog_box.show()
@@ -964,9 +949,6 @@ class MultiWorkflowLauncher(AbsGuiStarter):
         self._pending_tasks: \
             "queue.Queue[Tuple[AbsWorkflow, Dict[str, typing.Any]]]" \
             = queue.Queue()
-
-    def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
-        return self.start_gui(app)
 
     def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
 
