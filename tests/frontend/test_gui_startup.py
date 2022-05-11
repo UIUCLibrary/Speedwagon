@@ -393,7 +393,7 @@ class TestStartupDefault:
 class TestSingleWorkflowJSON:
     def test_run_without_json_raises_exception(self):
         with pytest.raises(ValueError) as error:
-            startup = gui_startup.SingleWorkflowJSON()
+            startup = gui_startup.SingleWorkflowJSON(app=None)
             startup.options = Mock()
             startup.workflow = None
             startup.run()
@@ -401,7 +401,7 @@ class TestSingleWorkflowJSON:
 
     def test_run_without_options_raises_exception(self):
         with pytest.raises(ValueError) as error:
-            startup = gui_startup.SingleWorkflowJSON()
+            startup = gui_startup.SingleWorkflowJSON(app=None)
             startup.options = None
             startup.workflow = Mock()
             startup.run()
@@ -416,7 +416,7 @@ class TestSingleWorkflowJSON:
             lambda *args, **kwargs: None
         )
 
-        startup = gui_startup.SingleWorkflowJSON()
+        startup = gui_startup.SingleWorkflowJSON(app=None)
         startup.load_json_string(
             json.dumps(
                 {
@@ -482,7 +482,7 @@ class TestSingleWorkflowJSON:
 
     def test_run_on_exit_is_called(self, qtbot, monkeypatch):
         from PySide6 import QtWidgets
-        startup = speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON()
+        startup = speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON(app=None)
         startup.options = {}
         workflow = Mock()
         workflow.name = "spam"
@@ -520,7 +520,7 @@ class TestSingleWorkflowJSON:
         assert startup.on_exit.called is True
 
     def test_load_json(self):
-        startup = gui_startup.SingleWorkflowJSON()
+        startup = gui_startup.SingleWorkflowJSON(app=None)
 
         startup.load_json_string(
             json.dumps(
@@ -540,7 +540,7 @@ class TestSingleWorkflowJSON:
 
 class TestMultiWorkflowLauncher:
     def test_all_workflows_validate_user_options(self, qtbot, monkeypatch):
-        startup_launcher = gui_startup.MultiWorkflowLauncher()
+        startup_launcher = gui_startup.MultiWorkflowLauncher(app=None)
         workflow_tasks = [
 
             (
@@ -576,7 +576,7 @@ class TestMultiWorkflowLauncher:
         assert all(job.validate_user_options.called is True for job in jobs)
 
     def test_task_failing(self, qtbot):
-        startup_launcher = gui_startup.MultiWorkflowLauncher()
+        startup_launcher = gui_startup.MultiWorkflowLauncher(app=None)
         mock_workflow = MagicMock()
         mock_workflow.name = 'Verify Checksum Batch [Single]'
         mock_workflow.__class__ = speedwagon.job.Workflow

@@ -31,7 +31,6 @@ except ImportError:
 
 if TYPE_CHECKING:
     import speedwagon.frontend.qtwidgets.gui_startup
-    from speedwagon.frontend.qtwidgets import gui_startup
 
 
 __all__ = [
@@ -199,15 +198,20 @@ class ApplicationLauncher:
            >>> app.run()
     """
 
-    def __init__(self, strategy: gui_startup.AbsGuiStarter = None) -> None:
+    def __init__(self, strategy: AbsStarter = None) -> None:
         """Strategy pattern for loading speedwagon in different ways.
 
         Args:
             strategy: Starter strategy class.
         """
         super().__init__()
-        from speedwagon.frontend.qtwidgets.gui_startup import StartQtThreaded
-        self.strategy = strategy or StartQtThreaded()
+        try:
+            from speedwagon.frontend.qtwidgets.gui_startup import \
+                StartQtThreaded
+
+            self.strategy = strategy or StartQtThreaded()
+        except ImportError:
+            self.strategy = strategy or CLIStarter()
 
     def initialize(self) -> None:
         """Initialize anything that needs to done prior to running."""
@@ -215,7 +219,10 @@ class ApplicationLauncher:
 
     def run(self, app=None) -> int:
         """Run Speedwagon."""
-        return self.strategy.run(app)
+        if app:
+            return self.strategy.start_gui(app)
+        else:
+            return self.strategy.run()
 
 
 class SubCommand(abc.ABC):
@@ -231,7 +238,9 @@ class SubCommand(abc.ABC):
 
 class RunCommand(SubCommand):
     def json_startup(self) -> None:
-        startup_strategy = frontend.qtwidgets.gui_startup.SingleWorkflowJSON()
+        startup_strategy = \
+            frontend.qtwidgets.gui_startup.SingleWorkflowJSON(app=None)
+
         startup_strategy.global_settings = self.global_settings
         startup_strategy.load(self.args.json)
         self._run_strategy(startup_strategy)
@@ -278,6 +287,28 @@ def run_command(
     new_command = command(args)
     new_command.global_settings = get_global_options()
     new_command.run()
+
+
+class AbsStarter(metaclass=abc.ABCMeta):
+    config_file: str
+    tabs_file: str
+    user_data_dir: str
+    app_data_dir: str
+
+    @abc.abstractmethod
+    def run(self) -> int:
+        pass
+
+    def initialize(self) -> None:
+        """Initialize startup routine."""
+
+
+class CLIStarter(AbsStarter):
+
+    def run(self) -> int:
+        # todo: create a cli version here
+        print("todo start cli version")
+        return 0
 
 
 def main(argv: List[str] = None) -> None:

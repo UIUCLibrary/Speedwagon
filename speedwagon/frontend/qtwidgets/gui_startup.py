@@ -34,18 +34,18 @@ if typing.TYPE_CHECKING:
     from speedwagon.job import AbsWorkflow, AbsJobConfigSerializationStrategy
 
 
-class AbsGuiStarter(metaclass=abc.ABCMeta):
-    config_file: str
-    tabs_file: str
-    user_data_dir: str
-    app_data_dir: str
+class AbsGuiStarter(speedwagon.startup.AbsStarter):
+
+    def __init__(self, app) -> None:
+        super().__init__()
+        self.app = app
+
+    def run(self) -> int:
+        return self.start_gui(self.app)
 
     @abc.abstractmethod
-    def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
-        """Run the application."""
-
-    def initialize(self) -> None:
-        """Initialize startup routine."""
+    def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
+        """Run the gui application."""
 
 
 class StartupGuiDefault(AbsGuiStarter):
@@ -90,8 +90,7 @@ class StartupGuiDefault(AbsGuiStarter):
         self.ensure_settings_files()
         self.resolve_settings()
 
-    def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
-        # Display a splash screen until the app is loaded
+    def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         splash = splashscreen.create_splash()
         splash_message_handler = logging_helpers.SplashScreenLogHandler(splash)
 
@@ -489,6 +488,9 @@ class StartQtThreaded(AbsGuiStarter):
         config_dialog.exec_()
 
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
+        return self.start_gui(app)
+
+    def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
 
         with speedwagon.runner_strategies.BackgroundJobManager() \
                 as job_manager:
@@ -747,9 +749,13 @@ class SingleWorkflowLauncher(AbsGuiStarter):
 
     """
 
-    def __init__(self, logger: typing.Optional[logging.Logger] = None) -> None:
+    def __init__(
+            self,
+            app,
+            logger: typing.Optional[logging.Logger] = None
+    ) -> None:
         """Set up window for running a single workflow."""
-        super().__init__()
+        super().__init__(app)
         self.window: Optional[
             speedwagon.frontend.qtwidgets.gui.MainWindow1
         ] = None
@@ -758,6 +764,9 @@ class SingleWorkflowLauncher(AbsGuiStarter):
         self.logger = logger or logging.getLogger(__name__)
 
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
+        self.start_gui(app)
+
+    def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         """Run the workflow configured with the options given."""
         if self._active_workflow is None:
             raise AttributeError("Workflow has not been set")
@@ -816,13 +825,13 @@ class SingleWorkflowJSON(AbsGuiStarter):
 
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None) -> None:
+    def __init__(self, app, logger: Optional[logging.Logger] = None) -> None:
         """Create a environment where the workflow is loaded from a json file.
 
         Args:
             logger: Optional Logger, defaults to default logger for __name__.
         """
-        super().__init__()
+        super().__init__(app)
         self.global_settings = None
         self.on_exit: typing.Optional[
             typing.Callable[
@@ -861,6 +870,9 @@ class SingleWorkflowJSON(AbsGuiStarter):
         )
 
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
+        return self.start_gui(app)
+
+    def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         """Launch Speedwagon."""
         if self.options is None:
             raise ValueError("no data loaded")
@@ -946,14 +958,18 @@ class SingleWorkflowJSON(AbsGuiStarter):
 
 class MultiWorkflowLauncher(AbsGuiStarter):
 
-    def __init__(self, logger:  Optional[logging.Logger] = None) -> None:
-        super().__init__()
+    def __init__(self, app, logger:  Optional[logging.Logger] = None) -> None:
+        super().__init__(app)
         self.logger = logger or logging.getLogger(__name__)
         self._pending_tasks: \
             "queue.Queue[Tuple[AbsWorkflow, Dict[str, typing.Any]]]" \
             = queue.Queue()
 
     def run(self, app: Optional[QtWidgets.QApplication] = None) -> int:
+        return self.start_gui(app)
+
+    def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
+
         with speedwagon.frontend.qtwidgets.worker.ToolJobManager() as \
                 work_manager:
             work_manager.logger = self.logger

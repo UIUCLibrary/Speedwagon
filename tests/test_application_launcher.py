@@ -12,7 +12,8 @@ class TestSingleWorkflowLauncher:
         import speedwagon.frontend.qtwidgets.gui_startup
 
         for _ in range(times_run_in_a_row):
-            single_item_launcher = frontend.qtwidgets.gui_startup.SingleWorkflowLauncher()
+            single_item_launcher = \
+                frontend.qtwidgets.gui_startup.SingleWorkflowLauncher(app=None)
 
             monkeypatch.setattr(
                 speedwagon.frontend.qtwidgets.gui,
@@ -46,7 +47,9 @@ class TestSingleWorkflowLauncher:
 
     def test_workflow_not_set_throw_exception_when_run(self):
         pytest.importorskip("speedwagon.frontend.qtwidgets")
-        single_item_launcher = frontend.qtwidgets.gui_startup.SingleWorkflowLauncher()
+        single_item_launcher = \
+            frontend.qtwidgets.gui_startup.SingleWorkflowLauncher(app=None)
+
         with pytest.raises(AttributeError):
             single_item_launcher.run()
 
