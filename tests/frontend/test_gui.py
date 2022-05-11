@@ -6,9 +6,7 @@ import webbrowser
 import pytest
 
 import speedwagon.startup
-# import speedwagon.frontend.qtwidgets.tabs
-# import speedwagon.frontend.qtwidgets.dialog
-# import speedwagon.frontend.qtwidgets.gui
+
 
 import speedwagon.workflow
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")

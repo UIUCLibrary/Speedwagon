@@ -44,7 +44,7 @@ class TestJobProcessor:
     def test_process_flushes_buffer(self):
         parent = Mock(spec=worker.ToolJobManager)
         parent.futures = []
-        job_processor = worker.JobProcessor(parent)
+        job_processor = worker.QtJobProcessor(parent)
         list(job_processor.process())
         assert parent.flush_message_buffer.called is True
 
@@ -67,7 +67,8 @@ class TestJobProcessor:
             as_completed
         )
 
-        job_processor = worker.JobProcessor(parent)
+        job_processor = worker.QtJobProcessor(parent)
         job_processor.timeout_callback = Mock(name="timeout_callback")
         all(job_processor.process())
         assert job_processor.timeout_callback.called is True
+

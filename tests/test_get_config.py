@@ -81,37 +81,6 @@ def test_read_settings(tmpdir):
         os.unlink(shortcut)
 
 
-def test_serialize_settings_model():
-    pytest.importorskip("PySide6.QtCore")
-
-    import speedwagon.frontend.qtwidgets.models
-
-    original_settings = {
-        "tessdata": "~/mytesseractdata"
-    }
-
-    # Mock up a model
-    cfg_parser = configparser.ConfigParser()
-    original_settings = cfg_parser["GLOBAL"] = original_settings
-    my_model = speedwagon.frontend.qtwidgets.models.SettingsModel()
-    for k, v in original_settings.items():
-        my_model.add_setting(k, v)
-
-    # Serialize the model to ini file format
-    data = \
-        speedwagon.frontend.qtwidgets.models.serialize_settings_model(my_model)
-
-    assert data is not None
-
-    # Check that the new data is the same as original
-    new_config = configparser.ConfigParser()
-    new_config.read_string(data)
-    assert "GLOBAL" in new_config
-
-    for k, v in original_settings.items():
-        assert new_config["GLOBAL"][k] == v
-
-
 @pytest.mark.skipif(platform.system() == "Windows",
                     reason="Test for unix file systems only")
 def test_nix_get_app_data_directory(monkeypatch, tmpdir):
@@ -217,28 +186,6 @@ def test_generate_default_contains_global(default_config_file):
     config_data = configparser.ConfigParser()
     config_data.read(default_config_file)
     assert "GLOBAL" in config_data
-
-
-def test_build_setting_model_missing_file(tmpdir):
-    models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
-    dummy = str(os.path.join(tmpdir, "config.ini"))
-    with pytest.raises(FileNotFoundError):
-        models.build_setting_model(dummy)
-
-
-def test_build_setting_model(tmpdir):
-    models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
-
-    dummy = str(os.path.join(tmpdir, "config.ini"))
-    empty_config_data = """[GLOBAL]
-debug: False
-        """
-    with open(dummy, "w") as wf:
-        wf.write(empty_config_data)
-    model = models.build_setting_model(dummy)
-    assert isinstance(model, models.SettingsModel)
-
-    assert model is not None
 
 
 def test_find_missing_configs(tmpdir, monkeypatch):

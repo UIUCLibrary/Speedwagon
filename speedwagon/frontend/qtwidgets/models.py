@@ -788,7 +788,7 @@ class TabsModel(QtCore.QAbstractListModel):
         return True
 
 
-def build_setting_model(config_file: str) -> SettingsModel:
+def build_setting_qt_model(config_file: str) -> SettingsModel:
     """Read a configuration file and generate a SettingsModel."""
     if not os.path.exists(config_file):
         raise FileNotFoundError(f"No existing Configuration in ${config_file}")

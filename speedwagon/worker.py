@@ -8,10 +8,11 @@ import logging
 import multiprocessing
 import queue
 import sys
+import traceback
 import typing
 import warnings
 from types import TracebackType
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, Callable
 from collections import namedtuple
 import speedwagon
 from speedwagon.tasks import QueueAdapter
@@ -365,3 +366,90 @@ class AbsToolJobManager(
 
     def _cleanup(self) -> None:
         self._job_runtime.cleanup(self.logger)
+
+
+class JobProcessor:
+    def __init__(self, parent: "ToolJobManager"):
+        """Create a Job Processor object."""
+        warnings.warn("Don't use", DeprecationWarning)
+        self._parent = parent
+        self.completed = 0
+        self._total_jobs = None
+        self.timeout_callback: Optional[Callable[[int, int], None]] = None
+
+    def refresh_events(self):
+        """Flush any events in the buffer.
+
+        This is useful for handling GUI event loops.
+        """
+
+    def _process_all_futures(self, futures):
+        for completed_futures in concurrent.futures.as_completed(
+                self._parent.futures,
+                timeout=0.01):
+            self._parent.flush_message_buffer()
+            if not completed_futures.cancel() and \
+                    completed_futures.done():
+                self.completed += 1
+                if completed_futures in self._parent.futures:
+                    self._parent.futures.remove(completed_futures)
+                if self.timeout_callback:
+                    self.timeout_callback(self.completed, self._total_jobs)
+                yield from self.report_results_from_future(futures)
+
+            if self.timeout_callback:
+                self.timeout_callback(self.completed, self._total_jobs)
+
+    def process(self):
+        """Process job in queue."""
+        self._total_jobs = len(self._parent.futures)
+        total_jobs = self._total_jobs
+        futures = [(i, False) for i in self._parent.futures]
+
+        while self._parent.active:
+            try:
+                yield from self._process_all_futures(futures)
+
+                self._parent.active = False
+                futures.clear()
+                self._parent.flush_message_buffer()
+
+            except concurrent.futures.TimeoutError:
+                self._parent.flush_message_buffer()
+                if callable(self.timeout_callback):
+                    self.timeout_callback(self.completed, total_jobs)
+                self.refresh_events()
+                if self._parent.active:
+                    continue
+            except concurrent.futures.process.BrokenProcessPool as error:
+                traceback.print_tb(error.__traceback__)
+                print(error, file=sys.stderr)
+                raise
+            self._parent.flush_message_buffer()
+
+    @staticmethod
+    def report_results_from_future(futures):
+        """Get the results from the futures."""
+        for i, (future, reported) in enumerate(futures):
+
+            if not reported and future.done():
+                yield future.result()
+                futures[i] = future, True
+
+
+class ToolJobManager(AbsToolJobManager):
+
+    def abort(self) -> None:
+        pass
+
+    def get_results(
+            self,
+            timeout_callback: typing.Callable[[int, int], None] = None
+    ) -> typing.Generator[typing.Any, None, None]:
+        processor = JobProcessor(self)
+        processor.timeout_callback = timeout_callback
+        yield from processor.process()
+
+    def flush_message_buffer(self) -> None:
+        """Flush any messages in the buffer to the logger."""
+        self._job_runtime.flush_message_buffer(self.logger)

@@ -168,10 +168,8 @@ def simple_task_builder_with_2_subtasks(tmpdir_factory):
 @pytest.mark.filterwarnings(
     "ignore::DeprecationWarning")
 def test_adapter_results(simple_task_builder_with_2_subtasks):
-    worker = pytest.importorskip("speedwagon.frontend.qtwidgets.worker")
-
     new_task = simple_task_builder_with_2_subtasks.build_task()
-    with worker.ToolJobManager() as manager:
+    with speedwagon.worker.ToolJobManager() as manager:
         for subtask in new_task.main_subtasks:
             adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
             manager.add_job(adapted_tool, adapted_tool.settings)
@@ -199,12 +197,12 @@ class LogCatcher(logging.Handler):
 @pytest.mark.filterwarnings(
     "ignore::DeprecationWarning")
 def test_adapter_logs(simple_task_builder_with_2_subtasks):
-    worker = pytest.importorskip("speedwagon.frontend.qtwidgets.worker")
+    # worker = pytest.importorskip("speedwagon.frontend.qtwidgets.worker")
     logs = []
     log_catcher = LogCatcher(logs)
     new_task = simple_task_builder_with_2_subtasks.build_task()
 
-    with worker.ToolJobManager() as manager:
+    with speedwagon.worker.ToolJobManager() as manager:
         manager.logger.setLevel(logging.INFO)
         manager.logger.addHandler(log_catcher)
 
@@ -259,7 +257,6 @@ def test_posttask_builder(tmpdir):
 @pytest.mark.adapter
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_adapter_results_with_pretask(tmpdir):
-    worker = pytest.importorskip("speedwagon.frontend.qtwidgets.worker")
     temp_path = tmpdir.mkdir("test")
     pretask = SimplePreTask("Starting")
 
@@ -269,7 +266,7 @@ def test_adapter_results_with_pretask(tmpdir):
     builder.add_subtask(subtask=SimpleSubtask("Second"))
     new_task = builder.build_task()
 
-    with worker.ToolJobManager() as manager:
+    with speedwagon.worker.ToolJobManager() as manager:
         for subtask in new_task.subtasks:
             adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
             manager.add_job(adapted_tool, adapted_tool.settings)
@@ -296,7 +293,7 @@ def test_adapter_results_with_pretask(tmpdir):
 @pytest.mark.filterwarnings(
     "ignore::DeprecationWarning")
 def test_adapter_results_with_posttask(tmpdir):
-    worker = pytest.importorskip("speedwagon.frontend.qtwidgets.worker")
+    from speedwagon.worker import ToolJobManager
     temp_path = tmpdir.mkdir("test")
     post_task = SimpleSubtask("Ending")
 
@@ -308,7 +305,7 @@ def test_adapter_results_with_posttask(tmpdir):
 
     queued_order = []
 
-    with worker.ToolJobManager() as manager:
+    with ToolJobManager() as manager:
         for subtask in new_task.subtasks:
             adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
             manager.add_job(adapted_tool, adapted_tool.settings)
