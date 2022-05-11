@@ -8,8 +8,8 @@ import requests
 import speedwagon
 import speedwagon.exceptions
 import xml.etree.ElementTree as ET
-workflow_get_marc = pytest.importorskip("speedwagon.workflows.workflow_get_marc")
-
+# workflow_get_marc = pytest.importorskip("speedwagon.workflows.workflow_get_marc")
+from speedwagon.workflows import workflow_get_marc
 
 @pytest.fixture
 def unconfigured_workflow():

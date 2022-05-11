@@ -82,6 +82,10 @@ class AbstractPackageBrowser(AbsUserWidget, ABC):
         return image_type
 
 
+class AbstractPackageTitlePageSelection(AbsUserWidget, ABC):
+    pass
+
+
 class UserRequestFactory(abc.ABC):
     """Factory for generate user interaction objects."""
 
@@ -92,3 +96,8 @@ class UserRequestFactory(abc.ABC):
     @abc.abstractmethod
     def confirm_removal(self) -> AbstractConfirmFilesystemItemRemoval:
         """Get the correct type of removal dialog."""
+
+    def package_title_page_selection(
+            self
+    ) -> AbstractPackageTitlePageSelection:
+        """Get the title page for the packages."""

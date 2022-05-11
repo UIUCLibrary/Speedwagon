@@ -6,6 +6,7 @@ import typing
 from typing import Dict, Any, Optional, List, Union, Type
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtGui import Qt
+from uiucprescon.packager import Metadata
 
 import speedwagon.exceptions
 from speedwagon.frontend import interaction
@@ -34,6 +35,11 @@ class QtWidgetFactory(interaction.UserRequestFactory):
     ) -> interaction.AbstractConfirmFilesystemItemRemoval:
         """Generate widget for selecting which files or folders to remove."""
         return QtWidgetConfirmFileSystemRemoval(parent=self.parent)
+
+    def package_title_page_selection(
+            self
+    ) -> interaction.AbstractPackageTitlePageSelection:
+        return QtWidgetTitlePageSelection(parent=self.parent)
 
 
 class ConfirmListModel(QtCore.QAbstractListModel):
@@ -279,6 +285,41 @@ class QtWidgetPackageBrowserWidget(interaction.AbstractPackageBrowser):
         )
         browser.exec()
         return browser.data()
+
+
+class QtWidgetTitlePageSelection(
+    interaction.AbstractPackageTitlePageSelection
+):
+    def __init__(self, parent: Optional[QtWidgets.QWidget]) -> None:
+        """Create a title page selection widget."""
+        super().__init__()
+        self.parent = parent
+        self.browser_widget = PackageBrowser
+
+    def get_user_response(
+            self, options: dict,
+            pretask_results: list
+    ) -> Dict[str, Any]:
+        results = pretask_results[0]
+        packages = results.data
+
+        title_pages: Dict[str, str] = {}
+        extra_data: Dict[str, Dict[str, str]] = {}
+        browser = self.browser_widget(packages, self.parent)
+        browser.exec()
+
+        if browser.result() != QtWidgets.QDialog.Accepted:
+            raise speedwagon.exceptions.JobCancelled()
+        data = browser.data()
+        for package in data:
+            bib_id = typing.cast(str, package.metadata[Metadata.ID])
+
+            title_page = \
+                typing.cast(str, package.metadata[Metadata.TITLE_PAGE])
+
+            title_pages[bib_id] = title_page
+        extra_data["title_pages"] = title_pages
+        return extra_data
 
 
 class QtRequestMoreInfo(QtCore.QObject):

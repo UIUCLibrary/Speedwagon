@@ -3,11 +3,12 @@ from __future__ import annotations
 import itertools
 import os
 import warnings
-from typing import Dict, Optional, List, Any, Type, Mapping, TYPE_CHECKING
+from typing import Dict, Optional, List, Any, Type, Mapping
 import typing
 from collections.abc import Sized
-if TYPE_CHECKING:
-    from PySide6 import QtWidgets  # type: ignore
+
+from speedwagon.frontend import interaction
+
 
 from uiucprescon.packager.packages.collection import Metadata
 from uiucprescon import packager
@@ -18,10 +19,8 @@ import speedwagon.workflow
 import speedwagon.tasks.packaging
 import speedwagon.tasks.prep
 from speedwagon.workflows import workflow_get_marc
-from speedwagon.frontend.qtwidgets import shared_custom_widgets
-from speedwagon.frontend.qtwidgets.dialog.title_page_selection import \
-    PackageBrowser
-
+if typing.TYPE_CHECKING:
+    from speedwagon.workflow import AbsOutputOptionDataType
 
 __all__ = ['CaptureOneBatchToHathiComplete']
 
@@ -93,24 +92,21 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                 )
         return tasks_metadata
 
-    def user_options(self) -> List[workflow_get_marc.UserOptions]:
-        suppoted_identifer_types: List[str] = [
+    def get_user_options(self) -> List[AbsOutputOptionDataType]:
+        supported_identifier_types: List[str] = [
             "Bibid",
             "MMS ID"
         ]
-        workflow_options: List[workflow_get_marc.UserOptions] = [
-            shared_custom_widgets.UserOptionCustomDataType(
-                "Source", shared_custom_widgets.FolderData
-            ),
-            shared_custom_widgets.UserOptionCustomDataType(
-                "Destination", shared_custom_widgets.FolderData
-            )
-        ]
-        id_type_option = shared_custom_widgets.ListSelection("Identifier type")
-        for id_type in suppoted_identifer_types:
+
+        id_type_option = speedwagon.workflow.ChoiceSelection('Identifier type')
+        for id_type in supported_identifier_types:
             id_type_option.add_selection(id_type)
-        workflow_options.append(id_type_option)
-        return workflow_options
+
+        return [
+            speedwagon.workflow.DirectorySelect("Source"),
+            speedwagon.workflow.DirectorySelect("Destination"),
+            id_type_option
+        ]
 
     def initial_task(self, task_builder: speedwagon.tasks.TaskBuilder,
                      **user_args: str) -> None:
@@ -168,33 +164,20 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
             )
         )
 
-    def get_additional_info(self,
-                            parent: typing.Optional[QtWidgets.QWidget],
-                            options: Mapping[Any, Any],
-                            pretask_results: List[speedwagon.tasks.Result]
-                            ) -> Dict[str, Any]:
+    def get_additional_info(
+            self,
+            user_request_factory: interaction.UserRequestFactory,
+            options: dict,
+            pretask_results: list
+    ) -> dict:
         """Request the title page information from the user."""
-        extra_data: Dict[str, Dict[str, str]] = {}
         if len(pretask_results) == 1:
-            title_pages: Dict[str, str] = {}
-            results = pretask_results.pop()
-            packages = results.data
-            browser = PackageBrowser(packages, parent)
-            browser.exec()
-
-            if browser.result() != browser.Accepted:
-                raise speedwagon.exceptions.JobCancelled()
-            data = browser.data()
-            for package in data:
-                bib_id = typing.cast(str, package.metadata[Metadata.ID])
-
-                title_page = \
-                    typing.cast(str, package.metadata[Metadata.TITLE_PAGE])
-
-                title_pages[bib_id] = title_page
-            extra_data["title_pages"] = title_pages
-
-        return extra_data
+            package_title_page_selection = \
+                user_request_factory.package_title_page_selection()
+            return package_title_page_selection.get_user_response(
+                options,
+                pretask_results
+            )
 
     @classmethod
     def generate_report(cls, results: List[speedwagon.tasks.Result],
