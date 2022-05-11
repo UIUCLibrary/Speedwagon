@@ -7,9 +7,6 @@ from typing import Dict, Optional, List, Any, Type, Mapping
 import typing
 from collections.abc import Sized
 
-from speedwagon.frontend import interaction
-
-
 from uiucprescon.packager.packages.collection import Metadata
 from uiucprescon import packager
 
@@ -18,6 +15,7 @@ import speedwagon.exceptions
 import speedwagon.workflow
 import speedwagon.tasks.packaging
 import speedwagon.tasks.prep
+from speedwagon.frontend import interaction
 from speedwagon.workflows import workflow_get_marc
 if typing.TYPE_CHECKING:
     from speedwagon.workflow import AbsOutputOptionDataType
@@ -171,13 +169,14 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
             pretask_results: list
     ) -> dict:
         """Request the title page information from the user."""
-        if len(pretask_results) == 1:
-            package_title_page_selection = \
-                user_request_factory.package_title_page_selection()
-            return package_title_page_selection.get_user_response(
-                options,
-                pretask_results
-            )
+        if len(pretask_results) != 1:
+            return {}
+        package_title_page_selection = \
+            user_request_factory.package_title_page_selection()
+        return package_title_page_selection.get_user_response(
+            options,
+            pretask_results
+        )
 
     @classmethod
     def generate_report(cls, results: List[speedwagon.tasks.Result],
