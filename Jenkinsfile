@@ -569,9 +569,9 @@ pipeline {
             post{
                 always{
                     recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx_html.log')])
-                    stash includes: 'dist/docs/*.pdf', name: 'SPEEDWAGON_DOC_PDF'
                 }
                 success{
+                    stash includes: 'dist/docs/*.pdf', name: 'SPEEDWAGON_DOC_PDF'
                     zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
                     stash includes: 'dist/*.doc.zip,build/docs/html/**', name: 'DOCS_ARCHIVE'
                     archiveArtifacts artifacts: 'dist/docs/*.pdf'
