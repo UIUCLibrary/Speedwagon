@@ -1,7 +1,7 @@
 def buildSphinxDocumentation(args = [:]){
     def sourceDir = args.sourceDir
     def outputDir = args.outputDir
-    def sphinxBuildCommand = "python -m sphinx"
+    def sphinxBuildCommand = "python -m sphinx -W"
 
     if(args['builder'] != null){
         sphinxBuildCommand = sphinxBuildCommand + " -b ${args.builder}"
