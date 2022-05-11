@@ -29,7 +29,8 @@ __all__ = [
     "Workflow",
     "NullWorkflow",
     "available_workflows",
-    "all_required_workflow_keys"
+    "all_required_workflow_keys",
+    "AbsJobConfigSerializationStrategy"
 ]
 
 
