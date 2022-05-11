@@ -32,8 +32,14 @@ if __name__ == "__main__":
             "speedwagon.workflows",
         ],
         setup_requires=['pytest-runner'],
-        tests_require=['pytest', "behave", "pytest-qt"],
+        tests_require=[
+            'pytest', "behave",
+            # "pytest-qt"
+        ],
         python_requires=">=3.6",
+        extras_require={
+          "QT": ["PySide6"]
+        },
         entry_points={
             "gui_scripts": [
                 'speedwagon = speedwagon.__main__:main',
