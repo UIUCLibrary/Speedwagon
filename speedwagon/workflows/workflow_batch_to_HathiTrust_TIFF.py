@@ -91,6 +91,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         return tasks_metadata
 
     def get_user_options(self) -> List[AbsOutputOptionDataType]:
+        """Request identifier type, source, and destination."""
         supported_identifier_types: List[str] = [
             "Bibid",
             "MMS ID"
@@ -108,6 +109,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
 
     def initial_task(self, task_builder: speedwagon.tasks.TaskBuilder,
                      **user_args: str) -> None:
+        """Find capture one packages."""
         super().initial_task(task_builder, **user_args)
         root = user_args['Source']
         task_builder.add_subtask(FindCaptureOnePackageTask(root=root))
