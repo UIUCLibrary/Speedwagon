@@ -12,12 +12,12 @@ $fileLocation = Join-Path $toolsDir '[[InstallerFile]]'
 $dependenciesLocation = Join-Path $toolsDir dist\deps
 $packageSourceUrl =  '[[PackageSourceUrl]]'
 $PYTHON = "$(Join-Path $(Get-AppInstallLocation('python')) 'python.exe')"
-$requirementSpecifier = "$($fileLocation)`[QT`]"
+$requirementSpecifier = "'$($fileLocation)`[QT`]'"
 Write-Host "Running installing $requirementSpecifier"
 Write-Host "Creating Python virtualenv at $installDir\venv"
 & "$PYTHON" -m venv $installDir\venv
 & "$installDir\venv\Scripts\python.exe" -m pip install pip --upgrade --no-compile
-& "$installDir\venv\Scripts\python.exe" -m pip install  '$requirementSpecifier' --find-link "$dependenciesLocation"
+& "$installDir\venv\Scripts\python.exe" -m pip install  $requirementSpecifier --find-link "$dependenciesLocation"
 
 $files = get-childitem $installDir -include *.exe -recurse
 foreach ($file in $files) {
