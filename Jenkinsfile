@@ -1151,10 +1151,10 @@ pipeline {
                                             additionalBuildArgs '--build-arg CHOCOLATEY_SOURCE'
                                           }
                                     }
-                                    when{
-                                        equals expected: true, actual: params.TEST_PACKAGES
-                                        beforeAgent true
-                                    }
+//                                     when{
+//                                         equals expected: true, actual: params.TEST_PACKAGES
+//                                         beforeAgent true
+//                                     }
                                     steps{
                                         unstash 'CHOCOLATEY_PACKAGE'
                                         testSpeedwagonChocolateyPkg(props.Version)
