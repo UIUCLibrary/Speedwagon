@@ -4,12 +4,11 @@ import logging
 import os
 
 import pytest
-gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 from unittest.mock import Mock, MagicMock, patch, mock_open, ANY
-from PySide6 import QtWidgets
-import speedwagon.config
 import io
-# from speedwagon.frontend.qtwidgets import gui_startup
+import speedwagon.config
+gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
+from PySide6 import QtWidgets
 from speedwagon.frontend.qtwidgets.dialog import dialogs
 from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog
 
@@ -489,7 +488,6 @@ class TestSingleWorkflowJSON:
         logger.removeHandler(signal_log_handler)
 
     def test_run_on_exit_is_called(self, qtbot, monkeypatch):
-        from PySide6 import QtWidgets
         startup = \
             speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON(
                 app=None
