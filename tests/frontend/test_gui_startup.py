@@ -14,10 +14,15 @@ from speedwagon.frontend.qtwidgets.dialog import dialogs
 from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog
 
 
-
 def test_standalone_tab_editor_loads(qtbot, monkeypatch):
     TabsEditorApp = MagicMock()
-    monkeypatch.setattr(speedwagon.frontend.qtwidgets.gui_startup, "TabsEditorApp", TabsEditorApp)
+
+    monkeypatch.setattr(
+        speedwagon.frontend.qtwidgets.gui_startup,
+        "TabsEditorApp",
+        TabsEditorApp
+    )
+
     app = Mock()
     settings = Mock()
     get_platform_settings = Mock(return_value=settings)
@@ -82,6 +87,7 @@ def test_run_loads_window(qtbot, monkeypatch, tmpdir):
     standard_startup._logger = Mock()
     standard_startup.run()
     assert app.exec_.called is True
+
 
 class TestStartupDefault:
     @pytest.fixture
@@ -390,6 +396,7 @@ class TestStartupDefault:
             expected_message in m for m in caplog.messages
         )
 
+
 class TestSingleWorkflowJSON:
     def test_run_without_json_raises_exception(self):
         with pytest.raises(ValueError) as error:
@@ -455,6 +462,7 @@ class TestSingleWorkflowJSON:
 
     def test_signal_is_sent(self, qtbot):
         from PySide6 import QtCore
+
         class Dummy(QtCore.QObject):
             dummy_signal = QtCore.Signal(str, int)
 
@@ -482,7 +490,11 @@ class TestSingleWorkflowJSON:
 
     def test_run_on_exit_is_called(self, qtbot, monkeypatch):
         from PySide6 import QtWidgets
-        startup = speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON(app=None)
+        startup = \
+            speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON(
+                app=None
+            )
+
         startup.options = {}
         workflow = Mock()
         workflow.name = "spam"
@@ -537,6 +549,7 @@ class TestSingleWorkflowJSON:
         assert startup.options["Source"] == "dummy_source" and \
                startup.options["Output"] == "dummy_out" and \
                startup.workflow.name == 'Zip Packages'
+
 
 class TestMultiWorkflowLauncher:
     def test_all_workflows_validate_user_options(self, qtbot, monkeypatch):
@@ -593,6 +606,7 @@ class TestMultiWorkflowLauncher:
          )
         with pytest.raises(speedwagon.exceptions.JobCancelled):
             startup_launcher.run()
+
 
 class TestStartQtThreaded:
     @pytest.fixture(scope="function")
@@ -670,7 +684,10 @@ class TestStartQtThreaded:
             getSaveFileName
         )
         parent = Mock()
-        with patch('speedwagon.frontend.qtwidgets.gui_startup', mock_open()) as w:
+        with patch(
+                'speedwagon.frontend.qtwidgets.gui_startup',
+                mock_open()
+        ) as w:
             starter.save_log(parent)
         assert getSaveFileName.called is True
 
@@ -706,7 +723,10 @@ class TestStartQtThreaded:
             "QMessageBox",
             QMessageBox
         )
-        with patch('speedwagon.frontend.qtwidgets.gui_startup.open', mock_open()) as mock:
+        with patch(
+                'speedwagon.frontend.qtwidgets.gui_startup.open',
+                mock_open()
+        ) as mock:
             mock.side_effect = side_effect_for_saving
             starter.save_log(None)
 
@@ -822,19 +842,14 @@ class TestStartQtThreaded:
         starter.load_all_workflows_tab = Mock()
         starter.run()
 
+        metadata = speedwagon.frontend.qtwidgets.gui_startup.metadata
         monkeypatch.setattr(
             speedwagon.frontend.qtwidgets.gui_startup.metadata,
             "metadata",
-            Mock(
-                side_effect=speedwagon.frontend.qtwidgets.gui_startup.metadata.PackageNotFoundError(
-                    "Not found yet"
-                )
-            )
+            Mock(side_effect=metadata.PackageNotFoundError("Not found yet"))
         )
         starter.windows.help_requested.emit()
-        assert any(
-            "No help link available" in m for m in caplog.messages
-        )
+        assert any("No help link available" in m for m in caplog.messages)
 
     def test_load_help(self, qtbot, monkeypatch, starter):
         show = Mock()
@@ -1148,6 +1163,7 @@ class TestWorkflowProgressCallbacks:
         )
         callbacks.refresh()
         assert processEvents.called is True
+
 
 class TestQtRequestMoreInfo:
     def test_job_cancelled(self, qtbot):
