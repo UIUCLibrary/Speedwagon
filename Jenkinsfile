@@ -366,7 +366,6 @@ def testPythonPackages(){
                     glob: 'dist/*.whl',
                     stash: 'PYTHON_PACKAGES',
                     toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
-//                     pythonVersion: pythonVersion,
                     retry: 3,
                 )
             }
@@ -385,7 +384,6 @@ def testPythonPackages(){
                     glob: 'dist/*.tar.gz',
                     stash: 'PYTHON_PACKAGES',
                     toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
-//                     pythonVersion: pythonVersion,
                     retry: 3,
                 )
             }
@@ -401,7 +399,6 @@ def testPythonPackages(){
                     glob: 'dist/*.whl',
                     stash: 'PYTHON_PACKAGES',
                     toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
-//                     pythonVersion: pythonVersion,
                     retry: 3,
                 )
             }
@@ -419,7 +416,6 @@ def testPythonPackages(){
                         glob: 'dist/*.tar.gz,dist/*.zip',
                         stash: 'PYTHON_PACKAGES',
                         toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
-//                         pythonVersion: pythonVersion,
                         toxExec: 'venv/bin/tox',
                         testSetup: {
                             checkout scm
@@ -448,7 +444,6 @@ def testPythonPackages(){
                         glob: 'dist/*.whl',
                         stash: 'PYTHON_PACKAGES',
                         toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
-//                         pythonVersion: pythonVersion,
                         toxExec: 'venv/bin/tox',
                         testSetup: {
                             checkout scm
