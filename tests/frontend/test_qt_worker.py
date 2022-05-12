@@ -71,4 +71,3 @@ class TestJobProcessor:
         job_processor.timeout_callback = Mock(name="timeout_callback")
         all(job_processor.process())
         assert job_processor.timeout_callback.called is True
-

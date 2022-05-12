@@ -125,9 +125,13 @@ class TestQtRunner:
         task_runner = MagicMock()
 
         task_runner.run = Mock(
-            side_effect=speedwagon.frontend.qtwidgets.runners.TaskFailed("my bad")
+            side_effect=speedwagon.frontend.qtwidgets.runners.TaskFailed(
+                "my bad"
+            )
         )
-        with pytest.raises(speedwagon.frontend.qtwidgets.runners.TaskFailed) as error:
+        with pytest.raises(
+                speedwagon.frontend.qtwidgets.runners.TaskFailed
+        ) as error:
             runner.run_abs_workflow(
                 task_scheduler=task_runner,
                 job=job,
@@ -171,7 +175,9 @@ class TestWorkRunnerExternal3:
     @pytest.mark.filterwarnings(
         "ignore:Don't use the dialog:DeprecationWarning")
     def test_abort_calls_callback(self, qtbot):
-        with speedwagon.frontend.qtwidgets.runners.WorkRunnerExternal3(QtWidgets.QWidget()) as r:
+        with speedwagon.frontend.qtwidgets.runners.WorkRunnerExternal3(
+                QtWidgets.QWidget()
+        ) as r:
             r.abort_callback = Mock()
             r.abort()
         assert r.abort_callback.called is True
@@ -179,7 +185,9 @@ class TestWorkRunnerExternal3:
     @pytest.mark.filterwarnings(
         "ignore:Don't use the dialog:DeprecationWarning")
     def test_abort_worth_with_no_callback(self, qtbot):
-        with speedwagon.frontend.qtwidgets.runners.WorkRunnerExternal3(QtWidgets.QWidget()) as r:
+        with speedwagon.frontend.qtwidgets.runners.WorkRunnerExternal3(
+                QtWidgets.QWidget()
+        ) as r:
             r.abort_callback = None
             r.abort()
 
@@ -188,7 +196,9 @@ class TestWorkRunnerExternal3:
     def test_someone_resetting_dialog_throws_error(self, qtbot):
         with pytest.raises(AttributeError) as e:
             work_runner = \
-                speedwagon.frontend.qtwidgets.runners.WorkRunnerExternal3(QtWidgets.QWidget())
+                speedwagon.frontend.qtwidgets.runners.WorkRunnerExternal3(
+                    QtWidgets.QWidget()
+                )
             with work_runner as r:
                 r.dialog = None
         assert "dialog" in str(e.value)
