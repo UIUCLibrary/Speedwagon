@@ -187,8 +187,8 @@ endif(SPEEDWAGON_EXTRA_REQUIREMENTS_FILE)
 
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
         DEPENDS wheel
-        COMMAND ${VENV_PYTHON} -m pip install pytest pytest-qt -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
-        COMMENT "Adding pytest and pytest-qt to standalone virtual environment"
+        COMMAND ${VENV_PYTHON} -m pip install pytest pytest-qt PySide6 -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
+        COMMENT "Adding PySide6, pytest, and pytest-qt to standalone virtual environment"
         )
 set(SPEEDWAGON_PYTHON_INTERP python.exe)
 
