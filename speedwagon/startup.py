@@ -12,8 +12,11 @@ Changes:
 from __future__ import annotations
 import abc
 import argparse
+import io
+import json
 import os
 import sys
+import typing
 from typing import Dict, Iterator, Tuple, List, cast, Type, TYPE_CHECKING
 import yaml
 
@@ -220,7 +223,13 @@ class ApplicationLauncher:
     def run(self, app=None) -> int:
         """Run Speedwagon."""
         if app:
-            return self.strategy.start_gui(app)
+            try:
+                from speedwagon.frontend.qtwidgets.gui_startup \
+                    import AbsGuiStarter
+                if isinstance(self.strategy, AbsGuiStarter):
+                    return self.strategy.start_gui(app)
+            except ImportError:
+                pass
         return self.strategy.run()
 
 
@@ -237,8 +246,11 @@ class SubCommand(abc.ABC):
 
 class RunCommand(SubCommand):
     def json_startup(self) -> None:
-        startup_strategy = \
-            frontend.qtwidgets.gui_startup.SingleWorkflowJSON(app=None)
+        try:
+            startup_strategy = \
+                frontend.qtwidgets.gui_startup.SingleWorkflowJSON(app=None)
+        except AttributeError:
+            startup_strategy = SingleWorkflowJSON()
 
         startup_strategy.global_settings = self.global_settings
         startup_strategy.load(self.args.json)
@@ -302,11 +314,42 @@ class AbsStarter(metaclass=abc.ABCMeta):
         """Initialize startup routine."""
 
 
+class SingleWorkflowJSON(AbsStarter):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.options: typing.Optional[typing.Dict[str, typing.Any]] = None
+        self.global_settings = None
+
+    def run(self) -> int:
+        speedwagon.simple_api_run_workflow(
+            self.workflow,
+            self.options,
+        )
+        return 0
+
+    def load(self, file_pointer: io.TextIOBase) -> None:
+        """Load the information from the json.
+
+        Args:
+            file_pointer: File pointer to json file
+
+        """
+        loaded_data = json.load(file_pointer)
+        self.options = loaded_data['Configuration']
+        self._set_workflow(loaded_data['Workflow'])
+
+    def _set_workflow(self, workflow_name: str) -> None:
+        available_workflows = speedwagon.job.available_workflows()
+        self.workflow = available_workflows[workflow_name](
+            global_settings=self.global_settings or {}
+        )
+
+
 class CLIStarter(AbsStarter):
 
     def run(self) -> int:
-        # todo: create a cli version here
-        print("todo start cli version")
+        print("Try running --help for info on the commands")
         return 0
 
 
