@@ -31,7 +31,12 @@ def test_show_help_open_web(qtbot, monkeypatch):
 
 def test_exit_button(qtbot, monkeypatch):
     exit_calls = []
-    monkeypatch.setattr(QtWidgets.QApplication, "exit", lambda: exit_calls.append(1))
+    monkeypatch.setattr(
+        QtWidgets.QApplication,
+        "exit",
+        lambda: exit_calls.append(1)
+    )
+
     mock_work_manager = Mock()
     main_window = \
         speedwagon.frontend.qtwidgets.gui.MainWindow1(mock_work_manager)
@@ -281,7 +286,7 @@ class TestMainWindow2:
                 return [
                     speedwagon.workflow.TextLineEditData("Dummy")
                 ]
-                pass
+
             def user_options(self) -> typing.List[Any]:
                 return [
                     shared_custom_widgets.UserOptionPythonDataType2(
