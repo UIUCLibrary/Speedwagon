@@ -98,7 +98,7 @@ if(SPEEDWAGON_CACHE_PYTHON_WHEEL_DEPENDENCIES)
     create_dep_wheels(
             PYTHON_EXE ${VENV_PYTHON}
             REQUIREMENTS_FILES
-            ${PROJECT_SOURCE_DIR}/requirements.txt
+            ${PROJECT_SOURCE_DIR}/requirements-gui.txt
             ${PROJECT_SOURCE_DIR}/requirements-dev.txt
     )
 endif()
