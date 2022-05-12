@@ -840,11 +840,14 @@ class TestStartQtThreaded:
         starter.load_all_workflows_tab = Mock()
         starter.run()
 
-        metadata = speedwagon.frontend.qtwidgets.gui_startup.metadata
         monkeypatch.setattr(
             speedwagon.frontend.qtwidgets.gui_startup.metadata,
             "metadata",
-            Mock(side_effect=metadata.PackageNotFoundError("Not found yet"))
+            Mock(
+                side_effect=speedwagon.frontend.qtwidgets.gui_startup.metadata.PackageNotFoundError(
+                    "Not found yet"
+                )
+            )
         )
         starter.windows.help_requested.emit()
         assert any("No help link available" in m for m in caplog.messages)
