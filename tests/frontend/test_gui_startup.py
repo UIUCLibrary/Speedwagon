@@ -17,7 +17,7 @@ from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog
 
 def test_standalone_tab_editor_loads(qtbot, monkeypatch):
     TabsEditorApp = MagicMock()
-    monkeypatch.setattr(speedwagon.startup.frontend.qtwidgets.gui_startup, "TabsEditorApp", TabsEditorApp)
+    monkeypatch.setattr(speedwagon.frontend.qtwidgets.gui_startup, "TabsEditorApp", TabsEditorApp)
     app = Mock()
     settings = Mock()
     get_platform_settings = Mock(return_value=settings)
@@ -670,7 +670,7 @@ class TestStartQtThreaded:
             getSaveFileName
         )
         parent = Mock()
-        with patch('speedwagon.startup.frontend.qtwidgets.gui_startup', mock_open()) as w:
+        with patch('speedwagon.frontend.qtwidgets.gui_startup', mock_open()) as w:
             starter.save_log(parent)
         assert getSaveFileName.called is True
 
@@ -853,10 +853,14 @@ class TestStartQtThreaded:
         def metadata(*args, **kwargs):
             return {'Home-page': "https://www.fake.com"}
 
-        monkeypatch.setattr(speedwagon.frontend.qtwidgets.gui_startup.metadata, "metadata", metadata)
+        monkeypatch.setattr(
+            speedwagon.frontend.qtwidgets.gui_startup.metadata,
+            "metadata",
+            metadata
+        )
 
         monkeypatch.setattr(
-            speedwagon.startup.frontend.qtwidgets.gui_startup.webbrowser,
+            speedwagon.frontend.qtwidgets.gui_startup.webbrowser,
             "open_new",
             open_new
         )

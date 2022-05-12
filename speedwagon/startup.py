@@ -23,7 +23,7 @@ import yaml
 import speedwagon
 import speedwagon.config
 import speedwagon.exceptions
-from speedwagon import frontend
+
 from speedwagon import job
 
 
@@ -247,6 +247,7 @@ class SubCommand(abc.ABC):
 class RunCommand(SubCommand):
     def json_startup(self) -> None:
         try:
+            from speedwagon import frontend
             startup_strategy = \
                 frontend.qtwidgets.gui_startup.SingleWorkflowJSON(app=None)
         except AttributeError:
