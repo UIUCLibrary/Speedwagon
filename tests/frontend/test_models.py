@@ -14,8 +14,6 @@ from speedwagon.frontend.qtwidgets import tabs, models
 def test_serialize_settings_model():
     pytest.importorskip("PySide6.QtCore")
 
-    import speedwagon.frontend.qtwidgets.models
-
     original_settings = {
         "tessdata": "~/mytesseractdata"
     }
@@ -39,6 +37,7 @@ def test_serialize_settings_model():
 
     for k, v in original_settings.items():
         assert new_config["GLOBAL"][k] == v
+
 
 def test_build_setting_model_missing_file(tmpdir):
     dummy = str(os.path.join(tmpdir, "config.ini"))
