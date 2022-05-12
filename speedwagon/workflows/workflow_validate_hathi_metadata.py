@@ -13,6 +13,8 @@ from .. import workflow
 
 
 class ValidateImageMetadataWorkflow(Workflow):
+    """Validate tiff embedded metadata for HathiTrust."""
+
     name = "Validate Tiff Image Metadata for HathiTrust"
     description = "Validate the metadata located within a tiff file. " \
                   "Validates the technical metadata to include x and why " \
