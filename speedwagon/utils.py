@@ -1,3 +1,5 @@
+"""General module for things that don't fit anywhere else."""
+
 from typing import Iterator, Callable
 
 import logging

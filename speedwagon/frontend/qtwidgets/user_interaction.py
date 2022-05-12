@@ -39,6 +39,8 @@ class QtWidgetFactory(interaction.UserRequestFactory):
     def package_title_page_selection(
             self
     ) -> interaction.AbstractPackageTitlePageSelection:
+        """Generate widget for selecting title pages from a package."""
+
         return QtWidgetTitlePageSelection(parent=self.parent)
 
 
@@ -290,6 +292,8 @@ class QtWidgetPackageBrowserWidget(interaction.AbstractPackageBrowser):
 class QtWidgetTitlePageSelection(
     interaction.AbstractPackageTitlePageSelection
 ):
+    """Qt widget for selection of a title page."""
+
     def __init__(self, parent: Optional[QtWidgets.QWidget]) -> None:
         """Create a title page selection widget."""
         super().__init__()
@@ -300,6 +304,7 @@ class QtWidgetTitlePageSelection(
             self, options: dict,
             pretask_results: list
     ) -> Dict[str, Any]:
+        """Show the user the packages and ask for a title page."""
         results = pretask_results[0]
         packages = results.data
 

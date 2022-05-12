@@ -80,6 +80,7 @@ class QtJobProcessor(speedwagon.worker.JobProcessor):
     """Job processor for Qt Widgets."""
 
     def refresh_events(self):
+        """Update any pending Qt events."""
         QtWidgets.QApplication.processEvents()
 
 

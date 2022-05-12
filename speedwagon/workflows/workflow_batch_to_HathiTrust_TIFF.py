@@ -181,6 +181,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
     @classmethod
     def generate_report(cls, results: List[speedwagon.tasks.Result],
                         **user_args: str) -> Optional[str]:
+        """Generate batch report."""
         subtask_type = Type[speedwagon.tasks.tasks.AbsSubtask]
         results_grouped: Mapping[subtask_type, Sized] = \
             cls.group_results(

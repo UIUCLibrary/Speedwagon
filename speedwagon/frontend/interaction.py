@@ -83,7 +83,7 @@ class AbstractPackageBrowser(AbsUserWidget, ABC):
 
 
 class AbstractPackageTitlePageSelection(AbsUserWidget, ABC):
-    pass
+    """Select title page from a package."""
 
 
 class UserRequestFactory(abc.ABC):
