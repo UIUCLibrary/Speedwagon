@@ -199,11 +199,10 @@ class TestWorkflow:
 
 @pytest.fixture()
 def user_options():
-    # from speedwagon.frontend.qtwidgets import models
-    models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
     workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
-    return models.ToolOptionsModel4(workflow.get_user_options()).get()
-    # return models.ToolOptionsModel3(workflow.user_options()).get()
+    return {
+        data.label: data.value for data in workflow.get_user_options()
+    }
 
 
 class TestValidateUserArgs:

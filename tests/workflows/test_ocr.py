@@ -112,10 +112,9 @@ class TestOCRWorkflow:
 
     @pytest.fixture
     def default_options(self, workflow):
-        models = pytest.importorskip('speedwagon.frontend.qtwidgets.models')
-        return models.ToolOptionsModel4(
-            workflow.get_user_options()
-        ).get()
+        return {
+            data.label: data.value for data in workflow.get_user_options()
+        }
 
     def test_validate_user_options_valid(
             self,

@@ -40,10 +40,14 @@ class TestChecksumWorkflowValidArgs:
 
     @pytest.fixture
     def default_options(self, workflow):
-        models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
-        return models.ToolOptionsModel4(
-            workflow.get_user_options()
-        ).get()
+        return {
+            data.label: data.value for data in workflow.get_user_options()
+        }
+
+        # models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
+        # return models.ToolOptionsModel4(
+        #     workflow.get_user_options()
+        # ).get()
 
     @pytest.mark.parametrize("invalid_input_value", [None, ""])
     def test_empty_input_fails(
@@ -100,10 +104,14 @@ class TestChecksumWorkflowTaskGenerators:
 
     @pytest.fixture
     def default_options(self, workflow):
-        models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
-        return models.ToolOptionsModel4(
-            workflow.get_user_options()
-        ).get()
+        return {
+            data.label: data.value for data in workflow.get_user_options()
+        }
+
+        # models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
+        # return models.ToolOptionsModel4(
+        #     workflow.get_user_options()
+        # ).get()
 
     def test_checksum_workflow_initial_task(
             self,
@@ -175,10 +183,14 @@ class TestChecksumWorkflow:
 
     @pytest.fixture
     def default_options(self, workflow):
-        models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
-        return models.ToolOptionsModel4(
-            workflow.get_user_options()
-        ).get()
+        return {
+            data.label: data.value for data in workflow.get_user_options()
+        }
+
+        # models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
+        # return models.ToolOptionsModel4(
+        #     workflow.get_user_options()
+        # ).get()
 
     def test_discover_task_metadata(self, workflow, default_options):
         initial_results = [
@@ -326,8 +338,12 @@ class TestVerifyChecksumBatchSingleWorkflow:
 
     @pytest.fixture
     def default_options(self, workflow):
-        models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
-        return models.ToolOptionsModel4(workflow.get_user_options()).get()
+        return {
+            data.label: data.value for data in workflow.get_user_options()
+        }
+
+        # models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
+        # return models.ToolOptionsModel4(workflow.get_user_options()).get()
 
     def test_discover_task_metadata(self, workflow, default_options,
                                     monkeypatch):
