@@ -689,7 +689,7 @@ class TabsEditorApp(QtWidgets.QDialog):
                 speedwagon.frontend.qtwidgets.tabs.extract_tab_information(
                     cast(
                         speedwagon.frontend.qtwidgets.models.TabsModel,
-                        self.editor.selectedTabComboBox.model()
+                        self.editor.selected_tab_combo_box.model()
                     )
                 )
             )
