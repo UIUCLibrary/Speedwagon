@@ -146,6 +146,7 @@ class TestWorkflowsTab:
 
             def get_user_options(self):
                 return []
+
             def user_options(self):
                 return []
 
@@ -228,8 +229,7 @@ class TestTabsYaml:
             monkeypatch.setattr(os.path, "getsize", lambda x: 1)
             monkeypatch.setattr(yaml, "load", Mock(side_effect=exception_type))
             with pytest.raises(exception_type) as e:
-                list(tabs.read_tabs_yaml('tabs.yml')
-                )
+                list(tabs.read_tabs_yaml('tabs.yml'))
             assert e.type == exception_type
 
     def test_read_tabs_yaml(self, monkeypatch):
