@@ -93,10 +93,6 @@ endif()
 
 create_virtual_env()
 execute_process(COMMAND ${VENV_PYTHON} -m pip install wheel)
-#set_property(DIRECTORY PROPERTY CMAKE_CONFIGURE_DEPENDS "requirements.txt;requirements-dev.txt")
-
-#file(TIMESTAMP ${PROJECT_SOURCE_DIR}/requirements.txt requirements_TS)
-#message(FATAL_ERROR "requirements_TS = ${requirements_TS}")
 
 if(SPEEDWAGON_CACHE_PYTHON_WHEEL_DEPENDENCIES)
     create_dep_wheels(
@@ -112,7 +108,7 @@ if(SPEEDWAGON_SYNC_PYTHON_BUILD_VENV)
             PYTHON_EXE ${VENV_PYTHON}
             REQUIREMENTS_FILES
             ${PROJECT_SOURCE_DIR}/requirements-dev.txt
-            ${PROJECT_SOURCE_DIR}/requirements.txt
+            ${PROJECT_SOURCE_DIR}/requirements-gui.txt
     )
 endif()
 
