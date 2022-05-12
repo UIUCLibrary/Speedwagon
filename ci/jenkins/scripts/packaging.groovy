@@ -78,6 +78,40 @@ def testPkg(args = [:]){
     }
 }
 
+
+def testPkg2(args = [:]){
+    def tox = args['toxExec'] ? args['toxExec']: "tox"
+    def setup = args['testSetup'] ? args['testSetup']: {
+        checkout scm
+        unstash "${args.stash}"
+    }
+    def toxEnv = args['toxEnv'] ? args['toxEnv']: "py"
+    def teardown =  args['testTeardown'] ? args['testTeardown']: {}
+    def retries = args.containsKey('retry') ? args.retry : 1
+    def agentRunner = getAgent(args)
+    retry(retries){
+        agentRunner {
+            setup()
+            try{
+                findFiles(glob: args.glob).each{
+                    def toxCommand = "${tox} --installpkg ${it.path} -e ${toxEnv}"
+                    if(isUnix()){
+                        sh(label: "Testing tox version", script: "${tox} --version")
+                        sh(label: "Running Tox", script: toxCommand)
+                    } else{
+                        bat(label: "Testing tox version", script: "${tox} --version")
+                        toxCommand = toxCommand + " --workdir %TEMP%\\tox"
+                        bat(label: "Running Tox", script: toxCommand)
+                    }
+                }
+            } finally{
+                teardown()
+            }
+        }
+    }
+}
+
 return [
     testPkg: this.&testPkg
+    testPkg2: this.&testPkg2
 ]

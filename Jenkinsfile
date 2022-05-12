@@ -340,7 +340,7 @@ def testPythonPackages(){
         def windowsTests = [:]
         SUPPORTED_WINDOWS_VERSIONS.each{ pythonVersion ->
             windowsTests["Windows - Python ${pythonVersion}-x86: sdist"] = {
-                packages.testPkg(
+                packages.testPkg2(
                     agent: [
                         dockerfile: [
                             label: 'windows && docker && x86',
@@ -350,12 +350,12 @@ def testPythonPackages(){
                     ],
                     glob: 'dist/*.tar.gz,dist/*.zip',
                     stash: 'PYTHON_PACKAGES',
-                    pythonVersion: pythonVersion,
+                    toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
                     retry: 3,
                 )
             }
             windowsTests["Windows - Python ${pythonVersion}-x86: wheel"] = {
-                packages.testPkg(
+                packages.testPkg2(
                     agent: [
                         dockerfile: [
                             label: 'windows && docker && x86',
@@ -365,7 +365,8 @@ def testPythonPackages(){
                     ],
                     glob: 'dist/*.whl',
                     stash: 'PYTHON_PACKAGES',
-                    pythonVersion: pythonVersion,
+                    toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+//                     pythonVersion: pythonVersion,
                     retry: 3,
                 )
             }
@@ -373,7 +374,7 @@ def testPythonPackages(){
         def linuxTests = [:]
         SUPPORTED_LINUX_VERSIONS.each{ pythonVersion ->
             linuxTests["Linux - Python ${pythonVersion}-x86: sdist"] = {
-                packages.testPkg(
+                packages.testPkg2(
                     agent: [
                         dockerfile: [
                             label: 'linux && docker && x86',
@@ -383,12 +384,13 @@ def testPythonPackages(){
                     ],
                     glob: 'dist/*.tar.gz',
                     stash: 'PYTHON_PACKAGES',
-                    pythonVersion: pythonVersion,
+                    toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+//                     pythonVersion: pythonVersion,
                     retry: 3,
                 )
             }
             linuxTests["Linux - Python ${pythonVersion}: wheel"] = {
-                packages.testPkg(
+                packages.testPkg2(
                     agent: [
                         dockerfile: [
                             label: 'linux && docker && x86',
@@ -398,7 +400,8 @@ def testPythonPackages(){
                     ],
                     glob: 'dist/*.whl',
                     stash: 'PYTHON_PACKAGES',
-                    pythonVersion: pythonVersion,
+                    toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+//                     pythonVersion: pythonVersion,
                     retry: 3,
                 )
             }
@@ -409,13 +412,14 @@ def testPythonPackages(){
         SUPPORTED_MAC_VERSIONS.each{ pythonVersion ->
             macTests["Mac - Python ${pythonVersion}-x86 : sdist"] = {
                 withEnv(['QT_QPA_PLATFORM=offscreen']) {
-                    packages.testPkg(
+                    packages.testPkg2(
                         agent: [
                             label: "mac && python${pythonVersion} && x86",
                         ],
                         glob: 'dist/*.tar.gz,dist/*.zip',
                         stash: 'PYTHON_PACKAGES',
-                        pythonVersion: pythonVersion,
+                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+//                         pythonVersion: pythonVersion,
                         toxExec: 'venv/bin/tox',
                         testSetup: {
                             checkout scm
@@ -437,13 +441,14 @@ def testPythonPackages(){
             }
             macTests["Mac - Python ${pythonVersion}-x86: wheel"] = {
                 withEnv(['QT_QPA_PLATFORM=offscreen']) {
-                    packages.testPkg(
+                    packages.testPkg2(
                         agent: [
                             label: "mac && python${pythonVersion} && x86",
                         ],
                         glob: 'dist/*.whl',
                         stash: 'PYTHON_PACKAGES',
-                        pythonVersion: pythonVersion,
+                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+//                         pythonVersion: pythonVersion,
                         toxExec: 'venv/bin/tox',
                         testSetup: {
                             checkout scm
