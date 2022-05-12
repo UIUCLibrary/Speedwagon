@@ -5,11 +5,12 @@ import yaml
 import pytest
 import speedwagon.exceptions
 import speedwagon.job
-from speedwagon.frontend.qtwidgets import tabs
-from speedwagon.frontend.qtwidgets.runners import QtRunner
 
 QtCore = pytest.importorskip("PySide6.QtCore")
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
+
+from speedwagon.frontend.qtwidgets import tabs
+from speedwagon.frontend.qtwidgets.runners import QtRunner
 
 
 class TestWorkflowsTab:
