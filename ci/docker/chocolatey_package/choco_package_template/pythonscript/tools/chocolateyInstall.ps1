@@ -9,14 +9,14 @@ $toolsDir     = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
 $installDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
 
 $fileLocation = Join-Path $toolsDir '[[InstallerFile]]'
-$depDendenciesLocation = Join-Path $toolsDir dist\deps
+$dependenciesLocation = Join-Path $toolsDir dist\deps
 $packageSourceUrl =  '[[PackageSourceUrl]]'
 $PYTHON = "$(Join-Path $(Get-AppInstallLocation('python')) 'python.exe')"
 
 Write-Host "Creating Python virtualenv at $installDir\venv"
 & "$PYTHON" -m venv $installDir\venv
 & "$installDir\venv\Scripts\python.exe" -m pip install pip --upgrade --no-compile
-& "$installDir\venv\Scripts\python.exe" -m pip install  '$fileLocation`[QT`]' --find-link "$depDendenciesLocation"
+& "$installDir\venv\Scripts\python.exe" -m pip install  '$fileLocation`[QT`]' --find-link "$dependenciesLocation"
 
 $files = get-childitem $installDir -include *.exe -recurse
 foreach ($file in $files) {
