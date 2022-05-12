@@ -56,6 +56,7 @@ class SpyWorkRunner(contextlib.AbstractContextManager):
 @pytest.fixture()
 def tool_job_manager_spy():
     worker = pytest.importorskip("speedwagon.frontend.qtwidgets.worker")
+
     class SpyToolJobManager(worker.ToolJobManager):
         def open(self, parent, runner, *args, **kwargs):
             return SpyWorkRunner(*args, **kwargs, parent=parent)
