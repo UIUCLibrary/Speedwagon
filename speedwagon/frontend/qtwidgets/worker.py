@@ -69,7 +69,9 @@ class ToolJobManager(speedwagon.worker.AbsToolJobManager):
                     timeout_callback: Callable[[int, int], None] = None
                     ) -> typing.Generator[typing.Any, None, None]:
         """Process jobs and return results."""
-        processor = QtJobProcessor(self)
+        processor = QtJobProcessor(
+            typing.cast(speedwagon.worker.ToolJobManager, self)
+        )
         processor.timeout_callback = timeout_callback
         yield from processor.process()
 

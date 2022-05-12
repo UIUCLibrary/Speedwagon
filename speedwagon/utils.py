@@ -17,10 +17,11 @@ def log_config(
 
     """
     try:
+        log_handler: logging.Handler
         from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
-        log_handler: logging.Handler = GuiLogHandler(callback)
+        log_handler = GuiLogHandler(callback)
     except ImportError:
-        log_handler: logging.Handler = logging.StreamHandler()
+        log_handler = logging.StreamHandler()
 
     try:
         logger.addHandler(log_handler)

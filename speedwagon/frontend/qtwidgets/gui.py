@@ -33,7 +33,7 @@ import speedwagon.runner_strategies
 
 from speedwagon.job import Workflow
 if typing.TYPE_CHECKING:
-    from speedwagon.frontend.qtwidgets.worker import ToolJobManager
+    from speedwagon.worker import AbsToolJobManager
 
 __all__ = [
     "MainWindow1"
@@ -161,7 +161,7 @@ class ItemTabsWidget(QtWidgets.QWidget):
 class MainProgram(QtWidgets.QMainWindow):
     def __init__(
             self,
-            work_manager: ToolJobManager,
+            work_manager: AbsToolJobManager,
             debug: bool = False
     ) -> None:
         super().__init__()
@@ -336,7 +336,7 @@ class MainWindowMenuBuilder:
 class MainWindow1(MainProgram):
     def __init__(
             self,
-            work_manager: ToolJobManager,
+            work_manager: AbsToolJobManager,
             debug: bool = False
     ) -> None:
 

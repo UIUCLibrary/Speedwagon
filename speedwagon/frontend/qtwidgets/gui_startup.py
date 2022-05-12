@@ -30,7 +30,7 @@ from . import runners
 if typing.TYPE_CHECKING:
     from typing import Tuple
     from speedwagon import runner_strategies
-    from speedwagon.frontend.qtwidgets import gui, worker
+    from speedwagon.frontend.qtwidgets import gui
     from speedwagon.frontend.qtwidgets.dialog import dialogs
     from speedwagon.job import AbsWorkflow, AbsJobConfigSerializationStrategy
 
@@ -150,7 +150,10 @@ class StartupGuiDefault(AbsGuiStarter):
             self._logger.removeHandler(splash_message_handler)
             return self.app.exec_()
 
-    def load_configurations(self, work_manager: worker.ToolJobManager) -> None:
+    def load_configurations(
+            self,
+            work_manager: speedwagon.worker.AbsToolJobManager
+    ) -> None:
         self._logger.debug("Applying settings to Speedwagon")
         work_manager.user_settings = self.platform_settings
         work_manager.configuration_file = self.config_file
@@ -960,7 +963,7 @@ class MultiWorkflowLauncher(AbsGuiStarter):
 
     def _run(
             self,
-            work_manager: worker.ToolJobManager
+            work_manager: speedwagon.worker.AbsToolJobManager
     ) -> None:
         window = speedwagon.frontend.qtwidgets.gui.MainWindow1(
             work_manager=work_manager,

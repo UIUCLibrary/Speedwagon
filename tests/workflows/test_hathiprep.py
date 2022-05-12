@@ -57,7 +57,9 @@ def test_get_additional_info_opens_dialog_box(monkeypatch):
     )
 
     package_browser = Mock()
-    package_browser.result = Mock(return_value=title_page_selection.PackageBrowser.Accepted)
+    package_browser.result = \
+        Mock(return_value=title_page_selection.PackageBrowser.Accepted)
+
     package_browser.Accepted = title_page_selection.PackageBrowser.Accepted
 
     with monkeypatch.context() as mp:

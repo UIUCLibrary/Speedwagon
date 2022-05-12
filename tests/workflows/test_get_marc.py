@@ -8,8 +8,8 @@ import requests
 import speedwagon
 import speedwagon.exceptions
 import xml.etree.ElementTree as ET
-# workflow_get_marc = pytest.importorskip("speedwagon.workflows.workflow_get_marc")
 from speedwagon.workflows import workflow_get_marc
+
 
 @pytest.fixture
 def unconfigured_workflow():
@@ -313,8 +313,9 @@ def test_955_added_to_tasks(unconfigured_workflow, identifier_type,
 
     assert \
         isinstance(
-            retrieval_task, workflow_get_marc.MarcGeneratorTask), f"tasks_generated = " \
-                                                f"{retrieval_task}"
+            retrieval_task,
+            workflow_get_marc.MarcGeneratorTask
+        ), f"tasks_generated = {retrieval_task}"
 
     assert retrieval_task.identifier_type == identifier_type and \
            retrieval_task.identifier == expected_identifier
@@ -845,7 +846,12 @@ def test_failing_to_parse_provides_input(monkeypatch):
 
 
 def test_reflow(monkeypatch):
-    task = workflow_get_marc.MarcGeneratorTask("12345", "MMS ID", "sample.xml", "fake.com")
+    task = workflow_get_marc.MarcGeneratorTask(
+        "12345",
+        "MMS ID",
+        "sample.xml",
+        "fake.com"
+    )
     workflow_get_marc.MarcGeneratorTask.log = Mock()
     task.write_file = Mock()
 
@@ -862,7 +868,12 @@ def test_reflow(monkeypatch):
 
 
 def test_catching_unicode_error(monkeypatch):
-    task = workflow_get_marc.MarcGeneratorTask("12345", "MMS ID", "sample.xml", "fake.com")
+    task = workflow_get_marc.MarcGeneratorTask(
+        "12345",
+        "MMS ID",
+        "sample.xml",
+        "fake.com"
+    )
     workflow_get_marc.MarcGeneratorTask.log = Mock()
 
     def mock_get(*args, **kwargs):
