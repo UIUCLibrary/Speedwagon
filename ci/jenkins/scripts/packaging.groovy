@@ -112,6 +112,6 @@ def testPkg2(args = [:]){
 }
 
 return [
-    testPkg: this.&testPkg
+    testPkg: this.&testPkg,
     testPkg2: this.&testPkg2
 ]
