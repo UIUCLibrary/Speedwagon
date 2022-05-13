@@ -169,7 +169,7 @@ def getToxTestsParallel(args = [:]){
                     node(originalNodeLabel){
                         ws{
                             checkout scm
-                            dockerImageForTesting.inside{
+                            dockerImageForTesting.inside(''){
                                 try{
                                     publishChecks(
                                         conclusion: 'NONE',
