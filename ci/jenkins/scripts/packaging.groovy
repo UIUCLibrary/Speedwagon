@@ -61,7 +61,7 @@ def testPkg(args = [:]){
             setup()
             try{
                 findFiles(glob: args.glob).each{
-                    def toxCommand = "${tox} --installpkg ${it.path} -e ${getToxEnv(args)}"
+                    def toxCommand = "${tox} --installpkg ${it.path} -e ${getToxEnv(args)} -vv"
                     if(isUnix()){
                         sh(label: "Testing tox version", script: "${tox} --version")
                         sh(label: "Running Tox", script: toxCommand)
@@ -94,7 +94,7 @@ def testPkg2(args = [:]){
             setup()
             try{
                 findFiles(glob: args.glob).each{
-                    def toxCommand = "${tox} --installpkg ${it.path} -e ${toxEnv}"
+                    def toxCommand = "${tox} --installpkg ${it.path} -e ${toxEnv} -vv"
                     if(isUnix()){
                         sh(label: "Testing tox version", script: "${tox} --version")
                         sh(label: "Running Tox", script: toxCommand)
