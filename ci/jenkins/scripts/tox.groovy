@@ -169,7 +169,9 @@ def getToxTestsParallel(args = [:]){
                     node(originalNodeLabel){
                         ws{
                             checkout scm
-                            dockerImageForTesting.inside{
+                            //             -v c:\users\containeradministrator\appdata\local\pip\
+                            def dockerRunArgs = ""
+                            dockerImageForTesting.inside(dockerRunArgs){
                                 try{
                                     publishChecks(
                                         conclusion: 'NONE',
