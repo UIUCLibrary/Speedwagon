@@ -347,7 +347,8 @@ def testPythonPackages(){
                         dockerfile: [
                             label: 'windows && docker && x86',
                             filename: 'ci/docker/python/windows/tox/Dockerfile',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
+                            args: "-v pipcache_${currentBuild.projectName}:c:/users/containeradministrator/appdata/local/pip"
                         ]
                     ],
                     glob: 'dist/*.tar.gz,dist/*.zip',
@@ -362,7 +363,8 @@ def testPythonPackages(){
                         dockerfile: [
                             label: 'windows && docker && x86',
                             filename: 'ci/docker/python/windows/tox/Dockerfile',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
+                            args: "-v pipcache_${currentBuild.projectName}:c:/users/containeradministrator/appdata/local/pip"
                         ]
                     ],
                     glob: 'dist/*.whl',
@@ -380,7 +382,8 @@ def testPythonPackages(){
                         dockerfile: [
                             label: 'linux && docker && x86',
                             filename: 'ci/docker/python/linux/tox/Dockerfile',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                            args: "-v pipcache_${currentBuild.projectName}:/.cache/pip"
                         ]
                     ],
                     glob: 'dist/*.tar.gz',
@@ -395,7 +398,8 @@ def testPythonPackages(){
                         dockerfile: [
                             label: 'linux && docker && x86',
                             filename: 'ci/docker/python/linux/tox/Dockerfile',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                            args: "-v pipcache_${currentBuild.projectName}:/.cache/pip"
                         ]
                     ],
                     glob: 'dist/*.whl',
