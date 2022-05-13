@@ -127,7 +127,7 @@ def runTox(){
                             label: 'linux && docker && x86',
                             dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
                             dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                            dockerRunArgs: '-v pipcache:/.cache/pip'
+                            dockerRunArgs: "-v pipcache_${currentBuild.projectName}:/.cache/pip"
                         )
                 },
                 'Windows':{
@@ -136,7 +136,7 @@ def runTox(){
                             label: 'windows && docker && x86',
                             dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
                             dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
-                            dockerRunArgs: '-v pipcache:c:/users/containeradministrator/appdata/local/pip'
+                            dockerRunArgs: "-v pipcache_${currentBuild.projectName}:c:/users/containeradministrator/appdata/local/pip"
                      )
                 },
                 failFast: true
