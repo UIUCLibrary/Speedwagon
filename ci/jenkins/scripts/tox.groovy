@@ -170,7 +170,7 @@ def getToxTestsParallel(args = [:]){
                         ws{
                             checkout scm
                             //             -v c:\users\containeradministrator\appdata\local\pip\
-                            dockerImageForTesting.inside(""){
+                            dockerImageForTesting.inside(){
                                 try{
                                     publishChecks(
                                         conclusion: 'NONE',
