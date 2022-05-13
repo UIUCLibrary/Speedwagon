@@ -134,7 +134,8 @@ def runTox(){
                             envNamePrefix: 'Tox Windows',
                             label: 'windows && docker && x86',
                             dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
-                            dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                            dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
+                            dockerRunArgs: '-v pipcache:c:/users/containeradministrator/appdata/local/pip'
                      )
                 },
                 failFast: true
