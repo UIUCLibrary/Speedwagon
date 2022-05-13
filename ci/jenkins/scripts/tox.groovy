@@ -169,7 +169,15 @@ def getToxTestsParallel(args = [:]){
                     node(originalNodeLabel){
                         ws{
                             checkout scm
-                            dockerImageForTesting.inside(''){
+                            def dockerRunArgs
+                            if(isUnix()){
+                                dockerRunArgs = ''
+//                                 echo 'todo: add linux docker volume mounts'
+                            } else {
+                                dockerRunArgs = "-v pipcache:c:/users/containeradministrator/appdata/local/pip"
+                            }
+
+                            dockerImageForTesting.inside(dockerRunArgs){
                                 try{
                                     publishChecks(
                                         conclusion: 'NONE',
