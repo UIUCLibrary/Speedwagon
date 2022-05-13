@@ -157,6 +157,7 @@ def getToxTestsParallel(args = [:]){
             dockerImageForTesting = docker.build(dockerImageName, "-f ${dockerfile} ${dockerArgs} . ")
 
         }
+        def dockerRunArgs = ""
         echo "Adding jobs to ${originalNodeLabel}"
         def jobs = envs.collectEntries({ tox_env ->
             def tox_result
@@ -170,7 +171,6 @@ def getToxTestsParallel(args = [:]){
                         ws{
                             checkout scm
                             //             -v c:\users\containeradministrator\appdata\local\pip\
-                            def dockerRunArgs = ""
                             dockerImageForTesting.inside(dockerRunArgs){
                                 try{
                                     publishChecks(
