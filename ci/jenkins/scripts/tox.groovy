@@ -125,6 +125,7 @@ def getToxTestsParallel(args = [:]){
     def label = args['label']
     def dockerfile = args['dockerfile']
     def dockerArgs = args['dockerArgs']
+    def dockerRunArgs = args.get('dockerRunArgs', '')
     script{
         def TOX_RESULT_FILE_NAME = "tox_result.json"
         def envs
@@ -169,7 +170,7 @@ def getToxTestsParallel(args = [:]){
                     node(originalNodeLabel){
                         ws{
                             checkout scm
-                            dockerImageForTesting.inside{
+                            dockerImageForTesting.inside(dockerRunArgs){
                                 try{
                                     publishChecks(
                                         conclusion: 'NONE',

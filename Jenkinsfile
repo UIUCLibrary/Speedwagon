@@ -126,7 +126,8 @@ def runTox(){
                             envNamePrefix: 'Tox Linux',
                             label: 'linux && docker && x86',
                             dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
-                            dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                            dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                            dockerRunArgs: "-v pipcache_speedwagon:/.cache/pip"
                         )
                 },
                 'Windows':{
@@ -134,7 +135,8 @@ def runTox(){
                             envNamePrefix: 'Tox Windows',
                             label: 'windows && docker && x86',
                             dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
-                            dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                            dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
+                            dockerRunArgs: "-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip"
                      )
                 },
                 failFast: true
@@ -345,7 +347,8 @@ def testPythonPackages(){
                         dockerfile: [
                             label: 'windows && docker && x86',
                             filename: 'ci/docker/python/windows/tox/Dockerfile',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
+                            args: "-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip"
                         ]
                     ],
                     glob: 'dist/*.tar.gz,dist/*.zip',
@@ -360,7 +363,8 @@ def testPythonPackages(){
                         dockerfile: [
                             label: 'windows && docker && x86',
                             filename: 'ci/docker/python/windows/tox/Dockerfile',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
+                            args: "-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip"
                         ]
                     ],
                     glob: 'dist/*.whl',
@@ -378,7 +382,8 @@ def testPythonPackages(){
                         dockerfile: [
                             label: 'linux && docker && x86',
                             filename: 'ci/docker/python/linux/tox/Dockerfile',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                            args: "-v pipcache_speedwagon:/.cache/pip"
                         ]
                     ],
                     glob: 'dist/*.tar.gz',
@@ -393,7 +398,8 @@ def testPythonPackages(){
                         dockerfile: [
                             label: 'linux && docker && x86',
                             filename: 'ci/docker/python/linux/tox/Dockerfile',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                            args: "-v pipcache_speedwagon:/.cache/pip"
                         ]
                     ],
                     glob: 'dist/*.whl',
