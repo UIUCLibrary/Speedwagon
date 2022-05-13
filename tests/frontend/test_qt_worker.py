@@ -2,9 +2,11 @@ import concurrent.futures
 from unittest.mock import Mock
 
 import pytest
+worker = pytest.importorskip("speedwagon.frontend.qtwidgets.worker")
+dialog = pytest.importorskip("speedwagon.frontend.qtwidgets.dialog")
 
-from speedwagon.frontend.qtwidgets import worker
-from speedwagon.frontend.qtwidgets import dialog
+# from speedwagon.frontend.qtwidgets import worker
+# from speedwagon.frontend.qtwidgets import dialog
 
 
 class TestToolJobManager:
@@ -42,7 +44,7 @@ class TestJobProcessor:
     def test_process_flushes_buffer(self):
         parent = Mock(spec=worker.ToolJobManager)
         parent.futures = []
-        job_processor = worker.JobProcessor(parent)
+        job_processor = worker.QtJobProcessor(parent)
         list(job_processor.process())
         assert parent.flush_message_buffer.called is True
 
@@ -65,7 +67,7 @@ class TestJobProcessor:
             as_completed
         )
 
-        job_processor = worker.JobProcessor(parent)
+        job_processor = worker.QtJobProcessor(parent)
         job_processor.timeout_callback = Mock(name="timeout_callback")
         all(job_processor.process())
         assert job_processor.timeout_callback.called is True

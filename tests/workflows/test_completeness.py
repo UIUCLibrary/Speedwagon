@@ -142,7 +142,7 @@ checksum_results = [
 @pytest.mark.parametrize("errors_found,throw_exception", checksum_results)
 def test_hathi_missing_checksum_task_calls_validator(
         monkeypatch, errors_found, throw_exception):
-
+    # pytest.importorskip('speedwagon.frontend.qtwidgets.logging_helpers')
     package_path = "./sample_path/package1"
     check_ocr = False
     task = workflow_completeness.HathiCheckMissingComponentsTask(
@@ -182,7 +182,6 @@ validation_tasks = [
                          validation_tasks)
 def test_validator_task_calls_validator(monkeypatch, validator_task,
                                         validator_process):
-
     package_path = "./sample_path/package1"
 
     task = validator_task(package_path=package_path)
@@ -223,6 +222,7 @@ def test_hathi_checksum_task_calls_validator(monkeypatch):
 
 
 def test_validate_marc_task_calls_validator(monkeypatch):
+    # pytest.importorskip("speedwagon.frontend.qtwidgets.logging_helpers")
     package_path = os.path.join("sample_path", "package1")
     marc_file = os.path.join(package_path, "marc.xml")
     from hathi_validate import process, validator

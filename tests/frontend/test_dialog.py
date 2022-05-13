@@ -1,6 +1,7 @@
+import pytest
 from unittest.mock import Mock
+QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 
-from PySide6 import QtWidgets
 try:
     from importlib import metadata
     from importlib.metadata import PackageNotFoundError

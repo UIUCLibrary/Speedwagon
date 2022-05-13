@@ -4,18 +4,15 @@ import logging
 import typing
 import warnings
 
-from typing import Any, Dict, Iterator, List, Union, Optional
-
-from contextlib import contextmanager
+from typing import Any, Dict, List, Union, Optional
 
 from uiucprescon import packager
 from uiucprescon.packager.packages.collection import Package
 from uiucprescon.packager.packages.collection_builder import Metadata
 
 import speedwagon
-from speedwagon import validators
+from speedwagon import validators, utils
 from speedwagon.job import Workflow
-from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
 
 __all__ = ['CaptureOneToDlCompoundWorkflow']
 
@@ -141,21 +138,6 @@ class PackageConverter(speedwagon.tasks.Subtask):
 
     name = "Package Conversion"
 
-    @contextmanager
-    def log_config(self, logger: logging.Logger) -> Iterator[None]:
-        """Configure logs so they get forwarded to the speedwagon console.
-
-        Args:
-            logger:
-
-        """
-        gui_logger: logging.Handler = GuiLogHandler(self.log)
-        try:
-            logger.addHandler(gui_logger)
-            yield
-        finally:
-            logger.removeHandler(gui_logger)
-
     def __init__(self,
                  source_path: str,
                  packaging_id: str,
@@ -189,7 +171,7 @@ class PackageConverter(speedwagon.tasks.Subtask):
         """
         my_logger = logging.getLogger(packager.__name__)
         my_logger.setLevel(logging.INFO)
-        with self.log_config(my_logger):
+        with utils.log_config(my_logger, self.log):
             self.log(
                 f"Converting {self.packaging_id} from {self.source_path} "
                 f"to a Hathi Trust Tiff package at {self.new_package_root}")

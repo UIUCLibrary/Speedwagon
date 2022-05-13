@@ -24,7 +24,6 @@ import speedwagon
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from speedwagon import reports, validators, workflow
 from speedwagon.job import Workflow
-from speedwagon.frontend.qtwidgets import shared_custom_widgets as options
 
 __all__ = ['GenerateMarcXMLFilesWorkflow']
 
@@ -35,13 +34,6 @@ OPTION_035_FIELD: Final[str] = "Add 035 field"
 OPTION_USER_INPUT: Final[str] = "Input"
 IDENTIFIER_TYPE: Final[str] = 'Identifier type'
 # =========================================================================== #
-
-
-UserOptions = Union[
-    options.UserOptionCustomDataType,
-    options.ListSelection,
-    options.UserOptionPythonDataType2
-]
 
 MMSID_PATTERN = \
     re.compile(r"^(?P<identifier>99[0-9]*(122)?05899)(_(?P<volume>[0-1]*))?")

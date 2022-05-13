@@ -1,6 +1,7 @@
 from unittest.mock import Mock
 import pytest
-from PySide6 import QtWidgets
+QtWidgets = pytest.importorskip("PySide6.QtWidgets")
+
 from typing import List, Any
 from speedwagon.job import AbsWorkflow
 import speedwagon.frontend.qtwidgets.tabs

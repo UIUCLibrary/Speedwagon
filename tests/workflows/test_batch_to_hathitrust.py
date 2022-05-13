@@ -10,8 +10,6 @@ from speedwagon.workflows import workflow_hathi_limited_to_dl_compound
 import speedwagon.tasks.prep
 from speedwagon.workflows import workflow_get_marc
 import os
-# import speedwagon.frontend.qtwidgets.dialog.title_page_selection
-from speedwagon.frontend.qtwidgets.dialog import title_page_selection
 from uiucprescon.packager.common import Metadata as PackageMetadata
 
 
@@ -83,81 +81,58 @@ def test_initial_task(monkeypatch):
            len(created_task.results[0].items) == number_of_fake_files
 
 
-def test_package_browser(qtbot):
-    mock_package = MagicMock()
 
-    def mock_get_item(obj, key):
-        return {
-            "ID": "99423682912205899",
-            "ITEM_NAME": "",
-            "TITLE_PAGE": "99423682912205899_0001.tif",
-            "PATH": "/some/random/path/"
-        }.get(key.name, str(key))
-
-    mock_package.metadata.__getitem__ = mock_get_item
-    mock_package.__len__ = lambda x: 1
-
-    widget = title_page_selection.PackageBrowser([mock_package], None)
-
-    with qtbot.waitSignal(widget.finished) as blocker:
-        widget.ok_button.click()
-    data = widget.data()
-
-    assert data[0].metadata[PackageMetadata.TITLE_PAGE] == \
-           "99423682912205899_0001.tif"
-
-
-def test_get_additional_info(qtbot, monkeypatch):
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        workflow = wf.CaptureOneBatchToHathiComplete()
-    mock_package = MagicMock()
-    mock_data = {
-            "ID": "99423682912205899",
-            "ITEM_NAME": "",
-            "TITLE_PAGE": "99423682912205899_0001.tif",
-            "PATH": "/some/random/path/"
-            }
-
-    def mock_get_item(obj, key):
-        return mock_data.get(key.name, str(key))
-
-    mock_package.metadata.__getitem__ = mock_get_item
-    mock_package.__len__ = lambda x: 1
-
-    pretask_result = speedwagon.tasks.Result(
-        source=wf.FindCaptureOnePackageTask,
-        data=[mock_package]
-    )
-
-    def patched_package_browser(packages, parent):
-        patched_browser = \
-            title_page_selection.PackageBrowser(packages, parent)
-
-        patched_browser.exec = Mock()
-        patched_browser.result = Mock(return_value=patched_browser.Accepted)
-        data = MagicMock()
-        data.metadata = MagicMock()
-
-        data.metadata.__getitem__ = \
-            lambda _, k: mock_data.get(k.name, str(k))
-
-        patched_browser.data = Mock(return_value=[data])
-        return patched_browser
-
-    with monkeypatch.context() as mp:
-        mp.setattr(wf, "PackageBrowser", patched_package_browser)
-
-        extra_data = workflow.get_additional_info(
-            parent=None,
-            options={},
-            pretask_results=[pretask_result]
-        )
-
-    assert extra_data['title_pages']['99423682912205899'] == \
-           "99423682912205899_0001.tif"
-
-    assert isinstance(extra_data, dict)
+# def test_get_additional_info(qtbot, monkeypatch):
+#     with warnings.catch_warnings():
+#         warnings.simplefilter("ignore")
+#         workflow = wf.CaptureOneBatchToHathiComplete()
+#     mock_package = MagicMock()
+#     mock_data = {
+#             "ID": "99423682912205899",
+#             "ITEM_NAME": "",
+#             "TITLE_PAGE": "99423682912205899_0001.tif",
+#             "PATH": "/some/random/path/"
+#             }
+#
+#     def mock_get_item(obj, key):
+#         return mock_data.get(key.name, str(key))
+#
+#     mock_package.metadata.__getitem__ = mock_get_item
+#     mock_package.__len__ = lambda x: 1
+#
+#     pretask_result = speedwagon.tasks.Result(
+#         source=wf.FindCaptureOnePackageTask,
+#         data=[mock_package]
+#     )
+#
+#     def patched_package_browser(packages, parent):
+#         patched_browser = \
+#             title_page_selection.PackageBrowser(packages, parent)
+#
+#         patched_browser.exec = Mock()
+#         patched_browser.result = Mock(return_value=patched_browser.Accepted)
+#         data = MagicMock()
+#         data.metadata = MagicMock()
+#
+#         data.metadata.__getitem__ = \
+#             lambda _, k: mock_data.get(k.name, str(k))
+#
+#         patched_browser.data = Mock(return_value=[data])
+#         return patched_browser
+#
+#     with monkeypatch.context() as mp:
+#         mp.setattr(wf, "PackageBrowser", patched_package_browser)
+#
+#         extra_data = workflow.get_additional_info(
+#             parent=None,
+#             options={},
+#             pretask_results=[pretask_result]
+#         )
+#
+#     assert extra_data['title_pages']['99423682912205899'] == \
+#            "99423682912205899_0001.tif"
+#
+#     assert isinstance(extra_data, dict)
 
 
 @pytest.fixture

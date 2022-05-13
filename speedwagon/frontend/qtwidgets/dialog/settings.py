@@ -148,7 +148,7 @@ class GlobalSettingsTab(QtWidgets.QWidget):
             raise FileNotFoundError("Invalid Configuration file set")
 
         self.settings_table.setModel(
-            models.build_setting_model(self.config_file)
+            models.build_setting_qt_model(self.config_file)
         )
 
         self.settings_table.model().dataChanged.connect(self.on_modified)

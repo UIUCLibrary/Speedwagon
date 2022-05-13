@@ -3,7 +3,6 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 from speedwagon.workflows import workflow_capture_one_to_hathi
-from speedwagon.frontend.qtwidgets import models
 
 
 class TestCaptureOneToHathiTiffPackageWorkflow:
@@ -16,9 +15,14 @@ class TestCaptureOneToHathiTiffPackageWorkflow:
 
     @pytest.fixture
     def default_options(self, workflow):
-        return models.ToolOptionsModel4(
-            workflow.get_user_options()
-        ).get()
+        return {
+            data.label: data.value for data in workflow.get_user_options()
+        }
+
+        # models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
+        # return models.ToolOptionsModel4(
+        #     workflow.get_user_options()
+        # ).get()
 
     def test_discover_task_metadata(
             self,

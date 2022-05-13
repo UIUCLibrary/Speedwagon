@@ -3,7 +3,6 @@ from unittest.mock import Mock, ANY
 
 import pytest
 from speedwagon.workflows import workflow_convertTifftoHathiTrustJP2
-from speedwagon.frontend.qtwidgets import models
 
 
 class TestConvertTiffToHathiJp2Workflow:
@@ -16,9 +15,11 @@ class TestConvertTiffToHathiJp2Workflow:
 
     @pytest.fixture
     def default_options(self, workflow):
-        return models.ToolOptionsModel4(
-            workflow.get_user_options()
-        ).get()
+        # models = pytest.importorskip("speedwagon.frontend.qtwidgets.models")
+        # a = models.ToolOptionsModel4(
+        #     workflow.get_user_options()
+        # ).get()
+        return {data.label: data.value for data in workflow.get_user_options()}
 
     def test_discover_task_metadata(
             self,

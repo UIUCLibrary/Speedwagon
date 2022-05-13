@@ -12,9 +12,3 @@ ApplicationLauncher is needed to start speedwagon.
 
 To change how it starts change the strategy with an AbsStarter class.
 
-Starters
-________
-
-.. autoclass:: speedwagon.startup.StartupDefault
-
-.. autoclass:: speedwagon.startup.SingleWorkflowLauncher

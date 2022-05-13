@@ -1,7 +1,11 @@
+import warnings
 from unittest.mock import MagicMock, Mock
 
 import pytest
-from PySide6 import QtWidgets, QtCore
+QtWidgets = pytest.importorskip("PySide6.QtWidgets")
+QtCore = pytest.importorskip("PySide6.QtCore")
+from uiucprescon.packager.common import Metadata as PackageMetadata
+# from PySide6 import QtWidgets, QtCore
 
 import speedwagon
 import speedwagon.exceptions
@@ -195,3 +199,88 @@ class TestQtWidgetConfirmFileSystemRemoval:
                 [".DS_Store"],
                 dialog_box=Mock(return_value=dialog_box)
             )
+
+
+class TestQtWidgetTitlePageSelection:
+    def test_selection(self, monkeypatch, qtbot):
+        from speedwagon.workflows.workflow_batch_to_HathiTrust_TIFF \
+            import FindCaptureOnePackageTask
+
+        widget = \
+            qtwidgets.user_interaction.QtWidgetTitlePageSelection(parent=None)
+
+        mock_package = MagicMock()
+        mock_data = {
+                "ID": "99423682912205899",
+                "ITEM_NAME": "",
+                "TITLE_PAGE": "99423682912205899_0001.tif",
+                "PATH": "/some/random/path/"
+            }
+
+        def mock_get_item(obj, key):
+            return mock_data.get(key.name, str(key))
+
+        mock_package.metadata.__getitem__ = mock_get_item
+        mock_package.__len__ = lambda x: 1
+
+        pretask_result = speedwagon.tasks.Result(
+            source=FindCaptureOnePackageTask,
+            data=[mock_package]
+            )
+
+        data = Mock()
+        data.metadata = MagicMock()
+        data.metadata.__getitem__ = \
+            lambda _, k: mock_data.get(k.name, str(k))
+
+        browser_widget = Mock(name='browser_widget')
+        browser_widget.data = Mock(return_value=[data])
+        browser_widget.result = \
+            Mock(name="result", return_value=QtWidgets.QDialog.Accepted)
+
+        widget.browser_widget = Mock(
+            name="browser_widget_type", return_value=browser_widget
+        )
+        results = widget.get_user_response({}, [pretask_result])
+        assert results['title_pages']['99423682912205899'] == \
+               "99423682912205899_0001.tif"
+
+
+def test_package_browser(qtbot):
+    mock_package = MagicMock()
+
+    def mock_get_item(obj, key):
+        return {
+            "ID": "99423682912205899",
+            "ITEM_NAME": "",
+            "TITLE_PAGE": "99423682912205899_0001.tif",
+            "PATH": "/some/random/path/"
+        }.get(key.name, str(key))
+
+    mock_package.metadata.__getitem__ = mock_get_item
+    mock_package.__len__ = lambda x: 1
+
+    widget = title_page_selection.PackageBrowser([mock_package], None)
+
+    with qtbot.waitSignal(widget.finished) as blocker:
+        widget.ok_button.click()
+    data = widget.data()
+
+    assert data[0].metadata[PackageMetadata.TITLE_PAGE] == \
+           "99423682912205899_0001.tif"
+
+
+def test_get_additional_info_opens_dialog():
+    from speedwagon.workflows import workflow_batch_to_HathiTrust_TIFF as wf
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        workflow = wf.CaptureOneBatchToHathiComplete()
+
+    user_request_factory = Mock(spec=interaction.UserRequestFactory)
+    user_request_factory.package_title_page_selection = MagicMock()
+    workflow.get_additional_info(
+        user_request_factory=user_request_factory,
+        options={},
+        pretask_results=[MagicMock()]
+    )
+    assert user_request_factory.package_title_page_selection.called is True

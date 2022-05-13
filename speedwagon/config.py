@@ -1,4 +1,5 @@
 """Load and save user configurations."""
+from __future__ import annotations
 import argparse
 import configparser
 import contextlib
@@ -13,18 +14,21 @@ import collections.abc
 from typing import Optional, Dict, Type, Set, Iterator, Iterable, Union, List
 from types import TracebackType
 import platform
+import speedwagon
 
 try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
 
-import speedwagon
+if typing.TYPE_CHECKING:
+    from speedwagon.startup import AbsStarter
 
 __all__ = [
     "ConfigManager",
     "generate_default",
-    "get_platform_settings"
+    "get_platform_settings",
+    "AbsConfig"
 ]
 
 
@@ -466,7 +470,7 @@ class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
 
     def __init__(
             self,
-            app: "speedwagon.startup.AbsStarter",
+            app: AbsStarter,
             logger: Optional[logging.Logger] = None
     ) -> None:
         super().__init__(logger)
@@ -521,7 +525,7 @@ class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
 
 
 def ensure_settings_files(
-        starter: "speedwagon.startup.AbsStarter",
+        starter: AbsStarter,
         logger: Optional[logging.Logger] = None,
         strategy: Optional[AbsEnsureConfigFile] = None
 ) -> None:

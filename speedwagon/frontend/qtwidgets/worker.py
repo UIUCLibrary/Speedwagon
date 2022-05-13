@@ -9,85 +9,29 @@ Notes:
 from __future__ import annotations
 
 import abc
-import contextlib
 import multiprocessing
 import queue
-import sys
-import traceback
 from abc import ABC
-from types import TracebackType
-from typing import Optional, Type, Dict, Any, Callable
+from typing import Callable
 import typing
 import warnings
-import logging
 import concurrent.futures
 
 from PySide6 import QtWidgets
 
 import speedwagon.worker
+import speedwagon.workflow
 
 if typing.TYPE_CHECKING:
     import speedwagon.config
 
 
-class ToolJobManager(
-    contextlib.AbstractContextManager,
-    speedwagon.worker.AbsJobManager
-):
+class ToolJobManager(speedwagon.worker.AbsToolJobManager):
     """Tool job manager."""
 
-    def __init__(self) -> None:
-        """Create a tool job manager."""
-        self.settings_path: Optional[str] = None
-        self._job_runtime = speedwagon.worker.JobExecutor()
-        self.logger = logging.getLogger(__name__)
-        self.user_settings: Optional["speedwagon.config.AbsConfig"] = None
-        self.configuration_file: Optional[str] = None
-
-    @property
-    def active(self) -> bool:
-        """Check if a job is active."""
-        return self._job_runtime.active
-
-    @active.setter
-    def active(self, value: bool) -> None:
-        warnings.warn("don't use directly", DeprecationWarning)
-        self._job_runtime.active = value
-
-    @property
-    def futures(self) -> typing.List[concurrent.futures.Future]:
-        """Get the futures."""
-        return self._job_runtime.futures
-
-    def __enter__(self) -> "ToolJobManager":
-        """Startup job management and load a worker pool."""
-        self._job_runtime._message_queue = self._job_runtime.manager.Queue()
-
-        self._job_runtime._executor = concurrent.futures.ProcessPoolExecutor(1)
-
-        return self
-
-    def __exit__(self,
-                 exc_type: Optional[Type[BaseException]],
-                 exc_value: Optional[BaseException],
-                 exc_tb: Optional[TracebackType]) -> None:
-        """Clean up manager and show down the executor."""
-        self._job_runtime.cleanup(self.logger)
-        self._job_runtime.shutdown()
-
-    def open(self, parent, runner, *args, **kwargs):
-        """Open a runner with the a given job arguments."""
-        return runner(*args, **kwargs, parent=parent)
-
-    def add_job(self,
-                new_job: speedwagon.worker.ProcessJobWorker,
-                settings: Dict[str, Any]) -> None:
-        """Add job to the run queue."""
-        self._job_runtime.add_job(new_job, settings)
-
-    def start(self) -> None:
-        """Start jobs."""
-        self._job_runtime.start()
+    def flush_message_buffer(self) -> None:
+        """Flush any messages in the buffer to the logger."""
+        self._job_runtime.flush_message_buffer(self.logger)
 
     def abort(self) -> None:
         """Abort jobs."""
@@ -121,87 +65,23 @@ class ToolJobManager(
         self.flush_message_buffer()
         dialog_box.accept()
 
-    # TODO: refactor to use an overloaded method instead of a callback
     def get_results(self,
                     timeout_callback: Callable[[int, int], None] = None
                     ) -> typing.Generator[typing.Any, None, None]:
         """Process jobs and return results."""
-        processor = JobProcessor(self)
+        processor = QtJobProcessor(
+            typing.cast(speedwagon.worker.ToolJobManager, self)
+        )
         processor.timeout_callback = timeout_callback
         yield from processor.process()
 
-    def flush_message_buffer(self) -> None:
-        """Flush any messages in the buffer to the logger."""
-        self._job_runtime.flush_message_buffer(self.logger)
 
-    def _cleanup(self) -> None:
-        self._job_runtime.cleanup(self.logger)
-
-
-class JobProcessor:
+class QtJobProcessor(speedwagon.worker.JobProcessor):
     """Job processor for Qt Widgets."""
 
-    def __init__(self, parent: "ToolJobManager"):
-        """Create a Job Processor object."""
-        warnings.warn("Don't use", DeprecationWarning)
-        self._parent = parent
-        self.completed = 0
-        self._total_jobs = None
-        self.timeout_callback: Optional[Callable[[int, int], None]] = None
-
-    @staticmethod
-    def report_results_from_future(futures):
-        """Get the results from the futures."""
-        for i, (future, reported) in enumerate(futures):
-
-            if not reported and future.done():
-                result = future.result()
-                yield result
-                futures[i] = future, True
-
-    def process(self):
-        """Process job in queue."""
-        self._total_jobs = len(self._parent.futures)
-        total_jobs = self._total_jobs
-        futures = [(i, False) for i in self._parent.futures]
-
-        while self._parent.active:
-            try:
-                yield from self._process_all_futures(futures)
-
-                self._parent.active = False
-                futures.clear()
-                self._parent.flush_message_buffer()
-
-            except concurrent.futures.TimeoutError:
-                self._parent.flush_message_buffer()
-                if callable(self.timeout_callback):
-                    self.timeout_callback(self.completed, total_jobs)
-                QtWidgets.QApplication.processEvents()
-                if self._parent.active:
-                    continue
-            except concurrent.futures.process.BrokenProcessPool as error:
-                traceback.print_tb(error.__traceback__)
-                print(error, file=sys.stderr)
-                raise
-            self._parent.flush_message_buffer()
-
-    def _process_all_futures(self, futures):
-        for completed_futures in concurrent.futures.as_completed(
-                self._parent.futures,
-                timeout=0.01):
-            self._parent.flush_message_buffer()
-            if not completed_futures.cancel() and \
-                    completed_futures.done():
-                self.completed += 1
-                if completed_futures in self._parent.futures:
-                    self._parent.futures.remove(completed_futures)
-                if self.timeout_callback:
-                    self.timeout_callback(self.completed, self._total_jobs)
-                yield from self.report_results_from_future(futures)
-
-            if self.timeout_callback:
-                self.timeout_callback(self.completed, self._total_jobs)
+    def refresh_events(self):
+        """Update any pending Qt events."""
+        QtWidgets.QApplication.processEvents()
 
 
 class UIWorker(speedwagon.worker.Worker, ABC):

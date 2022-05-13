@@ -340,7 +340,7 @@ def testPythonPackages(){
         def windowsTests = [:]
         SUPPORTED_WINDOWS_VERSIONS.each{ pythonVersion ->
             windowsTests["Windows - Python ${pythonVersion}-x86: sdist"] = {
-                packages.testPkg(
+                packages.testPkg2(
                     agent: [
                         dockerfile: [
                             label: 'windows && docker && x86',
@@ -350,12 +350,12 @@ def testPythonPackages(){
                     ],
                     glob: 'dist/*.tar.gz,dist/*.zip',
                     stash: 'PYTHON_PACKAGES',
-                    pythonVersion: pythonVersion,
+                    toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
                     retry: 3,
                 )
             }
             windowsTests["Windows - Python ${pythonVersion}-x86: wheel"] = {
-                packages.testPkg(
+                packages.testPkg2(
                     agent: [
                         dockerfile: [
                             label: 'windows && docker && x86',
@@ -365,7 +365,7 @@ def testPythonPackages(){
                     ],
                     glob: 'dist/*.whl',
                     stash: 'PYTHON_PACKAGES',
-                    pythonVersion: pythonVersion,
+                    toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
                     retry: 3,
                 )
             }
@@ -373,7 +373,7 @@ def testPythonPackages(){
         def linuxTests = [:]
         SUPPORTED_LINUX_VERSIONS.each{ pythonVersion ->
             linuxTests["Linux - Python ${pythonVersion}-x86: sdist"] = {
-                packages.testPkg(
+                packages.testPkg2(
                     agent: [
                         dockerfile: [
                             label: 'linux && docker && x86',
@@ -383,12 +383,12 @@ def testPythonPackages(){
                     ],
                     glob: 'dist/*.tar.gz',
                     stash: 'PYTHON_PACKAGES',
-                    pythonVersion: pythonVersion,
+                    toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
                     retry: 3,
                 )
             }
             linuxTests["Linux - Python ${pythonVersion}: wheel"] = {
-                packages.testPkg(
+                packages.testPkg2(
                     agent: [
                         dockerfile: [
                             label: 'linux && docker && x86',
@@ -398,7 +398,7 @@ def testPythonPackages(){
                     ],
                     glob: 'dist/*.whl',
                     stash: 'PYTHON_PACKAGES',
-                    pythonVersion: pythonVersion,
+                    toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
                     retry: 3,
                 )
             }
@@ -409,13 +409,13 @@ def testPythonPackages(){
         SUPPORTED_MAC_VERSIONS.each{ pythonVersion ->
             macTests["Mac - Python ${pythonVersion}-x86 : sdist"] = {
                 withEnv(['QT_QPA_PLATFORM=offscreen']) {
-                    packages.testPkg(
+                    packages.testPkg2(
                         agent: [
                             label: "mac && python${pythonVersion} && x86",
                         ],
                         glob: 'dist/*.tar.gz,dist/*.zip',
                         stash: 'PYTHON_PACKAGES',
-                        pythonVersion: pythonVersion,
+                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
                         toxExec: 'venv/bin/tox',
                         testSetup: {
                             checkout scm
@@ -437,13 +437,13 @@ def testPythonPackages(){
             }
             macTests["Mac - Python ${pythonVersion}-x86: wheel"] = {
                 withEnv(['QT_QPA_PLATFORM=offscreen']) {
-                    packages.testPkg(
+                    packages.testPkg2(
                         agent: [
                             label: "mac && python${pythonVersion} && x86",
                         ],
                         glob: 'dist/*.whl',
                         stash: 'PYTHON_PACKAGES',
-                        pythonVersion: pythonVersion,
+                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
                         toxExec: 'venv/bin/tox',
                         testSetup: {
                             checkout scm
@@ -562,14 +562,16 @@ pipeline {
                   }
             }
             steps {
-                buildSphinx()
+                catchError(buildResult: 'UNSTABLE', message: 'Sphinx has warnings', stageResult: "UNSTABLE") {
+                    buildSphinx()
+                }
             }
             post{
                 always{
                     recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx_html.log')])
-                    stash includes: 'dist/docs/*.pdf', name: 'SPEEDWAGON_DOC_PDF'
                 }
                 success{
+                    stash includes: 'dist/docs/*.pdf', name: 'SPEEDWAGON_DOC_PDF'
                     zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
                     stash includes: 'dist/*.doc.zip,build/docs/html/**', name: 'DOCS_ARCHIVE'
                     archiveArtifacts artifacts: 'dist/docs/*.pdf'

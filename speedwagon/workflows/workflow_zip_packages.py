@@ -3,16 +3,15 @@
 import logging
 
 import os
-from contextlib import contextmanager
 from typing import List, Any, Optional
 
 import hathizip.process
 import hathizip
 
 import speedwagon
-from speedwagon import reports, workflow
+from speedwagon import reports, workflow, utils
 from speedwagon.job import Workflow
-from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
+
 
 __all__ = ['ZipPackagesWorkflow']
 
@@ -109,7 +108,7 @@ class ZipTask(speedwagon.tasks.Subtask):
     def work(self) -> bool:
         my_logger = logging.getLogger(hathizip.__name__)
         my_logger.setLevel(logging.INFO)
-        with self.log_config(my_logger):
+        with utils.log_config(my_logger, self.log):
             self.log(f"Zipping {self._source_path}")
             hathizip.process.compress_folder_inplace(
                 path=self._source_path,
@@ -121,12 +120,3 @@ class ZipTask(speedwagon.tasks.Subtask):
             self.set_results(newfile)
 
         return True
-
-    @contextmanager
-    def log_config(self, logger: logging.Logger):
-        gui_logger = GuiLogHandler(self.log)
-        try:
-            logger.addHandler(gui_logger)
-            yield
-        finally:
-            logger.removeHandler(gui_logger)

@@ -4,7 +4,7 @@ import pytest
 from uiucprescon import packager
 import speedwagon
 import speedwagon.exceptions
-from speedwagon.frontend.qtwidgets import models
+
 from speedwagon.workflows \
     import workflow_capture_one_to_dl_compound_and_dl as ht_wf
 
@@ -200,8 +200,9 @@ class TestWorkflow:
 @pytest.fixture()
 def user_options():
     workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
-    return models.ToolOptionsModel4(workflow.get_user_options()).get()
-    # return models.ToolOptionsModel3(workflow.user_options()).get()
+    return {
+        data.label: data.value for data in workflow.get_user_options()
+    }
 
 
 class TestValidateUserArgs:

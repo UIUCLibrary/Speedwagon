@@ -4,48 +4,17 @@ import os
 from typing import List, Any, Optional
 from uiucprescon import imagevalidate
 
-from PySide6 import QtWidgets  # type: ignore
-
 import speedwagon
 from speedwagon.job import Workflow
-from speedwagon.frontend.qtwidgets import shared_custom_widgets as options
 
 __all__ = ['ValidateImageMetadataWorkflow']
 
 from .. import workflow
 
 
-class ImageFile(options.AbsBrowseableWidget):
-    def browse_clicked(self) -> None:
-        selection = QtWidgets.QFileDialog.getOpenFileName(
-            filter="Tiff files (*.tif)"
-        )
-
-        if selection[0]:
-            self.data = selection[0]
-            self.editingFinished.emit()
-
-
-class TiffFileCheckData(options.AbsCustomData3):
-
-    @classmethod
-    def is_valid(cls, value: str) -> bool:
-        if not value:
-            return False
-
-        if not os.path.exists(value):
-            return False
-        if os.path.splitext(value)[1].lower() == ".tif":
-            print("No a Tiff file")
-            return False
-        return True
-
-    @classmethod
-    def edit_widget(cls) -> QtWidgets.QWidget:
-        return ImageFile()
-
-
 class ValidateImageMetadataWorkflow(Workflow):
+    """Validate tiff embedded metadata for HathiTrust."""
+
     name = "Validate Tiff Image Metadata for HathiTrust"
     description = "Validate the metadata located within a tiff file. " \
                   "Validates the technical metadata to include x and why " \

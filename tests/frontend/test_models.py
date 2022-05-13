@@ -1,11 +1,48 @@
+import configparser
 import json
+import os
 from unittest.mock import Mock
 
 import pytest
-from PySide6 import QtCore, QtWidgets
+QtWidgets = pytest.importorskip("PySide6.QtWidgets")
+QtCore = pytest.importorskip("PySide6.QtCore")
 
 from speedwagon import job, workflow
 from speedwagon.frontend.qtwidgets import tabs, models
+
+
+def test_serialize_settings_model():
+    pytest.importorskip("PySide6.QtCore")
+
+    original_settings = {
+        "tessdata": "~/mytesseractdata"
+    }
+
+    # Mock up a model
+    cfg_parser = configparser.ConfigParser()
+    original_settings = cfg_parser["GLOBAL"] = original_settings
+    my_model = models.SettingsModel()
+    for k, v in original_settings.items():
+        my_model.add_setting(k, v)
+
+    # Serialize the model to ini file format
+    data = models.serialize_settings_model(my_model)
+
+    assert data is not None
+
+    # Check that the new data is the same as original
+    new_config = configparser.ConfigParser()
+    new_config.read_string(data)
+    assert "GLOBAL" in new_config
+
+    for k, v in original_settings.items():
+        assert new_config["GLOBAL"][k] == v
+
+
+def test_build_setting_model_missing_file(tmpdir):
+    dummy = str(os.path.join(tmpdir, "config.ini"))
+    with pytest.raises(FileNotFoundError):
+        models.build_setting_qt_model(dummy)
 
 
 class TestSettingsModel:
@@ -388,3 +425,17 @@ class TestToolOptionsModel4:
         model.setData(index, "spam")
         changed_value = model.data(index)
         assert starting_value is None and changed_value == "spam"
+
+
+def test_build_setting_model(tmpdir):
+
+    dummy = str(os.path.join(tmpdir, "config.ini"))
+    empty_config_data = """[GLOBAL]
+debug: False
+        """
+    with open(dummy, "w") as wf:
+        wf.write(empty_config_data)
+    model = models.build_setting_qt_model(dummy)
+    assert isinstance(model, models.SettingsModel)
+
+    assert model is not None

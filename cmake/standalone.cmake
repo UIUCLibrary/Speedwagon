@@ -93,16 +93,12 @@ endif()
 
 create_virtual_env()
 execute_process(COMMAND ${VENV_PYTHON} -m pip install wheel)
-#set_property(DIRECTORY PROPERTY CMAKE_CONFIGURE_DEPENDS "requirements.txt;requirements-dev.txt")
-
-#file(TIMESTAMP ${PROJECT_SOURCE_DIR}/requirements.txt requirements_TS)
-#message(FATAL_ERROR "requirements_TS = ${requirements_TS}")
 
 if(SPEEDWAGON_CACHE_PYTHON_WHEEL_DEPENDENCIES)
     create_dep_wheels(
             PYTHON_EXE ${VENV_PYTHON}
             REQUIREMENTS_FILES
-            ${PROJECT_SOURCE_DIR}/requirements.txt
+            ${PROJECT_SOURCE_DIR}/requirements-gui.txt
             ${PROJECT_SOURCE_DIR}/requirements-dev.txt
     )
 endif()
@@ -112,7 +108,7 @@ if(SPEEDWAGON_SYNC_PYTHON_BUILD_VENV)
             PYTHON_EXE ${VENV_PYTHON}
             REQUIREMENTS_FILES
             ${PROJECT_SOURCE_DIR}/requirements-dev.txt
-            ${PROJECT_SOURCE_DIR}/requirements.txt
+            ${PROJECT_SOURCE_DIR}/requirements-gui.txt
     )
 endif()
 
@@ -191,8 +187,8 @@ endif(SPEEDWAGON_EXTRA_REQUIREMENTS_FILE)
 
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
         DEPENDS wheel
-        COMMAND ${VENV_PYTHON} -m pip install pytest pytest-qt -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
-        COMMENT "Adding pytest and pytest-qt to standalone virtual environment"
+        COMMAND ${VENV_PYTHON} -m pip install pytest pytest-qt PySide6 -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
+        COMMENT "Adding PySide6, pytest, and pytest-qt to standalone virtual environment"
         )
 set(SPEEDWAGON_PYTHON_INTERP python.exe)
 

@@ -29,7 +29,8 @@ __all__ = [
     "Workflow",
     "NullWorkflow",
     "available_workflows",
-    "all_required_workflow_keys"
+    "all_required_workflow_keys",
+    "AbsJobConfigSerializationStrategy"
 ]
 
 
@@ -314,7 +315,10 @@ def all_required_workflow_keys(
 
 
 class AbsJobConfigSerializationStrategy(abc.ABC):
+    """Base class for serializing job configurations."""
+
     def __init__(self):
+        """Create a new job serialization strategy."""
         self.file_name: typing.Optional[str] = None
 
     @abc.abstractmethod

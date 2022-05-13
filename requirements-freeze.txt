@@ -3,3 +3,4 @@
 cmake
 Jinja2
 pyinstaller
+PySide6
