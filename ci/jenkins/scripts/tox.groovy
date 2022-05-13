@@ -125,6 +125,7 @@ def getToxTestsParallel(args = [:]){
     def label = args['label']
     def dockerfile = args['dockerfile']
     def dockerArgs = args['dockerArgs']
+    def dockerRunArgs = args.get('dockerRunArgs', '')
     script{
         def TOX_RESULT_FILE_NAME = "tox_result.json"
         def envs
@@ -169,14 +170,6 @@ def getToxTestsParallel(args = [:]){
                     node(originalNodeLabel){
                         ws{
                             checkout scm
-                            def dockerRunArgs
-                            if(isUnix()){
-                                dockerRunArgs = ''
-//                                 echo 'todo: add linux docker volume mounts'
-                            } else {
-                                dockerRunArgs = "-v pipcache:c:/users/containeradministrator/appdata/local/pip"
-                            }
-
                             dockerImageForTesting.inside(dockerRunArgs){
                                 try{
                                     publishChecks(
