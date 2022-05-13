@@ -134,7 +134,7 @@ def getToxTestsParallel(args = [:]){
             originalNodeLabel = env.NODE_NAME
             checkout scm
             def dockerImage = docker.build(dockerImageName, "-f ${dockerfile} ${dockerArgs} .")
-            dockerImage.inside(){
+            dockerImage.inside{
                 envs = getToxEnvs()
             }
             if(isUnix()){
@@ -169,8 +169,7 @@ def getToxTestsParallel(args = [:]){
                     node(originalNodeLabel){
                         ws{
                             checkout scm
-                            //             -v c:\users\containeradministrator\appdata\local\pip\
-                            dockerImageForTesting.inside(){
+                            dockerImageForTesting.inside{
                                 try{
                                     publishChecks(
                                         conclusion: 'NONE',
@@ -187,7 +186,7 @@ def getToxTestsParallel(args = [:]){
                                     } else {
                                         bat(
                                             label: "Running Tox with ${tox_env} environment",
-                                            script: "tox  -vv --parallel--safe-build --result-json=${TOX_RESULT_FILE_NAME} --workdir=%TEMP% -e $tox_env"
+                                            script: "tox  -vv --parallel--safe-build --result-json=${TOX_RESULT_FILE_NAME} --workdir=%TEMP% -e $tox_env "
                                         )
                                     }
                                 } catch (e){
