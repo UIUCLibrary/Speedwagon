@@ -36,7 +36,6 @@ class MedusaPreingestCuration(speedwagon.Workflow):
 -  Locates and deletes file that start with ._ (dot underscore)
 -  Locates and deletes .DS_Store files
 -  Locates and deletes Capture One files
--  Verifies that contents are structured in standard package format
     """.strip()
 
     validation_checks: List[Callable[[Dict[str, Union[str, bool]]], None]] = [
