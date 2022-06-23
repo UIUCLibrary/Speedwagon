@@ -850,15 +850,19 @@ pipeline {
                     stages{
                         stage('Packaging sdist and wheel'){
                             agent {
-                                dockerfile {
-                                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                                    label 'linux && docker && x86'
-                                    additionalBuildArgs ' --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                  }
+                                docker{
+                                    image 'python'
+                                    label 'linux && docker'
+                                }
                             }
                             steps{
                                 timeout(5){
-                                    sh script: 'python -m build .'
+                                    sh(label: 'Building Python Package',
+                                       script: '''python -m venv venv --upgrade-deps
+                                                  venv/bin/pip install build
+                                                  venv/bin/python -m build .
+                                                  '''
+                                       )
                                 }
                             }
                             post{
@@ -871,6 +875,8 @@ pipeline {
                                     cleanWs(
                                         deleteDirs: true,
                                         patterns: [
+                                            [pattern: '**/__pycache__/', type: 'INCLUDE'],
+                                            [pattern: 'venv/', type: 'INCLUDE'],
                                             [pattern: 'dist/', type: 'INCLUDE']
                                             ]
                                         )
