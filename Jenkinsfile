@@ -853,6 +853,7 @@ pipeline {
                                 docker{
                                     image 'python'
                                     label 'linux && docker'
+                                    args '-v pipcache_speedwagon:/.cache/pip'
                                 }
                             }
                             steps{
