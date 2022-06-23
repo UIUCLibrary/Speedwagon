@@ -853,17 +853,18 @@ pipeline {
                                 docker{
                                     image 'python'
                                     label 'linux && docker'
-                                    args '-v pipcache_speedwagon:/.cache/pip'
                                 }
                             }
                             steps{
                                 timeout(5){
-                                    sh(label: 'Building Python Package',
-                                       script: '''python -m venv venv --upgrade-deps
-                                                  venv/bin/pip install build
-                                                  venv/bin/python -m build .
-                                                  '''
-                                       )
+                                    withEnv(['PIP_NO_CACHE_DIR=off']) {
+                                        sh(label: 'Building Python Package',
+                                           script: '''python -m venv venv --upgrade-deps
+                                                      venv/bin/pip install build
+                                                      venv/bin/python -m build .
+                                                      '''
+                                           )
+                                   }
                                 }
                             }
                             post{
