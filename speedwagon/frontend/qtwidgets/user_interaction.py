@@ -118,7 +118,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
                 QtCore.QPersistentModelIndex
             ],
             value: Any,
-            role: Qt.ItemDataRole = Qt.DisplayRole
+            role: int = typing.cast(int, Qt.DisplayRole)
     ) -> bool:
         """Set model data."""
         if role == Qt.CheckStateRole:
