@@ -161,7 +161,7 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.package_view = QtWidgets.QListView(self)
 
         self.select_all_button = QtWidgets.QPushButton(parent=self)
-        self.select_all_button.clicked.connect(self._select_all)
+        self._connect_signals()
         self.select_all_button.setText("Select All")
         layout.addWidget(self.package_view)
         layout.addWidget(self.select_all_button)
@@ -187,6 +187,15 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.model.itemsChanged.connect(self.update_view_label)
         self.model.items = items
         self.package_view.setModel(self.model)
+
+    def _connect_signals(self):
+        """Connect any Qt signals.
+
+        The only reason for this method is to localize the pylint false
+        positive warnings.
+        """
+        # pylint: disable=no-member
+        self.select_all_button.clicked.connect(self._select_all)
 
     def _select_all(self):
         self.model.beginResetModel()
