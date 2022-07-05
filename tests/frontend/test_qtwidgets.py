@@ -101,13 +101,13 @@ class TestConfirmListModel:
         model = qtwidgets.user_interaction.ConfirmListModel(items)
         qtmodeltester.check(model)
 
-    def test_all_data_defaults_to_checked(self):
+    def test_all_data_defaults_to_unchecked(self):
         items = [
             "./file1.txt",
             "/directory/"
         ]
         model = qtwidgets.user_interaction.ConfirmListModel(items)
-        assert model.selected() == items
+        assert model.selected() == []
 
     def test_unchecking_item(self):
         items = [
@@ -119,6 +119,11 @@ class TestConfirmListModel:
         model.setData(
             index=model.index(0),
             value=QtCore.Qt.Unchecked,
+            role=QtCore.Qt.CheckStateRole
+        )
+        model.setData(
+            index=model.index(1),
+            value=QtCore.Qt.Checked,
             role=QtCore.Qt.CheckStateRole
         )
 
@@ -163,6 +168,16 @@ class TestConfirmDeleteDialog:
 
         with qtbot.wait_signal(dialog_box.rejected):
             cancel_button.click()
+
+    def test_select_all(self, qtbot):
+        items = [
+            "./file1.txt",
+            "/directory/"
+        ]
+        dialog_box = \
+            qtwidgets.user_interaction.ConfirmDeleteDialog(items)
+        dialog_box.select_all_button.click()
+        assert dialog_box.model.selected() == items
 
 
 class TestQtWidgetConfirmFileSystemRemoval:

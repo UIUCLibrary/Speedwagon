@@ -67,7 +67,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
     def items(self, value):
         self._items = [{
                 "name": i,
-                "checked": Qt.Checked
+                "checked": Qt.Unchecked
             } for i in value
         ]
         self.itemsChanged.emit()
@@ -104,7 +104,9 @@ class ConfirmListModel(QtCore.QAbstractListModel):
     ) -> Any:
         """Get data from the model."""
         if role == Qt.CheckStateRole:
-            return self._items[index.row()].get("checked", Qt.Unchecked)
+            return int(
+                self._items[index.row()].get("checked", QtCore.Qt.Unchecked)
+            )
         if role == Qt.DisplayRole:
             return self._items[index.row()]['name']
         return None
@@ -116,7 +118,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
                 QtCore.QPersistentModelIndex
             ],
             value: Any,
-            role: int = typing.cast(int, Qt.DisplayRole)
+            role: Qt.ItemDataRole = Qt.DisplayRole
     ) -> bool:
         """Set model data."""
         if role == Qt.CheckStateRole:
@@ -158,7 +160,11 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self._make_connections()
         self.package_view = QtWidgets.QListView(self)
 
+        self.select_all_button = QtWidgets.QPushButton(parent=self)
+        self.select_all_button.clicked.connect(self._select_all)
+        self.select_all_button.setText("Select All")
         layout.addWidget(self.package_view)
+        layout.addWidget(self.select_all_button)
         layout.addWidget(self.button_box)
         self.setLayout(layout)
 
@@ -181,6 +187,17 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.model.itemsChanged.connect(self.update_view_label)
         self.model.items = items
         self.package_view.setModel(self.model)
+
+    def _select_all(self):
+        self.model.beginResetModel()
+        for i in range(self.model.rowCount()):
+            index = self.model.index(i)
+            self.model.setData(
+                index,
+                value=QtCore.Qt.Checked,
+                role=QtCore.Qt.CheckStateRole
+            )
+        self.model.endResetModel()
 
     def update_view_label(self) -> None:
         """Update the label on top of the list view widget."""
