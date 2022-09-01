@@ -6,7 +6,6 @@ import threading
 import typing
 from typing import Dict, Any, Optional, List, Union, Type
 
-import PySide6.QtCore
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtGui import Qt
 from uiucprescon.packager import Metadata
@@ -146,8 +145,8 @@ class ConfirmTableDetailsModel(QtCore.QIdentityProxyModel):
     def columnCount(
             self,
             parent: Union[
-                PySide6.QtCore.QModelIndex,
-                PySide6.QtCore.QPersistentModelIndex] = ...
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex] = ...
     ) -> int:
         return 3
 
@@ -180,17 +179,21 @@ class ConfirmTableDetailsModel(QtCore.QIdentityProxyModel):
     def rowCount(
             self,
             parent: Union[
-                PySide6.QtCore.QModelIndex,
-                PySide6.QtCore.QPersistentModelIndex
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
             ] = ...) -> int:
         source_model = self.sourceModel()
         if not source_model:
             return 0
         return source_model.rowCount()
 
-    def data(self, proxyIndex: Union[
-        PySide6.QtCore.QModelIndex, PySide6.QtCore.QPersistentModelIndex],
-             role: int = ...) -> Any:
+    def data(
+            self,
+            proxyIndex: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ],
+            role: int = ...) -> Any:
         # Only the first column should be checkable
         if role == QtCore.Qt.CheckStateRole and proxyIndex.column() != 0:
             return None
