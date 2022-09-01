@@ -173,8 +173,10 @@ class ConfirmTableDetailsModel(QtCore.QIdentityProxyModel):
                 role == QtCore.Qt.DisplayRole:
             if section == 1:
                 return "Path"
-            if section == 2:
+            elif section == 2:
                 return "Name"
+            return ''
+        return None
 
     def rowCount(
             self,
