@@ -5,7 +5,7 @@ import pytest
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 QtCore = pytest.importorskip("PySide6.QtCore")
 from uiucprescon.packager.common import Metadata as PackageMetadata
-# from PySide6 import QtWidgets, QtCore
+from PySide6 import QtWidgets, QtCore
 
 import speedwagon
 import speedwagon.exceptions
@@ -90,6 +90,19 @@ class TestQtWidgetPackageBrowserWidget:
         )
         assert mock_dialog_box_type.called is True and \
                mock_dialog_box.exec.called is True
+
+
+class TestConfirmTableModel:
+    def test_model_mapping(self, qtmodeltester):
+        items = [
+            "./file1.txt",
+            "/directory/"
+        ]
+        list_model = qtwidgets.user_interaction.ConfirmListModel()
+        model = qtwidgets.user_interaction.ConfirmTableDetailsModel()
+        model.setSourceModel(list_model)
+        list_model.items = items
+        assert model.index(0, 2).data(QtCore.Qt.DisplayRole) == "file1.txt"
 
 
 class TestConfirmListModel:

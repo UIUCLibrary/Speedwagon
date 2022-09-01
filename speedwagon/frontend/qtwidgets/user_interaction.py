@@ -1,9 +1,12 @@
 """User interaction when using a QtWidget backend."""
 from __future__ import annotations
 
+import os.path
 import threading
 import typing
 from typing import Dict, Any, Optional, List, Union, Type
+
+import PySide6.QtCore
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtGui import Qt
 from uiucprescon.packager import Metadata
@@ -54,7 +57,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
             items: List[str] = None,
             parent: Optional[QtCore.QObject] = None
     ) -> None:
-        """Create a new confirm list model."""
+        """Create a new confirmation list model."""
         super().__init__(parent)
         self.items = items or []
 
@@ -139,6 +142,73 @@ class ConfirmListModel(QtCore.QAbstractListModel):
         return super().flags(index)
 
 
+class ConfirmTableDetailsModel(QtCore.QIdentityProxyModel):
+    def columnCount(
+            self,
+            parent: Union[
+                PySide6.QtCore.QModelIndex,
+                PySide6.QtCore.QPersistentModelIndex] = ...
+    ) -> int:
+        return 3
+
+    def index(self, row: int, column: int, parent=QtCore.QModelIndex()):
+        return self.createIndex(row, column)
+
+    def mapToSource(self, proxyIndex):
+        if not proxyIndex.isValid():
+            return QtCore.QModelIndex()
+        return self.sourceModel().index(proxyIndex.row(), 0)
+
+    def mapFromSource(self, sourceIndex):
+        if sourceIndex.isValid() and 0 <= sourceIndex.row() < self.rowCount():
+            ix = self.sourceModel().index(sourceIndex.row(), 0)
+            return self.createIndex(
+                ix.row(),
+                sourceIndex.column(),
+                sourceIndex.internalPointer()
+            )
+        return QtCore.QModelIndex()
+
+    def headerData(self, section, orientation, role):
+        if orientation == QtCore.Qt.Horizontal and \
+                role == QtCore.Qt.DisplayRole:
+            if section == 1:
+                return "Path"
+            if section == 2:
+                return "Name"
+
+    def rowCount(
+            self,
+            parent: Union[
+                PySide6.QtCore.QModelIndex,
+                PySide6.QtCore.QPersistentModelIndex
+            ] = ...) -> int:
+        source_model = self.sourceModel()
+        if not source_model:
+            return 0
+        return source_model.rowCount()
+
+    def data(self, proxyIndex: Union[
+        PySide6.QtCore.QModelIndex, PySide6.QtCore.QPersistentModelIndex],
+             role: int = ...) -> Any:
+        if role == QtCore.Qt.CheckStateRole:
+            if proxyIndex.column() != 0:
+                return None
+        if role == QtCore.Qt.DisplayRole:
+            source_model = self.sourceModel()
+            if source_model is not None:
+                source_value = source_model.data(proxyIndex, role)
+                path = os.path.split(source_value)
+                if proxyIndex.column() == 2:
+                    return path[-1]
+                if proxyIndex.column() == 1:
+                    return path[0]
+                if proxyIndex.column() == 0:
+                    return None
+
+        return super().data(proxyIndex, role)
+
+
 class ConfirmDeleteDialog(QtWidgets.QDialog):
     """Confirm deletion dialog box."""
 
@@ -156,9 +226,15 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
         )
         self.setWindowTitle("Delete the Following Items?")
-        self.setFixedWidth(500)
+        self.setMinimumWidth(500)
         self._make_connections()
-        self.package_view = QtWidgets.QListView(self)
+        self.package_view = QtWidgets.QTableView(self)
+        self.package_view.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
+        self.package_view.setSelectionMode(
+            QtWidgets.QTableView.SingleSelection
+        )
+        self.package_view.verticalHeader().setVisible(False)
+        self.package_view.horizontalHeader().setStretchLastSection(True)
 
         self.select_all_button = QtWidgets.QPushButton(parent=self)
         self._connect_signals()
@@ -186,7 +262,12 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.model.itemsChanged.connect(self.update_buttons)
         self.model.itemsChanged.connect(self.update_view_label)
         self.model.items = items
-        self.package_view.setModel(self.model)
+        self.model_table = ConfirmTableDetailsModel()
+        self.model_table.setSourceModel(self.model)
+        self.package_view.setModel(self.model_table)
+        self.package_view.setColumnWidth(0, 50)
+        header = self.package_view.horizontalHeader()
+        header.setSectionResizeMode(0, QtWidgets.QHeaderView.Fixed)
 
     def _connect_signals(self):
         """Connect any Qt signals.
