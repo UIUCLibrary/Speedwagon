@@ -173,7 +173,7 @@ class ConfirmTableDetailsModel(QtCore.QIdentityProxyModel):
                 role == QtCore.Qt.DisplayRole:
             if section == 1:
                 return "Path"
-            elif section == 2:
+            if section == 2:
                 return "Name"
             return ''
         return None
