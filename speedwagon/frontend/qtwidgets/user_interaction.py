@@ -191,9 +191,9 @@ class ConfirmTableDetailsModel(QtCore.QIdentityProxyModel):
     def data(self, proxyIndex: Union[
         PySide6.QtCore.QModelIndex, PySide6.QtCore.QPersistentModelIndex],
              role: int = ...) -> Any:
-        if role == QtCore.Qt.CheckStateRole:
-            if proxyIndex.column() != 0:
-                return None
+        # Only the first column should be checkable
+        if role == QtCore.Qt.CheckStateRole and proxyIndex.column() != 0:
+            return None
         if role == QtCore.Qt.DisplayRole:
             source_model = self.sourceModel()
             if source_model is not None:
@@ -264,7 +264,12 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.model.items = items
         self.model_table = ConfirmTableDetailsModel()
         self.model_table.setSourceModel(self.model)
-        self.package_view.setModel(self.model_table)
+
+        self._proxy_model = QtCore.QSortFilterProxyModel()
+        self._proxy_model.setSourceModel(self.model_table)
+        self.package_view.setSortingEnabled(True)
+
+        self.package_view.setModel(self._proxy_model)
         self.package_view.setColumnWidth(0, 50)
         header = self.package_view.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.Fixed)
