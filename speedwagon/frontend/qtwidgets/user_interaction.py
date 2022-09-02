@@ -179,16 +179,27 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
     ) -> int:
         return len(self.DetailsColumns)
 
-    def index(self, row: int, column: int, parent=QtCore.QModelIndex()):
+    def index(
+            self,
+            row: int,
+            column: int,
+            parent: QtCore.QModelIndex = QtCore.QModelIndex()
+    ) -> QtCore.QModelIndex:
         return self.createIndex(row, column)
 
-    def mapToSource(self, proxy_index):
+    def mapToSource(
+            self,
+            proxy_index: QtCore.QModelIndex
+    ) -> QtCore.QModelIndex:
         return self.sourceModel().index(
             proxy_index.row(),
             0
         ) if proxy_index.isValid() else QtCore.QModelIndex()
 
-    def mapFromSource(self, source_index):
+    def mapFromSource(
+            self,
+            source_index: QtCore.QModelIndex
+    ) -> QtCore.QModelIndex:
         if source_index.isValid() and \
                 0 <= source_index.row() < self.rowCount():
             return self.createIndex(
@@ -198,7 +209,12 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
             )
         return QtCore.QModelIndex()
 
-    def headerData(self, section, orientation, role):
+    def headerData(
+            self,
+            section: int,
+            orientation: QtCore.Qt.Orientation,
+            role: int
+    ) -> str:
         if orientation == QtCore.Qt.Horizontal and \
                 role == QtCore.Qt.DisplayRole:
             if section == self.DetailsColumns.NAME:
@@ -225,14 +241,14 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex
             ],
-            role: int = ...) -> Any:
+            role: Optional[int] = None) -> Any:
         # Only the first column should be checkable
         if role == QtCore.Qt.CheckStateRole and proxy_index.column() != 0:
             return None
         if role == QtCore.Qt.DisplayRole:
             source_model = self.sourceModel()
             if source_model is not None:
-                source_value = source_model.data(proxy_index, role)
+                source_value: str = source_model.data(proxy_index, role)
                 path = os.path.split(source_value)
                 if proxy_index.column() == \
                         self.DetailsColumns.NAME.value:
