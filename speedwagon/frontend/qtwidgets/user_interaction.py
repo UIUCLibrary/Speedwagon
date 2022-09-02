@@ -141,7 +141,29 @@ class ConfirmListModel(QtCore.QAbstractListModel):
         return super().flags(index)
 
 
-class ConfirmTableDetailsModel(QtCore.QIdentityProxyModel):
+class DetailsSorterProxyModel(QtCore.QSortFilterProxyModel):
+
+    def lessThan(
+            self,
+            source_left: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ],
+            source_right: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ]) -> bool:
+        # The first column uses a checkbox to state if selected or not
+        if source_right.column() == 0:
+            return source_left.data(
+                typing.cast(int, QtCore.Qt.CheckStateRole)
+            ) < source_right.data(
+                typing.cast(int, QtCore.Qt.CheckStateRole)
+            )
+        return super().lessThan(source_left, source_right)
+
+
+class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
     def columnCount(
             self,
             parent: Union[
@@ -176,7 +198,7 @@ class ConfirmTableDetailsModel(QtCore.QIdentityProxyModel):
             if section == 2:
                 return "Name"
             return ''
-        return None
+        return super().headerData(section, orientation, role)
 
     def rowCount(
             self,

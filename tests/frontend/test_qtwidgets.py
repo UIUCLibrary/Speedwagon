@@ -161,7 +161,7 @@ class TestConfirmTableModel:
         list_model.items = items
         table = QtWidgets.QTableView()
 
-        proxy_model = QtCore.QSortFilterProxyModel()
+        proxy_model = qtwidgets.user_interaction.DetailsSorterProxyModel()
         proxy_model.setSourceModel(model)
 
         table.setModel(proxy_model)
@@ -169,6 +169,68 @@ class TestConfirmTableModel:
         table.sortByColumn(column, sorting_order)
         new_data = proxy_model.index(0, column)
         assert new_data.data() == expected_file_item
+
+    def test_sort_checked_ascending(self, qtbot):
+        items = [
+            "./file1.txt",
+            "/directory/more.txt"
+        ]
+        list_model = qtwidgets.user_interaction.ConfirmListModel()
+        details_model = qtwidgets.user_interaction.ConfirmTableDetailsModel()
+        details_model.setSourceModel(list_model)
+        table = QtWidgets.QTableView()
+
+        proxy_model = qtwidgets.user_interaction.DetailsSorterProxyModel()
+        proxy_model.setSourceModel(details_model)
+
+        list_model.items = items
+        table.setModel(proxy_model)
+        table.setSortingEnabled(True)
+
+        list_model.setData(
+            list_model.match(
+                list_model.index(0),
+                QtCore.Qt.DisplayRole,
+                "./file1.txt"
+            )[0],
+            QtCore.Qt.Checked,
+            role=QtCore.Qt.CheckStateRole
+        )
+        table.sortByColumn(0, QtCore.Qt.AscendingOrder)
+
+        new_data = table.model().index(1, 2)
+        assert new_data.data() == "file1.txt"
+
+    def test_sort_checked_descending(self, qtbot):
+        items = [
+            "./file1.txt",
+            "/directory/more.txt"
+        ]
+        list_model = qtwidgets.user_interaction.ConfirmListModel()
+        details_model = qtwidgets.user_interaction.ConfirmTableDetailsModel()
+        details_model.setSourceModel(list_model)
+        table = QtWidgets.QTableView()
+
+        proxy_model = qtwidgets.user_interaction.DetailsSorterProxyModel()
+        proxy_model.setSourceModel(details_model)
+
+        list_model.items = items
+        table.setModel(proxy_model)
+        table.setSortingEnabled(True)
+
+        list_model.setData(
+            list_model.match(
+                list_model.index(0),
+                QtCore.Qt.DisplayRole,
+                "./file1.txt"
+            )[0],
+            QtCore.Qt.Checked,
+            role=QtCore.Qt.CheckStateRole
+        )
+        table.sortByColumn(0, QtCore.Qt.DescendingOrder)
+
+        new_data = table.model().index(1, 2)
+        assert new_data.data() == "more.txt"
 
 class TestConfirmListModel:
     def test_model_check(self, qtmodeltester):
