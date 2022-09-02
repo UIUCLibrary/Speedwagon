@@ -93,7 +93,7 @@ class TestQtWidgetPackageBrowserWidget:
 
 
 class TestConfirmTableModel:
-    def test_model_mapping(self, qtmodeltester):
+    def test_model_mapping(self):
         items = [
             "./file1.txt",
             "/directory/"
@@ -104,6 +104,71 @@ class TestConfirmTableModel:
         list_model.items = items
         assert model.index(0, 2).data(QtCore.Qt.DisplayRole) == "file1.txt"
 
+    @pytest.mark.parametrize(
+        "items,column,sorting_order,expected_file_item",
+        [
+            (
+                [
+                    "./file1.txt",
+                    "/directory/"
+                ],
+                2,
+                QtCore.Qt.DescendingOrder,
+                "file1.txt"
+            ),
+            (
+                [
+                    "/directory/",
+                    "./file1.txt",
+                ],
+                2,
+                QtCore.Qt.DescendingOrder,
+                "file1.txt"
+            ),
+            (
+                [
+                    "/directory/",
+                    "./file1.txt",
+                ],
+                2,
+                QtCore.Qt.AscendingOrder,
+                ""
+            ),
+            (
+                [
+                    "/directory/",
+                    "./file1.txt",
+                ],
+                1,
+                QtCore.Qt.AscendingOrder,
+                "."
+            ),
+            (
+                [
+                    "/directory/",
+                    "./file1.txt",
+                ],
+                1,
+                QtCore.Qt.DescendingOrder,
+                "/directory"
+            ),
+        ]
+    )
+    def test_sort(self, qtbot, items, column, sorting_order, expected_file_item):
+        list_model = qtwidgets.user_interaction.ConfirmListModel()
+        model = qtwidgets.user_interaction.ConfirmTableDetailsModel()
+        model.setSourceModel(list_model)
+        list_model.items = items
+        table = QtWidgets.QTableView()
+
+        proxy_model = QtCore.QSortFilterProxyModel()
+        proxy_model.setSourceModel(model)
+
+        table.setModel(proxy_model)
+        table.setSortingEnabled(True)
+        table.sortByColumn(column, sorting_order)
+        new_data = proxy_model.index(0, column)
+        assert new_data.data() == expected_file_item
 
 class TestConfirmListModel:
     def test_model_check(self, qtmodeltester):
