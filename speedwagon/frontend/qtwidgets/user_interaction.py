@@ -250,11 +250,9 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
             if source_model is not None:
                 source_value: str = source_model.data(proxy_index, role)
                 path = os.path.split(source_value)
-                if proxy_index.column() == \
-                        self.DetailsColumns.NAME.value:
+                if proxy_index.column() == self.DetailsColumns.NAME:
                     return path[-1]
-                if proxy_index.column() == \
-                        self.DetailsColumns.LOCATION.value:
+                if proxy_index.column() == self.DetailsColumns.LOCATION:
                     return path[0]
                 if proxy_index.column() == 0:
                     return None

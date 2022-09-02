@@ -247,6 +247,25 @@ class TestConfirmTableModel:
         )
         assert new_data.data() == "more.txt"
 
+    def test_empty_first_column(self, qtbot):
+        list_model = qtwidgets.user_interaction.ConfirmListModel()
+        model = qtwidgets.user_interaction.ConfirmTableDetailsModel()
+        model.setSourceModel(list_model)
+        items = [
+            "./file1.txt",
+            "/directory/"
+        ]
+        list_model.items = items
+        table = QtWidgets.QTableView()
+
+        table.setModel(model)
+        table_model = table.model()
+        assert table_model.data(
+            table_model.index(0, 0),
+            role=QtCore.Qt.DisplayRole
+        ) is None
+
+
 class TestConfirmListModel:
     def test_model_check(self, qtmodeltester):
         items = [
