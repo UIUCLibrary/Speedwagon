@@ -175,18 +175,19 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
     def index(self, row: int, column: int, parent=QtCore.QModelIndex()):
         return self.createIndex(row, column)
 
-    def mapToSource(self, proxyIndex):
-        if not proxyIndex.isValid():
+    def mapToSource(self, proxy_ndex):
+        if not proxy_ndex.isValid():
             return QtCore.QModelIndex()
-        return self.sourceModel().index(proxyIndex.row(), 0)
+        return self.sourceModel().index(proxy_ndex.row(), 0)
 
-    def mapFromSource(self, sourceIndex):
-        if sourceIndex.isValid() and 0 <= sourceIndex.row() < self.rowCount():
-            ix = self.sourceModel().index(sourceIndex.row(), 0)
+    def mapFromSource(self, source_index):
+        if source_index.isValid() and \
+                0 <= source_index.row() < self.rowCount():
+            ix = self.sourceModel().index(source_index.row(), 0)
             return self.createIndex(
                 ix.row(),
-                sourceIndex.column(),
-                sourceIndex.internalPointer()
+                source_index.column(),
+                source_index.internalPointer()
             )
         return QtCore.QModelIndex()
 
@@ -213,27 +214,27 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
 
     def data(
             self,
-            proxyIndex: Union[
+            proxy_index: Union[
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex
             ],
             role: int = ...) -> Any:
         # Only the first column should be checkable
-        if role == QtCore.Qt.CheckStateRole and proxyIndex.column() != 0:
+        if role == QtCore.Qt.CheckStateRole and proxy_index.column() != 0:
             return None
         if role == QtCore.Qt.DisplayRole:
             source_model = self.sourceModel()
             if source_model is not None:
-                source_value = source_model.data(proxyIndex, role)
+                source_value = source_model.data(proxy_index, role)
                 path = os.path.split(source_value)
-                if proxyIndex.column() == 2:
+                if proxy_index.column() == 2:
                     return path[-1]
-                if proxyIndex.column() == 1:
+                if proxy_index.column() == 1:
                     return path[0]
-                if proxyIndex.column() == 0:
+                if proxy_index.column() == 0:
                     return None
 
-        return super().data(proxyIndex, role)
+        return super().data(proxy_index, role)
 
 
 class ConfirmDeleteDialog(QtWidgets.QDialog):
@@ -292,7 +293,7 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.model_table = ConfirmTableDetailsModel()
         self.model_table.setSourceModel(self.model)
 
-        self._proxy_model = QtCore.QSortFilterProxyModel()
+        self._proxy_model = DetailsSorterProxyModel()
         self._proxy_model.setSourceModel(self.model_table)
         self.package_view.setSortingEnabled(True)
 
