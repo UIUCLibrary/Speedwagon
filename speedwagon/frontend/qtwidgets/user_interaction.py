@@ -175,7 +175,7 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
             self,
             parent: Union[
                 QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex] = ...
+                QtCore.QPersistentModelIndex] = None
     ) -> int:
         return len(self.DetailsColumns)
 
@@ -183,13 +183,19 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
             self,
             row: int,
             column: int,
-            parent: QtCore.QModelIndex = QtCore.QModelIndex()
+            parent: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ] = QtCore.QModelIndex()
     ) -> QtCore.QModelIndex:
         return self.createIndex(row, column)
 
     def mapToSource(
             self,
-            proxy_index: QtCore.QModelIndex
+            proxy_index: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ]
     ) -> QtCore.QModelIndex:
         return self.sourceModel().index(
             proxy_index.row(),
@@ -198,7 +204,10 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
 
     def mapFromSource(
             self,
-            source_index: QtCore.QModelIndex
+            source_index: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ]
     ) -> QtCore.QModelIndex:
         if source_index.isValid() and \
                 0 <= source_index.row() < self.rowCount():
@@ -213,7 +222,7 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
             self,
             section: int,
             orientation: QtCore.Qt.Orientation,
-            role: int
+            role: int = QtCore.Qt.DisplayRole
     ) -> str:
         if orientation == QtCore.Qt.Horizontal and \
                 role == QtCore.Qt.DisplayRole:
@@ -229,7 +238,7 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
             parent: Union[
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex
-            ] = ...) -> int:
+            ] = None) -> int:
         source_model = self.sourceModel()
         if not source_model:
             return 0
@@ -241,7 +250,7 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex
             ],
-            role: Optional[int] = None) -> Any:
+            role: int = Qt.DisplayRole) -> Any:
         # Only the first column should be checkable
         if role == QtCore.Qt.CheckStateRole and proxy_index.column() != 0:
             return None
