@@ -21,6 +21,8 @@ if typing.TYPE_CHECKING:
     from uiucprescon.packager.packages import collection
     from speedwagon.job import Workflow
 
+__all__ = ['QtRequestMoreInfo']
+
 
 class QtWidgetFactory(interaction.UserRequestFactory):
     """Factory for generating Qt Widget."""
@@ -44,7 +46,6 @@ class QtWidgetFactory(interaction.UserRequestFactory):
             self
     ) -> interaction.AbstractPackageTitlePageSelection:
         """Generate widget for selecting title pages from a package."""
-
         return QtWidgetTitlePageSelection(parent=self.parent)
 
 
