@@ -183,9 +183,8 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
     def mapFromSource(self, source_index):
         if source_index.isValid() and \
                 0 <= source_index.row() < self.rowCount():
-            ix = self.sourceModel().index(source_index.row(), 0)
             return self.createIndex(
-                ix.row(),
+                self.sourceModel().index(source_index.row(), 0).row(),
                 source_index.column(),
                 source_index.internalPointer()
             )
