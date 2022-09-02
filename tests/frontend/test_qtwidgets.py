@@ -12,6 +12,9 @@ import speedwagon.exceptions
 from speedwagon.frontend import qtwidgets, interaction
 from speedwagon.frontend.qtwidgets.dialog import title_page_selection
 
+from speedwagon.frontend.qtwidgets.user_interaction import \
+    ConfirmTableDetailsModel
+
 
 class TestQtWidgetPackageBrowserWidget:
     def test_get_user_response_invalid_file_format_raises(
@@ -102,7 +105,10 @@ class TestConfirmTableModel:
         model = qtwidgets.user_interaction.ConfirmTableDetailsModel()
         model.setSourceModel(list_model)
         list_model.items = items
-        assert model.index(0, 2).data(QtCore.Qt.DisplayRole) == "file1.txt"
+        assert model.index(
+            0,
+            model.DetailsColumns.NAME
+        ).data(QtCore.Qt.DisplayRole) == "file1.txt"
 
     @pytest.mark.parametrize(
         "items,column,sorting_order,expected_file_item",
@@ -112,7 +118,7 @@ class TestConfirmTableModel:
                     "./file1.txt",
                     "/directory/"
                 ],
-                2,
+                ConfirmTableDetailsModel.DetailsColumns.NAME,
                 QtCore.Qt.DescendingOrder,
                 "file1.txt"
             ),
@@ -121,7 +127,7 @@ class TestConfirmTableModel:
                     "/directory/",
                     "./file1.txt",
                 ],
-                2,
+                ConfirmTableDetailsModel.DetailsColumns.NAME,
                 QtCore.Qt.DescendingOrder,
                 "file1.txt"
             ),
@@ -130,7 +136,7 @@ class TestConfirmTableModel:
                     "/directory/",
                     "./file1.txt",
                 ],
-                2,
+                ConfirmTableDetailsModel.DetailsColumns.NAME,
                 QtCore.Qt.AscendingOrder,
                 ""
             ),
@@ -139,7 +145,7 @@ class TestConfirmTableModel:
                     "/directory/",
                     "./file1.txt",
                 ],
-                1,
+                ConfirmTableDetailsModel.DetailsColumns.LOCATION,
                 QtCore.Qt.AscendingOrder,
                 "."
             ),
@@ -148,7 +154,7 @@ class TestConfirmTableModel:
                     "/directory/",
                     "./file1.txt",
                 ],
-                1,
+                ConfirmTableDetailsModel.DetailsColumns.LOCATION,
                 QtCore.Qt.DescendingOrder,
                 "/directory"
             ),
@@ -196,9 +202,15 @@ class TestConfirmTableModel:
             QtCore.Qt.Checked,
             role=QtCore.Qt.CheckStateRole
         )
-        table.sortByColumn(0, QtCore.Qt.AscendingOrder)
+        table.sortByColumn(
+            ConfirmTableDetailsModel.DetailsColumns.SELECTED,
+            QtCore.Qt.AscendingOrder
+        )
 
-        new_data = table.model().index(1, 2)
+        new_data = table.model().index(
+            1,
+            ConfirmTableDetailsModel.DetailsColumns.NAME
+        )
         assert new_data.data() == "file1.txt"
 
     def test_sort_checked_descending(self, qtbot):
@@ -229,7 +241,10 @@ class TestConfirmTableModel:
         )
         table.sortByColumn(0, QtCore.Qt.DescendingOrder)
 
-        new_data = table.model().index(1, 2)
+        new_data = table.model().index(
+            1,
+            ConfirmTableDetailsModel.DetailsColumns.NAME
+        )
         assert new_data.data() == "more.txt"
 
 class TestConfirmListModel:

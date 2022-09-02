@@ -1,6 +1,7 @@
 """User interaction when using a QtWidget backend."""
 from __future__ import annotations
 
+import enum
 import os.path
 import threading
 import typing
@@ -14,6 +15,7 @@ import speedwagon.exceptions
 from speedwagon.frontend import interaction
 from speedwagon.frontend.qtwidgets.dialog.title_page_selection import \
     PackageBrowser
+
 
 if typing.TYPE_CHECKING:
     from uiucprescon.packager.packages import collection
@@ -164,21 +166,27 @@ class DetailsSorterProxyModel(QtCore.QSortFilterProxyModel):
 
 
 class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
+    class DetailsColumns(enum.IntEnum):
+        SELECTED = 0
+        NAME = 1
+        LOCATION = 2
+
     def columnCount(
             self,
             parent: Union[
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex] = ...
     ) -> int:
-        return 3
+        return len(self.DetailsColumns)
 
     def index(self, row: int, column: int, parent=QtCore.QModelIndex()):
         return self.createIndex(row, column)
 
-    def mapToSource(self, proxy_ndex):
-        if not proxy_ndex.isValid():
-            return QtCore.QModelIndex()
-        return self.sourceModel().index(proxy_ndex.row(), 0)
+    def mapToSource(self, proxy_index):
+        return self.sourceModel().index(
+            proxy_index.row(),
+            0
+        ) if proxy_index.isValid() else QtCore.QModelIndex()
 
     def mapFromSource(self, source_index):
         if source_index.isValid() and \
@@ -193,10 +201,10 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
     def headerData(self, section, orientation, role):
         if orientation == QtCore.Qt.Horizontal and \
                 role == QtCore.Qt.DisplayRole:
-            if section == 1:
-                return "Path"
-            if section == 2:
+            if section == self.DetailsColumns.NAME:
                 return "Name"
+            if section == self.DetailsColumns.LOCATION:
+                return "Location"
             return ''
         return super().headerData(section, orientation, role)
 
@@ -226,9 +234,11 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
             if source_model is not None:
                 source_value = source_model.data(proxy_index, role)
                 path = os.path.split(source_value)
-                if proxy_index.column() == 2:
+                if proxy_index.column() == \
+                        self.DetailsColumns.NAME.value:
                     return path[-1]
-                if proxy_index.column() == 1:
+                if proxy_index.column() == \
+                        self.DetailsColumns.LOCATION.value:
                     return path[0]
                 if proxy_index.column() == 0:
                     return None
@@ -288,14 +298,17 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.model = ConfirmListModel(parent=self)
         self.model.itemsChanged.connect(self.update_buttons)
         self.model.itemsChanged.connect(self.update_view_label)
-        self.model.items = items
+        self.model.items = sorted(items)
         self.model_table = ConfirmTableDetailsModel()
         self.model_table.setSourceModel(self.model)
 
         self._proxy_model = DetailsSorterProxyModel()
         self._proxy_model.setSourceModel(self.model_table)
         self.package_view.setSortingEnabled(True)
-
+        self.package_view.sortByColumn(
+            ConfirmTableDetailsModel.DetailsColumns.LOCATION,
+            Qt.AscendingOrder
+        )
         self.package_view.setModel(self._proxy_model)
         self.package_view.setColumnWidth(0, 50)
         header = self.package_view.horizontalHeader()

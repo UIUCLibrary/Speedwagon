@@ -2,7 +2,7 @@
 
 Added on 3/30/2022
 """
-
+import itertools
 import os
 import typing
 from typing import List, Any, Dict, Optional, Set, Iterator, Union, Callable
@@ -237,7 +237,10 @@ class FindOffendingFiles(tasks.Subtask):
         if not os.path.exists(self.root):
             raise FileNotFoundError(f"Could not find {self.root}")
 
-        for dir_name in self.locate_folders(self.root):
+        for dir_name in itertools.chain(
+                [self.root],
+                self.locate_folders(self.root)
+        ):
             relative_dir_to_root = \
                 os.path.relpath(
                     dir_name,
