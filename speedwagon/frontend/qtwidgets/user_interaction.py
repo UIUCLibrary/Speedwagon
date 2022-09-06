@@ -1,9 +1,12 @@
 """User interaction when using a QtWidget backend."""
 from __future__ import annotations
 
+import abc
 import enum
+import io
 import os.path
 import threading
+import csv
 import typing
 from typing import Dict, Any, Optional, List, Union, Type
 
@@ -21,7 +24,12 @@ if typing.TYPE_CHECKING:
     from uiucprescon.packager.packages import collection
     from speedwagon.job import Workflow
 
-__all__ = ['QtRequestMoreInfo']
+__all__ = [
+    'QtRequestMoreInfo',
+    'ConfirmTableDetailsModel',
+    'ExportCSVConfirmedDeleted',
+    'ExportCSVConfirmedAction'
+]
 
 
 class QtWidgetFactory(interaction.UserRequestFactory):
@@ -283,7 +291,7 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         """Create a package browser dialog window."""
         super().__init__(parent, flags)
         layout = QtWidgets.QGridLayout(self)
-        self.button_box = QtWidgets.QDialogButtonBox(
+        self.dialog_button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
         )
         self.setWindowTitle("Delete the Following Items?")
@@ -296,13 +304,25 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         )
         self.package_view.verticalHeader().setVisible(False)
         self.package_view.horizontalHeader().setStretchLastSection(True)
+        self.button_frame = QtWidgets.QFrame(self)
 
         self.select_all_button = QtWidgets.QPushButton(parent=self)
-        self._connect_signals()
         self.select_all_button.setText("Select All")
+
+        self.export_to_csv_button = QtWidgets.QPushButton(parent=self)
+        self.export_to_csv_button.setText("Export Selection to csv")
+
+        self.button_frame.setLayout(QtWidgets.QHBoxLayout())
+        self.button_frame.layout().addWidget(self.select_all_button)
+        self.button_frame.layout().addWidget(self.export_to_csv_button)
+
+        self._connect_signals()
+
         layout.addWidget(self.package_view)
-        layout.addWidget(self.select_all_button)
-        layout.addWidget(self.button_box)
+        # self.dialog_button_box.button(QtWidgets.QDialogButtonBox.)
+        layout.addWidget(self.button_frame)
+        # layout.addWidget(self.select_all_button)
+        layout.addWidget(self.dialog_button_box)
         self.setLayout(layout)
 
         self.nothing_found_label = QtWidgets.QLabel()
@@ -346,6 +366,11 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         """
         # pylint: disable=no-member
         self.select_all_button.clicked.connect(self._select_all)
+        self.export_to_csv_button.clicked.connect(self._export_csv)
+
+    def _export_csv(self):
+        action = ExportCSVConfirmedAction()
+        action.export_model(self.model)
 
     def _select_all(self):
         self.model.beginResetModel()
@@ -364,20 +389,91 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
 
     def update_buttons(self) -> None:
         """Update the dialog box button states."""
-        ok_button = self.button_box.button(QtWidgets.QDialogButtonBox.Ok)
+        ok_button = self.dialog_button_box.button(
+            QtWidgets.QDialogButtonBox.Ok
+        )
         if len(self.model.items) > 0:
             ok_button.setEnabled(True)
         else:
             ok_button.setEnabled(False)
 
-    def _make_connections(self):
+    def _make_connections(self) -> None:
         # pylint: disable=E1101
-        self.button_box.accepted.connect(self.accept)
-        self.button_box.rejected.connect(self.reject)
+        self.dialog_button_box.accepted.connect(self.accept)
+        self.dialog_button_box.rejected.connect(self.reject)
 
     def data(self) -> List[str]:
         """Get the files and folders selected by the user in the dialog box."""
         return self.model.selected()
+
+
+class AbsConfirmOutputReport(abc.ABC):
+    def __init__(self, model: ConfirmListModel) -> None:
+        self.model = model
+
+    @abc.abstractmethod
+    def generate(self) -> str:
+        """Create a output file report as a string."""
+
+
+class ExportCSVConfirmedDeleted(AbsConfirmOutputReport):
+    field_names = [
+        'path',
+        "selected_for_removal"
+    ]
+
+    def generate(self) -> str:
+        return self.generate_csv()
+
+    def generate_csv(self) -> str:
+        with io.StringIO() as file_string:
+            writer = csv.DictWriter(file_string, fieldnames=self.field_names)
+            writer.writeheader()
+            for row_number in range(self.model.rowCount()):
+                index = self.model.index(row_number)
+                writer.writerow(
+                    {
+                        ExportCSVConfirmedDeleted.field_names[0]:
+                            index.data(),
+                        ExportCSVConfirmedDeleted.field_names[1]:
+                            index.data(role=Qt.CheckStateRole) == Qt.Checked,
+                    }
+                )
+            return file_string.getvalue()
+
+
+class ExportCSVConfirmedAction:
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
+        self._parent = parent
+        self.dialog = QtWidgets.QFileDialog(self._parent)
+
+    def export_model(
+            self,
+            model: ConfirmListModel,
+            report_strategy: Optional[AbsConfirmOutputReport] = None
+    ) -> None:
+        output_file = self.get_output_file()
+        if output_file is None:
+            return
+        report_strategy = report_strategy or ExportCSVConfirmedDeleted
+        csv_builder = report_strategy(model)
+        report = csv_builder.generate()
+        self.save_file_to_disk(output_file, report)
+
+    def get_output_file(self) -> Optional[str]:
+        """Request the file name to use"""
+        filename, _ = self.dialog.getSaveFileName(
+            self._parent,
+            caption="Save File",
+            filter="Comma-separated Values (*.csv)"
+        )
+
+        return None if filename == '' else filename
+
+    @staticmethod
+    def save_file_to_disk(filename: str, data: str) -> None:
+        with open(filename, "w") as file:
+            file.write(data)
 
 
 class QtWidgetConfirmFileSystemRemoval(

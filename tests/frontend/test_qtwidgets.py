@@ -1,5 +1,7 @@
+import csv
+import io
 import warnings
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, ANY
 
 import pytest
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
@@ -11,9 +13,11 @@ import speedwagon
 import speedwagon.exceptions
 from speedwagon.frontend import qtwidgets, interaction
 from speedwagon.frontend.qtwidgets.dialog import title_page_selection
-
-from speedwagon.frontend.qtwidgets.user_interaction import \
-    ConfirmTableDetailsModel
+from speedwagon.frontend.qtwidgets.user_interaction import (
+        ConfirmTableDetailsModel,
+        ExportCSVConfirmedDeleted,
+        ExportCSVConfirmedAction,
+)
 
 
 class TestQtWidgetPackageBrowserWidget:
@@ -311,7 +315,7 @@ class TestConfirmDeleteDialog:
             qtwidgets.user_interaction.ConfirmDeleteDialog(items)
 
         okay_button = \
-            dialog_box.button_box.button(QtWidgets.QDialogButtonBox.Ok)
+            dialog_box.dialog_button_box.button(QtWidgets.QDialogButtonBox.Ok)
 
         with qtbot.wait_signal(dialog_box.accepted):
             okay_button.setEnabled(True)
@@ -329,7 +333,8 @@ class TestConfirmDeleteDialog:
             qtwidgets.user_interaction.ConfirmDeleteDialog(items)
         dialog_box.update_buttons()
         ok_button = \
-            dialog_box.button_box.button(QtWidgets.QDialogButtonBox.Ok)
+            dialog_box.dialog_button_box.button(QtWidgets.QDialogButtonBox.Ok)
+
         assert ok_button.isEnabled() is expected_enabled
 
     def test_cancel_button_rejects(self, qtbot):
@@ -338,7 +343,9 @@ class TestConfirmDeleteDialog:
             qtwidgets.user_interaction.ConfirmDeleteDialog(items)
 
         cancel_button = \
-            dialog_box.button_box.button(QtWidgets.QDialogButtonBox.Cancel)
+            dialog_box.dialog_button_box.button(
+                QtWidgets.QDialogButtonBox.Cancel
+            )
 
         with qtbot.wait_signal(dialog_box.rejected):
             cancel_button.click()
@@ -473,3 +480,105 @@ def test_get_additional_info_opens_dialog():
         pretask_results=[MagicMock()]
     )
     assert user_request_factory.package_title_page_selection.called is True
+
+
+class TestExportConfirmedDeletedAction:
+
+    @pytest.fixture
+    def model(self) -> qtwidgets.user_interaction.ConfirmListModel:
+        return qtwidgets.user_interaction.ConfirmListModel()
+
+    def test_csv_produces_header(self, model):
+        action = ExportCSVConfirmedDeleted(model=model)
+        data = action.generate_csv()
+        assert all(
+            key in data for key in ExportCSVConfirmedDeleted.field_names
+        )
+
+    def test_csv_produces_a_string(self, model):
+        action = ExportCSVConfirmedDeleted(model=model)
+        data = action.generate_csv()
+        assert isinstance(data, str)
+
+    def test_output_item_name(self, model):
+        action = ExportCSVConfirmedDeleted(model=model)
+        model.items = ["dummy"]
+        data = action.generate_csv()
+        assert "dummy" in data
+
+    @pytest.mark.parametrize(
+        'check_state,expected_csv_value',
+        [
+                (QtCore.Qt.Unchecked, "False"),
+                (QtCore.Qt.Checked, "True"),
+        ]
+    )
+    def test_output_selected_for_removal(
+            self,
+            model,
+            check_state,
+            expected_csv_value
+    ):
+        action = ExportCSVConfirmedDeleted(model=model)
+        model.items = ["dummy"]
+        match =\
+            model.match(model.index(0, 0), QtCore.Qt.DisplayRole, "dummy")[0]
+
+        model.setData(match, role=QtCore.Qt.CheckStateRole, value=check_state)
+        data = action.generate_csv()
+        with io.StringIO() as file_string:
+            file_string.write(data)
+            file_string.seek(0)
+            row = next(csv.DictReader(file_string))
+            assert row['selected_for_removal'] == expected_csv_value
+
+
+class TestExportCSVConfirmedAction:
+    @pytest.fixture
+    def model(self) -> qtwidgets.user_interaction.ConfirmListModel:
+        return qtwidgets.user_interaction.ConfirmListModel()
+
+    def test_calls_getSaveFileName(self, qtbot,model):
+        action = ExportCSVConfirmedAction()
+        model.items = ["dummy"]
+        # action.export_model(model)
+        action.dialog.getSaveFileName = Mock(
+            return_value=(
+                'somefile.csv', 'Comma-separated Values (*.csv)'
+            )
+        )
+        action.get_output_file()
+        assert action.dialog.getSaveFileName.called is True
+
+    def test_export_model(self, model):
+        model.items = ["dummy"]
+
+        action = ExportCSVConfirmedAction()
+        action.dialog.getSaveFileName = Mock(
+            return_value=(
+                'somefile.csv', 'Comma-separated Values (*.csv)'
+            )
+        )
+        action.save_file_to_disk = Mock()
+
+        strategy = Mock()
+        strategy_class = Mock(return_value=strategy)
+        action.export_model(model, report_strategy=strategy_class)
+        assert strategy.generate.called is True
+
+    def test_export_model_calls_save_file(self, model):
+        model.items = ["dummy"]
+
+        action = ExportCSVConfirmedAction()
+        action.dialog.getSaveFileName = Mock(
+            return_value=(
+                'somefile.csv', 'Comma-separated Values (*.csv)'
+            )
+        )
+        action.save_file_to_disk = Mock()
+
+        strategy = Mock()
+        strategy_class = Mock(return_value=strategy)
+        action.export_model(model, report_strategy=strategy_class)
+        action.save_file_to_disk.assert_called_once_with('somefile.csv', ANY)
+
