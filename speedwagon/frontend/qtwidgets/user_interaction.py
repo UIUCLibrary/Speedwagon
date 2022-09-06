@@ -175,7 +175,11 @@ class DetailsSorterProxyModel(QtCore.QSortFilterProxyModel):
 
 
 class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
+    """Add file details to the file directory list model."""
+
     class DetailsColumns(enum.IntEnum):
+        """Columns used."""
+
         SELECTED = 0
         NAME = 1
         LOCATION = 2
@@ -186,6 +190,7 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex] = None
     ) -> int:
+        """Column count."""
         return len(self.DetailsColumns)
 
     def index(
@@ -197,6 +202,7 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
                 QtCore.QPersistentModelIndex
             ] = QtCore.QModelIndex()
     ) -> QtCore.QModelIndex:
+        """Generate new index."""
         return self.createIndex(row, column)
 
     def mapToSource(
@@ -206,6 +212,7 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
                 QtCore.QPersistentModelIndex
             ]
     ) -> QtCore.QModelIndex:
+        """Map to source model."""
         return self.sourceModel().index(
             proxy_index.row(),
             0
@@ -218,6 +225,7 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
                 QtCore.QPersistentModelIndex
             ]
     ) -> QtCore.QModelIndex:
+        """Map from source model."""
         if source_index.isValid() and \
                 0 <= source_index.row() < self.rowCount():
             return self.createIndex(
@@ -233,6 +241,7 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
             orientation: QtCore.Qt.Orientation,
             role: int = QtCore.Qt.DisplayRole
     ) -> str:
+        """Header data."""
         if orientation == QtCore.Qt.Horizontal and \
                 role == QtCore.Qt.DisplayRole:
             if section == self.DetailsColumns.NAME:
@@ -248,6 +257,7 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex
             ] = None) -> int:
+        """Row count."""
         source_model = self.sourceModel()
         if not source_model:
             return 0
@@ -260,6 +270,7 @@ class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
                 QtCore.QPersistentModelIndex
             ],
             role: int = Qt.DisplayRole) -> Any:
+        """Get data including name and location."""
         # Only the first column should be checkable
         if role == QtCore.Qt.CheckStateRole and proxy_index.column() != 0:
             return None
@@ -408,24 +419,32 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
 
 
 class AbsConfirmOutputReport(abc.ABC):
+    """Abstract class to generate output text format."""
+
+    # This is an abstract class that needs only one method.
+    # pylint: disable=R0903
     def __init__(self, model: ConfirmListModel) -> None:
         self.model = model
 
     @abc.abstractmethod
     def generate(self) -> str:
-        """Create a output file report as a string."""
+        """Create an output file report as a string."""
 
 
 class ExportCSVConfirmedDeleted(AbsConfirmOutputReport):
+    """CVS report generator class for deleted items."""
+
     field_names = [
         'path',
         "selected_for_removal"
     ]
 
     def generate(self) -> str:
+        """Create an output file report as a string."""
         return self.generate_csv()
 
     def generate_csv(self) -> str:
+        """Generate csv data as a string from the model."""
         with io.StringIO() as file_string:
             writer = csv.DictWriter(file_string, fieldnames=self.field_names)
             writer.writeheader()
@@ -443,7 +462,10 @@ class ExportCSVConfirmedDeleted(AbsConfirmOutputReport):
 
 
 class ExportCSVConfirmedAction:
+    """Export confirmed list to a CSV file."""
+
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
+        """Create a new export csv confirmed action."""
         self._parent = parent
         self.dialog = QtWidgets.QFileDialog(self._parent)
 
@@ -452,6 +474,7 @@ class ExportCSVConfirmedAction:
             model: ConfirmListModel,
             report_strategy: Optional[AbsConfirmOutputReport] = None
     ) -> None:
+        """Export confirm model to a csv file on user's hard drive."""
         output_file = self.get_output_file()
         if output_file is None:
             return
@@ -461,7 +484,7 @@ class ExportCSVConfirmedAction:
         self.save_file_to_disk(output_file, report)
 
     def get_output_file(self) -> Optional[str]:
-        """Request the file name to use"""
+        """Request the file name to use."""
         filename, _ = self.dialog.getSaveFileName(
             self._parent,
             caption="Save File",
@@ -472,7 +495,8 @@ class ExportCSVConfirmedAction:
 
     @staticmethod
     def save_file_to_disk(filename: str, data: str) -> None:
-        with open(filename, "w") as file:
+        """Save data to a file on disk."""
+        with open(filename, "w", encoding="utf-8") as file:
             file.write(data)
 
 
