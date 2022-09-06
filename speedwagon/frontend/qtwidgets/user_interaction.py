@@ -330,9 +330,7 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self._connect_signals()
 
         layout.addWidget(self.package_view)
-        # self.dialog_button_box.button(QtWidgets.QDialogButtonBox.)
         layout.addWidget(self.button_frame)
-        # layout.addWidget(self.select_all_button)
         layout.addWidget(self.dialog_button_box)
         self.setLayout(layout)
 
