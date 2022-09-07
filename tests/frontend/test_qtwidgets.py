@@ -535,10 +535,10 @@ class TestExportConfirmedDeletedAction:
 
 class TestExportCSVConfirmedAction:
     @pytest.fixture
-    def model(self) -> qtwidgets.user_interaction.ConfirmListModel:
+    def model(self, qtbot) -> qtwidgets.user_interaction.ConfirmListModel:
         return qtwidgets.user_interaction.ConfirmListModel()
 
-    def test_calls_getSaveFileName(self, qtbot,model):
+    def test_calls_getSaveFileName(self, model):
         action = ExportCSVConfirmedAction()
         model.items = ["dummy"]
         # action.export_model(model)
