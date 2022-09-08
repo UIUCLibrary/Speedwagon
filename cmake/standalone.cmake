@@ -168,6 +168,7 @@ add_custom_command(
         ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages/speedwagon
         DEPENDS wheel
         COMMAND ${VENV_PYTHON} -m pip install ${PROJECT_BINARY_DIR}/speedwagon-${SPEEDWAGON_VERSION}-py3-none-any.whl -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
+        COMMAND ${VENV_PYTHON} -m pip install PySide6 -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
         COMMENT "Installing ${PROJECT_NAME} to standalone build"
 )
 
