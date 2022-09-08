@@ -41,6 +41,7 @@ if (NOT embedded_python_POPULATED)
             RESULTS_VARIABLE  PYTHON_EMBEDDED_P_SIZE
     )
     set(CMAKE_SIZEOF_VOID_P ${PYTHON_EMBEDDED_P_SIZE})
+    set(CPACK_SYSTEM_NAME "win64")
     message(STATUS "Fetching Embedded Distribution of Python version ${PYTHON_VERSION_STRING} for ${CMAKE_SYSTEM_PROCESSOR} - Done")
 
     find_file(PYTHON_EMBEDDED_PTH_FILE
