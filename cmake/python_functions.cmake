@@ -3,7 +3,7 @@ function(get_python_version SETUP_PY)
     cmake_parse_arguments(PYTHON "" "VERSION;MAJOR;MINOR;PATCH" "" ${ARGN})
 
     execute_process(
-        COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} --version
+        COMMAND ${Python_EXECUTABLE} ${SETUP_PY} --version
         OUTPUT_VARIABLE PYTHON_PACKAGE_VERSION
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
@@ -35,7 +35,7 @@ endfunction(get_python_version)
 
 macro(create_virtual_env)
     message(STATUS "Generating Python virtual environment for building")
-    execute_process(COMMAND ${PYTHON_EXECUTABLE} -m venv ${SPEEDWAGON_VENV_PATH})
+    execute_process(COMMAND ${Python_EXECUTABLE} -m venv ${SPEEDWAGON_VENV_PATH})
     message(STATUS "Generating Python virtual environment for building - Done")
     find_program(VENV_PYTHON
         NAMES python
@@ -120,5 +120,5 @@ function(get_embedded_python_url)
     cmake_parse_arguments(EMBEDDED_PYTHON "" "VERSION;URL_VAR" "" ${ARGN})
     string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} PROCESSOR_TYPE)
 
-    set(${EMBEDDED_PYTHON_URL_VAR} "https://www.python.org/ftp/python/${EMBEDDED_PYTHON_VERSION}/python-${EMBEDDED_PYTHON_VERSION}-embed-${PROCESSOR_TYPE}.zip" PARENT_SCOPE)
+    set(${EMBEDDED_PYTHON_URL_VAR} "https://www.python.org/ftp/python/${Python_VERSION}/python-${Python_VERSION}-embed-${PROCESSOR_TYPE}.zip" PARENT_SCOPE)
 endfunction(get_embedded_python_url)

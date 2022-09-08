@@ -4,9 +4,9 @@ project(Speedwagon
         )
 
 include(FetchContent)
-find_package(PythonInterp REQUIRED)
+find_package(Python REQUIRED)
 
-message(STATUS "Using Python ${PYTHON_VERSION_STRING} located at \"${PYTHON_EXECUTABLE}\".")
+message(STATUS "Using Python ${Python_VERSION} located at \"${Python_EXECUTABLE}\".")
 option(SPEEDWAGON_CACHE_PYTHON_WHEEL_DEPENDENCIES "Cache python whl dependencies to a folder for reuse" ON)
 option(SPEEDWAGON_SYNC_PYTHON_BUILD_VENV "SYNC installed python packages in build virtual environment" ON)
 option(SPEEDWAGON_TESTCI "For testing ci builds" OFF)
