@@ -17,7 +17,7 @@ find_file(SPEEDWAGON_DOC_PDF
         )
 
 get_embedded_python_url(
-        VERSION ${PYTHON_VERSION_STRING}
+        VERSION ${Python_VERSION}
         URL_VAR EMBEDDED_PYTHON_URL
 )
 
@@ -30,28 +30,29 @@ FetchContent_GetProperties(embedded_python)
 
 
 if (NOT embedded_python_POPULATED)
-    message(STATUS "Fetching Embedded Distribution of Python version ${PYTHON_VERSION_STRING} for ${CMAKE_SYSTEM_PROCESSOR}")
+    message(STATUS "Fetching Embedded Distribution of Python version ${Python_VERSION} for ${CMAKE_SYSTEM_PROCESSOR}")
     FetchContent_Populate(embedded_python)
 
     # Get pointer size. Used for CPack and deciding if the version of Python
     # used is 32 bit or 64 bit
     execute_process(
-            COMMAND python  -c "import struct;import sys;sys ;sys.exit(struct.calcsize('P'))"
-            WORKING_DIRECTORY embedded_python_SOURCE_DIR
+            COMMAND ${Python_EXECUTABLE} -c "import struct;import sys;sys ;sys.exit(struct.calcsize('P'))"
             RESULTS_VARIABLE  PYTHON_EMBEDDED_P_SIZE
     )
     set(CMAKE_SIZEOF_VOID_P ${PYTHON_EMBEDDED_P_SIZE})
-    set(CPACK_SYSTEM_NAME "win64")
-    message(STATUS "Fetching Embedded Distribution of Python version ${PYTHON_VERSION_STRING} for ${CMAKE_SYSTEM_PROCESSOR} - Done")
+    if("${PYTHON_EMBEDDED_P_SIZE}" STREQUAL "8")
+        set(CPACK_SYSTEM_NAME "win64")
+    endif()
+    message(STATUS "Fetching Embedded Distribution of Python version ${Python_VERSION} for ${CMAKE_SYSTEM_PROCESSOR} - Done")
 
     find_file(PYTHON_EMBEDDED_PTH_FILE
-            NAMES python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth
+            NAMES python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}._pth
             HINTS ${embedded_python_SOURCE_DIR}
             NO_DEFAULT_PATH
             )
 
-    set(PYTHON_INSTALL_CONFIG_PTH_FILE "${CMAKE_CURRENT_BINARY_DIR}/configs/install/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth")
-    set(PYTHON_TEST_CONFIG_PTH_FILE "${CMAKE_CURRENT_BINARY_DIR}/configs/test/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth")
+    set(PYTHON_INSTALL_CONFIG_PTH_FILE "${CMAKE_CURRENT_BINARY_DIR}/configs/install/python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}._pth")
+    set(PYTHON_TEST_CONFIG_PTH_FILE "${CMAKE_CURRENT_BINARY_DIR}/configs/test/python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}._pth")
 
     create_pth_configure_file(
             SOURCE_PTH_FILE "${PYTHON_EMBEDDED_PTH_FILE}"
@@ -208,8 +209,8 @@ if(WIN32)
             COMMENT "Adding Python standalone distribution to build"
             )
     add_custom_command(TARGET standalone POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PYTHON_TEST_CONFIG_PTH_FILE} ${PROJECT_BINARY_DIR}/standalone/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth
-            COMMENT "Fixing up python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PYTHON_TEST_CONFIG_PTH_FILE} ${PROJECT_BINARY_DIR}/standalone/python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}._pth
+            COMMENT "Fixing up python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}._pth"
             )
     install(FILES ${PYTHON_INSTALL_CONFIG_PTH_FILE} DESTINATION bin)
     install(PROGRAMS
@@ -308,7 +309,7 @@ if(WIN32)
             PATTERN "Lib" EXCLUDE
             PATTERN "python.exe" EXCLUDE
             PATTERN "pythonw.exe" EXCLUDE
-            PATTERN "python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth" EXCLUDE
+            PATTERN "python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}._pth" EXCLUDE
             )
 
     if(EXISTS "${SPEEDWAGON_DOC_PDF}")
