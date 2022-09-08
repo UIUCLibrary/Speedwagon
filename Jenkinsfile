@@ -1316,7 +1316,11 @@ pipeline {
                              def macPackages = [:]
                             SUPPORTED_MAC_VERSIONS.each{pythonVersion ->
                                 macPackages["Test Python ${pythonVersion}: wheel Mac"] = {
-                                    withEnv(['QT_QPA_PLATFORM=offscreen']) {
+                                    withEnv([
+                                        'QT_QPA_PLATFORM=offscreen',
+                                        'PATH+EXTRA=./venv/bin'
+
+                                    ]) {
                                         devpi.testDevpiPackage(
                                             agent: [
                                                 label: "mac && python${pythonVersion} && x86 && devpi-access"
@@ -1338,7 +1342,7 @@ pipeline {
                                                         label:'Installing Devpi client',
                                                         script: '''python3 -m venv venv
                                                                     venv/bin/python -m pip install pip --upgrade
-                                                                    venv/bin/python -m pip install devpi_client
+                                                                    venv/bin/python -m pip install devpi_client tox
                                                                     '''
                                                     )
                                                 },
@@ -1351,7 +1355,10 @@ pipeline {
                                     }
                                 }
                                 macPackages["Test Python ${pythonVersion}: sdist Mac"] = {
-                                    withEnv(['QT_QPA_PLATFORM=offscreen']) {
+                                    withEnv([
+                                    'QT_QPA_PLATFORM=offscreen',
+                                    'PATH+EXTRA=./venv/bin'
+                                    ]) {
                                         devpi.testDevpiPackage(
                                             agent: [
                                                 label: "mac && python${pythonVersion} && x86 && devpi-access"
@@ -1374,7 +1381,7 @@ pipeline {
                                                         label:'Installing Devpi client',
                                                         script: '''python3 -m venv venv
                                                                     venv/bin/python -m pip install pip --upgrade
-                                                                    venv/bin/python -m pip install devpi_client
+                                                                    venv/bin/python -m pip install devpi_client tox
                                                                     '''
                                                     )
                                                 },
