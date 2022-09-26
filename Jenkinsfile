@@ -1045,6 +1045,7 @@ pipeline {
                                     equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
                                     equals expected: true, actual: params.DEPLOY_DMG
                                 }
+                                beforeInput true
                             }
                             stages{
                                 stage('Create Build Environment'){
