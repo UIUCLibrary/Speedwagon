@@ -507,14 +507,33 @@ def buildSphinx(){
 }
 
 startup()
+
 def get_props(){
     stage('Reading Package Metadata'){
-        node(){
-            unstash 'DIST-INFO'
-            return readProperties(interpolate: true, file: 'speedwagon.dist-info/METADATA')
+        node() {
+            try{
+                unstash 'DIST-INFO'
+                def metadataFile = findFiles(excludes: '', glob: '*.dist-info/METADATA')[0]
+                def package_metadata = readProperties interpolate: true, file: metadataFile.path
+                echo """Metadata:
+
+    Name      ${package_metadata.Name}
+    Version   ${package_metadata.Version}
+    """
+                return package_metadata
+            } finally {
+                cleanWs(
+                    patterns: [
+                            [pattern: '*.dist-info/**', type: 'INCLUDE'],
+                        ],
+                    notFailBuild: true,
+                    deleteDirs: true
+                )
+            }
         }
     }
 }
+
 props = get_props()
 pipeline {
     agent none
