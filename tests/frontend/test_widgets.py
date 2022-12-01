@@ -47,10 +47,10 @@ class TestDelegateSelection:
     ):
         delegate_widget = \
             speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection()
-
+        parent = QtWidgets.QWidget()
         assert isinstance(
             delegate_widget.createEditor(
-                parent=QtWidgets.QWidget(),
+                parent=parent,
                 option=QtWidgets.QStyleOptionViewItem(),
                 index=index
             ),
