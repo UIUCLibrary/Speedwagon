@@ -48,6 +48,7 @@ class TestDelegateSelection:
         delegate_widget = \
             speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection()
         parent = QtWidgets.QWidget()
+        qtbot.addWidget(parent)
         assert isinstance(
             delegate_widget.createEditor(
                 parent=parent,
