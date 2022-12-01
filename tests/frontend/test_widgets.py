@@ -139,7 +139,7 @@ class TestCheckBoxWidget:
         widget = speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget()
         assert widget.data is False
         with qtbot.wait_signal(widget.dataChanged):
-            widget.check_box.setCheckState(QtCore.Qt.Checked)
+            widget.check_box.setChecked(True)
         assert widget.data is True
 
 
