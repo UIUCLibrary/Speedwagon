@@ -145,6 +145,7 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
     ) -> None:
         super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
         self.edit = QtWidgets.QLineEdit(parent=self)
+        # self.edit = QtWidgets.QLineEdit(parent=self)
 
         self._make_connections()
 
@@ -284,7 +285,7 @@ class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
             return super().createEditor(parent, option, index)
 
         editor_widget: EditDelegateWidget = \
-            editor_type(widget_metadata=json_data)
+            editor_type(parent, widget_metadata=json_data)
 
         editor_widget.setParent(parent)
         return editor_widget
