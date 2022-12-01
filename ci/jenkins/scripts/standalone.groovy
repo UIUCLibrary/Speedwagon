@@ -80,7 +80,7 @@ def build_standalone(args=[:]){
                     bat "tree ${buildDir} /A /F"
                 }
                 archiveArtifacts(allowEmptyArchive: true, artifacts: "${buildDir}/CMakeCache.txt")
-                archiveArtifacts(artifacts: "${buildDir}/CMakeFiles/**")
+                archiveArtifacts(allowEmptyArchive: true, artifacts: "${buildDir}/CMakeFiles/**")
 //                 archiveArtifacts(artifacts: "${buildDir}/CMakeFiles/*.log")
                 throw e
             }
