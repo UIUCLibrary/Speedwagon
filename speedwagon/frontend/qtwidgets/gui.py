@@ -112,7 +112,7 @@ class ToolConsole(QtWidgets.QWidget):
 
     def _follow_text(self) -> None:
         cursor = QtGui.QTextCursor(self._log)
-        cursor.movePosition(cursor.End)
+        cursor.movePosition(cursor.MoveOperation.End)
         self._console.setTextCursor(cursor)
 
     @QtCore.Slot(str)
@@ -121,7 +121,7 @@ class ToolConsole(QtWidgets.QWidget):
             message: str,
     ) -> None:
 
-        self.cursor.movePosition(self.cursor.End)
+        self.cursor.movePosition(self.cursor.MoveOperation.End)
         self.cursor.beginEditBlock()
         self._console.setTextCursor(self.cursor)
         self.cursor.insertHtml(message)
