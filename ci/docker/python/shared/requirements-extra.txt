@@ -1,5 +1,5 @@
 HathiValidate>=0.3.4
-PySide6
+-r requirements/requirements-gui.txt
 ruamel.yaml
 six>=1.11
 pydocstyle

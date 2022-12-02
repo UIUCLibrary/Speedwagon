@@ -144,8 +144,7 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
             **kwargs
     ) -> None:
         super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
-        self.edit = QtWidgets.QLineEdit(parent=self)
-        # self.edit = QtWidgets.QLineEdit(parent=self)
+        self.edit = QtWidgets.QLineEdit(self)
 
         self._make_connections()
 

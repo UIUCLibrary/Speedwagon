@@ -106,22 +106,31 @@ class TestDelegateSelection:
 
 class TestDropDownWidget:
     def test_empty_widget_metadata(self, qtbot):
-        widget = speedwagon.frontend.qtwidgets.widgets.ComboWidget()
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.ComboWidget(parent)
+        qtbot.addWidget(parent)
         assert isinstance(widget, QtWidgets.QWidget)
 
     def test_data_updating(self, qtbot):
+        parent = QtWidgets.QWidget()
+        qtbot.addWidget(parent)
         widget = speedwagon.frontend.qtwidgets.widgets.ComboWidget(
+            parent,
             widget_metadata={
                 "selections": ["spam", "bacon", "eggs"]
             }
         )
+        qtbot.addWidget(widget)
         starting_data = widget.data
         widget.combo_box.setCurrentIndex(0)
         first_index_data = widget.data
         assert starting_data is None and first_index_data == "spam"
 
     def test_placeholder_text(self, qtbot):
+        parent = QtWidgets.QWidget()
+        qtbot.addWidget(parent)
         widget = speedwagon.frontend.qtwidgets.widgets.ComboWidget(
+            parent,
             widget_metadata={
                 "selections": ["spam", "bacon", "eggs"],
                 "placeholder_text": "Dummy"
@@ -133,7 +142,10 @@ class TestDropDownWidget:
 
 class TestCheckBoxWidget:
     def test_empty_widget_metadata(self, qtbot):
-        widget = speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget()
+        parent = QtWidgets.QWidget()
+        qtbot.addWidget(parent)
+        widget = speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget(parent)
+        qtbot.addWidget(widget)
         assert isinstance(widget, QtWidgets.QWidget)
 
     def test_checking_changes_value(self, qtbot):
@@ -147,6 +159,7 @@ class TestCheckBoxWidget:
 class TestFileSelectWidget:
     def test_empty_widget_metadata(self, qtbot):
         widget = speedwagon.frontend.qtwidgets.widgets.FileSelectWidget()
+        qtbot.addWidget(widget)
         assert isinstance(widget, QtWidgets.QWidget)
 
     def test_browse_dir_valid(self, qtbot):

@@ -201,15 +201,15 @@ class AbsWorkflowProgressState(abc.ABC):
 
         close_button: QtWidgets.QPushButton \
             = button_box.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Close
-        )
+                QtWidgets.QDialogButtonBox.StandardButton.Close
+            )
         close_button.setEnabled(True)
 
     def reset_cancel_button(self) -> None:
         cancel_button: QtWidgets.QPushButton \
             = self.context.button_box.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Cancel
-        )
+                QtWidgets.QDialogButtonBox.StandardButton.Cancel
+            )
         cancel_button.setText("Cancel")
 
     @staticmethod
@@ -236,8 +236,8 @@ class WorkflowProgressStateIdle(AbsWorkflowProgressState):
     def _set_button_defaults(self) -> None:
         cancel_button: QtWidgets.QPushButton \
             = self.context.button_box.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Cancel
-        )
+                QtWidgets.QDialogButtonBox.StandardButton.Cancel
+            )
         cancel_button.setEnabled(False)
         self.context.rejected.connect(self.context.button_box.rejected)
 
@@ -253,14 +253,14 @@ class WorkflowProgressStateWorking(AbsWorkflowProgressState):
 
         cancel_button: QtWidgets.QPushButton \
             = self.context.button_box.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Cancel
-        )
+                QtWidgets.QDialogButtonBox.StandardButton.Cancel
+            )
         cancel_button.setEnabled(True)
         self.context.button_box.rejected.disconnect()
         close_button: QtWidgets.QPushButton \
             = self.context.button_box.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Close
-        )
+                QtWidgets.QDialogButtonBox.StandardButton.Close
+            )
         close_button.setEnabled(False)
 
     def start(self) -> None:
@@ -294,8 +294,8 @@ class WorkflowProgressStateStopping(AbsWorkflowProgressState):
 
         cancel_button: QtWidgets.QPushButton \
             = self.context.button_box.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Cancel
-        )
+                QtWidgets.QDialogButtonBox.StandardButton.Cancel
+            )
 
         cancel_button.setText("Force Quit")
 
@@ -327,8 +327,8 @@ class WorkflowProgressStateAborted(AbsWorkflowProgressState):
         self.set_buttons_to_close_only(context.button_box)
         close_button: QtWidgets.QPushButton \
             = self.context.button_box.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Close
-        )
+                QtWidgets.QDialogButtonBox.StandardButton.Close
+            )
         self.context.write_to_console("Successfully aborted")
         self.context.banner.setText("Aborted")
         close_button.clicked.connect(self.context.accept)
@@ -347,8 +347,8 @@ class WorkflowProgressStateFailed(AbsWorkflowProgressState):
         self.set_buttons_to_close_only(context.button_box)
         close_button: QtWidgets.QPushButton \
             = self.context.button_box.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Close
-        )
+                QtWidgets.QDialogButtonBox.StandardButton.Close
+            )
         close_button.clicked.connect(self.context.reject)
         self.hide_progress_bar(self.context.progress_bar)
         self.context.banner.setText("Failed")
@@ -374,8 +374,8 @@ class WorkflowProgressStateDone(AbsWorkflowProgressState):
         self.set_buttons_to_close_only(context.button_box)
         close_button: QtWidgets.QPushButton \
             = self.context.button_box.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Close
-        )
+                QtWidgets.QDialogButtonBox.StandardButton.Close
+            )
         close_button.setFocus()
         close_button.clicked.connect(self.context.accept)
         self.set_progress_to_full(self.context.progress_bar)
