@@ -8,6 +8,7 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_TRUSTED_HOST
 ARG PIP_INDEX_URL
 COPY requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt ci/docker/python/shared/requirements-extra.txt c:/temp/
+COPY requirements/ c:/temp/requirements
 RUN python -m pip install pip --upgrade ;`
     pip install setuptools --upgrade ; `
     pip install wheel ;`
@@ -28,7 +29,7 @@ RUN certutil -addstore -f root roots.sst ; `
 COPY --from=wheel_maker c:\wheels\ c:\wheels\
 
 COPY requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt c:/temp/
-
+COPY requirements/ c:/temp/requirements
 RUN python -m pip install pip --upgrade ; `
     pip install setuptools --upgrade ; `
     pip install --no-index --find-links c:\wheels `

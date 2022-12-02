@@ -7,6 +7,7 @@ ARG PIP_TRUSTED_HOST
 ARG PIP_INDEX_URL
 
 ADD requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt ci/docker/python/shared/requirements-extra.txt /tmp/
+COPY requirements/ /tmp/requirements
 RUN python -m pip install --upgrade pip &&  \
     pip install setuptools && \
     pip install wheel && \
@@ -56,6 +57,7 @@ ENV LC_ALL en_US.UTF-8
 ENV QT_QPA_PLATFORM="offscreen"
 COPY --from=wheel_builder /wheels /wheels/
 COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt /tmp/
+COPY requirements/ /tmp/requirements
 
 RUN python -m pip install --upgrade pip && \
     pip install --no-index --find-links=/wheels \

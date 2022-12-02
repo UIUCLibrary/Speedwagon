@@ -170,7 +170,7 @@ add_custom_command(
         ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages/speedwagon
         DEPENDS wheel
         COMMAND ${VENV_PYTHON} -m pip install ${PROJECT_BINARY_DIR}/speedwagon-${SPEEDWAGON_VERSION}-py3-none-any.whl -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
-        COMMAND ${VENV_PYTHON} -m pip install PySide6 -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
+        COMMAND ${VENV_PYTHON} -m pip install -r ${PROJECT_SOURCE_DIR}/requirements/requirements-gui.txt -t ${PROJECT_BINARY_DIR}/standalone/Lib/site-packages --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
         COMMENT "Installing ${PROJECT_NAME} to standalone build"
 )
 
@@ -190,7 +190,7 @@ endif(SPEEDWAGON_EXTRA_REQUIREMENTS_FILE)
 
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
         DEPENDS wheel
-        COMMAND ${VENV_PYTHON} -m pip install pytest pytest-qt PySide6 -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
+        COMMAND ${VENV_PYTHON} -m pip install pytest pytest-qt -r ${PROJECT_SOURCE_DIR}/requirements/requirements-gui.txt -t ${PROJECT_BINARY_DIR}/standalone/pytest --find-links ${SPEEDWAGON_PYTHON_DEPENDENCY_CACHE}
         COMMENT "Adding PySide6, pytest, and pytest-qt to standalone virtual environment"
         )
 set(SPEEDWAGON_PYTHON_INTERP python.exe)

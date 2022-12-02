@@ -13,11 +13,9 @@ pluggy==0.13.1
 py3exiv2bind>=0.1.9b1
 pyhathiprep>=0.1.7
 pyqt-distutils>=0.7.3
-# PySide6
 pytz==2020.1
 PyYAML==5.4
 ruamel.yaml>=0.17.17
-# ruamel.yaml.clib>=0.2.6
 tzlocal==2.1
 uiucprescon.packager[kdu]>=0.2.15b2
 uiucprescon.images>=0.0.5

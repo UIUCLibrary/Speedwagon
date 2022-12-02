@@ -66,6 +66,7 @@ RUN $PYTHON_VERSIONS = @(${Env:PYTHON_37_VERSION}, ${Env:PYTHON_38_VERSION}, ${E
 FROM BASE_BUILDER as WHEEL_BUILDER_PY37
 SHELL ["cmd", "/S", "/C" ]
 COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt c:/requirements/
+COPY requirements/ c:/requirements/requirements
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 ENV PY_PYTHON=3.7
@@ -81,6 +82,7 @@ RUN py -m pip list
 FROM BASE_BUILDER as WHEEL_BUILDER_PY38
 SHELL ["cmd", "/S", "/C" ]
 COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt c:/requirements/
+COPY requirements/ c:/requirements/requirements
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 ENV PY_PYTHON=3.8
@@ -97,6 +99,7 @@ RUN py -m pip list
 FROM BASE_BUILDER as WHEEL_BUILDER_PY39
 SHELL ["cmd", "/S", "/C" ]
 COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt c:/requirements/
+COPY requirements/ c:/requirements/requirements
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 ENV PY_PYTHON=3.9
@@ -112,6 +115,7 @@ RUN py -m pip list
 FROM BASE_BUILDER as WHEEL_BUILDER_PY310
 SHELL ["cmd", "/S", "/C" ]
 COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt c:/requirements/
+COPY requirements/ c:/requirements/requirements
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 ENV PY_PYTHON=3.10

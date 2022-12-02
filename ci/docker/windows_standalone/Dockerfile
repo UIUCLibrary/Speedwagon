@@ -115,6 +115,7 @@ ENV PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
 ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"
 
 ADD requirements.txt requirements-dev.txt c:\temp\
+COPY requirements/ c:/temp/requirements
 RUN python -m pip install --upgrade pip ; `
     pip install wheel ; `
     pip install --upgrade setuptools ;`

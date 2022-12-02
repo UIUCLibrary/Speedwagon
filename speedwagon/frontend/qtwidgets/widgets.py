@@ -54,7 +54,10 @@ class CheckBoxWidget(EditDelegateWidget):
         self.check_box = QtWidgets.QCheckBox(self)
         self.setFocusProxy(self.check_box)
         self._make_connections()
-        self.layout().addWidget(self.check_box)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.check_box)
+        self.setLayout(layout)
         self.set_defaults()
 
     def set_defaults(self) -> None:
@@ -65,21 +68,16 @@ class CheckBoxWidget(EditDelegateWidget):
         self.check_box.stateChanged.connect(self.update_data)
 
     def update_data(self, state: QtCore.Qt.CheckState) -> None:
-
-        if state == QtCore.Qt.Unchecked:
-            self.data = False
-
-        if state == QtCore.Qt.Checked:
-            self.data = True
+        self.data = self.check_box.isChecked()
         self.dataChanged.emit()
 
     @EditDelegateWidget.data.setter
     def data(self, value: bool) -> None:
         self._data = value
         if value:
-            self.check_box.setCheckState(QtCore.Qt.Checked)
+            self.check_box.setCheckState(QtCore.Qt.CheckState.Checked)
         else:
-            self.check_box.setCheckState(QtCore.Qt.Unchecked)
+            self.check_box.setCheckState(QtCore.Qt.CheckState.Unchecked)
 
 
 class ComboWidget(EditDelegateWidget):
@@ -106,7 +104,10 @@ class ComboWidget(EditDelegateWidget):
 
         self.setFocusProxy(self.combo_box)
         self._make_connections()
-        self.layout().addWidget(self.combo_box)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.combo_box)
+        self.setLayout(layout)
 
     def _make_connections(self) -> None:
         # pylint: disable=no-member
@@ -143,7 +144,7 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
             **kwargs
     ) -> None:
         super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
-        self.edit = QtWidgets.QLineEdit(parent=self)
+        self.edit = QtWidgets.QLineEdit(self)
 
         self._make_connections()
 
@@ -152,7 +153,10 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
             QtWidgets.QLineEdit.TrailingPosition
         )
         self.setFocusProxy(self.edit)
-        self.layout().addWidget(self.edit)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.edit)
+        self.setLayout(layout)
 
     def _make_connections(self) -> None:
         # pylint: disable=no-member
@@ -280,7 +284,7 @@ class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
             return super().createEditor(parent, option, index)
 
         editor_widget: EditDelegateWidget = \
-            editor_type(widget_metadata=json_data)
+            editor_type(parent, widget_metadata=json_data)
 
         editor_widget.setParent(parent)
         return editor_widget
