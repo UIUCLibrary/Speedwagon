@@ -294,6 +294,7 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
                     ],
                     test:[
                         setup: {
+                            checkout scm
                             sh(
                                 label:'Installing Devpi client',
                                 script: '''python3 -m venv venv
@@ -332,6 +333,7 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
                     ],
                     test:[
                         setup: {
+                            checkout scm
                             sh(
                                 label:'Installing Devpi client',
                                 script: '''python3 -m venv venv
@@ -370,6 +372,7 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
                     ],
                     test:[
                         setup: {
+                            checkout scm
                             sh(
                                 label:'Installing Devpi client',
                                 script: '''python3 -m venv venv
@@ -408,6 +411,7 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
                     ],
                     test:[
                         setup: {
+                            checkout scm
                             sh(
                                 label:'Installing Devpi client',
                                 script: '''python3 -m venv venv
