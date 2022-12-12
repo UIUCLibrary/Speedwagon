@@ -298,7 +298,7 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
                                 label:'Installing Devpi client',
                                 script: '''python3 -m venv venv
                                             venv/bin/python -m pip install pip --upgrade
-                                            venv/bin/python -m pip install devpi_client tox
+                                            venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
                                             '''
                             )
                         },
@@ -336,7 +336,7 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
                                 label:'Installing Devpi client',
                                 script: '''python3 -m venv venv
                                             venv/bin/python -m pip install pip --upgrade
-                                            venv/bin/python -m pip install devpi_client tox
+                                            venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
                                             '''
                             )
                         },
@@ -374,7 +374,7 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
                                 label:'Installing Devpi client',
                                 script: '''python3 -m venv venv
                                             venv/bin/python -m pip install pip --upgrade
-                                            venv/bin/python -m pip install devpi_client tox
+                                            venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
                                             '''
                             )
                         },
@@ -412,7 +412,7 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
                                 label:'Installing Devpi client',
                                 script: '''python3 -m venv venv
                                             venv/bin/python -m pip install pip --upgrade
-                                            venv/bin/python -m pip install devpi_client tox
+                                            venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
                                             '''
                             )
                         },
@@ -593,7 +593,7 @@ def testPythonPackages(){
                                 label:'Install Tox',
                                 script: '''python3 -m venv venv
                                            venv/bin/pip install pip --upgrade
-                                           venv/bin/pip install tox
+                                           venv/bin/pip install -r requirements/requirements_tox.txt
                                            '''
                             )
                         },
@@ -621,7 +621,7 @@ def testPythonPackages(){
                                 label:'Install Tox',
                                 script: '''python3 -m venv venv
                                            venv/bin/pip install pip --upgrade
-                                           venv/bin/pip install tox
+                                           venv/bin/pip install -r requirements/requirements_tox.txt
                                            '''
                             )
                         },
@@ -1537,7 +1537,7 @@ pipeline {
                     when {
                         allOf{
                             equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
-                     
+
                             anyOf {
                                 equals expected: 'master', actual: env.BRANCH_NAME
                                 tag '*'
