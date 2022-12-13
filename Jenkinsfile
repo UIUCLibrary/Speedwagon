@@ -733,7 +733,6 @@ pipeline {
         booleanParam(name: 'DEPLOY_HATHI_TOOL_BETA', defaultValue: false, description: 'Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/')
         booleanParam(name: 'DEPLOY_SCCM', defaultValue: false, description: 'Request deployment of MSI installer to SCCM')
         booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
-//         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
     stages {
         stage('Build Sphinx Documentation'){
@@ -1676,54 +1675,6 @@ pipeline {
                         }
                     }
                 }
-//                 stage('Deploy Online Documentation') {
-//                     when{
-//                         equals expected: true, actual: params.DEPLOY_DOCS
-//                         beforeAgent true
-//                         beforeInput true
-//                     }
-//                     agent any
-//                     input {
-//                         message 'Update project documentation?'
-//                     }
-//                     steps{
-//                         unstash 'DOCS_ARCHIVE'
-//                         dir('build/docs/html/'){
-//                             sshPublisher(
-//                                 publishers: [
-//                                     sshPublisherDesc(
-//                                         configName: 'apache-ns - lib-dccuser-updater',
-//                                         sshLabel: [label: 'Linux'],
-//                                         transfers: [sshTransfer(excludes: '',
-//                                         execCommand: '',
-//                                         execTimeout: 120000,
-//                                         flatten: false,
-//                                         makeEmptyDirs: false,
-//                                         noDefaultExcludes: false,
-//                                         patternSeparator: '[, ]+',
-//                                         remoteDirectory: params.DEPLOY_DOCS_URL_SUBFOLDER,
-//                                         remoteDirectorySDF: false,
-//                                         removePrefix: '',
-//                                         sourceFiles: '**')],
-//                                     usePromotionTimestamp: false,
-//                                     useWorkspaceInPromotion: false,
-//                                     verbose: true
-//                                     )
-//                                 ]
-//                             )
-//                         }
-//                     }
-//                     post{
-//                         cleanup{
-//                             cleanWs(
-//                                 deleteDirs: true,
-//                                 patterns: [
-//                                     [pattern: 'build/', type: 'INCLUDE']
-//                                 ]
-//                             )
-//                         }
-//                     }
-//                 }
                 stage('Deploy MacOS DMG to Nexus'){
                     when{
                         equals expected: true, actual: params.DEPLOY_DMG
