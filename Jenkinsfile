@@ -919,15 +919,7 @@ pipeline {
                                     }
                                 }
                             }
-                            post{
-                                cleanup{
-                                    cleanWs(patterns: [
-                                            [pattern: 'logs/*', type: 'INCLUDE'],
-                                            [pattern: 'reports/', type: 'INCLUDE'],
-                                            [pattern: '.coverage', type: 'INCLUDE']
-                                        ])
-                                }
-                            }
+
                         }
                         stage('Run Sonarqube Analysis'){
                             options{
@@ -941,15 +933,6 @@ pipeline {
                             steps{
                                 script{
                                     def sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
-                                    def stashes = [
-                                        'COVERAGE_REPORT_DATA',
-                                        'PYTEST_UNIT_TEST_RESULTS',
-                                        'PYLINT_REPORT',
-                                        'FLAKE8_REPORT'
-                                    ]
-                                    stashes.each{
-                                        unstash "$it"
-                                    }
                                     def sonarqubeConfig = [
                                                 installationName: 'sonarcloud',
                                                 credentialsId: 'sonarcloud-speedwagon',
@@ -998,6 +981,13 @@ pipeline {
                         }
                     }
                     post{
+                        cleanup{
+                            cleanWs(patterns: [
+                                    [pattern: 'logs/*', type: 'INCLUDE'],
+                                    [pattern: 'reports/', type: 'INCLUDE'],
+                                    [pattern: '.coverage', type: 'INCLUDE']
+                                ])
+                        }
                         failure{
                             sh 'pip list'
                         }
