@@ -1,7 +1,7 @@
 About Speedwagon
 ================
 
-Collection of tools and workflows for DS
+Collection of tools and workflows for DS.
 
 
 `Documentation <https://www.library.illinois.edu/dccdocs/speedwagon/>`_
@@ -18,10 +18,10 @@ Collection of tools and workflows for DS
         .. image:: https://jenkins.library.illinois.edu/buildStatus/icon?job=OpenSourceProjects/Speedwagon/master
            :target: https://jenkins.library.illinois.edu/job/OpenSourceProjects/job/Speedwagon/job/master/
 
-        .. image:: https://img.shields.io/jenkins/coverage/api/https/jenkins.library.illinois.edu/job/OpenSourceProjects/job/Speedwagon/job/master   
+        .. image:: https://img.shields.io/jenkins/coverage/api/https/jenkins.library.illinois.edu/job/OpenSourceProjects/job/Speedwagon/job/master
            :alt: Jenkins Coverage
            :target: https://jenkins.library.illinois.edu/job/OpenSourceProjects/job/Speedwagon/job/master/coverage/
-           
+
 How to Build Wheel from Source
 ------------------------------
 
