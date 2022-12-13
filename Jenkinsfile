@@ -446,12 +446,12 @@ def startup(){
     parallel(
     [
         failFast: true,
-        'Loading Reference Build Information': {
-            node(){
-                checkout scm
-                discoverGitReferenceBuild(latestBuildIfNotFound: true)
-            }
-        },
+//         'Loading Reference Build Information': {
+//             node(){
+//                 checkout scm
+//                 discoverGitReferenceBuild(latestBuildIfNotFound: true)
+//             }
+//         },
         'Getting Distribution Info': {
             node('linux && docker') {
                 timeout(2){
