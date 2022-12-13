@@ -948,7 +948,6 @@ pipeline {
                                     milestone label: 'sonarcloud'
                                     if (env.CHANGE_ID){
                                         sonarqube.submitToSonarcloud(
-                                            reportStashes: stashes,
                                             artifactStash: 'sonarqube artifacts',
                                             sonarqube: sonarqubeConfig,
                                             pullRequest: [
@@ -962,7 +961,6 @@ pipeline {
                                         )
                                     } else {
                                         sonarqube.submitToSonarcloud(
-                                            reportStashes: stashes,
                                             artifactStash: 'sonarqube artifacts',
                                             sonarqube: sonarqubeConfig,
                                             package: [

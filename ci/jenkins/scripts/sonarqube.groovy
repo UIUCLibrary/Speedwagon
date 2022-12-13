@@ -31,7 +31,6 @@ def get_sonarqube_unresolved_issues(report_task_file){
 
 
 def submitToSonarcloud(args = [:]){
-    def reportStashes = args['reportStashes']
     def artifactStash = args['artifactStash']
     def isPullRequest = args['pullRequest'] ? true: false
     def buildString = args['buildString'] ? args['buildString']: env.BUILD_TAG
