@@ -97,7 +97,7 @@ def deploy_to_nexus(filename, deployUrl, credId){
         }
     }
 }
-def deploy_artifacts_to_url(regex, urlDestination, jiraIssueKey){
+def deploy_artifacts_to_url(regex, urlDestination){
     script{
         def installer_files  = findFiles glob: 'dist/*.msi,dist/*.exe,dist/*.zip'
         def simple_file_names = []
@@ -114,11 +114,9 @@ def deploy_artifacts_to_url(regex, urlDestination, jiraIssueKey){
             }
         } finally{
             def url_message_list = new_urls.collect{"* " + it}.join("\n")
-            def jira_message = """The following beta file(s) are now available:
+            echo """The following beta file(s) are now available:
 ${url_message_list}
 """
-            echo "${jira_message}"
-            jiraComment body: jira_message, issueKey: jiraIssueKey
         }
     }
 }
@@ -207,7 +205,7 @@ def createNewChocolateyPackage(args=[:]){
     )
 }
 
-def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
+def deploy_sscm(file_glob, pkgVersion){
     script{
         def msi_files = findFiles glob: file_glob
         def deployment_request = requestDeploy yaml: "${WORKSPACE}/deployment.yml", file_name: msi_files[0]
@@ -233,7 +231,6 @@ def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
                 ]]
             )
 
-        jiraComment body: "Version ${pkgVersion} sent to staging for user testing.", issueKey: jiraIssueKey
         input('Deploy to production?')
         writeFile file: 'logs/deployment_request.txt', text: deployment_request
         echo deployment_request
@@ -717,7 +714,6 @@ props = get_props()
 pipeline {
     agent none
     parameters {
-        string(name: 'JIRA_ISSUE_VALUE', defaultValue: 'PSR-83', description: 'Jira task to generate about updates.')
         booleanParam(name: 'USE_SONARQUBE', defaultValue: true, description: 'Send data test data to SonarQube')
         booleanParam(name: 'RUN_CHECKS', defaultValue: true, description: 'Run checks on code')
         booleanParam(name: 'TEST_RUN_TOX', defaultValue: false, description: 'Run Tox Tests')
@@ -740,23 +736,6 @@ pipeline {
 //         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
     stages {
-
-//         stage("Testing Jira epic"){
-//             agent any
-//             options {
-//                 skipDefaultCheckout(true)
-//
-//             }
-//             steps {
-//                 check_jira_project('PSR',, 'logs/jira_project_data.json')
-//                 check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
-//             }
-//             post{
-//                 cleanup{
-//                     cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
-//                 }
-//             }
-//         }
         stage('Build Sphinx Documentation'){
             agent {
                 dockerfile {
@@ -1735,9 +1714,6 @@ pipeline {
 //                         }
 //                     }
 //                     post{
-//                         success{
-//                             jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: params.JIRA_ISSUE_VALUE
-//                         }
 //                         cleanup{
 //                             cleanWs(
 //                                 deleteDirs: true,
@@ -1819,7 +1795,7 @@ pipeline {
                         unstash 'SPEEDWAGON_DOC_PDF'
                         unstash 'DOCS_ARCHIVE'
                         script{
-                            deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
+                            deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/")
                         }
                     }
                     post{
@@ -1852,12 +1828,11 @@ pipeline {
                     steps {
                         unstash 'STANDALONE_INSTALLERS'
                         dir('dist'){
-                            deploy_sscm('*.msi', props.Version, params.JIRA_ISSUE_VALUE)
+                            deploy_sscm('*.msi', props.Version)
                         }
                     }
                     post {
                         success {
-                            jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: params.JIRA_ISSUE_VALUE
                             archiveArtifacts artifacts: 'logs/deployment_request.txt'
                         }
                     }
