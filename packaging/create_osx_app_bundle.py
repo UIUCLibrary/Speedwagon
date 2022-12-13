@@ -142,7 +142,13 @@ def write_cpack_config_file(
         autoescape=jinja2.select_autoescape()
     )
     template = env.get_template("CPackConfig.cmake.in")
-    platform_info = platform.system().lower()
+    if "arm64" in platform.platform():
+        platform_info = "arm64"
+    elif "x86_64" in platform.platform():
+        platform_info = "x86_64"
+    else:
+        platform_info = platform.system().lower()
+
     data = {**get_default_cpack_data(), **{
         "CPACK_INSTALLED_DIRECTORIES": {
             "source": source_app,

@@ -28,7 +28,6 @@ def getDevPiStagingIndex(){
     }
 }
 
-
 def getDevpiConfig() {
     node(){
         configFileProvider([configFile(fileId: 'devpi_config', variable: 'CONFIG_FILE')]) {
@@ -46,6 +45,29 @@ def getDevpiConfig() {
 }
 def DEVPI_CONFIG = getDevpiConfig()
 
+def macAppleBundle() {
+
+    stage('Create Build Environment'){
+        unstash 'PYTHON_PACKAGES'
+        sh(
+            label: 'Creating build environment',
+            script: '''python3 -m venv --upgrade-deps venv
+                       . ./venv/bin/activate
+                       pip install wheel
+                       pip install -r requirements-freeze.txt
+            '''
+            )
+        findFiles(glob: 'dist/speedwagon*.whl').each{ wheel ->
+            sh(label: "Installing ${wheel.name}", script: "venv/bin/pip install ${wheel}")
+        }
+        sh('venv/bin/pip list')
+    }
+    stage('Building Apple Application Bundle'){
+        unstash 'DIST-INFO'
+        sh(label: 'Running pyinstaller script', script: 'venv/bin/python packaging/create_osx_app_bundle.py')
+    }
+
+}
 
 def run_pylint(){
     def MAX_TIME = 10
@@ -776,6 +798,7 @@ pipeline {
                 stage('Code Quality'){
                     when{
                         equals expected: true, actual: params.RUN_CHECKS
+                        beforeAgent true
                     }
                     agent {
                         dockerfile {
@@ -1058,7 +1081,7 @@ pipeline {
                 }
                 stage('End-user packages'){
                     parallel{
-                        stage('Mac Application Bundle'){
+                        stage('Mac Application Bundle x86_64'){
                             agent{
                                 label 'mac && python3 && x86'
                             }
@@ -1069,40 +1092,48 @@ pipeline {
                                 }
                                 beforeInput true
                             }
-                            stages{
-                                stage('Create Build Environment'){
-                                    steps{
-                                        unstash 'PYTHON_PACKAGES'
-                                        sh(
-                                            label: 'Creating build environment',
-                                            script: '''python3 -m venv --upgrade-deps venv
-                                                       venv/bin/pip install -r requirements-freeze.txt
-                                            '''
-                                            )
-                                        script{
-                                            findFiles(glob: 'dist/speedwagon*.whl').each{ wheel ->
-                                                sh(label: "Installing ${wheel.name}", script: "venv/bin/pip install ${wheel}")
-                                            }
-                                        }
-
-                                    }
-                                    post{
-                                        success{
-                                            sh('venv/bin/pip list')
-                                        }
-                                    }
-                                }
-                                stage('Building Apple Application Bundle'){
-                                    steps{
-                                        unstash 'DIST-INFO'
-                                        sh(label: 'Running pyinstaller script', script: 'venv/bin/python packaging/create_osx_app_bundle.py')
-                                    }
+                            steps{
+                                script{
+                                    macAppleBundle()
                                 }
                             }
                             post{
                                 success{
                                     archiveArtifacts artifacts: 'dist/*.dmg', fingerprint: true
-                                    stash includes: 'dist/*.dmg', name: 'APPLE_APPLICATION_BUNDLE'
+                                    stash includes: 'dist/*.dmg', name: 'APPLE_APPLICATION_BUNDLE_X86_64'
+                                }
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        patterns: [
+                                            [pattern: 'dist/', type: 'INCLUDE'],
+                                            [pattern: 'build/', type: 'INCLUDE'],
+                                            [pattern: 'venv/', type: 'INCLUDE'],
+                                        ]
+                                    )
+                                }
+                            }
+                        }
+                        stage('Mac Application Bundle M1'){
+                            agent{
+                                label 'mac && python3 && m1'
+                            }
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
+                                    equals expected: true, actual: params.DEPLOY_DMG
+                                }
+                                beforeInput true
+                            }
+                            steps{
+                                script{
+                                    macAppleBundle()
+                                }
+                            }
+                            post{
+                                success{
+                                    archiveArtifacts artifacts: 'dist/*.dmg', fingerprint: true
+                                    stash includes: 'dist/*.dmg', name: 'APPLE_APPLICATION_BUNDLE_M1'
                                 }
                                 cleanup{
                                     cleanWs(
@@ -1675,7 +1706,8 @@ pipeline {
                         }
                     }
                     steps{
-                        unstash 'APPLE_APPLICATION_BUNDLE'
+                        unstash 'APPLE_APPLICATION_BUNDLE_X86_64'
+                        unstash 'APPLE_APPLICATION_BUNDLE_M1'
                         script{
                             findFiles(glob: 'dist/*.dmg').each{
                                 try{
