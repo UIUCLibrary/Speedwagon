@@ -998,6 +998,8 @@ pipeline {
                 anyOf{
                     equals expected: true, actual: params.BUILD_PACKAGES
                     equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
+                    equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
+                    equals expected: true, actual: params.DEPLOY_DMG
                     equals expected: true, actual: params.DEPLOY_DEVPI
                     equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
                     equals expected: true, actual: params.DEPLOY_CHOCOLATEY
