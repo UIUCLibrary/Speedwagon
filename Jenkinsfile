@@ -937,14 +937,6 @@ pipeline {
                                                 installationName: 'sonarcloud',
                                                 credentialsId: 'sonarcloud-speedwagon',
                                             ]
-                                    def agent = [
-                                            dockerfile: [
-                                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                                                label: 'linux && docker && x86',
-                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                args: '--mount source=sonar-cache-speedwagon,target=/opt/sonar/.sonar/cache',
-                                            ]
-                                        ]
                                     milestone label: 'sonarcloud'
                                     if (env.CHANGE_ID){
                                         sonarqube.submitToSonarcloud(
