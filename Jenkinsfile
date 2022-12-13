@@ -765,6 +765,17 @@ pipeline {
                     additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                   }
             }
+            when{
+                anyOf{
+                    equals expected: true, actual: params.RUN_CHECKS
+                    equals expected: true, actual: params.DEPLOY_DOCS
+                    equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
+                    equals expected: true, actual: params.DEPLOY_CHOCOLATEY
+                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+                }
+                beforeAgent true
+            }
             steps {
                 catchError(buildResult: 'UNSTABLE', message: 'Sphinx has warnings', stageResult: "UNSTABLE") {
                     buildSphinx()
@@ -884,7 +895,6 @@ pipeline {
                                                 }
                                             }
                                         }
-
                                         stage('Run Pylint Static Analysis') {
                                             steps{
                                                 run_pylint()
