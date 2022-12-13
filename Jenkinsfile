@@ -965,7 +965,6 @@ pipeline {
                                     milestone label: 'sonarcloud'
                                     if (env.CHANGE_ID){
                                         sonarqube.submitToSonarcloud(
-                                            agent: agent,
                                             reportStashes: stashes,
                                             artifactStash: 'sonarqube artifacts',
                                             sonarqube: sonarqubeConfig,
@@ -980,7 +979,6 @@ pipeline {
                                         )
                                     } else {
                                         sonarqube.submitToSonarcloud(
-                                            agent: agent,
                                             reportStashes: stashes,
                                             artifactStash: 'sonarqube artifacts',
                                             sonarqube: sonarqubeConfig,
