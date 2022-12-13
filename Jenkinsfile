@@ -28,11 +28,23 @@ def getDevPiStagingIndex(){
     }
 }
 
-DEVPI_CONFIG = [
-    index: getDevPiStagingIndex(),
-    server: 'https://devpi.library.illinois.edu',
-    credentialsId: 'DS_devpi',
-]
+
+def getDevpiConfig() {
+    node(){
+        configFileProvider([configFile(fileId: 'devpi_config', variable: 'CONFIG_FILE')]) {
+            def configProperties = readProperties(file: CONFIG_FILE)
+            configProperties.stagingIndex = {
+                if (env.TAG_NAME?.trim()){
+                    return 'tag_staging'
+                } else{
+                    return "${env.BRANCH_NAME}_staging"
+                }
+            }()
+            return configProperties
+        }
+    }
+}
+def DEVPI_CONFIG = getDevpiConfig()
 
 
 def run_pylint(){
@@ -85,7 +97,7 @@ def deploy_to_nexus(filename, deployUrl, credId){
         }
     }
 }
-def deploy_artifacts_to_url(regex, urlDestination, jiraIssueKey){
+def deploy_artifacts_to_url(regex, urlDestination){
     script{
         def installer_files  = findFiles glob: 'dist/*.msi,dist/*.exe,dist/*.zip'
         def simple_file_names = []
@@ -102,11 +114,9 @@ def deploy_artifacts_to_url(regex, urlDestination, jiraIssueKey){
             }
         } finally{
             def url_message_list = new_urls.collect{"* " + it}.join("\n")
-            def jira_message = """The following beta file(s) are now available:
+            echo """The following beta file(s) are now available:
 ${url_message_list}
 """
-            echo "${jira_message}"
-            jiraComment body: jira_message, issueKey: jiraIssueKey
         }
     }
 }
@@ -195,7 +205,7 @@ def createNewChocolateyPackage(args=[:]){
     )
 }
 
-def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
+def deploy_sscm(file_glob, pkgVersion){
     script{
         def msi_files = findFiles glob: file_glob
         def deployment_request = requestDeploy yaml: "${WORKSPACE}/deployment.yml", file_name: msi_files[0]
@@ -221,7 +231,6 @@ def deploy_sscm(file_glob, pkgVersion, jiraIssueKey){
                 ]]
             )
 
-        jiraComment body: "Version ${pkgVersion} sent to staging for user testing.", issueKey: jiraIssueKey
         input('Deploy to production?')
         writeFile file: 'logs/deployment_request.txt', text: deployment_request
         echo deployment_request
@@ -290,15 +299,16 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
                     package:[
                         name: packageName,
                         version: packageVersion,
-                        selector: "(${pythonVersion.replace('.','')}).*(-*macosx_*).*(x86_64\\.whl)"
+                        selector: 'whl'
                     ],
                     test:[
                         setup: {
+                            checkout scm
                             sh(
                                 label:'Installing Devpi client',
                                 script: '''python3 -m venv venv
                                             venv/bin/python -m pip install pip --upgrade
-                                            venv/bin/python -m pip install devpi_client tox
+                                            venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
                                             '''
                             )
                         },
@@ -328,15 +338,16 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
                     package:[
                         name: packageName,
                         version: packageVersion,
-                        selector: "(${pythonVersion.replace('.','')}).*(-*macosx_*).*(arm64\\.whl)"
+                        selector: 'whl'
                     ],
                     test:[
                         setup: {
+                            checkout scm
                             sh(
                                 label:'Installing Devpi client',
                                 script: '''python3 -m venv venv
                                             venv/bin/python -m pip install pip --upgrade
-                                            venv/bin/python -m pip install devpi_client tox
+                                            venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
                                             '''
                             )
                         },
@@ -370,11 +381,12 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
                     ],
                     test:[
                         setup: {
+                            checkout scm
                             sh(
                                 label:'Installing Devpi client',
                                 script: '''python3 -m venv venv
                                             venv/bin/python -m pip install pip --upgrade
-                                            venv/bin/python -m pip install devpi_client tox
+                                            venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
                                             '''
                             )
                         },
@@ -408,11 +420,12 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
                     ],
                     test:[
                         setup: {
+                            checkout scm
                             sh(
                                 label:'Installing Devpi client',
                                 script: '''python3 -m venv venv
                                             venv/bin/python -m pip install pip --upgrade
-                                            venv/bin/python -m pip install devpi_client tox
+                                            venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
                                             '''
                             )
                         },
@@ -593,7 +606,7 @@ def testPythonPackages(){
                                 label:'Install Tox',
                                 script: '''python3 -m venv venv
                                            venv/bin/pip install pip --upgrade
-                                           venv/bin/pip install tox
+                                           venv/bin/pip install -r requirements/requirements_tox.txt
                                            '''
                             )
                         },
@@ -621,7 +634,7 @@ def testPythonPackages(){
                                 label:'Install Tox',
                                 script: '''python3 -m venv venv
                                            venv/bin/pip install pip --upgrade
-                                           venv/bin/pip install tox
+                                           venv/bin/pip install -r requirements/requirements_tox.txt
                                            '''
                             )
                         },
@@ -701,7 +714,6 @@ props = get_props()
 pipeline {
     agent none
     parameters {
-        string(name: 'JIRA_ISSUE_VALUE', defaultValue: 'PSR-83', description: 'Jira task to generate about updates.')
         booleanParam(name: 'USE_SONARQUBE', defaultValue: true, description: 'Send data test data to SonarQube')
         booleanParam(name: 'RUN_CHECKS', defaultValue: true, description: 'Run checks on code')
         booleanParam(name: 'TEST_RUN_TOX', defaultValue: false, description: 'Run Tox Tests')
@@ -713,34 +725,16 @@ pipeline {
         booleanParam(name: 'PACKAGE_WINDOWS_STANDALONE_MSI', defaultValue: false, description: 'Create a standalone wix based .msi installer')
         booleanParam(name: 'PACKAGE_WINDOWS_STANDALONE_NSIS', defaultValue: false, description: 'Create a standalone NULLSOFT NSIS based .exe installer')
         booleanParam(name: 'PACKAGE_WINDOWS_STANDALONE_ZIP', defaultValue: false, description: 'Create a standalone portable package')
-        booleanParam(name: 'DEPLOY_DEVPI', defaultValue: false, description: "Deploy to DevPi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
-        booleanParam(name: 'DEPLOY_DEVPI_PRODUCTION', defaultValue: false, description: 'Deploy to https://devpi.library.illinois.edu/production/release')
+        booleanParam(name: 'DEPLOY_DEVPI', defaultValue: false, description: "Deploy to DevPi on ${DEVPI_CONFIG.server}/DS_Jenkins/${env.BRANCH_NAME}")
+        booleanParam(name: 'DEPLOY_DEVPI_PRODUCTION', defaultValue: false, description: "Deploy to ${DEVPI_CONFIG.server}/production/release")
         booleanParam(name: 'DEPLOY_PYPI', defaultValue: false, description: 'Deploy to pypi')
         booleanParam(name: 'DEPLOY_CHOCOLATEY', defaultValue: false, description: 'Deploy to Chocolatey repository')
         booleanParam(name: 'DEPLOY_DMG', defaultValue: false, description: 'Deploy MacOS standalone')
         booleanParam(name: 'DEPLOY_HATHI_TOOL_BETA', defaultValue: false, description: 'Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/')
         booleanParam(name: 'DEPLOY_SCCM', defaultValue: false, description: 'Request deployment of MSI installer to SCCM')
         booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
-//         string(name: 'DEPLOY_DOCS_URL_SUBFOLDER', defaultValue: "speedwagon", description: 'The directory that the docs should be saved under')
     }
     stages {
-
-//         stage("Testing Jira epic"){
-//             agent any
-//             options {
-//                 skipDefaultCheckout(true)
-//
-//             }
-//             steps {
-//                 check_jira_project('PSR',, 'logs/jira_project_data.json')
-//                 check_jira_issue("${params.JIRA_ISSUE_VALUE}", "logs/jira_issue_data.json")
-//             }
-//             post{
-//                 cleanup{
-//                     cleanWs(patterns: [[pattern: "logs/*.json", type: 'INCLUDE']])
-//                 }
-//             }
-//         }
         stage('Build Sphinx Documentation'){
             agent {
                 dockerfile {
@@ -914,26 +908,18 @@ pipeline {
                                         always{
                                             sh 'coverage combine && coverage xml -o reports/coverage.xml && coverage html -d reports/coverage'
                                             stash includes: 'reports/coverage.xml', name: 'COVERAGE_REPORT_DATA'
-                                        //   publishCoverage(
-                                        //       adapters: [
-                                        //               coberturaAdapter('reports/coverage.xml')
-                                        //           ],
-                                        //       calculateDiffForChangeRequests: true,
-                                        //       sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
-                                        //   )
+                                            publishCoverage(
+                                                adapters: [
+                                                    coberturaAdapter('reports/coverage.xml')
+                                                ],
+                                                calculateDiffForChangeRequests: true,
+                                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                                            )
                                         }
                                     }
                                 }
                             }
-                            post{
-                                cleanup{
-                                    cleanWs(patterns: [
-                                            [pattern: 'logs/*', type: 'INCLUDE'],
-                                            [pattern: 'reports/', type: 'INCLUDE'],
-                                            [pattern: '.coverage', type: 'INCLUDE']
-                                        ])
-                                }
-                            }
+
                         }
                         stage('Run Sonarqube Analysis'){
                             options{
@@ -947,32 +933,13 @@ pipeline {
                             steps{
                                 script{
                                     def sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
-                                    def stashes = [
-                                        'COVERAGE_REPORT_DATA',
-                                        'PYTEST_UNIT_TEST_RESULTS',
-                                        'PYLINT_REPORT',
-                                        'FLAKE8_REPORT'
-                                    ]
-                                    stashes.each{
-                                        unstash "$it"
-                                    }
                                     def sonarqubeConfig = [
                                                 installationName: 'sonarcloud',
                                                 credentialsId: 'sonarcloud-speedwagon',
                                             ]
-                                    def agent = [
-                                            dockerfile: [
-                                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                                                label: 'linux && docker && x86',
-                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                args: '--mount source=sonar-cache-speedwagon,target=/opt/sonar/.sonar/cache',
-                                            ]
-                                        ]
                                     milestone label: 'sonarcloud'
                                     if (env.CHANGE_ID){
                                         sonarqube.submitToSonarcloud(
-                                            agent: agent,
-                                            reportStashes: stashes,
                                             artifactStash: 'sonarqube artifacts',
                                             sonarqube: sonarqubeConfig,
                                             pullRequest: [
@@ -986,8 +953,6 @@ pipeline {
                                         )
                                     } else {
                                         sonarqube.submitToSonarcloud(
-                                            agent: agent,
-                                            reportStashes: stashes,
                                             artifactStash: 'sonarqube artifacts',
                                             sonarqube: sonarqubeConfig,
                                             package: [
@@ -1006,6 +971,13 @@ pipeline {
                         }
                     }
                     post{
+                        cleanup{
+                            cleanWs(patterns: [
+                                    [pattern: 'logs/*', type: 'INCLUDE'],
+                                    [pattern: 'reports/', type: 'INCLUDE'],
+                                    [pattern: '.coverage', type: 'INCLUDE']
+                                ])
+                        }
                         failure{
                             sh 'pip list'
                         }
@@ -1026,6 +998,8 @@ pipeline {
                 anyOf{
                     equals expected: true, actual: params.BUILD_PACKAGES
                     equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
+                    equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
+                    equals expected: true, actual: params.DEPLOY_DMG
                     equals expected: true, actual: params.DEPLOY_DEVPI
                     equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
                     equals expected: true, actual: params.DEPLOY_CHOCOLATEY
@@ -1347,9 +1321,9 @@ pipeline {
                         unstash 'PYTHON_PACKAGES'
                         script{
                             load('ci/jenkins/scripts/devpi.groovy').upload(
-                                    server: 'https://devpi.library.illinois.edu',
-                                    credentialsId: 'DS_devpi',
-                                    index: getDevPiStagingIndex(),
+                                    server: DEVPI_CONFIG.server,
+                                    credentialsId: DEVPI_CONFIG.credentialsId,
+                                    index: DEVPI_CONFIG.stagingIndex,
                                     clientDir: './devpi'
                                 )
                         }
@@ -1363,86 +1337,6 @@ pipeline {
                                 devpi = load('ci/jenkins/scripts/devpi.groovy')
                             }
                             def macPackages = getMacDevpiTestStages(props.Name, props.Version, SUPPORTED_MAC_VERSIONS, DEVPI_CONFIG.server, DEVPI_CONFIG.credentialsId, DEVPI_CONFIG.stagingIndex)
-//                             SUPPORTED_MAC_VERSIONS.each{pythonVersion ->
-//                                 macPackages["Test Python ${pythonVersion}: wheel Mac"] = {
-//                                     withEnv([
-//                                         'QT_QPA_PLATFORM=offscreen',
-//                                         'PATH+EXTRA=./venv/bin'
-//
-//                                     ]) {
-//                                         devpi.testDevpiPackage(
-//                                             agent: [
-//                                                 label: "mac && python${pythonVersion} && x86 && devpi-access"
-//                                             ],
-//                                             devpi: [
-//                                                 index: DEVPI_CONFIG.index,
-//                                                 server: DEVPI_CONFIG.server,
-//                                                 credentialsId: DEVPI_CONFIG.credentialsId,
-//                                                 devpiExec: 'venv/bin/devpi'
-//                                             ],
-//                                             package:[
-//                                                 name: props.Name,
-//                                                 version: props.Version,
-//                                                 selector: 'whl'
-//                                             ],
-//                                             test:[
-//                                                 setup: {
-//                                                     sh(
-//                                                         label:'Installing Devpi client',
-//                                                         script: '''python3 -m venv venv
-//                                                                     venv/bin/python -m pip install pip --upgrade
-//                                                                     venv/bin/python -m pip install devpi_client tox
-//                                                                     '''
-//                                                     )
-//                                                 },
-//                                                 toxEnv: "py${pythonVersion}".replace('.',''),
-//                                                 teardown: {
-//                                                     sh( label: 'Remove Devpi client', script: 'rm -r venv')
-//                                                 }
-//                                             ]
-//                                         )
-//                                     }
-//                                 }
-//                                 macPackages["Test Python ${pythonVersion}: sdist Mac"] = {
-//                                     withEnv([
-//                                     'QT_QPA_PLATFORM=offscreen',
-//                                     'PATH+EXTRA=./venv/bin'
-//                                     ]) {
-//                                         devpi.testDevpiPackage(
-//                                             agent: [
-//                                                 label: "mac && python${pythonVersion} && x86 && devpi-access"
-//                                             ],
-//                                             devpi: [
-//                                                 index: DEVPI_CONFIG.index,
-//                                                 server: DEVPI_CONFIG.server,
-//                                                 credentialsId: DEVPI_CONFIG.credentialsId,
-//                                                 devpiExec: 'venv/bin/devpi'
-//                                             ],
-//                                             package:[
-//                                                 name: props.Name,
-//                                                 version: props.Version,
-//                                                 selector: 'tar.gz'
-//                                             ],
-//                                             test:[
-//                                                 setup: {
-//                                                     checkout scm
-//                                                     sh(
-//                                                         label:'Installing Devpi client',
-//                                                         script: '''python3 -m venv venv
-//                                                                     venv/bin/python -m pip install pip --upgrade
-//                                                                     venv/bin/python -m pip install devpi_client tox
-//                                                                     '''
-//                                                     )
-//                                                 },
-//                                                 toxEnv: "py${pythonVersion}".replace('.',''),
-//                                                 teardown: {
-//                                                     sh( label: 'Remove Devpi client', script: 'rm -r venv')
-//                                                 }
-//                                             ]
-//                                         )
-//                                     }
-//                                 }
-//                             }
                             windowsPackages = [:]
                             SUPPORTED_WINDOWS_VERSIONS.each{pythonVersion ->
                                 windowsPackages["Test Python ${pythonVersion}: sdist Windows"] = {
@@ -1454,7 +1348,11 @@ pipeline {
                                                 label: 'windows && docker && x86 && devpi-access'
                                             ]
                                         ],
-                                        devpi: DEVPI_CONFIG,
+                                        devpi: [
+                                            index: DEVPI_CONFIG.stagingIndex,
+                                            server: DEVPI_CONFIG.server,
+                                            credentialsId: DEVPI_CONFIG.credentialsId,
+                                        ],
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
@@ -1474,7 +1372,11 @@ pipeline {
                                                 label: 'windows && docker && x86 && devpi-access'
                                             ]
                                         ],
-                                        devpi: DEVPI_CONFIG,
+                                        devpi: [
+                                            index: DEVPI_CONFIG.stagingIndex,
+                                            server: DEVPI_CONFIG.server,
+                                            credentialsId: DEVPI_CONFIG.credentialsId,
+                                        ],
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
@@ -1497,7 +1399,11 @@ pipeline {
                                                 label: 'linux && docker && x86 && devpi-access'
                                             ]
                                         ],
-                                        devpi: DEVPI_CONFIG,
+                                        devpi: [
+                                            index: DEVPI_CONFIG.stagingIndex,
+                                            server: DEVPI_CONFIG.server,
+                                            credentialsId: DEVPI_CONFIG.credentialsId,
+                                        ],
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
@@ -1517,7 +1423,11 @@ pipeline {
                                                 label: 'linux && docker && x86 && devpi-access'
                                             ]
                                         ],
-                                        devpi: DEVPI_CONFIG,
+                                        devpi: [
+                                            index: DEVPI_CONFIG.stagingIndex,
+                                            server: DEVPI_CONFIG.server,
+                                            credentialsId: DEVPI_CONFIG.credentialsId,
+                                        ],
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
@@ -1537,7 +1447,7 @@ pipeline {
                     when {
                         allOf{
                             equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
-                     
+
                             anyOf {
                                 equals expected: 'master', actual: env.BRANCH_NAME
                                 tag '*'
@@ -1561,10 +1471,10 @@ pipeline {
                             load('ci/jenkins/scripts/devpi.groovy').pushPackageToIndex(
                                 pkgName: props.Name,
                                 pkgVersion: props.Version,
-                                server: 'https://devpi.library.illinois.edu',
+                                server: DEVPI_CONFIG.server,
                                 indexSource: "DS_Jenkins/${getDevPiStagingIndex()}",
                                 indexDestination: 'production/release',
-                                credentialsId: 'DS_devpi'
+                                credentialsId: DEVPI_CONFIG.credentialsId
                             )
                         }
                     }
@@ -1580,10 +1490,10 @@ pipeline {
                                     load('ci/jenkins/scripts/devpi.groovy').pushPackageToIndex(
                                         pkgName: props.Name,
                                         pkgVersion: props.Version,
-                                        server: 'https://devpi.library.illinois.edu',
+                                        server: DEVPI_CONFIG.server,
                                         indexSource: "DS_Jenkins/${getDevPiStagingIndex()}",
                                         indexDestination: "DS_Jenkins/${env.BRANCH_NAME}",
-                                        credentialsId: 'DS_devpi'
+                                        credentialsId: DEVPI_CONFIG.credentialsId,
                                     )
                             }
                            }
@@ -1599,8 +1509,8 @@ pipeline {
                                     pkgName: props.Name,
                                     pkgVersion: props.Version,
                                     index: "DS_Jenkins/${getDevPiStagingIndex()}",
-                                    server: 'https://devpi.library.illinois.edu',
-                                    credentialsId: 'DS_devpi',
+                                    server: DEVPI_CONFIG.server,
+                                    credentialsId: DEVPI_CONFIG.credentialsId,
 
                                 )
                             }
@@ -1745,57 +1655,6 @@ pipeline {
                         }
                     }
                 }
-//                 stage('Deploy Online Documentation') {
-//                     when{
-//                         equals expected: true, actual: params.DEPLOY_DOCS
-//                         beforeAgent true
-//                         beforeInput true
-//                     }
-//                     agent any
-//                     input {
-//                         message 'Update project documentation?'
-//                     }
-//                     steps{
-//                         unstash 'DOCS_ARCHIVE'
-//                         dir('build/docs/html/'){
-//                             sshPublisher(
-//                                 publishers: [
-//                                     sshPublisherDesc(
-//                                         configName: 'apache-ns - lib-dccuser-updater',
-//                                         sshLabel: [label: 'Linux'],
-//                                         transfers: [sshTransfer(excludes: '',
-//                                         execCommand: '',
-//                                         execTimeout: 120000,
-//                                         flatten: false,
-//                                         makeEmptyDirs: false,
-//                                         noDefaultExcludes: false,
-//                                         patternSeparator: '[, ]+',
-//                                         remoteDirectory: params.DEPLOY_DOCS_URL_SUBFOLDER,
-//                                         remoteDirectorySDF: false,
-//                                         removePrefix: '',
-//                                         sourceFiles: '**')],
-//                                     usePromotionTimestamp: false,
-//                                     useWorkspaceInPromotion: false,
-//                                     verbose: true
-//                                     )
-//                                 ]
-//                             )
-//                         }
-//                     }
-//                     post{
-//                         success{
-//                             jiraComment body: "Documentation updated. https://www.library.illinois.edu/dccdocs/${params.DEPLOY_DOCS_URL_SUBFOLDER}", issueKey: params.JIRA_ISSUE_VALUE
-//                         }
-//                         cleanup{
-//                             cleanWs(
-//                                 deleteDirs: true,
-//                                 patterns: [
-//                                     [pattern: 'build/', type: 'INCLUDE']
-//                                 ]
-//                             )
-//                         }
-//                     }
-//                 }
                 stage('Deploy MacOS DMG to Nexus'){
                     when{
                         equals expected: true, actual: params.DEPLOY_DMG
@@ -1867,7 +1726,7 @@ pipeline {
                         unstash 'SPEEDWAGON_DOC_PDF'
                         unstash 'DOCS_ARCHIVE'
                         script{
-                            deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/", params.JIRA_ISSUE_VALUE)
+                            deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/")
                         }
                     }
                     post{
@@ -1900,12 +1759,11 @@ pipeline {
                     steps {
                         unstash 'STANDALONE_INSTALLERS'
                         dir('dist'){
-                            deploy_sscm('*.msi', props.Version, params.JIRA_ISSUE_VALUE)
+                            deploy_sscm('*.msi', props.Version)
                         }
                     }
                     post {
                         success {
-                            jiraComment body: "Deployment request was sent to SCCM for version ${PKG_VERSION}.", issueKey: params.JIRA_ISSUE_VALUE
                             archiveArtifacts artifacts: 'logs/deployment_request.txt'
                         }
                     }
