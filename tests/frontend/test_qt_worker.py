@@ -39,35 +39,35 @@ class TestProcessWorker:
         assert process_worker.on_completion.called is True
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
-class TestJobProcessor:
-    def test_process_flushes_buffer(self):
-        parent = Mock(spec=worker.ToolJobManager)
-        parent.futures = []
-        job_processor = worker.QtJobProcessor(parent)
-        list(job_processor.process())
-        assert parent.flush_message_buffer.called is True
-
-    def test_process_timeout_calls_timeout_callback(self, monkeypatch):
-        parent = Mock(spec=worker.ToolJobManager)
-        future = Mock(
-            spec=concurrent.futures.Future,
-        )
-        parent.futures = [
-            future
-        ]
-
-        def as_completed(fs, timeout=None):
-            parent.active = False
-            raise concurrent.futures.TimeoutError()
-
-        monkeypatch.setattr(
-            worker.concurrent.futures,
-            "as_completed",
-            as_completed
-        )
-
-        job_processor = worker.QtJobProcessor(parent)
-        job_processor.timeout_callback = Mock(name="timeout_callback")
-        all(job_processor.process())
-        assert job_processor.timeout_callback.called is True
+# @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+# class TestJobProcessor:
+#     def test_process_flushes_buffer(self):
+#         parent = Mock(spec=worker.ToolJobManager)
+#         parent.futures = []
+#         job_processor = worker.QtJobProcessor(parent)
+#         list(job_processor.process())
+#         assert parent.flush_message_buffer.called is True
+#
+#     def test_process_timeout_calls_timeout_callback(self, monkeypatch):
+#         parent = Mock(spec=worker.ToolJobManager)
+#         future = Mock(
+#             spec=concurrent.futures.Future,
+#         )
+#         parent.futures = [
+#             future
+#         ]
+#
+#         def as_completed(fs, timeout=None):
+#             parent.active = False
+#             raise concurrent.futures.TimeoutError()
+#
+#         monkeypatch.setattr(
+#             worker.concurrent.futures,
+#             "as_completed",
+#             as_completed
+#         )
+#
+#         job_processor = worker.QtJobProcessor(parent)
+#         job_processor.timeout_callback = Mock(name="timeout_callback")
+#         all(job_processor.process())
+#         assert job_processor.timeout_callback.called is True

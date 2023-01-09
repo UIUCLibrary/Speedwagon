@@ -3,6 +3,15 @@
 import os
 import platform
 import typing
+from typing import Optional, Dict, cast, Type, Union
+from PySide6 import QtWidgets, QtCore  # type: ignore
+
+try:  # pragma: no cover
+    from importlib.resources import as_file
+    from importlib import resources
+except ImportError:  # pragma: no cover
+    from importlib_resources import as_file
+    import importlib_resources as resources  # type: ignore
 
 from speedwagon.config import \
     AbsOpenSettings, \
@@ -10,14 +19,6 @@ from speedwagon.config import \
     WindowsOpenSettings, \
     OpenSettingsDirectory
 
-try:  # pragma: no cover
-    from importlib import resources
-except ImportError:  # pragma: no cover
-    import importlib_resources as resources  # type: ignore
-
-from typing import Optional, Dict, cast, Type, Union
-
-from PySide6 import QtWidgets, QtCore  # type: ignore
 from speedwagon import job
 from speedwagon.frontend import qtwidgets
 from speedwagon.frontend.qtwidgets import models
@@ -316,9 +317,11 @@ class TabEditorWidget(QtWidgets.QWidget):
         self.load_ui_file()
 
     def load_ui_file(self) -> None:
-        with resources.path(
-                "speedwagon.frontend.qtwidgets.ui",
-                "tab_editor.ui"
+
+        with as_file(
+                resources.files(
+                    "speedwagon.frontend.qtwidgets.ui"
+                ).joinpath("tab_editor.ui")
         ) as ui_file:
             qtwidgets.ui_loader.load_ui(str(ui_file), self)
 

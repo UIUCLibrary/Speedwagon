@@ -92,7 +92,7 @@ class ComboWidget(EditDelegateWidget):
             'selections': []
         }
 
-        self.combo_box = QtWidgets.QComboBox(self)
+        self.combo_box = QtWidgets.QComboBox(self.parent())
         place_holder_text = widget_metadata.get("placeholder_text")
 
         if place_holder_text is not None:
@@ -144,7 +144,7 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
             **kwargs
     ) -> None:
         super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
-        self.edit = QtWidgets.QLineEdit(self)
+        self.edit = QtWidgets.QLineEdit(self.parent())
 
         self._make_connections()
 

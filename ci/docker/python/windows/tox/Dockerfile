@@ -98,7 +98,7 @@ RUN py -m pip install --upgrade pip wheel && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt
 RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
 RUN py -m pip list
-# ==============================================================================# ==============================================================================
+# ==============================================================================
 
 FROM BASE_BUILDER as WHEEL_BUILDER_PY310
 SHELL ["cmd", "/S", "/C" ]
@@ -114,45 +114,37 @@ RUN py -m pip install --upgrade pip wheel && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt
 RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
 RUN py -m pip list
+
 # ==============================================================================
 
-#FROM BASE_BUILDER as CONAN_BUILDER
-#ARG PIP_EXTRA_INDEX_URL
-#ARG PIP_INDEX_URL
-#RUN python -m pip install --upgrade pip ; `
-#    pip install wheel ; `
-#    pip install conan cmake
-#COPY conanfile.py c:/temp/conanfile.py
-#COPY ci/docker/shared/conan/remotes.json  C:/Users/ContainerAdministrator/.conan/remotes.json
-#COPY ci/docker/python/windows/msvc/shared/profile.ini  C:/Users/ContainerAdministrator/.conan/profiles/default
-#SHELL ["cmd", "/S", "/C" ]
-#RUN conan config home
-#RUN conan install c:/temp/ --build missing --build openjpeg --no-import  && `
-#    conan remove "*" -b --src -f && `
-#    conan remove --lock
+FROM BASE_BUILDER as WHEEL_BUILDER_PY311
+SHELL ["cmd", "/S", "/C" ]
+COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt c:/requirements/
+COPY requirements/ c:/requirements/requirements
+ARG PIP_EXTRA_INDEX_URL
+ARG PIP_INDEX_URL
+ENV PY_PYTHON=3.11
+RUN py -m pip install --upgrade pip wheel && `
+    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements.txt -r c:/requirements/requirements-dev.txt && `
+    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-vendor.txt && `
+    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt && `
+    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt
+RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
+RUN py -m pip list
+
 ## ==============================================================================
 #
 FROM BASE_BUILDER
 COPY --from=certsgen c:/roots.sst roots.sst
 RUN certutil -addstore -f root roots.sst ; `
     del roots.sst
-#
-#RUN python -m pip install pip --upgrade ; `
-#    pip install wheel ; `
-#    pip install conan
-#
-#COPY --from=CONAN_BUILDER C:/Users/ContainerAdministrator/.conan/ C:/Users/ContainerAdministrator/.conan/
-#ENV CONAN_USER_HOME=C:/Users/ContainerAdministrator
-#COPY conanfile.py c:/temp/conanfile.py
-#RUN conan config home
-#RUN conan install c:/temp/ --build outdated --no-import  ; `
-#    conan remove "*" -b --src -f ; `
-#    conan remove --locks
+
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 COPY --from=WHEEL_BUILDER_PY37 c:/wheels/ c:/wheels/
 COPY --from=WHEEL_BUILDER_PY38 c:/wheels/ c:/wheels/
 COPY --from=WHEEL_BUILDER_PY39 c:/wheels/ c:/wheels/
 COPY --from=WHEEL_BUILDER_PY310 c:/wheels/ c:/wheels/
+COPY --from=WHEEL_BUILDER_PY311 c:/wheels/ c:/wheels/
 
 ENV PIP_FIND_LINKS=c:\wheels
 

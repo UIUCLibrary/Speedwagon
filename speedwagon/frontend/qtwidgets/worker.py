@@ -29,6 +29,10 @@ if typing.TYPE_CHECKING:
 class ToolJobManager(speedwagon.worker.AbsToolJobManager):
     """Tool job manager."""
 
+    def __init__(self) -> None:
+        warnings.warn("Don't use", DeprecationWarning)
+        super().__init__()
+
     def flush_message_buffer(self) -> None:
         """Flush any messages in the buffer to the logger."""
         self._job_runtime.flush_message_buffer(self.logger)

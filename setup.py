@@ -9,8 +9,8 @@ if __name__ == "__main__":
             "HathiValidate>=0.3.8",
             "pyhathiprep>=0.1.7",
             "pyyaml",
-            "uiucprescon.imagevalidate>=0.1.9b5",
-            "uiucprescon.ocr>=0.1.4b5",
+            "uiucprescon.imagevalidate>=0.1.9b6",
+            "uiucprescon.ocr>=0.1.4b6",
             "uiucprescon.packager[kdu]>=0.2.15b2",
             "uiucprescon.images",
             "pykdu-compress>=0.1.8b1",
@@ -19,7 +19,7 @@ if __name__ == "__main__":
             'typing-extensions;python_version<"3.8"',
             'lxml',
             "requests",
-            "py3exiv2bind>=0.1.9b4",
+            "py3exiv2bind>=0.1.9b7",
         ],
         packages=[
             "speedwagon",
@@ -38,7 +38,7 @@ if __name__ == "__main__":
         ],
         python_requires=">=3.6",
         extras_require={
-          "QT": ["PySide6==6.3"]
+          "QT": ["PySide6==6.4"]
         },
         entry_points={
             "gui_scripts": [

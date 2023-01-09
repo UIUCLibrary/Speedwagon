@@ -15,9 +15,11 @@ except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
 
 try:  # pragma: no cover
+    from importlib.resources import as_file
     from importlib import resources
 except ImportError:  # pragma: no cover
     import importlib_resources as resources  # type: ignore
+    from importlib_resources import as_file  # type: ignore
 
 import speedwagon
 from speedwagon.frontend.qtwidgets import logging_helpers, ui_loader
@@ -418,9 +420,10 @@ class WorkflowProgressGui(QtWidgets.QDialog):
 
         # All ui info is located in the .ui file. Any graphical changes should
         # be make in there.
-        with resources.path(
-                "speedwagon.frontend.qtwidgets.ui",
-                "workflow_progress.ui"
+        with as_file(
+                resources.files(
+                    "speedwagon.frontend.qtwidgets.ui"
+                ).joinpath("workflow_progress.ui")
         ) as ui_file:
             ui_loader.load_ui(str(ui_file), self)
 

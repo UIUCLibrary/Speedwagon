@@ -261,6 +261,7 @@ class SubtaskJobAdapter(AbsJobAdapter,
 
     def __init__(self, adaptee: AbsSubtask) -> None:
         """Create a sub-task job adapter."""
+        warnings.warn("Don't use", DeprecationWarning)
         AbsJobAdapter.__init__(self, adaptee)
         ProcessJobWorker.__init__(self)
         self.adaptee.parent_task_log_q = QueueAdapter()

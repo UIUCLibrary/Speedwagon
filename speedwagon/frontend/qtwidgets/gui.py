@@ -19,9 +19,11 @@ except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
 
 try:  # pragma: no cover
+    from importlib.resources import as_file
     from importlib import resources
 except ImportError:  # pragma: no cover
     import importlib_resources as resources  # type: ignore
+    from importlib_resources import as_file
 
 from collections import namedtuple
 
@@ -84,7 +86,9 @@ class ToolConsole(QtWidgets.QWidget):
         self.log_formatter = qtwidgets.logging_helpers.ConsoleFormatter()
         self.log_handler.setFormatter(self.log_formatter)
 
-        with resources.path(qtwidgets.ui, "console.ui") as ui_file:
+        with as_file(
+                resources.files(qtwidgets.ui).joinpath("console.ui")
+        ) as ui_file:
             qtwidgets.ui_loader.load_ui(str(ui_file), self)
 
         # ======================================================================
@@ -146,7 +150,9 @@ class ItemTabsWidget(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
-        with resources.path(qtwidgets.ui, "setup_job.ui") as ui_file:
+        with as_file(
+                resources.files(qtwidgets.ui).joinpath("setup_job.ui")
+        ) as ui_file:
             qtwidgets.ui_loader.load_ui(str(ui_file), self)
         # ======================================================================
         # Type Hints
@@ -341,7 +347,9 @@ class MainWindow1(MainProgram):
     ) -> None:
 
         super().__init__(work_manager, debug)
-        with resources.path(qtwidgets.ui, "main_window2.ui") as ui_file:
+        with as_file(
+                resources.files(qtwidgets.ui).joinpath("main_window2.ui")
+        ) as ui_file:
             self.load_ui_file(str(ui_file))
 
         # ======================================================================
@@ -592,7 +600,9 @@ class MainWindow2UI(QtWidgets.QMainWindow):
             parent: typing.Optional[QtWidgets.QWidget] = None
     ) -> None:
         super().__init__(parent)
-        with resources.path(qtwidgets.ui, "main_window2.ui") as ui_file:
+        with as_file(
+                resources.files(qtwidgets.ui).joinpath("main_window2.ui")
+        ) as ui_file:
             qtwidgets.ui_loader.load_ui(str(ui_file), self)
 
         # ======================================================================
@@ -798,8 +808,10 @@ class MainWindow2(MainWindow2UI):
 
 
 def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
-    with resources.open_binary(speedwagon.__name__, "favicon.ico") as icon:
-        app.setWindowIcon(QtGui.QIcon(icon.name))
+    with as_file(
+            resources.files("speedwagon").joinpath("favicon.ico")
+    ) as favicon_file:
+        app.setWindowIcon(QtGui.QIcon(str(favicon_file)))
     try:
         app.setApplicationVersion(metadata.version(__package__))
     except metadata.PackageNotFoundError:
