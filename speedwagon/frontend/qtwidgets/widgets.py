@@ -1,6 +1,7 @@
 """Specialize widgets."""
 
 import json
+import sys
 import typing
 import warnings
 from typing import Union, Optional, Dict, Any
@@ -12,7 +13,7 @@ __all__ = [
     "QtWidgetDelegateSelection"
 ]
 
-WidgetMetadata = Dict[str, Any]
+WidgetMetadata = Dict[str, Union[str, None]]
 
 
 class EditDelegateWidget(QtWidgets.QWidget):
@@ -21,14 +22,13 @@ class EditDelegateWidget(QtWidgets.QWidget):
 
     def __init__(
             self,
-            *args,
+            parent: Optional[QtWidgets.QWidget] = None,
             widget_metadata: Optional[WidgetMetadata] = None,
-            **kwargs
     ) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(parent)
         self._data: Optional[Any] = None
         self.widget_metadata = widget_metadata or {}
-        inner_layout = QtWidgets.QHBoxLayout(parent=self)
+        inner_layout = QtWidgets.QHBoxLayout()
         inner_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(inner_layout)
         self.setAutoFillBackground(True)
@@ -46,15 +46,14 @@ class CheckBoxWidget(EditDelegateWidget):
 
     def __init__(
             self,
-            *args,
+            parent: Optional[QtWidgets.QWidget] = None,
             widget_metadata: Optional[WidgetMetadata] = None,
-            **kwargs
     ) -> None:
-        super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
-        self.check_box = QtWidgets.QCheckBox(self.parent())
+        super().__init__(widget_metadata=widget_metadata, parent=parent)
+        self.check_box = QtWidgets.QCheckBox()
         self.setFocusProxy(self.check_box)
         self._make_connections()
-        layout = QtWidgets.QVBoxLayout(self.parent())
+        layout = self.layout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.check_box)
         self.setLayout(layout)
@@ -64,8 +63,11 @@ class CheckBoxWidget(EditDelegateWidget):
         self.data = False
 
     def _make_connections(self) -> None:
-        # pylint: disable=no-member
-        self.check_box.stateChanged.connect(self.update_data)
+        state_changed = getattr(self.check_box, "stateChanged")
+        if state_changed:
+            state_changed.connect(self.update_data)
+        else:
+            raise AttributeError("stateChanged not found")
 
     def update_data(self, state: QtCore.Qt.CheckState) -> None:
         self.data = self.check_box.isChecked()
@@ -83,11 +85,10 @@ class CheckBoxWidget(EditDelegateWidget):
 class ComboWidget(EditDelegateWidget):
     def __init__(
             self,
-            *args,
+            parent: Optional[QtWidgets.QWidget] = None,
             widget_metadata: Optional[WidgetMetadata] = None,
-            **kwargs
     ) -> None:
-        super().__init__(widget_metadata=widget_metadata, *args, **kwargs)
+        super().__init__(widget_metadata=widget_metadata, parent=parent)
         widget_metadata = widget_metadata or {
             'selections': []
         }
@@ -104,7 +105,7 @@ class ComboWidget(EditDelegateWidget):
 
         self.setFocusProxy(self.combo_box)
         self._make_connections()
-        layout = QtWidgets.QVBoxLayout(self)
+        layout = self.layout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.combo_box)
         self.setLayout(layout)
@@ -139,29 +140,30 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
 
     def __init__(
             self,
-            *args,
+            parent: Optional[QtWidgets.QWidget] = None,
             widget_metadata: Optional[WidgetMetadata] = None,
-            **kwargs
     ) -> None:
-        super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
-        self.edit = QtWidgets.QLineEdit(self.parent())
+        super().__init__(widget_metadata=widget_metadata, parent=parent)
+        self.edit = QtWidgets.QLineEdit()
 
         self._make_connections()
 
         self.edit.addAction(
             self.get_browse_action(),
-            QtWidgets.QLineEdit.TrailingPosition
+            QtWidgets.QLineEdit.ActionPosition.TrailingPosition
         )
         self.setFocusProxy(self.edit)
-        layout = QtWidgets.QVBoxLayout(self)
+        layout = self.layout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.edit)
         self.setLayout(layout)
 
     def _make_connections(self) -> None:
         # pylint: disable=no-member
-        self.edit.textChanged.connect(self._update_data_from_line_edit)
-        self.edit.editingFinished.connect(self.editingFinished)
+        self.edit.textChanged.connect(  # type: ignore
+            self._update_data_from_line_edit
+        )
+        self.edit.editingFinished.connect(self.editingFinished)  # type: ignore
 
     def _update_data_from_line_edit(self) -> None:
         self._data = self.edit.text()
@@ -179,12 +181,12 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
 class DirectorySelectWidget(FileSystemItemSelectWidget):
     def get_browse_action(self) -> QtGui.QAction:
         icon = QtWidgets.QApplication.style().standardIcon(
-            QtWidgets.QStyle.SP_DialogOpenButton)
+            QtWidgets.QStyle.StandardPixmap.SP_DialogOpenButton)
         browse_dir_action = QtGui.QAction(
             icon, "Browse", parent=self
         )
         # pylint: disable=no-member
-        browse_dir_action.triggered.connect(self.browse_dir)
+        browse_dir_action.triggered.connect(self.browse_dir)  # type: ignore
         return browse_dir_action
 
     def browse_dir(
@@ -206,21 +208,20 @@ class DirectorySelectWidget(FileSystemItemSelectWidget):
 class FileSelectWidget(FileSystemItemSelectWidget):
     def get_browse_action(self) -> QtGui.QAction:
         icon = QtWidgets.QApplication.style().standardIcon(
-            QtWidgets.QStyle.SP_DialogOpenButton)
+            QtWidgets.QStyle.StandardPixmap.SP_DialogOpenButton)
         browse_file_action = QtGui.QAction(
             icon, "Browse", parent=self
         )
         # pylint: disable=no-member
-        browse_file_action.triggered.connect(self.browse_file)
+        browse_file_action.triggered.connect(self.browse_file)  # type: ignore
         return browse_file_action
 
     def __init__(
             self,
-            *args,
+            parent: Optional[QtWidgets.QWidget] = None,
             widget_metadata: Optional[WidgetMetadata] = None,
-            **kwargs
     ) -> None:
-        super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
+        super().__init__(widget_metadata=widget_metadata, parent=parent)
         widget_metadata = widget_metadata or {}
         self.filter = widget_metadata.get('filter')
 
@@ -273,9 +274,15 @@ class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
             ]
     ) -> QtWidgets.QWidget:
         """Create the correct editor widget for editing the data."""
-        json_data = json.loads(
-            index.data(role=models.ToolOptionsModel4.JsonDataRole)
-        )
+        if not index.isValid():
+            return super().createEditor(parent, option, index)
+        serialized_json_data: str = \
+            typing.cast(
+                str,
+                index.data(role=models.ToolOptionsModel4.JsonDataRole)
+            )
+        json_data = \
+            typing.cast(WidgetMetadata, json.loads(serialized_json_data))
 
         editor_type: Optional[typing.Type[EditDelegateWidget]] = \
             self.widget_types.get(json_data['widget_type'])
@@ -284,7 +291,7 @@ class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
             return super().createEditor(parent, option, index)
 
         editor_widget: EditDelegateWidget = \
-            editor_type(parent, widget_metadata=json_data)
+            editor_type(parent=parent, widget_metadata=json_data)
 
         editor_widget.setParent(parent)
         return editor_widget
@@ -298,7 +305,9 @@ class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
             ]
     ) -> None:
         """Update the editor delegate widget with the model's data."""
-        editor.data = index.data(typing.cast(int, QtCore.Qt.EditRole))
+        editor.data = \
+            index.data(typing.cast(int, QtCore.Qt.ItemDataRole.EditRole))
+
         super().setEditorData(editor, index)
 
     def setModelData(
@@ -314,7 +323,7 @@ class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
             model.setData(
                 index,
                 editor.data,
-                role=typing.cast(int, QtCore.Qt.EditRole)
+                role=typing.cast(int, QtCore.Qt.ItemDataRole.EditRole)
             )
         else:
             warnings.warn(

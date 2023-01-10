@@ -154,7 +154,7 @@ class QtRunner(speedwagon.runner.AbsRunner2):
     """Job runner for Qt Widgets."""
 
     def __init__(self,
-                 parent: QtWidgets.QWidget = None) -> None:
+                 parent: Optional[QtWidgets.QWidget] = None) -> None:
         """Create a new runner."""
         self.parent = parent
 
@@ -193,7 +193,7 @@ class QtRunner(speedwagon.runner.AbsRunner2):
     def run(self,
             job: AbsWorkflow,
             options: typing.Dict[str, Any],
-            logger: logging.Logger = None,
+            logger: Optional[logging.Logger] = None,
             completion_callback=None
             ) -> None:
         """Execute run."""
@@ -220,7 +220,7 @@ class QtRunner(speedwagon.runner.AbsRunner2):
         task_scheduler: speedwagon.runner_strategies.TaskScheduler,
         job: speedwagon.job.Workflow,
         options: typing.Dict[str, Any],
-        logger: logging.Logger = None
+        logger: Optional[logging.Logger] = None
     ) -> None:
         """Run workflow."""
         task_scheduler.logger = logger or logging.getLogger(__name__)
@@ -290,7 +290,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
             self.dialog_box.write_to_console(str(exc), level=logging.ERROR)
             error = QtWidgets.QMessageBox()
             error.setWindowTitle("Workflow Failed")
-            error.setIcon(QtWidgets.QMessageBox.Critical)
+            error.setIcon(QtWidgets.QMessageBox.Icon.Critical)
             error.setText(message or f"An error occurred: {exc}")
             if traceback is not None:
                 error.setDetailedText(traceback)

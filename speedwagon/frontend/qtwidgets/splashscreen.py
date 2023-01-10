@@ -23,9 +23,9 @@ def create_splash() -> QtWidgets.QSplashScreen:
     splash.setEnabled(False)
     splash.setWindowFlags(
         typing.cast(
-            QtCore.Qt.WindowFlags,
-            QtCore.Qt.WindowStaysOnTopHint |
-            QtCore.Qt.FramelessWindowHint
+            QtCore.Qt.WindowType,
+            QtCore.Qt.WindowType.WindowStaysOnTopHint |
+            QtCore.Qt.WindowType.FramelessWindowHint
         )
     )
     return splash

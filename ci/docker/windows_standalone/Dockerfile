@@ -97,13 +97,13 @@ RUN Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force ;`
     $env:Path += $WIX_PATH ; `
     [Environment]::SetEnvironmentVariable('Path', $env:Path, [EnvironmentVariableTarget]::Machine ) ;`
     Write-Host "Updated path to = $env:Path"
-ARG PYTHON_INSTALLER_URL=https://www.python.org/ftp/python/3.9.6/python-3.9.6-amd64.exe
+ARG PYTHON_INSTALLER_URL=https://www.python.org/ftp/python/3.11.1/python-3.11.1-amd64.exe
 
 RUN $ErrorActionPreference = 'Stop'; `
     Invoke-WebRequest $Env:PYTHON_INSTALLER_URL -OutFile c:\python-installer.exe ; `
     Start-Process python-installer.exe -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' -Wait ; `
     Remove-Item c:\python-installer.exe -Force ; `
-    $process = start-process -NoNewWindow -PassThru -FilePath 'c:\Program Files\Python39\python.exe' -ArgumentList "--version" -Wait ;`
+    $process = start-process -NoNewWindow -PassThru -FilePath 'c:\Program Files\Python311\python.exe' -ArgumentList "--version" -Wait ;`
     if ( $process.ExitCode -eq 0) `
     { `
         Write-Host "Installed Python`

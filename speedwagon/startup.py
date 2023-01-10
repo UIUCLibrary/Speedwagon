@@ -17,7 +17,8 @@ import json
 import os
 import sys
 import typing
-from typing import Dict, Iterator, Tuple, List, cast, Type, TYPE_CHECKING
+from typing import Dict, Iterator, Tuple, List, cast, Type, TYPE_CHECKING, \
+    Optional
 import yaml
 
 import speedwagon
@@ -186,7 +187,7 @@ class ApplicationLauncher:
        >>> app.run()
     """
 
-    def __init__(self, strategy: AbsStarter = None) -> None:
+    def __init__(self, strategy: Optional[AbsStarter] = None) -> None:
         """Strategy pattern for loading speedwagon in different ways.
 
         Args:
@@ -339,7 +340,7 @@ class CLIStarter(AbsStarter):
         return 0
 
 
-def main(argv: List[str] = None) -> None:
+def main(argv: Optional[List[str]] = None) -> None:
     """Launch main entry point."""
     argv = argv or sys.argv
     if "tab-editor" in argv:

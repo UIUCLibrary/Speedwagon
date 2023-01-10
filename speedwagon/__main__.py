@@ -4,7 +4,7 @@ import logging
 import sys
 
 import importlib
-from typing import List
+from typing import List, Optional
 
 import speedwagon.startup
 
@@ -13,7 +13,7 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
 
-def main(argv: List[str] = None) -> None:
+def main(argv: Optional[List[str]] = None) -> None:
     """Launch main entry point."""
     argv = argv or sys.argv
 

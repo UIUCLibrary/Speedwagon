@@ -5,7 +5,7 @@ import logging.handlers
 import sys
 import typing
 import warnings
-from typing import Collection, Union, Optional
+from typing import Collection, Optional
 
 from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
 
@@ -37,11 +37,11 @@ ALREADY_STOPPED_MESSAGE = "Already stopped"
 class ErrorDialogBox(QtWidgets.QMessageBox):
     """Dialog box for Error Messages causes while running a job."""
 
-    def __init__(self, parent: QtWidgets.QWidget = None) -> None:
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         """Create a error dialog box."""
         super().__init__(parent)
-        self.setIcon(QtWidgets.QMessageBox.Critical)
-        self.setStandardButtons(QtWidgets.QMessageBox.Abort)
+        self.setIcon(QtWidgets.QMessageBox.Icon.Critical)
+        self.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Abort)
         self.setSizeGripEnabled(True)
 
     def event(self, event: QtCore.QEvent) -> bool:
@@ -56,7 +56,9 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
         self.setMaximumWidth(1000)
 
         self.setSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Expanding
+        )
 
         text_edit = typing.cast(
             Optional[QtWidgets.QTextEdit],
@@ -67,8 +69,8 @@ class ErrorDialogBox(QtWidgets.QMessageBox):
             text_edit.setMinimumHeight(100)
             text_edit.setMaximumHeight(16777215)
             text_edit.setSizePolicy(
-                QtWidgets.QSizePolicy.Expanding,
-                QtWidgets.QSizePolicy.Expanding)
+                QtWidgets.QSizePolicy.Policy.Expanding,
+                QtWidgets.QSizePolicy.Policy.Expanding)
 
         return result
 
@@ -79,7 +81,7 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
     def __init__(
             self,
             parent: Optional[QtWidgets.QWidget] = None,
-            flags: QtCore.Qt.WindowFlags = QtCore.Qt.WindowFlags()) -> None:
+            flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0)) -> None:
         """Create a work progress dialog window."""
         super().__init__(parent, flags)
         self.setModal(True)
@@ -125,9 +127,8 @@ class SystemInfoDialog(QtWidgets.QDialog):
     #     Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags()
     def __init__(
             self,
-            parent: QtWidgets.QWidget = None,
-            flags: Union[QtCore.Qt.WindowFlags,
-                         QtCore.Qt.WindowType] = QtCore.Qt.WindowFlags()
+            parent: Optional[QtWidgets.QWidget] = None,
+            flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0)
     ) -> None:
         """Display System information."""
         super().__init__(parent, flags)
@@ -148,9 +149,11 @@ class SystemInfoDialog(QtWidgets.QDialog):
         layout.addWidget(self.installed_packages_widget)
 
         self._button_box = \
-            QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
+            QtWidgets.QDialogButtonBox(
+                QtWidgets.QDialogButtonBox.StandardButton.Ok
+            )
         # pylint: disable=no-member
-        self._button_box.accepted.connect(self.accept)
+        self._button_box.accepted.connect(self.accept)  # type: ignore
         layout.addWidget(self._button_box)
 
     @staticmethod
@@ -185,7 +188,7 @@ class AbsWorkflowProgressState(abc.ABC):
     def stop(self) -> None:
         """Stop."""
 
-    def close_dialog(  # pylint: disable=R0201
+    def close_dialog(
             self,
             event: QtGui.QCloseEvent
     ) -> None:
@@ -241,7 +244,9 @@ class WorkflowProgressStateIdle(AbsWorkflowProgressState):
                 QtWidgets.QDialogButtonBox.StandardButton.Cancel
             )
         cancel_button.setEnabled(False)
-        self.context.rejected.connect(self.context.button_box.rejected)
+        self.context.rejected.connect(  # type: ignore
+            self.context.button_box.rejected
+        )
 
     def start(self) -> None:
         self.context.state = WorkflowProgressStateWorking(self.context)
@@ -258,7 +263,7 @@ class WorkflowProgressStateWorking(AbsWorkflowProgressState):
                 QtWidgets.QDialogButtonBox.StandardButton.Cancel
             )
         cancel_button.setEnabled(True)
-        self.context.button_box.rejected.disconnect()
+        self.context.button_box.rejected.disconnect()  # type: ignore
         close_button: QtWidgets.QPushButton \
             = self.context.button_box.button(
                 QtWidgets.QDialogButtonBox.StandardButton.Close
@@ -273,12 +278,13 @@ class WorkflowProgressStateWorking(AbsWorkflowProgressState):
 
     def close_dialog(self, event: QtGui.QCloseEvent) -> None:
         dialog = QtWidgets.QMessageBox(
-            QtWidgets.QMessageBox.Information,
+            QtWidgets.QMessageBox.Icon.Information,
             "Trying to stop job.",
             "Trying to stop job?",
-            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
+            QtWidgets.QMessageBox.StandardButton.Yes |
+            QtWidgets.QMessageBox.StandardButton.No
         )
-        if dialog.exec() == QtWidgets.QMessageBox.Yes:
+        if dialog.exec() == QtWidgets.QMessageBox.StandardButton.Yes:
             self.context.aborted.emit()
             self.context.state = WorkflowProgressStateStopping(self.context)
             event.accept()
@@ -309,12 +315,13 @@ class WorkflowProgressStateStopping(AbsWorkflowProgressState):
 
     def stop(self) -> None:
         dialog = QtWidgets.QMessageBox(
-            QtWidgets.QMessageBox.Information,
+            QtWidgets.QMessageBox.Icon.Information,
             "Trying to stop job.",
             "Do you want to force quit?",
-            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
+            QtWidgets.QMessageBox.StandardButton.Yes |
+            QtWidgets.QMessageBox.StandardButton.No
         )
-        if dialog.exec() == QtWidgets.QMessageBox.Yes:
+        if dialog.exec() == QtWidgets.QMessageBox.StandardButton.Yes:
             sys.exit(1)
         warnings.warn("Already stopping")
 
@@ -333,7 +340,7 @@ class WorkflowProgressStateAborted(AbsWorkflowProgressState):
             )
         self.context.write_to_console("Successfully aborted")
         self.context.banner.setText("Aborted")
-        close_button.clicked.connect(self.context.accept)
+        close_button.clicked.connect(self.context.accept)  # type: ignore
 
     def stop(self) -> None:
         warnings.warn(ALREADY_STOPPED_MESSAGE)
@@ -351,7 +358,7 @@ class WorkflowProgressStateFailed(AbsWorkflowProgressState):
             = self.context.button_box.button(
                 QtWidgets.QDialogButtonBox.StandardButton.Close
             )
-        close_button.clicked.connect(self.context.reject)
+        close_button.clicked.connect(self.context.reject)  # type: ignore
         self.hide_progress_bar(self.context.progress_bar)
         self.context.banner.setText("Failed")
 
@@ -379,7 +386,7 @@ class WorkflowProgressStateDone(AbsWorkflowProgressState):
                 QtWidgets.QDialogButtonBox.StandardButton.Close
             )
         close_button.setFocus()
-        close_button.clicked.connect(self.context.accept)
+        close_button.clicked.connect(self.context.accept)  # type: ignore
         self.set_progress_to_full(self.context.progress_bar)
         self.hide_progress_bar(self.context.progress_bar)
         self.context.banner.setText("Finished")
@@ -484,21 +491,23 @@ class WorkflowProgress(WorkflowProgressGui):
         # =====================================================================
 
         mono_font = \
-            QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
+            QtGui.QFontDatabase.systemFont(
+                QtGui.QFontDatabase.SystemFont.FixedFont
+            )
 
         self._console_data.setDefaultFont(mono_font)
 
         # pylint: disable=no-member
         typing.cast(
             QtCore.SignalInstance,
-            self._console_data.contentsChanged
+            self._console_data.contentsChanged  # type: ignore
         ).connect(self._follow_text)
 
         self.console.setMinimumWidth(self.calculate_window_width(mono_font))
 
         self.console.setDocument(self._console_data)
         # =====================================================================
-        self.button_box.button(
+        self.button_box.button(  # type: ignore
             QtWidgets.QDialogButtonBox.StandardButton.Cancel
         ).clicked.connect(self.aborted)
 
@@ -510,11 +519,11 @@ class WorkflowProgress(WorkflowProgressGui):
         # Seems to be causing the segfault
         # self.finished.connect(self.clean_local_console)
 
-        self.finished.connect(self.remove_log_handles)
+        self.finished.connect(self.remove_log_handles)  # type: ignore
 
         self._refresh_timer = QtCore.QTimer(self)
-        self._refresh_timer.timeout.connect(self.flush)
-        self.finished.connect(self.stop_timer)
+        self._refresh_timer.timeout.connect(self.flush)  # type: ignore
+        self.finished.connect(self.stop_timer)  # type: ignore
         self._refresh_timer.start(100)
 
     def stop_timer(self) -> None:

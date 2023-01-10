@@ -69,9 +69,12 @@ class ToolJobManager(speedwagon.worker.AbsToolJobManager):
         self.flush_message_buffer()
         dialog_box.accept()
 
-    def get_results(self,
-                    timeout_callback: Callable[[int, int], None] = None
-                    ) -> typing.Generator[typing.Any, None, None]:
+    def get_results(
+            self,
+            timeout_callback: typing.Optional[
+                Callable[[int, int], None]
+            ] = None
+    ) -> typing.Generator[typing.Any, None, None]:
         """Process jobs and return results."""
         processor = QtJobProcessor(
             typing.cast(speedwagon.worker.ToolJobManager, self)

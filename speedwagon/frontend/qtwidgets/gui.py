@@ -11,7 +11,7 @@ import os
 import time
 import typing
 import webbrowser
-from typing import List
+from typing import List, Optional
 
 try:  # pragma: no cover
     from importlib import metadata
@@ -45,13 +45,13 @@ DEBUG_LOGGING_FORMAT = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 TAB_WIDGET_SIZE_POLICY = QtWidgets.QSizePolicy(
-    QtWidgets.QSizePolicy.MinimumExpanding,
-    QtWidgets.QSizePolicy.Maximum
+    QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+    QtWidgets.QSizePolicy.Policy.Maximum
 )
 
 CONSOLE_SIZE_POLICY = QtWidgets.QSizePolicy(
-    QtWidgets.QSizePolicy.MinimumExpanding,
-    QtWidgets.QSizePolicy.Minimum
+    QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+    QtWidgets.QSizePolicy.Policy.Minimum
 )
 
 Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
@@ -79,7 +79,7 @@ class ToolConsole(QtWidgets.QWidget):
                 self.signals.message.emit(message)
             super().flush()
 
-    def __init__(self, parent: QtWidgets.QWidget = None) -> None:
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
         self.log_handler = ToolConsole.ConsoleLogHandler(self)
 
@@ -98,7 +98,9 @@ class ToolConsole(QtWidgets.QWidget):
 
         #  Use a monospaced font based on what's on system running
         monospaced_font = \
-            QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
+            QtGui.QFontDatabase.systemFont(
+                QtGui.QFontDatabase.SystemFont.FixedFont
+            )
 
         self._log = QtGui.QTextDocument()
         self._log.setDefaultFont(monospaced_font)
@@ -148,7 +150,7 @@ class ToolConsole(QtWidgets.QWidget):
 
 class ItemTabsWidget(QtWidgets.QWidget):
 
-    def __init__(self, parent: QtWidgets.QWidget = None) -> None:
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
         with as_file(
                 resources.files(qtwidgets.ui).joinpath("setup_job.ui")
@@ -233,7 +235,7 @@ class MainWindowMenuBuilder:
 
             system_info_menu_item.setObjectName("systemInfoAction")
             # pylint: disable=no-member
-            system_info_menu_item.triggered.connect(
+            system_info_menu_item.triggered.connect(  # type: ignore
                 self.show_system_info_signal
             )
             system_menu.addAction(system_info_menu_item)
@@ -247,8 +249,9 @@ class MainWindowMenuBuilder:
 
             system_settings_menu_item.setObjectName('settingsAction')
             # pylint: disable=no-member
-            system_settings_menu_item.triggered.connect(
-                self.show_configuration_signal)
+            system_settings_menu_item.triggered.connect(  # type: ignore
+                self.show_configuration_signal
+            )
 
             system_settings_menu_item.setShortcut("Ctrl+Shift+S")
             system_menu.addAction(system_settings_menu_item)
@@ -268,7 +271,9 @@ class MainWindowMenuBuilder:
             exit_button.setObjectName("exitAction")
 
             # pylint: disable=no-member
-            exit_button.triggered.connect(self.exit_function)
+            exit_button.triggered.connect(  # type: ignore
+                self.exit_function
+            )
             file_menu.addAction(exit_button)
 
     def _build_export_log_action(self, file_menu: QtWidgets.QMenu) -> None:
@@ -282,10 +287,12 @@ class MainWindowMenuBuilder:
 
             export_logs_button.setIcon(
                 self._parent.style().standardIcon(
-                    QtWidgets.QStyle.SP_DialogSaveButton)
+                    QtWidgets.QStyle.StandardPixmap.SP_DialogSaveButton)
             )
             # pylint: disable=no-member
-            export_logs_button.triggered.connect(self.save_log_function)
+            export_logs_button.triggered.connect(  # type: ignore
+                self.save_log_function
+            )
             # export_logs_button.triggered.connect(self._parent.save_log)
             file_menu.addAction(export_logs_button)
             file_menu.setObjectName("fileMenu")
@@ -302,7 +309,9 @@ class MainWindowMenuBuilder:
             # Create a Help menu item
             help_button = QtGui.QAction(" &Help ", self._parent)
             # pylint: disable=no-member
-            help_button.triggered.connect(self._parent.help_requested)
+            help_button.triggered.connect(  # type: ignore
+                self._parent.help_requested
+            )
             help_menu.addAction(help_button)
 
         if self.add_about is True:
@@ -310,7 +319,9 @@ class MainWindowMenuBuilder:
             # Create an About button
             about_button = QtGui.QAction(" &About ", self._parent)
             # pylint: disable=no-member
-            about_button.triggered.connect(self._parent.show_about_window)
+            about_button.triggered.connect(  # type: ignore
+                self._parent.show_about_window
+            )
             help_menu.addAction(about_button)
 
     def _build_job_menu(self, menu_bar: QtWidgets.QMenuBar) -> None:
@@ -324,7 +335,7 @@ class MainWindowMenuBuilder:
             )
 
             # pylint: disable=no-member
-            export_button.triggered.connect(self.export_signal)
+            export_button.triggered.connect(self.export_signal)  # type: ignore
             job_menu.addAction(export_button)
 
         if self.import_signal is not None:
@@ -334,7 +345,7 @@ class MainWindowMenuBuilder:
             )
 
             # pylint: disable=no-member
-            import_button.triggered.connect(self.import_signal)
+            import_button.triggered.connect(self.import_signal)  # type: ignore
 
             job_menu.addAction(import_button)
 
@@ -381,7 +392,7 @@ class MainWindow1(MainProgram):
         self.statusBar()
 
         # ##################
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
 
     def load_ui_file(self, ui_file: str) -> None:
         qtwidgets.ui_loader.load_ui(ui_file, self)
@@ -412,11 +423,13 @@ class MainWindow1(MainProgram):
         # File --> Export Log
         export_logs_button = QtGui.QAction(" &Export Log", self)
         export_logs_button.setIcon(
-            self.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton)
+            self.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_DialogSaveButton
+            )
         )
 
         # pylint: disable=no-member
-        export_logs_button.triggered.connect(self.save_log)
+        export_logs_button.triggered.connect(self.save_log)  # type: ignore
 
         file_menu.addAction(export_logs_button)
         file_menu.setObjectName("fileMenu")
@@ -428,7 +441,9 @@ class MainWindow1(MainProgram):
         # Create Exit button
         exit_button = QtGui.QAction(" &Exit", self)
         exit_button.setObjectName("exitAction")
-        exit_button.triggered.connect(QtWidgets.QApplication.exit)
+        exit_button.triggered.connect(  # type: ignore
+            QtWidgets.QApplication.exit
+        )
         file_menu.addAction(exit_button)
         system_menu = menu_bar.addMenu("System")
         system_menu.setObjectName("systemMenu")
@@ -439,7 +454,7 @@ class MainWindow1(MainProgram):
             QtGui.QAction("Settings", self)
         system_settings_menu_item.setObjectName('settingsAction')
 
-        system_settings_menu_item.triggered.connect(
+        system_settings_menu_item.triggered.connect(  # type: ignore
             self.show_configuration)
 
         system_settings_menu_item.setShortcut("Ctrl+Shift+S")
@@ -449,7 +464,9 @@ class MainWindow1(MainProgram):
         # Create a system info menu item
         system_info_menu_item = QtGui.QAction("System Info", self)
         system_info_menu_item.setObjectName("systemInfoAction")
-        system_info_menu_item.triggered.connect(self.show_system_info)
+        system_info_menu_item.triggered.connect(  # type: ignore
+            self.show_system_info
+        )
         system_menu.addAction(system_info_menu_item)
 
         # Help Menu
@@ -458,13 +475,13 @@ class MainWindow1(MainProgram):
         # Help --> Help
         # Create a Help menu item
         help_button = QtGui.QAction(" &Help ", self)
-        help_button.triggered.connect(self.show_help)
+        help_button.triggered.connect(self.show_help)  # type: ignore
         help_menu.addAction(help_button)
 
         # Help --> About
         # Create an About button
         about_button = QtGui.QAction(" &About ", self)
-        about_button.triggered.connect(self.show_about_window)
+        about_button.triggered.connect(self.show_about_window)  # type: ignore
         help_menu.addAction(about_button)
 
     def _create_console(self) -> None:
@@ -549,7 +566,9 @@ class MainWindow1(MainProgram):
         config_dialog.add_tab(global_settings_tab, "Global Settings")
 
         # pylint: disable=no-member
-        config_dialog.accepted.connect(global_settings_tab.on_okay)
+        config_dialog.accepted.connect(  # type: ignore
+            global_settings_tab.on_okay
+        )
 
         tabs_tab = qtwidgets.dialog.TabsConfigurationTab()
 
@@ -559,7 +578,7 @@ class MainWindow1(MainProgram):
             tabs_tab.load()
 
         config_dialog.add_tab(tabs_tab, "Tabs")
-        config_dialog.accepted.connect(tabs_tab.on_okay)
+        config_dialog.accepted.connect(tabs_tab.on_okay)  # type: ignore
 
         config_dialog.exec()
 
@@ -735,7 +754,7 @@ class MainWindow2(MainWindow2UI):
                     current_tab_index
                 ].item_selection_model.data(
                     item_selected_index,
-                    role=typing.cast(int, QtCore.Qt.UserRole)
+                    role=typing.cast(int, QtCore.Qt.ItemDataRole.UserRole)
                 )
             )
         return current_workflow.name

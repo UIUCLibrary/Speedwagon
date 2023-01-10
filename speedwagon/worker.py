@@ -361,7 +361,9 @@ class AbsToolJobManager(
     @abc.abstractmethod
     def get_results(
             self,
-            timeout_callback: typing.Callable[[int, int], None] = None
+            timeout_callback: Optional[
+                typing.Callable[[int, int], None]
+            ] = None
     ) -> typing.Generator[typing.Any, None, None]:
         """Process jobs and return results."""
 
@@ -445,7 +447,9 @@ class ToolJobManager(AbsToolJobManager):
 
     def get_results(
             self,
-            timeout_callback: typing.Callable[[int, int], None] = None
+            timeout_callback: Optional[
+                typing.Callable[[int, int], None]
+            ] = None
     ) -> typing.Generator[typing.Any, None, None]:
         processor = JobProcessor(self)
         processor.timeout_callback = timeout_callback

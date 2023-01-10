@@ -49,7 +49,7 @@ class AbsGuiStarter(speedwagon.startup.AbsStarter):
 
 class StartQtThreaded(AbsGuiStarter):
 
-    def __init__(self, app: QtWidgets.QApplication = None) -> None:
+    def __init__(self, app: Optional[QtWidgets.QApplication] = None) -> None:
         self.startup_settings: Dict[str, Union[str, bool]] = {'debug': False}
 
         self.windows: Optional[gui.MainWindow2] = None
@@ -168,7 +168,7 @@ class StartQtThreaded(AbsGuiStarter):
             resolution_order: Optional[
                 List[config.AbsSetting]
             ] = None,
-            loader: config.ConfigLoader = None
+            loader: Optional[config.ConfigLoader] = None
     ) -> Dict[str, Union[str, bool]]:
 
         loader = loader or config.ConfigLoader(self.config_file)
@@ -293,7 +293,7 @@ class StartQtThreaded(AbsGuiStarter):
         dialog.dialogs.SystemInfoDialog(parent).exec()
 
     @staticmethod
-    def request_settings(parent: QtWidgets.QWidget = None) -> None:
+    def request_settings(parent: Optional[QtWidgets.QWidget] = None) -> None:
         platform_settings = config.get_platform_settings()
         settings_path = platform_settings.get_app_data_directory()
 
@@ -489,9 +489,9 @@ class TabsEditorApp(QtWidgets.QDialog):
 
         self.dialog_button_box.setStandardButtons(
             cast(
-                QtWidgets.QDialogButtonBox.StandardButtons,
-                QtWidgets.QDialogButtonBox.Cancel |
-                QtWidgets.QDialogButtonBox.Ok
+                QtWidgets.QDialogButtonBox.StandardButton,
+                QtWidgets.QDialogButtonBox.StandardButton.Cancel |
+                QtWidgets.QDialogButtonBox.StandardButton.Ok
             )
         )
 
@@ -538,7 +538,9 @@ class TabsEditorApp(QtWidgets.QDialog):
         self.editor.tabs_file = value
 
 
-def standalone_tab_editor(app: QtWidgets.QApplication = None) -> None:
+def standalone_tab_editor(
+        app: Optional[QtWidgets.QApplication] = None
+) -> None:
     """Launch standalone tab editor app."""
     print("Loading settings")
     settings = config.get_platform_settings()

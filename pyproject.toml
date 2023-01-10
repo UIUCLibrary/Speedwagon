@@ -12,12 +12,12 @@ markers=[
     "slow: mark test as slow.",
     "model_data"
 ]
+qt_api="pyside6"
 
 [tool.pydocstyle]
 # Ignore files that end in _ui.py because they are machine generated
 match="((?!test).*)(^(?!.*(ui)).*)\\.py"
 
 [tool.mypy]
-python_version = "3.8"
-ignore_missing_imports = true
+python_version = "3.11"
 
