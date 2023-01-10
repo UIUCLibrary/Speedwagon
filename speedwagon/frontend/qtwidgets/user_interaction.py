@@ -1,9 +1,15 @@
 """User interaction when using a QtWidget backend."""
 from __future__ import annotations
 
+import abc
+import enum
+import io
+import os.path
 import threading
+import csv
 import typing
 from typing import Dict, Any, Optional, List, Union, Type
+
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtGui import Qt
 from uiucprescon.packager import Metadata
@@ -13,9 +19,17 @@ from speedwagon.frontend import interaction
 from speedwagon.frontend.qtwidgets.dialog.title_page_selection import \
     PackageBrowser
 
+
 if typing.TYPE_CHECKING:
     from uiucprescon.packager.packages import collection
     from speedwagon.job import Workflow
+
+__all__ = [
+    'QtRequestMoreInfo',
+    'ConfirmTableDetailsModel',
+    'ExportCSVConfirmedDeleted',
+    'ExportCSVConfirmedAction'
+]
 
 
 class QtWidgetFactory(interaction.UserRequestFactory):
@@ -40,7 +54,6 @@ class QtWidgetFactory(interaction.UserRequestFactory):
             self
     ) -> interaction.AbstractPackageTitlePageSelection:
         """Generate widget for selecting title pages from a package."""
-
         return QtWidgetTitlePageSelection(parent=self.parent)
 
 
@@ -54,7 +67,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
             items: List[str] = None,
             parent: Optional[QtCore.QObject] = None
     ) -> None:
-        """Create a new confirm list model."""
+        """Create a new confirmation list model."""
         super().__init__(parent)
         self.items = items or []
 
@@ -67,7 +80,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
     def items(self, value):
         self._items = [{
                 "name": i,
-                "checked": Qt.Checked
+                "checked": Qt.Unchecked
             } for i in value
         ]
         self.itemsChanged.emit()
@@ -104,7 +117,9 @@ class ConfirmListModel(QtCore.QAbstractListModel):
     ) -> Any:
         """Get data from the model."""
         if role == Qt.CheckStateRole:
-            return self._items[index.row()].get("checked", Qt.Unchecked)
+            return int(
+                self._items[index.row()].get("checked", QtCore.Qt.Unchecked)
+            )
         if role == Qt.DisplayRole:
             return self._items[index.row()]['name']
         return None
@@ -137,6 +152,143 @@ class ConfirmListModel(QtCore.QAbstractListModel):
         return super().flags(index)
 
 
+class DetailsSorterProxyModel(QtCore.QSortFilterProxyModel):
+
+    def lessThan(
+            self,
+            source_left: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ],
+            source_right: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ]) -> bool:
+        # The first column uses a checkbox to state if selected or not
+        if source_right.column() == 0:
+            return source_left.data(
+                typing.cast(int, QtCore.Qt.CheckStateRole)
+            ) < source_right.data(
+                typing.cast(int, QtCore.Qt.CheckStateRole)
+            )
+        return super().lessThan(source_left, source_right)
+
+
+class ConfirmTableDetailsModel(QtCore.QTransposeProxyModel):
+    """Add file details to the file directory list model."""
+
+    class DetailsColumns(enum.IntEnum):
+        """Columns used."""
+
+        SELECTED = 0
+        NAME = 1
+        LOCATION = 2
+
+    def columnCount(
+            self,
+            parent: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex] = None
+    ) -> int:
+        """Column count."""
+        return len(self.DetailsColumns)
+
+    def index(
+            self,
+            row: int,
+            column: int,
+            parent: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ] = QtCore.QModelIndex()
+    ) -> QtCore.QModelIndex:
+        """Generate new index."""
+        return self.createIndex(row, column)
+
+    def mapToSource(
+            self,
+            proxy_index: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ]
+    ) -> QtCore.QModelIndex:
+        """Map to source model."""
+        return self.sourceModel().index(
+            proxy_index.row(),
+            0
+        ) if proxy_index.isValid() else QtCore.QModelIndex()
+
+    def mapFromSource(
+            self,
+            source_index: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ]
+    ) -> QtCore.QModelIndex:
+        """Map from source model."""
+        if source_index.isValid() and \
+                0 <= source_index.row() < self.rowCount():
+            return self.createIndex(
+                self.sourceModel().index(source_index.row(), 0).row(),
+                source_index.column(),
+                source_index.internalPointer()
+            )
+        return QtCore.QModelIndex()
+
+    def headerData(
+            self,
+            section: int,
+            orientation: QtCore.Qt.Orientation,
+            role: int = QtCore.Qt.DisplayRole
+    ) -> str:
+        """Header data."""
+        if orientation == QtCore.Qt.Horizontal and \
+                role == QtCore.Qt.DisplayRole:
+            if section == self.DetailsColumns.NAME:
+                return "Name"
+            if section == self.DetailsColumns.LOCATION:
+                return "Location"
+            return ''
+        return super().headerData(section, orientation, role)
+
+    def rowCount(
+            self,
+            parent: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ] = None) -> int:
+        """Row count."""
+        source_model = self.sourceModel()
+        if not source_model:
+            return 0
+        return source_model.rowCount()
+
+    def data(
+            self,
+            proxy_index: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ],
+            role: int = Qt.DisplayRole) -> Any:
+        """Get data including name and location."""
+        # Only the first column should be checkable
+        if role == QtCore.Qt.CheckStateRole and proxy_index.column() != 0:
+            return None
+        if role == QtCore.Qt.DisplayRole:
+            source_model = self.sourceModel()
+            if source_model is not None:
+                source_value: str = source_model.data(proxy_index, role)
+                path = os.path.split(source_value)
+                if proxy_index.column() == self.DetailsColumns.NAME:
+                    return path[-1]
+                if proxy_index.column() == self.DetailsColumns.LOCATION:
+                    return path[0]
+                if proxy_index.column() == 0:
+                    return None
+
+        return super().data(proxy_index, role)
+
+
 class ConfirmDeleteDialog(QtWidgets.QDialog):
     """Confirm deletion dialog box."""
 
@@ -150,16 +302,36 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         """Create a package browser dialog window."""
         super().__init__(parent, flags)
         layout = QtWidgets.QGridLayout(self)
-        self.button_box = QtWidgets.QDialogButtonBox(
+        self.dialog_button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
         )
         self.setWindowTitle("Delete the Following Items?")
-        self.setFixedWidth(500)
+        self.setMinimumWidth(500)
         self._make_connections()
-        self.package_view = QtWidgets.QListView(self)
+        self.package_view = QtWidgets.QTableView(self)
+        self.package_view.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
+        self.package_view.setSelectionMode(
+            QtWidgets.QTableView.SingleSelection
+        )
+        self.package_view.verticalHeader().setVisible(False)
+        self.package_view.horizontalHeader().setStretchLastSection(True)
+        self.button_frame = QtWidgets.QFrame(self)
+
+        self.select_all_button = QtWidgets.QPushButton(parent=self)
+        self.select_all_button.setText("Select All")
+
+        self.export_to_csv_button = QtWidgets.QPushButton(parent=self)
+        self.export_to_csv_button.setText("Export Selection to csv")
+
+        self.button_frame.setLayout(QtWidgets.QHBoxLayout())
+        self.button_frame.layout().addWidget(self.select_all_button)
+        self.button_frame.layout().addWidget(self.export_to_csv_button)
+
+        self._connect_signals()
 
         layout.addWidget(self.package_view)
-        layout.addWidget(self.button_box)
+        layout.addWidget(self.button_frame)
+        layout.addWidget(self.dialog_button_box)
         self.setLayout(layout)
 
         self.nothing_found_label = QtWidgets.QLabel()
@@ -179,8 +351,46 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.model = ConfirmListModel(parent=self)
         self.model.itemsChanged.connect(self.update_buttons)
         self.model.itemsChanged.connect(self.update_view_label)
-        self.model.items = items
-        self.package_view.setModel(self.model)
+        self.model.items = sorted(items)
+        self.model_table = ConfirmTableDetailsModel()
+        self.model_table.setSourceModel(self.model)
+
+        self._proxy_model = DetailsSorterProxyModel()
+        self._proxy_model.setSourceModel(self.model_table)
+        self.package_view.setSortingEnabled(True)
+        self.package_view.sortByColumn(
+            ConfirmTableDetailsModel.DetailsColumns.LOCATION,
+            Qt.AscendingOrder
+        )
+        self.package_view.setModel(self._proxy_model)
+        self.package_view.setColumnWidth(0, 50)
+        header = self.package_view.horizontalHeader()
+        header.setSectionResizeMode(0, QtWidgets.QHeaderView.Fixed)
+
+    def _connect_signals(self):
+        """Connect any Qt signals.
+
+        The only reason for this method is to localize the pylint false
+        positive warnings.
+        """
+        # pylint: disable=no-member
+        self.select_all_button.clicked.connect(self._select_all)
+        self.export_to_csv_button.clicked.connect(self._export_csv)
+
+    def _export_csv(self):
+        action = ExportCSVConfirmedAction()
+        action.export_model(self.model)
+
+    def _select_all(self):
+        self.model.beginResetModel()
+        for i in range(self.model.rowCount()):
+            index = self.model.index(i)
+            self.model.setData(
+                index,
+                value=QtCore.Qt.Checked,
+                role=QtCore.Qt.CheckStateRole
+            )
+        self.model.endResetModel()
 
     def update_view_label(self) -> None:
         """Update the label on top of the list view widget."""
@@ -188,20 +398,104 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
 
     def update_buttons(self) -> None:
         """Update the dialog box button states."""
-        ok_button = self.button_box.button(QtWidgets.QDialogButtonBox.Ok)
+        ok_button = self.dialog_button_box.button(
+            QtWidgets.QDialogButtonBox.Ok
+        )
         if len(self.model.items) > 0:
             ok_button.setEnabled(True)
         else:
             ok_button.setEnabled(False)
 
-    def _make_connections(self):
+    def _make_connections(self) -> None:
         # pylint: disable=E1101
-        self.button_box.accepted.connect(self.accept)
-        self.button_box.rejected.connect(self.reject)
+        self.dialog_button_box.accepted.connect(self.accept)
+        self.dialog_button_box.rejected.connect(self.reject)
 
     def data(self) -> List[str]:
         """Get the files and folders selected by the user in the dialog box."""
         return self.model.selected()
+
+
+class AbsConfirmOutputReport(abc.ABC):
+    """Abstract class to generate output text format."""
+
+    # This is an abstract class that needs only one method.
+    # pylint: disable=R0903
+    def __init__(self, model: ConfirmListModel) -> None:
+        self.model = model
+
+    @abc.abstractmethod
+    def generate(self) -> str:
+        """Create an output file report as a string."""
+
+
+class ExportCSVConfirmedDeleted(AbsConfirmOutputReport):
+    """CVS report generator class for deleted items."""
+
+    field_names = [
+        'path',
+        "selected_for_removal"
+    ]
+
+    def generate(self) -> str:
+        """Create an output file report as a string."""
+        return self.generate_csv()
+
+    def generate_csv(self) -> str:
+        """Generate csv data as a string from the model."""
+        with io.StringIO() as file_string:
+            writer = csv.DictWriter(file_string, fieldnames=self.field_names)
+            writer.writeheader()
+            for row_number in range(self.model.rowCount()):
+                index = self.model.index(row_number)
+                writer.writerow(
+                    {
+                        ExportCSVConfirmedDeleted.field_names[0]:
+                            index.data(),
+                        ExportCSVConfirmedDeleted.field_names[1]:
+                            index.data(role=Qt.CheckStateRole) == Qt.Checked,
+                    }
+                )
+            return file_string.getvalue()
+
+
+class ExportCSVConfirmedAction:
+    """Export confirmed list to a CSV file."""
+
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
+        """Create a new export csv confirmed action."""
+        self._parent = parent
+        self.dialog = QtWidgets.QFileDialog(self._parent)
+
+    def export_model(
+            self,
+            model: ConfirmListModel,
+            report_strategy: Optional[AbsConfirmOutputReport] = None
+    ) -> None:
+        """Export confirm model to a csv file on user's hard drive."""
+        output_file = self.get_output_file()
+        if output_file is None:
+            return
+        report_strategy = report_strategy or ExportCSVConfirmedDeleted
+        csv_builder = report_strategy(model)
+        report = csv_builder.generate()
+        self.save_file_to_disk(output_file, report)
+
+    def get_output_file(self) -> Optional[str]:
+        """Request the file name to use."""
+        filename, _ = self.dialog.getSaveFileName(
+            self._parent,
+            caption="Save File",
+            filter="Comma-separated Values (*.csv)"
+        )
+
+        return None if filename == '' else filename
+
+    @staticmethod
+    def save_file_to_disk(filename: str, data: str) -> None:
+        """Save data to a file on disk."""
+        with open(filename, "w", encoding="utf-8") as file:
+            file.write(data)
 
 
 class QtWidgetConfirmFileSystemRemoval(
