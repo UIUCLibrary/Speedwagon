@@ -54,7 +54,7 @@ class CheckBoxWidget(EditDelegateWidget):
         self.check_box = QtWidgets.QCheckBox(self.parent())
         self.setFocusProxy(self.check_box)
         self._make_connections()
-        layout = QtWidgets.QVBoxLayout(self)
+        layout = QtWidgets.QVBoxLayout(self.parent())
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.check_box)
         self.setLayout(layout)

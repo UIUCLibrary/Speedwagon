@@ -149,7 +149,8 @@ class TestCheckBoxWidget:
         assert isinstance(widget, QtWidgets.QWidget)
 
     def test_checking_changes_value(self, qtbot):
-        widget = speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget()
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget(parent)
         assert widget.data is False
         with qtbot.wait_signal(widget.dataChanged):
             widget.check_box.setChecked(True)
@@ -158,7 +159,8 @@ class TestCheckBoxWidget:
 
 class TestFileSelectWidget:
     def test_empty_widget_metadata(self, qtbot):
-        widget = speedwagon.frontend.qtwidgets.widgets.FileSelectWidget()
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.FileSelectWidget(parent)
         qtbot.addWidget(widget)
         assert isinstance(widget, QtWidgets.QWidget)
 

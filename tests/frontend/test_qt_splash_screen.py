@@ -1,4 +1,5 @@
-from PySide6 import QtWidgets
+import pytest
+QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 from speedwagon.frontend.qtwidgets import splashscreen
 
 
