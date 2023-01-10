@@ -51,7 +51,7 @@ class CheckBoxWidget(EditDelegateWidget):
             **kwargs
     ) -> None:
         super().__init__(*args, widget_metadata=widget_metadata, **kwargs)
-        self.check_box = QtWidgets.QCheckBox(self)
+        self.check_box = QtWidgets.QCheckBox(self.parent())
         self.setFocusProxy(self.check_box)
         self._make_connections()
         layout = QtWidgets.QVBoxLayout(self)
