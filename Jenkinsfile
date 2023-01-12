@@ -740,6 +740,7 @@ pipeline {
         booleanParam(name: 'RUN_CHECKS', defaultValue: true, description: 'Run checks on code')
         booleanParam(name: 'TEST_RUN_TOX', defaultValue: false, description: 'Run Tox Tests')
         booleanParam(name: 'BUILD_PACKAGES', defaultValue: false, description: 'Build Packages')
+        booleanParam(name: 'TEST_STANDALONE_PACKAGE_DEPLOYMENT', defaultValue: true, description: 'Test deploying any packages that are designed to be installed without using Python directly')
         booleanParam(name: 'BUILD_CHOCOLATEY_PACKAGE', defaultValue: false, description: 'Build package for chocolatey package manager')
         booleanParam(name: "TEST_PACKAGES_ON_MAC", defaultValue: false, description: "Test Python packages on Mac")
         booleanParam(name: 'TEST_PACKAGES', defaultValue: true, description: 'Test Python packages by installing them and running tests on the installed package')
@@ -1221,7 +1222,7 @@ pipeline {
                                           }
                                     }
                                     when{
-                                        equals expected: true, actual: params.TEST_PACKAGES
+                                        equals expected: true, actual: params.TEST_STANDALONE_PACKAGE_DEPLOYMENT
                                         beforeAgent true
                                     }
                                     steps{
@@ -1303,7 +1304,10 @@ pipeline {
                                       }
                                     }
                                     when{
-                                        equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                        allOf{
+                                            equals expected: true, actual: params.TEST_STANDALONE_PACKAGE_DEPLOYMENT
+                                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                        }
                                         beforeAgent true
                                     }
                                     steps{
