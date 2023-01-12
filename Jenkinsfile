@@ -279,7 +279,6 @@ def deploy_sscm(file_glob, pkgVersion){
     }
 }
 def testSpeedwagonChocolateyPkg(version){
-    echo 'Testing Chocolatey package'
     script{
         def chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
         chocolatey.install_chocolatey_package(
@@ -502,33 +501,6 @@ def startup(){
 
 }
 
-
-def create_wheels(){
-    def wheelCreatorTasks = [:]
-    ['3.7', '3.8', '3.9', '3.10', '3.11'].each{ pythonVersion ->
-        wheelCreatorTasks["Packaging wheels for ${pythonVersion}"] = {
-            node('windows && docker && x86') {
-                ws{
-                    checkout scm
-                    try{
-                        docker.build("speedwagon:wheelbuilder","-f ci/docker/python/windows/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE .").inside{
-                            bat(label: "Getting dependencies to vendor", script:"py -${pythonVersion} -m pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://devpi.library.illinois.edu/production/release")
-                            stash includes: "deps/*.whl", name: "PYTHON_DEPS_${pythonVersion}"
-                        }
-                    } finally{
-                        cleanWs(
-                            deleteDirs: true,
-                            patterns: [
-                                [pattern: 'deps/', type: 'INCLUDE']
-                                ]
-                        )
-                    }
-                }
-            }
-        }
-    }
-    parallel(wheelCreatorTasks)
-}
 
 def testPythonPackages(){
     script{
@@ -1157,9 +1129,30 @@ pipeline {
                                 beforeInput true
                             }
                             stages{
-                                stage('Packaging python dependencies'){
+                                stage('Building Python Vendored Wheels'){
+                                    agent {
+                                        dockerfile {
+                                            filename 'ci/docker/python/windows/tox/Dockerfile'
+                                            label 'windows && docker && x86'
+                                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                          }
+                                    }
                                     steps{
-                                        create_wheels()
+                                        withEnv(['PY_PYTHON=3.11']) {
+                                            bat(
+                                                label: 'Getting dependencies to vendor',
+                                                script: '''
+                                                    py -m pip install pip --upgrade
+                                                    py -m pip install wheel
+                                                    py -m pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python/simple
+                                                '''
+                                            )
+                                        }
+                                    }
+                                    post{
+                                        success{
+                                            stash includes: 'deps/*.whl', name: 'VENDORED_WHEELS_FOR_CHOCOLATEY'
+                                        }
                                     }
                                 }
                                 stage('Package for Chocolatey'){
@@ -1171,19 +1164,12 @@ pipeline {
                                           }
                                     }
                                     steps{
+                                        checkout scm
                                         unstash 'PYTHON_PACKAGES'
+                                        unstash 'VENDORED_WHEELS_FOR_CHOCOLATEY'
                                         script {
                                             findFiles(glob: 'dist/*.whl').each{
-                                                [
-                                                    'PYTHON_DEPS_3.11',
-                                                    'PYTHON_DEPS_3.10',
-                                                    'PYTHON_DEPS_3.9',
-                                                    'PYTHON_DEPS_3.8',
-                                                    'PYTHON_DEPS_3.7',
-                                                    'SPEEDWAGON_DOC_PDF'
-                                                ].each{ stashName ->
-                                                    unstash stashName
-                                                }
+                                                unstash 'SPEEDWAGON_DOC_PDF'
                                                 createNewChocolateyPackage(
                                                     name: 'speedwagon',
                                                     version: props.Version,
@@ -1238,60 +1224,7 @@ pipeline {
                                                         """
                                                 )
                                             archiveArtifacts artifacts: 'logs/*'
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        stage('Windows Standalone'){
-                            when{
-                                anyOf{
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
-                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
-                                }
-                                beforeAgent true
-                            }
-                            stages{
-                                stage('CMake Build'){
-                                    agent {
-                                        dockerfile {
-                                            filename 'ci/docker/windows_standalone/Dockerfile'
-                                            label 'Windows && Docker && x86'
-                                            args '-u ContainerAdministrator'
-                                            additionalBuildArgs '--build-arg CHOCOLATEY_SOURCE'
-                                          }
-                                    }
-                                    steps {
-                                        unstash 'SPEEDWAGON_DOC_PDF'
-                                        script{
-                                            withEnv(["build_number=${get_build_number()}"]) {
-                                                load('ci/jenkins/scripts/standalone.groovy').build_standalone(
-                                                    packageFormat: [
-                                                        msi: params.PACKAGE_WINDOWS_STANDALONE_MSI,
-                                                        nsis: params.PACKAGE_WINDOWS_STANDALONE_NSIS,
-                                                        zipFile: params.PACKAGE_WINDOWS_STANDALONE_ZIP,
-                                                    ],
-                                                    package: [
-                                                        version: props.Version
-                                                    ]
-                                                )
-                                            }
-                                        }
-                                    }
-                                    post {
-                                        success{
-                                            archiveArtifacts artifacts: 'dist/*.msi,dist/*.exe,dist/*.zip', fingerprint: true
-                                            stash includes: 'dist/*.msi,dist/*.exe,dist/*.zip', name: 'STANDALONE_INSTALLERS'
-                                        }
-                                        failure {
-                                            archiveArtifacts allowEmptyArchive: true, artifacts: 'dist/**/wix.log,dist/**/*.wxs'
-                                        }
-                                        cleanup{
-                                            cleanWs(
-                                                deleteDirs: true,
-                                                notFailBuild: true
-                                            )
+                                            bat(script: 'py --list', returnStatus: true)
                                         }
                                     }
                                 }
@@ -1304,10 +1237,7 @@ pipeline {
                                       }
                                     }
                                     when{
-                                        allOf{
-                                            equals expected: true, actual: params.TEST_STANDALONE_PACKAGE_DEPLOYMENT
-                                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                                        }
+                                        equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
                                         beforeAgent true
                                     }
                                     steps{
