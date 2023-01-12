@@ -11,7 +11,7 @@ $installDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
 $fileLocation = Join-Path $toolsDir '[[InstallerFile]]'
 $dependenciesLocation = Join-Path $toolsDir dist\deps
 $packageSourceUrl =  '[[PackageSourceUrl]]'
-$PYTHON = "$(Join-Path $(Get-AppInstallLocation('python')) 'python.exe')"
+$PYTHON = "$(Join-Path 'c:\python311' 'python.exe')"
 $requirementSpecifier = "$($fileLocation)`[QT`]"
 Write-Host "Running installing $requirementSpecifier"
 Write-Host "Creating Python virtualenv at $installDir\venv"
