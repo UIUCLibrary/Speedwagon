@@ -1,7 +1,6 @@
 """Specialize widgets."""
 
 import json
-import sys
 import typing
 import warnings
 from typing import Union, Optional, Dict, Any
