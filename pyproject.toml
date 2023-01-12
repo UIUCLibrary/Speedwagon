@@ -12,7 +12,6 @@ markers=[
     "slow: mark test as slow.",
     "model_data"
 ]
-qt_api="pyside6"
 
 [tool.pydocstyle]
 # Ignore files that end in _ui.py because they are machine generated
