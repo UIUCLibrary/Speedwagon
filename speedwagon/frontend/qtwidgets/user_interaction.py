@@ -86,8 +86,8 @@ class ConfirmListModel(QtCore.QAbstractListModel):
 
     def rowCount(  # pylint: disable=invalid-name
             self,
-            parent: Optional[
-                Union[  # pylint: disable=unused-argument
+            parent: Optional[  # pylint: disable=unused-argument
+                Union[
                     QtCore.QModelIndex,
                     QtCore.QPersistentModelIndex
                 ]

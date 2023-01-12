@@ -62,11 +62,8 @@ class CheckBoxWidget(EditDelegateWidget):
         self.data = False
 
     def _make_connections(self) -> None:
-        state_changed = getattr(self.check_box, "stateChanged")
-        if state_changed:
-            state_changed.connect(self.update_data)
-        else:
-            raise AttributeError("stateChanged not found")
+        # pylint: disable=no-member
+        self.check_box.stateChanged.connect(self.update_data)
 
     def update_data(self, state: QtCore.Qt.CheckState) -> None:
         self.data = self.check_box.isChecked()
