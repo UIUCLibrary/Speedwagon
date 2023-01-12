@@ -11,9 +11,8 @@ $installDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
 $fileLocation = Join-Path $toolsDir '[[InstallerFile]]'
 $dependenciesLocation = Join-Path $toolsDir dist\deps
 $packageSourceUrl =  '[[PackageSourceUrl]]'
-$PYTHON = "$(Join-Path $(Get-AppInstallLocation('python')) 'python.exe')"
+$PYTHON = "C:\Python311\python.exe"
 $requirementSpecifier = "$($fileLocation)`[QT`]"
-Write-Host "Running installing $requirementSpecifier"
 Write-Host "Creating Python virtualenv at $installDir\venv"
 & "$PYTHON" -m venv $installDir\venv
 & "$installDir\venv\Scripts\python.exe" -m pip install pip --upgrade --no-compile
@@ -28,12 +27,12 @@ Install-ChocolateyShortcut `
   -ShortcutFilePath "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\$packageName\$packageName.lnk" `
   -TargetPath "$installDir\venv\Scripts\$packageName.exe" `
   -WorkingDirectory "C:\" `
-  -Description "This is the description"
+  -Description "Collection of tools and workflows for DS"
 
 Install-ChocolateyShortcut `
   -ShortcutFilePath "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\$packageName\Manual.lnk" `
   -TargetPath "$installDir\documentation\$packageName.pdf" `
   -WorkingDirectory "C:\" `
-  -Description "This is the description"
+  -Description "Speedwagon Manual"
 
 Install-BinFile -Name $packageName -Path "$installDir\venv\Scripts\$packageName.exe"
