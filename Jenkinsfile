@@ -505,7 +505,7 @@ def startup(){
 
 def create_wheels(){
     def wheelCreatorTasks = [:]
-    ['3.7', '3.8', '3.9', '3.10'].each{ pythonVersion ->
+    ['3.7', '3.8', '3.9', '3.10', '3.11'].each{ pythonVersion ->
         wheelCreatorTasks["Packaging wheels for ${pythonVersion}"] = {
             node('windows && docker && x86') {
                 ws{
@@ -1174,6 +1174,7 @@ pipeline {
                                         script {
                                             findFiles(glob: 'dist/*.whl').each{
                                                 [
+                                                    'PYTHON_DEPS_3.11',
                                                     'PYTHON_DEPS_3.10',
                                                     'PYTHON_DEPS_3.9',
                                                     'PYTHON_DEPS_3.8',
