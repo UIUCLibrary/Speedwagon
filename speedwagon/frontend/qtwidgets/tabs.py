@@ -39,17 +39,17 @@ __all__ = [
 ]
 
 SELECTOR_VIEW_SIZE_POLICY = QtWidgets.QSizePolicy(
-    QtWidgets.QSizePolicy.MinimumExpanding,
-    QtWidgets.QSizePolicy.Maximum)
+    QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+    QtWidgets.QSizePolicy.Policy.Maximum)
 
 # There are correct
 WORKFLOW_SIZE_POLICY = QtWidgets.QSizePolicy(
-    QtWidgets.QSizePolicy.MinimumExpanding,
-    QtWidgets.QSizePolicy.Maximum)
+    QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+    QtWidgets.QSizePolicy.Policy.Maximum)
 
 ITEM_SETTINGS_POLICY = QtWidgets.QSizePolicy(
-    QtWidgets.QSizePolicy.MinimumExpanding,
-    QtWidgets.QSizePolicy.Maximum)
+    QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+    QtWidgets.QSizePolicy.Policy.Maximum)
 
 
 class TabWidgets(enum.Enum):
@@ -87,8 +87,8 @@ class Tab:
         tool_settings = QtWidgets.QTableView(parent=parent)
         tool_settings.setEditTriggers(
             typing.cast(
-                QtWidgets.QAbstractItemView.EditTriggers,
-                QtWidgets.QAbstractItemView.AllEditTriggers
+                QtWidgets.QAbstractItemView.EditTrigger,
+                QtWidgets.QAbstractItemView.EditTrigger.AllEditTriggers
             )
         )
 
@@ -96,11 +96,13 @@ class Tab:
 
         tool_settings.horizontalHeader().setVisible(False)
         tool_settings.setSelectionMode(
-            QtWidgets.QAbstractItemView.SingleSelection)
+            QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
         tool_settings.horizontalHeader().setSectionResizeMode(
-            QtWidgets.QHeaderView.Stretch)
+            QtWidgets.QHeaderView.ResizeMode.Stretch)
         v_header = tool_settings.verticalHeader()
-        v_header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        v_header.setSectionResizeMode(
+            QtWidgets.QHeaderView.ResizeMode.ResizeToContents
+        )
         v_header.setSectionsClickable(False)
         return tool_settings
 
@@ -122,7 +124,7 @@ class Tab:
         settings = cls.create_tools_settings_view(parent)
 
         tool_config_layout.setFieldGrowthPolicy(
-            QtWidgets.QFormLayout.ExpandingFieldsGrow)
+            QtWidgets.QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
         tool_config_layout.addRow(QtWidgets.QLabel("Selected"), name_line)
         tool_config_layout.addRow(QtWidgets.QLabel("Description"),
                                   description_information)
@@ -232,7 +234,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         selector_view.setSizePolicy(SELECTOR_VIEW_SIZE_POLICY)
 
         selector_view.setSelectionBehavior(
-            QtWidgets.QAbstractItemView.SelectRows
+            QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows
         )
 
         cast(
@@ -280,12 +282,18 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         start_button = QtWidgets.QPushButton()
 
         start_button.setText("Start")
-        start_button.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        start_button.setContextMenuPolicy(
+            QtCore.Qt.ContextMenuPolicy.CustomContextMenu
+        )
         # pylint: disable=no-member
-        start_button.clicked.connect(self._start)
+        start_button.clicked.connect(self._start)  # type: ignore
 
         tool_actions_layout.addSpacerItem(
-            QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Expanding)
+            QtWidgets.QSpacerItem(
+                0,
+                40,
+                QtWidgets.QSizePolicy.Policy.Expanding
+            )
         )
 
         tool_actions_layout.addWidget(start_button)
@@ -299,7 +307,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             typing.Type[Workflow],
             self.item_selection_model.data(
                 self.item_selector_view.selectedIndexes()[0],
-                role=typing.cast(int, QtCore.Qt.UserRole)
+                role=typing.cast(int, QtCore.Qt.ItemDataRole.UserRole)
             )
         )
         if self.is_ready_to_start():
@@ -341,7 +349,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         item = cast(
             typing.Type[Workflow],
             self.item_selection_model.data(
-                index, role=typing.cast(int, QtCore.Qt.UserRole)
+                index, role=typing.cast(int, QtCore.Qt.ItemDataRole.UserRole)
             )
         )
 
@@ -367,13 +375,15 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             message = f"Unable to use {item_name}. Reason: {class_name}"
 
             warning_message_dialog = QtWidgets.QMessageBox(self.parent)
-            spanner = QtWidgets.QSpacerItem(300,
-                                            0,
-                                            QtWidgets.QSizePolicy.Minimum,
-                                            QtWidgets.QSizePolicy.Expanding)
+            spanner = QtWidgets.QSpacerItem(
+                300,
+                0,
+                QtWidgets.QSizePolicy.Policy.Minimum,
+                QtWidgets.QSizePolicy.Policy.Expanding
+            )
 
             warning_message_dialog.setWindowTitle("Settings Error")
-            warning_message_dialog.setIcon(QtWidgets.QMessageBox.Warning)
+            warning_message_dialog.setIcon(QtWidgets.QMessageBox.Icon.Warning)
             warning_message_dialog.setText(message)
             warning_message_dialog.setDetailedText("".join(stack_trace))
             layout: QtWidgets.QGridLayout = warning_message_dialog.layout()
@@ -388,10 +398,12 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
     def compose_tab_layout(self) -> None:
         """Build the tab widgets."""
-        self.tab_layout.setAlignment(QtCore.Qt.AlignTop)
+        self.tab_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         self.tab_layout.addWidget(self.item_selector_view)
         self.tab_layout.addWidget(self.workspace)
-        self.tab_layout.addLayout(self.actions_layout)
+        actions = QtWidgets.QWidget()
+        actions.setLayout(self.actions_layout)
+        self.tab_layout.addWidget(actions)
 
 
 class WorkflowSignals(QtCore.QObject):
@@ -452,9 +464,9 @@ class WorkflowsTab(ItemSelectionTab):
                 window_title="Job Cancelled"
             )
             if job_cancel_exception.expected is True:
-                msg.setIcon(QtWidgets.QMessageBox.Information)
+                msg.setIcon(QtWidgets.QMessageBox.Icon.Information)
             else:
-                msg.setIcon(QtWidgets.QMessageBox.Warning)
+                msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
                 traceback.print_tb(job_cancel_exception.__traceback__)
                 print(job_cancel_exception, file=sys.stderr)
             msg.exec_()
@@ -480,7 +492,7 @@ class WorkflowsTab(ItemSelectionTab):
     ) -> QtWidgets.QMessageBox:
 
         message_box = QtWidgets.QMessageBox(self.parent)
-        message_box.setIcon(QtWidgets.QMessageBox.Warning)
+        message_box.setIcon(QtWidgets.QMessageBox.Icon.Warning)
         window_title = window_title or exc.__class__.__name__
         message_box.setWindowTitle(window_title)
         message = message or str(exc)
@@ -547,12 +559,17 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
             self,
             parent: QtWidgets.QWidget,
             option: QtWidgets.QStyleOptionViewItem,
-            index: QtCore.QModelIndex
+            index: typing.Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ]
     ) -> QtWidgets.QWidget:
 
         if index.isValid():
             tool_settings = \
-                index.data(role=typing.cast(int, QtCore.Qt.UserRole))
+                index.data(
+                    role=typing.cast(int, QtCore.Qt.ItemDataRole.UserRole)
+                )
 
             browser_widget = tool_settings.edit_widget()
             if browser_widget:
@@ -576,10 +593,15 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
     def setEditorData(  # pylint: disable=C0103
             self,
             editor: QtWidgets.QWidget,
-            index: QtCore.QModelIndex
+            index: typing.Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ]
     ) -> None:
         if index.isValid():
-            i = index.data(role=typing.cast(int, QtCore.Qt.UserRole))
+            i = index.data(
+                role=typing.cast(int, QtCore.Qt.ItemDataRole.UserRole)
+            )
             if isinstance(
                     editor,
                     qtwidgets.shared_custom_widgets.CustomItemWidget
@@ -591,7 +613,10 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
             self,
             widget: QtWidgets.QWidget,
             model: QtCore.QAbstractItemModel,
-            index: QtCore.QModelIndex
+            index: typing.Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ],
     ) -> None:
 
         if isinstance(

@@ -3,6 +3,14 @@
 import os
 import platform
 import typing
+from typing import Optional, Dict, cast, Type
+from PySide6 import QtWidgets, QtCore  # type: ignore
+try:  # pragma: no cover
+    from importlib.resources import as_file
+    from importlib import resources
+except ImportError:  # pragma: no cover
+    from importlib_resources import as_file
+    import importlib_resources as resources  # type: ignore
 
 from speedwagon.config import \
     AbsOpenSettings, \
@@ -10,14 +18,6 @@ from speedwagon.config import \
     WindowsOpenSettings, \
     OpenSettingsDirectory
 
-try:  # pragma: no cover
-    from importlib import resources
-except ImportError:  # pragma: no cover
-    import importlib_resources as resources  # type: ignore
-
-from typing import Optional, Dict, cast, Type, Union
-
-from PySide6 import QtWidgets, QtCore  # type: ignore
 from speedwagon import job
 from speedwagon.frontend import qtwidgets
 from speedwagon.frontend.qtwidgets import models
@@ -29,14 +29,14 @@ class UnsupportedOpenSettings(AbsOpenSettings):
 
     def __init__(self,
                  settings_directory: str,
-                 parent: QtWidgets.QWidget = None
+                 parent: Optional[QtWidgets.QWidget] = None
                  ) -> None:
         super().__init__(settings_directory)
         self.parent = parent
 
     def system_open_directory(self, settings_directory: str) -> None:
         msg = QtWidgets.QMessageBox(parent=self.parent)
-        msg.setIcon(QtWidgets.QMessageBox.Warning)
+        msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
         msg.setText(
             f"Don't know how to do that on {platform.system()}"
         )
@@ -48,9 +48,8 @@ class SettingsDialog(QtWidgets.QDialog):
 
     def __init__(
             self,
-            parent: QtWidgets.QWidget = None,
-            flags: Union[QtCore.Qt.WindowFlags,
-                         QtCore.Qt.WindowType] = QtCore.Qt.WindowFlags()
+            parent: Optional[QtWidgets.QWidget] = None,
+            flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0)
     ) -> None:
         super().__init__(parent, flags)
         self.settings_location: Optional[str] = None
@@ -67,7 +66,7 @@ class SettingsDialog(QtWidgets.QDialog):
         # pylint: disable=unnecessary-lambda
         # This needs a lambda to delay execution. Otherwise Qt might segfault
         # when it tries to open the dialog box
-        self.open_settings_path_button.clicked.connect(
+        self.open_settings_path_button.clicked.connect(  # type: ignore
             lambda: self.open_settings_dir()
         )
         # pylint: enable=unnecessary-lambda
@@ -77,14 +76,18 @@ class SettingsDialog(QtWidgets.QDialog):
         self._button_box = \
             QtWidgets.QDialogButtonBox(
                 cast(
-                    QtWidgets.QDialogButtonBox.StandardButtons,
-                    QtWidgets.QDialogButtonBox.Cancel |
-                    QtWidgets.QDialogButtonBox.Ok
+                    QtWidgets.QDialogButtonBox.StandardButton,
+                    QtWidgets.QDialogButtonBox.StandardButton.Cancel |
+                    QtWidgets.QDialogButtonBox.StandardButton.Ok
                 )
             )
 
-        self._button_box.accepted.connect(self.accept)
-        self._button_box.rejected.connect(self.reject)
+        self._button_box.accepted.connect(  # type: ignore
+            self.accept
+        )
+        self._button_box.rejected.connect(  # type: ignore
+            self.reject
+        )
         layout.addWidget(self._button_box)
 
         self.setLayout(layout)
@@ -94,7 +97,10 @@ class SettingsDialog(QtWidgets.QDialog):
     def add_tab(self, tab: QtWidgets.QWidget, tab_name: str) -> None:
         self.tabs_widget.addTab(tab, tab_name)
 
-    def open_settings_dir(self, strategy: AbsOpenSettings = None) -> None:
+    def open_settings_dir(
+            self,
+            strategy: Optional[AbsOpenSettings] = None
+    ) -> None:
         if self.settings_location is None:
             return
 
@@ -119,9 +125,8 @@ class GlobalSettingsTab(QtWidgets.QWidget):
 
     def __init__(
             self,
-            parent: QtWidgets.QWidget = None,
-            flags: Union[QtCore.Qt.WindowFlags,
-                         QtCore.Qt.WindowType] = QtCore.Qt.WindowFlags()
+            parent: Optional[QtWidgets.QWidget] = None,
+            flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0)
     ) -> None:
         """Create a global settings tab widget."""
         super().__init__(parent, flags)
@@ -133,7 +138,7 @@ class GlobalSettingsTab(QtWidgets.QWidget):
         self.settings_table = QtWidgets.QTableView(self)
 
         self.settings_table.setSelectionMode(
-            QtWidgets.QAbstractItemView.SingleSelection)
+            QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
 
         self.settings_table.horizontalHeader().setStretchLastSection(True)
 
@@ -151,7 +156,9 @@ class GlobalSettingsTab(QtWidgets.QWidget):
             models.build_setting_qt_model(self.config_file)
         )
 
-        self.settings_table.model().dataChanged.connect(self.on_modified)
+        self.settings_table.model().dataChanged.connect(  # type: ignore
+            self.on_modified
+        )
 
     def on_modified(self) -> None:
         """Set modified to true."""
@@ -163,7 +170,7 @@ class GlobalSettingsTab(QtWidgets.QWidget):
             return
         if self.config_file is None:
             msg = QtWidgets.QMessageBox(parent=self)
-            msg.setIcon(QtWidgets.QMessageBox.Warning)
+            msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
             msg.setText("Unable to save settings. No configuration file set")
             msg.exec()
             return
@@ -188,9 +195,8 @@ class TabsConfigurationTab(QtWidgets.QWidget):
 
     def __init__(
             self,
-            parent: QtWidgets.QWidget = None,
-            flags: Union[QtCore.Qt.WindowFlags,
-                         QtCore.Qt.WindowType] = QtCore.Qt.WindowFlags()
+            parent: Optional[QtWidgets.QWidget] = None,
+            flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0)
     ) -> None:
         """Create a tab configuration widget."""
         super().__init__(parent, flags)
@@ -208,7 +214,7 @@ class TabsConfigurationTab(QtWidgets.QWidget):
             return
         if self.settings_location is None:
             msg = QtWidgets.QMessageBox(parent=self)
-            msg.setIcon(QtWidgets.QMessageBox.Warning)
+            msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
             msg.setText("Unable to save settings. No settings location set")
             msg.exec()
             return
@@ -256,7 +262,9 @@ class SettingsBuilder:
             tabs_tab.load()
 
         config_dialog.add_tab(tabs_tab, "Tabs")
-        config_dialog.accepted.connect(tabs_tab.on_okay)
+        config_dialog.accepted.connect(  # type: ignore
+            tabs_tab.on_okay
+        )
 
     def _build_global_settings(self, config_dialog: SettingsDialog) -> None:
         global_settings_tab = GlobalSettingsTab()
@@ -264,7 +272,9 @@ class SettingsBuilder:
             global_settings_tab.config_file = self._global_config_file_path
             global_settings_tab.read_config_data()
 
-        config_dialog.accepted.connect(global_settings_tab.on_okay)
+        config_dialog.accepted.connect(  # type: ignore
+            global_settings_tab.on_okay
+        )
         self._global_settings_tab = global_settings_tab
 
         if self._global_settings_tab is not None:
@@ -307,18 +317,19 @@ class TabEditorWidget(QtWidgets.QWidget):
 
     def __init__(
             self,
-            parent: QtWidgets.QWidget = None,
-            flags: Union[QtCore.Qt.WindowFlags,
-                         QtCore.Qt.WindowType] = QtCore.Qt.WindowFlags()
+            parent: Optional[QtWidgets.QWidget] = None,
+            flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0)
     ) -> None:
         """Create a tab editor widget."""
         super().__init__(parent, flags)
         self.load_ui_file()
 
     def load_ui_file(self) -> None:
-        with resources.path(
-                "speedwagon.frontend.qtwidgets.ui",
-                "tab_editor.ui"
+
+        with as_file(
+                resources.files(
+                    "speedwagon.frontend.qtwidgets.ui"
+                ).joinpath("tab_editor.ui")
         ) as ui_file:
             qtwidgets.ui_loader.load_ui(str(ui_file), self)
 
@@ -328,9 +339,8 @@ class TabEditor(TabEditorWidget):
 
     def __init__(
             self,
-            parent: QtWidgets.QWidget = None,
-            flags: Union[QtCore.Qt.WindowFlags,
-                         QtCore.Qt.WindowType] = QtCore.Qt.WindowFlags()
+            parent: Optional[QtWidgets.QWidget] = None,
+            flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0)
     ) -> None:
         """Create a tab editor widget."""
         super().__init__(parent, flags)
@@ -349,19 +359,28 @@ class TabEditor(TabEditorWidget):
         self.tab_workflows_list_view.setModel(
             self._active_tab_workflows_model
         )
-
-        self.selected_tab_combo_box.currentIndexChanged.connect(
+        selected_tab_combo_box = self.selected_tab_combo_box
+        selected_tab_combo_box.currentIndexChanged.connect(  # type: ignore
             self._changed_tab
         )
 
-        self.new_tab_button.clicked.connect(self._create_new_tab)
+        self.new_tab_button.clicked.connect(  # type: ignore
+            self._create_new_tab
+        )
 
-        self.delete_current_tab_button.clicked.connect(self._delete_tab)
-        self.add_items_button.clicked.connect(self._add_items_to_tab)
-        self.remove_items_button.clicked.connect(self._remove_items)
+        self.delete_current_tab_button.clicked.connect(  # type: ignore
+            self._delete_tab
+        )
+
+        self.add_items_button.clicked.connect(  # type: ignore
+            self._add_items_to_tab
+        )
+        self.remove_items_button.clicked.connect(  # type: ignore
+            self._remove_items
+        )
 
         # pylint: disable=no-member
-        self.tabs_model.dataChanged.connect(self.on_modified)
+        self.tabs_model.dataChanged.connect(self.on_modified)  # type: ignore
         self.modified: bool = False
         self.splitter.setChildrenCollapsible(False)
 
@@ -379,7 +398,9 @@ class TabEditor(TabEditorWidget):
 
         for tab in qtwidgets.tabs.read_tabs_yaml(value):
 
-            tab.workflows_model.dataChanged.connect(self.on_modified)
+            tab.workflows_model.dataChanged.connect(  # type: ignore
+                self.on_modified
+            )
             self.tabs_model.add_tab(tab)
         self.selected_tab_combo_box.setCurrentIndex(0)
         self._tabs_file = value
@@ -392,7 +413,10 @@ class TabEditor(TabEditorWidget):
         )
         index = model.index(tab)
         if index.isValid():
-            data = model.data(index, role=typing.cast(int, QtCore.Qt.UserRole))
+            data = model.data(
+                index,
+                role=typing.cast(int, QtCore.Qt.ItemDataRole.UserRole)
+            )
             self.tab_workflows_list_view.setModel(data.workflows_model)
         else:
             self.tab_workflows_list_view.setModel(
@@ -415,7 +439,7 @@ class TabEditor(TabEditorWidget):
                 error = QtWidgets.QMessageBox(self)
                 error.setText(message)
                 error.setWindowTitle("Unable to Create New Tab")
-                error.setIcon(QtWidgets.QMessageBox.Critical)
+                error.setIcon(QtWidgets.QMessageBox.Icon.Critical)
                 error.exec()
                 continue
 
@@ -440,7 +464,7 @@ class TabEditor(TabEditorWidget):
             self.tab_workflows_list_view.model()
         )
         for i in self.all_workflows_list_view.selectedIndexes():
-            new_workflow = i.data(role=QtCore.Qt.UserRole)
+            new_workflow = i.data(role=QtCore.Qt.ItemDataRole.UserRole)
             model.add_workflow(new_workflow)
         model.sort(0)
 
@@ -450,7 +474,7 @@ class TabEditor(TabEditorWidget):
             self.tab_workflows_list_view.model()
         )
         items_to_remove = [
-            i.data(role=QtCore.Qt.UserRole)
+            i.data(role=QtCore.Qt.ItemDataRole.UserRole)
             for i in self.tab_workflows_list_view.selectedIndexes()
         ]
 

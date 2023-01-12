@@ -180,5 +180,5 @@ class SplashScreenLogHandler(logging.Handler):
         """Write logging message on the splash screen widget."""
         self.widget.showMessage(
             self.format(record),
-            QtCore.Qt.AlignCenter,
+            QtCore.Qt.AlignmentFlag.AlignCenter,
         )

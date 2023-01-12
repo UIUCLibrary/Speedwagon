@@ -2,7 +2,7 @@
 
 import os
 import typing
-from typing import NamedTuple, Any
+from typing import NamedTuple, Any, Union
 
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtCore import Qt
@@ -24,18 +24,19 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
             self,
             parent: QtWidgets.QWidget,
             item: QtWidgets.QStyleOptionViewItem,
-            index: QtCore.QModelIndex) -> QtWidgets.QWidget:
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+    ) -> QtWidgets.QWidget:
         """Create editor widget."""
         return QtWidgets.QComboBox(parent)
 
     def setEditorData(  # pylint: disable=C0103,W0613,R0201
             self,
             editor: QtCore.QObject,
-            index: QtCore.QModelIndex
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
     ) -> None:
         """Set editor data."""
         object_record: collection.PackageObject = \
-            index.data(role=typing.cast(int, Qt.UserRole))
+            index.data(role=typing.cast(int, Qt.ItemDataRole.UserRole))
 
         try:
             title_page = object_record.component_metadata[
@@ -58,16 +59,20 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
             self,
             widget: QtWidgets.QWidget,
             model: QtCore.QAbstractItemModel,
-            index: QtCore.QModelIndex
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
     ) -> None:
         """Set model data."""
         record: collection.PackageObject = \
-            model.data(index, role=typing.cast(int, Qt.UserRole))
+            model.data(index, role=typing.cast(int, Qt.ItemDataRole.UserRole))
 
         record.component_metadata[
             collection.Metadata.TITLE_PAGE] = widget.currentText()
 
-        model.setData(index, record, role=typing.cast(int, Qt.UserRole))
+        model.setData(
+            index,
+            record,
+            role=typing.cast(int, Qt.ItemDataRole.UserRole)
+        )
 
 
 class PackagesModel(QtCore.QAbstractTableModel):
@@ -100,7 +105,9 @@ class PackagesModel(QtCore.QAbstractTableModel):
     def columnCount(  # pylint: disable=C0103,W0613
             self,
             *args,
-            parent: typing.Optional[QtCore.QModelIndex] = None,
+            parent: typing.Optional[
+                Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+            ] = None,
             **kwargs,
     ) -> int:
         """Get the number of fields in model."""
@@ -109,7 +116,9 @@ class PackagesModel(QtCore.QAbstractTableModel):
     def rowCount(  # pylint: disable=C0103,W0613
             self,
             *args,
-            parent: typing.Optional[QtCore.QModelIndex] = None,
+            parent: typing.Optional[
+                Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+            ] = None,
             **kwargs
     ) -> int:
         """Get the number of packages in model."""
@@ -119,11 +128,11 @@ class PackagesModel(QtCore.QAbstractTableModel):
             self,
             index: int,
             orientation: Qt.Orientation,
-            role: int = typing.cast(int, QtCore.Qt.DisplayRole)
-    ) -> typing.Union[str, QtCore.QObject]:
+            role: int = typing.cast(int, QtCore.Qt.ItemDataRole.DisplayRole)
+    ) -> Union[str, QtCore.QObject]:
         """Get model header information."""
-        if role == QtCore.Qt.DisplayRole and \
-                orientation == QtCore.Qt.Horizontal:
+        if role == QtCore.Qt.ItemDataRole.DisplayRole and \
+                orientation == QtCore.Qt.Orientation.Horizontal:
             try:
                 return self.fields[index].column_header
             except IndexError:
@@ -133,21 +142,21 @@ class PackagesModel(QtCore.QAbstractTableModel):
 
     def data(
             self,
-            index: QtCore.QModelIndex,
-            role=QtCore.Qt.DisplayRole
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+            role=QtCore.Qt.ItemDataRole.DisplayRole
     ) -> Any:
         """Get data at index."""
         row = index.row()
         column = index.column()
 
-        if role == QtCore.Qt.DisplayRole:
+        if role == QtCore.Qt.ItemDataRole.DisplayRole:
             field = self.fields[column]
             try:
                 return self._packages[row].metadata[field.data_entry]
             except KeyError:
                 return ""
 
-        if role == QtCore.Qt.UserRole:
+        if role == QtCore.Qt.ItemDataRole.UserRole:
             return self._packages[row]
 
         return None
@@ -156,13 +165,16 @@ class PackagesModel(QtCore.QAbstractTableModel):
         """Get results."""
         return self._packages
 
-    def flags(self, index: QtCore.QModelIndex) -> Qt.ItemFlags:
+    def flags(
+            self,
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+    ) -> Qt.ItemFlag:
         """Set flags for index."""
         column = index.column()
         if self.fields[column].editable:
             return typing.cast(
-                Qt.ItemFlags,
-                Qt.ItemIsEditable | Qt.ItemIsEnabled
+                Qt.ItemFlag,
+                Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsEnabled
             )
         return super().flags(index)
 
@@ -174,8 +186,7 @@ class PackageBrowser(QtWidgets.QDialog):
             self,
             packages: typing.List[collection.Package],
             parent: typing.Optional[QtWidgets.QWidget],
-            flags: typing.Union[
-                Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
+            flags: Qt.WindowType = Qt.WindowType(0),
     ) -> None:
         """Create a package browser dialog window."""
         super().__init__(parent, flags)
@@ -186,7 +197,10 @@ class PackageBrowser(QtWidgets.QDialog):
         self._layout = QtWidgets.QGridLayout(self)
 
         self.package_view = QtWidgets.QTreeView(self)
-        self.package_view.setEditTriggers(QtWidgets.QTreeView.AllEditTriggers)
+        self.package_view.setEditTriggers(
+            QtWidgets.QTreeView.EditTrigger.AllEditTriggers
+        )
+
         self.package_view.setContentsMargins(0, 0, 0, 0)
         self.package_view.setModel(self._model)
 
@@ -197,9 +211,9 @@ class PackageBrowser(QtWidgets.QDialog):
         self.ok_button = QtWidgets.QPushButton("Done")
 
         # pylint: disable=no-member
-        self.ok_button.clicked.connect(self.accept)
+        self.ok_button.clicked.connect(self.accept)  # type: ignore
         self.cancel_button = QtWidgets.QPushButton("Cancel")
-        self.cancel_button.clicked.connect(self.reject)
+        self.cancel_button.clicked.connect(self.reject)  # type: ignore
 
         self._layout.addWidget(self.package_view, 0, 0, 1, 4)
 

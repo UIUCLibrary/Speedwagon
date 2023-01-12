@@ -51,7 +51,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
 
     def __init__(
             self,
-            items: List[str] = None,
+            items: Optional[List[str]] = None,
             parent: Optional[QtCore.QObject] = None
     ) -> None:
         """Create a new confirm list model."""
@@ -67,7 +67,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
     def items(self, value):
         self._items = [{
                 "name": i,
-                "checked": Qt.Checked
+                "checked": Qt.CheckState.Checked
             } for i in value
         ]
         self.itemsChanged.emit()
@@ -78,17 +78,19 @@ class ConfirmListModel(QtCore.QAbstractListModel):
         for i in range(self.rowCount()):
             index = self.index(i)
             checked: QtCore.Qt.ItemDataRole = \
-                self.data(index, Qt.CheckStateRole)
+                self.data(index, Qt.ItemDataRole.CheckStateRole)
 
-            if checked == Qt.Checked:
-                selected.append(self.data(index, Qt.DisplayRole))
+            if checked == Qt.CheckState.Checked:
+                selected.append(self.data(index, Qt.ItemDataRole.DisplayRole))
         return selected
 
     def rowCount(  # pylint: disable=invalid-name
             self,
-            parent: Union[  # pylint: disable=unused-argument
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
+            parent: Optional[  # pylint: disable=unused-argument
+                Union[
+                    QtCore.QModelIndex,
+                    QtCore.QPersistentModelIndex
+                ]
             ] = None
     ) -> int:
         """Get the number of items."""
@@ -100,12 +102,15 @@ class ConfirmListModel(QtCore.QAbstractListModel):
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex
             ],
-            role: int = typing.cast(int, Qt.DisplayRole)
+            role: int = typing.cast(int, Qt.ItemDataRole.DisplayRole)
     ) -> Any:
         """Get data from the model."""
-        if role == Qt.CheckStateRole:
-            return self._items[index.row()].get("checked", Qt.Unchecked)
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.CheckStateRole:
+            return self._items[index.row()].get(
+                "checked",
+                Qt.CheckState.Unchecked
+            )
+        if role == Qt.ItemDataRole.DisplayRole:
             return self._items[index.row()]['name']
         return None
 
@@ -116,10 +121,10 @@ class ConfirmListModel(QtCore.QAbstractListModel):
                 QtCore.QPersistentModelIndex
             ],
             value: Any,
-            role: int = typing.cast(int, Qt.DisplayRole)
+            role: int = typing.cast(int, Qt.ItemDataRole.DisplayRole)
     ) -> bool:
         """Set model data."""
-        if role == Qt.CheckStateRole:
+        if role == Qt.ItemDataRole.CheckStateRole:
             self._items[index.row()]['checked'] = value
             return True
 
@@ -130,10 +135,10 @@ class ConfirmListModel(QtCore.QAbstractListModel):
             index: Union[
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex
-            ]) -> QtCore.Qt.ItemFlags:
+            ]) -> QtCore.Qt.ItemFlag:
         """Set the flags needed."""
         if index.isValid():
-            return super().flags(index) | Qt.ItemIsUserCheckable
+            return super().flags(index) | Qt.ItemFlag.ItemIsUserCheckable
         return super().flags(index)
 
 
@@ -144,14 +149,14 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
             self,
             items: typing.List[str],
             parent: typing.Optional[QtWidgets.QWidget] = None,
-            flags: typing.Union[
-                Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
+            flags: Qt.WindowType = Qt.WindowType(0),
     ) -> None:
         """Create a package browser dialog window."""
         super().__init__(parent, flags)
         layout = QtWidgets.QGridLayout(self)
         self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+            QtWidgets.QDialogButtonBox.StandardButton.Ok |
+            QtWidgets.QDialogButtonBox.StandardButton.Cancel
         )
         self.setWindowTitle("Delete the Following Items?")
         self.setFixedWidth(500)
@@ -171,7 +176,7 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self.nothing_found_label.setVisible(False)
 
         package_layout = QtWidgets.QVBoxLayout()
-        package_layout.setAlignment(Qt.AlignHCenter)
+        package_layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         package_layout.addWidget(self.nothing_found_label)
 
         self.package_view.setLayout(package_layout)
@@ -188,7 +193,11 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
 
     def update_buttons(self) -> None:
         """Update the dialog box button states."""
-        ok_button = self.button_box.button(QtWidgets.QDialogButtonBox.Ok)
+        ok_button = \
+            self.button_box.button(
+                QtWidgets.QDialogButtonBox.StandardButton.Ok
+            )
+
         if len(self.model.items) > 0:
             ok_button.setEnabled(True)
         else:
@@ -246,7 +255,7 @@ class QtWidgetConfirmFileSystemRemoval(
             parent=parent
         )
         results = dialog.exec()
-        if results == QtWidgets.QDialog.Rejected:
+        if results == QtWidgets.QDialog.DialogCode.Rejected:
             raise speedwagon.exceptions.JobCancelled()
         return dialog.data()
 
@@ -313,7 +322,7 @@ class QtWidgetTitlePageSelection(
         browser = self.browser_widget(packages, self.parent)
         browser.exec()
 
-        if browser.result() != QtWidgets.QDialog.Accepted:
+        if browser.result() != QtWidgets.QDialog.DialogCode.Accepted:
             raise speedwagon.exceptions.JobCancelled()
         data = browser.data()
         for package in data:

@@ -305,7 +305,7 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
                  source_image: str,
                  out_text_file: str,
                  lang: str = "eng",
-                 tesseract_path: str = None) -> None:
+                 tesseract_path: Optional[str] = None) -> None:
         super().__init__()
 
         self._source = source_image
@@ -319,7 +319,7 @@ class GenerateOCRFileTask(speedwagon.tasks.Subtask):
         return f"Scanning for text in {self._source}"
 
     @classmethod
-    def set_tess_path(cls, path: str = None) -> None:
+    def set_tess_path(cls, path: Optional[str] = None) -> None:
         if path is None:
             path = locate_tessdata()
         assert path is not None

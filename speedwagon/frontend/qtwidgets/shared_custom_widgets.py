@@ -72,20 +72,20 @@ class AbsBrowseableWidget(CustomItemWidget):
         self.action = \
             self.text_line.addAction(
                 self.get_browse_icon(),
-                QtWidgets.QLineEdit.TrailingPosition
+                QtWidgets.QLineEdit.ActionPosition.TrailingPosition
             )
 
-        self.action.triggered.connect(self.browse_clicked)
+        self.action.triggered.connect(self.browse_clicked)  # type: ignore
 
         # pylint: disable=no-member
-        self.text_line.textEdited.connect(self._change_data)
+        self.text_line.textEdited.connect(self._change_data)  # type: ignore
 
         self.inner_layout.addWidget(self.text_line)
 
     def get_browse_icon(self) -> QtGui.QIcon:
         """Get the icon for the right type of browsing."""
         return QtWidgets.QApplication.style().standardIcon(
-            QtWidgets.QStyle.SP_DirOpenIcon)
+            QtWidgets.QStyle.StandardPixmap.SP_DirOpenIcon)
 
     @abc.abstractmethod
     def browse_clicked(self) -> None:
@@ -125,7 +125,7 @@ class ChecksumFile(AbsBrowseableWidget):
     def get_browse_icon(self) -> QtGui.QIcon:
         """Get the os-specific browse icon for files."""
         return QtWidgets.QApplication.style().standardIcon(
-            QtWidgets.QStyle.SP_FileIcon)
+            QtWidgets.QStyle.StandardPixmap.SP_FileIcon)
 
     def browse_clicked(self) -> None:
         """Launch file browser to locate an .md5 file."""
@@ -162,7 +162,7 @@ class FolderBrowseWidget(AbsBrowseableWidget):
     def get_browse_icon(self) -> QtGui.QIcon:
         """Get the os-specific browse icon for folders."""
         return QtWidgets.QApplication.style().standardIcon(
-            QtWidgets.QStyle.SP_DirOpenIcon)
+            QtWidgets.QStyle.StandardPixmap.SP_DirOpenIcon)
 
     def browse_clicked(self) -> None:
         """Browse hard drive to select an existing directory."""
@@ -272,9 +272,13 @@ class ListSelectionWidget(CustomItemWidget):
         self._combobox.setModel(self._model)
 
         # pylint: disable=no-member
-        self._combobox.currentIndexChanged.connect(self._update)
-        self.inner_layout.addWidget(self._combobox,
-                                    alignment=QtCore.Qt.AlignBaseline)
+        self._combobox.currentIndexChanged.connect(  # type: ignore
+            self._update
+        )
+        self.inner_layout.addWidget(
+            self._combobox,
+            alignment=QtCore.Qt.AlignmentFlag.AlignBaseline
+        )
 
     def _update(self) -> None:
         self.data = self._combobox.currentText()

@@ -20,7 +20,6 @@ import warnings
 
 from PySide6.QtCore import QAbstractItemModel
 from PySide6 import QtCore, QtGui  # type: ignore
-
 if typing.TYPE_CHECKING:
     from speedwagon.frontend.qtwidgets import shared_custom_widgets, tabs
     from speedwagon.job import AbsWorkflow, Workflow
@@ -63,10 +62,13 @@ class ItemListModel(QtCore.QAbstractTableModel):
         """
         return 2
 
-    def rowCount(self,
-                 *args,
-                 parent: QtCore.QModelIndex = None,
-                 **kwargs) -> int:
+    def rowCount(
+            self,
+            *args,
+            parent: Optional[
+                Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+            ] = None,
+            **kwargs) -> int:
         """Get the number of jobs in the model."""
         return len(self.jobs)
 
@@ -90,21 +92,24 @@ class WorkflowListModel(ItemListModel):
 
     def data(
             self,
-            index: QtCore.QModelIndex,
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
             role: Optional[QtConstant] = None
     ) -> Optional[Union[str, Type[Workflow], QtCore.QSize, QtCore.QObject]]:
         """Get data at a specific index."""
         if index.isValid():
             data = self.jobs[index.row()]
-            if role in [QtCore.Qt.DisplayRole, QtCore.Qt.EditRole]:
+            if role in [
+                QtCore.Qt.ItemDataRole.DisplayRole,
+                QtCore.Qt.ItemDataRole.EditRole
+            ]:
                 return self._extract_job_metadata(
                     job=data,
                     data_type=JobModelData(index.column())
                 ) or None
 
-            if role == QtCore.Qt.UserRole:
+            if role == QtCore.Qt.ItemDataRole.UserRole:
                 return self.jobs[index.row()]
-            if role == QtCore.Qt.SizeHintRole:
+            if role == QtCore.Qt.ItemDataRole.SizeHintRole:
                 return QtCore.QSize(10, 20)
 
         return None
@@ -115,16 +120,16 @@ class WorkflowListModel(ItemListModel):
         Defaults alphabetically by title.
         """
         # pylint: disable=no-member
-        self.layoutAboutToBeChanged.emit()
+        self.layoutAboutToBeChanged.emit()  # type: ignore
 
         self.jobs.sort(key=key or (lambda i: i.name))
-        self.layoutChanged.emit()
+        self.layoutChanged.emit()  # type: ignore
 
 
 class WorkflowListModel2(QtCore.QAbstractListModel):
     """Workflow Qt list model."""
 
-    def __init__(self, parent: QtCore.QObject = None) -> None:
+    def __init__(self, parent: Optional[QtCore.QObject] = None) -> None:
         """Create a new WorkflowListModel2 qt list model."""
         super().__init__(parent)
         self.workflows: List[Type[Workflow]] = []
@@ -139,16 +144,20 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         self.remove_workflow(other)
         return self
 
-    def rowCount(self,
-                 *args,
-                 parent: QtCore.QModelIndex = None,
-                 **kwargs) -> int:
+    def rowCount(
+            self,
+            *args,
+            parent: Optional[
+                Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+            ] = None,
+            **kwargs
+    ) -> int:
         """Get the number of workflows loaded in the model."""
         return len(self.workflows)
 
     def data(
             self,
-            index: QtCore.QModelIndex,
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
             role: Optional[QtConstant] = None
     ) -> Optional[Union[str, Type[Workflow], QtCore.QObject]]:
         """Get data at specific index."""
@@ -162,8 +171,8 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
                        Optional[Union[str,
                                       Type[Workflow],
                                       QtCore.QObject]]] = {
-            QtCore.Qt.DisplayRole: self.workflows[row].name,
-            QtCore.Qt.UserRole: self.workflows[row],
+            QtCore.Qt.ItemDataRole.DisplayRole: self.workflows[row].name,
+            QtCore.Qt.ItemDataRole.UserRole: self.workflows[row],
         }
         value = workflow.get(typing.cast(QtCore.Qt.ItemDataRole, role))
         if value is not None:
@@ -193,11 +202,15 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
             self.workflows.insert(row, workflow)
 
             # pylint: disable=no-member
-            self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
+            self.dataChanged.emit(  # type: ignore
+                index,
+                index,
+                [QtCore.Qt.ItemDataRole.EditRole]
+            )
             self.endInsertRows()
 
     def setData(self,
-                index: QtCore.QModelIndex,
+                index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
                 workflow: Type[Workflow],
                 role: Optional[QtConstant] = None) -> bool:
         """Get data at a given index."""
@@ -215,7 +228,7 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         self.workflows[row] = workflow
 
         # pylint: disable=no-member
-        self.dataChanged.emit(index, index, [role])
+        self.dataChanged.emit(index, index, [role])  # type: ignore
         return True
 
     def remove_workflow(self, workflow: Type[Workflow]) -> None:
@@ -226,7 +239,11 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
             self.workflows.remove(workflow)
 
             # pylint: disable=no-member
-            self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
+            self.dataChanged.emit(  # type: ignore
+                index,
+                index,
+                [QtCore.Qt.ItemDataRole.EditRole]
+            )
             self.endRemoveRows()
 
 
@@ -240,13 +257,17 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
 
     def rowCount(
             self,
-            parent: typing.Optional[QtCore.QModelIndex] = None
+            parent: Optional[
+                Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+            ] = None
     ) -> int:
         return len(self._data)
 
     def columnCount(
             self,
-            parent: typing.Optional[QtCore.QModelIndex] = None
+            parent: Optional[
+                Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+            ] = None
     ) -> int:
         if len(self._data) > 0:
             return 1
@@ -256,19 +277,22 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
     def get(self):
         raise NotImplementedError
 
-    def flags(self, index: QtCore.QModelIndex):
+    def flags(
+            self,
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+    ):
         """Get flags for a given index."""
         if not index.isValid():
-            return QtCore.Qt.ItemIsEnabled
+            return QtCore.Qt.ItemFlag.ItemIsEnabled
 
         column = index.column()
 
         if column == 0:
-            return QtCore.Qt.ItemIsEnabled \
-                   | QtCore.Qt.ItemIsSelectable \
-                   | QtCore.Qt.ItemIsEditable
+            return QtCore.Qt.ItemFlag.ItemIsEnabled \
+                   | QtCore.Qt.ItemFlag.ItemIsSelectable \
+                   | QtCore.Qt.ItemFlag.ItemIsEditable
         print(column, file=sys.stderr)
-        return QtCore.Qt.NoItemFlags
+        return QtCore.Qt.ItemFlag.NoItemFlags
 
 
 class ToolOptionsPairsModel(ToolOptionsModel):
@@ -290,13 +314,13 @@ class ToolOptionsPairsModel(ToolOptionsModel):
             self._data.append(OptionPair(key, value))
 
     def data(self,
-             index: QtCore.QModelIndex,
+             index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
              role: Optional[QtConstant] = None):
         """Get data at a certain index."""
         if index.isValid():
-            if role == QtCore.Qt.DisplayRole:
+            if role == QtCore.Qt.ItemDataRole.DisplayRole:
                 return self._data[index.row()].data
-            if role == QtCore.Qt.EditRole:
+            if role == QtCore.Qt.ItemDataRole.EditRole:
                 return self._data[index.row()].data
         return None
 
@@ -320,8 +344,8 @@ class ToolOptionsPairsModel(ToolOptionsModel):
             role: Optional[QtConstant] = None
     ) -> Union[None, str, QtCore.QObject]:
         """Get header information."""
-        if orientation == QtCore.Qt.Vertical \
-                and role == QtCore.Qt.DisplayRole:
+        if orientation == QtCore.Qt.Orientation.Vertical \
+                and role == QtCore.Qt.ItemDataRole.DisplayRole:
             title = self._data[index].label
             return str(title)
         return None
@@ -349,7 +373,7 @@ class ToolOptionsModel3(ToolOptionsModel):
     def __init__(
             self,
             data: List[shared_custom_widgets.UserOptionPythonDataType2],
-            parent: QtCore.QObject = None
+            parent: Optional[QtCore.QObject] = None
     ) -> None:
         """Create a new tool options Qt model."""
         warnings.warn("use ToolOptionsModel4 instead", DeprecationWarning)
@@ -362,8 +386,8 @@ class ToolOptionsModel3(ToolOptionsModel):
 
     def data(
             self,
-            index: QtCore.QModelIndex,
-            role=QtCore.Qt.DisplayRole
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+            role=QtCore.Qt.ItemDataRole.DisplayRole
     ) -> Union[None,
                QtCore.QObject,
                QtCore.QSize,
@@ -371,16 +395,16 @@ class ToolOptionsModel3(ToolOptionsModel):
                str]:
         """Get data at an index in the model."""
         if index.isValid():
-            if role == QtCore.Qt.DisplayRole:
+            if role == QtCore.Qt.ItemDataRole.DisplayRole:
                 data = self._data[index.row()].data
                 if data is not None:
                     return str(data)
                 return ""
-            if role == QtCore.Qt.EditRole:
+            if role == QtCore.Qt.ItemDataRole.EditRole:
                 return self._data[index.row()].data
-            if role == QtCore.Qt.UserRole:
+            if role == QtCore.Qt.ItemDataRole.UserRole:
                 return self._data[index.row()]
-            if role == QtCore.Qt.SizeHintRole:
+            if role == QtCore.Qt.ItemDataRole.SizeHintRole:
                 return QtCore.QSize(10, 25)
         return None
 
@@ -396,7 +420,7 @@ class ToolOptionsModel3(ToolOptionsModel):
             index = self.index(i, 0)
             if typing.cast(
                 'shared_custom_widgets.UserOption2',
-                self.data(index, role=QtCore.Qt.UserRole)
+                self.data(index, role=QtCore.Qt.ItemDataRole.UserRole)
             ).label_text == key:
                 return index
         return None
@@ -419,8 +443,8 @@ class ToolOptionsModel3(ToolOptionsModel):
             role: Optional[QtConstant] = None
     ) -> Union[None, QtCore.QObject, str]:
         """Get header data for a given index."""
-        if orientation == QtCore.Qt.Vertical and \
-                role == QtCore.Qt.DisplayRole:
+        if orientation == QtCore.Qt.Orientation.Vertical and \
+                role == QtCore.Qt.ItemDataRole.DisplayRole:
 
             title = self._data[index].label_text
             return str(title)
@@ -428,7 +452,7 @@ class ToolOptionsModel3(ToolOptionsModel):
 
     def setData(
             self,
-            index: QtCore.QModelIndex,
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
             data,
             role: Optional[QtConstant] = None
     ) -> bool:
@@ -440,13 +464,13 @@ class ToolOptionsModel3(ToolOptionsModel):
 
 
 class ToolOptionsModel4(QtCore.QAbstractListModel):
-    JsonDataRole = cast(int, QtCore.Qt.UserRole) + 1
+    JsonDataRole = cast(int, QtCore.Qt.ItemDataRole.UserRole) + 1
     DataRole = JsonDataRole + 1
 
     def __init__(
             self,
-            data: List[AbsOutputOptionDataType] = None,
-            parent: QtCore.QObject = None
+            data: Optional[List[AbsOutputOptionDataType]] = None,
+            parent: Optional[QtCore.QObject] = None
     ) -> None:
         super().__init__(parent)
         self._data = data or []
@@ -471,33 +495,37 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             index: Union[
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex
-            ]) -> QtCore.Qt.ItemFlags:
-        return QtCore.Qt.ItemIsSelectable | \
-               QtCore.Qt.ItemIsEnabled | \
-               QtCore.Qt.ItemIsEditable
+            ]) -> QtCore.Qt.ItemFlag:
+        return QtCore.Qt.ItemFlag.ItemIsSelectable | \
+               QtCore.Qt.ItemFlag.ItemIsEnabled | \
+               QtCore.Qt.ItemFlag.ItemIsEditable
 
     def rowCount(
             self,
-            parent: Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
+            parent: Optional[
+                Union[
+                    QtCore.QModelIndex,
+                    QtCore.QPersistentModelIndex
+                ]
             ] = None
     ) -> int:
         return len(self._data)
 
-    def headerData(self,
-                   section: int,
-                   orientation: QtCore.Qt.Orientation,
-                   role: int = cast(int, QtCore.Qt.DisplayRole)) -> Any:
-        if orientation == QtCore.Qt.Vertical and \
-                role == QtCore.Qt.DisplayRole:
+    def headerData(
+            self,
+            section: int,
+            orientation: QtCore.Qt.Orientation,
+            role: int = cast(int, QtCore.Qt.ItemDataRole.DisplayRole)
+    ) -> Any:
+        if orientation == QtCore.Qt.Orientation.Vertical and \
+                role == QtCore.Qt.ItemDataRole.DisplayRole:
             return self._data[section].label
         return None
 
     def data(
             self,
             index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
-            role: int = typing.cast(int, QtCore.Qt.DisplayRole)
+            role: int = typing.cast(int, QtCore.Qt.ItemDataRole.DisplayRole)
     ) -> Optional[Any]:
         if not index.isValid():
             return None
@@ -512,13 +540,13 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             self,
             index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
             value: Optional[Any],
-            role: int = typing.cast(int, QtCore.Qt.EditRole)
+            role: int = typing.cast(int, QtCore.Qt.ItemDataRole.EditRole)
     ) -> bool:
 
         if value is None:
             return False
 
-        if role == typing.cast(int, QtCore.Qt.EditRole):
+        if role == typing.cast(int, QtCore.Qt.ItemDataRole.EditRole):
             self._data[index.row()].value = value
             return True
 
@@ -581,9 +609,9 @@ class ModelDataFormatter:
             role: QtCore.Qt.ItemDataRole
     ) -> Optional[Any]:
         formatter = {
-            QtCore.Qt.DisplayRole: self.display_role,
-            QtCore.Qt.EditRole: lambda setting_: setting_.value,
-            QtCore.Qt.FontRole: self.font_role,
+            QtCore.Qt.ItemDataRole.DisplayRole: self.display_role,
+            QtCore.Qt.ItemDataRole.EditRole: lambda setting_: setting_.value,
+            QtCore.Qt.ItemDataRole.FontRole: self.font_role,
             self._model.JsonDataRole:
                 lambda setting_: setting_.build_json_data(),
             self._model.DataRole: lambda setting_: setting_
@@ -611,24 +639,26 @@ class SettingsModel(QtCore.QAbstractTableModel):
 
     def data(
             self,
-            index: QtCore.QModelIndex,
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
             role: Optional[QtConstant] = None
     ) -> Optional[Union[str, QtCore.QObject]]:
         """Get role data from an index."""
         if not index.isValid():
             return None
 
-        if role == QtCore.Qt.DisplayRole:
+        if role == QtCore.Qt.ItemDataRole.DisplayRole:
             return self._data[index.row()][index.column()]
 
-        if role == QtCore.Qt.EditRole:
+        if role == QtCore.Qt.ItemDataRole.EditRole:
             return self._data[index.row()][index.column()]
 
         return None
 
     def rowCount(
             self,
-            parent: typing.Optional[QtCore.QModelIndex] = None
+            parent: Optional[
+                Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+            ] = None
     ) -> int:
         """Return the number of settings loaded in the model."""
         return len(self._data)
@@ -639,7 +669,9 @@ class SettingsModel(QtCore.QAbstractTableModel):
 
     def columnCount(
             self,
-            parent: typing.Optional[QtCore.QModelIndex] = None
+            parent: Optional[
+                Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+            ] = None
     ) -> int:
         """Return number of columns.
 
@@ -654,25 +686,31 @@ class SettingsModel(QtCore.QAbstractTableModel):
             role: Optional[QtConstant] = None
     ) -> Optional[Union[str, QtCore.QObject]]:
         """Get header data from settings."""
-        if orientation == QtCore.Qt.Horizontal and \
-                role == QtCore.Qt.DisplayRole:
+        if orientation == QtCore.Qt.Orientation.Horizontal and \
+                role == QtCore.Qt.ItemDataRole.DisplayRole:
             return self._headers.get(index, "")
         return None
 
-    def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
+    def flags(
+            self,
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+    ) -> QtCore.Qt.ItemFlag:
         """Manage display flags for a given index."""
         if self._headers.get(index.column(), "") == "Key":
-            return cast(QtCore.Qt.ItemFlags, QtCore.Qt.NoItemFlags)
+            return cast(QtCore.Qt.ItemFlag, QtCore.Qt.ItemFlag.NoItemFlags)
 
         if self._headers.get(index.column(), "") == "Value":
-            return cast(QtCore.Qt.ItemFlags,
-                        QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable)
+            return cast(
+                QtCore.Qt.ItemFlag,
+                QtCore.Qt.ItemFlag.ItemIsEnabled |
+                QtCore.Qt.ItemFlag.ItemIsEditable
+            )
 
         return super().flags(index)
 
     def setData(
             self,
-            index: QtCore.QModelIndex,
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
             data: Any,
             role: Optional[QtConstant] = None
     ) -> bool:
@@ -687,7 +725,11 @@ class SettingsModel(QtCore.QAbstractTableModel):
             self._data[row] = (self._data[row][0], data)
 
             # pylint: disable=no-member
-            self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
+            self.dataChanged.emit(  # type: ignore
+                index,
+                index,
+                [QtCore.Qt.ItemDataRole.EditRole]
+            )
 
             return True
         return False
@@ -696,7 +738,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
 class TabsModel(QtCore.QAbstractListModel):
     """Tabs Qt list Model."""
 
-    def __init__(self, parent: QtCore.QObject = None) -> None:
+    def __init__(self, parent: Optional[QtCore.QObject] = None) -> None:
         """Create a new tab qt list model."""
         super().__init__(parent)
         self.tabs: List[tabs.TabData] = []
@@ -716,7 +758,10 @@ class TabsModel(QtCore.QAbstractListModel):
         return self
 
     def data(self,
-             index: QtCore.QModelIndex,
+             index: Union[
+                 QtCore.QModelIndex,
+                 QtCore.QPersistentModelIndex
+             ],
              role: Optional[QtConstant] = None
              ) -> Optional[Union[str, tabs.TabData]]:
         """Get data about a tab for an index."""
@@ -729,15 +774,17 @@ class TabsModel(QtCore.QAbstractListModel):
 
         if role is not None:
             workflow: Dict[QtCore.Qt.ItemDataRole, Any] = {
-                QtCore.Qt.DisplayRole: self.tabs[row].tab_name,
-                QtCore.Qt.UserRole: self.tabs[row]
+                QtCore.Qt.ItemDataRole.DisplayRole: self.tabs[row].tab_name,
+                QtCore.Qt.ItemDataRole.UserRole: self.tabs[row]
             }
             return workflow.get(typing.cast(QtCore.Qt.ItemDataRole, role))
         return None
 
     def rowCount(
             self,
-            parent: typing.Optional[QtCore.QModelIndex] = None
+            parent: typing.Optional[
+                Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+            ] = None
     ) -> int:
         """Get the number of tabs loaded in the model."""
         return len(self.tabs)
@@ -750,7 +797,11 @@ class TabsModel(QtCore.QAbstractListModel):
         self.tabs.insert(row, tab)
 
         # pylint: disable=no-member
-        self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
+        self.dataChanged.emit(  # type: ignore
+            index,
+            index,
+            [QtCore.Qt.ItemDataRole.EditRole]
+        )
         self.endInsertRows()
 
     def remove_tab(self, tab: tabs.TabData) -> None:
@@ -761,12 +812,19 @@ class TabsModel(QtCore.QAbstractListModel):
             self.tabs.remove(tab)
 
             # pylint: disable=no-member
-            self.dataChanged.emit(index, index, [QtCore.Qt.EditRole])
+            self.dataChanged.emit(  # type: ignore
+                index,
+                index,
+                [QtCore.Qt.ItemDataRole.EditRole]
+            )
             self.endRemoveRows()
 
     def setData(
             self,
-            index: QtCore.QModelIndex,
+            index: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex
+            ],
             tab: tabs.TabData,
             role: Optional[QtConstant] = None
     ) -> bool:
@@ -784,7 +842,7 @@ class TabsModel(QtCore.QAbstractListModel):
         self.tabs[row] = tab
 
         # pylint: disable=no-member
-        self.dataChanged.emit(index, index, [role])
+        self.dataChanged.emit(index, index, [role])  # type: ignore
         return True
 
 

@@ -7,23 +7,44 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-2019]
         python-version: ['3.7', '3.8' ,'3.9', '3.10', '3.11']
+        frontend: ["", "PySide6"]
         exclude:
           - os: macos-latest
             python-version: '3.7'
 
       fail-fast: false
-    name: Python ${{ matrix.python-version }} ${{ matrix.os }} build
+    name: Python ${{ matrix.python-version }} ${{ matrix.os }} ${{ matrix.frontend }} build
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip' # caching pip dependencies
+      - name: Install Linux system dependencies for PySide
+        if: |
+          contains(matrix.os, 'ubuntu') && contains(matrix.frontend, 'PySide6')
+        run: |
+          sudo apt update
+          sudo apt-get install freeglut3 freeglut3-dev
       - name: Install requirements
         run: |
           pip install wheel
           pip install -r requirements/requirements_tox.txt
+      - uses: actions/github-script@v6
+        id: tox-env
+        with:
+          script: |
+            const frontend = "${{matrix.frontend}}"
+            const toxEnv = "py${{matrix.python-version}}".replace('.','') 
+            if(frontend === ""){
+              return toxEnv
+            }
+            return "py${{matrix.python-version}}".replace('.','') + "-${{matrix.frontend}}"
+          result-encoding: string
       - name: Run tox
-        run: tox -e py -vvv
+        run: tox -e ${{ steps.tox-env.outputs.result }} -vvv
         env:
           PIP_EXTRA_INDEX_URL: https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python/simple/
+          QT_QPA_PLATFORM: "offscreen"
+          DISPLAY: ':99.0'
+

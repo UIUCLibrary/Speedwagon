@@ -29,6 +29,10 @@ if typing.TYPE_CHECKING:
 class ToolJobManager(speedwagon.worker.AbsToolJobManager):
     """Tool job manager."""
 
+    def __init__(self) -> None:
+        warnings.warn("Don't use", DeprecationWarning)
+        super().__init__()
+
     def flush_message_buffer(self) -> None:
         """Flush any messages in the buffer to the logger."""
         self._job_runtime.flush_message_buffer(self.logger)
@@ -65,9 +69,12 @@ class ToolJobManager(speedwagon.worker.AbsToolJobManager):
         self.flush_message_buffer()
         dialog_box.accept()
 
-    def get_results(self,
-                    timeout_callback: Callable[[int, int], None] = None
-                    ) -> typing.Generator[typing.Any, None, None]:
+    def get_results(
+            self,
+            timeout_callback: typing.Optional[
+                Callable[[int, int], None]
+            ] = None
+    ) -> typing.Generator[typing.Any, None, None]:
         """Process jobs and return results."""
         processor = QtJobProcessor(
             typing.cast(speedwagon.worker.ToolJobManager, self)

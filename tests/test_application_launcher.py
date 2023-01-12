@@ -10,22 +10,25 @@ class TestSingleWorkflowLauncher:
     def test_commands_called(self, qtbot, monkeypatch, times_run_in_a_row):
         from speedwagon.frontend.qtwidgets import dialog
         import speedwagon.frontend.qtwidgets.gui_startup
-
+        monkeypatch.setattr(
+            speedwagon.frontend.qtwidgets.gui,
+            "MainWindow1",
+            Mock(
+                spec=speedwagon.frontend.qtwidgets.gui.MainWindow1
+            )
+        )
+        monkeypatch.setattr(
+            dialog,
+            "WorkProgressBar",
+            Mock(spec=dialog.dialogs.WorkProgressBar)
+        )
         for _ in range(times_run_in_a_row):
             single_item_launcher = \
                 frontend.qtwidgets.gui_startup.SingleWorkflowLauncher(app=None)
 
-            monkeypatch.setattr(
-                speedwagon.frontend.qtwidgets.gui,
-                "MainWindow1",
-                Mock(speedwagon.frontend.qtwidgets.gui.MainWindow1)
-            )
 
-            monkeypatch.setattr(
-                dialog,
-                "WorkProgressBar",
-                Mock(spec=dialog.dialogs.WorkProgressBar)
-            )
+
+
             workflow = Mock(spec=Workflow)
             workflow.discover_task_metadata = Mock(return_value=[])
             workflow.name = "job"

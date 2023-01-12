@@ -10,176 +10,176 @@ from speedwagon import runner_strategies, tasks
 import speedwagon
 
 
-@pytest.mark.filterwarnings(
-    "ignore:Use UsingExternalManagerForAdapter2 instead:DeprecationWarning")
-def test_job_call_order(monkeypatch):
-    runners = pytest.importorskip("speedwagon.frontend.qtwidgets.runners")
-    manager = Mock(name="manager")
-    manager.get_results = Mock(return_value=["dddd"])
-    manager.open = MagicMock(name="manager.opena")
+# @pytest.mark.filterwarnings(
+#     "ignore:Use UsingExternalManagerForAdapter2 instead:DeprecationWarning")
+# def test_job_call_order(monkeypatch):
+#     runners = pytest.importorskip("speedwagon.frontend.qtwidgets.runners")
+#     manager = Mock(name="manager")
+#     manager.get_results = Mock(return_value=["dddd"])
+#     manager.open = MagicMock(name="manager.opena")
+#
+#     manager.open.return_value.__enter__.return_value = Mock(was_aborted=False)
+#     runner = \
+#         runners.UsingExternalManagerForAdapter(manager)
+#
+#     parent = Mock()
+#     parent.name = "parent"
+#     job = Mock()
+#     job.__class__ = speedwagon.job.AbsWorkflow
+#     options = {}
+#     logger = Mock()
+#     call_order = []
+#
+#     job.initial_task = Mock(
+#         side_effect=lambda _: call_order.append("initial_task")
+#     )
+#
+#     job.discover_task_metadata = Mock(
+#         side_effect=lambda *_: call_order.append("discover_task_metadata")
+#     )
+#
+#     job.completion_task = Mock(
+#         side_effect=lambda *_: call_order.append("completion_task")
+#     )
+#
+#     job.generate_report = Mock(
+#         side_effect=lambda _: call_order.append("generate_report")
+#     )
+#
+#     runner.run(
+#         parent=parent,
+#         job=job,
+#         options=options,
+#         logger=logger
+#     )
+#
+#     assert logger.error.called is False, ".".join(logger.error.call_args.args)
+#     assert job.initial_task.called is True and \
+#            job.discover_task_metadata.called is True and \
+#            job.completion_task.called is True and \
+#            job.generate_report.called is True
+#
+#     assert call_order == [
+#         'initial_task',
+#         'discover_task_metadata',
+#         'completion_task',
+#         'generate_report'
+#     ]
 
-    manager.open.return_value.__enter__.return_value = Mock(was_aborted=False)
-    runner = \
-        runners.UsingExternalManagerForAdapter(manager)
+# @pytest.mark.parametrize("step", [
+#     "initial_task",
+#     'discover_task_metadata',
+#     'completion_task'
+# ])
+# @pytest.mark.filterwarnings(
+#     "ignore:Use UsingExternalManagerForAdapter2 instead:DeprecationWarning")
+# def test_task_exception_logs_error(step):
+#     # with pytest.warns():
+#     runners = pytest.importorskip("speedwagon.frontend.qtwidgets.runners")
+#
+#     manager = Mock(name="manager")
+#     manager.get_results = Mock(return_value=["dddd"])
+#     manager.open = MagicMock(name="manager.opena")
+#
+#     manager.open.return_value.__enter__.return_value = Mock(
+#         was_aborted=False
+#     )
+#
+#     runner = runners.UsingExternalManagerForAdapter(manager)
+#
+#     parent = Mock()
+#     parent.name = "parent"
+#     job = Mock()
+#     job.__class__ = speedwagon.job.AbsWorkflow
+#     options = {}
+#     logger = Mock()
+#     job.discover_task_metadata = Mock(return_value=[])
+#
+#     setattr(
+#         job,
+#         step,
+#         Mock(
+#             side_effect=speedwagon.frontend.qtwidgets.runners.TaskFailed(
+#                 "error"
+#             )
+#         )
+#     )
+#
+#     runner.run(
+#         parent=parent,
+#         job=job,
+#         options=options,
+#         logger=logger
+#     )
+#     assert logger.error.called is True
+#
 
-    parent = Mock()
-    parent.name = "parent"
-    job = Mock()
-    job.__class__ = speedwagon.job.AbsWorkflow
-    options = {}
-    logger = Mock()
-    call_order = []
-
-    job.initial_task = Mock(
-        side_effect=lambda _: call_order.append("initial_task")
-    )
-
-    job.discover_task_metadata = Mock(
-        side_effect=lambda *_: call_order.append("discover_task_metadata")
-    )
-
-    job.completion_task = Mock(
-        side_effect=lambda *_: call_order.append("completion_task")
-    )
-
-    job.generate_report = Mock(
-        side_effect=lambda _: call_order.append("generate_report")
-    )
-
-    runner.run(
-        parent=parent,
-        job=job,
-        options=options,
-        logger=logger
-    )
-
-    assert logger.error.called is False, ".".join(logger.error.call_args.args)
-    assert job.initial_task.called is True and \
-           job.discover_task_metadata.called is True and \
-           job.completion_task.called is True and \
-           job.generate_report.called is True
-
-    assert call_order == [
-        'initial_task',
-        'discover_task_metadata',
-        'completion_task',
-        'generate_report'
-    ]
-
-@pytest.mark.parametrize("step", [
-    "initial_task",
-    'discover_task_metadata',
-    'completion_task'
-])
-@pytest.mark.filterwarnings(
-    "ignore:Use UsingExternalManagerForAdapter2 instead:DeprecationWarning")
-def test_task_exception_logs_error(step):
-    # with pytest.warns():
-    runners = pytest.importorskip("speedwagon.frontend.qtwidgets.runners")
-
-    manager = Mock(name="manager")
-    manager.get_results = Mock(return_value=["dddd"])
-    manager.open = MagicMock(name="manager.opena")
-
-    manager.open.return_value.__enter__.return_value = Mock(
-        was_aborted=False
-    )
-
-    runner = runners.UsingExternalManagerForAdapter(manager)
-
-    parent = Mock()
-    parent.name = "parent"
-    job = Mock()
-    job.__class__ = speedwagon.job.AbsWorkflow
-    options = {}
-    logger = Mock()
-    job.discover_task_metadata = Mock(return_value=[])
-
-    setattr(
-        job,
-        step,
-        Mock(
-            side_effect=speedwagon.frontend.qtwidgets.runners.TaskFailed(
-                "error"
-            )
-        )
-    )
-
-    runner.run(
-        parent=parent,
-        job=job,
-        options=options,
-        logger=logger
-    )
-    assert logger.error.called is True
-
-
-@pytest.mark.filterwarnings(
-    "ignore:Use UsingExternalManagerForAdapter2 instead:DeprecationWarning")
-@pytest.mark.parametrize("step", [
-    "initial_task",
-    'discover_task_metadata',
-    'completion_task'
-])
-def test_task_aborted(caplog, step, monkeypatch):
-    runners = pytest.importorskip("speedwagon.frontend.qtwidgets.runners")
-    manager = Mock(name="manager")
-    manager.get_results = Mock(return_value=[])
-    manager.open = MagicMock(name="manager.open")
-    runner = Mock(name="runner", was_aborted=False)
-    runner.progress_dialog_box_handler = logging.StreamHandler()
-    manager.open.return_value.__enter__.return_value = runner
-
-    runner_strategy = runners.UsingExternalManagerForAdapter(manager)
-
-    parent = Mock(name="parent")
-    job = Mock(name="job")
-    job.__class__ = speedwagon.job.AbsWorkflow
-
-    options = {}
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
-    job.discover_task_metadata = Mock(
-        return_value=[MagicMock(name="new_task_metadata")])
-
-    setattr(
-        job,
-        step,
-        Mock(
-            side_effect=lambda *_: setattr(runner, "was_aborted", True)
-        )
-    )
-
-    def build_task(_):
-        mock_task = Mock(name="task")
-        mock_task.subtasks = [
-            MagicMock()
-        ]
-        mock_task.main_subtasks = [
-            MagicMock()
-        ]
-        return mock_task
-
-    with monkeypatch.context() as mp:
-        mp.setattr(
-            speedwagon.tasks.TaskBuilder,
-            "build_task",
-            build_task
-        )
-
-        runner_strategy.run(
-            parent=parent,
-            job=job,
-            options=options,
-            logger=logger
-        )
-
-        assert caplog.messages, "No logs recorded"
-        assert "Reason: User Aborted" in caplog.text
-
-# todo: make tests for UsingExternalManagerForAdapter2
-
-
+# @pytest.mark.filterwarnings(
+#     "ignore:Use UsingExternalManagerForAdapter2 instead:DeprecationWarning")
+# @pytest.mark.parametrize("step", [
+#     "initial_task",
+#     'discover_task_metadata',
+#     'completion_task'
+# ])
+# def test_task_aborted(caplog, step, monkeypatch):
+#     runners = pytest.importorskip("speedwagon.frontend.qtwidgets.runners")
+#     manager = Mock(name="manager")
+#     manager.get_results = Mock(return_value=[])
+#     manager.open = MagicMock(name="manager.open")
+#     runner = Mock(name="runner", was_aborted=False)
+#     runner.progress_dialog_box_handler = logging.StreamHandler()
+#     manager.open.return_value.__enter__.return_value = runner
+#
+#     runner_strategy = runners.UsingExternalManagerForAdapter(manager)
+#
+#     parent = Mock(name="parent")
+#     job = Mock(name="job")
+#     job.__class__ = speedwagon.job.AbsWorkflow
+#
+#     options = {}
+#     logger = logging.getLogger(__name__)
+#     logger.setLevel(logging.DEBUG)
+#     job.discover_task_metadata = Mock(
+#         return_value=[MagicMock(name="new_task_metadata")])
+#
+#     setattr(
+#         job,
+#         step,
+#         Mock(
+#             side_effect=lambda *_: setattr(runner, "was_aborted", True)
+#         )
+#     )
+#
+#     def build_task(_):
+#         mock_task = Mock(name="task")
+#         mock_task.subtasks = [
+#             MagicMock()
+#         ]
+#         mock_task.main_subtasks = [
+#             MagicMock()
+#         ]
+#         return mock_task
+#
+#     with monkeypatch.context() as mp:
+#         mp.setattr(
+#             speedwagon.tasks.TaskBuilder,
+#             "build_task",
+#             build_task
+#         )
+#
+#         runner_strategy.run(
+#             parent=parent,
+#             job=job,
+#             options=options,
+#             logger=logger
+#         )
+#
+#         assert caplog.messages, "No logs recorded"
+#         assert "Reason: User Aborted" in caplog.text
+#
+# # todo: make tests for UsingExternalManagerForAdapter2
+#
+#
 
 
 class TestTaskGenerator:

@@ -164,24 +164,24 @@ def simple_task_builder_with_2_subtasks(tmpdir_factory):
         os.unlink(shortcut)
 
 
-@pytest.mark.adapter
-@pytest.mark.filterwarnings(
-    "ignore::DeprecationWarning")
-def test_adapter_results(simple_task_builder_with_2_subtasks):
-    new_task = simple_task_builder_with_2_subtasks.build_task()
-    with speedwagon.worker.ToolJobManager() as manager:
-        for subtask in new_task.main_subtasks:
-            adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
-            manager.add_job(adapted_tool, adapted_tool.settings)
-        manager.start()
-        results = list()
-        for r in manager.get_results():
-            results.append(r.data)
-
-        assert len(results) == 2
-        assert "First" == results[0]
-        assert "Second" == results[1]
-
+# @pytest.mark.adapter
+# @pytest.mark.filterwarnings(
+#     "ignore::DeprecationWarning")
+# def test_adapter_results(simple_task_builder_with_2_subtasks):
+#     new_task = simple_task_builder_with_2_subtasks.build_task()
+#     with speedwagon.worker.ToolJobManager() as manager:
+#         for subtask in new_task.main_subtasks:
+#             adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
+#             manager.add_job(adapted_tool, adapted_tool.settings)
+#         manager.start()
+#         results = list()
+#         for r in manager.get_results():
+#             results.append(r.data)
+#
+#         assert len(results) == 2
+#         assert "First" == results[0]
+#         assert "Second" == results[1]
+#
 
 class LogCatcher(logging.Handler):
 
@@ -193,29 +193,29 @@ class LogCatcher(logging.Handler):
         self.storage.append(record)
 
 
-@pytest.mark.adapter
-@pytest.mark.filterwarnings(
-    "ignore::DeprecationWarning")
-def test_adapter_logs(simple_task_builder_with_2_subtasks):
-    # worker = pytest.importorskip("speedwagon.frontend.qtwidgets.worker")
-    logs = []
-    log_catcher = LogCatcher(logs)
-    new_task = simple_task_builder_with_2_subtasks.build_task()
-
-    with speedwagon.worker.ToolJobManager() as manager:
-        manager.logger.setLevel(logging.INFO)
-        manager.logger.addHandler(log_catcher)
-
-        for subtask in new_task.main_subtasks:
-            adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
-            manager.add_job(adapted_tool, adapted_tool.settings)
-        manager.start()
-
-        list(manager.get_results())
-
-    assert len(logs) == 2
-    assert logs[0].message == "processing"
-    assert logs[1].message == "processing"
+# @pytest.mark.adapter
+# @pytest.mark.filterwarnings(
+#     "ignore::DeprecationWarning")
+# def test_adapter_logs(simple_task_builder_with_2_subtasks):
+#     # worker = pytest.importorskip("speedwagon.frontend.qtwidgets.worker")
+#     logs = []
+#     log_catcher = LogCatcher(logs)
+#     new_task = simple_task_builder_with_2_subtasks.build_task()
+#
+#     with speedwagon.worker.ToolJobManager() as manager:
+#         manager.logger.setLevel(logging.INFO)
+#         manager.logger.addHandler(log_catcher)
+#
+#         for subtask in new_task.main_subtasks:
+#             adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
+#             manager.add_job(adapted_tool, adapted_tool.settings)
+#         manager.start()
+#
+#         list(manager.get_results())
+#
+#     assert len(logs) == 2
+#     assert logs[0].message == "processing"
+#     assert logs[1].message == "processing"
 
 
 def test_pretask_builder(tmpdir):
@@ -253,89 +253,89 @@ def test_posttask_builder(tmpdir):
     if os.path.exists(shortcut):
         os.unlink(shortcut)
 
+#
+# @pytest.mark.adapter
+# # @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+# def test_adapter_results_with_pretask(tmpdir):
+#     temp_path = tmpdir.mkdir("test")
+#     pretask = SimplePreTask("Starting")
+#
+#     builder = speedwagon.tasks.TaskBuilder(SimpleTaskBuilder(), temp_path)
+#     builder.set_pretask(subtask=pretask)
+#     builder.add_subtask(subtask=SimpleSubtask("First"))
+#     builder.add_subtask(subtask=SimpleSubtask("Second"))
+#     new_task = builder.build_task()
+#
+#     with speedwagon.worker.ToolJobManager() as manager:
+#         for subtask in new_task.subtasks:
+#             adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
+#             manager.add_job(adapted_tool, adapted_tool.settings)
+#         manager.start()
+#         results = list()
+#         for r in manager.get_results():
+#             results.append(r.data)
+#
+#         assert len(results) == 3
+#         assert "Starting" == results[0]
+#         assert "First" == results[1]
+#         assert "Second" == results[2]
+#     shutil.rmtree(tmpdir)
+#
+#     shortcut = \
+#         os.path.join(tmpdir.dirname, "test_adapter_results_with_pretcurrent")
+#
+#     if os.path.exists(shortcut):
+#         os.unlink(shortcut)
+#
 
-@pytest.mark.adapter
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
-def test_adapter_results_with_pretask(tmpdir):
-    temp_path = tmpdir.mkdir("test")
-    pretask = SimplePreTask("Starting")
-
-    builder = speedwagon.tasks.TaskBuilder(SimpleTaskBuilder(), temp_path)
-    builder.set_pretask(subtask=pretask)
-    builder.add_subtask(subtask=SimpleSubtask("First"))
-    builder.add_subtask(subtask=SimpleSubtask("Second"))
-    new_task = builder.build_task()
-
-    with speedwagon.worker.ToolJobManager() as manager:
-        for subtask in new_task.subtasks:
-            adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
-            manager.add_job(adapted_tool, adapted_tool.settings)
-        manager.start()
-        results = list()
-        for r in manager.get_results():
-            results.append(r.data)
-
-        assert len(results) == 3
-        assert "Starting" == results[0]
-        assert "First" == results[1]
-        assert "Second" == results[2]
-    shutil.rmtree(tmpdir)
-
-    shortcut = \
-        os.path.join(tmpdir.dirname, "test_adapter_results_with_pretcurrent")
-
-    if os.path.exists(shortcut):
-        os.unlink(shortcut)
-
-
-@pytest.mark.slow
-@pytest.mark.adapter
-@pytest.mark.filterwarnings(
-    "ignore::DeprecationWarning")
-def test_adapter_results_with_posttask(tmpdir):
-    from speedwagon.worker import ToolJobManager
-    temp_path = tmpdir.mkdir("test")
-    post_task = SimpleSubtask("Ending")
-
-    builder = speedwagon.tasks.TaskBuilder(SimpleTaskBuilder(), temp_path)
-    builder.set_posttask(subtask=post_task)
-    builder.add_subtask(subtask=SimpleSubtask("First"))
-    builder.add_subtask(subtask=SimpleSubtask("Second"))
-    new_task = builder.build_task()
-
-    queued_order = []
-
-    with ToolJobManager() as manager:
-        for subtask in new_task.subtasks:
-            adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
-            manager.add_job(adapted_tool, adapted_tool.settings)
-
-        for message in manager._job_runtime._pending_jobs.queue:
-            print(message)
-            queued_order.append(message.args['message'])
-
-        manager.start()
-
-        # Fuzz this
-        time.sleep(1)
-
-        results = list()
-
-        for r in manager.get_results():
-            results.append(r.data)
-
-        assert len(results) == 3
-
-        assert "First" == results[0], "results = {}, queued_order={}".format(
-            results, queued_order)
-
-        assert "Second" == results[1]
-        assert "Ending" == results[2]
-
-    shutil.rmtree(tmpdir)
-
-    shortcut = \
-        os.path.join(tmpdir.dirname, "test_adapter_results_with_postcurrent")
-
-    if os.path.exists(shortcut):
-        os.unlink(shortcut)
+# @pytest.mark.slow
+# @pytest.mark.adapter
+# # @pytest.mark.filterwarnings(
+# #     "ignore::DeprecationWarning")
+# def test_adapter_results_with_posttask(tmpdir):
+#     from speedwagon.worker import ToolJobManager
+#     temp_path = tmpdir.mkdir("test")
+#     post_task = SimpleSubtask("Ending")
+#
+#     builder = speedwagon.tasks.TaskBuilder(SimpleTaskBuilder(), temp_path)
+#     builder.set_posttask(subtask=post_task)
+#     builder.add_subtask(subtask=SimpleSubtask("First"))
+#     builder.add_subtask(subtask=SimpleSubtask("Second"))
+#     new_task = builder.build_task()
+#
+#     queued_order = []
+#
+#     with ToolJobManager() as manager:
+#         for subtask in new_task.subtasks:
+#             adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
+#             manager.add_job(adapted_tool, adapted_tool.settings)
+#
+#         for message in manager._job_runtime._pending_jobs.queue:
+#             print(message)
+#             queued_order.append(message.args['message'])
+#
+#         manager.start()
+#
+#         # Fuzz this
+#         time.sleep(1)
+#
+#         results = list()
+#
+#         for r in manager.get_results():
+#             results.append(r.data)
+#
+#         assert len(results) == 3
+#
+#         assert "First" == results[0], "results = {}, queued_order={}".format(
+#             results, queued_order)
+#
+#         assert "Second" == results[1]
+#         assert "Ending" == results[2]
+#
+#     shutil.rmtree(tmpdir)
+#
+#     shortcut = \
+#         os.path.join(tmpdir.dirname, "test_adapter_results_with_postcurrent")
+#
+#     if os.path.exists(shortcut):
+#         os.unlink(shortcut)

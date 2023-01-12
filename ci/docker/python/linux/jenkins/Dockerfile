@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION=3.8
+ARG PYTHON_VERSION=3.11
 FROM python:${PYTHON_VERSION} as base_image
 FROM base_image as wheel_builder
 

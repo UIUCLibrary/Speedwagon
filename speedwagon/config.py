@@ -265,15 +265,15 @@ def ensure_keys(config_file: str, keys: Iterable[str]) -> Optional[Set[str]]:
 
 class AbsSetting(metaclass=abc.ABCMeta):
 
-    @property
     @staticmethod
+    @property
     @abc.abstractmethod
     def friendly_name():
         return NotImplementedError
 
     def update(  # pylint: disable=R0201
             self,
-            settings: Dict[str, Union[str, bool]] = None
+            settings: Optional[Dict[str, Union[str, bool]]] = None
     ) -> Dict["str", Union[str, bool]]:
         if settings is None:
             return {}
@@ -285,7 +285,7 @@ class DefaultsSetter(AbsSetting):
 
     def update(
             self,
-            settings: Dict[str, Union[str, bool]] = None
+            settings: Optional[Dict[str, Union[str, bool]]] = None
     ) -> Dict["str", Union[str, bool]]:
         new_settings = super().update(settings)
         new_settings["debug"] = False
@@ -301,7 +301,7 @@ class ConfigFileSetter(AbsSetting):
 
     def update(
             self,
-            settings: Dict[str, Union[str, bool]] = None
+            settings: Optional[Dict[str, Union[str, bool]]] = None
     ) -> Dict["str", Union[str, bool]]:
         """Update setting configuration."""
         new_settings = super().update(settings)
@@ -320,7 +320,7 @@ class CliArgsSetter(AbsSetting):
 
     def update(
             self,
-            settings: Dict[str, Union[str, bool]] = None
+            settings: Optional[Dict[str, Union[str, bool]]] = None
     ) -> Dict["str", Union[str, bool]]:
         new_settings = super().update(settings)
 

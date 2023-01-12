@@ -17,7 +17,8 @@ import json
 import os
 import sys
 import typing
-from typing import Dict, Iterator, Tuple, List, cast, Type, TYPE_CHECKING
+from typing import Dict, Iterator, Tuple, List, cast, Type, TYPE_CHECKING, \
+    Optional
 import yaml
 
 import speedwagon
@@ -162,46 +163,31 @@ class ApplicationLauncher:
        Added ApplicationLauncher for launching speedwagon in different ways.
 
     Examples:
-       The easy way
 
-        .. testsetup::
+    .. testsetup::
 
-            from speedwagon.startup import ApplicationLauncher
-            from speedwagon.frontend.qtwidgets.gui_startup import StartupGuiDefault
-            from unittest.mock import Mock
-
-        .. doctest::
-           :skipif: True
-
-           >>> app = ApplicationLauncher()
-           >>> app.run()
-
-       or
-
-        .. testsetup::
-
-            from speedwagon.workflows.workflow_capture_one_to_dl_compound_and_dl import CaptureOneToDlCompoundAndDLWorkflow  # noqa: E501 pylint: disable=line-too-long
-            from speedwagon.frontend.qtwidgets.gui_startup import SingleWorkflowLauncher  # noqa: E501 pylint: disable=line-too-long
+        from speedwagon.workflows.workflow_capture_one_to_dl_compound_and_dl import CaptureOneToDlCompoundAndDLWorkflow  # noqa: E501 pylint: disable=line-too-long
+        from speedwagon.frontend.qtwidgets.gui_startup import SingleWorkflowLauncher  # noqa: E501 pylint: disable=line-too-long
 
 
-        .. testcode::
-           :skipif: True
+    .. testcode::
+       :skipif: True
 
-           >>> startup_strategy = SingleWorkflowLauncher()
-           >>> startup_strategy.set_workflow(
-           ...      CaptureOneToDlCompoundAndDLWorkflow()
-           ... )
-           >>> startup_strategy.options = {
-           ...      "Input": "source/images/",
-           ...      "Package Type": "Capture One",
-           ...      "Output Digital Library": "output/dl",
-           ...      "Output HathiTrust": "output/ht"
-           ... }
-           >>> app = ApplicationLauncher(strategy=startup_strategy)
-           >>> app.run()
+       >>> startup_strategy = SingleWorkflowLauncher()
+       >>> startup_strategy.set_workflow(
+       ...      CaptureOneToDlCompoundAndDLWorkflow()
+       ... )
+       >>> startup_strategy.options = {
+       ...      "Input": "source/images/",
+       ...      "Package Type": "Capture One",
+       ...      "Output Digital Library": "output/dl",
+       ...      "Output HathiTrust": "output/ht"
+       ... }
+       >>> app = ApplicationLauncher(strategy=startup_strategy)
+       >>> app.run()
     """
 
-    def __init__(self, strategy: AbsStarter = None) -> None:
+    def __init__(self, strategy: Optional[AbsStarter] = None) -> None:
         """Strategy pattern for loading speedwagon in different ways.
 
         Args:
@@ -354,7 +340,7 @@ class CLIStarter(AbsStarter):
         return 0
 
 
-def main(argv: List[str] = None) -> None:
+def main(argv: Optional[List[str]] = None) -> None:
     """Launch main entry point."""
     argv = argv or sys.argv
     if "tab-editor" in argv:

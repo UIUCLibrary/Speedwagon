@@ -261,6 +261,7 @@ class SubtaskJobAdapter(AbsJobAdapter,
 
     def __init__(self, adaptee: AbsSubtask) -> None:
         """Create a sub-task job adapter."""
+        warnings.warn("Don't use", DeprecationWarning)
         AbsJobAdapter.__init__(self, adaptee)
         ProcessJobWorker.__init__(self)
         self.adaptee.parent_task_log_q = QueueAdapter()
@@ -360,7 +361,9 @@ class AbsToolJobManager(
     @abc.abstractmethod
     def get_results(
             self,
-            timeout_callback: typing.Callable[[int, int], None] = None
+            timeout_callback: Optional[
+                typing.Callable[[int, int], None]
+            ] = None
     ) -> typing.Generator[typing.Any, None, None]:
         """Process jobs and return results."""
 
@@ -444,7 +447,9 @@ class ToolJobManager(AbsToolJobManager):
 
     def get_results(
             self,
-            timeout_callback: typing.Callable[[int, int], None] = None
+            timeout_callback: Optional[
+                typing.Callable[[int, int], None]
+            ] = None
     ) -> typing.Generator[typing.Any, None, None]:
         processor = JobProcessor(self)
         processor.timeout_callback = timeout_callback

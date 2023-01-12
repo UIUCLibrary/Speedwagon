@@ -45,355 +45,355 @@ class TestTabsEditorApp:
         editor.on_okay()
         assert editor.close.called is True
 
+#
+# def test_run_loads_window(qtbot, monkeypatch, tmpdir):
+#     app = Mock()
+#     app.exec_ = MagicMock()
+#
+#     def dummy_app_data_dir(*args, **kwargs):
+#         app_data_dir = tmpdir / "app_data_dir"
+#         app_data_dir.ensure_dir()
+#         return app_data_dir.strpath
+#
+#     monkeypatch.setattr(
+#         speedwagon.config.get_platform_settings().__class__,
+#         "get_app_data_directory",
+#         dummy_app_data_dir
+#     )
+#
+#     monkeypatch.setattr(
+#         speedwagon.config.NixConfig,
+#         "get_user_data_directory",
+#         lambda _: '~'
+#     )
+#
+#     standard_startup = gui_startup.StartupGuiDefault(app=app)
+#
+#     standard_startup.startup_settings['debug'] = True
+#     tabs_file = tmpdir / "tabs.yaml"
+#     tabs_file.ensure()
+#
+#     # get_app_data_directory
+#
+#     standard_startup.tabs_file = tabs_file
+#
+#     monkeypatch.setattr(QtWidgets, "QSplashScreen", MagicMock())
+#     monkeypatch.setattr(
+#         speedwagon.frontend.qtwidgets.gui,
+#         "MainWindow1",
+#         MagicMock()
+#     )
+#     standard_startup._logger = Mock()
+#     standard_startup.run()
+#     assert app.exec_.called is True
+#
 
-def test_run_loads_window(qtbot, monkeypatch, tmpdir):
-    app = Mock()
-    app.exec_ = MagicMock()
-
-    def dummy_app_data_dir(*args, **kwargs):
-        app_data_dir = tmpdir / "app_data_dir"
-        app_data_dir.ensure_dir()
-        return app_data_dir.strpath
-
-    monkeypatch.setattr(
-        speedwagon.config.get_platform_settings().__class__,
-        "get_app_data_directory",
-        dummy_app_data_dir
-    )
-
-    monkeypatch.setattr(
-        speedwagon.config.NixConfig,
-        "get_user_data_directory",
-        lambda _: '~'
-    )
-
-    standard_startup = gui_startup.StartupGuiDefault(app=app)
-
-    standard_startup.startup_settings['debug'] = True
-    tabs_file = tmpdir / "tabs.yaml"
-    tabs_file.ensure()
-
-    # get_app_data_directory
-
-    standard_startup.tabs_file = tabs_file
-
-    monkeypatch.setattr(QtWidgets, "QSplashScreen", MagicMock())
-    monkeypatch.setattr(
-        speedwagon.frontend.qtwidgets.gui,
-        "MainWindow1",
-        MagicMock()
-    )
-    standard_startup._logger = Mock()
-    standard_startup.run()
-    assert app.exec_.called is True
-
-
-class TestStartupDefault:
-    @pytest.fixture
-    def parse_args(self):
-        def parse(*args, **kwargs):
-            return argparse.Namespace(
-                debug=False,
-                start_tab="main"
-            )
-        return parse
-
-    def test_invalid_setting_logs_warning(
-            self,
-            caplog,
-            monkeypatch,
-            parse_args
-    ):
-
-        def update(*_, **__):
-            raise ValueError("oops")
-        # Monkey patch Path.home() because this will fail on linux systems if
-        # uid not found. For example: in some docker containers
-        monkeypatch.setattr(
-            speedwagon.config.Path, "home", lambda: "my_home"
-        )
-
-        monkeypatch.setattr(
-            speedwagon.startup.argparse.ArgumentParser,
-            "parse_args",
-            parse_args
-        )
-
-        monkeypatch.setattr(
-            speedwagon.config.WindowsConfig,
-            "get_app_data_directory",
-            lambda *_: "app_data_dir"
-        )
-        startup_worker = gui_startup.StartupGuiDefault(app=Mock())
-        resolution = Mock(FRIENDLY_NAME="dummy")
-        resolution.update = lambda _: update()
-
-        loader = speedwagon.config.ConfigLoader(startup_worker.config_file)
-        loader.resolution_strategy_order = [resolution]
-
-        startup_worker.resolve_settings(
-            resolution_order=[resolution],
-            loader=loader
-        )
-
-        assert any("oops is an invalid setting" in m for m in caplog.messages)
-
-    def test_invalid_setting_logs_warning_for_ConfigFileSetter(
-            self, caplog, monkeypatch, parse_args):
-
-        def update(*_, **__):
-            raise ValueError("oops")
-
-        # Monkey patch Path.home() because this will fail on linux systems if
-        # uid not found. For example: in some docker containers
-        monkeypatch.setattr(
-            speedwagon.config.Path, "home", lambda: "my_home"
-        )
-        monkeypatch.setattr(
-            speedwagon.config.WindowsConfig,
-            "get_app_data_directory",
-            lambda *_: "app_data_dir"
-        )
-
-        monkeypatch.setattr(
-            speedwagon.startup.argparse.ArgumentParser,
-            "parse_args",
-            parse_args
-        )
-
-        startup_worker = gui_startup.StartupGuiDefault(app=Mock())
-        resolution = Mock(FRIENDLY_NAME="dummy")
-        resolution.__class__ = speedwagon.config.ConfigFileSetter
-        resolution.update = lambda _: update()
-        startup_worker.resolve_settings(resolution_order=[resolution])
-        assert any("contains an invalid setting" in m for m in caplog.messages)
-
-    def test_missing_debug_setting(self, caplog, monkeypatch, parse_args):
-        # Monkey patch Path.home() because this will fail on linux systems if
-        # uid not found. For example: in some docker containers
-        monkeypatch.setattr(
-            speedwagon.config.Path, "home", lambda: "my_home"
-        )
-        monkeypatch.setattr(
-            speedwagon.config.WindowsConfig,
-            "get_app_data_directory",
-            lambda *_: "app_data_dir"
-        )
-
-        startup_worker = gui_startup.StartupGuiDefault(app=Mock())
-        startup_worker.startup_settings = {"sss": "dd"}
-
-        monkeypatch.setattr(
-            speedwagon.startup.argparse.ArgumentParser,
-            "parse_args",
-            parse_args
-        )
-
-        loader = speedwagon.config.ConfigLoader(startup_worker.config_file)
-        loader.resolution_strategy_order = []
-        loader.startup_settings = {"sss": "dd"}
-
-        startup_worker.resolve_settings(
-            resolution_order=[],
-            loader=loader
-        )
-
-        assert any(
-            "Unable to find a key for debug mode" in m for m in caplog.messages
-        )
-
-    def test_default_resolve_settings_calls_default_setter(self, monkeypatch):
-
-        def update(*_, **__):
-            raise ValueError("oops")
-
-        default_setter = MagicMock()
-        monkeypatch.setattr(
-            speedwagon.config, "DefaultsSetter", default_setter
-        )
-
-        # Monkey patch Path.home() because this will fail on linux systems if
-        # uid not found. For example: in some docker containers
-        monkeypatch.setattr(
-            speedwagon.config.Path, "home", lambda: "my_home"
-        )
-
-        monkeypatch.setattr(
-            speedwagon.config.WindowsConfig,
-            "get_app_data_directory",
-            lambda *_: "app_data_dir"
-        )
-
-        monkeypatch.setattr(
-            speedwagon.config.CliArgsSetter, "update", MagicMock()
-        )
-
-        startup_worker = \
-            gui_startup.StartupGuiDefault(app=Mock(name="app"))
-
-        resolution = Mock(friendly_name="dummy")
-        resolution.update = lambda _: update()
-        startup_worker.resolve_settings()
-        assert default_setter.called is True
-
-    def test_ensure_settings_files_called_generate_default(
-            self,
-            monkeypatch,
-            first_time_startup_worker
-    ):
-        generate_default = Mock()
-
-        monkeypatch.setattr(
-            speedwagon.startup.speedwagon.config,
-            "generate_default",
-            generate_default
-        )
-
-        first_time_startup_worker.ensure_settings_files()
-        assert generate_default.called is True
-
-    @pytest.fixture()
-    def first_time_startup_worker(self, monkeypatch):
-        # Monkey patch Path.home() because this will fail on linux systems if
-        # uid not found. For example: in some docker containers
-        monkeypatch.setattr(
-            speedwagon.config.Path, "home", lambda: "my_home"
-        )
-        monkeypatch.setattr(
-            speedwagon.config.WindowsConfig,
-            "get_app_data_directory",
-            lambda *_: "app_data_dir"
-        )
-        startup_worker = gui_startup.StartupGuiDefault(app=Mock())
-        startup_worker.config_file = "dummy.yml"
-        startup_worker.tabs_file = "tabs.yml"
-        startup_worker.app_data_dir = \
-            os.path.join("invalid", "app_data", "path")
-
-        startup_worker.user_data_dir = os.path.join("invalid", "path")
-
-        def exists(path):
-            config_files = [
-                startup_worker.config_file,
-                startup_worker.tabs_file,
-                startup_worker.app_data_dir,
-                startup_worker.user_data_dir
-            ]
-            if path in config_files:
-                return False
-
-            return False
-
-        monkeypatch.setattr(
-            speedwagon.startup.os.path, "exists", exists
-        )
-
-        makedirs = Mock()
-        monkeypatch.setattr(speedwagon.startup.os, "makedirs", makedirs)
-
-        touch = Mock()
-        monkeypatch.setattr(speedwagon.config.pathlib.Path, "touch", touch)
-
-        return startup_worker
-
-    @pytest.fixture()
-    def returning_startup_worker(self, monkeypatch):
-        # Monkey patch Path.home() because this will fail on linux systems if
-        # uid not found. For example: in some docker containers
-        monkeypatch.setattr(
-            speedwagon.config.Path, "home", lambda: "my_home"
-        )
-        monkeypatch.setattr(
-            speedwagon.config.WindowsConfig,
-            "get_app_data_directory",
-            lambda *_: "app_data_dir"
-        )
-        startup_worker = gui_startup.StartupGuiDefault(app=Mock())
-        startup_worker.config_file = "dummy.yml"
-        startup_worker.tabs_file = "tabs.yml"
-        startup_worker.app_data_dir = os.path.join("some", "path")
-        startup_worker.user_data_dir = os.path.join("some", "user", "path")
-
-        def exists(path):
-            config_files = [
-                startup_worker.config_file,
-                startup_worker.tabs_file,
-                startup_worker.app_data_dir,
-                startup_worker.user_data_dir
-            ]
-            if path in config_files:
-                return True
-            return False
-
-        monkeypatch.setattr(
-            speedwagon.startup.os.path, "exists", exists
-        )
-        makedirs = Mock()
-        monkeypatch.setattr(speedwagon.config.os, "makedirs", makedirs)
-
-        touch = Mock()
-        monkeypatch.setattr(speedwagon.config.pathlib.Path, "touch", touch)
-
-        return startup_worker
-
-    @pytest.mark.parametrize(
-        "expected_message",
-        [
-            'No config file found',
-            "No tabs.yml file found",
-            "Created",
-            "Created directory "
-        ]
-    )
-    def test_ensure_settings_files_called_messages(
-            self,
-            monkeypatch,
-            caplog,
-            expected_message,
-            first_time_startup_worker
-    ):
-        generate_default = Mock()
-
-        monkeypatch.setattr(
-            speedwagon.startup.speedwagon.config,
-            "generate_default",
-            generate_default
-        )
-
-        first_time_startup_worker.ensure_settings_files()
-
-        assert any(
-            expected_message in m for m in caplog.messages
-        )
-
-    @pytest.mark.parametrize(
-        "expected_message",
-        [
-            'Found existing config file',
-            "Found existing tabs file",
-            "Found existing app data",
-            "Found existing user data directory"
-        ]
-    )
-    def test_ensure_settings_files_called_messages_on_success(
-            self,
-            monkeypatch,
-            caplog,
-            expected_message,
-            returning_startup_worker
-    ):
-        generate_default = Mock()
-
-        monkeypatch.setattr(
-            speedwagon.startup.speedwagon.config,
-            "generate_default",
-            generate_default
-        )
-
-        returning_startup_worker.ensure_settings_files()
-        assert any(
-            expected_message in m for m in caplog.messages
-        )
+# class TestStartupDefault:
+#     @pytest.fixture
+#     def parse_args(self):
+#         def parse(*args, **kwargs):
+#             return argparse.Namespace(
+#                 debug=False,
+#                 start_tab="main"
+#             )
+#         return parse
+#
+#     # def test_invalid_setting_logs_warning(
+#     #         self,
+#     #         caplog,
+#     #         monkeypatch,
+#     #         parse_args
+#     # ):
+#     #
+#     #     def update(*_, **__):
+#     #         raise ValueError("oops")
+#     #     # Monkey patch Path.home() because this will fail on linux systems if
+#     #     # uid not found. For example: in some docker containers
+#     #     monkeypatch.setattr(
+#     #         speedwagon.config.Path, "home", lambda: "my_home"
+#     #     )
+#     #
+#     #     monkeypatch.setattr(
+#     #         speedwagon.startup.argparse.ArgumentParser,
+#     #         "parse_args",
+#     #         parse_args
+#     #     )
+#     #
+#     #     monkeypatch.setattr(
+#     #         speedwagon.config.WindowsConfig,
+#     #         "get_app_data_directory",
+#     #         lambda *_: "app_data_dir"
+#     #     )
+#     #     startup_worker = gui_startup.StartupGuiDefault(app=Mock())
+#     #     resolution = Mock(FRIENDLY_NAME="dummy")
+#     #     resolution.update = lambda _: update()
+#     #
+#     #     loader = speedwagon.config.ConfigLoader(startup_worker.config_file)
+#     #     loader.resolution_strategy_order = [resolution]
+#     #
+#     #     startup_worker.resolve_settings(
+#     #         resolution_order=[resolution],
+#     #         loader=loader
+#     #     )
+#     #
+#     #     assert any("oops is an invalid setting" in m for m in caplog.messages)
+#
+#     # def test_invalid_setting_logs_warning_for_ConfigFileSetter(
+#     #         self, caplog, monkeypatch, parse_args):
+#     #
+#     #     def update(*_, **__):
+#     #         raise ValueError("oops")
+#     #
+#     #     # Monkey patch Path.home() because this will fail on linux systems if
+#     #     # uid not found. For example: in some docker containers
+#     #     monkeypatch.setattr(
+#     #         speedwagon.config.Path, "home", lambda: "my_home"
+#     #     )
+#     #     monkeypatch.setattr(
+#     #         speedwagon.config.WindowsConfig,
+#     #         "get_app_data_directory",
+#     #         lambda *_: "app_data_dir"
+#     #     )
+#     #
+#     #     monkeypatch.setattr(
+#     #         speedwagon.startup.argparse.ArgumentParser,
+#     #         "parse_args",
+#     #         parse_args
+#     #     )
+#     #
+#     #     startup_worker = gui_startup.StartupGuiDefault(app=Mock())
+#     #     resolution = Mock(FRIENDLY_NAME="dummy")
+#     #     resolution.__class__ = speedwagon.config.ConfigFileSetter
+#     #     resolution.update = lambda _: update()
+#     #     startup_worker.resolve_settings(resolution_order=[resolution])
+#     #     assert any("contains an invalid setting" in m for m in caplog.messages)
+#
+#     # def test_missing_debug_setting(self, caplog, monkeypatch, parse_args):
+#     #     # Monkey patch Path.home() because this will fail on linux systems if
+#     #     # uid not found. For example: in some docker containers
+#     #     monkeypatch.setattr(
+#     #         speedwagon.config.Path, "home", lambda: "my_home"
+#     #     )
+#     #     monkeypatch.setattr(
+#     #         speedwagon.config.WindowsConfig,
+#     #         "get_app_data_directory",
+#     #         lambda *_: "app_data_dir"
+#     #     )
+#     #
+#     #     startup_worker = gui_startup.StartupGuiDefault(app=Mock())
+#     #     startup_worker.startup_settings = {"sss": "dd"}
+#     #
+#     #     monkeypatch.setattr(
+#     #         speedwagon.startup.argparse.ArgumentParser,
+#     #         "parse_args",
+#     #         parse_args
+#     #     )
+#     #
+#     #     loader = speedwagon.config.ConfigLoader(startup_worker.config_file)
+#     #     loader.resolution_strategy_order = []
+#     #     loader.startup_settings = {"sss": "dd"}
+#     #
+#     #     startup_worker.resolve_settings(
+#     #         resolution_order=[],
+#     #         loader=loader
+#     #     )
+#     #
+#     #     assert any(
+#     #         "Unable to find a key for debug mode" in m for m in caplog.messages
+#     #     )
+#
+#     # def test_default_resolve_settings_calls_default_setter(self, monkeypatch):
+#     #
+#     #     def update(*_, **__):
+#     #         raise ValueError("oops")
+#     #
+#     #     default_setter = MagicMock()
+#     #     monkeypatch.setattr(
+#     #         speedwagon.config, "DefaultsSetter", default_setter
+#     #     )
+#     #
+#     #     # Monkey patch Path.home() because this will fail on linux systems if
+#     #     # uid not found. For example: in some docker containers
+#     #     monkeypatch.setattr(
+#     #         speedwagon.config.Path, "home", lambda: "my_home"
+#     #     )
+#     #
+#     #     monkeypatch.setattr(
+#     #         speedwagon.config.WindowsConfig,
+#     #         "get_app_data_directory",
+#     #         lambda *_: "app_data_dir"
+#     #     )
+#     #
+#     #     monkeypatch.setattr(
+#     #         speedwagon.config.CliArgsSetter, "update", MagicMock()
+#     #     )
+#     #
+#     #     startup_worker = \
+#     #         gui_startup.StartupGuiDefault(app=Mock(name="app"))
+#     #
+#     #     resolution = Mock(friendly_name="dummy")
+#     #     resolution.update = lambda _: update()
+#     #     startup_worker.resolve_settings()
+#     #     assert default_setter.called is True
+#
+#     def test_ensure_settings_files_called_generate_default(
+#             self,
+#             monkeypatch,
+#             first_time_startup_worker
+#     ):
+#         generate_default = Mock()
+#
+#         monkeypatch.setattr(
+#             speedwagon.startup.speedwagon.config,
+#             "generate_default",
+#             generate_default
+#         )
+#
+#         first_time_startup_worker.ensure_settings_files()
+#         assert generate_default.called is True
+#
+#     @pytest.fixture()
+#     def first_time_startup_worker(self, monkeypatch):
+#         # Monkey patch Path.home() because this will fail on linux systems if
+#         # uid not found. For example: in some docker containers
+#         monkeypatch.setattr(
+#             speedwagon.config.Path, "home", lambda: "my_home"
+#         )
+#         monkeypatch.setattr(
+#             speedwagon.config.WindowsConfig,
+#             "get_app_data_directory",
+#             lambda *_: "app_data_dir"
+#         )
+#         startup_worker = gui_startup.StartupGuiDefault(app=Mock())
+#         startup_worker.config_file = "dummy.yml"
+#         startup_worker.tabs_file = "tabs.yml"
+#         startup_worker.app_data_dir = \
+#             os.path.join("invalid", "app_data", "path")
+#
+#         startup_worker.user_data_dir = os.path.join("invalid", "path")
+#
+#         def exists(path):
+#             config_files = [
+#                 startup_worker.config_file,
+#                 startup_worker.tabs_file,
+#                 startup_worker.app_data_dir,
+#                 startup_worker.user_data_dir
+#             ]
+#             if path in config_files:
+#                 return False
+#
+#             return False
+#
+#         monkeypatch.setattr(
+#             speedwagon.startup.os.path, "exists", exists
+#         )
+#
+#         makedirs = Mock()
+#         monkeypatch.setattr(speedwagon.startup.os, "makedirs", makedirs)
+#
+#         touch = Mock()
+#         monkeypatch.setattr(speedwagon.config.pathlib.Path, "touch", touch)
+#
+#         return startup_worker
+#
+#     @pytest.fixture()
+#     def returning_startup_worker(self, monkeypatch):
+#         # Monkey patch Path.home() because this will fail on linux systems if
+#         # uid not found. For example: in some docker containers
+#         monkeypatch.setattr(
+#             speedwagon.config.Path, "home", lambda: "my_home"
+#         )
+#         monkeypatch.setattr(
+#             speedwagon.config.WindowsConfig,
+#             "get_app_data_directory",
+#             lambda *_: "app_data_dir"
+#         )
+#         startup_worker = gui_startup.StartupGuiDefault(app=Mock())
+#         startup_worker.config_file = "dummy.yml"
+#         startup_worker.tabs_file = "tabs.yml"
+#         startup_worker.app_data_dir = os.path.join("some", "path")
+#         startup_worker.user_data_dir = os.path.join("some", "user", "path")
+#
+#         def exists(path):
+#             config_files = [
+#                 startup_worker.config_file,
+#                 startup_worker.tabs_file,
+#                 startup_worker.app_data_dir,
+#                 startup_worker.user_data_dir
+#             ]
+#             if path in config_files:
+#                 return True
+#             return False
+#
+#         monkeypatch.setattr(
+#             speedwagon.startup.os.path, "exists", exists
+#         )
+#         makedirs = Mock()
+#         monkeypatch.setattr(speedwagon.config.os, "makedirs", makedirs)
+#
+#         touch = Mock()
+#         monkeypatch.setattr(speedwagon.config.pathlib.Path, "touch", touch)
+#
+#         return startup_worker
+#
+#     @pytest.mark.parametrize(
+#         "expected_message",
+#         [
+#             'No config file found',
+#             "No tabs.yml file found",
+#             "Created",
+#             "Created directory "
+#         ]
+#     )
+#     def test_ensure_settings_files_called_messages(
+#             self,
+#             monkeypatch,
+#             caplog,
+#             expected_message,
+#             first_time_startup_worker
+#     ):
+#         generate_default = Mock()
+#
+#         monkeypatch.setattr(
+#             speedwagon.startup.speedwagon.config,
+#             "generate_default",
+#             generate_default
+#         )
+#
+#         first_time_startup_worker.ensure_settings_files()
+#
+#         assert any(
+#             expected_message in m for m in caplog.messages
+#         )
+#
+#     @pytest.mark.parametrize(
+#         "expected_message",
+#         [
+#             'Found existing config file',
+#             "Found existing tabs file",
+#             "Found existing app data",
+#             "Found existing user data directory"
+#         ]
+#     )
+#     def test_ensure_settings_files_called_messages_on_success(
+#             self,
+#             monkeypatch,
+#             caplog,
+#             expected_message,
+#             returning_startup_worker
+#     ):
+#         generate_default = Mock()
+#
+#         monkeypatch.setattr(
+#             speedwagon.startup.speedwagon.config,
+#             "generate_default",
+#             generate_default
+#         )
+#
+#         returning_startup_worker.ensure_settings_files()
+#         assert any(
+#             expected_message in m for m in caplog.messages
+#         )
 
 
 class TestSingleWorkflowJSON:

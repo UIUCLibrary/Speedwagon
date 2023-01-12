@@ -1,4 +1,4 @@
-aiohttp>=3.6.2
+aiohttp>=3.7.0
 async-timeout==3.0.1
 attrs>=19.3.0
 HathiValidate>=0.3.8
@@ -10,7 +10,7 @@ importlib-resources>=1.5.0
 typing-extensions;python_version<"3.8"
 lxml>=4.5.1
 pluggy==0.13.1
-py3exiv2bind>=0.1.9b1
+py3exiv2bind>=0.1.9b7
 pyhathiprep>=0.1.7
 pyqt-distutils>=0.7.3
 pytz==2020.1
@@ -19,8 +19,8 @@ ruamel.yaml>=0.17.17
 tzlocal==2.1
 uiucprescon.packager[kdu]>=0.2.15b2
 uiucprescon.images>=0.0.5
-uiucprescon.imagevalidate>=0.1.9b2
-uiucprescon.ocr>=0.1.4b1
+uiucprescon.imagevalidate>=0.1.9b6
+uiucprescon.ocr>=0.1.4b6
 yarl>=1.4.2
 zipp==3.1.0
 setuptools~=49.2.1
