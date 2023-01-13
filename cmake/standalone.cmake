@@ -195,6 +195,7 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/standalone/pytest/pytest.py
         )
 set(SPEEDWAGON_PYTHON_INTERP python.exe)
 
+
 include(CTest)
 if(WIN32)
     list(APPEND TOP_LEVEL_FILES ${PROJECT_SOURCE_DIR}/cmake/speedwagon.vbs)
@@ -249,7 +250,7 @@ if(WIN32)
                 OUTPUT_VARIABLE PYTEST_COLLECTION
                 ERROR_VARIABLE pytest_std
                 OUTPUT_STRIP_TRAILING_WHITESPACE
-                ENCODING AUTO
+                ENCODING UTF8
                 )
 
         message(STATUS "PYTEST_COLLECTION= ${PYTEST_COLLECTION}")
@@ -267,7 +268,7 @@ if(WIN32)
                     endif()
                     string(STRIP ${test_name} test_name)
                     set(FULL_TEST_NAME "${PROJECT_NAME}.pytest${test_name}")
-                    string(REPLACE " " "_" FULL_TEST_NAME ${FULL_TEST_NAME})
+#                    string(REPLACE " " "_" FULL_TEST_NAME ${FULL_TEST_NAME})
                     add_test(NAME ${FULL_TEST_NAME}
                             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
                             COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest "../../${test_name}" -v --full-trace -raP -c ${PROJECT_SOURCE_DIR}/pyproject.toml

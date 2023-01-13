@@ -999,6 +999,9 @@ pipeline {
                     equals expected: true, actual: params.DEPLOY_DEVPI
                     equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
                     equals expected: true, actual: params.DEPLOY_CHOCOLATEY
+                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
                 }
                 beforeAgent true
             }
@@ -1234,7 +1237,7 @@ pipeline {
                                             filename 'ci/docker/windows_standalone/Dockerfile'
                                             label 'Windows && Docker && x86'
                                             args '-u ContainerAdministrator'
-                                            additionalBuildArgs '--build-arg CHOCOLATEY_SOURCE'
+                                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
                                           }
                                     }
                                     steps {

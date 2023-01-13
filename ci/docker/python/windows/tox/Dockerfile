@@ -24,19 +24,6 @@ RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
     choco feature disable -n=showDownloadProgress ; `
     Remove-Item -Force -Recurse ${Env:TEMP}\*
 
-
-ADD ci/docker/shared/chocolatey/packages.xml choco/packages.config
-RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
-    C:\ProgramData\chocolatey\bin\choco.exe install -y --stoponfirstfailure --no-progress --verbose choco/packages.config ;`
-    Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse ; `
-    refreshenv ; `
-    Remove-Item -Force -Recurse ${Env:TEMP}\* ; `
-    if (!(Test-Path 'C:\Program Files\Git\cmd\git.exe')) `
-    { `
-        throw 'git.exe not found' ; `
-    }; `
-    Write-Host "Finished install packages with Chocolatey"
-
 ADD ci/docker/shared/chocolatey/python.xml choco/python.config
 RUN C:\ProgramData\chocolatey\bin\choco.exe install -y --stoponfirstfailure --no-progress --verbose choco/python.config ;`
     Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse ; `
@@ -49,6 +36,18 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe install -y --stoponfirstfailure --no
     py -3.10 --version ; `
     py -3.11 --version ; `
     Write-Host "Installing Python with Chocolatey - Done"
+
+ADD ci/docker/shared/chocolatey/packages.xml choco/packages.config
+RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
+    C:\ProgramData\chocolatey\bin\choco.exe install -y --stoponfirstfailure --no-progress --verbose choco/packages.config ;`
+    Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse ; `
+    refreshenv ; `
+    Remove-Item -Force -Recurse ${Env:TEMP}\* ; `
+    if (!(Test-Path 'C:\Program Files\Git\cmd\git.exe')) `
+    { `
+        throw 'git.exe not found' ; `
+    }; `
+    Write-Host "Finished install packages with Chocolatey"
 
 # ==============================================================================
 FROM BASE_BUILDER as WHEEL_BUILDER_PY37

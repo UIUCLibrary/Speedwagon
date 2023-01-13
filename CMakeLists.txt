@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 project(Speedwagon
         LANGUAGES NONE
         )
-
+cmake_policy(SET CMP0110 NEW)
 include(FetchContent)
 find_package(Python REQUIRED)
 
