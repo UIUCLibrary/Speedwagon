@@ -1279,7 +1279,10 @@ pipeline {
                                       }
                                     }
                                     when{
-                                        equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                        allOf{
+                                            equals expected: true, actual: params.TEST_STANDALONE_PACKAGE_DEPLOYMENT
+                                            equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                        }
                                         beforeAgent true
                                     }
                                     steps{
