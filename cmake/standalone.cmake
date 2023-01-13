@@ -268,8 +268,7 @@ if(WIN32)
                     endif()
                     string(STRIP ${test_name} test_name)
                     set(FULL_TEST_NAME "${PROJECT_NAME}.pytest${test_name}")
-                    string(REPLACE " " "_" FULL_TEST_NAME ${FULL_TEST_NAME})
-                    string(REPLACE "Â" "" FULL_TEST_NAME ${FULL_TEST_NAME})
+#                    string(REPLACE " " "_" FULL_TEST_NAME ${FULL_TEST_NAME})
                     add_test(NAME ${FULL_TEST_NAME}
                             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
                             COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest "../../${test_name}" -v --full-trace -raP -c ${PROJECT_SOURCE_DIR}/pyproject.toml
