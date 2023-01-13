@@ -1215,16 +1215,58 @@ pipeline {
                                         unstash 'CHOCOLATEY_PACKAGE'
                                         testSpeedwagonChocolateyPkg(props.Version)
                                     }
-                                    post{
-                                        failure{
-                                            powershell(
-                                                script: """
-                                                        New-Item -ItemType Directory -Force ${WORKSPACE}\\logs
-                                                        Copy-Item C:\\ProgramData\\chocolatey\\logs\\*.log -Destination ${WORKSPACE}\\logs
-                                                        """
+                                }
+                            }
+                        }
+                        stage('Windows Standalone'){
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+                                }
+                                beforeAgent true
+                            }
+                            stages{
+                                stage('CMake Build'){
+                                    agent {
+                                        dockerfile {
+                                            filename 'ci/docker/windows_standalone/Dockerfile'
+                                            label 'Windows && Docker && x86'
+                                            args '-u ContainerAdministrator'
+                                            additionalBuildArgs '--build-arg CHOCOLATEY_SOURCE'
+                                          }
+                                    }
+                                    steps {
+                                        unstash 'SPEEDWAGON_DOC_PDF'
+                                        script{
+                                            withEnv(["build_number=${get_build_number()}"]) {
+                                                load('ci/jenkins/scripts/standalone.groovy').build_standalone(
+                                                    packageFormat: [
+                                                        msi: params.PACKAGE_WINDOWS_STANDALONE_MSI,
+                                                        nsis: params.PACKAGE_WINDOWS_STANDALONE_NSIS,
+                                                        zipFile: params.PACKAGE_WINDOWS_STANDALONE_ZIP,
+                                                    ],
+                                                    package: [
+                                                        version: props.Version
+                                                    ]
                                                 )
-                                            archiveArtifacts artifacts: 'logs/*'
-                                            bat(script: 'py --list', returnStatus: true)
+                                            }
+                                        }
+                                    }
+                                    post {
+                                        success{
+                                            archiveArtifacts artifacts: 'dist/*.msi,dist/*.exe,dist/*.zip', fingerprint: true
+                                            stash includes: 'dist/*.msi,dist/*.exe,dist/*.zip', name: 'STANDALONE_INSTALLERS'
+                                        }
+                                        failure {
+                                            archiveArtifacts allowEmptyArchive: true, artifacts: 'dist/**/wix.log,dist/**/*.wxs'
+                                        }
+                                        cleanup{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                notFailBuild: true
+                                            )
                                         }
                                     }
                                 }
