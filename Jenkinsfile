@@ -1237,7 +1237,7 @@ pipeline {
                                             filename 'ci/docker/windows_standalone/Dockerfile'
                                             label 'Windows && Docker && x86'
                                             args '-u ContainerAdministrator'
-                                            additionalBuildArgs '--build-arg CHOCOLATEY_SOURCE'
+                                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
                                           }
                                     }
                                     steps {

@@ -111,8 +111,8 @@ RUN $ErrorActionPreference = 'Stop'; `
         throw "Testing Python Failed with exit code ($process.ExitCode)" ;  `
     }
 
-ARG PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
-
+ARG PIP_EXTRA_INDEX_URL
+ARG PIP_INDEX_URL
 ADD requirements.txt requirements-dev.txt c:\temp\
 COPY requirements/ c:/temp/requirements
 RUN python -m pip install --upgrade pip ; `
@@ -128,3 +128,5 @@ ENV PIP_FIND_LINKS=c:\wheels\
 COPY ci/docker/windows_standalone/build_standalone.ps1 c:/scripts/build_standalone.ps1
 CMD c:\scripts\build_standalone.ps1
 ##SHELL ["cmd", "/S", "/C"]
+ENV PIP_EXTRA_INDEX_URL=${PIP_EXTRA_INDEX_URL}
+ENV PIP_INDEX_URL=${PIP_INDEX_URL}
