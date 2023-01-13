@@ -66,6 +66,14 @@ RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
     choco feature disable -n=showDownloadProgress ; `
     Remove-Item -Force -Recurse ${Env:TEMP}\*
 
+ADD ci/docker/windows_standalone/chocolatey/python.xml choco/python.config
+RUN C:\ProgramData\chocolatey\bin\choco.exe install -y --stoponfirstfailure --no-progress --verbose choco/python.config ;`
+    Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse ; `
+    refreshenv ; `
+    Remove-Item -Force -Recurse ${Env:TEMP}\* ; `
+    py --list ;`
+    py -3.11 --version ; `
+    Write-Host "Installing Python with Chocolatey - Done"
 
 # Install packages that can be installed by chocolatey
 ADD ci/docker/windows_standalone/chocolatey/packages.config choco/packages.config
@@ -87,8 +95,7 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
     }; `
     Write-Host "Finished install packages with Chocolatey"
 
-
-# Install WiX toolset for making .msi installers and put the tools on the path
+    # Install WiX toolset for making .msi installers and put the tools on the path
 RUN Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force ;`
     Register-PackageSource -Name MyNuGet -Location https://www.nuget.org/api/v2 -ProviderName NuGet ;`
     Install-Package -Name WiX -Source MyNuGet -Force ; `
@@ -97,19 +104,6 @@ RUN Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force ;`
     $env:Path += $WIX_PATH ; `
     [Environment]::SetEnvironmentVariable('Path', $env:Path, [EnvironmentVariableTarget]::Machine ) ;`
     Write-Host "Updated path to = $env:Path"
-ARG PYTHON_INSTALLER_URL=https://www.python.org/ftp/python/3.11.1/python-3.11.1-amd64.exe
-
-RUN $ErrorActionPreference = 'Stop'; `
-    Invoke-WebRequest $Env:PYTHON_INSTALLER_URL -OutFile c:\python-installer.exe ; `
-    Start-Process python-installer.exe -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' -Wait ; `
-    Remove-Item c:\python-installer.exe -Force ; `
-    $process = start-process -NoNewWindow -PassThru -FilePath 'c:\Program Files\Python311\python.exe' -ArgumentList "--version" -Wait ;`
-    if ( $process.ExitCode -eq 0) `
-    { `
-        Write-Host "Installed Python`
-    } else { `
-        throw "Testing Python Failed with exit code ($process.ExitCode)" ;  `
-    }
 
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
@@ -127,6 +121,3 @@ RUN pip install --no-index --find-links=c:\wheels\ `
 ENV PIP_FIND_LINKS=c:\wheels\
 COPY ci/docker/windows_standalone/build_standalone.ps1 c:/scripts/build_standalone.ps1
 CMD c:\scripts\build_standalone.ps1
-##SHELL ["cmd", "/S", "/C"]
-ENV PIP_EXTRA_INDEX_URL=${PIP_EXTRA_INDEX_URL}
-ENV PIP_INDEX_URL=${PIP_INDEX_URL}
