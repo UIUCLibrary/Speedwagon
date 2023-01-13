@@ -111,8 +111,7 @@ RUN $ErrorActionPreference = 'Stop'; `
         throw "Testing Python Failed with exit code ($process.ExitCode)" ;  `
     }
 
-ENV PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
-ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"
+ARG PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
 
 ADD requirements.txt requirements-dev.txt c:\temp\
 COPY requirements/ c:/temp/requirements
