@@ -121,7 +121,6 @@ RUN python -m pip install --upgrade pip ; `
     python -m pip wheel -r c:\temp\requirements.txt -r c:\temp\requirements-dev.txt --wheel-dir c:\wheels
 
 RUN pip install --no-index --find-links=c:\wheels\ `
-        --trusted-host devpi.library.illinois.edu `
         -r c:\temp\requirements.txt `
         -r c:\temp\requirements-dev.txt
 
