@@ -187,7 +187,7 @@ class MainProgram(QtWidgets.QMainWindow):
 
 
 class MainWindowMenuBuilder:
-    def __init__(self, parent: QtWidgets.QMainWindow) -> None:
+    def __init__(self, parent: MainWindow2) -> None:
         self._parent = parent
         self._menu_bar: QtWidgets.QMenuBar = self._parent.menuBar()
 
@@ -700,9 +700,10 @@ class MainWindow2(MainWindow2UI):
         if tab_index is None:
             raise AssertionError("Missing All tab")
         all_tab = self._tabs[tab_index]
-        model = all_tab.workspace_widgets[
-            qtwidgets.tabs.TabWidgets.SETTINGS
-        ].model()
+        model = typing.cast(
+            QtWidgets.QTableWidget,
+            all_tab.workspace_widgets[qtwidgets.tabs.TabWidgets.SETTINGS]
+        ).model()
 
         for key, value in data.items():
             model[key] = value

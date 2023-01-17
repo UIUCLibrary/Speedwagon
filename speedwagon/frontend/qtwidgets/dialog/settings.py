@@ -337,6 +337,8 @@ class TabEditorWidget(QtWidgets.QWidget):
 class TabEditor(TabEditorWidget):
     """Widget for editing tabs."""
 
+    all_workflows_list_view: QtWidgets.QListView
+
     def __init__(
             self,
             parent: Optional[QtWidgets.QWidget] = None,
@@ -455,7 +457,7 @@ class TabEditor(TabEditorWidget):
 
     def _delete_tab(self) -> None:
         data = self.selected_tab_combo_box.currentData()
-        model = self.selected_tab_combo_box.model()
+        model = cast(models.TabsModel, self.selected_tab_combo_box.model())
         model.remove_tab(data)
 
     def _add_items_to_tab(self) -> None:

@@ -138,7 +138,9 @@ class ChecksumFile(AbsBrowseableWidget):
     def browse_clicked(self) -> None:
         """Launch file browser to locate an .md5 file."""
         selection = QtWidgets.QFileDialog.getOpenFileName(
-            filter="Checksum files (*.md5)")
+            self,
+            filter="Checksum files (*.md5)"
+        )
 
         if selection[0]:
             self.data = selection[0]

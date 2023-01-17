@@ -5,7 +5,7 @@ import logging.handlers
 import sys
 import typing
 import warnings
-from typing import Collection, Optional
+from typing import Optional, Sequence
 
 from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
 
@@ -98,7 +98,7 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
         self.setMinimumHeight(self._label.sizeHint().height() + 75)
 
 
-def about_dialog_box(parent: typing.Optional[QtWidgets.QWidget]) -> None:
+def about_dialog_box(parent: QtWidgets.QWidget) -> None:
     """Launch the about speedwagon dialog box."""
     try:
         pkg_metadata: metadata.PackageMetadata = \
@@ -155,7 +155,7 @@ class SystemInfoDialog(QtWidgets.QDialog):
         layout.addWidget(self._button_box)
 
     @staticmethod
-    def get_installed_packages() -> Collection[str]:
+    def get_installed_packages() -> Sequence[str]:
         """Get list of strings of installed packages."""
         pkgs = sorted(
             metadata.distributions(),

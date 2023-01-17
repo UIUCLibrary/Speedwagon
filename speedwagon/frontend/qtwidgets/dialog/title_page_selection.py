@@ -49,7 +49,7 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
         for i in object_record:
             for instance in i.instantiations.values():
                 files += [os.path.basename(f) for f in instance.files]
-
+        editor = typing.cast(QtWidgets.QComboBox, editor)
         for i, file in enumerate(files):
             editor.addItem(file)
             if title_page == file:

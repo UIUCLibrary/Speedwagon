@@ -646,12 +646,14 @@ class TestStartQtThreaded:
 
     def test_save_workflow_config(self, qtbot, starter):
         dialog = Mock()
+        parent = QtWidgets.QWidget()
         dialog.getSaveFileName = MagicMock(return_value=("make_jp2.json", ""))
 
         serialization_strategy = Mock()
         starter.save_workflow_config(
             workflow_name="Spam",
             data={},
+            parent=parent,
             dialog_box=dialog,
             serialization_strategy=serialization_strategy
         )

@@ -185,10 +185,10 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         Defaults alphabetically by title.
         """
         # pylint: disable=no-member
-        cast(QtCore.SignalInstance, self.layoutAboutToBeChanged).emit()
+        self.layoutAboutToBeChanged.emit()  # type: ignore
 
         self.workflows.sort(key=key or (lambda i: i.name))
-        cast(QtCore.SignalInstance, self.layoutChanged).emit()
+        self.layoutChanged.emit()  # type: ignore
 
     def add_workflow(self, workflow: Type[Workflow]) -> None:
         """Add workflow to model."""

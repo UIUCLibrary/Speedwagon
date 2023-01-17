@@ -106,7 +106,7 @@ class StartQtThreaded(AbsGuiStarter):
     def save_workflow_config(
             workflow_name,
             data,
-            parent: typing.Optional[QtWidgets.QWidget] = None,
+            parent: QtWidgets.QWidget,
             dialog_box: typing.Optional[QtWidgets.QFileDialog] = None,
             serialization_strategy: typing.Optional[
                 speedwagon.job.AbsJobConfigSerializationStrategy
@@ -261,7 +261,7 @@ class StartQtThreaded(AbsGuiStarter):
                     error
                 )
 
-    def save_log(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+    def save_log(self, parent: QtWidgets.QWidget) -> None:
         data = self._log_data.getvalue()
         epoch_in_minutes = int(time.time() / 60)
         while True:
