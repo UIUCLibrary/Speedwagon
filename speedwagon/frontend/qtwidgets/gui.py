@@ -406,7 +406,8 @@ class MainWindow1(MainProgram):
 
     def show_help(self) -> None:
         try:
-            pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
+            pkg_metadata: metadata.PackageMetadata = \
+                metadata.metadata(speedwagon.__name__)
             webbrowser.open_new(pkg_metadata['Home-page'])
         except metadata.PackageNotFoundError as error:
             self.log_manager.warning(

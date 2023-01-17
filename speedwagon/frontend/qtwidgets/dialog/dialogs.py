@@ -101,10 +101,8 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
 def about_dialog_box(parent: typing.Optional[QtWidgets.QWidget]) -> None:
     """Launch the about speedwagon dialog box."""
     try:
-        pkg_metadata: typing.Dict[str, str] = \
-            dict(
-                metadata.metadata(speedwagon.__name__)
-            )
+        pkg_metadata: metadata.PackageMetadata = \
+            metadata.metadata("speedwagon")
 
         summary = pkg_metadata['Summary']
         version = pkg_metadata['Version']
@@ -245,7 +243,7 @@ class WorkflowProgressStateIdle(AbsWorkflowProgressState):
             )
         cancel_button.setEnabled(False)
         self.context.rejected.connect(  # type: ignore
-            self.context.button_box.rejected
+            self.context.button_box.rejected   # type: ignore
         )
 
     def start(self) -> None:

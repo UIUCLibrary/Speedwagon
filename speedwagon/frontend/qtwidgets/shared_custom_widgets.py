@@ -3,7 +3,7 @@
 import abc
 import os
 import warnings
-from typing import Type, Union, List
+from typing import Type, Union, List, Optional
 from PySide6 import QtWidgets, QtCore, QtGui
 
 __all__ = [
@@ -16,7 +16,7 @@ class AbsCustomData2(metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def is_valid(cls, value) -> bool:
+    def is_valid(cls, value: str) -> bool:
         """Check user selection is valid."""
 
     @classmethod
@@ -34,7 +34,12 @@ class CustomItemWidget(QtWidgets.QWidget):
 
     editingFinished = QtCore.Signal()
 
-    def __init__(self, *args, parent=None, **kwargs) -> None:
+    def __init__(
+            self,
+            *args,
+            parent: Optional[QtWidgets.QWidget] = None,
+            **kwargs
+    ) -> None:
         """Create a custom item widget."""
         warnings.warn(
             "Use workflow.AbsOutputOptionDataType instead",
@@ -42,7 +47,10 @@ class CustomItemWidget(QtWidgets.QWidget):
         )
         super().__init__(parent, *args, **kwargs)
         self._data = ""
-        self.inner_layout = QtWidgets.QHBoxLayout(parent)
+        self.inner_layout = \
+            QtWidgets.QHBoxLayout(parent) \
+            if parent is not None \
+            else QtWidgets.QHBoxLayout()
         self.inner_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.inner_layout)
         self.setAutoFillBackground(True)
@@ -229,7 +237,7 @@ class UserOptionCustomDataType(UserOption3):
 class UserOption2(metaclass=abc.ABCMeta):
     """User Option."""
 
-    def __init__(self, label_text):
+    def __init__(self, label_text: str):
         """Create user option data."""
         self.label_text: str = label_text
         self.data = None

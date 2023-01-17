@@ -63,7 +63,7 @@ class CheckBoxWidget(EditDelegateWidget):
 
     def _make_connections(self) -> None:
         # pylint: disable=no-member
-        self.check_box.stateChanged.connect(self.update_data)
+        self.check_box.stateChanged.connect(self.update_data)  # type: ignore
 
     def update_data(self, state: QtCore.Qt.CheckState) -> None:
         self.data = self.check_box.isChecked()
@@ -108,7 +108,9 @@ class ComboWidget(EditDelegateWidget):
 
     def _make_connections(self) -> None:
         # pylint: disable=no-member
-        self.combo_box.currentTextChanged.connect(self.update_data)
+        self.combo_box.currentTextChanged.connect(  # type: ignore
+            self.update_data
+        )
 
     def update_data(self, value: str) -> None:
         self.data = value

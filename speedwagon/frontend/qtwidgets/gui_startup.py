@@ -148,7 +148,8 @@ class StartQtThreaded(AbsGuiStarter):
 
     def _load_help(self) -> None:
         try:
-            pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
+            pkg_metadata: metadata.PackageMetadata = \
+                metadata.metadata(speedwagon.__name__)
             webbrowser.open_new(pkg_metadata['Home-page'])
         except metadata.PackageNotFoundError as error:
             self.logger.warning(
@@ -420,7 +421,7 @@ class StartQtThreaded(AbsGuiStarter):
 
         if main_app is not None:
             # pylint: disable=no-member
-            dialog_box.rejected.connect(main_app.close)
+            dialog_box.rejected.connect(main_app.close)  # type: ignore
 
         dialog_box.setWindowTitle(workflow_name)
         dialog_box.show()
@@ -498,9 +499,9 @@ class TabsEditorApp(QtWidgets.QDialog):
         self.setLayout(layout)
 
         # pylint: disable=no-member
-        self.dialog_button_box.accepted.connect(self.on_okay)
-        self.dialog_button_box.rejected.connect(self.on_cancel)
-        self.rejected.connect(self.on_cancel)
+        self.dialog_button_box.accepted.connect(self.on_okay)  # type: ignore
+        self.dialog_button_box.rejected.connect(self.on_cancel)  # type: ignore
+        self.rejected.connect(self.on_cancel)  # type: ignore
 
     def load_all_workflows(self) -> None:
         workflows = speedwagon.job.available_workflows()
