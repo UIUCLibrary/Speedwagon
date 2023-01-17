@@ -53,7 +53,7 @@ ITEM_SETTINGS_POLICY = QtWidgets.QSizePolicy(
 
 
 class TabsFileError(speedwagon.exceptions.SpeedwagonException):
-    """Error with Tabs File"""
+    """Error with Tabs File."""
 
 
 class TabWidgets(enum.Enum):

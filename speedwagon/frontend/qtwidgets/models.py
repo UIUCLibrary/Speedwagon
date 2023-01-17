@@ -368,6 +368,8 @@ def _lookup_constant(value: int) -> List[str]:
 
 
 class ToolOptionsModel4(QtCore.QAbstractListModel):
+    """Tool Model Options."""
+
     JsonDataRole = cast(int, QtCore.Qt.ItemDataRole.UserRole) + 1
     DataRole = JsonDataRole + 1
 
@@ -376,6 +378,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             data: Optional[List[AbsOutputOptionDataType]] = None,
             parent: Optional[QtCore.QObject] = None
     ) -> None:
+        """Create a new ToolOptionsModel4 object."""
         super().__init__(parent)
         self._data = data or []
 
@@ -384,6 +387,10 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             key: str,
             value: Optional[Union[str, int, bool]]
     ) -> None:
+        """Set the [key] operator.
+
+        This allows for looking up the data based on the key.
+        """
         if self._data is None:
             raise IndexError("No data")
 
@@ -400,9 +407,10 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex
             ]) -> QtCore.Qt.ItemFlag:
+        """Get Qt Widget item flags used for an index."""
         return QtCore.Qt.ItemFlag.ItemIsSelectable | \
-               QtCore.Qt.ItemFlag.ItemIsEnabled | \
-               QtCore.Qt.ItemFlag.ItemIsEditable
+            QtCore.Qt.ItemFlag.ItemIsEnabled | \
+            QtCore.Qt.ItemFlag.ItemIsEditable
 
     def rowCount(
             self,
@@ -413,6 +421,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
                 ]
             ] = None
     ) -> int:
+        """Get the amount of entries in the model."""
         return len(self._data)
 
     def headerData(
@@ -421,6 +430,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             orientation: QtCore.Qt.Orientation,
             role: int = cast(int, QtCore.Qt.ItemDataRole.DisplayRole)
     ) -> Any:
+        """Get model header data."""
         if orientation == QtCore.Qt.Orientation.Vertical and \
                 role == QtCore.Qt.ItemDataRole.DisplayRole:
             return self._data[section].label
@@ -431,6 +441,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
             role: int = typing.cast(int, QtCore.Qt.ItemDataRole.DisplayRole)
     ) -> Optional[Any]:
+        """Get data from model."""
         if not index.isValid():
             return None
 
@@ -446,7 +457,11 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             value: Optional[Any],
             role: int = typing.cast(int, QtCore.Qt.ItemDataRole.EditRole)
     ) -> bool:
+        """Set model data.
 
+        Returns:
+            True if successful
+        """
         if value is None:
             return False
 
@@ -457,6 +472,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
         return super().setData(index, value, role)
 
     def serialize(self):
+        """Serialize model data to a dictionary."""
         return {data.label: data.value for data in self._data}
 
     def get(self) -> Dict[str, Any]:
