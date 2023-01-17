@@ -208,49 +208,12 @@ class UserOption3(metaclass=abc.ABCMeta):
     def is_valid(self) -> bool:
         """Check user selection is valid."""
 
-    def edit_widget(self) -> QtWidgets.QWidget:
+    def edit_widget(self) -> Optional[QtWidgets.QWidget]:
         """Get widget for editing."""
+        return None
 
 
-class UserOptionCustomDataType(UserOption3):
-    """User option custom data type."""
-
-    def __init__(
-            self,
-            label_text: str,
-            data_type: Type[AbsCustomData3]
-    ) -> None:
-        """Create a custom user options data type."""
-        super().__init__(label_text)
-        self.data_type = data_type
-        self.data = None
-
-    def is_valid(self) -> bool:
-        """Check user selection is valid."""
-        return self.data_type.is_valid(self.data)
-
-    def edit_widget(self) -> QtWidgets.QWidget:
-        """Return a new widget for editing the value."""
-        return self.data_type.edit_widget()
-
-
-class UserOption2(metaclass=abc.ABCMeta):
-    """User Option."""
-
-    def __init__(self, label_text: str):
-        """Create user option data."""
-        self.label_text: str = label_text
-        self.data = None
-
-    @abc.abstractmethod
-    def is_valid(self) -> bool:
-        """Check user selection is valid."""
-
-    def edit_widget(self) -> QtWidgets.QWidget:
-        """Return a new widget for editing the value."""
-
-
-class UserOptionPythonDataType2(UserOption2):
+class UserOptionPythonDataType2(UserOption3):
     """User option Python data type."""
 
     def __init__(self,
@@ -290,26 +253,3 @@ class ListSelectionWidget(CustomItemWidget):
 
     def _update(self) -> None:
         self.data = self._combobox.currentText()
-
-
-class ListSelection(UserOption2):
-    """List selection."""
-
-    def __init__(self, label_text: str) -> None:
-        """Create a list selection."""
-        super().__init__(label_text)
-        self._selections: List[str] = []
-
-    def is_valid(self) -> bool:
-        """Check if list selection is valid."""
-        return True
-
-    def edit_widget(self) -> QtWidgets.QWidget:
-        """Get a drop down widget with the selections prepopulated."""
-        return ListSelectionWidget(self._selections)
-
-    def add_selection(self, text: str) -> "ListSelection":
-        """Add text to the list selection."""
-        self._selections.append(text)
-        self.data = self._selections[0]
-        return self

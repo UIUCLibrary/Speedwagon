@@ -179,7 +179,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         self.export_action = QtGui.QAction(text="summy")
         self.log_manager = log_manager
         self.item_selection_model = item_model
-        self.options_model: Optional[models.ToolOptionsModel3] = None
+        self.options_model: Optional[models.ToolOptionsModel4] = None
         self.tab_name = name
 
         self.item_selector_view = self._create_selector_view(
@@ -275,7 +275,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     def get_item_options_model(
             self,
             workflow: Type[Workflow]
-    ) -> models.ToolOptionsModel3:
+    ) -> models.ToolOptionsModel4:
         """Get item options model."""
 
     def create_actions(self) -> Tuple[Dict[str, QtWidgets.QWidget],

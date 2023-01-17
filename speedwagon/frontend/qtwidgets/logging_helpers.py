@@ -9,7 +9,7 @@ from logging import handlers
 from typing import Callable
 if typing.TYPE_CHECKING:
     from logging import LogRecord
-    from PySide6 import QtCore, QtWidgets
+    from PySide6 import QtCore
 
 
 class GuiLogHandler(handlers.BufferingHandler):

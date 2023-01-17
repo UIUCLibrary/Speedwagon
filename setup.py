@@ -33,7 +33,7 @@ if __name__ == "__main__":
         ],
         setup_requires=['pytest-runner'],
         tests_require=[
-            'pytest', "behave",
+            'pytest',
             # "pytest-qt"
         ],
         python_requires=">=3.6",

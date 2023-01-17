@@ -791,21 +791,6 @@ pipeline {
                             stages{
                                 stage('Run Tests'){
                                     parallel {
-                                        stage('Run Behave BDD Tests') {
-                                            steps {
-                                                catchError(buildResult: 'UNSTABLE', message: 'Did not pass all Behave BDD tests', stageResult: "UNSTABLE") {
-                                                    sh(
-                                                        script: '''mkdir -p reports
-                                                                   coverage run --parallel-mode --source=speedwagon -m behave --junit --junit-directory reports/tests/behave'''
-                                                    )
-                                                }
-                                            }
-                                            post {
-                                                always {
-                                                    junit 'reports/tests/behave/*.xml'
-                                                }
-                                            }
-                                        }
                                         stage('Run PyTest Unit Tests'){
                                             steps{
                                                 catchError(buildResult: 'UNSTABLE', message: 'Did not pass all pytest tests', stageResult: "UNSTABLE") {
