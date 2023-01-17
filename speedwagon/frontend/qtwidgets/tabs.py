@@ -52,6 +52,10 @@ ITEM_SETTINGS_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.Policy.Maximum)
 
 
+class TabsFileError(speedwagon.exceptions.SpeedwagonException):
+    """Error with Tabs File"""
+
+
 class TabWidgets(enum.Enum):
     NAME = "name"
     DESCRIPTION = "description"
@@ -644,7 +648,7 @@ def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
                 tabs_config_data = \
                     yaml.load(file.read(), Loader=yaml.SafeLoader)
             if not isinstance(tabs_config_data, dict):
-                raise Exception("Failed to parse file")
+                raise TabsFileError("Failed to parse file")
 
             for tab_name in tabs_config_data:
                 model = qtwidgets.models.WorkflowListModel2()
