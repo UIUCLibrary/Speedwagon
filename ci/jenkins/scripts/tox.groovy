@@ -125,6 +125,7 @@ def getToxTestsParallel(args = [:]){
     def label = args['label']
     def dockerfile = args['dockerfile']
     def dockerArgs = args['dockerArgs']
+    def dockerRunArgs = args.get('dockerRunArgs', '')
     def retries = args.containsKey('retry') ? args.retry : 1
     script{
         def envs
@@ -135,7 +136,7 @@ def getToxTestsParallel(args = [:]){
                 originalNodeLabel = env.NODE_NAME
                 checkout scm
                 def dockerImage = docker.build(dockerImageName, "-f ${dockerfile} ${dockerArgs} .")
-                dockerImage.inside{
+                dockerImage.inside(dockerRunArgs){
                     envs = getToxEnvs()
                 }
                 if(isUnix()){
@@ -165,7 +166,7 @@ def getToxTestsParallel(args = [:]){
                             checkout scm
                             def dockerImageForTesting = docker.build(dockerImageName, "-f ${dockerfile} ${dockerArgs} . ")
                             try{
-                                dockerImageForTesting.inside{
+                                dockerImageForTesting.inside(dockerRunArgs){
                                     if(isUnix()){
                                         sh(
                                             label: "Running Tox with ${tox_env} environment",
