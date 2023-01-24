@@ -114,6 +114,8 @@ class ComboWidget(EditDelegateWidget):
 
     def update_data(self, value: str) -> None:
         self.data = value
+        self.dataChanged.emit()
+        self.editingFinished.emit()
 
     @EditDelegateWidget.data.setter
     def data(self, value) -> None:
@@ -290,9 +292,14 @@ class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
 
         editor_widget: EditDelegateWidget = \
             editor_type(parent=parent, widget_metadata=json_data)
-
+        editor_widget.editingFinished.connect(self.commit_and_close_editor)
         editor_widget.setParent(parent)
         return editor_widget
+
+    def commit_and_close_editor(self):
+        """Commit and close the editor."""
+        editor: EditDelegateWidget = self.sender()
+        self.commitData.emit(editor)
 
     def setEditorData(
             self,
