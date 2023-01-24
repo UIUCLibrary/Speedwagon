@@ -1210,6 +1210,22 @@ pipeline {
                                         unstash 'CHOCOLATEY_PACKAGE'
                                         testSpeedwagonChocolateyPkg(props.Version)
                                     }
+                                    post{
+                                        failure{
+                                            powershell(
+                                                label: 'Gathering Chocolatey logs',
+                                                script: '''
+                                                        $Path = "${Env:WORKSPACE}\\logs\\chocolatey"
+                                                        If(!(test-path -PathType container $Path))
+                                                        {
+                                                              New-Item -ItemType Directory -Path $Path
+                                                        }
+                                                        Copy-Item -Path C:\\ProgramData\\chocolatey\\logs -Destination $Path -Recurse
+                                                        '''
+                                                )
+                                            archiveArtifacts( artifacts: 'logs/**')
+                                        }
+                                    }
                                 }
                             }
                         }
