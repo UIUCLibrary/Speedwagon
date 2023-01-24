@@ -5,8 +5,6 @@ include speedwagon/favicon.ico
 recursive-include speedwagon/frontend/qtwidgets/ui *.ui
 include speedwagon/frontend/qtwidgets/ui/__init__.py
 recursive-include tests *.py
-recursive-include features/steps *.py
-recursive-include features *.feature
 include docs/make.bat docs/Makefile
 recursive-include docs/source *
 

@@ -271,7 +271,7 @@ class AbsSetting(metaclass=abc.ABCMeta):
     def friendly_name():
         return NotImplementedError
 
-    def update(  # pylint: disable=R0201
+    def update(
             self,
             settings: Optional[Dict[str, Union[str, bool]]] = None
     ) -> Dict["str", Union[str, bool]]:

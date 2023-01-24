@@ -5,7 +5,7 @@ import logging.handlers
 import sys
 import typing
 import warnings
-from typing import Collection, Optional
+from typing import Optional, Sequence
 
 from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
 
@@ -98,13 +98,11 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
         self.setMinimumHeight(self._label.sizeHint().height() + 75)
 
 
-def about_dialog_box(parent: typing.Optional[QtWidgets.QWidget]) -> None:
+def about_dialog_box(parent: QtWidgets.QWidget) -> None:
     """Launch the about speedwagon dialog box."""
     try:
-        pkg_metadata: typing.Dict[str, str] = \
-            dict(
-                metadata.metadata(speedwagon.__name__)
-            )
+        pkg_metadata: metadata.PackageMetadata = \
+            metadata.metadata("speedwagon")
 
         summary = pkg_metadata['Summary']
         version = pkg_metadata['Version']
@@ -157,7 +155,7 @@ class SystemInfoDialog(QtWidgets.QDialog):
         layout.addWidget(self._button_box)
 
     @staticmethod
-    def get_installed_packages() -> Collection[str]:
+    def get_installed_packages() -> Sequence[str]:
         """Get list of strings of installed packages."""
         pkgs = sorted(
             metadata.distributions(),
@@ -245,7 +243,7 @@ class WorkflowProgressStateIdle(AbsWorkflowProgressState):
             )
         cancel_button.setEnabled(False)
         self.context.rejected.connect(  # type: ignore
-            self.context.button_box.rejected
+            self.context.button_box.rejected   # type: ignore
         )
 
     def start(self) -> None:

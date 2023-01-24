@@ -187,7 +187,7 @@ class MainProgram(QtWidgets.QMainWindow):
 
 
 class MainWindowMenuBuilder:
-    def __init__(self, parent: QtWidgets.QMainWindow) -> None:
+    def __init__(self, parent: MainWindow2) -> None:
         self._parent = parent
         self._menu_bar: QtWidgets.QMenuBar = self._parent.menuBar()
 
@@ -406,7 +406,8 @@ class MainWindow1(MainProgram):
 
     def show_help(self) -> None:
         try:
-            pkg_metadata = dict(metadata.metadata(speedwagon.__name__))
+            pkg_metadata: metadata.PackageMetadata = \
+                metadata.metadata(speedwagon.__name__)
             webbrowser.open_new(pkg_metadata['Home-page'])
         except metadata.PackageNotFoundError as error:
             self.log_manager.warning(
@@ -699,9 +700,10 @@ class MainWindow2(MainWindow2UI):
         if tab_index is None:
             raise AssertionError("Missing All tab")
         all_tab = self._tabs[tab_index]
-        model = all_tab.workspace_widgets[
-            qtwidgets.tabs.TabWidgets.SETTINGS
-        ].model()
+        model = typing.cast(
+            QtWidgets.QTableWidget,
+            all_tab.workspace_widgets[qtwidgets.tabs.TabWidgets.SETTINGS]
+        ).model()
 
         for key, value in data.items():
             model[key] = value

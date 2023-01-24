@@ -161,7 +161,6 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
         You need to implement the discover_task_metadata() method.
     """
 
-    # pylint: disable=no-self-use
     def get_additional_info(
             self,
             user_request_factory:  # pylint: disable=unused-argument
@@ -184,9 +183,7 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
         """
         return {}
 
-    def get_user_options(  # pylint: disable=no-self-use
-            self
-    ) -> List[AbsOutputOptionDataType]:
+    def get_user_options(self) -> List[AbsOutputOptionDataType]:
         """Get user options.
 
         Defaults to no args.

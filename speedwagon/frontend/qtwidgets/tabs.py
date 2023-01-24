@@ -52,6 +52,10 @@ ITEM_SETTINGS_POLICY = QtWidgets.QSizePolicy(
     QtWidgets.QSizePolicy.Policy.Maximum)
 
 
+class TabsFileError(speedwagon.exceptions.SpeedwagonException):
+    """Error with Tabs File."""
+
+
 class TabWidgets(enum.Enum):
     NAME = "name"
     DESCRIPTION = "description"
@@ -175,7 +179,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         self.export_action = QtGui.QAction(text="summy")
         self.log_manager = log_manager
         self.item_selection_model = item_model
-        self.options_model: Optional[models.ToolOptionsModel3] = None
+        self.options_model: Optional[models.ToolOptionsModel4] = None
         self.tab_name = name
 
         self.item_selector_view = self._create_selector_view(
@@ -236,11 +240,10 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         selector_view.setSelectionBehavior(
             QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows
         )
-
-        cast(
-            QtCore.SignalInstance,
-            selector_view.selectionModel().currentChanged
-        ).connect(self._update_tool_selected)
+        selection_model = selector_view.selectionModel()
+        selection_model.currentChanged.connect(  # type: ignore
+            self._update_tool_selected
+        )
 
         return selector_view
 
@@ -271,7 +274,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
     def get_item_options_model(
             self,
             workflow: Type[Workflow]
-    ) -> models.ToolOptionsModel3:
+    ) -> models.ToolOptionsModel4:
         """Get item options model."""
 
     def create_actions(self) -> Tuple[Dict[str, QtWidgets.QWidget],
@@ -353,7 +356,10 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             )
         )
 
-        item_settings = self.workspace_widgets[TabWidgets.SETTINGS]
+        item_settings = cast(
+            QtWidgets.QTableView,
+            self.workspace_widgets[TabWidgets.SETTINGS]
+        )
         #################
         try:
             model = self.get_item_options_model(item)
@@ -386,7 +392,10 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             warning_message_dialog.setIcon(QtWidgets.QMessageBox.Icon.Warning)
             warning_message_dialog.setText(message)
             warning_message_dialog.setDetailedText("".join(stack_trace))
-            layout: QtWidgets.QGridLayout = warning_message_dialog.layout()
+            layout = cast(
+                QtWidgets.QGridLayout,
+                warning_message_dialog.layout()
+            )
 
             layout.addItem(
                 spanner, layout.rowCount(), 0, 1, layout.columnCount())
@@ -588,7 +597,7 @@ class MyDelegate(QtWidgets.QStyledItemDelegate):
     # noinspection PyUnresolvedReferences
     def update_custom_item(self) -> None:
         # pylint: disable=no-member
-        self.commitData.emit(self.sender())
+        self.commitData.emit(self.sender())  # type: ignore
 
     def setEditorData(  # pylint: disable=C0103
             self,
@@ -644,7 +653,7 @@ def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
                 tabs_config_data = \
                     yaml.load(file.read(), Loader=yaml.SafeLoader)
             if not isinstance(tabs_config_data, dict):
-                raise Exception("Failed to parse file")
+                raise TabsFileError("Failed to parse file")
 
             for tab_name in tabs_config_data:
                 model = qtwidgets.models.WorkflowListModel2()

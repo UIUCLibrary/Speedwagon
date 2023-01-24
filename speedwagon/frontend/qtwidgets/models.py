@@ -21,7 +21,7 @@ import warnings
 from PySide6.QtCore import QAbstractItemModel
 from PySide6 import QtCore, QtGui  # type: ignore
 if typing.TYPE_CHECKING:
-    from speedwagon.frontend.qtwidgets import shared_custom_widgets, tabs
+    from speedwagon.frontend.qtwidgets import tabs
     from speedwagon.job import AbsWorkflow, Workflow
     from speedwagon.workflow import AbsOutputOptionDataType
 
@@ -31,7 +31,7 @@ __all__ = [
     "WorkflowListModel",
     "WorkflowListModel2",
     "ToolOptionsPairsModel",
-    "ToolOptionsModel3",
+    "ToolOptionsModel4",
     "SettingsModel",
     "TabsModel"
 ]
@@ -185,10 +185,10 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         Defaults alphabetically by title.
         """
         # pylint: disable=no-member
-        cast(QtCore.SignalInstance, self.layoutAboutToBeChanged).emit()
+        self.layoutAboutToBeChanged.emit()  # type: ignore
 
         self.workflows.sort(key=key or (lambda i: i.name))
-        cast(QtCore.SignalInstance, self.layoutChanged).emit()
+        self.layoutChanged.emit()  # type: ignore
 
     def add_workflow(self, workflow: Type[Workflow]) -> None:
         """Add workflow to model."""
@@ -367,103 +367,9 @@ def _lookup_constant(value: int) -> List[str]:
     return res
 
 
-class ToolOptionsModel3(ToolOptionsModel):
-    """Model for tool options."""
-
-    def __init__(
-            self,
-            data: List[shared_custom_widgets.UserOptionPythonDataType2],
-            parent: Optional[QtCore.QObject] = None
-    ) -> None:
-        """Create a new tool options Qt model."""
-        warnings.warn("use ToolOptionsModel4 instead", DeprecationWarning)
-        if data is None:
-            raise NotImplementedError
-        super().__init__(parent)
-
-        self._data: \
-            List[shared_custom_widgets.UserOptionPythonDataType2] = data
-
-    def data(
-            self,
-            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
-            role=QtCore.Qt.ItemDataRole.DisplayRole
-    ) -> Union[None,
-               QtCore.QObject,
-               QtCore.QSize,
-               shared_custom_widgets.UserOption2,
-               str]:
-        """Get data at an index in the model."""
-        if index.isValid():
-            if role == QtCore.Qt.ItemDataRole.DisplayRole:
-                data = self._data[index.row()].data
-                if data is not None:
-                    return str(data)
-                return ""
-            if role == QtCore.Qt.ItemDataRole.EditRole:
-                return self._data[index.row()].data
-            if role == QtCore.Qt.ItemDataRole.UserRole:
-                return self._data[index.row()]
-            if role == QtCore.Qt.ItemDataRole.SizeHintRole:
-                return QtCore.QSize(10, 25)
-        return None
-
-    def get(self) -> Dict[str, Any]:
-        """Access the key value settings for all options."""
-        options: Dict[str, Any] = {}
-        for data in self._data:
-            options[data.label_text] = data.data
-        return options
-
-    def _look_up_index(self, key: str) -> typing.Optional[QtCore.QModelIndex]:
-        for i in range(self.rowCount()):
-            index = self.index(i, 0)
-            if typing.cast(
-                'shared_custom_widgets.UserOption2',
-                self.data(index, role=QtCore.Qt.ItemDataRole.UserRole)
-            ).label_text == key:
-                return index
-        return None
-
-    def __getitem__(self, item: str):
-        """Locate the option based on the name."""
-        for data in self._data:
-            if data.label_text == item:
-                return data.data
-        raise IndexError(f"No option found for {item}")
-
-    def __setitem__(self, key, value):
-        """Set an option based on the name."""
-        self.setData(self._look_up_index(key), value)
-
-    def headerData(
-            self,
-            index: int,
-            orientation: QtCore.Qt.Orientation,
-            role: Optional[QtConstant] = None
-    ) -> Union[None, QtCore.QObject, str]:
-        """Get header data for a given index."""
-        if orientation == QtCore.Qt.Orientation.Vertical and \
-                role == QtCore.Qt.ItemDataRole.DisplayRole:
-
-            title = self._data[index].label_text
-            return str(title)
-        return None
-
-    def setData(
-            self,
-            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
-            data,
-            role: Optional[QtConstant] = None
-    ) -> bool:
-        """Set tool option data in the model."""
-        if not index.isValid():
-            return False
-        self._data[index.row()].data = data
-        return True
-
-
 class ToolOptionsModel4(QtCore.QAbstractListModel):
+    """Tool Model Options."""
+
     JsonDataRole = cast(int, QtCore.Qt.ItemDataRole.UserRole) + 1
     DataRole = JsonDataRole + 1
 
@@ -472,6 +378,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             data: Optional[List[AbsOutputOptionDataType]] = None,
             parent: Optional[QtCore.QObject] = None
     ) -> None:
+        """Create a new ToolOptionsModel4 object."""
         super().__init__(parent)
         self._data = data or []
 
@@ -480,6 +387,10 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             key: str,
             value: Optional[Union[str, int, bool]]
     ) -> None:
+        """Set the [key] operator.
+
+        This allows for looking up the data based on the key.
+        """
         if self._data is None:
             raise IndexError("No data")
 
@@ -496,9 +407,10 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
                 QtCore.QModelIndex,
                 QtCore.QPersistentModelIndex
             ]) -> QtCore.Qt.ItemFlag:
+        """Get Qt Widget item flags used for an index."""
         return QtCore.Qt.ItemFlag.ItemIsSelectable | \
-               QtCore.Qt.ItemFlag.ItemIsEnabled | \
-               QtCore.Qt.ItemFlag.ItemIsEditable
+            QtCore.Qt.ItemFlag.ItemIsEnabled | \
+            QtCore.Qt.ItemFlag.ItemIsEditable
 
     def rowCount(
             self,
@@ -509,6 +421,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
                 ]
             ] = None
     ) -> int:
+        """Get the amount of entries in the model."""
         return len(self._data)
 
     def headerData(
@@ -517,6 +430,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             orientation: QtCore.Qt.Orientation,
             role: int = cast(int, QtCore.Qt.ItemDataRole.DisplayRole)
     ) -> Any:
+        """Get model header data."""
         if orientation == QtCore.Qt.Orientation.Vertical and \
                 role == QtCore.Qt.ItemDataRole.DisplayRole:
             return self._data[section].label
@@ -527,6 +441,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
             role: int = typing.cast(int, QtCore.Qt.ItemDataRole.DisplayRole)
     ) -> Optional[Any]:
+        """Get data from model."""
         if not index.isValid():
             return None
 
@@ -542,7 +457,11 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             value: Optional[Any],
             role: int = typing.cast(int, QtCore.Qt.ItemDataRole.EditRole)
     ) -> bool:
+        """Set model data.
 
+        Returns:
+            True if successful
+        """
         if value is None:
             return False
 
@@ -553,6 +472,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
         return super().setData(index, value, role)
 
     def serialize(self):
+        """Serialize model data to a dictionary."""
         return {data.label: data.value for data in self._data}
 
     def get(self) -> Dict[str, Any]:

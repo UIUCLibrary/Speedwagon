@@ -71,7 +71,7 @@ class ValidateMetadataWorkflow(Workflow):
         profile_type = speedwagon.workflow.ChoiceSelection("Profile")
         profile_type.placeholder_text = "Select a Profile"
 
-        for profile_name in imagevalidate.available_profiles():
+        for profile_name in sorted(imagevalidate.available_profiles()):
             profile_type.add_selection(profile_name)
 
         return [

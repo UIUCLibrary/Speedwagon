@@ -20,7 +20,7 @@ class ModelField(NamedTuple):
 class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
     """File selection delegate widget."""
 
-    def createEditor(  # pylint: disable=C0103,W0613,R0201
+    def createEditor(  # pylint: disable=C0103,W0613
             self,
             parent: QtWidgets.QWidget,
             item: QtWidgets.QStyleOptionViewItem,
@@ -29,7 +29,7 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
         """Create editor widget."""
         return QtWidgets.QComboBox(parent)
 
-    def setEditorData(  # pylint: disable=C0103,W0613,R0201
+    def setEditorData(  # pylint: disable=C0103,W0613
             self,
             editor: QtCore.QObject,
             index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
@@ -49,13 +49,13 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
         for i in object_record:
             for instance in i.instantiations.values():
                 files += [os.path.basename(f) for f in instance.files]
-
+        editor = typing.cast(QtWidgets.QComboBox, editor)
         for i, file in enumerate(files):
             editor.addItem(file)
             if title_page == file:
                 editor.setCurrentIndex(i)
 
-    def setModelData(  # pylint: disable=C0103,R0201
+    def setModelData(  # pylint: disable=C0103
             self,
             widget: QtWidgets.QWidget,
             model: QtCore.QAbstractItemModel,

@@ -63,7 +63,7 @@ class CheckBoxWidget(EditDelegateWidget):
 
     def _make_connections(self) -> None:
         # pylint: disable=no-member
-        self.check_box.stateChanged.connect(self.update_data)
+        self.check_box.stateChanged.connect(self.update_data)  # type: ignore
 
     def update_data(self, state: QtCore.Qt.CheckState) -> None:
         self.data = self.check_box.isChecked()
@@ -108,10 +108,14 @@ class ComboWidget(EditDelegateWidget):
 
     def _make_connections(self) -> None:
         # pylint: disable=no-member
-        self.combo_box.currentTextChanged.connect(self.update_data)
+        self.combo_box.currentTextChanged.connect(  # type: ignore
+            self.update_data
+        )
 
     def update_data(self, value: str) -> None:
         self.data = value
+        self.dataChanged.emit()
+        self.editingFinished.emit()
 
     @EditDelegateWidget.data.setter
     def data(self, value) -> None:
@@ -288,9 +292,14 @@ class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
 
         editor_widget: EditDelegateWidget = \
             editor_type(parent=parent, widget_metadata=json_data)
-
+        editor_widget.editingFinished.connect(self.commit_and_close_editor)
         editor_widget.setParent(parent)
         return editor_widget
+
+    def commit_and_close_editor(self):
+        """Commit and close the editor."""
+        editor: EditDelegateWidget = self.sender()
+        self.commitData.emit(editor)
 
     def setEditorData(
             self,
