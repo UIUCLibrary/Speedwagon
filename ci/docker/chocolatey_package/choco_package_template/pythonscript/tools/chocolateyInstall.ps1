@@ -7,14 +7,20 @@ $ErrorActionPreference = 'Stop'; # stop on all errors
 $packageName  = '[[PackageName]]'
 $toolsDir     = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
 $installDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$venvDir      = "$installDir\venv"
 
 $fileLocation = Join-Path $toolsDir '[[InstallerFile]]'
 $dependenciesLocation = Join-Path $toolsDir dist\deps
 $packageSourceUrl =  '[[PackageSourceUrl]]'
 $PYTHON = "C:\Python311\python.exe"
 $requirementSpecifier = "$($fileLocation)`[QT`]"
-Write-Host "Creating Python virtualenv at $installDir\venv"
-& "$PYTHON" -m venv $installDir\venv
+If(test-path -PathType container $venvDir){
+  Write-Host "Removing existing Python virtual environment"
+  Remove-Tree $venvDir
+}
+
+Write-Host "Creating Python virtualenv at $venvDir"
+& "$PYTHON" -m venv $venvDir
 & "$installDir\venv\Scripts\python.exe" -m pip install pip --upgrade --no-compile
 & "$installDir\venv\Scripts\python.exe" -m pip install  "$requirementSpecifier" --find-link "$dependenciesLocation"
 
