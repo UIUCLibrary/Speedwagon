@@ -623,11 +623,68 @@ def testPythonPackages(){
                     )
                 }
             }
+            macTests["Mac - Python ${pythonVersion}-arm64 : sdist"] = {
+                withEnv(['QT_QPA_PLATFORM=offscreen']) {
+                    packages.testPkg2(
+                        agent: [
+                            label: "mac && python${pythonVersion} && m1",
+                        ],
+                        glob: 'dist/*.tar.gz,dist/*.zip',
+                        stash: 'PYTHON_PACKAGES',
+                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+                        toxExec: 'venv/bin/tox',
+                        testSetup: {
+                            checkout scm
+                            unstash 'PYTHON_PACKAGES'
+                            sh(
+                                label:'Install Tox',
+                                script: '''python3 -m venv venv
+                                           venv/bin/pip install pip --upgrade
+                                           venv/bin/pip install -r requirements/requirements_tox.txt
+                                           '''
+                            )
+                        },
+                        testTeardown: {
+                            sh 'rm -r venv/'
+                        },
+                        retry: 3,
+                    )
+                }
+            }
             macTests["Mac - Python ${pythonVersion}-x86: wheel"] = {
                 withEnv(['QT_QPA_PLATFORM=offscreen']) {
                     packages.testPkg2(
                         agent: [
                             label: "mac && python${pythonVersion} && x86",
+                        ],
+                        glob: 'dist/*.whl',
+                        stash: 'PYTHON_PACKAGES',
+                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+                        toxExec: 'venv/bin/tox',
+                        testSetup: {
+                            checkout scm
+                            unstash 'PYTHON_PACKAGES'
+                            sh(
+                                label:'Install Tox',
+                                script: '''python3 -m venv venv
+                                           venv/bin/pip install pip --upgrade
+                                           venv/bin/pip install -r requirements/requirements_tox.txt
+                                           '''
+                            )
+                        },
+                        testTeardown: {
+                            sh 'rm -r venv/'
+                        },
+                        retry: 3,
+
+                    )
+                }
+            }
+            macTests["Mac - Python ${pythonVersion}-arm64: wheel"] = {
+                withEnv(['QT_QPA_PLATFORM=offscreen']) {
+                    packages.testPkg2(
+                        agent: [
+                            label: "mac && python${pythonVersion} && m1",
                         ],
                         glob: 'dist/*.whl',
                         stash: 'PYTHON_PACKAGES',
