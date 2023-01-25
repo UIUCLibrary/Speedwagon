@@ -70,6 +70,11 @@ def macAppleBundle() {
     stage('Building Apple Application Bundle'){
         unstash 'DIST-INFO'
         sh(label: 'Running pyinstaller script', script: 'venv/bin/python packaging/create_osx_app_bundle.py')
+        findFiles(glob: 'dist/*.dmg').each{
+
+            echo "SHA256 value of ${it.path} = \"${sha256 (it.path)}\""
+        }
+
     }
 
 }
