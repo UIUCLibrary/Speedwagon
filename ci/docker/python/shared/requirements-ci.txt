@@ -2,7 +2,7 @@ build
 conan
 -r requirements/requirements-devpi.txt
 flake8
-pykdu_compress >= 0.1.8b1
+pykdu_compress >= 0.1.8
 pylint
 sphinx
 paramiko
