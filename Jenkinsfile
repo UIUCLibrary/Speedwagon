@@ -510,7 +510,7 @@ def testPythonPackages(){
                         ],
                         glob: 'dist/*.tar.gz',
                         stash: 'PYTHON_PACKAGES',
-                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+                        toxEnv: processorArchitecture=="arm" ? "py${pythonVersion.replace('.', '')}" : "py${pythonVersion.replace('.', '')}-PySide6",
                         retry: 3,
                     )
                 }
@@ -526,7 +526,7 @@ def testPythonPackages(){
                         ],
                         glob: 'dist/*.whl',
                         stash: 'PYTHON_PACKAGES',
-                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+                        toxEnv: processorArchitecture=="arm" ? "py${pythonVersion.replace('.', '')}" : "py${pythonVersion.replace('.', '')}-PySide6",
                         retry: 3,
                     )
                 }

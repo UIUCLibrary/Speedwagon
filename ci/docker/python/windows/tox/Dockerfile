@@ -58,13 +58,15 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 ENV PY_PYTHON=3.7
 RUN py -m pip install --upgrade pip wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements.txt -r c:/requirements/requirements-dev.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-vendor.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-gui.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt
+    py -m pip wheel -w c:\wheels\ --no-cache-dir  `
+      -r c:/requirements/requirements.txt  `
+      -r c:/requirements/requirements-dev.txt `
+      -r c:/requirements/requirements-vendor.txt `
+      -r c:/requirements/requirements-extra.txt `
+      -r c:/requirements/requirements-gui.txt `
+      -r c:/requirements/requirements-ci.txt
 RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
-RUN py -m pip list
+
 
 # ==============================================================================
 FROM BASE_BUILDER as WHEEL_BUILDER_PY38
@@ -75,13 +77,15 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 ENV PY_PYTHON=3.8
 RUN py -m pip install --upgrade pip wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements.txt -r c:/requirements/requirements-dev.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-vendor.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-gui.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt
+    py -m pip wheel -w c:\wheels\ --no-cache-dir  `
+      -r c:/requirements/requirements.txt  `
+      -r c:/requirements/requirements-dev.txt `
+      -r c:/requirements/requirements-vendor.txt `
+      -r c:/requirements/requirements-extra.txt `
+      -r c:/requirements/requirements-gui.txt `
+      -r c:/requirements/requirements-ci.txt
 RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
-RUN py -m pip list
+
 
 # ==============================================================================
 
@@ -93,30 +97,33 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 ENV PY_PYTHON=3.9
 RUN py -m pip install --upgrade pip wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements.txt -r c:/requirements/requirements-dev.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-vendor.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-gui.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt
+    py -m pip wheel -w c:\wheels\ --no-cache-dir  `
+      -r c:/requirements/requirements.txt  `
+      -r c:/requirements/requirements-dev.txt `
+      -r c:/requirements/requirements-vendor.txt `
+      -r c:/requirements/requirements-extra.txt `
+      -r c:/requirements/requirements-gui.txt `
+      -r c:/requirements/requirements-ci.txt
 RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
-RUN py -m pip list
+
 # ==============================================================================
 
 FROM BASE_BUILDER as WHEEL_BUILDER_PY310
 SHELL ["cmd", "/S", "/C" ]
-COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt c:/requirements/
+COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt requirements-gui.txt ci/docker/python/shared/requirements-extra.txt c:/requirements/
 COPY requirements/ c:/requirements/requirements
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 ENV PY_PYTHON=3.10
 RUN py -m pip install --upgrade pip wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements.txt -r c:/requirements/requirements-dev.txt requirements-gui.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-vendor.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-gui.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt
+    py -m pip wheel -w c:\wheels\ --no-cache-dir  `
+      -r c:/requirements/requirements.txt  `
+      -r c:/requirements/requirements-dev.txt `
+      -r c:/requirements/requirements-vendor.txt `
+      -r c:/requirements/requirements-extra.txt `
+      -r c:/requirements/requirements-gui.txt `
+      -r c:/requirements/requirements-ci.txt
 RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
-RUN py -m pip list
 
 # ==============================================================================
 
@@ -128,13 +135,14 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 ENV PY_PYTHON=3.11
 RUN py -m pip install --upgrade pip wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements.txt -r c:/requirements/requirements-dev.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-vendor.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-extra.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-gui.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt
+    py -m pip wheel -w c:\wheels\ --no-cache-dir  `
+      -r c:/requirements/requirements.txt  `
+      -r c:/requirements/requirements-dev.txt `
+      -r c:/requirements/requirements-vendor.txt `
+      -r c:/requirements/requirements-extra.txt `
+      -r c:/requirements/requirements-gui.txt `
+      -r c:/requirements/requirements-ci.txt
 RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
-RUN py -m pip list
 
 ## ==============================================================================
 #
