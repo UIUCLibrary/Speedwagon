@@ -490,37 +490,39 @@ def testPythonPackages(){
         }
         def linuxTests = [:]
         SUPPORTED_LINUX_VERSIONS.each{ pythonVersion ->
-            linuxTests["Linux - Python ${pythonVersion}-x86: sdist"] = {
-                packages.testPkg2(
-                    agent: [
-                        dockerfile: [
-                            label: 'linux && docker && x86',
-                            filename: 'ci/docker/python/linux/tox/Dockerfile',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                            args: "-v pipcache_speedwagon:/.cache/pip"
-                        ]
-                    ],
-                    glob: 'dist/*.tar.gz',
-                    stash: 'PYTHON_PACKAGES',
-                    toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
-                    retry: 3,
-                )
-            }
-            linuxTests["Linux - Python ${pythonVersion}: wheel"] = {
-                packages.testPkg2(
-                    agent: [
-                        dockerfile: [
-                            label: 'linux && docker && x86',
-                            filename: 'ci/docker/python/linux/tox/Dockerfile',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                            args: "-v pipcache_speedwagon:/.cache/pip"
-                        ]
-                    ],
-                    glob: 'dist/*.whl',
-                    stash: 'PYTHON_PACKAGES',
-                    toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
-                    retry: 3,
-                )
+            if(params.INCLUDE_LINUX_X86_64 == true){
+                linuxTests["Linux - Python ${pythonVersion}-x86: sdist"] = {
+                    packages.testPkg2(
+                        agent: [
+                            dockerfile: [
+                                label: 'linux && docker && x86',
+                                filename: 'ci/docker/python/linux/tox/Dockerfile',
+                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                args: "-v pipcache_speedwagon:/.cache/pip"
+                            ]
+                        ],
+                        glob: 'dist/*.tar.gz',
+                        stash: 'PYTHON_PACKAGES',
+                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+                        retry: 3,
+                    )
+                }
+                linuxTests["Linux - Python ${pythonVersion}: wheel"] = {
+                    packages.testPkg2(
+                        agent: [
+                            dockerfile: [
+                                label: 'linux && docker && x86',
+                                filename: 'ci/docker/python/linux/tox/Dockerfile',
+                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                args: "-v pipcache_speedwagon:/.cache/pip"
+                            ]
+                        ],
+                        glob: 'dist/*.whl',
+                        stash: 'PYTHON_PACKAGES',
+                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+                        retry: 3,
+                    )
+                }
             }
         }
         def macTests = [:]
@@ -665,6 +667,7 @@ pipeline {
         booleanParam(name: 'INCLUDE_MACOS_ARM', defaultValue: false, description: 'Include ARM(m1) architecture for Mac')
         booleanParam(name: 'INCLUDE_MACOS_X86_64', defaultValue: false, description: 'Include x86_64 architecture for Mac')
         booleanParam(name: 'INCLUDE_WINDOWS_X86_64', defaultValue: true, description: 'Include x86_64 architecture for Windows')
+        booleanParam(name: 'INCLUDE_LINUX_X86_64', defaultValue: true, description: 'Include x86_64 architecture for Linux')
         booleanParam(name: 'TEST_PACKAGES', defaultValue: true, description: 'Test Python packages by installing them and running tests on the installed package')
         booleanParam(name: 'PACKAGE_MAC_OS_STANDALONE_DMG', defaultValue: false, description: 'Create a Apple Application Bundle DMG')
         booleanParam(name: 'PACKAGE_WINDOWS_STANDALONE_MSI', defaultValue: false, description: 'Create a standalone wix based .msi installer')
@@ -1368,53 +1371,55 @@ pipeline {
                             }
                             def linuxPackages = [:]
                             SUPPORTED_LINUX_VERSIONS.each{pythonVersion ->
-                                linuxPackages["Test Python ${pythonVersion}: sdist Linux"] = {
-                                    devpi.testDevpiPackage(
-                                        agent: [
-                                            dockerfile: [
-                                                filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL",
-                                                label: 'linux && docker && x86 && devpi-access'
+                                if(params.INCLUDE_LINUX_X86_64 == true){
+                                    linuxPackages["Test Python ${pythonVersion}: sdist Linux"] = {
+                                        devpi.testDevpiPackage(
+                                            agent: [
+                                                dockerfile: [
+                                                    filename: 'ci/docker/python/linux/tox/Dockerfile',
+                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL",
+                                                    label: 'linux && docker && x86 && devpi-access'
+                                                ]
+                                            ],
+                                            devpi: [
+                                                index: DEVPI_CONFIG.stagingIndex,
+                                                server: DEVPI_CONFIG.server,
+                                                credentialsId: DEVPI_CONFIG.credentialsId,
+                                            ],
+                                            package:[
+                                                name: props.Name,
+                                                version: props.Version,
+                                                selector: 'tar.gz'
+                                            ],
+                                            test:[
+                                                toxEnv: "py${pythonVersion}".replace('.',''),
                                             ]
-                                        ],
-                                        devpi: [
-                                            index: DEVPI_CONFIG.stagingIndex,
-                                            server: DEVPI_CONFIG.server,
-                                            credentialsId: DEVPI_CONFIG.credentialsId,
-                                        ],
-                                        package:[
-                                            name: props.Name,
-                                            version: props.Version,
-                                            selector: 'tar.gz'
-                                        ],
-                                        test:[
-                                            toxEnv: "py${pythonVersion}".replace('.',''),
-                                        ]
-                                    )
-                                }
-                                linuxPackages["Test Python ${pythonVersion}: wheel Linux"] = {
-                                    devpi.testDevpiPackage(
-                                        agent: [
-                                            dockerfile: [
-                                                filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                label: 'linux && docker && x86 && devpi-access'
+                                        )
+                                    }
+                                    linuxPackages["Test Python ${pythonVersion}: wheel Linux"] = {
+                                        devpi.testDevpiPackage(
+                                            agent: [
+                                                dockerfile: [
+                                                    filename: 'ci/docker/python/linux/tox/Dockerfile',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                    label: 'linux && docker && x86 && devpi-access'
+                                                ]
+                                            ],
+                                            devpi: [
+                                                index: DEVPI_CONFIG.stagingIndex,
+                                                server: DEVPI_CONFIG.server,
+                                                credentialsId: DEVPI_CONFIG.credentialsId,
+                                            ],
+                                            package:[
+                                                name: props.Name,
+                                                version: props.Version,
+                                                selector: 'whl'
+                                            ],
+                                            test:[
+                                                toxEnv: "py${pythonVersion}".replace('.',''),
                                             ]
-                                        ],
-                                        devpi: [
-                                            index: DEVPI_CONFIG.stagingIndex,
-                                            server: DEVPI_CONFIG.server,
-                                            credentialsId: DEVPI_CONFIG.credentialsId,
-                                        ],
-                                        package:[
-                                            name: props.Name,
-                                            version: props.Version,
-                                            selector: 'whl'
-                                        ],
-                                        test:[
-                                            toxEnv: "py${pythonVersion}".replace('.',''),
-                                        ]
-                                    )
+                                        )
+                                    }
                                 }
                             }
                             parallel(linuxPackages + windowsPackages + macPackages)
