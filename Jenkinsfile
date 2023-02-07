@@ -313,14 +313,14 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
     }
     def macPackageStages = [:]
     pythonVersions.each{pythonVersion ->
-        def architectures = []
+        def macArchitectures = []
         if(params.INCLUDE_MACOS_X86_64 == true){
             architectures.add('x86_64')
         }
         if(params.INCLUDE_MACOS_ARM == true){
-            architectures.add("m1")
+            macArchitectures.add("m1")
         }
-        architectures.each{ processorArchitecture ->
+        macArchitectures.each{ processorArchitecture ->
             macPackageStages["Test Python ${pythonVersion}: wheel Mac ${processorArchitecture}"] = {
                 withEnv([
                     'QT_QPA_PLATFORM=offscreen',
@@ -490,12 +490,19 @@ def testPythonPackages(){
         }
         def linuxTests = [:]
         SUPPORTED_LINUX_VERSIONS.each{ pythonVersion ->
+            def architectures = []
             if(params.INCLUDE_LINUX_X86_64 == true){
-                linuxTests["Linux - Python ${pythonVersion}-x86: sdist"] = {
+                architectures.add('x86_64')
+            }
+            if(params.INCLUDE_LINUX_ARM == true){
+                architectures.add("arm")
+            }
+            architectures.each{ processorArchitecture ->
+                linuxTests["Linux-${processorArchitecture} - Python ${pythonVersion}: sdist"] = {
                     packages.testPkg2(
                         agent: [
                             dockerfile: [
-                                label: 'linux && docker && x86',
+                                label: "linux && docker && ${processorArchitecture}",
                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
                                 args: "-v pipcache_speedwagon:/.cache/pip"
@@ -507,11 +514,11 @@ def testPythonPackages(){
                         retry: 3,
                     )
                 }
-                linuxTests["Linux - Python ${pythonVersion}: wheel"] = {
+                linuxTests["Linux-${processorArchitecture} - Python ${pythonVersion}: wheel"] = {
                     packages.testPkg2(
                         agent: [
                             dockerfile: [
-                                label: 'linux && docker && x86',
+                                label: "linux && docker && ${processorArchitecture}",
                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
                                 args: "-v pipcache_speedwagon:/.cache/pip"
@@ -664,10 +671,11 @@ pipeline {
         booleanParam(name: 'BUILD_PACKAGES', defaultValue: false, description: 'Build Packages')
         booleanParam(name: 'TEST_STANDALONE_PACKAGE_DEPLOYMENT', defaultValue: true, description: 'Test deploying any packages that are designed to be installed without using Python directly')
         booleanParam(name: 'BUILD_CHOCOLATEY_PACKAGE', defaultValue: false, description: 'Build package for chocolatey package manager')
+        booleanParam(name: 'INCLUDE_LINUX_ARM', defaultValue: false, description: 'Include ARM architecture for Linux')
+        booleanParam(name: 'INCLUDE_LINUX_X86_64', defaultValue: true, description: 'Include x86_64 architecture for Linux')
         booleanParam(name: 'INCLUDE_MACOS_ARM', defaultValue: false, description: 'Include ARM(m1) architecture for Mac')
         booleanParam(name: 'INCLUDE_MACOS_X86_64', defaultValue: false, description: 'Include x86_64 architecture for Mac')
         booleanParam(name: 'INCLUDE_WINDOWS_X86_64', defaultValue: true, description: 'Include x86_64 architecture for Windows')
-        booleanParam(name: 'INCLUDE_LINUX_X86_64', defaultValue: true, description: 'Include x86_64 architecture for Linux')
         booleanParam(name: 'TEST_PACKAGES', defaultValue: true, description: 'Test Python packages by installing them and running tests on the installed package')
         booleanParam(name: 'PACKAGE_MAC_OS_STANDALONE_DMG', defaultValue: false, description: 'Create a Apple Application Bundle DMG')
         booleanParam(name: 'PACKAGE_WINDOWS_STANDALONE_MSI', defaultValue: false, description: 'Create a standalone wix based .msi installer')
