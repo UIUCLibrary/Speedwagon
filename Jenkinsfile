@@ -453,37 +453,39 @@ def testPythonPackages(){
         }
         def windowsTests = [:]
         SUPPORTED_WINDOWS_VERSIONS.each{ pythonVersion ->
-            windowsTests["Windows - Python ${pythonVersion}-x86: sdist"] = {
-                packages.testPkg2(
-                    agent: [
-                        dockerfile: [
-                            label: 'windows && docker && x86',
-                            filename: 'ci/docker/python/windows/tox/Dockerfile',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
-                            args: "-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip"
-                        ]
-                    ],
-                    glob: 'dist/*.tar.gz,dist/*.zip',
-                    stash: 'PYTHON_PACKAGES',
-                    toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
-                    retry: 3,
-                )
-            }
-            windowsTests["Windows - Python ${pythonVersion}-x86: wheel"] = {
-                packages.testPkg2(
-                    agent: [
-                        dockerfile: [
-                            label: 'windows && docker && x86',
-                            filename: 'ci/docker/python/windows/tox/Dockerfile',
-                            additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
-                            args: "-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip"
-                        ]
-                    ],
-                    glob: 'dist/*.whl',
-                    stash: 'PYTHON_PACKAGES',
-                    toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
-                    retry: 3,
-                )
+            if(params.INCLUDE_WINDOWS_X86_64 == true){
+                windowsTests["Windows - Python ${pythonVersion}-x86: sdist"] = {
+                    packages.testPkg2(
+                        agent: [
+                            dockerfile: [
+                                label: 'windows && docker && x86',
+                                filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
+                                args: "-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip"
+                            ]
+                        ],
+                        glob: 'dist/*.tar.gz,dist/*.zip',
+                        stash: 'PYTHON_PACKAGES',
+                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+                        retry: 3,
+                    )
+                }
+                windowsTests["Windows - Python ${pythonVersion}-x86: wheel"] = {
+                    packages.testPkg2(
+                        agent: [
+                            dockerfile: [
+                                label: 'windows && docker && x86',
+                                filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
+                                args: "-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip"
+                            ]
+                        ],
+                        glob: 'dist/*.whl',
+                        stash: 'PYTHON_PACKAGES',
+                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+                        retry: 3,
+                    )
+                }
             }
         }
         def linuxTests = [:]
@@ -662,6 +664,7 @@ pipeline {
         booleanParam(name: 'BUILD_CHOCOLATEY_PACKAGE', defaultValue: false, description: 'Build package for chocolatey package manager')
         booleanParam(name: 'INCLUDE_MACOS_ARM', defaultValue: false, description: 'Include ARM(m1) architecture for Mac')
         booleanParam(name: 'INCLUDE_MACOS_X86_64', defaultValue: false, description: 'Include x86_64 architecture for Mac')
+        booleanParam(name: 'INCLUDE_WINDOWS_X86_64', defaultValue: true, description: 'Include x86_64 architecture for Windows')
         booleanParam(name: 'TEST_PACKAGES', defaultValue: true, description: 'Test Python packages by installing them and running tests on the installed package')
         booleanParam(name: 'PACKAGE_MAC_OS_STANDALONE_DMG', defaultValue: false, description: 'Create a Apple Application Bundle DMG')
         booleanParam(name: 'PACKAGE_WINDOWS_STANDALONE_MSI', defaultValue: false, description: 'Create a standalone wix based .msi installer')
@@ -1312,53 +1315,55 @@ pipeline {
                             def macPackages = getMacDevpiTestStages(props.Name, props.Version, SUPPORTED_MAC_VERSIONS, DEVPI_CONFIG.server, DEVPI_CONFIG.credentialsId, DEVPI_CONFIG.stagingIndex)
                             windowsPackages = [:]
                             SUPPORTED_WINDOWS_VERSIONS.each{pythonVersion ->
-                                windowsPackages["Test Python ${pythonVersion}: sdist Windows"] = {
-                                    devpi.testDevpiPackage(
-                                        agent: [
-                                            dockerfile: [
-                                                filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE",
-                                                label: 'windows && docker && x86 && devpi-access'
+                                if(params.INCLUDE_WINDOWS_X86_64 == true){
+                                    windowsPackages["Test Python ${pythonVersion}: sdist Windows"] = {
+                                        devpi.testDevpiPackage(
+                                            agent: [
+                                                dockerfile: [
+                                                    filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE",
+                                                    label: 'windows && docker && x86 && devpi-access'
+                                                ]
+                                            ],
+                                            devpi: [
+                                                index: DEVPI_CONFIG.stagingIndex,
+                                                server: DEVPI_CONFIG.server,
+                                                credentialsId: DEVPI_CONFIG.credentialsId,
+                                            ],
+                                            package:[
+                                                name: props.Name,
+                                                version: props.Version,
+                                                selector: 'tar.gz'
+                                            ],
+                                            test:[
+                                                toxEnv: "py${pythonVersion}".replace('.',''),
                                             ]
-                                        ],
-                                        devpi: [
-                                            index: DEVPI_CONFIG.stagingIndex,
-                                            server: DEVPI_CONFIG.server,
-                                            credentialsId: DEVPI_CONFIG.credentialsId,
-                                        ],
-                                        package:[
-                                            name: props.Name,
-                                            version: props.Version,
-                                            selector: 'tar.gz'
-                                        ],
-                                        test:[
-                                            toxEnv: "py${pythonVersion}".replace('.',''),
-                                        ]
-                                    )
-                                }
-                                windowsPackages["Test Python ${pythonVersion}: wheel Windows"] = {
-                                    devpi.testDevpiPackage(
-                                        agent: [
-                                            dockerfile: [
-                                                filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE",
-                                                label: 'windows && docker && x86 && devpi-access'
+                                        )
+                                    }
+                                    windowsPackages["Test Python ${pythonVersion}: wheel Windows"] = {
+                                        devpi.testDevpiPackage(
+                                            agent: [
+                                                dockerfile: [
+                                                    filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE",
+                                                    label: 'windows && docker && x86 && devpi-access'
+                                                ]
+                                            ],
+                                            devpi: [
+                                                index: DEVPI_CONFIG.stagingIndex,
+                                                server: DEVPI_CONFIG.server,
+                                                credentialsId: DEVPI_CONFIG.credentialsId,
+                                            ],
+                                            package:[
+                                                name: props.Name,
+                                                version: props.Version,
+                                                selector: 'whl'
+                                            ],
+                                            test:[
+                                                toxEnv: "py${pythonVersion}".replace('.',''),
                                             ]
-                                        ],
-                                        devpi: [
-                                            index: DEVPI_CONFIG.stagingIndex,
-                                            server: DEVPI_CONFIG.server,
-                                            credentialsId: DEVPI_CONFIG.credentialsId,
-                                        ],
-                                        package:[
-                                            name: props.Name,
-                                            version: props.Version,
-                                            selector: 'whl'
-                                        ],
-                                        test:[
-                                            toxEnv: "py${pythonVersion}".replace('.',''),
-                                        ]
-                                    )
+                                        )
+                                    }
                                 }
                             }
                             def linuxPackages = [:]
