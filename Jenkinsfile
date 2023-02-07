@@ -315,7 +315,7 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
     pythonVersions.each{pythonVersion ->
         def macArchitectures = []
         if(params.INCLUDE_MACOS_X86_64 == true){
-            architectures.add('x86_64')
+            macArchitectures.add('x86_64')
         }
         if(params.INCLUDE_MACOS_ARM == true){
             macArchitectures.add("m1")
