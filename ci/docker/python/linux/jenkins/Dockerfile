@@ -6,7 +6,7 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_TRUSTED_HOST
 ARG PIP_INDEX_URL
 
-ADD requirements.txt requirements-dev.txt ci/docker/python/shared/requirements-ci.txt ci/docker/python/shared/requirements-extra.txt /tmp/
+ADD requirements.txt requirements-dev.txt requirements-gui.txt ci/docker/python/shared/requirements-ci.txt ci/docker/python/shared/requirements-extra.txt /tmp/
 COPY requirements/ /tmp/requirements
 RUN python -m pip install --upgrade pip &&  \
     pip install setuptools && \
@@ -15,6 +15,7 @@ RUN python -m pip install --upgrade pip &&  \
     pip wheel --wheel-dir=/wheels --no-cache-dir \
         -r /tmp/requirements.txt \
         -r /tmp/requirements-dev.txt \
+        -r /tmp/requirements-gui.txt \
         -r /tmp/requirements-ci.txt && \
     pip wheel --wheel-dir=/wheels -r /tmp/requirements-extra.txt && \
     rm -rf  /root/.cache
@@ -56,13 +57,14 @@ ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 ENV QT_QPA_PLATFORM="offscreen"
 COPY --from=wheel_builder /wheels /wheels/
-COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt /tmp/
+COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt requirements-gui.txt ci/docker/python/shared/requirements-extra.txt /tmp/
 COPY requirements/ /tmp/requirements
 
 RUN python -m pip install --upgrade pip && \
     pip install --no-index --find-links=/wheels \
         -r /tmp/requirements.txt \
         -r /tmp/requirements-dev.txt \
+        -r /tmp/requirements-gui.txt \
         -r /tmp/requirements-ci.txt
 
 ENV PIP_FIND_LINKS=/wheels
