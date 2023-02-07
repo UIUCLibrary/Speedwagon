@@ -4,22 +4,21 @@ if __name__ == "__main__":
     setup(
         test_suite="tests",
         install_requires=[
-            # "PySide6",
             "HathiZip>=0.1.10",
             "HathiValidate>=0.3.8",
             "pyhathiprep>=0.1.7",
             "pyyaml",
-            "uiucprescon.imagevalidate>=0.1.9b6",
-            "uiucprescon.ocr>=0.1.4b6",
-            "uiucprescon.packager[kdu]>=0.2.15b2",
+            "uiucprescon.imagevalidate>=0.1.9",
+            "uiucprescon.ocr>=0.1.4",
+            "uiucprescon.packager[kdu]>=0.2.15",
             "uiucprescon.images",
-            "pykdu-compress>=0.1.8b1",
+            "pykdu-compress>=0.1.8",
             'importlib_resources;python_version<"3.9"',
             'importlib-metadata;python_version<"3.8"',
             'typing-extensions;python_version<"3.8"',
             'lxml',
             "requests",
-            "py3exiv2bind>=0.1.9b7",
+            "py3exiv2bind>=0.1.9",
         ],
         packages=[
             "speedwagon",
@@ -34,7 +33,6 @@ if __name__ == "__main__":
         setup_requires=['pytest-runner'],
         tests_require=[
             'pytest',
-            # "pytest-qt"
         ],
         python_requires=">=3.6",
         extras_require={
