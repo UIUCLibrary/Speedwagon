@@ -313,161 +313,91 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
     }
     def macPackageStages = [:]
     pythonVersions.each{pythonVersion ->
-        macPackageStages["MacOS x86_64 - Python ${pythonVersion}: wheel"] = {
-
-            withEnv([
-                'QT_QPA_PLATFORM=offscreen',
-                'PATH+EXTRA=./venv/bin'
-                ]) {
-                devpi.testDevpiPackage(
-                    agent: [
-                        label: "mac && python${pythonVersion} && x86 && devpi-access"
-                    ],
-                    devpi: [
-                        index: devpiIndex,
-                        server: devpiServer,
-                        credentialsId: devpiCredentialsId,
-                        devpiExec: 'venv/bin/devpi'
-                    ],
-                    package:[
-                        name: packageName,
-                        version: packageVersion,
-                        selector: 'whl'
-                    ],
-                    test:[
-                        setup: {
-                            checkout scm
-                            sh(
-                                label:'Installing Devpi client',
-                                script: '''python3 -m venv venv
-                                            venv/bin/python -m pip install pip --upgrade
-                                            venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
-                                            '''
-                            )
-                        },
-                        toxEnv: "py${pythonVersion}".replace('.',''),
-                        teardown: {
-                            sh( label: 'Remove Devpi client', script: 'rm -r venv')
-                        }
-                    ]
-                )
-            }
+        def architectures = []
+        if(params.INCLUDE_MACOS_X86_64 == true){
+            architectures.add('x86_64')
         }
-        macPackageStages["MacOS m1 - Python ${pythonVersion}: wheel"] = {
-            withEnv([
-                'QT_QPA_PLATFORM=offscreen',
-                'PATH+EXTRA=./venv/bin'
-                ]) {
-                devpi.testDevpiPackage(
-                    agent: [
-                        label: "mac && python${pythonVersion} && m1 && devpi-access"
-                    ],
-                    devpi: [
-                        index: devpiIndex,
-                        server: devpiServer,
-                        credentialsId: devpiCredentialsId,
-                        devpiExec: 'venv/bin/devpi'
-                    ],
-                    package:[
-                        name: packageName,
-                        version: packageVersion,
-                        selector: 'whl'
-                    ],
-                    test:[
-                        setup: {
-                            checkout scm
-                            sh(
-                                label:'Installing Devpi client',
-                                script: '''python3 -m venv venv
-                                            venv/bin/python -m pip install pip --upgrade
-                                            venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
-                                            '''
-                            )
-                        },
-                        toxEnv: "py${pythonVersion}".replace('.',''),
-                        teardown: {
-                            sh( label: 'Remove Devpi client', script: 'rm -r venv')
-                        }
-                    ]
-                )
-            }
+        if(params.INCLUDE_MACOS_ARM == true){
+            architectures.add("m1")
         }
-        macPackageStages["MacOS x86_64 - Python ${pythonVersion}: sdist"]= {
-            withEnv([
-                'QT_QPA_PLATFORM=offscreen',
-                'PATH+EXTRA=./venv/bin'
-                ]) {
-                devpi.testDevpiPackage(
-                    agent: [
-                        label: "mac && python${pythonVersion} && x86 && devpi-access"
-                    ],
-                    devpi: [
-                        index: devpiIndex,
-                        server: devpiServer,
-                        credentialsId: devpiCredentialsId,
-                        devpiExec: 'venv/bin/devpi'
-                    ],
-                    package:[
-                        name: packageName,
-                        version: packageVersion,
-                        selector: 'tar.gz'
-                    ],
-                    test:[
-                        setup: {
-                            checkout scm
-                            sh(
-                                label:'Installing Devpi client',
-                                script: '''python3 -m venv venv
-                                            venv/bin/python -m pip install pip --upgrade
-                                            venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
-                                            '''
-                            )
-                        },
-                        toxEnv: "py${pythonVersion}".replace('.',''),
-                        teardown: {
-                            sh( label: 'Remove Devpi client', script: 'rm -r venv')
-                        }
-                    ]
-                )
+        architectures.each{ processorArchitecture ->
+            macPackageStages["Test Python ${pythonVersion}: wheel Mac ${processorArchitecture}"] = {
+                withEnv([
+                    'QT_QPA_PLATFORM=offscreen',
+                    'PATH+EXTRA=./venv/bin'
+                    ]) {
+                    devpi.testDevpiPackage(
+                        agent: [
+                            label: "mac && python${pythonVersion} && ${processorArchitecture} && devpi-access"
+                        ],
+                        devpi: [
+                            index: devpiIndex,
+                            server: devpiServer,
+                            credentialsId: devpiCredentialsId,
+                            devpiExec: 'venv/bin/devpi'
+                        ],
+                        package:[
+                            name: packageName,
+                            version: packageVersion,
+                            selector: 'whl'
+                        ],
+                        test:[
+                            setup: {
+                                checkout scm
+                                sh(
+                                    label:'Installing Devpi client',
+                                    script: '''python3 -m venv venv
+                                                venv/bin/python -m pip install pip --upgrade
+                                                venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
+                                                '''
+                                )
+                            },
+                            toxEnv: "py${pythonVersion}".replace('.',''),
+                            teardown: {
+                                sh( label: 'Remove Devpi client', script: 'rm -r venv')
+                            }
+                        ]
+                    )
+                }
             }
-        }
-        macPackageStages["MacOS m1 - Python ${pythonVersion}: sdist"]= {
-            withEnv([
-                'QT_QPA_PLATFORM=offscreen',
-                'PATH+EXTRA=./venv/bin'
-                ]) {
-                devpi.testDevpiPackage(
-                    agent: [
-                        label: "mac && python${pythonVersion} && m1 && devpi-access"
-                    ],
-                    devpi: [
-                        index: devpiIndex,
-                        server: devpiServer,
-                        credentialsId: devpiCredentialsId,
-                        devpiExec: 'venv/bin/devpi'
-                    ],
-                    package:[
-                        name: packageName,
-                        version: packageVersion,
-                        selector: 'tar.gz'
-                    ],
-                    test:[
-                        setup: {
-                            checkout scm
-                            sh(
-                                label:'Installing Devpi client',
-                                script: '''python3 -m venv venv
-                                            venv/bin/python -m pip install pip --upgrade
-                                            venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
-                                            '''
-                            )
-                        },
-                        toxEnv: "py${pythonVersion}".replace('.',''),
-                        teardown: {
-                            sh( label: 'Remove Devpi client', script: 'rm -r venv')
-                        }
-                    ]
-                )
+            macPackageStages["Test Python ${pythonVersion}: sdist Mac ${processorArchitecture}"] = {
+                withEnv([
+                    'QT_QPA_PLATFORM=offscreen',
+                    'PATH+EXTRA=./venv/bin'
+                    ]) {
+                    devpi.testDevpiPackage(
+                        agent: [
+                            label: "mac && python${pythonVersion} && ${processorArchitecture} && devpi-access"
+                        ],
+                        devpi: [
+                            index: devpiIndex,
+                            server: devpiServer,
+                            credentialsId: devpiCredentialsId,
+                            devpiExec: 'venv/bin/devpi'
+                        ],
+                        package:[
+                            name: packageName,
+                            version: packageVersion,
+                            selector: 'whl'
+                        ],
+                        test:[
+                            setup: {
+                                checkout scm
+                                sh(
+                                    label:'Installing Devpi client',
+                                    script: '''python3 -m venv venv
+                                                venv/bin/python -m pip install pip --upgrade
+                                                venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
+                                                '''
+                                )
+                            },
+                            toxEnv: "py${pythonVersion}".replace('.',''),
+                            teardown: {
+                                sh( label: 'Remove Devpi client', script: 'rm -r venv')
+                            }
+                        ]
+                    )
+                }
             }
         }
     }
@@ -591,129 +521,76 @@ def testPythonPackages(){
                 )
             }
         }
-        def tests = linuxTests + windowsTests
         def macTests = [:]
 
         SUPPORTED_MAC_VERSIONS.each{ pythonVersion ->
-            macTests["Mac - Python ${pythonVersion}-x86 : sdist"] = {
-                withEnv(['QT_QPA_PLATFORM=offscreen']) {
-                    packages.testPkg2(
-                        agent: [
-                            label: "mac && python${pythonVersion} && x86",
-                        ],
-                        glob: 'dist/*.tar.gz,dist/*.zip',
-                        stash: 'PYTHON_PACKAGES',
-                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
-                        toxExec: 'venv/bin/tox',
-                        testSetup: {
-                            checkout scm
-                            unstash 'PYTHON_PACKAGES'
-                            sh(
-                                label:'Install Tox',
-                                script: '''python3 -m venv venv
-                                           venv/bin/pip install pip --upgrade
-                                           venv/bin/pip install -r requirements/requirements_tox.txt
-                                           '''
-                            )
-                        },
-                        testTeardown: {
-                            sh 'rm -r venv/'
-                        },
-                        retry: 3,
-                    )
-                }
+            def architectures = []
+            if(params.INCLUDE_MACOS_X86_64 == true){
+                architectures.add('x86_64')
             }
-            macTests["Mac - Python ${pythonVersion}-arm64 : sdist"] = {
-                withEnv(['QT_QPA_PLATFORM=offscreen']) {
-                    packages.testPkg2(
-                        agent: [
-                            label: "mac && python${pythonVersion} && m1",
-                        ],
-                        glob: 'dist/*.tar.gz,dist/*.zip',
-                        stash: 'PYTHON_PACKAGES',
-                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
-                        toxExec: 'venv/bin/tox',
-                        testSetup: {
-                            checkout scm
-                            unstash 'PYTHON_PACKAGES'
-                            sh(
-                                label:'Install Tox',
-                                script: '''python3 -m venv venv
-                                           venv/bin/pip install pip --upgrade
-                                           venv/bin/pip install -r requirements/requirements_tox.txt
-                                           '''
-                            )
-                        },
-                        testTeardown: {
-                            sh 'rm -r venv/'
-                        },
-                        retry: 3,
-                    )
-                }
+            if(params.INCLUDE_MACOS_ARM == true){
+                architectures.add("m1")
             }
-            macTests["Mac - Python ${pythonVersion}-x86: wheel"] = {
-                withEnv(['QT_QPA_PLATFORM=offscreen']) {
-                    packages.testPkg2(
-                        agent: [
-                            label: "mac && python${pythonVersion} && x86",
-                        ],
-                        glob: 'dist/*.whl',
-                        stash: 'PYTHON_PACKAGES',
-                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
-                        toxExec: 'venv/bin/tox',
-                        testSetup: {
-                            checkout scm
-                            unstash 'PYTHON_PACKAGES'
-                            sh(
-                                label:'Install Tox',
-                                script: '''python3 -m venv venv
-                                           venv/bin/pip install pip --upgrade
-                                           venv/bin/pip install -r requirements/requirements_tox.txt
-                                           '''
-                            )
-                        },
-                        testTeardown: {
-                            sh 'rm -r venv/'
-                        },
-                        retry: 3,
-
-                    )
+            architectures.each{ processorArchitecture ->
+                macTests["Mac - ${processorArchitecture} - Python ${pythonVersion}: wheel"] = {
+                    withEnv(['QT_QPA_PLATFORM=offscreen']) {
+                        packages.testPkg2(
+                            agent: [
+                                label: "mac && python${pythonVersion} && ${processorArchitecture}",
+                            ],
+                            glob: 'dist/*.tar.gz,dist/*.zip',
+                            stash: 'PYTHON_PACKAGES',
+                            toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+                            toxExec: 'venv/bin/tox',
+                            testSetup: {
+                                checkout scm
+                                unstash 'PYTHON_PACKAGES'
+                                sh(
+                                    label:'Install Tox',
+                                    script: '''python3 -m venv venv
+                                               venv/bin/pip install pip --upgrade
+                                               venv/bin/pip install -r requirements/requirements_tox.txt
+                                               '''
+                                )
+                            },
+                            testTeardown: {
+                                sh 'rm -r venv/'
+                            },
+                            retry: 3,
+                        )
+                    }
                 }
-            }
-            macTests["Mac - Python ${pythonVersion}-arm64: wheel"] = {
-                withEnv(['QT_QPA_PLATFORM=offscreen']) {
-                    packages.testPkg2(
-                        agent: [
-                            label: "mac && python${pythonVersion} && m1",
-                        ],
-                        glob: 'dist/*.whl',
-                        stash: 'PYTHON_PACKAGES',
-                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
-                        toxExec: 'venv/bin/tox',
-                        testSetup: {
-                            checkout scm
-                            unstash 'PYTHON_PACKAGES'
-                            sh(
-                                label:'Install Tox',
-                                script: '''python3 -m venv venv
-                                           venv/bin/pip install pip --upgrade
-                                           venv/bin/pip install -r requirements/requirements_tox.txt
-                                           '''
-                            )
-                        },
-                        testTeardown: {
-                            sh 'rm -r venv/'
-                        },
-                        retry: 3,
-
-                    )
+                macTests["Mac - ${processorArchitecture} - Python ${pythonVersion}: sdist"] = {
+                    withEnv(['QT_QPA_PLATFORM=offscreen']) {
+                        packages.testPkg2(
+                            agent: [
+                                label: "mac && python${pythonVersion} && ${processorArchitecture}",
+                            ],
+                            glob: 'dist/*.tar.gz,dist/*.zip',
+                            stash: 'PYTHON_PACKAGES',
+                            toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+                            toxExec: 'venv/bin/tox',
+                            testSetup: {
+                                checkout scm
+                                unstash 'PYTHON_PACKAGES'
+                                sh(
+                                    label:'Install Tox',
+                                    script: '''python3 -m venv venv
+                                               venv/bin/pip install pip --upgrade
+                                               venv/bin/pip install -r requirements/requirements_tox.txt
+                                               '''
+                                )
+                            },
+                            testTeardown: {
+                                sh 'rm -r venv/'
+                            },
+                            retry: 3,
+                        )
+                    }
                 }
             }
         }
-        if(params.TEST_PACKAGES_ON_MAC == true){
-            tests = tests + macTests
-        }
-        parallel(tests)
+        parallel(linuxTests + windowsTests + macTests)
     }
 }
 
@@ -783,7 +660,8 @@ pipeline {
         booleanParam(name: 'BUILD_PACKAGES', defaultValue: false, description: 'Build Packages')
         booleanParam(name: 'TEST_STANDALONE_PACKAGE_DEPLOYMENT', defaultValue: true, description: 'Test deploying any packages that are designed to be installed without using Python directly')
         booleanParam(name: 'BUILD_CHOCOLATEY_PACKAGE', defaultValue: false, description: 'Build package for chocolatey package manager')
-        booleanParam(name: "TEST_PACKAGES_ON_MAC", defaultValue: false, description: "Test Python packages on Mac")
+        booleanParam(name: 'INCLUDE_MACOS_ARM', defaultValue: false, description: 'Include ARM(m1) architecture for Mac')
+        booleanParam(name: 'INCLUDE_MACOS_X86_64', defaultValue: false, description: 'Include x86_64 architecture for Mac')
         booleanParam(name: 'TEST_PACKAGES', defaultValue: true, description: 'Test Python packages by installing them and running tests on the installed package')
         booleanParam(name: 'PACKAGE_MAC_OS_STANDALONE_DMG', defaultValue: false, description: 'Create a Apple Application Bundle DMG')
         booleanParam(name: 'PACKAGE_WINDOWS_STANDALONE_MSI', defaultValue: false, description: 'Create a standalone wix based .msi installer')
