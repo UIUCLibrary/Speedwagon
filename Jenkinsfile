@@ -788,7 +788,7 @@ pipeline {
                                                 catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: "UNSTABLE") {
                                                     tee('logs/mypy.log'){
                                                         sh(label: 'Running MyPy',
-                                                           script: 'mypy -p speedwagon --exclude speedwagon/ui/ --html-report reports/mypy/html'
+                                                           script: 'mypy -p speedwagon --html-report reports/mypy/html'
                                                         )
                                                     }
                                                 }

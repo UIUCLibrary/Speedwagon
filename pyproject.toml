@@ -19,4 +19,6 @@ match="((?!test).*)(^(?!.*(ui)).*)\\.py"
 
 [tool.mypy]
 python_version = "3.11"
-
+follow_imports_for_stubs=true
+# incremental is problematic because of dependency ruamel.yaml
+incremental=false
