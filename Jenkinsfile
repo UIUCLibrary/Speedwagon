@@ -315,7 +315,7 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
     pythonVersions.each{pythonVersion ->
         def macArchitectures = []
         if(params.INCLUDE_MACOS_X86_64 == true){
-            architectures.add('x86_64')
+            macArchitectures.add('x86_64')
         }
         if(params.INCLUDE_MACOS_ARM == true){
             macArchitectures.add("m1")
@@ -788,7 +788,7 @@ pipeline {
                                                 catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: "UNSTABLE") {
                                                     tee('logs/mypy.log'){
                                                         sh(label: 'Running MyPy',
-                                                           script: 'mypy -p speedwagon --exclude speedwagon/ui/ --html-report reports/mypy/html'
+                                                           script: 'mypy -p speedwagon --html-report reports/mypy/html'
                                                         )
                                                     }
                                                 }
