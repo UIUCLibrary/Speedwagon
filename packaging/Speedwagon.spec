@@ -1,5 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
+try:  # pragma: no cover
+    from importlib import metadata
+except ImportError:  # pragma: no cover
+    import importlib_metadata as metadata  # type: ignore
 
 block_cipher = None
 # a = Analysis(['../speedwagon/__main__.py'],
@@ -45,7 +49,10 @@ coll = COLLECT(exe,
                upx=True,
                upx_exclude=[],
                name='Speedwagon!')
+pkg_metadata = metadata.metadata("speedwagon")
+
 app = BUNDLE(coll,
              name='Speedwagon.app',
+             version=pkg_metadata['Version'],
              icon='favicon.icns',
              bundle_identifier=None)
