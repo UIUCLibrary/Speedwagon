@@ -92,23 +92,32 @@ def install_chocolatey_package(args=[:]){
     def packageName = args['name']
     def version = args['version']
     def source = args['source']
-    powershell(
-        label: "Installing Chocolatey Package",
-        script: """\$ErrorActionPreference=\"Stop\"
-                    try
-                    {
-                       \$process = start-process -NoNewWindow -PassThru -Wait -FilePath C:\\ProgramData\\chocolatey\\bin\\choco.exe -ArgumentList \"install ${packageName} -y -dv  --version=${version} -s \'${source}\' --no-progress\"
-                       if ( \$process.ExitCode -ne 0){
-                            throw 'This is a failure message'
-                       }
-                    }
-                    catch
-                    {
-                        Write-Error "Chocolatey Failed to install package: \$Error"
-                        exit 1
-                    }
-                    """,
-    )
+    def retries = args['retries'] ? args['retries'] : 1
+    retry(retries){
+        try
+            powershell(
+                label: "Installing Chocolatey Package",
+                script: """\$ErrorActionPreference=\"Stop\"
+                            try
+                            {
+                               \$process = start-process -NoNewWindow -PassThru -Wait -FilePath C:\\ProgramData\\chocolatey\\bin\\choco.exe -ArgumentList \"install ${packageName} -y -dv  --version=${version} -s \'${source}\' --no-progress\"
+                               if ( \$process.ExitCode -ne 0){
+                                    throw 'This is a failure message'
+                               }
+                            }
+                            catch
+                            {
+                                Write-Error "Chocolatey Failed to install package: \$Error"
+                                exit 1
+                            }
+                            """,
+            )
+        } catch(ex){
+            sleep 5
+            throw ex
+
+        }
+    }
 }
 
 return this

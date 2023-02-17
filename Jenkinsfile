@@ -296,7 +296,8 @@ def testSpeedwagonChocolateyPkg(version){
         chocolatey.install_chocolatey_package(
             name: 'speedwagon',
             version: chocolatey.sanitize_chocolatey_version(version),
-            source: './packages/;CHOCOLATEY_SOURCE;chocolatey'
+            source: './packages/;CHOCOLATEY_SOURCE;chocolatey',
+            retries: 3
         )
     }
     powershell(
