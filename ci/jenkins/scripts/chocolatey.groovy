@@ -94,7 +94,7 @@ def install_chocolatey_package(args=[:]){
     def source = args['source']
     def retries = args['retries'] ? args['retries'] : 1
     retry(retries){
-        try
+        try{
             powershell(
                 label: "Installing Chocolatey Package",
                 script: """\$ErrorActionPreference=\"Stop\"
