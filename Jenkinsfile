@@ -190,55 +190,6 @@ def runTox(){
     }
 }
 
-def createNewChocolateyPackage(args=[:]){
-
-    def chocoPackageName = args.name
-    def packageSummery = args.summary
-    def sanitizedPackageVersion
-    def packageMaintainer = args.maintainer
-    def applicationWheel = args.files.applicationWheel
-    def dependenciesDir = args.files.dependenciesDir
-    def docsDir = args.files.docsDir
-
-    echo 'Creating new Chocolatey package'
-
-    node(){
-        checkout scm
-        sanitizedPackageVersion = load('ci/jenkins/scripts/chocolatey.groovy').sanitize_chocolatey_version(args.version)
-    }
-    bat(
-        label: 'Creating new Chocolatey package workspace',
-        script: """
-                choco new ${chocoPackageName} packageversion=${sanitizedPackageVersion} PythonSummary="${packageSummery}" InstallerFile=${applicationWheel} MaintainerName="${packageMaintainer}" -t pythonscript --outputdirectory packages
-               """
-        )
-
-
-    powershell(
-        label: 'Adding data to Chocolatey package workspace',
-        script: """\$ErrorActionPreference = 'Stop';
-               New-Item -ItemType File -Path ".\\packages\\${chocoPackageName}\\${applicationWheel}" -Force | Out-Null
-               Move-Item -Path "${applicationWheel}"  -Destination "./packages/${chocoPackageName}/${applicationWheel}"  -Force | Out-Null
-               Copy-Item -Path "${dependenciesDir}"  -Destination ".\\packages\\${chocoPackageName}\\deps\\" -Force -Recurse
-               Copy-Item -Path "${docsDir}"  -Destination ".\\packages\\${chocoPackageName}\\docs\\" -Force -Recurse
-               """
-        )
-    findFiles(glob: 'packages/**/*.nuspec').each{
-        def nuspec = readFile(file: it.path)
-        echo "nuspec = ${nuspec}"
-    }
-
-    bat(
-        label: 'Packaging Chocolatey package',
-        script: "choco pack .\\packages\\speedwagon\\speedwagon.nuspec --outputdirectory .\\packages"
-    )
-
-    bat(
-        label: 'Checking chocolatey package metadata',
-        script: 'choco info --pre -s .\\packages\\ speedwagon'
-    )
-}
-
 def deploy_sscm(file_glob, pkgVersion){
     script{
         def msi_files = findFiles glob: file_glob
@@ -1120,17 +1071,18 @@ pipeline {
                                         script {
                                             findFiles(glob: 'dist/*.whl').each{
                                                 unstash 'SPEEDWAGON_DOC_PDF'
-                                                createNewChocolateyPackage(
-                                                    name: 'speedwagon',
-                                                    version: props.Version,
-                                                    summary: props.Summary,
-                                                    maintainer: props.Maintainer,
-                                                    files:[
-                                                            applicationWheel: it.path,
-                                                            dependenciesDir: '.\\deps',
-                                                            docsDir: '.\\dist\\docs'
-                                                        ]
-                                                    )
+                                                powershell(
+                                                    label: 'Creating new Chocolatey package',
+                                                    script: """ci/jenkins/scripts/make_chocolatey.ps1 `
+                                                                -PackageName speedwagon `
+                                                                -PackageSummary \"${props.Summary}\" `
+                                                                -PackageVersion ${props.Version} `
+                                                                -PackageMaintainer \"${props.Maintainer}\" `
+                                                                -Wheel ${it.path} `
+                                                                -DependenciesDir '.\\deps' `
+                                                                -DocsDir '.\\dist\\docs'
+                                                            """
+                                                )
                                             }
                                         }
                                     }
