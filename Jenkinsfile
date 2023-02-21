@@ -216,7 +216,7 @@ def createNewChocolateyPackage(args=[:]){
 
     powershell(
         label: 'Adding data to Chocolatey package workspace',
-        script: """\$ErrorActionPreference = 'Stop'; # stop on all errors
+        script: """\$ErrorActionPreference = 'Stop';
                New-Item -ItemType File -Path ".\\packages\\${chocoPackageName}\\${applicationWheel}" -Force | Out-Null
                Move-Item -Path "${applicationWheel}"  -Destination "./packages/${chocoPackageName}/${applicationWheel}"  -Force | Out-Null
                Copy-Item -Path "${dependenciesDir}"  -Destination ".\\packages\\${chocoPackageName}\\deps\\" -Force -Recurse
