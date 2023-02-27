@@ -19,7 +19,7 @@ class AbsOutputOptionDataType(abc.ABC):
                             f"without abstract property widget_name")
         return super().__init_subclass__()
 
-    def __init__(self, label: str, required:bool) -> None:
+    def __init__(self, label: str, required: bool) -> None:
         """Create a new output time with a given label."""
         super().__init__()
         self.label = label

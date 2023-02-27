@@ -21,12 +21,13 @@ from speedwagon.frontend.qtwidgets.widgets import QtWidgetDelegateSelection
 from speedwagon import runner_strategies
 from speedwagon.frontend import qtwidgets
 
-from speedwagon.exceptions import MissingConfiguration
+from speedwagon.exceptions import MissingConfiguration, InvalidConfiguration
 from speedwagon.job import AbsWorkflow, NullWorkflow, Workflow
+from speedwagon.frontend.qtwidgets import models
 
 if typing.TYPE_CHECKING:
     from speedwagon.frontend.qtwidgets.worker import ToolJobManager
-    from speedwagon.frontend.qtwidgets import models
+    from speedwagon.workflow import AbsOutputOptionDataType
 
 
 __all__ = [
@@ -306,6 +307,14 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         return actions, tool_actions_layout
 
     def _start(self) -> None:
+        try:
+            self.warn_user_of_invalid_settings(
+                checks=[
+                    models.check_required_settings_have_values
+                ]
+            )
+        except InvalidConfiguration:
+            return
         selected_workflow = cast(
             typing.Type[Workflow],
             self.item_selection_model.data(
@@ -413,6 +422,28 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         actions = QtWidgets.QWidget()
         actions.setLayout(self.actions_layout)
         self.tab_layout.addWidget(actions)
+
+    def warn_user_of_invalid_settings(
+            self,
+            checks: List[
+                typing.Callable[[AbsOutputOptionDataType], Optional[str]]
+            ]
+    ) -> None:
+        if not self.options_model:
+            return
+        errors = models.get_settings_errors(self.options_model, checks)
+        if not errors:
+            return
+        error_message = '\n'.join(errors)
+        config_error_dialog = QtWidgets.QMessageBox(self.parent)
+        config_error_dialog.setWindowTitle("Settings Error")
+        config_error_dialog.setDetailedText(f"{error_message}")
+        config_error_dialog.setText(
+            "Speedwagon has a problem with current configuration "
+            "settings"
+        )
+        config_error_dialog.exec_()
+        raise InvalidConfiguration(errors)
 
 
 class WorkflowSignals(QtCore.QObject):

@@ -9,6 +9,10 @@ class SpeedwagonException(Exception):
     description: Optional[str] = None  # pylint: disable=unsubscriptable-object
 
 
+class InvalidConfiguration(SpeedwagonException):
+    description = "Invalid value is settings"
+
+
 class MissingConfiguration(SpeedwagonException):
     """An expected key was missing from the config."""
 

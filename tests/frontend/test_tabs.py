@@ -1,8 +1,10 @@
 from collections import OrderedDict
+from typing import List, Any, Dict
 from unittest import mock
 from unittest.mock import Mock, MagicMock, patch, call
 import yaml
 import pytest
+
 import speedwagon.exceptions
 import speedwagon.job
 
@@ -11,6 +13,8 @@ QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 
 from speedwagon.frontend.qtwidgets import tabs
 from speedwagon.frontend.qtwidgets.runners import QtRunner
+from speedwagon import worker
+from speedwagon.workflow import DirectorySelect
 
 
 class TestWorkflowsTab:
@@ -184,7 +188,6 @@ class TestWorkflowsTab:
     ])
     def test_run_dialog_catch_exception(
             self, qtbot, monkeypatch, exception_type):
-
         workflows = {
             "spam": MagicMock(name="spam")
         }
@@ -213,6 +216,155 @@ class TestWorkflowsTab:
         selection_tab.run(workflows['spam'], {})
         assert exec_.called is True
 
+    @pytest.fixture()
+    def dummy_workflow_cls_factory(self):
+        def _make_workflow(user_options):
+            class DummyWorkflow(tabs.Workflow):
+
+                def discover_task_metadata(self, initial_results: List[Any],
+                                           additional_data: Dict[str, Any],
+                                           **user_args) -> List[dict]:
+                    return []
+
+                def get_user_options(self):
+                    return user_options
+            return DummyWorkflow
+        return _make_workflow
+
+    @pytest.fixture()
+    def workflow_tab_factory(self, dummy_workflow_cls_factory):
+        def _make_workflow_tab(user_options):
+
+            base_widget = QtWidgets.QWidget()
+            workflows = {'dummy': dummy_workflow_cls_factory(user_options)}
+            log_manager = Mock()
+            work_manager = Mock(worker.ToolJobManager, user_settings={})
+            selection_tab = tabs.WorkflowsTab(
+                parent=base_widget,
+                workflows=workflows,
+                log_manager=log_manager,
+                work_manager=work_manager
+            )
+            return selection_tab
+        return _make_workflow_tab
+
+    @pytest.mark.parametrize(
+        "user_options,raises",
+        [
+            (
+                [
+                    DirectorySelect("Input", required=True),
+                ],
+                True
+            ),
+            (
+                [
+                    DirectorySelect("Input", required=False),
+                    DirectorySelect("Output", required=True),
+                ],
+                True
+            ),
+            (
+                [
+                    DirectorySelect("Input", required=True),
+                    DirectorySelect("Output", required=True),
+                ],
+                True
+            ),
+            (
+                [
+                    DirectorySelect("Output", required=False),
+                ],
+                False
+            ),
+            (
+                [
+                    DirectorySelect("Input", required=False),
+                    DirectorySelect("Output", required=False),
+                ],
+                False
+            )
+        ]
+    )
+    def test_warn_user_of_invalid_settings(
+            self,
+            qtbot,
+            monkeypatch,
+            workflow_tab_factory,
+            user_options,
+            raises
+    ):
+
+        error_message_box = Mock()
+        monkeypatch.setattr(
+            tabs.QtWidgets, "QMessageBox", Mock(return_value=error_message_box)
+        )
+        workflow_tab = workflow_tab_factory(user_options)
+
+        def checker(data):
+            return "I failed" if data.required else None
+
+        if raises:
+            with pytest.raises(speedwagon.exceptions.InvalidConfiguration):
+                workflow_tab.warn_user_of_invalid_settings([checker])
+            assert error_message_box.exec_.called is True
+        else:
+            assert workflow_tab.warn_user_of_invalid_settings([checker]) is None
+
+    def test_start_with_errors_does_not_start(
+            self,
+            qtbot,
+            workflow_tab_factory
+    ):
+        no_value_widget = DirectorySelect("Input", required=True)
+        no_value_widget.value = None
+
+        workflow_tab = workflow_tab_factory([no_value_widget])
+        workflow_tab.start = Mock()
+        workflow_tab.warn_user_of_invalid_settings = \
+            Mock(side_effect=tabs.InvalidConfiguration)
+        qtbot.mouseClick(workflow_tab.actions_widgets['start_button'], QtCore.Qt.MouseButton.LeftButton)
+        assert workflow_tab.start.called is False
+
+    def test_valid_start_calls_start(
+            self,
+            qtbot,
+            workflow_tab_factory
+    ):
+        no_value_widget = DirectorySelect("Input", required=True)
+        no_value_widget.value = "foo"
+
+        workflow_tab = workflow_tab_factory([no_value_widget])
+        workflow_tab.start = Mock()
+        workflow_tab.warn_user_of_invalid_settings = Mock()
+        qtbot.mouseClick(
+            workflow_tab.actions_widgets['start_button'],
+            QtCore.Qt.MouseButton.LeftButton
+        )
+        assert workflow_tab.start.called is True
+    def test_invalid_config_starts_open_dialog_box(
+            self,
+            qtbot,
+            workflow_tab_factory,
+            monkeypatch
+    ):
+        no_value_widget = DirectorySelect("Input", required=True)
+
+        workflow_tab = workflow_tab_factory([no_value_widget])
+        workflow_tab.is_ready_to_start = Mock(return_value=True)
+        workflow_tab.start = Mock(
+            side_effect=speedwagon.exceptions.MissingConfiguration("oh no")
+        )
+        workflow_tab.warn_user_of_invalid_settings = Mock()
+        message_box = Mock()
+        monkeypatch.setattr(
+            tabs.QtWidgets, "QMessageBox", Mock(return_value=message_box)
+        )
+        qtbot.mouseClick(
+            workflow_tab.actions_widgets['start_button'],
+            QtCore.Qt.MouseButton.LeftButton
+        )
+        message_box.setWindowTitle.assert_called_with("Settings Error")
 
 class TestTabsYaml:
     @pytest.mark.parametrize("exception_type", [
@@ -243,7 +395,6 @@ class TestTabsYaml:
         monkeypatch.setattr(os.path, 'getsize', lambda x: 1)
         with patch('speedwagon.frontend.qtwidgets.tabs.open',
                    mock.mock_open(read_data=sample_text)):
-
             tab_data = list(tabs.read_tabs_yaml('tabs.yml'))
             assert len(tab_data) == 1 and \
                    len(tab_data[0][1].workflows) == 4
