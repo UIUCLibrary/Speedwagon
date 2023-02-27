@@ -311,6 +311,25 @@ class TestWorkflowsTab:
         else:
             assert workflow_tab.warn_user_of_invalid_settings([checker]) is None
 
+    def test_warn_user_of_invalid_settings_workflow(self, qtbot, workflow_tab_factory, monkeypatch):
+
+        value_widget = DirectorySelect("Input", required=True)
+        value_widget.value = "some value"
+
+        workflow_tab = workflow_tab_factory([value_widget])
+        workflow = Mock(speedwagon.job.Workflow)
+
+        monkeypatch.setattr(
+            tabs,
+            'get_workflow_errors',
+            Mock(return_value="got some errors")
+        )
+
+        monkeypatch.setattr(tabs.QtWidgets.QMessageBox, 'exec_', Mock())
+
+        with pytest.raises(speedwagon.exceptions.InvalidConfiguration):
+            workflow_tab.warn_user_of_invalid_settings(checks=[], workflow=workflow)
+
     def test_start_with_errors_does_not_start(
             self,
             qtbot,
@@ -409,3 +428,19 @@ class TestTabsYaml:
             assert m.called is True
         handle = m()
         handle.write.assert_has_calls([call('dummy_tab')])
+
+
+def test_get_workflow_errors_returns_none_if_found_nothing():
+    workflow = Mock()
+    options = {"someoption": "somevalue"}
+    assert tabs.get_workflow_errors(options, workflow) is None
+
+
+def test_get_workflow_errors_returns_string_if_found_something():
+    workflow = Mock(
+        validate_user_options=Mock(side_effect=ValueError('something wrong'))
+    )
+
+    options = {"someoption": "some invalid value"}
+
+    assert tabs.get_workflow_errors(options, workflow) == "something wrong"

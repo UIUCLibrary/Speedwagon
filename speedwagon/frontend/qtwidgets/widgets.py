@@ -2,14 +2,14 @@
 
 import json
 import typing
-import warnings
 from typing import Union, Optional, Dict, Any
+
 
 from PySide6 import QtWidgets, QtCore, QtGui
 from speedwagon.frontend.qtwidgets import models
-
+if typing.TYPE_CHECKING:
+    from speedwagon.workflow import AbsOutputOptionDataType
 __all__ = [
-    "QtWidgetDelegateSelection"
 ]
 
 WidgetMetadata = Dict[str, Union[str, None]]
@@ -41,6 +41,40 @@ class EditDelegateWidget(QtWidgets.QWidget):
         self._data = value
 
 
+class LineEditWidget(EditDelegateWidget):
+
+    def __init__(
+            self,
+            parent: Optional[QtWidgets.QWidget] = None,
+            widget_metadata: Optional[WidgetMetadata] = None,
+    ) -> None:
+        super().__init__(widget_metadata=widget_metadata, parent=parent)
+        self.text_box = QtWidgets.QLineEdit(self)
+        self._make_connections()
+        self.setFocusProxy(self.text_box)
+        self.text_box.installEventFilter(self)
+        self.text_box.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
+        layout = self.layout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.text_box)
+        self.setLayout(layout)
+
+    def _make_connections(self) -> None:
+        # pylint: disable=no-member
+        self.text_box.textChanged.connect(  # type: ignore
+            self._update_data_from_line_edit
+        )
+
+    def _update_data_from_line_edit(self) -> None:
+        self._data = self.text_box.text()
+        self.dataChanged.emit()
+
+    @EditDelegateWidget.data.setter
+    def data(self, value: str) -> None:
+        self._data = value
+        self.text_box.setText(value)
+
+
 class CheckBoxWidget(EditDelegateWidget):
 
     def __init__(
@@ -49,7 +83,7 @@ class CheckBoxWidget(EditDelegateWidget):
             widget_metadata: Optional[WidgetMetadata] = None,
     ) -> None:
         super().__init__(widget_metadata=widget_metadata, parent=parent)
-        self.check_box = QtWidgets.QCheckBox()
+        self.check_box = QtWidgets.QCheckBox(self)
         self.setFocusProxy(self.check_box)
         self._make_connections()
         layout = self.layout()
@@ -144,8 +178,7 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
             widget_metadata: Optional[WidgetMetadata] = None,
     ) -> None:
         super().__init__(widget_metadata=widget_metadata, parent=parent)
-        self.edit = QtWidgets.QLineEdit()
-
+        self.edit = QtWidgets.QLineEdit(self)
         self._make_connections()
 
         self.edit.addAction(
@@ -153,6 +186,8 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
             QtWidgets.QLineEdit.ActionPosition.TrailingPosition
         )
         self.setFocusProxy(self.edit)
+        self.edit.installEventFilter(self)
+        self.edit.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
         layout = self.layout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.edit)
@@ -163,7 +198,6 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
         self.edit.textChanged.connect(  # type: ignore
             self._update_data_from_line_edit
         )
-        self.edit.editingFinished.connect(self.editingFinished)  # type: ignore
 
     def _update_data_from_line_edit(self) -> None:
         self._data = self.edit.text()
@@ -250,92 +284,85 @@ class FileSelectWidget(FileSystemItemSelectWidget):
             self.dataChanged.emit()
 
 
-class QtWidgetDelegateSelection(QtWidgets.QStyledItemDelegate):
-    """Special delegate selector.
+class DynamicForm(QtWidgets.QWidget):
+    modelChanged = QtCore.Signal()
 
-    Uses data in widget_type field to dynamically select the correct editor
-    widget.
-    """
-
-    widget_types: typing.Dict[str, typing.Type[EditDelegateWidget]] = {
-        "FileSelect": FileSelectWidget,
-        "DirectorySelect": DirectorySelectWidget,
-        "ChoiceSelection": ComboWidget,
-        "BooleanSelect": CheckBoxWidget
-    }
-
-    def createEditor(
+    def __init__(
             self,
-            parent: QtWidgets.QWidget,
-            option: QtWidgets.QStyleOptionViewItem,
-            index: Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ]
-    ) -> QtWidgets.QWidget:
-        """Create the correct editor widget for editing the data."""
-        if not index.isValid():
-            return super().createEditor(parent, option, index)
-        serialized_json_data: str = \
-            typing.cast(
-                str,
-                index.data(role=models.ToolOptionsModel4.JsonDataRole)
-            )
-        json_data = \
-            typing.cast(WidgetMetadata, json.loads(serialized_json_data))
-
-        editor_type: Optional[typing.Type[EditDelegateWidget]] = \
-            self.widget_types.get(json_data['widget_type'])
-
-        if editor_type is None:
-            return super().createEditor(parent, option, index)
-
-        editor_widget: EditDelegateWidget = \
-            editor_type(parent=parent, widget_metadata=json_data)
-        editor_widget.editingFinished.connect(self.commit_and_close_editor)
-        editor_widget.setParent(parent)
-        return editor_widget
-
-    def commit_and_close_editor(self):
-        """Commit and close the editor."""
-        editor: EditDelegateWidget = self.sender()
-        self.commitData.emit(editor)
-
-    def setEditorData(
-            self,
-            editor: QtWidgets.QWidget,
-            index: Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ]
+            parent: Optional[QtWidgets.QWidget] = None
     ) -> None:
-        """Update the editor delegate widget with the model's data."""
-        editor.data = \
-            index.data(typing.cast(int, QtCore.Qt.ItemDataRole.EditRole))
+        super().__init__(parent)
+        self._scroll = QtWidgets.QScrollArea(self)
+        self._scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self._scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self._scroll.setWidgetResizable(True)
 
-        super().setEditorData(editor, index)
+        layout = QtWidgets.QFormLayout(self._scroll)
+        layout.setRowWrapPolicy(layout.RowWrapPolicy.WrapLongRows)
+        layout.setLabelAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
+        layout.setFieldGrowthPolicy(
+            layout.FieldGrowthPolicy.ExpandingFieldsGrow
+        )
+        self.widgets: Dict[str, EditDelegateWidget] = {}
+        self.setLayout(QtWidgets.QVBoxLayout())
+        self.layout().setContentsMargins(0, 0, 0, 0)
+        self.model = models.ToolOptionsModel4()
+        self._background = QtWidgets.QFrame(self)
+        self._background.setLayout(layout)
+        self.layout().addWidget(self._scroll)
+        self.modelChanged.connect(self.update_widget)
+        self._scroll.setWidget(self._background)
+        self.setMinimumHeight(100)
 
-    def setModelData(
-            self,
-            editor: QtWidgets.QWidget,
-            model: QtCore.QAbstractItemModel,
-            index: Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ]) -> None:
-        """Set data from editor widget to the model."""
-        if hasattr(editor, "data"):
-            model.setData(
+    def create_editor(self, widget_name, data):
+        widget_types: typing.Dict[str, typing.Type[EditDelegateWidget]] = {
+            "FileSelect": FileSelectWidget,
+            "DirectorySelect": DirectorySelectWidget,
+            "ChoiceSelection": ComboWidget,
+            "BooleanSelect": CheckBoxWidget,
+            "TextInput": LineEditWidget,
+        }
+        return widget_types.get(widget_name)(self._background, data)
+
+    def update_widget(self):
+        self.widgets: Dict[str, EditDelegateWidget] = {}
+        layout = self._background.layout()
+        while layout.rowCount():
+            layout.removeRow(0)
+        self.model: Optional[models.ToolOptionsModel4]
+        for i in range(self.model.rowCount()):
+            index = self.model.index(i)
+            if not index.isValid():
+                return
+            serialized_json_data: str = \
+                typing.cast(
+                    str,
+                    index.data(role=models.ToolOptionsModel4.JsonDataRole)
+                )
+            json_data = \
+                typing.cast(WidgetMetadata, json.loads(serialized_json_data))
+            widget = self.create_editor(json_data['widget_type'], json_data)
+            widget.setAutoFillBackground(True)
+            widget.data = json_data.get("value")
+            self.widgets[json_data['label']] = widget
+            layout.addRow(json_data['label'], widget)
+
+    # pylint: disable=invalid-name
+    def setModel(self, model: models.ToolOptionsModel4):
+        self.model = model
+        self.modelChanged.emit()
+
+    def update_model(self):
+        for i in range(self.model.rowCount()):
+            index = self.model.index(i)
+            if not index.isValid():
+                return
+            model_data: AbsOutputOptionDataType = self.model.data(
                 index,
-                editor.data,
-                role=typing.cast(int, QtCore.Qt.ItemDataRole.EditRole)
+                models.ToolOptionsModel4.DataRole
             )
-        else:
-            warnings.warn(
-                f"Editor [{editor.__class__.__name__}] has to have the "
-                "attribute data to display properly. "
-                "Make sure to use a widget that is a subclass of "
-                "EditDelegateWidget",
-                Warning
-            )
-            super().setModelData(editor, model, index)
+
+            self.model.setData(index, self.widgets[model_data.label].data)
+
+    def sizeHint(self) -> QtCore.QSize:
+        return self._scroll.sizeHint()

@@ -374,6 +374,19 @@ def test_get_settings_errors():
     assert len(error) > 0
 
 
+def test_check_required_settings_have_values_not_required_returns_nothing():
+    option_data = Mock(workflow.AbsOutputOptionDataType, required=False)
+    result = models.check_required_settings_have_values(option_data)
+    assert result is None
+
+
+def test_check_required_settings_have_values_required_and_has_value_returns_nothing():
+    option_data = Mock(workflow.AbsOutputOptionDataType, required=True)
+    option_data.value = "something"
+    result = models.check_required_settings_have_values(option_data)
+    assert result is None
+
+
 def test_build_setting_model(tmpdir):
 
     dummy = str(os.path.join(tmpdir, "config.ini"))

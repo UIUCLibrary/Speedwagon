@@ -100,7 +100,7 @@ class TextLineEditData(AbsOutputOptionDataType):
     def __init__(self, label: str, required: bool = True) -> None:
         super().__init__(label, required)
 
-    widget_name = "line_edit"
+    widget_name = "TextInput"
 
 
 class DirectorySelect(AbsOutputOptionDataType):
@@ -117,3 +117,9 @@ class BooleanSelect(AbsOutputOptionDataType):
         super().__init__(label, required)
 
     widget_name = "BooleanSelect"
+
+    def serialize(self) -> Dict[str, Any]:
+        data = super().serialize()
+        if self.value is None:
+            data['value'] = False
+        return data

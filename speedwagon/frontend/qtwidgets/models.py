@@ -467,8 +467,8 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
 
         if role == typing.cast(int, QtCore.Qt.ItemDataRole.EditRole):
             self._data[index.row()].value = value
+            self.dataChanged.emit(index, index, [role])  # type: ignore
             return True
-
         return super().setData(index, value, role)
 
     def serialize(self):
@@ -485,7 +485,7 @@ def check_required_settings_have_values(
 ) -> Optional[str]:
     if option_data.required is False:
         return None
-    if option_data.value is None:
+    if option_data.value is None or option_data.value == "":
         return f"Required setting '{option_data.label}' is missing value"
     return None
 
@@ -517,7 +517,7 @@ class ModelDataFormatter:
         if cls._should_use_placeholder_text(item) is True:
             return item.placeholder_text
         if isinstance(item.value, bool):
-            return "Yes" if item.value is True else "No"
+            return item.value
         if item.value is None:
             return item.value
         return str(item.value)
