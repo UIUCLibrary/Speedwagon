@@ -14,19 +14,19 @@ from abc import ABCMeta
 
 import yaml
 from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
-
 import speedwagon
-from speedwagon.frontend.qtwidgets.widgets import QtWidgetDelegateSelection
+from speedwagon.frontend.qtwidgets.widgets import DynamicForm
 
 from speedwagon import runner_strategies
 from speedwagon.frontend import qtwidgets
 
-from speedwagon.exceptions import MissingConfiguration
+from speedwagon.exceptions import MissingConfiguration, InvalidConfiguration
 from speedwagon.job import AbsWorkflow, NullWorkflow, Workflow
+from speedwagon.frontend.qtwidgets import models
 
 if typing.TYPE_CHECKING:
     from speedwagon.frontend.qtwidgets.worker import ToolJobManager
-    from speedwagon.frontend.qtwidgets import models
+    from speedwagon.workflow import AbsOutputOptionDataType
 
 
 __all__ = [
@@ -83,33 +83,6 @@ class Tab:
         self.tab_widget.setSizePolicy(WORKFLOW_SIZE_POLICY)
         self.tab_layout.setSpacing(20)
 
-    @staticmethod
-    def create_tools_settings_view(
-            parent: QtWidgets.QWidget
-    ) -> QtWidgets.QTableView:
-
-        tool_settings = QtWidgets.QTableView(parent=parent)
-        tool_settings.setEditTriggers(
-            typing.cast(
-                QtWidgets.QAbstractItemView.EditTrigger,
-                QtWidgets.QAbstractItemView.EditTrigger.AllEditTriggers
-            )
-        )
-
-        tool_settings.setItemDelegate(QtWidgetDelegateSelection(parent))
-
-        tool_settings.horizontalHeader().setVisible(False)
-        tool_settings.setSelectionMode(
-            QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
-        tool_settings.horizontalHeader().setSectionResizeMode(
-            QtWidgets.QHeaderView.ResizeMode.Stretch)
-        v_header = tool_settings.verticalHeader()
-        v_header.setSectionResizeMode(
-            QtWidgets.QHeaderView.ResizeMode.ResizeToContents
-        )
-        v_header.setSectionsClickable(False)
-        return tool_settings
-
     @classmethod
     def create_workspace_layout(cls, parent: QtWidgets.QWidget) \
             -> Tuple[
@@ -117,7 +90,7 @@ class Tab:
                 QtWidgets.QFormLayout
             ]:
 
-        tool_config_layout = QtWidgets.QFormLayout()
+        tool_config_layout = QtWidgets.QFormLayout(parent)
 
         name_line = QtWidgets.QLineEdit()
         name_line.setReadOnly(True)
@@ -125,8 +98,7 @@ class Tab:
         description_information = QtWidgets.QTextBrowser()
         description_information.setMinimumHeight(75)
 
-        settings = cls.create_tools_settings_view(parent)
-
+        settings = DynamicForm(parent=parent)
         tool_config_layout.setFieldGrowthPolicy(
             QtWidgets.QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
         tool_config_layout.addRow(QtWidgets.QLabel("Selected"), name_line)
@@ -146,12 +118,15 @@ class Tab:
     def create_workspace(cls, title: str, parent: QtWidgets.QWidget) -> \
             Tuple[QtWidgets.QGroupBox, Dict[
                 TabWidgets, QtWidgets.QWidget], QtWidgets.QFormLayout]:
-        tool_workspace = QtWidgets.QGroupBox()
+        tool_workspace = QtWidgets.QGroupBox(parent)
 
         tool_workspace.setTitle(title)
-        workspace_widgets, layout = cls.create_workspace_layout(parent)
+        workspace_widgets, layout = cls.create_workspace_layout(tool_workspace)
+        # workspace_widgets[TabWidgets.SETTINGS].viewport().installEventFilter(
+        #     tool_workspace
+        # )
         tool_workspace.setLayout(layout)
-        tool_workspace.setSizePolicy(WORKFLOW_SIZE_POLICY)
+        # tool_workspace.setSizePolicy(WORKFLOW_SIZE_POLICY)
         return tool_workspace, workspace_widgets, layout
 
     @staticmethod
@@ -189,7 +164,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
         self.workspace, self.workspace_widgets, self.workspace_layout = \
             self.create_workspace(self.tab_name, parent)
-
         self.item_form = self.create_form(self.parent,
                                           self.workspace_widgets,
                                           model=self.item_selection_model)
@@ -198,7 +172,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         if self.item_selection_model.rowCount() == 0:
             self.item_selector_view.setVisible(False)
             self.workspace.setVisible(False)
-            self.actions_widgets['start_button'].setEnabled(False)
             self._empty_tab_message = QtWidgets.QLabel()
             self._empty_tab_message.setText("No items available to display")
             self.tab_layout.addWidget(self._empty_tab_message)
@@ -283,7 +256,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         tool_actions_layout = QtWidgets.QHBoxLayout()
 
         start_button = QtWidgets.QPushButton()
-
+        # start_button.setEnabled(False)
         start_button.setText("Start")
         start_button.setContextMenuPolicy(
             QtCore.Qt.ContextMenuPolicy.CustomContextMenu
@@ -306,6 +279,8 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         return actions, tool_actions_layout
 
     def _start(self) -> None:
+        self.workspace_widgets[TabWidgets.SETTINGS].update_model()
+        # print(data)
         selected_workflow = cast(
             typing.Type[Workflow],
             self.item_selection_model.data(
@@ -313,6 +288,15 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
                 role=typing.cast(int, QtCore.Qt.ItemDataRole.UserRole)
             )
         )
+        try:
+            self.warn_user_of_invalid_settings(
+                workflow=selected_workflow,
+                checks=[
+                    models.check_required_settings_have_values,
+                ]
+            )
+        except InvalidConfiguration:
+            return
         if self.is_ready_to_start():
             try:
                 self.start(selected_workflow)
@@ -366,10 +350,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             self.options_model = model
             item_settings.setModel(self.options_model)
 
-            item_settings.setFixedHeight(
-                ((item_settings.sizeHintForRow(0) - 1) * model.rowCount()) + 2
-            )
-
             item_settings.setSizePolicy(ITEM_SETTINGS_POLICY)
         except Exception as error:
             traceback.print_exc()
@@ -410,9 +390,46 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         self.tab_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         self.tab_layout.addWidget(self.item_selector_view)
         self.tab_layout.addWidget(self.workspace)
+        self.workspace.setFixedHeight(300)
         actions = QtWidgets.QWidget()
         actions.setLayout(self.actions_layout)
         self.tab_layout.addWidget(actions)
+
+    def warn_user_of_invalid_settings(
+            self,
+            checks: List[
+                typing.Callable[[AbsOutputOptionDataType], Optional[str]]
+            ],
+            workflow: Optional[Type[Workflow]] = None,
+    ) -> None:
+        if not self.options_model:
+            return
+        errors = models.get_settings_errors(self.options_model, checks)
+        if workflow:
+            workflow_error = \
+                get_workflow_errors(self.options_model.get(), workflow)
+            if workflow_error:
+                errors.append(workflow_error)
+        if not errors:
+            return
+        error_message = '\n'.join(errors)
+        config_error_dialog = QtWidgets.QMessageBox(self.parent)
+        config_error_dialog.setWindowTitle("Settings Error")
+        config_error_dialog.setDetailedText(f"{error_message}")
+        config_error_dialog.setText(
+            "Speedwagon has a problem with current configuration "
+            "settings"
+        )
+        config_error_dialog.exec_()
+        raise InvalidConfiguration(errors)
+
+
+def get_workflow_errors(options, workflow):
+    try:
+        workflow.validate_user_options(**options)
+    except ValueError as error:
+        return str(error)
+    return None
 
 
 class WorkflowSignals(QtCore.QObject):
@@ -531,13 +548,17 @@ class WorkflowsTab(ItemSelectionTab):
             workflow: typing.Type[Workflow]
     ) -> models.ToolOptionsModel4:
         """Get item options model."""
+        user_options = self.get_item_user_options(workflow)
+        return \
+            qtwidgets.models.ToolOptionsModel4(user_options)
+
+    def get_item_user_options(self, workflow: typing.Type[Workflow]):
         if self.work_manager.user_settings is None:
             raise ValueError("user_settings not set")
         new_workflow = workflow(
             global_settings=dict(self.work_manager.user_settings)
         )
-        return \
-            qtwidgets.models.ToolOptionsModel4(new_workflow.get_user_options())
+        return new_workflow.get_user_options()
 
 
 class WorkflowsTab2(WorkflowsTab):
@@ -560,81 +581,6 @@ class WorkflowsTab2(WorkflowsTab):
             raise RuntimeError("options_model not set")
 
         self.signals.start_workflow.emit(item.name, self.options_model.get())
-
-
-class MyDelegate(QtWidgets.QStyledItemDelegate):
-
-    def createEditor(  # pylint: disable=C0103
-            self,
-            parent: QtWidgets.QWidget,
-            option: QtWidgets.QStyleOptionViewItem,
-            index: typing.Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ]
-    ) -> QtWidgets.QWidget:
-
-        if index.isValid():
-            tool_settings = \
-                index.data(
-                    role=typing.cast(int, QtCore.Qt.ItemDataRole.UserRole)
-                )
-
-            browser_widget = tool_settings.edit_widget()
-            if browser_widget:
-                assert isinstance(
-                    browser_widget,
-                    qtwidgets.shared_custom_widgets.CustomItemWidget
-                )
-                browser_widget.editingFinished.connect(self.update_custom_item)
-                browser_widget.setParent(parent)
-
-                return browser_widget
-        editor = super().createEditor(parent, option, index)
-        editor.setAutoFillBackground(True)
-        return editor
-
-    # noinspection PyUnresolvedReferences
-    def update_custom_item(self) -> None:
-        # pylint: disable=no-member
-        self.commitData.emit(self.sender())  # type: ignore
-
-    def setEditorData(  # pylint: disable=C0103
-            self,
-            editor: QtWidgets.QWidget,
-            index: typing.Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ]
-    ) -> None:
-        if index.isValid():
-            i = index.data(
-                role=typing.cast(int, QtCore.Qt.ItemDataRole.UserRole)
-            )
-            if isinstance(
-                    editor,
-                    qtwidgets.shared_custom_widgets.CustomItemWidget
-            ):
-                editor.data = i.data
-        super().setEditorData(editor, index)
-
-    def setModelData(  # pylint: disable=C0103
-            self,
-            widget: QtWidgets.QWidget,
-            model: QtCore.QAbstractItemModel,
-            index: typing.Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ],
-    ) -> None:
-
-        if isinstance(
-                widget,
-                qtwidgets.shared_custom_widgets.CustomItemWidget
-        ):
-            model.setData(index, widget.data)
-            return
-        super().setModelData(widget, model, index)
 
 
 class TabData(NamedTuple):

@@ -4,6 +4,7 @@ Mainly for connecting GUI elements, such as buttons, to functions and methods
 that do the work
 """
 from __future__ import annotations
+
 import io
 import logging
 import logging.handlers
@@ -11,7 +12,7 @@ import os
 import time
 import typing
 import webbrowser
-from typing import List, Optional
+from typing import List, Optional, Dict, Union
 
 try:  # pragma: no cover
     from importlib import metadata
@@ -31,10 +32,11 @@ from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
 
 import speedwagon
 from speedwagon.frontend import qtwidgets
+from speedwagon.frontend.qtwidgets import widgets, models
 import speedwagon.runner_strategies
-
 from speedwagon.job import Workflow
 if typing.TYPE_CHECKING:
+    from speedwagon.workflow import AbsOutputOptionDataType
     from speedwagon.worker import AbsToolJobManager
 
 __all__ = [
@@ -293,7 +295,6 @@ class MainWindowMenuBuilder:
             export_logs_button.triggered.connect(  # type: ignore
                 self.save_log_function
             )
-            # export_logs_button.triggered.connect(self._parent.save_log)
             file_menu.addAction(export_logs_button)
             file_menu.setObjectName("fileMenu")
             file_menu.addAction(export_logs_button)
@@ -587,7 +588,7 @@ class MainWindow1(MainProgram):
         num_selected = self._workflow_selector_view.selectedIndexes()
         if len(num_selected) != 1:
             print(
-                "Invalid number of selected Indexes. "
+                "`Invali`d number of selected Indexes. "
                 f"Expected 1. Found {num_selected}"
             )
 
@@ -700,13 +701,24 @@ class MainWindow2(MainWindow2UI):
         if tab_index is None:
             raise AssertionError("Missing All tab")
         all_tab = self._tabs[tab_index]
-        model = typing.cast(
-            QtWidgets.QTableWidget,
-            all_tab.workspace_widgets[qtwidgets.tabs.TabWidgets.SETTINGS]
-        ).model()
-
-        for key, value in data.items():
-            model[key] = value
+        current_tab_index = self.tab_widget.tabs.currentIndex()
+        item_selected_index = \
+            self._tabs[
+                current_tab_index
+            ].item_selector_view.selectedIndexes()[0]
+        current_workflow: typing.Type[Workflow] = self._tabs[
+                current_tab_index
+            ].item_selection_model.data(
+                item_selected_index,
+                role=typing.cast(int, QtCore.Qt.ItemDataRole.UserRole)
+            )
+        load_job_settings_model(
+            data,
+            all_tab.workspace_widgets[qtwidgets.tabs.TabWidgets.SETTINGS],
+            current_workflow(self.user_settings).get_user_options()
+        )
+        self._tabs[current_tab_index].options_model = \
+            all_tab.workspace_widgets[qtwidgets.tabs.TabWidgets.SETTINGS].model
 
     def close(self) -> bool:
         self.console.close()
@@ -839,3 +851,21 @@ def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
         pass
     app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
     QtWidgets.QApplication.processEvents()
+
+
+def load_job_settings_model(
+        data: Dict[str, Union[str, bool]],
+        settings_widget: widgets.DynamicForm,
+        workflow_options: List[AbsOutputOptionDataType]
+):
+    model = models.ToolOptionsModel4(workflow_options)
+    for key, value in data.items():
+        for i in range(model.rowCount()):
+            index = model.index(i)
+            option_data: AbsOutputOptionDataType = \
+                model.data(index, models.ToolOptionsModel4.DataRole)
+
+            if option_data.label == key:
+                model.setData(index, value, QtCore.Qt.ItemDataRole.EditRole)
+    settings_widget.setModel(model)
+    settings_widget.update_widget()

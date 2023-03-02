@@ -467,8 +467,8 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
 
         if role == typing.cast(int, QtCore.Qt.ItemDataRole.EditRole):
             self._data[index.row()].value = value
+            self.dataChanged.emit(index, index, [role])  # type: ignore
             return True
-
         return super().setData(index, value, role)
 
     def serialize(self):
@@ -478,6 +478,31 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
     def get(self) -> Dict[str, Any]:
         """Access the key value settings for all options."""
         return self.serialize()
+
+
+def check_required_settings_have_values(
+        option_data: AbsOutputOptionDataType
+) -> Optional[str]:
+    if option_data.required is False:
+        return None
+    if option_data.value is None or option_data.value == "":
+        return f"Required setting '{option_data.label}' is missing value"
+    return None
+
+
+def get_settings_errors(
+        model: ToolOptionsModel4,
+        checks: List[typing.Callable[[AbsOutputOptionDataType], Optional[str]]]
+) -> List[str]:
+    errors = []
+    for row_id in range(model.rowCount()):
+        index = model.index(row_id)
+        data = model.data(index, model.DataRole)
+        for check_func in checks:
+            error_check_result = check_func(data)
+            if error_check_result is not None:
+                errors.append(error_check_result)
+    return errors
 
 
 class ModelDataFormatter:
@@ -492,7 +517,7 @@ class ModelDataFormatter:
         if cls._should_use_placeholder_text(item) is True:
             return item.placeholder_text
         if isinstance(item.value, bool):
-            return "Yes" if item.value is True else "No"
+            return item.value
         if item.value is None:
             return item.value
         return str(item.value)

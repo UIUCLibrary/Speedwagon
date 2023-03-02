@@ -14,6 +14,8 @@ QtGui = pytest.importorskip("PySide6.QtGui")
 from speedwagon.frontend.qtwidgets import shared_custom_widgets
 
 
+
+
 def test_show_help_open_web(qtbot, monkeypatch):
     mock_work_manager = Mock()
     main_window = \
@@ -300,3 +302,35 @@ class TestMainWindow2:
 
         main_window.set_current_workflow_settings({"Dummy": "Yes"})
         assert main_window.get_current_job_settings()["Dummy"] == "Yes"
+
+
+def test_load_job_settings_model(qtbot):
+    data = {
+        'Source': '/Volumes/G-RAID with Thunderbolt/hathi_test/access/',
+        'Check for page_data in meta.yml': True,
+        'Check ALTO OCR xml files': True,
+        'Check OCR xml files are utf-8': False
+    }
+    source = speedwagon.workflow.DirectorySelect("Source")
+
+    check_page_data_option = \
+        speedwagon.workflow.BooleanSelect("Check for page_data in meta.yml")
+    check_page_data_option.value = False
+
+    check_ocr_option = speedwagon.workflow.BooleanSelect("Check ALTO OCR xml files")
+    check_ocr_option.value = True
+
+    check_ocr_utf8_option = \
+        speedwagon.workflow.BooleanSelect('Check OCR xml files are utf-8')
+    check_ocr_utf8_option.value = False
+
+    workflow_options = [
+        source,
+        check_page_data_option,
+        check_ocr_option,
+        check_ocr_utf8_option
+
+    ]
+    form = speedwagon.frontend.qtwidgets.widgets.DynamicForm()
+    speedwagon.frontend.qtwidgets.gui.load_job_settings_model(data, form, workflow_options)
+    assert form.widgets['Source'].data == '/Volumes/G-RAID with Thunderbolt/hathi_test/access/'

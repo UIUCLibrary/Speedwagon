@@ -116,10 +116,16 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
             package_type_selection.add_selection(package_type_name)
 
         output_digital_library = \
-            speedwagon.workflow.DirectorySelect(OUTPUT_DIGITAL_LIBRARY)
+            speedwagon.workflow.DirectorySelect(
+                OUTPUT_DIGITAL_LIBRARY,
+                required=False
+            )
 
         output_hathi_trust = \
-            speedwagon.workflow.DirectorySelect(OUTPUT_HATHITRUST)
+            speedwagon.workflow.DirectorySelect(
+                OUTPUT_HATHITRUST,
+                required=False
+            )
 
         return [
             input_path,

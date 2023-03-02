@@ -10,6 +10,7 @@ class AbsOutputOptionDataType(abc.ABC):
 
     label: str
     widget_name: str
+    required: bool
 
     def __init_subclass__(cls) -> None:
         """Verify that any subclass has a widget_name defined."""
@@ -18,18 +19,20 @@ class AbsOutputOptionDataType(abc.ABC):
                             f"without abstract property widget_name")
         return super().__init_subclass__()
 
-    def __init__(self, label: str) -> None:
+    def __init__(self, label: str, required: bool) -> None:
         """Create a new output time with a given label."""
         super().__init__()
         self.label = label
         self.value: Optional[Union[str, int, bool]] = None
         self.placeholder_text: Optional[str] = None
+        self.required = required
 
     def serialize(self) -> Dict[str, Any]:
         """Serialize the data."""
         data = {
             "widget_type": self.widget_name,
-            "label": self.label
+            "label": self.label,
+            "required": self.required
         }
         if self.value is not None:
             data['value'] = self.value
@@ -48,9 +51,9 @@ class ChoiceSelection(AbsOutputOptionDataType):
 
     widget_name: str = "ChoiceSelection"
 
-    def __init__(self, label: str) -> None:
+    def __init__(self, label: str, required=True) -> None:
         """Present the user with a possible selection of choices."""
-        super().__init__(label)
+        super().__init__(label, required)
         self._selections: List[str] = []
 
     def add_selection(self, label: str) -> None:
@@ -75,9 +78,9 @@ class FileSelectData(AbsOutputOptionDataType):
 
     widget_name: str = "FileSelect"
 
-    def __init__(self, label: str) -> None:
+    def __init__(self, label: str, required=True) -> None:
         """Select a file."""
-        super().__init__(label)
+        super().__init__(label, required)
         self.filter: Optional[str] = None
 
     def serialize(self) -> Dict[str, Any]:
@@ -94,16 +97,29 @@ class FileSelectData(AbsOutputOptionDataType):
 class TextLineEditData(AbsOutputOptionDataType):
     """Single text line."""
 
-    widget_name = "line_edit"
+    def __init__(self, label: str, required: bool = True) -> None:
+        super().__init__(label, required)
+
+    widget_name = "TextInput"
 
 
 class DirectorySelect(AbsOutputOptionDataType):
     """Directory path selection."""
+    def __init__(self, label: str, required: bool = True) -> None:
+        super().__init__(label, required)
 
     widget_name = "DirectorySelect"
 
 
 class BooleanSelect(AbsOutputOptionDataType):
     """Boolean selection."""
+    def __init__(self, label: str, required: bool = False) -> None:
+        super().__init__(label, required)
 
     widget_name = "BooleanSelect"
+
+    def serialize(self) -> Dict[str, Any]:
+        data = super().serialize()
+        if self.value is None:
+            data['value'] = False
+        return data

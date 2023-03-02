@@ -1,112 +1,15 @@
+import os
+from typing import Union, Optional, Any, List
+
 import pytest
-# QtWidgets = pytest.importorskip("PySide6.QtWidgets")
+
+
 QtCore = pytest.importorskip("PySide6.QtCore")
 from PySide6 import QtWidgets
 
 import speedwagon.workflow
 import speedwagon.frontend.qtwidgets.widgets
 import speedwagon.frontend.qtwidgets.models
-
-
-class TestDelegateSelection:
-    @pytest.fixture
-    def model(self):
-        return speedwagon.frontend.qtwidgets.models.ToolOptionsModel4(data=[
-            speedwagon.workflow.FileSelectData('Spam'),
-        ])
-
-    @pytest.fixture
-    def index(
-            self,
-            qtbot,
-            model: speedwagon.frontend.qtwidgets.models.ToolOptionsModel4):
-        return model.createIndex(0, 0)
-
-    @pytest.fixture
-    def delegate_widget(self):
-        return \
-            speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection()
-
-    @pytest.fixture
-    def editor(
-            self,
-            qtbot,
-            index,
-            delegate_widget,
-            model: speedwagon.frontend.qtwidgets.models.ToolOptionsModel4
-    ) -> speedwagon.frontend.qtwidgets.widgets.FileSelectWidget:
-
-        parent = QtWidgets.QWidget()
-        options = QtWidgets.QStyleOptionViewItem()
-        yield delegate_widget.createEditor(parent, options, index)
-
-    def test_returns_a_qt_widget(
-            self,
-            qtbot,
-            index,
-    ):
-        delegate_widget_parent = QtWidgets.QWidget()
-        delegate_widget = \
-            speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection(
-                delegate_widget_parent
-            )
-        qtbot.addWidget(delegate_widget_parent)
-        widget_parent = QtWidgets.QWidget()
-        qtbot.addWidget(widget_parent)
-        assert isinstance(
-            delegate_widget.createEditor(
-                parent=widget_parent,
-                option=QtWidgets.QStyleOptionViewItem(),
-                index=index
-            ),
-            QtWidgets.QWidget
-        )
-
-    def test_setting_model_data(
-            self,
-            qtbot,
-            index,
-            editor: speedwagon.frontend.qtwidgets.widgets.FileSelectWidget,
-            delegate_widget,
-            model: speedwagon.frontend.qtwidgets.models.ToolOptionsModel4
-    ):
-        starting_value = model.data(index, role=QtCore.Qt.DisplayRole)
-
-        editor.data = "Dummy"
-        delegate_widget.setModelData(editor, model, index)
-        ending_value = model.data(index, role=QtCore.Qt.DisplayRole)
-
-        assert starting_value is None and ending_value == "Dummy"
-
-    def test_setting_editor_data(
-            self,
-            qtbot,
-            index,
-            delegate_widget,
-            model: speedwagon.frontend.qtwidgets.models.ToolOptionsModel4
-    ):
-        model.setData(index, "Dummy")
-        parent = QtWidgets.QWidget()
-        new_editor = \
-            delegate_widget.createEditor(
-                parent,
-                QtWidgets.QStyleOptionViewItem(),
-                index,
-            )
-        delegate_widget.setEditorData(new_editor, index)
-        assert new_editor.data == "Dummy"
-
-    def test_warn_on_not_using_right_subclass(
-            self,
-            index: QtCore.QModelIndex,
-            delegate_widget:
-            speedwagon.frontend.qtwidgets.widgets.QtWidgetDelegateSelection,
-            model: speedwagon.frontend.qtwidgets.models.ToolOptionsModel4
-    ):
-        model.setData(index, "Dummy")
-        with pytest.warns(Warning):
-            delegate_widget.setModelData(QtWidgets.QLineEdit(), model, index)
-
 
 class TestDropDownWidget:
     def test_empty_widget_metadata(self, qtbot):
@@ -205,9 +108,79 @@ class TestDirectorySelectWidget:
         widget.browse_dir(get_file_callback=lambda: None)
         assert widget.data is None
 
-
-
+# def test_clicking_outside(qtbot, mocker):
+#     # window = QtWidgets.QMainWindow()
+#     parent = QtWidgets.QWidget()
+#     # window.setCentralWidget(parent)
+#     layout = QtWidgets.QVBoxLayout()
+#     parent.setLayout(layout)
+#     widget = speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget()
+#     text_box = QtWidgets.QLineEdit()
+#     text_box2 = QtWidgets.QLineEdit()
+#     layout.addWidget(text_box)
+#     layout.addWidget(text_box2)
+#     layout.addWidget(widget)
 #
+#     # spy = mocker.spy(widget.edit, "closeEvent")
+#     # widget.setFocus()
+#     # text_box.setFocus()
+#     # assert spy.call_count == 1
+#
+#     # with qtbot.wait_signal(table.editorOpened, raising=False) as blocker:
+#     # qtbot.staticmouseDClick(widget, QtCore.Qt.MouseButton.LeftButton)
+#     # qtbot.mouseClick(widget, QtCore.Qt.MouseButton.LeftButton)
+#     # qtbot.mouseClick(widget, QtCore.Qt.MouseButton.LeftButton)
+#     # qtbot.wait_until(lambda: widget.hasFocus())
+#     # assert widget.hasFocus()
+#
+#     w = QtWidgets.QDialog()
+#     w.setFixedWidth(300)
+#     w.setFixedHeight(300)
+#     w.setLayout(QtWidgets.QVBoxLayout())
+#     w.layout().addWidget(parent)
+#     w.exec()
+#
+#     # w.setLayout(layout)
+#     # path = qtbot.screenshot(window)
+#     # os.system(f"open {path}")
+#     # print(path)
+
+
+# def test_clicking_outside_table_closes_editor(qtbot):
+#     layout = QtWidgets.QVBoxLayout()
+#     pushButton = QtWidgets.QPushButton('outside of table')
+#     layout.addWidget(pushButton)
+#     data = [
+#         speedwagon.workflow.FileSelectData("input"),
+#         speedwagon.workflow.FileSelectData("output")
+#     ]
+#     model = speedwagon.frontend.qtwidgets.models.ToolOptionsModel4(data)
+#     table = speedwagon.frontend.qtwidgets.widgets.EditSettingsTable()
+#     layout.addWidget(table)
+#     table.setModel(model)
+#
+#     with qtbot.wait_signal(table.editorOpened, raising=False) as blocker:
+#         index = model.index(0,0)
+#         assert index.isValid()
+#         rect = table.visualRect(index)
+#         qtbot.mouseClick(table.viewport(), QtCore.Qt.MouseButton.LeftButton, pos=rect.center())
+#         qtbot.mouseClick(table.viewport(), QtCore.Qt.MouseButton.LeftButton, pos=rect.center())
+#     assert blocker.signal_triggered, "table delegate editor never opened"
+#
+#     with qtbot.wait_signal(table._delegate.closed, raising=False) as blocker:
+#         pushButton.setFocus()
+#         # qtbot.mouseClick(pushButton, QtCore.Qt.MouseButton.LeftButton)
+#     assert blocker.signal_triggered, "table delegate editor never closed"
+
+    # w = QtWidgets.QDialog()
+    # w.setFixedWidth(300)
+    # w.setFixedHeight(300)
+    # w.setLayout(layout)
+    # # path = qtbot.screenshot(table)
+    # # print(path)
+    # w.exec()
+#
+# #
 # def test_init(qtbot):
 #     dialog_box = QtWidgets.QDialog()
 #     table = QtWidgets.QTableView(parent=dialog_box)
@@ -239,3 +212,54 @@ class TestDirectorySelectWidget:
 #     delegate = speedwagon.widgets.QtWidgetDelegateSelection()
 #     table.setItemDelegate(delegate)
 #     dialog_box.exec()
+
+
+class TestDynamicForm:
+    def test_update_model_boolean(self, qtbot):
+        form = speedwagon.frontend.qtwidgets.widgets.DynamicForm()
+        data = [
+            speedwagon.workflow.BooleanSelect("spam"),
+            speedwagon.workflow.BooleanSelect("bacon")
+        ]
+        model = speedwagon.frontend.qtwidgets.models.ToolOptionsModel4(data)
+        form.setModel(model)
+        checkbox: speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget = form.widgets['spam']
+        assert form.widgets['spam'].data is False
+        checkbox.check_box.setChecked(True)
+        qtbot.wait_until(lambda : form.widgets['spam'].data is True)
+        form.update_model()
+        assert model.data(model.index(0, 0)) is True
+        assert model.data(model.index(1, 0)) is False
+
+    def test_update_model_file_select(self, qtbot):
+        form = speedwagon.frontend.qtwidgets.widgets.DynamicForm()
+        data = [
+            speedwagon.workflow.FileSelectData("input"),
+            speedwagon.workflow.FileSelectData("output")
+        ]
+        model = speedwagon.frontend.qtwidgets.models.ToolOptionsModel4(data)
+
+        form.setModel(model)
+        qtbot.keyClicks(form.widgets['input'].edit, "/someinput/file.txt")
+        qtbot.keyClicks(form.widgets['output'].edit, "/output/file.txt")
+
+        form.update_model()
+        assert model.data(model.index(0, 0)) == "/someinput/file.txt"
+        assert model.data(model.index(1, 0)) == "/output/file.txt"
+
+    def test_update_model_combobox(self, qtbot):
+        form = speedwagon.frontend.qtwidgets.widgets.DynamicForm()
+        option = speedwagon.workflow.ChoiceSelection('choice 1')
+        option.add_selection("spam")
+        option.add_selection("bacon")
+        data = [
+            option
+        ]
+        model = speedwagon.frontend.qtwidgets.models.ToolOptionsModel4(data)
+
+        form.setModel(model)
+        combobox: speedwagon.frontend.qtwidgets.widgets.ComboWidget = form.widgets['choice 1']
+        combobox.combo_box.setCurrentIndex(1)
+        form.update_model()
+
+        assert model.data(model.index(0, 0)) == "bacon"
