@@ -1,9 +1,8 @@
 """Specialize widgets."""
-
 import json
+import os.path
 import typing
 from typing import Union, Optional, Dict, Any
-
 
 from PySide6 import QtWidgets, QtCore, QtGui
 from speedwagon.frontend.qtwidgets import models
@@ -192,6 +191,7 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.edit)
         self.setLayout(layout)
+        self.setAcceptDrops(True)
 
     def _make_connections(self) -> None:
         # pylint: disable=no-member
@@ -211,8 +211,48 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
         self._data = value
         self.edit.setText(value)
 
+    def drop_acceptable_data(self, mime_data: QtCore.QMimeData) -> bool:
+        """Return if the item dragged over is the right type."""
+        return True
+
+    def eventFilter(
+            self,
+            watched: QtCore.QObject,
+            event: QtCore.QEvent
+    ) -> bool:
+        if event.type() == event.Type.DragEnter:
+            event = typing.cast(QtGui.QDragEnterEvent, event)
+            if self.drop_acceptable_data(event.mimeData()):
+                event.accept()
+            else:
+                event.ignore()
+            return True
+        if event.type() == event.Type.Drop:
+            event = typing.cast(QtGui.QDropEvent, event)
+            self.edit.setText(self.extract_path_from_event(event))
+            event.accept()
+            return True
+        return super().eventFilter(watched, event)
+
+    @staticmethod
+    def extract_path_from_event(
+        event: Union[QtGui.QDropEvent, QtGui.QDragMoveEvent]
+    ) -> str:
+        mime_data = event.mimeData()
+        urls = mime_data.urls()
+        return urls[0].path()
+
 
 class DirectorySelectWidget(FileSystemItemSelectWidget):
+    def drop_acceptable_data(self, mime_data: QtCore.QMimeData) -> bool:
+        if not mime_data.hasUrls():
+            return False
+        urls = mime_data.urls()
+        if len(urls) != 1:
+            return False
+        path = urls[0].path()
+        return os.path.exists(path) and os.path.isdir(path)
+
     def get_browse_action(self) -> QtGui.QAction:
         icon = QtWidgets.QApplication.style().standardIcon(
             QtWidgets.QStyle.StandardPixmap.SP_DialogOpenButton)
@@ -240,6 +280,15 @@ class DirectorySelectWidget(FileSystemItemSelectWidget):
 
 
 class FileSelectWidget(FileSystemItemSelectWidget):
+    def drop_acceptable_data(self, mime_data: QtCore.QMimeData) -> bool:
+        if not mime_data.hasUrls():
+            return False
+        urls = mime_data.urls()
+        if len(urls) != 1:
+            return False
+        path = urls[0].path()
+        return os.path.exists(path) and not os.path.isdir(path)
+
     def get_browse_action(self) -> QtGui.QAction:
         icon = QtWidgets.QApplication.style().standardIcon(
             QtWidgets.QStyle.StandardPixmap.SP_DialogOpenButton)
