@@ -33,6 +33,7 @@ if __name__ == "__main__":
         setup_requires=['pytest-runner'],
         tests_require=[
             'pytest',
+            'pytest-mock'
         ],
         python_requires=">=3.6",
         extras_require={

@@ -398,6 +398,10 @@ class PackageConverter(speedwagon.tasks.Subtask):
                 f"Converting {self.packaging_id} from {self.source_path} "
                 f"to a {self.package_format} package at "
                 f"{self.new_package_root}")
+            self.log('Please note: If this is running on slow storage as '
+                     'this could take a while.')
+            self.log('Please note: Converting to some package formats do not '
+                     'provided very detailed information to the progress bar')
 
             package_factory = self.package_factory(
                 PackageConverter.package_formats[self.package_format]

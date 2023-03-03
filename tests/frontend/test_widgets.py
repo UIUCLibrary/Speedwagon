@@ -1,11 +1,12 @@
 import os
 from typing import Union, Optional, Any, List
+from unittest.mock import Mock
 
 import pytest
 
 
 QtCore = pytest.importorskip("PySide6.QtCore")
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtGui
 
 import speedwagon.workflow
 import speedwagon.frontend.qtwidgets.widgets
@@ -87,6 +88,81 @@ class TestFileSelectWidget:
         widget.browse_file(get_file_callback=lambda: None)
         assert widget.data is None
 
+    def test_drop_acceptable_data(self, qtbot, monkeypatch):
+
+        parent = QtWidgets.QWidget()
+        widget = \
+            speedwagon.frontend.qtwidgets.widgets.FileSelectWidget(
+                parent=parent
+            )
+        mime_data = Mock(
+            urls=Mock(
+                return_value=[
+                    Mock(path=Mock(return_value="fakepath"))
+                ]
+            )
+        )
+        monkeypatch.setattr(os.path, "exists", lambda *_: True)
+        monkeypatch.setattr(os.path, "isdir", lambda *_: False)
+        assert widget.drop_acceptable_data(mime_data) is True
+
+    def test_drop_acceptable_data_no_url(self, qtbot, monkeypatch):
+
+        parent = QtWidgets.QWidget()
+        widget = \
+            speedwagon.frontend.qtwidgets.widgets.FileSelectWidget(
+                parent=parent
+            )
+        mime_data = Mock(
+            hasUrls=Mock(return_value=False),
+            urls=Mock(
+                return_value=[
+                    Mock(path=Mock(return_value="fakepath"))
+                ]
+            )
+        )
+        monkeypatch.setattr(os.path, "exists", lambda *_: True)
+        monkeypatch.setattr(os.path, "isdir", lambda *_: False)
+        assert widget.drop_acceptable_data(mime_data) is False
+
+    def test_drop_acceptable_data_no_multiple_files(self, qtbot, monkeypatch):
+
+        parent = QtWidgets.QWidget()
+        widget = \
+            speedwagon.frontend.qtwidgets.widgets.FileSelectWidget(
+                parent=parent
+            )
+        mime_data = Mock(
+            hasUrls=Mock(return_value=True),
+            urls=Mock(
+                return_value=[
+                    Mock(path=Mock(return_value="fake_file1")),
+                    Mock(path=Mock(return_value="fake_file2")),
+                ]
+            )
+        )
+        monkeypatch.setattr(os.path, "exists", lambda *_: True)
+        monkeypatch.setattr(os.path, "isdir", lambda *_: False)
+        assert widget.drop_acceptable_data(mime_data) is False
+
+    def test_extract_path_from_event(self, qtbot):
+        parent = QtWidgets.QWidget()
+        widget = \
+            speedwagon.frontend.qtwidgets.widgets.FileSelectWidget(
+                parent=parent
+            )
+        event = Mock(
+            mimeData=Mock(
+                return_value=Mock(
+                    urls=Mock(
+                        return_value=[
+                            Mock(path=Mock(return_value="fakepath"))
+                        ]
+                    )
+                )
+            )
+        )
+        assert widget.extract_path_from_event(event) == "fakepath"
 
 class TestDirectorySelectWidget:
     def test_empty_widget_metadata(self, qtbot):
@@ -108,111 +184,121 @@ class TestDirectorySelectWidget:
         widget.browse_dir(get_file_callback=lambda: None)
         assert widget.data is None
 
-# def test_clicking_outside(qtbot, mocker):
-#     # window = QtWidgets.QMainWindow()
-#     parent = QtWidgets.QWidget()
-#     # window.setCentralWidget(parent)
-#     layout = QtWidgets.QVBoxLayout()
-#     parent.setLayout(layout)
-#     widget = speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget()
-#     text_box = QtWidgets.QLineEdit()
-#     text_box2 = QtWidgets.QLineEdit()
-#     layout.addWidget(text_box)
-#     layout.addWidget(text_box2)
-#     layout.addWidget(widget)
-#
-#     # spy = mocker.spy(widget.edit, "closeEvent")
-#     # widget.setFocus()
-#     # text_box.setFocus()
-#     # assert spy.call_count == 1
-#
-#     # with qtbot.wait_signal(table.editorOpened, raising=False) as blocker:
-#     # qtbot.staticmouseDClick(widget, QtCore.Qt.MouseButton.LeftButton)
-#     # qtbot.mouseClick(widget, QtCore.Qt.MouseButton.LeftButton)
-#     # qtbot.mouseClick(widget, QtCore.Qt.MouseButton.LeftButton)
-#     # qtbot.wait_until(lambda: widget.hasFocus())
-#     # assert widget.hasFocus()
-#
-#     w = QtWidgets.QDialog()
-#     w.setFixedWidth(300)
-#     w.setFixedHeight(300)
-#     w.setLayout(QtWidgets.QVBoxLayout())
-#     w.layout().addWidget(parent)
-#     w.exec()
-#
-#     # w.setLayout(layout)
-#     # path = qtbot.screenshot(window)
-#     # os.system(f"open {path}")
-#     # print(path)
+    def test_drag_drop_success(self, qtbot, monkeypatch):
+        parent = QtWidgets.QWidget()
+        widget = \
+            speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(
+                parent=parent
+            )
 
+        watched = Mock()
+        event = Mock(
+            type=Mock(return_value=QtGui.QDropEvent.Type.DragEnter),
+            Type=Mock(DragEnter=QtGui.QDropEvent.Type.DragEnter)
+        )
+        monkeypatch.setattr(
+            speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget,
+            "drop_acceptable_data",
+            lambda *_: True
+        )
+        widget.eventFilter(watched, event)
+        assert event.accept.called is True
 
-# def test_clicking_outside_table_closes_editor(qtbot):
-#     layout = QtWidgets.QVBoxLayout()
-#     pushButton = QtWidgets.QPushButton('outside of table')
-#     layout.addWidget(pushButton)
-#     data = [
-#         speedwagon.workflow.FileSelectData("input"),
-#         speedwagon.workflow.FileSelectData("output")
-#     ]
-#     model = speedwagon.frontend.qtwidgets.models.ToolOptionsModel4(data)
-#     table = speedwagon.frontend.qtwidgets.widgets.EditSettingsTable()
-#     layout.addWidget(table)
-#     table.setModel(model)
-#
-#     with qtbot.wait_signal(table.editorOpened, raising=False) as blocker:
-#         index = model.index(0,0)
-#         assert index.isValid()
-#         rect = table.visualRect(index)
-#         qtbot.mouseClick(table.viewport(), QtCore.Qt.MouseButton.LeftButton, pos=rect.center())
-#         qtbot.mouseClick(table.viewport(), QtCore.Qt.MouseButton.LeftButton, pos=rect.center())
-#     assert blocker.signal_triggered, "table delegate editor never opened"
-#
-#     with qtbot.wait_signal(table._delegate.closed, raising=False) as blocker:
-#         pushButton.setFocus()
-#         # qtbot.mouseClick(pushButton, QtCore.Qt.MouseButton.LeftButton)
-#     assert blocker.signal_triggered, "table delegate editor never closed"
+    def test_drag_invalid(self, qtbot, monkeypatch):
+        parent = QtWidgets.QWidget()
+        widget = \
+            speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(
+                parent=parent
+            )
 
-    # w = QtWidgets.QDialog()
-    # w.setFixedWidth(300)
-    # w.setFixedHeight(300)
-    # w.setLayout(layout)
-    # # path = qtbot.screenshot(table)
-    # # print(path)
-    # w.exec()
-#
-# #
-# def test_init(qtbot):
-#     dialog_box = QtWidgets.QDialog()
-#     table = QtWidgets.QTableView(parent=dialog_box)
-#     table.setEditTriggers(table.AllEditTriggers)
-#     layout = QtWidgets.QVBoxLayout()
-#     dialog_box.setLayout(layout)
-#     dialog_box.layout().addWidget(table)
-#     qtbot.addWidget(table)
-#     spam_dir = speedwagon.widgets.FileSelectData('Spam')
-#     spam_dir.placeholder_text = "Select a spam"
-#
-#     # user_args.append(spam_dir)
-#
-#     drop_down = speedwagon.widgets.DropDownSelection("Dummy")
-#     # drop_down.value = "Option 2"
-#     drop_down.placeholder_text = "Select an option"
-#     drop_down.add_selection("Option 1")
-#     drop_down.add_selection("Option 2")
-#
-#     # user_args.append(drop_down)
-#
-#     user_args = [
-#         spam_dir,
-#         drop_down
-#
-#     ]
-#     model = speedwagon.models.ToolOptionsModel4(data=user_args)
-#     table.setModel(model)
-#     delegate = speedwagon.widgets.QtWidgetDelegateSelection()
-#     table.setItemDelegate(delegate)
-#     dialog_box.exec()
+        watched = Mock()
+        event = Mock(
+            type=Mock(return_value=QtGui.QDropEvent.Type.DragEnter),
+            Type=Mock(DragEnter=QtGui.QDropEvent.Type.DragEnter)
+        )
+        monkeypatch.setattr(
+            speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget,
+            "drop_acceptable_data",
+            lambda *_: False
+        )
+        widget.eventFilter(watched, event)
+        assert event.accept.called is False
 
+    def test_drop(self, qtbot, monkeypatch, mocker):
+        parent = QtWidgets.QWidget()
+        widget = \
+            speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(
+                parent=parent
+            )
+        setText = mocker.spy(widget.edit, "setText")
+        watched = Mock()
+        event = Mock(
+            type=Mock(return_value=QtGui.QDropEvent.Type.Drop),
+            Type=Mock(Drop=QtGui.QDropEvent.Type.Drop)
+        )
+        monkeypatch.setattr(
+            speedwagon.frontend.qtwidgets.widgets.FileSystemItemSelectWidget,
+            "extract_path_from_event",
+            lambda *_: 'some folder'
+        )
+        widget.eventFilter(watched, event)
+        setText.assert_called_once_with('some folder')
+
+    def test_drop_acceptable_data(self, qtbot, monkeypatch):
+
+        parent = QtWidgets.QWidget()
+        widget = \
+            speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(
+                parent=parent
+            )
+        mime_data = Mock(
+            urls=Mock(
+                return_value=[
+                    Mock(path=Mock(return_value="fakepath"))
+                ]
+            )
+        )
+        monkeypatch.setattr(os.path, "exists", lambda *_: True)
+        monkeypatch.setattr(os.path, "isdir", lambda *_: True)
+        assert widget.drop_acceptable_data(mime_data) is True
+
+    def test_drop_acceptable_data_has_no_urls(self, qtbot, monkeypatch):
+
+        parent = QtWidgets.QWidget()
+        widget = \
+            speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(
+                parent=parent
+            )
+        mime_data = Mock(
+            hasUrls=Mock(return_value=False),
+            urls=Mock(
+                return_value=[
+                    Mock(path=Mock(return_value="fakepath"))
+                ]
+            )
+        )
+        monkeypatch.setattr(os.path, "exists", lambda *_: True)
+        monkeypatch.setattr(os.path, "isdir", lambda *_: True)
+        assert widget.drop_acceptable_data(mime_data) is False
+    def test_drop_acceptable_data_reject_multiple_folders(self, qtbot, monkeypatch):
+
+        parent = QtWidgets.QWidget()
+        widget = \
+            speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(
+                parent=parent
+            )
+        mime_data = Mock(
+            hasUrls=Mock(return_value=True),
+            urls=Mock(
+                return_value=[
+                    Mock(path=Mock(return_value="fakepath1")),
+                    Mock(path=Mock(return_value="fakepath2"))
+                ]
+            )
+        )
+        monkeypatch.setattr(os.path, "exists", lambda *_: True)
+        monkeypatch.setattr(os.path, "isdir", lambda *_: True)
+        assert widget.drop_acceptable_data(mime_data) is False
 
 class TestDynamicForm:
     def test_update_model_boolean(self, qtbot):
