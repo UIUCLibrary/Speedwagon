@@ -175,7 +175,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             (selector_view.sizeHintForRow(0) * min_rows) + 4
         )
 
-        selector_view.setSizePolicy(SELECTOR_VIEW_SIZE_POLICY)
+        # selector_view.setSizePolicy(SELECTOR_VIEW_SIZE_POLICY)
 
         selector_view.setSelectionBehavior(
             QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows
@@ -297,7 +297,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             self.options_model = model
             self.settings_form.setModel(self.options_model)
 
-            self.settings_form.setSizePolicy(ITEM_SETTINGS_POLICY)
+            # self.settings_form.setSizePolicy(ITEM_SETTINGS_POLICY)
         except Exception as error:
             traceback.print_exc()
             stack_trace = traceback.format_exception(type(error),
@@ -337,7 +337,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         self.tab_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         self.tab_layout.addWidget(self.item_selector_view)
         self.tab_layout.addWidget(self.workspace_group_box)
-        self.workspace_group_box.setFixedHeight(300)
+        # self.workspace_group_box.setMaximumHeight(300)
         actions = QtWidgets.QWidget()
         actions.setLayout(self.actions_layout)
         self.tab_layout.addWidget(actions)

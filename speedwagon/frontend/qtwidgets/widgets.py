@@ -92,6 +92,8 @@ class CheckBoxWidget(EditDelegateWidget):
         super().__init__(widget_metadata=widget_metadata, parent=parent)
         self.check_box = QtWidgets.QCheckBox(self)
         self.setFocusProxy(self.check_box)
+        if widget_metadata:
+            self.check_box.setText(widget_metadata['label'])
         self._make_connections()
         layout = self.layout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -384,6 +386,7 @@ class DynamicForm(QtWidgets.QWidget):
     def update_widget(self):
         self.widgets: Dict[str, EditDelegateWidget] = {}
         layout = self._background.layout()
+        layout.setSpacing(2)
         while layout.rowCount():
             layout.removeRow(0)
         self.model: Optional[models.ToolOptionsModel4]
@@ -402,7 +405,13 @@ class DynamicForm(QtWidgets.QWidget):
             widget.setAutoFillBackground(True)
             widget.data = json_data.get("value")
             self.widgets[json_data['label']] = widget
-            layout.addRow(json_data['label'], widget)
+
+            # Checkboxes/BooleanSelect already have a label built into them
+            layout.addRow(
+                "" if json_data['widget_type'] == 'BooleanSelect'
+                else json_data['label'],
+                widget
+            )
 
     # pylint: disable=invalid-name
     def setModel(self, model: models.ToolOptionsModel4):
@@ -456,6 +465,7 @@ def get_workspace(
                     Workspace(workflow_model, parent)
                 ),
             )
+
     widget.tool_mapper.addMapping(widget.selectedWorkflowView, 0)
     widget.tool_mapper.addMapping(widget.descriptionView, 1, b"plainText")
     return widget

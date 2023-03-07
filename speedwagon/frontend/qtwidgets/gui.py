@@ -820,10 +820,10 @@ class MainWindow2(MainWindow2UI):
         self._tabs: List[qtwidgets.tabs.ItemSelectionTab] = []
 
         # Add the tabs widget as the first widget
-        self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
-        self.main_splitter.addWidget(self.tab_widget)
-        self.main_splitter.setStretchFactor(0, 0)
-        self.main_splitter.setStretchFactor(1, 2)
+        # self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
+        # self.main_splitter.addWidget(self.tab_widget)
+        # self.main_splitter.setStretchFactor(0, 1)
+        # self.main_splitter.setStretchFactor(1, 0)
 
     def _create_console(self) -> None:
 
