@@ -18,7 +18,7 @@ if __name__ == "__main__":
             'typing-extensions;python_version<"3.8"',
             'lxml',
             "requests",
-            "py3exiv2bind>=0.1.9",
+            "py3exiv2bind>=0.1.10",
         ],
         packages=[
             "speedwagon",
