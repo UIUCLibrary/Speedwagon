@@ -5,7 +5,15 @@ import typing
 from typing import Union, Optional, Dict, Any
 
 from PySide6 import QtWidgets, QtCore, QtGui
-from speedwagon.frontend.qtwidgets import models
+from speedwagon.frontend.qtwidgets import models, ui_loader, ui
+try:  # pragma: no cover
+    from importlib.resources import as_file
+    from importlib import resources
+except ImportError:  # pragma: no cover
+    import importlib_resources as resources  # type: ignore
+    from importlib_resources import as_file
+
+
 if typing.TYPE_CHECKING:
     from speedwagon.workflow import AbsOutputOptionDataType
 __all__ = [
@@ -415,3 +423,39 @@ class DynamicForm(QtWidgets.QWidget):
 
     def sizeHint(self) -> QtCore.QSize:
         return self._scroll.sizeHint()
+
+
+class Workspace(QtWidgets.QWidget):
+    settingsWidget: QtWidgets.QWidget
+    selectedWorkflowView: QtWidgets.QLineEdit
+    descriptionView: QtWidgets.QTextBrowser
+
+    def __init__(
+            self,
+            model: models.WorkflowListModel,
+            parent: Optional[QtWidgets.QWidget] = None
+    ) -> None:
+        super().__init__(parent)
+        self.tool_mapper = QtWidgets.QDataWidgetMapper(self)
+        self.model = model
+        self.tool_mapper.setModel(self.model)
+
+
+def get_workspace(
+        workflow_model: models.WorkflowListModel,
+        parent: QtWidgets.QWidget = None
+) -> Workspace:
+    with as_file(
+            resources.files(ui).joinpath("workspace.ui")
+    ) as ui_file:
+        widget = \
+            typing.cast(
+                Workspace,
+                ui_loader.load_ui(
+                    str(ui_file),
+                    Workspace(workflow_model, parent)
+                ),
+            )
+    widget.tool_mapper.addMapping(widget.selectedWorkflowView, 0)
+    widget.tool_mapper.addMapping(widget.descriptionView, 1, b"plainText")
+    return widget

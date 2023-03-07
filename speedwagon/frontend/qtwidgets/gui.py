@@ -714,11 +714,11 @@ class MainWindow2(MainWindow2UI):
             )
         load_job_settings_model(
             data,
-            all_tab.workspace_widgets[qtwidgets.tabs.TabWidgets.SETTINGS],
+            all_tab.settings_form,
             current_workflow(self.user_settings).get_user_options()
         )
         self._tabs[current_tab_index].options_model = \
-            all_tab.workspace_widgets[qtwidgets.tabs.TabWidgets.SETTINGS].model
+            all_tab.settings_form.model
 
     def close(self) -> bool:
         self.console.close()

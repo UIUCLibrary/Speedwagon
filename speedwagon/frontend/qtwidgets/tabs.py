@@ -83,52 +83,6 @@ class Tab:
         self.tab_widget.setSizePolicy(WORKFLOW_SIZE_POLICY)
         self.tab_layout.setSpacing(20)
 
-    @classmethod
-    def create_workspace_layout(cls, parent: QtWidgets.QWidget) \
-            -> Tuple[
-                Dict[TabWidgets, QtWidgets.QWidget],
-                QtWidgets.QFormLayout
-            ]:
-
-        tool_config_layout = QtWidgets.QFormLayout(parent)
-
-        name_line = QtWidgets.QLineEdit()
-        name_line.setReadOnly(True)
-
-        description_information = QtWidgets.QTextBrowser()
-        description_information.setMinimumHeight(75)
-
-        settings = DynamicForm(parent=parent)
-        tool_config_layout.setFieldGrowthPolicy(
-            QtWidgets.QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
-        tool_config_layout.addRow(QtWidgets.QLabel("Selected"), name_line)
-        tool_config_layout.addRow(QtWidgets.QLabel("Description"),
-                                  description_information)
-        tool_config_layout.addRow(QtWidgets.QLabel("Settings"), settings)
-
-        new_widgets: Dict[TabWidgets, QtWidgets.QWidget] = {
-            TabWidgets.NAME: name_line,
-            TabWidgets.DESCRIPTION: description_information,
-            TabWidgets.SETTINGS: settings,
-
-        }
-        return new_widgets, tool_config_layout
-
-    @classmethod
-    def create_workspace(cls, title: str, parent: QtWidgets.QWidget) -> \
-            Tuple[QtWidgets.QGroupBox, Dict[
-                TabWidgets, QtWidgets.QWidget], QtWidgets.QFormLayout]:
-        tool_workspace = QtWidgets.QGroupBox(parent)
-
-        tool_workspace.setTitle(title)
-        workspace_widgets, layout = cls.create_workspace_layout(tool_workspace)
-        # workspace_widgets[TabWidgets.SETTINGS].viewport().installEventFilter(
-        #     tool_workspace
-        # )
-        tool_workspace.setLayout(layout)
-        # tool_workspace.setSizePolicy(WORKFLOW_SIZE_POLICY)
-        return tool_workspace, workspace_widgets, layout
-
     @staticmethod
     def create_tab() -> Tuple[QtWidgets.QWidget, QtWidgets.QLayout]:
         tab_tools = QtWidgets.QWidget()
@@ -162,21 +116,34 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             model=self.item_selection_model
         )
 
-        self.workspace, self.workspace_widgets, self.workspace_layout = \
-            self.create_workspace(self.tab_name, parent)
-        self.item_form = self.create_form(self.parent,
-                                          self.workspace_widgets,
-                                          model=self.item_selection_model)
+        self.workspace_group_box = QtWidgets.QGroupBox(parent)
+        self.workspace_group_box.setLayout(QtWidgets.QVBoxLayout())
+        self.workspace_group_box.setTitle(self.tab_name)
+
+        self._workspace_widget = \
+            qtwidgets.widgets.get_workspace(
+                self.item_selection_model,
+                parent=parent
+            )
+        self.workspace_group_box.layout().addWidget(self._workspace_widget)
+        self.settings_form = DynamicForm(parent=self.workspace_group_box)
 
         self.actions_widgets, self.actions_layout = self.create_actions()
         if self.item_selection_model.rowCount() == 0:
             self.item_selector_view.setVisible(False)
-            self.workspace.setVisible(False)
+            self.workspace_group_box.setVisible(False)
+            # self.workspace.setVisible(False)
             self._empty_tab_message = QtWidgets.QLabel()
             self._empty_tab_message.setText("No items available to display")
             self.tab_layout.addWidget(self._empty_tab_message)
-        self.compose_tab_layout()
+
         self.init_selection()
+        self._workspace_widget.layout().replaceWidget(
+            self._workspace_widget.settingsWidget,
+            self.settings_form
+        )
+        self.tab_layout.addWidget(self.workspace_group_box)
+        self.compose_tab_layout()
 
     def init_selection(self) -> None:
         """Initialize selection.
@@ -220,25 +187,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
 
         return selector_view
 
-    @staticmethod
-    def create_form(
-            parent: QtWidgets.QWidget,
-            config_widgets: Dict[TabWidgets, QtWidgets.QWidget],
-            model: models.WorkflowListModel
-    ) -> QtWidgets.QDataWidgetMapper:
-        """Generate form for the selected item."""
-        tool_mapper = QtWidgets.QDataWidgetMapper(parent)
-        tool_mapper.setModel(model)
-        tool_mapper.addMapping(config_widgets[TabWidgets.NAME], 0)
-
-        # PlainText mapping because without the descriptions render without
-        # newline
-        tool_mapper.addMapping(config_widgets[TabWidgets.DESCRIPTION],
-                               1,
-                               b"plainText")
-
-        return tool_mapper
-
     @abc.abstractmethod
     def start(self, item: typing.Type[Workflow]) -> None:
         """Start item."""
@@ -256,7 +204,6 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         tool_actions_layout = QtWidgets.QHBoxLayout()
 
         start_button = QtWidgets.QPushButton()
-        # start_button.setEnabled(False)
         start_button.setText("Start")
         start_button.setContextMenuPolicy(
             QtCore.Qt.ContextMenuPolicy.CustomContextMenu
@@ -279,8 +226,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         return actions, tool_actions_layout
 
     def _start(self) -> None:
-        self.workspace_widgets[TabWidgets.SETTINGS].update_model()
-        # print(data)
+        self.settings_form.update_model()
         selected_workflow = cast(
             typing.Type[Workflow],
             self.item_selection_model.data(
@@ -322,11 +268,16 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         try:
             if current.isValid():
                 self.item_selected(current)
-                self.item_form.setCurrentModelIndex(current)
+                self._workspace_widget.tool_mapper.setCurrentModelIndex(
+                    current
+                )
         except Exception as error:
             if previous.isValid():
                 self.item_selected(previous)
-                self.item_form.setCurrentModelIndex(previous)
+                self._workspace_widget.tool_mapper.setCurrentModelIndex(
+                    previous
+                )
+
             else:
                 traceback.print_tb(error.__traceback__)
             self.item_selector_view.setCurrentIndex(previous)
@@ -340,17 +291,13 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             )
         )
 
-        item_settings = cast(
-            QtWidgets.QTableView,
-            self.workspace_widgets[TabWidgets.SETTINGS]
-        )
         #################
         try:
             model = self.get_item_options_model(item)
             self.options_model = model
-            item_settings.setModel(self.options_model)
+            self.settings_form.setModel(self.options_model)
 
-            item_settings.setSizePolicy(ITEM_SETTINGS_POLICY)
+            self.settings_form.setSizePolicy(ITEM_SETTINGS_POLICY)
         except Exception as error:
             traceback.print_exc()
             stack_trace = traceback.format_exception(type(error),
@@ -389,8 +336,8 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         """Build the tab widgets."""
         self.tab_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         self.tab_layout.addWidget(self.item_selector_view)
-        self.tab_layout.addWidget(self.workspace)
-        self.workspace.setFixedHeight(300)
+        self.tab_layout.addWidget(self.workspace_group_box)
+        self.workspace_group_box.setFixedHeight(300)
         actions = QtWidgets.QWidget()
         actions.setLayout(self.actions_layout)
         self.tab_layout.addWidget(actions)
