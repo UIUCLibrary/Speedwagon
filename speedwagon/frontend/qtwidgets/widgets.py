@@ -373,7 +373,11 @@ class DynamicForm(QtWidgets.QWidget):
         self._scroll.setWidget(self._background)
         self.setMinimumHeight(100)
 
-    def create_editor(self, widget_name, data):
+    def create_editor(
+            self,
+            widget_name: str,
+            data: WidgetMetadata
+    ) -> EditDelegateWidget:
         widget_types: typing.Dict[str, typing.Type[EditDelegateWidget]] = {
             "FileSelect": FileSelectWidget,
             "DirectorySelect": DirectorySelectWidget,
@@ -381,15 +385,14 @@ class DynamicForm(QtWidgets.QWidget):
             "BooleanSelect": CheckBoxWidget,
             "TextInput": LineEditWidget,
         }
-        return widget_types.get(widget_name)(self._background, data)
+        return widget_types[widget_name](self._background, data)
 
-    def update_widget(self):
-        self.widgets: Dict[str, EditDelegateWidget] = {}
-        layout = self._background.layout()
+    def update_widget(self) -> None:
+        self.widgets = {}
+        layout = typing.cast(QtWidgets.QFormLayout, self._background.layout())
         layout.setSpacing(2)
         while layout.rowCount():
             layout.removeRow(0)
-        self.model: Optional[models.ToolOptionsModel4]
         for i in range(self.model.rowCount()):
             index = self.model.index(i)
             if not index.isValid():
@@ -414,11 +417,11 @@ class DynamicForm(QtWidgets.QWidget):
             )
 
     # pylint: disable=invalid-name
-    def setModel(self, model: models.ToolOptionsModel4):
+    def setModel(self, model: models.ToolOptionsModel4) -> None:
         self.model = model
         self.modelChanged.emit()
 
-    def update_model(self):
+    def update_model(self) -> None:
         for i in range(self.model.rowCount()):
             index = self.model.index(i)
             if not index.isValid():
@@ -452,7 +455,7 @@ class Workspace(QtWidgets.QWidget):
 
 def get_workspace(
         workflow_model: models.WorkflowListModel,
-        parent: QtWidgets.QWidget = None
+        parent: Optional[QtWidgets.QWidget] = None
 ) -> Workspace:
     with as_file(
             resources.files(ui).joinpath("workspace.ui")
