@@ -779,7 +779,7 @@ class MainWindow2(MainWindow2UI):
             raise IndexError("Unable to locate the current tab")
         if current_tab.options_model is None:
             raise ValueError("Current tab has no option model")
-
+        current_tab.settings_form.update_model()
         return current_tab.options_model.get()
 
     def add_tab(
