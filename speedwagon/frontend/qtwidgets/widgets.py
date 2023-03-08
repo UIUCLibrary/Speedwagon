@@ -2,7 +2,15 @@
 import json
 import os.path
 import typing
-from typing import Union, Optional, Dict, Any, TypedDict, List, NotRequired
+from typing import \
+    Union, \
+    Optional, \
+    Dict, \
+    Any, \
+    TypedDict, \
+    List, \
+    NotRequired, \
+    TypeAlias
 
 from PySide6 import QtWidgets, QtCore, QtGui
 from speedwagon.frontend.qtwidgets import models, ui_loader, ui
@@ -20,12 +28,16 @@ __all__ = [
 ]
 
 
+UseDataType: TypeAlias = Union[str, bool, None]
+
+
 class WidgetMetadata(TypedDict):
     label: str
     widget_type: str
     filter: NotRequired[str]
     selections: NotRequired[List[str]]
     placeholder_text: NotRequired[str]
+    value: NotRequired[UseDataType]
 
 
 class EditDelegateWidget(QtWidgets.QWidget):
@@ -43,15 +55,12 @@ class EditDelegateWidget(QtWidgets.QWidget):
         inner_layout = QtWidgets.QHBoxLayout()
         inner_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(inner_layout)
-        self.setAutoFillBackground(True)
+        # self.setAutoFillBackground(True)
+        self.setAttribute(QtCore.Qt.WA_StyledBackground, True)
 
     @property
-    def data(self) -> Optional[Any]:
+    def data(self) -> UseDataType:
         return self._data
-
-    @data.setter
-    def data(self, value: Any) -> None:
-        self._data = value
 
 
 class LineEditWidget(EditDelegateWidget):
@@ -284,7 +293,9 @@ class DirectorySelectWidget(FileSystemItemSelectWidget):
         def default_use_qt_dialog() -> Optional[str]:
             return QtWidgets.QFileDialog.getExistingDirectory(parent=self)
 
-        selection = (get_file_callback or default_use_qt_dialog)()
+        selection: Optional[str] = \
+            (get_file_callback or default_use_qt_dialog)()
+
         if selection:
             data = selection
             self.data = data
@@ -344,40 +355,23 @@ class FileSelectWidget(FileSystemItemSelectWidget):
             self.dataChanged.emit()
 
 
-class DynamicForm(QtWidgets.QWidget):
+class InnerForm(QtWidgets.QWidget):
     modelChanged = QtCore.Signal()
 
     def __init__(
             self,
-            parent: Optional[QtWidgets.QWidget] = None
+            parent: Optional[QtWidgets.QWidget] = None,
     ) -> None:
         super().__init__(parent)
-        self._scroll = QtWidgets.QScrollArea(self)
-        self._scroll.setVerticalScrollBarPolicy(
-            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn
-        )
-
-        self._scroll.setHorizontalScrollBarPolicy(
-            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-        )
-        self._scroll.setWidgetResizable(True)
-
-        layout = QtWidgets.QFormLayout(self._scroll)
+        layout = QtWidgets.QFormLayout(self)
         layout.setRowWrapPolicy(layout.RowWrapPolicy.WrapLongRows)
-        layout.setLabelAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
         layout.setFieldGrowthPolicy(
             layout.FieldGrowthPolicy.ExpandingFieldsGrow
         )
-        self.widgets: Dict[str, EditDelegateWidget] = {}
-        self.setLayout(QtWidgets.QVBoxLayout())
-        self.layout().setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
         self.model = models.ToolOptionsModel4()
-        self._background = QtWidgets.QFrame(self)
-        self._background.setLayout(layout)
-        self.layout().addWidget(self._scroll)
         self.modelChanged.connect(self.update_widget)
-        self._scroll.setWidget(self._background)
-        self.setMinimumHeight(100)
+        self.widgets = {}
 
     def create_editor(
             self,
@@ -393,13 +387,14 @@ class DynamicForm(QtWidgets.QWidget):
         }
         return widget_types[widget_name](
             widget_metadata=data,
-            parent=self._background
+            parent=self
         )
 
     def update_widget(self) -> None:
         self.widgets = {}
-        layout = typing.cast(QtWidgets.QFormLayout, self._background.layout())
-        layout.setSpacing(2)
+        layout = typing.cast(QtWidgets.QFormLayout, self.layout())
+        layout.setContentsMargins(15, 0, 0, 0)
+        layout.setVerticalSpacing(1)
         while layout.rowCount():
             layout.removeRow(0)
         for i in range(self.model.rowCount()):
@@ -417,21 +412,19 @@ class DynamicForm(QtWidgets.QWidget):
                 widget_name=json_data['widget_type'],
                 data=json_data
             )
-            widget.setAutoFillBackground(True)
             widget.data = json_data.get("value")
             self.widgets[json_data['label']] = widget
 
             # Checkboxes/BooleanSelect already have a label built into them
-            layout.addRow(
+            label = QtWidgets.QLabel(
                 "" if json_data['widget_type'] == 'BooleanSelect'
-                else json_data['label'],
-                widget
+                else json_data['label']
             )
+            label.setFixedWidth(150)
+            label.setWordWrap(True)
+            layout.addRow(label, widget)
 
-    # pylint: disable=invalid-name
-    def setModel(self, model: models.ToolOptionsModel4) -> None:
-        self.model = model
-        self.modelChanged.emit()
+        self.update()
 
     def update_model(self) -> None:
         for i in range(self.model.rowCount()):
@@ -448,8 +441,105 @@ class DynamicForm(QtWidgets.QWidget):
 
             self.model.setData(index, self.widgets[model_data.label].data)
 
-    def sizeHint(self) -> QtCore.QSize:
-        return self._scroll.sizeHint()
+    @staticmethod
+    def iter_row_rect(layout: QtWidgets.QFormLayout, device):
+        last_height = 0
+        for row in range(layout.rowCount()):
+            label = \
+                layout.itemAt(row, QtWidgets.QFormLayout.ItemRole.LabelRole)
+            widget = \
+                layout.itemAt(row, QtWidgets.QFormLayout.ItemRole.FieldRole)
+
+            y_axis = label.geometry().y()
+            bottom_point = widget.geometry().y() + widget.geometry().height()
+            total_height = bottom_point - y_axis
+            rect = QtCore.QRect(0, y_axis, device.width(), total_height)
+            yield rect
+            last_height = rect.height() + rect.y()
+
+        default_row_height = 25
+        for y_pos in range(last_height, device.height(), default_row_height):
+            yield QtCore.QRect(0, y_pos, device.width(), default_row_height)
+
+    def paintEvent(self, event: QtGui.QPaintEvent) -> None:
+        options = QtWidgets.QStyleOptionViewItem()
+        painter = QtWidgets.QStylePainter(self)
+        for i, rect in enumerate(
+                self.iter_row_rect(
+                    typing.cast(QtWidgets.QFormLayout, self.layout()),
+                    painter.device()
+                )
+        ):
+            if i % 2 == 0:
+                options.features = options.ViewItemFeature.Alternate  # type: ignore  # noqa:E501
+            else:
+                options.features = options.ViewItemFeature.None_  # type: ignore  # noqa:E501
+            if self.isEnabled():
+                options.palette.setCurrentColorGroup(  # type: ignore  # noqa
+                    QtGui.QPalette.ColorGroup.Normal
+                )
+            else:
+                options.palette.setCurrentColorGroup(  # type: ignore  # noqa
+                    QtGui.QPalette.ColorGroup.Disabled
+                )
+            options.rect = rect  # type: ignore
+            painter.drawPrimitive(
+                QtWidgets.QStyle.PrimitiveElement.PE_PanelItemViewRow,
+                options
+            )
+        painter.end()
+
+
+class DynamicForm(QtWidgets.QScrollArea):
+    modelChanged = QtCore.Signal()
+
+    def __init__(
+            self,
+            parent: Optional[QtWidgets.QWidget] = None
+    ) -> None:
+        super().__init__(parent)
+        self.setVerticalScrollBarPolicy(
+            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn
+        )
+
+        self.setHorizontalScrollBarPolicy(
+            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.setWidgetResizable(True)
+
+        layout = QtWidgets.QFormLayout(self)
+        layout.setRowWrapPolicy(layout.RowWrapPolicy.WrapLongRows)
+        layout.setFieldGrowthPolicy(
+            layout.FieldGrowthPolicy.ExpandingFieldsGrow
+        )
+        self.widgets: Dict[str, EditDelegateWidget] = {}
+        self.setLayout(QtWidgets.QVBoxLayout())
+        self._background = InnerForm(self)
+        self.modelChanged.connect(self._background.modelChanged)
+        self.setWidget(self._background)
+        self.ensurePolished()
+
+    def create_editor(
+            self,
+            widget_name: str,
+            data: WidgetMetadata
+    ) -> EditDelegateWidget:
+        return self._background.create_editor(widget_name, data)
+
+    # pylint: disable=invalid-name
+    def set_model(self, model: models.ToolOptionsModel4) -> None:
+        self._background.model = model
+        self.modelChanged.emit()
+
+    def update_model(self) -> None:
+        self._background.update_model()
+
+    def update_widget(self):
+        self._background.update_widget()
+
+    @property
+    def model(self):
+        return self._background.model
 
 
 class Workspace(QtWidgets.QWidget):

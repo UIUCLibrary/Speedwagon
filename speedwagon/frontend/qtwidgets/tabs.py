@@ -294,7 +294,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             model = self.get_item_options_model(item)
             self.options_model = model
 
-            self.workspace_widget.settings_form.setModel(self.options_model)
+            self.workspace_widget.settings_form.set_model(self.options_model)
 
             # self.settings_form.setSizePolicy(ITEM_SETTINGS_POLICY)
         except Exception as error:

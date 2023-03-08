@@ -870,5 +870,5 @@ def load_job_settings_model(
 
             if option_data.label == key:
                 model.setData(index, value, QtCore.Qt.ItemDataRole.EditRole)
-    settings_widget.setModel(model)
+    settings_widget.set_model(model)
     settings_widget.update_widget()

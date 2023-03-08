@@ -333,4 +333,4 @@ def test_load_job_settings_model(qtbot):
     ]
     form = speedwagon.frontend.qtwidgets.widgets.DynamicForm()
     speedwagon.frontend.qtwidgets.gui.load_job_settings_model(data, form, workflow_options)
-    assert form.widgets['Source'].data == '/Volumes/G-RAID with Thunderbolt/hathi_test/access/'
+    assert form._background.widgets['Source'].data == '/Volumes/G-RAID with Thunderbolt/hathi_test/access/'
