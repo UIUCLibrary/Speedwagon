@@ -8,9 +8,18 @@ from typing import \
     Dict, \
     Any, \
     TypedDict, \
-    List, \
-    NotRequired, \
-    TypeAlias
+    List
+
+try:
+    from typing import TypeAlias
+except ImportError:
+    from typing_extensions import TypeAlias
+
+try:
+    from typing import NotRequired
+except ImportError:
+    from typing_extensions import NotRequired
+
 
 from PySide6 import QtWidgets, QtCore, QtGui
 from speedwagon.frontend.qtwidgets import models, ui_loader, ui
