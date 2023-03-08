@@ -2,10 +2,11 @@
 import json
 import os.path
 import typing
-from typing import Union, Optional, Dict, Any
+from typing import Union, Optional, Dict, Any, TypedDict, List, NotRequired
 
 from PySide6 import QtWidgets, QtCore, QtGui
 from speedwagon.frontend.qtwidgets import models, ui_loader, ui
+from speedwagon.workflow import AbsOutputOptionDataType
 try:  # pragma: no cover
     from importlib.resources import as_file
     from importlib import resources
@@ -14,12 +15,17 @@ except ImportError:  # pragma: no cover
     from importlib_resources import as_file
 
 
-if typing.TYPE_CHECKING:
-    from speedwagon.workflow import AbsOutputOptionDataType
 __all__ = [
+    'get_workspace'
 ]
 
-WidgetMetadata = Dict[str, Union[str, None]]
+
+class WidgetMetadata(TypedDict):
+    label: str
+    widget_type: str
+    filter: NotRequired[str]
+    selections: NotRequired[List[str]]
+    placeholder_text: NotRequired[str]
 
 
 class EditDelegateWidget(QtWidgets.QWidget):
@@ -28,10 +34,10 @@ class EditDelegateWidget(QtWidgets.QWidget):
 
     def __init__(
             self,
-            parent: Optional[QtWidgets.QWidget] = None,
-            widget_metadata: Optional[WidgetMetadata] = None,
+            widget_metadata: WidgetMetadata,
+            parent: Optional[QtWidgets.QWidget] = None
     ) -> None:
-        super().__init__(parent)
+        super().__init__(parent=parent)
         self._data: Optional[Any] = None
         self.widget_metadata = widget_metadata or {}
         inner_layout = QtWidgets.QHBoxLayout()
@@ -52,8 +58,8 @@ class LineEditWidget(EditDelegateWidget):
 
     def __init__(
             self,
+            widget_metadata: WidgetMetadata,
             parent: Optional[QtWidgets.QWidget] = None,
-            widget_metadata: Optional[WidgetMetadata] = None,
     ) -> None:
         super().__init__(widget_metadata=widget_metadata, parent=parent)
         self.text_box = QtWidgets.QLineEdit(self)
@@ -86,8 +92,8 @@ class CheckBoxWidget(EditDelegateWidget):
 
     def __init__(
             self,
+            widget_metadata: WidgetMetadata,
             parent: Optional[QtWidgets.QWidget] = None,
-            widget_metadata: Optional[WidgetMetadata] = None,
     ) -> None:
         super().__init__(widget_metadata=widget_metadata, parent=parent)
         self.check_box = QtWidgets.QCheckBox(self)
@@ -124,21 +130,17 @@ class CheckBoxWidget(EditDelegateWidget):
 class ComboWidget(EditDelegateWidget):
     def __init__(
             self,
+            widget_metadata: WidgetMetadata,
             parent: Optional[QtWidgets.QWidget] = None,
-            widget_metadata: Optional[WidgetMetadata] = None,
     ) -> None:
         super().__init__(widget_metadata=widget_metadata, parent=parent)
-        widget_metadata = widget_metadata or {
-            'selections': []
-        }
-
-        self.combo_box = QtWidgets.QComboBox(self.parent())
+        self.combo_box = QtWidgets.QComboBox(self)
         place_holder_text = widget_metadata.get("placeholder_text")
 
         if place_holder_text is not None:
             self.combo_box.setPlaceholderText(place_holder_text)
 
-        model = QtCore.QStringListModel(widget_metadata['selections'])
+        model = QtCore.QStringListModel(widget_metadata.get('selections', []))
         self.combo_box.setModel(model)
         self.combo_box.setCurrentIndex(-1)
 
@@ -161,17 +163,17 @@ class ComboWidget(EditDelegateWidget):
         self.editingFinished.emit()
 
     @EditDelegateWidget.data.setter
-    def data(self, value) -> None:
+    def data(self, value: Optional[str]) -> None:
         self._data = value
 
         self._update_combo_box_selected(value, self.combo_box)
 
     @staticmethod
     def _update_combo_box_selected(
-            expected_value: str,
+            expected_value: Optional[str],
             combo_box: QtWidgets.QComboBox
     ) -> None:
-        model: QtCore.QStringListModel = combo_box.model()
+        model = combo_box.model()
         for i in range(model.rowCount()):
             index = model.index(i, 0)
             if index.data() == expected_value:
@@ -183,8 +185,8 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
 
     def __init__(
             self,
+            widget_metadata: WidgetMetadata,
             parent: Optional[QtWidgets.QWidget] = None,
-            widget_metadata: Optional[WidgetMetadata] = None,
     ) -> None:
         super().__init__(widget_metadata=widget_metadata, parent=parent)
         self.edit = QtWidgets.QLineEdit(self)
@@ -311,11 +313,10 @@ class FileSelectWidget(FileSystemItemSelectWidget):
 
     def __init__(
             self,
+            widget_metadata: WidgetMetadata,
             parent: Optional[QtWidgets.QWidget] = None,
-            widget_metadata: Optional[WidgetMetadata] = None,
     ) -> None:
         super().__init__(widget_metadata=widget_metadata, parent=parent)
-        widget_metadata = widget_metadata or {}
         self.filter = widget_metadata.get('filter')
 
     def browse_file(
@@ -352,8 +353,13 @@ class DynamicForm(QtWidgets.QWidget):
     ) -> None:
         super().__init__(parent)
         self._scroll = QtWidgets.QScrollArea(self)
-        self._scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        self._scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self._scroll.setVerticalScrollBarPolicy(
+            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn
+        )
+
+        self._scroll.setHorizontalScrollBarPolicy(
+            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
         self._scroll.setWidgetResizable(True)
 
         layout = QtWidgets.QFormLayout(self._scroll)
@@ -385,7 +391,10 @@ class DynamicForm(QtWidgets.QWidget):
             "BooleanSelect": CheckBoxWidget,
             "TextInput": LineEditWidget,
         }
-        return widget_types[widget_name](self._background, data)
+        return widget_types[widget_name](
+            widget_metadata=data,
+            parent=self._background
+        )
 
     def update_widget(self) -> None:
         self.widgets = {}
@@ -404,7 +413,10 @@ class DynamicForm(QtWidgets.QWidget):
                 )
             json_data = \
                 typing.cast(WidgetMetadata, json.loads(serialized_json_data))
-            widget = self.create_editor(json_data['widget_type'], json_data)
+            widget = self.create_editor(
+                widget_name=json_data['widget_type'],
+                data=json_data
+            )
             widget.setAutoFillBackground(True)
             widget.data = json_data.get("value")
             self.widgets[json_data['label']] = widget
@@ -426,9 +438,12 @@ class DynamicForm(QtWidgets.QWidget):
             index = self.model.index(i)
             if not index.isValid():
                 return
-            model_data: AbsOutputOptionDataType = self.model.data(
-                index,
-                models.ToolOptionsModel4.DataRole
+            model_data = typing.cast(
+                AbsOutputOptionDataType,
+                self.model.data(
+                    index,
+                    models.ToolOptionsModel4.DataRole
+                )
             )
 
             self.model.setData(index, self.widgets[model_data.label].data)
@@ -441,6 +456,7 @@ class Workspace(QtWidgets.QWidget):
     settingsWidget: QtWidgets.QWidget
     selectedWorkflowView: QtWidgets.QLineEdit
     descriptionView: QtWidgets.QTextBrowser
+    settings_form: DynamicForm
 
     def __init__(
             self,
@@ -471,4 +487,9 @@ def get_workspace(
 
     widget.tool_mapper.addMapping(widget.selectedWorkflowView, 0)
     widget.tool_mapper.addMapping(widget.descriptionView, 1, b"plainText")
+    widget.settings_form = DynamicForm(widget)
+    widget.layout().replaceWidget(
+        widget.settingsWidget,
+        widget.settings_form
+    )
     return widget

@@ -15,7 +15,6 @@ from abc import ABCMeta
 import yaml
 from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
 import speedwagon
-from speedwagon.frontend.qtwidgets.widgets import DynamicForm
 
 from speedwagon import runner_strategies
 from speedwagon.frontend import qtwidgets
@@ -120,13 +119,12 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         self.workspace_group_box.setLayout(QtWidgets.QVBoxLayout())
         self.workspace_group_box.setTitle(self.tab_name)
 
-        self._workspace_widget = \
+        self.workspace_widget = \
             qtwidgets.widgets.get_workspace(
                 self.item_selection_model,
                 parent=parent
             )
-        self.workspace_group_box.layout().addWidget(self._workspace_widget)
-        self.settings_form = DynamicForm(parent=self.workspace_group_box)
+        self.workspace_group_box.layout().addWidget(self.workspace_widget)
 
         self.actions_widgets, self.actions_layout = self.create_actions()
         if self.item_selection_model.rowCount() == 0:
@@ -138,10 +136,10 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             self.tab_layout.addWidget(self._empty_tab_message)
 
         self.init_selection()
-        self._workspace_widget.layout().replaceWidget(
-            self._workspace_widget.settingsWidget,
-            self.settings_form
-        )
+        # self._workspace_widget.layout().replaceWidget(
+        #     self._workspace_widget.settingsWidget,
+        #     self.settings_form
+        # )
         self.tab_layout.addWidget(self.workspace_group_box)
         self.compose_tab_layout()
 
@@ -226,7 +224,7 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         return actions, tool_actions_layout
 
     def _start(self) -> None:
-        self.settings_form.update_model()
+        self.workspace_widget.settings_form.update_model()
         selected_workflow = cast(
             typing.Type[Workflow],
             self.item_selection_model.data(
@@ -268,13 +266,13 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         try:
             if current.isValid():
                 self.item_selected(current)
-                self._workspace_widget.tool_mapper.setCurrentModelIndex(
+                self.workspace_widget.tool_mapper.setCurrentModelIndex(
                     current
                 )
         except Exception as error:
             if previous.isValid():
                 self.item_selected(previous)
-                self._workspace_widget.tool_mapper.setCurrentModelIndex(
+                self.workspace_widget.tool_mapper.setCurrentModelIndex(
                     previous
                 )
 
@@ -295,7 +293,8 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
         try:
             model = self.get_item_options_model(item)
             self.options_model = model
-            self.settings_form.setModel(self.options_model)
+
+            self.workspace_widget.settings_form.setModel(self.options_model)
 
             # self.settings_form.setSizePolicy(ITEM_SETTINGS_POLICY)
         except Exception as error:

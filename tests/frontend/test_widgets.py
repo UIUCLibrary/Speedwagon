@@ -15,7 +15,10 @@ import speedwagon.frontend.qtwidgets.models
 class TestDropDownWidget:
     def test_empty_widget_metadata(self, qtbot):
         parent = QtWidgets.QWidget()
-        widget = speedwagon.frontend.qtwidgets.widgets.ComboWidget(parent=parent)
+        widget = speedwagon.frontend.qtwidgets.widgets.ComboWidget(
+            widget_metadata={},
+            parent=parent
+        )
         qtbot.addWidget(parent)
         assert isinstance(widget, QtWidgets.QWidget)
 
@@ -54,13 +57,19 @@ class TestCheckBoxWidget:
         parent = QtWidgets.QWidget()
         qtbot.addWidget(parent)
         widget = \
-            speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget(parent=parent)
+            speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget(
+                widget_metadata={},
+                parent=parent
+            )
         qtbot.addWidget(widget)
         assert isinstance(widget, QtWidgets.QWidget)
 
     def test_checking_changes_value(self, qtbot):
         parent = QtWidgets.QWidget()
-        widget = speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget(parent)
+        widget = speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget(
+            widget_metadata={},
+            parent=parent
+        )
         assert widget.data is False
         with qtbot.wait_signal(widget.dataChanged):
             widget.check_box.setChecked(True)
@@ -70,13 +79,20 @@ class TestCheckBoxWidget:
 class TestFileSelectWidget:
     def test_empty_widget_metadata(self, qtbot):
         parent = QtWidgets.QWidget()
-        widget = speedwagon.frontend.qtwidgets.widgets.FileSelectWidget(parent=parent)
+        widget = \
+            speedwagon.frontend.qtwidgets.widgets.FileSelectWidget(
+                widget_metadata={},
+                parent=parent
+            )
         qtbot.addWidget(widget)
         assert isinstance(widget, QtWidgets.QWidget)
 
     def test_browse_dir_valid(self, qtbot):
         parent = QtWidgets.QWidget()
-        widget = speedwagon.frontend.qtwidgets.widgets.FileSelectWidget(parent=parent)
+        widget = speedwagon.frontend.qtwidgets.widgets.FileSelectWidget(
+            widget_metadata={},
+            parent=parent
+        )
         fake_file_path = "/some/directory/file"
         with qtbot.wait_signal(widget.dataChanged):
             widget.browse_file(get_file_callback=lambda: fake_file_path)
@@ -84,7 +100,11 @@ class TestFileSelectWidget:
 
     def test_browse_dir_canceled(self, qtbot):
         parent = QtWidgets.QWidget()
-        widget = speedwagon.frontend.qtwidgets.widgets.FileSelectWidget(parent=parent)
+        widget = \
+            speedwagon.frontend.qtwidgets.widgets.FileSelectWidget(
+                widget_metadata={},
+                parent=parent
+            )
         widget.browse_file(get_file_callback=lambda: None)
         assert widget.data is None
 
@@ -93,6 +113,7 @@ class TestFileSelectWidget:
         parent = QtWidgets.QWidget()
         widget = \
             speedwagon.frontend.qtwidgets.widgets.FileSelectWidget(
+                widget_metadata={},
                 parent=parent
             )
         mime_data = Mock(
@@ -111,6 +132,7 @@ class TestFileSelectWidget:
         parent = QtWidgets.QWidget()
         widget = \
             speedwagon.frontend.qtwidgets.widgets.FileSelectWidget(
+                widget_metadata={},
                 parent=parent
             )
         mime_data = Mock(
@@ -130,6 +152,7 @@ class TestFileSelectWidget:
         parent = QtWidgets.QWidget()
         widget = \
             speedwagon.frontend.qtwidgets.widgets.FileSelectWidget(
+                widget_metadata={},
                 parent=parent
             )
         mime_data = Mock(
@@ -149,6 +172,7 @@ class TestFileSelectWidget:
         parent = QtWidgets.QWidget()
         widget = \
             speedwagon.frontend.qtwidgets.widgets.FileSelectWidget(
+                widget_metadata={},
                 parent=parent
             )
         event = Mock(
@@ -164,15 +188,24 @@ class TestFileSelectWidget:
         )
         assert widget.extract_path_from_event(event) == "fakepath"
 
+
 class TestDirectorySelectWidget:
     def test_empty_widget_metadata(self, qtbot):
         parent = QtWidgets.QWidget()
-        widget = speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(parent=parent)
+        widget = \
+            speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(
+                widget_metadata={},
+                parent=parent
+            )
         assert isinstance(widget, QtWidgets.QWidget)
 
     def test_browse_dir_valid(self, qtbot):
         parent = QtWidgets.QWidget()
-        widget = speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(parent=parent)
+        widget = \
+            speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(
+                widget_metadata={},
+                parent=parent
+            )
         fake_directory = "/some/directory"
         with qtbot.wait_signal(widget.dataChanged):
             widget.browse_dir(get_file_callback=lambda: fake_directory)
@@ -180,7 +213,11 @@ class TestDirectorySelectWidget:
 
     def test_browse_dir_canceled(self, qtbot):
         parent = QtWidgets.QWidget()
-        widget = speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(parent=parent)
+        widget = \
+            speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(
+                widget_metadata={},
+                parent=parent
+            )
         widget.browse_dir(get_file_callback=lambda: None)
         assert widget.data is None
 
@@ -188,6 +225,7 @@ class TestDirectorySelectWidget:
         parent = QtWidgets.QWidget()
         widget = \
             speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(
+                widget_metadata={},
                 parent=parent
             )
 
@@ -208,6 +246,7 @@ class TestDirectorySelectWidget:
         parent = QtWidgets.QWidget()
         widget = \
             speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(
+                widget_metadata={},
                 parent=parent
             )
 
@@ -228,6 +267,7 @@ class TestDirectorySelectWidget:
         parent = QtWidgets.QWidget()
         widget = \
             speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(
+                widget_metadata={},
                 parent=parent
             )
         setText = mocker.spy(widget.edit, "setText")
@@ -249,6 +289,7 @@ class TestDirectorySelectWidget:
         parent = QtWidgets.QWidget()
         widget = \
             speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(
+                widget_metadata={},
                 parent=parent
             )
         mime_data = Mock(
@@ -267,6 +308,7 @@ class TestDirectorySelectWidget:
         parent = QtWidgets.QWidget()
         widget = \
             speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(
+                widget_metadata={},
                 parent=parent
             )
         mime_data = Mock(
@@ -285,6 +327,7 @@ class TestDirectorySelectWidget:
         parent = QtWidgets.QWidget()
         widget = \
             speedwagon.frontend.qtwidgets.widgets.DirectorySelectWidget(
+                widget_metadata={},
                 parent=parent
             )
         mime_data = Mock(
