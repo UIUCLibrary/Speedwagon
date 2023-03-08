@@ -714,11 +714,11 @@ class MainWindow2(MainWindow2UI):
             )
         load_job_settings_model(
             data,
-            all_tab.workspace_widgets[qtwidgets.tabs.TabWidgets.SETTINGS],
+            all_tab.settings_form,
             current_workflow(self.user_settings).get_user_options()
         )
         self._tabs[current_tab_index].options_model = \
-            all_tab.workspace_widgets[qtwidgets.tabs.TabWidgets.SETTINGS].model
+            all_tab.settings_form.model
 
     def close(self) -> bool:
         self.console.close()
@@ -779,7 +779,7 @@ class MainWindow2(MainWindow2UI):
             raise IndexError("Unable to locate the current tab")
         if current_tab.options_model is None:
             raise ValueError("Current tab has no option model")
-
+        current_tab.settings_form.update_model()
         return current_tab.options_model.get()
 
     def add_tab(
@@ -820,10 +820,10 @@ class MainWindow2(MainWindow2UI):
         self._tabs: List[qtwidgets.tabs.ItemSelectionTab] = []
 
         # Add the tabs widget as the first widget
-        self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
-        self.main_splitter.addWidget(self.tab_widget)
-        self.main_splitter.setStretchFactor(0, 0)
-        self.main_splitter.setStretchFactor(1, 2)
+        # self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
+        # self.main_splitter.addWidget(self.tab_widget)
+        # self.main_splitter.setStretchFactor(0, 1)
+        # self.main_splitter.setStretchFactor(1, 0)
 
     def _create_console(self) -> None:
 

@@ -5,7 +5,15 @@ import typing
 from typing import Union, Optional, Dict, Any
 
 from PySide6 import QtWidgets, QtCore, QtGui
-from speedwagon.frontend.qtwidgets import models
+from speedwagon.frontend.qtwidgets import models, ui_loader, ui
+try:  # pragma: no cover
+    from importlib.resources import as_file
+    from importlib import resources
+except ImportError:  # pragma: no cover
+    import importlib_resources as resources  # type: ignore
+    from importlib_resources import as_file
+
+
 if typing.TYPE_CHECKING:
     from speedwagon.workflow import AbsOutputOptionDataType
 __all__ = [
@@ -84,6 +92,8 @@ class CheckBoxWidget(EditDelegateWidget):
         super().__init__(widget_metadata=widget_metadata, parent=parent)
         self.check_box = QtWidgets.QCheckBox(self)
         self.setFocusProxy(self.check_box)
+        if widget_metadata:
+            self.check_box.setText(widget_metadata['label'])
         self._make_connections()
         layout = self.layout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -363,7 +373,11 @@ class DynamicForm(QtWidgets.QWidget):
         self._scroll.setWidget(self._background)
         self.setMinimumHeight(100)
 
-    def create_editor(self, widget_name, data):
+    def create_editor(
+            self,
+            widget_name: str,
+            data: WidgetMetadata
+    ) -> EditDelegateWidget:
         widget_types: typing.Dict[str, typing.Type[EditDelegateWidget]] = {
             "FileSelect": FileSelectWidget,
             "DirectorySelect": DirectorySelectWidget,
@@ -371,14 +385,14 @@ class DynamicForm(QtWidgets.QWidget):
             "BooleanSelect": CheckBoxWidget,
             "TextInput": LineEditWidget,
         }
-        return widget_types.get(widget_name)(self._background, data)
+        return widget_types[widget_name](self._background, data)
 
-    def update_widget(self):
-        self.widgets: Dict[str, EditDelegateWidget] = {}
-        layout = self._background.layout()
+    def update_widget(self) -> None:
+        self.widgets = {}
+        layout = typing.cast(QtWidgets.QFormLayout, self._background.layout())
+        layout.setSpacing(2)
         while layout.rowCount():
             layout.removeRow(0)
-        self.model: Optional[models.ToolOptionsModel4]
         for i in range(self.model.rowCount()):
             index = self.model.index(i)
             if not index.isValid():
@@ -394,14 +408,20 @@ class DynamicForm(QtWidgets.QWidget):
             widget.setAutoFillBackground(True)
             widget.data = json_data.get("value")
             self.widgets[json_data['label']] = widget
-            layout.addRow(json_data['label'], widget)
+
+            # Checkboxes/BooleanSelect already have a label built into them
+            layout.addRow(
+                "" if json_data['widget_type'] == 'BooleanSelect'
+                else json_data['label'],
+                widget
+            )
 
     # pylint: disable=invalid-name
-    def setModel(self, model: models.ToolOptionsModel4):
+    def setModel(self, model: models.ToolOptionsModel4) -> None:
         self.model = model
         self.modelChanged.emit()
 
-    def update_model(self):
+    def update_model(self) -> None:
         for i in range(self.model.rowCount()):
             index = self.model.index(i)
             if not index.isValid():
@@ -415,3 +435,40 @@ class DynamicForm(QtWidgets.QWidget):
 
     def sizeHint(self) -> QtCore.QSize:
         return self._scroll.sizeHint()
+
+
+class Workspace(QtWidgets.QWidget):
+    settingsWidget: QtWidgets.QWidget
+    selectedWorkflowView: QtWidgets.QLineEdit
+    descriptionView: QtWidgets.QTextBrowser
+
+    def __init__(
+            self,
+            model: models.WorkflowListModel,
+            parent: Optional[QtWidgets.QWidget] = None
+    ) -> None:
+        super().__init__(parent)
+        self.tool_mapper = QtWidgets.QDataWidgetMapper(self)
+        self.model = model
+        self.tool_mapper.setModel(self.model)
+
+
+def get_workspace(
+        workflow_model: models.WorkflowListModel,
+        parent: Optional[QtWidgets.QWidget] = None
+) -> Workspace:
+    with as_file(
+            resources.files(ui).joinpath("workspace.ui")
+    ) as ui_file:
+        widget = \
+            typing.cast(
+                Workspace,
+                ui_loader.load_ui(
+                    str(ui_file),
+                    Workspace(workflow_model, parent)
+                ),
+            )
+
+    widget.tool_mapper.addMapping(widget.selectedWorkflowView, 0)
+    widget.tool_mapper.addMapping(widget.descriptionView, 1, b"plainText")
+    return widget
