@@ -41,6 +41,8 @@ class ResultValues(enum.Enum):
 
 
 class ChecksumWorkflow(Workflow):
+    """Checksum validation workflow for Speedwagon."""
+
     name = "Verify Checksum Batch [Multiple]"
     description = "Verify checksum values in checksum batch file, report " \
                   "errors. Verifies every entry in the checksum.md5 files " \
@@ -88,6 +90,11 @@ class ChecksumWorkflow(Workflow):
         return jobs
 
     def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        """Request user options.
+
+        User Options include:
+            * Input - path directory containing checksum files
+        """
         input_folder = \
             speedwagon.workflow.DirectorySelect(UserArgs.INPUT.value)
 
@@ -97,6 +104,7 @@ class ChecksumWorkflow(Workflow):
 
     @staticmethod
     def validate_user_options(**user_args: str) -> bool:
+        """Validate user options."""
         input_data = user_args[UserArgs.INPUT.value]
         if input_data is None:
             raise ValueError("Missing value in input")
@@ -118,7 +126,7 @@ class ChecksumWorkflow(Workflow):
             task_builder: "speedwagon.tasks.TaskBuilder",
             **job_args: str
     ) -> None:
-
+        """Create a checksum validation task."""
         filename = job_args['filename']
         file_path = job_args['path']
         expected_hash = job_args['expected_hash']
@@ -133,7 +141,7 @@ class ChecksumWorkflow(Workflow):
     def generate_report(cls,
                         results: List[speedwagon.tasks.Result],
                         **user_args: str) -> Optional[str]:
-
+        """Generate a report for files failed checksum test."""
         def validation_result_filter(
                 task_result: speedwagon.tasks.Result) -> bool:
             if task_result.source != ValidateChecksumTask:
@@ -175,7 +183,7 @@ class ChecksumWorkflow(Workflow):
             cls,
             new_results: Dict[str, List[Dict[ResultValues, TaskResult]]]
     ) -> dict:
-
+        """Locate failed results."""
         failed: DefaultDict[str, list] = collections.defaultdict(list)
         for checksum_file, results in new_results.items():
 
@@ -365,6 +373,11 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
         return jobs
 
     def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        """Request user options.
+
+        User Options include:
+            * Input - path checksum file
+        """
         input_file = workflow.FileSelectData(UserArgs.INPUT.value)
         input_file.filter = "Checksum files (*.md5)"
         return [
@@ -387,7 +400,7 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
             results: List[speedwagon.tasks.Result],
             **user_args: str
     ) -> Optional[str]:
-
+        """Generate a report for files failed checksum test."""
         results = [res.data for res in results]
 
         line_sep = "\n" + "-" * 60
@@ -453,7 +466,7 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
             cls,
             new_results: Dict[str, List[Dict[ResultValues, TaskResult]]]
     ) -> Dict[str, List[Dict[ResultValues, TaskResult]]]:
-
+        """Locate failed results."""
         failed: DefaultDict[str, List[Dict[ResultValues, TaskResult]]] = \
             collections.defaultdict(list)
 

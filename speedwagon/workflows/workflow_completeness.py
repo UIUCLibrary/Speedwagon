@@ -41,6 +41,7 @@ class CompletenessWorkflow(speedwagon.job.Workflow):
                   "doesn’t write new files as output)."
 
     def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        """Request user settings for which checks to be performed."""
         source = workflow.DirectorySelect("Source")
 
         check_page_data_option = \
@@ -66,6 +67,7 @@ class CompletenessWorkflow(speedwagon.job.Workflow):
                                additional_data: Mapping[str, str],
                                **user_args: Union[str, bool]
                                ) -> List[Dict[str, Union[str, bool]]]:
+        """Create task metadata based on user settings."""
         jobs = []
 
         def directory_only_filter(item: 'os.DirEntry[str]') -> bool:
@@ -99,7 +101,7 @@ class CompletenessWorkflow(speedwagon.job.Workflow):
     def create_new_task(self,
                         task_builder: "speedwagon.tasks.tasks.TaskBuilder",
                         **job_args: Union[str, bool]) -> None:
-
+        """Create validation tasks based on user settings."""
         package_path = \
             os.path.normcase(typing.cast(str, job_args['package_path']))
 
@@ -136,6 +138,7 @@ class CompletenessWorkflow(speedwagon.job.Workflow):
     @classmethod
     def generate_report(cls, results: List[speedwagon.tasks.tasks.Result],
                         **user_args: Union[str, bool]) -> Optional[str]:
+        """Generate a completeness report based on results."""
         report_builder = CompletenessReportBuilder()
 
         results_sorted = sorted(results, key=lambda x: x.source.__name__)
@@ -149,12 +152,13 @@ class CompletenessWorkflow(speedwagon.job.Workflow):
 
     def initial_task(self, task_builder: "speedwagon.tasks.tasks.TaskBuilder",
                      **user_args: str) -> None:
-
+        """Create generate manifest task."""
         new_task = HathiManifestGenerationTask(batch_root=user_args['Source'])
         task_builder.add_subtask(subtask=new_task)
 
     @staticmethod
     def validate_user_options(*args: str, **kwargs: str) -> bool:
+        """Verify user option for source is valid."""
         source = kwargs.get("Source")
         if not source:
             raise ValueError("Source is missing a value")

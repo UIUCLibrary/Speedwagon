@@ -163,7 +163,6 @@ class ApplicationLauncher:
        Added ApplicationLauncher for launching speedwagon in different ways.
 
     Examples:
-
     .. testsetup::
 
         from speedwagon.workflows.workflow_capture_one_to_dl_compound_and_dl import CaptureOneToDlCompoundAndDLWorkflow  # noqa: E501 pylint: disable=line-too-long

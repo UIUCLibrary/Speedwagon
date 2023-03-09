@@ -64,7 +64,7 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
         """Set model data."""
         record: collection.PackageObject = \
             model.data(index, role=typing.cast(int, Qt.ItemDataRole.UserRole))
-
+        widget = typing.cast(QtWidgets.QComboBox, widget)
         record.component_metadata[
             collection.Metadata.TITLE_PAGE] = widget.currentText()
 

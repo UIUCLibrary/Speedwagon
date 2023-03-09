@@ -91,6 +91,57 @@ class TestQtWidgetPackageBrowserWidget:
         assert mock_dialog_box_type.called is True and \
                mock_dialog_box.exec.called is True
 
+    def test_cancel(self, qtbot, monkeypatch):
+        parent = QtWidgets.QWidget()
+
+        def get_packages(*_, **__):
+            return []
+
+        monkeypatch.setattr(
+            qtwidgets.user_interaction.QtWidgetPackageBrowserWidget,
+            "get_packages",
+            get_packages
+        )
+
+        browse_widget = \
+            qtwidgets.user_interaction.QtWidgetPackageBrowserWidget(parent)
+
+        monkeypatch.setattr(
+            qtwidgets.user_interaction.PackageBrowser,
+            "exec",
+            lambda _self: _self.reject()
+        )
+        with pytest.raises(speedwagon.exceptions.JobCancelled):
+            browse_widget.get_data_with_dialog_box(
+                root_dir="somePath",
+                image_type=interaction.SupportedImagePackageFormats.JP2,
+            )
+
+    def test_success(self, qtbot, monkeypatch):
+        parent = QtWidgets.QWidget()
+
+        def get_packages(*_, **__):
+            return []
+
+        monkeypatch.setattr(
+            qtwidgets.user_interaction.QtWidgetPackageBrowserWidget,
+            "get_packages",
+            get_packages
+        )
+        browse_widget = \
+            qtwidgets.user_interaction.QtWidgetPackageBrowserWidget(parent)
+
+        monkeypatch.setattr(
+            qtwidgets.user_interaction.PackageBrowser,
+            "exec",
+            lambda _self: _self.accept()
+        )
+        data = browse_widget.get_data_with_dialog_box(
+            root_dir="somePath",
+            image_type=interaction.SupportedImagePackageFormats.JP2,
+        )
+        assert data == []
+
 
 class TestConfirmListModel:
     def test_model_check(self, qtmodeltester):

@@ -40,7 +40,6 @@ class QtWidgetFactory(interaction.UserRequestFactory):
             self
     ) -> interaction.AbstractPackageTitlePageSelection:
         """Generate widget for selecting title pages from a package."""
-
         return QtWidgetTitlePageSelection(parent=self.parent)
 
 
@@ -295,6 +294,9 @@ class QtWidgetPackageBrowserWidget(interaction.AbstractPackageBrowser):
             self.parent
         )
         browser.exec()
+        results = browser.result()
+        if results == QtWidgets.QDialog.DialogCode.Rejected:
+            raise speedwagon.exceptions.JobCancelled()
         return browser.data()
 
 

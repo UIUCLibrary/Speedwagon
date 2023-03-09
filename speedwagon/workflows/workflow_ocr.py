@@ -33,6 +33,8 @@ def path_contains_traineddata(path: str) -> bool:
 
 
 class OCRWorkflow(speedwagon.Workflow):
+    """Optical Character Recognition workflow for Speedwagon."""
+
     name = "Generate OCR Files"
 
     SUPPORTED_IMAGE_TYPES = {
@@ -94,6 +96,7 @@ class OCRWorkflow(speedwagon.Workflow):
 
     @classmethod
     def set_description(cls, text: str) -> None:
+        """Change the workflow's description seen by the user."""
         cls.description = text
 
     def discover_task_metadata(self,
@@ -101,7 +104,7 @@ class OCRWorkflow(speedwagon.Workflow):
                                    speedwagon.tasks.Result],
                                additional_data: Dict[str, Any],
                                **user_args: str) -> List[dict]:
-
+        """Create OCR task metadata for each file located."""
         if self.tessdata_path is not None and \
                 not os.path.exists(self.tessdata_path):
             raise MissingConfiguration("tessdata_path")
@@ -134,7 +137,7 @@ class OCRWorkflow(speedwagon.Workflow):
     def create_new_task(self,
                         task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args: str) -> None:
-
+        """Add ocr task for each file."""
         image_file = job_args["source_file_path"]
         destination_path = job_args["destination_path"]
         ocr_file_name = job_args["output_file_name"]
@@ -151,7 +154,7 @@ class OCRWorkflow(speedwagon.Workflow):
     def initial_task(self,
                      task_builder: "speedwagon.tasks.TaskBuilder",
                      **user_args: str) -> None:
-
+        """Create a task to locate appropriate files."""
         root = user_args['Path']
         file_type = user_args["Image File Type"]
         file_extension = self.get_file_extension(file_type)
@@ -162,11 +165,13 @@ class OCRWorkflow(speedwagon.Workflow):
 
     @classmethod
     def get_file_extension(cls, file_type: str) -> str:
+        """Identify file type extension."""
         return cls.SUPPORTED_IMAGE_TYPES[file_type]
 
     def get_user_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        """Request use settings for OCR job."""
         package_type = speedwagon.workflow.ChoiceSelection("Image File Type")
         package_type.placeholder_text = "Select Image Format"
         for file_type in OCRWorkflow.SUPPORTED_IMAGE_TYPES:
@@ -220,6 +225,7 @@ class OCRWorkflow(speedwagon.Workflow):
 
     @staticmethod
     def validate_user_options(**user_args: str) -> bool:
+        """Validate use input paths."""
         path = user_args["Path"]
         if path is None:
             raise ValueError("No path selected")
@@ -233,6 +239,7 @@ class OCRWorkflow(speedwagon.Workflow):
     @classmethod
     def generate_report(cls, results: List[speedwagon.tasks.Result],
                         **user_args) -> Optional[str]:
+        """Generate report for OCR files generated."""
         amount = len(cls._get_ocr_tasks(results))
 
         return \

@@ -348,6 +348,11 @@ class ItemSelectionTab(Tab, metaclass=ABCMeta):
             ],
             workflow: Optional[Type[Workflow]] = None,
     ) -> None:
+        """Generate dialog box reporting invalid settings discovered.
+
+        This is a noop if no errors found. However, if found any errors this
+        will raise InvalidConfiguration exception.
+        """
         if not self.options_model:
             return
         errors = models.get_settings_errors(self.options_model, checks)
@@ -499,6 +504,7 @@ class WorkflowsTab(ItemSelectionTab):
             qtwidgets.models.ToolOptionsModel4(user_options)
 
     def get_item_user_options(self, workflow: typing.Type[Workflow]):
+        """Get user options from  workflow."""
         if self.work_manager.user_settings is None:
             raise ValueError("user_settings not set")
         new_workflow = workflow(

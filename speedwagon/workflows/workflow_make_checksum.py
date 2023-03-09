@@ -100,6 +100,7 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
                                    speedwagon.tasks.Result],
                                additional_data,
                                **user_args: str) -> List[dict]:
+        """Generate metadata for task."""
         jobs = []
         package_root = user_args["Input"]
         report_to_save_to = os.path.normpath(
@@ -120,7 +121,7 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
     def generate_report(cls,
                         results: List[speedwagon.tasks.Result],
                         **user_args: str) -> Optional[str]:
-
+        """Generate report based on number of files hash calculated in file."""
         report_lines = [
             f"Checksum values for {len(items_written)} "
             f"files written to {checksum_report}"
@@ -134,12 +135,15 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
     def get_user_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        """Request directory input setting from user."""
         return [
             speedwagon.workflow.DirectorySelect("Input")
         ]
 
 
 class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
+    """Make checksum batch workflow for Speedwagon."""
+
     name = "Make Checksum Batch [Multiple]"
     description = "The checksum is a signature of a file.  If any data " \
                   "is changed, the checksum will provide a different " \
@@ -159,7 +163,7 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
             additional_data,
             **user_args: str
     ) -> List[typing.Dict[str, str]]:
-
+        """Generate metadata for task."""
         jobs = []
 
         for sub_dir in filter(lambda it: it.is_dir(),
@@ -185,6 +189,7 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
     def get_user_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        """Request input directory value from the user."""
         return [
             speedwagon.workflow.DirectorySelect("Input")
         ]
@@ -194,7 +199,7 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
             task_builder: "speedwagon.tasks.TaskBuilder",
             **job_args: str
     ) -> None:
-
+        """Create a checksum generation task."""
         filename = job_args['filename']
         report_name = job_args['save_to_filename']
         source_path = job_args['source_path']
@@ -212,7 +217,7 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
     def generate_report(cls,
                         results: List[speedwagon.tasks.Result],
                         **user_args: str) -> Optional[str]:
-
+        """Generate report based on number of files hash calculated in file."""
         report_lines = [
             f"Checksum values for {len(items_written)} "
             f"files written to {checksum_report}"

@@ -32,6 +32,7 @@ class ValidateImageMetadataWorkflow(Workflow):
                                initial_results: List[Any],
                                additional_data,
                                **user_args: str) -> List[dict]:
+        """Generate task metadata."""
         jobs = []
         source_input = user_args["Input"]
         jobs.append({
@@ -40,6 +41,7 @@ class ValidateImageMetadataWorkflow(Workflow):
         return jobs
 
     def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        """Request input setting from user."""
         return [
             workflow.DirectorySelect("Input")
         ]
@@ -49,13 +51,14 @@ class ValidateImageMetadataWorkflow(Workflow):
             task_builder: "speedwagon.tasks.TaskBuilder",
             **job_args: str
     ) -> None:
-
+        """Create a validation task."""
         source_file = job_args["source_file"]
         new_task = MetadataValidatorTask(source_file)
         task_builder.add_subtask(new_task)
 
     @staticmethod
     def validate_user_options(**user_args: str) -> bool:
+        """Validate input settings from user."""
         file_path = user_args["Input"]
 
         if not file_path:
