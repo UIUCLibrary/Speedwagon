@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import abc
+import copy
 import typing
 from abc import ABC
 from typing import Dict, Any, List, Optional
@@ -49,8 +50,9 @@ class AbstractPackageBrowser(AbsUserWidget, ABC):
     ) -> Dict[str, Any]:
         """Get a response from the user."""
 
-    @staticmethod
+    @classmethod
     def get_packages(
+            cls,
             root_dir: str,
             image_type: SupportedImagePackageFormats
     ) -> List[collection.Package]:
@@ -64,7 +66,10 @@ class AbstractPackageBrowser(AbsUserWidget, ABC):
         package_factory = PackageFactory(
             image_types[image_type]
         )
-        return list(package_factory.locate_packages(root_dir))
+        return [
+            cls.sort_package(package)
+            for package in package_factory.locate_packages(root_dir)
+        ]
 
     @staticmethod
     def image_str_to_enum(value: str) -> SupportedImagePackageFormats:
@@ -80,6 +85,16 @@ class AbstractPackageBrowser(AbsUserWidget, ABC):
                 f'"Image File Type": {value}'
             )
         return image_type
+
+    @staticmethod
+    def sort_package(package: collection.Package) -> collection.Package:
+        sorted_package = copy.copy(package)
+        item_name = uiucprescon.packager.Metadata.ITEM_NAME
+        sorted_package.items = sorted(
+            package.items,
+            key=lambda pack: pack.metadata[item_name]
+        )
+        return sorted_package
 
 
 class AbstractPackageTitlePageSelection(AbsUserWidget, ABC):

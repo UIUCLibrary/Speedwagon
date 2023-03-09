@@ -1,6 +1,7 @@
 from unittest.mock import Mock, MagicMock
 
 import pytest
+import uiucprescon.packager.packages.collection
 from uiucprescon.packager.packages import collection
 
 import speedwagon.exceptions
@@ -111,6 +112,23 @@ class TestCLIPackageBrowserWidget:
         pretask_result = []
         response = package_widget.get_user_response(options, pretask_result)
         assert "packages" in response
+    def test_sort_packages(self):
+        package_widget = cli.user_interaction.CLIPackageBrowserWidget()
+        package = uiucprescon.packager.packages.collection.PackageObject()
+        should_be_first = uiucprescon.packager.packages.collection.Item(package)
+        should_be_first.component_metadata[uiucprescon.packager.Metadata.ITEM_NAME] = '00000008'
+
+        should_be_second = uiucprescon.packager.packages.collection.Item(package)
+        should_be_second.component_metadata[uiucprescon.packager.Metadata.ITEM_NAME] = '00000009'
+
+        package.items = [
+            should_be_second,
+            should_be_first
+        ]
+        result = package_widget.sort_package(package)
+        assert result.items[0].metadata[uiucprescon.packager.Metadata.ITEM_NAME] == '00000008' and \
+               result.items[1].metadata[uiucprescon.packager.Metadata.ITEM_NAME] == '00000009'
+
 
 
 class TestCLIConfirmFilesystemItemRemoval:
