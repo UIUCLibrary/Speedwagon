@@ -1,4 +1,5 @@
 """Specialize widgets."""
+import abc
 import json
 import os.path
 import typing
@@ -49,7 +50,21 @@ class WidgetMetadata(TypedDict):
     value: NotRequired[UseDataType]
 
 
-class EditDelegateWidget(QtWidgets.QWidget):
+class AbstractEditDelegateWidgetMetaclass(
+    type(QtWidgets.QWidget),  # type: ignore
+    abc.ABCMeta
+):
+    """Pointless class.
+
+     This is only here until https://bugreports.qt.io/browse/PYSIDE-1434 is
+     resolved.
+     """
+
+
+class EditDelegateWidget(
+    QtWidgets.QWidget,
+    metaclass=AbstractEditDelegateWidgetMetaclass
+):
     editingFinished = QtCore.Signal()
     dataChanged = QtCore.Signal()
 
@@ -64,12 +79,16 @@ class EditDelegateWidget(QtWidgets.QWidget):
         inner_layout = QtWidgets.QHBoxLayout()
         inner_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(inner_layout)
-        # self.setAutoFillBackground(True)
         self.setAttribute(QtCore.Qt.WA_StyledBackground, True)
 
     @property
     def data(self) -> UseDataType:
         return self._data
+
+    @data.setter
+    @abc.abstractmethod
+    def data(self, value: UseDataType) -> None:
+        """Set the value based on the widget used."""
 
 
 class LineEditWidget(EditDelegateWidget):
@@ -100,7 +119,7 @@ class LineEditWidget(EditDelegateWidget):
         self._data = self.text_box.text()
         self.dataChanged.emit()
 
-    @EditDelegateWidget.data.setter
+    @EditDelegateWidget.data.setter  # type: ignore[attr-defined]
     def data(self, value: str) -> None:
         self._data = value
         self.text_box.setText(value)
@@ -136,7 +155,7 @@ class CheckBoxWidget(EditDelegateWidget):
         self.data = self.check_box.isChecked()
         self.dataChanged.emit()
 
-    @EditDelegateWidget.data.setter
+    @EditDelegateWidget.data.setter  # type: ignore[attr-defined]
     def data(self, value: bool) -> None:
         self._data = value
         if value:
@@ -180,7 +199,7 @@ class ComboWidget(EditDelegateWidget):
         self.dataChanged.emit()
         self.editingFinished.emit()
 
-    @EditDelegateWidget.data.setter
+    @EditDelegateWidget.data.setter  # type: ignore[attr-defined]
     def data(self, value: Optional[str]) -> None:
         self._data = value
 
@@ -236,7 +255,7 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
     def get_browse_action(self) -> QtGui.QAction:
         return QtGui.QAction("Browse", parent=self)
 
-    @EditDelegateWidget.data.setter
+    @EditDelegateWidget.data.setter  # type: ignore[attr-defined]
     def data(self, value: str) -> None:
         self._data = value
         self.edit.setText(value)
@@ -267,6 +286,10 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
         mime_data = event.mimeData()
         urls = mime_data.urls()
         return urls[0].path()
+
+    @abc.abstractmethod
+    def drop_acceptable_data(self, param) -> bool:
+        """check if dropped item is accessible"""
 
 
 class DirectorySelectWidget(FileSystemItemSelectWidget):
@@ -376,7 +399,7 @@ class InnerForm(QtWidgets.QWidget):
         self.setLayout(layout)
         self.model = models.ToolOptionsModel4()
         self.modelChanged.connect(self.update_widget)
-        self.widgets = {}
+        self.widgets: Dict[str, EditDelegateWidget] = {}
 
     def create_editor(
             self,
