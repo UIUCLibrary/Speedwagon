@@ -10,27 +10,6 @@ RUN apt-get update && \
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 
-# ==============================================================================
-FROM wheel_builder_base as WHEEL_BUILDER_PY38
-ARG PIP_EXTRA_INDEX_URL
-ARG PIP_INDEX_URL
-
-COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt ci/docker/python/shared/requirements-extra.txt /tmp/
-COPY requirements/ /tmp/requirements
-ENV PYTHON=python3.8
-RUN $PYTHON -m venv venv && \
-    . ./venv/bin/activate && \
-    python -m pip install --no-cache-dir pip --upgrade && \
-    python -m pip install --no-cache-dir wheel==0.37.1 && \
-    python -m pip wheel --no-cache-dir -w /wheels   \
-        -r /tmp/requirements.txt \
-        -r /tmp/requirements-dev.txt  \
-        -r /tmp/requirements-vendor.txt \
-        -r /tmp/requirements-ci.txt  \
-        -r /tmp/requirements-extra.txt && \
-    python -m pip wheel --no-cache-dir -w /wheels -r /tmp/requirements/requirements-devpi.txt && \
-    rm -rf venv
-
 FROM wheel_builder_base
 RUN mkdir -p /.cache/pip && \
     chmod -R 777 /.cache
@@ -42,7 +21,6 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 RUN pip3 wheel -w /wheels --no-cache-dir wheel
 
-ENV PIP_FIND_LINKS=/wheels
-RUN pip3 install --no-cache-dir --no-index --find-links=/wheels -r /tmp/requirements/requirements-devpi.txt
+RUN pip3 install --no-cache-dir -r /tmp/requirements/requirements-devpi.txt
 WORKDIR /src
 CMD ["tox", "--workdir", "/tmp/tox", "--recreate", "-p=auto"]
