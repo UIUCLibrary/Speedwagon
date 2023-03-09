@@ -241,10 +241,6 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
         self._data = value
         self.edit.setText(value)
 
-    def drop_acceptable_data(self, mime_data: QtCore.QMimeData) -> bool:
-        """Return if the item dragged over is the right type."""
-        return True
-
     def eventFilter(
             self,
             watched: QtCore.QObject,
@@ -497,6 +493,7 @@ class InnerForm(QtWidgets.QWidget):
                 options
             )
         painter.end()
+        super().paintEvent(event)
 
 
 class DynamicForm(QtWidgets.QScrollArea):
@@ -591,4 +588,5 @@ def get_workspace(
         widget.settingsWidget,
         widget.settings_form
     )
+    widget.settings_form.setMinimumHeight(100)
     return widget
