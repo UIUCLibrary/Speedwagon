@@ -9,7 +9,7 @@
     <description>[[PythonSummary]]</description>
     <packageSourceUrl>https://github.com/UIUCLibrary/Speedwagon/tree/master/ci/docker/chocolatey_package/choco_package_template/pythonscript</packageSourceUrl>
     <licenseUrl>https://raw.githubusercontent.com/UIUCLibrary/Speedwagon/master/LICENSE</licenseUrl>
-    <iconUrl>https://github.com/UIUCLibrary/Speedwagon/raw/master/speedwagon/favicon.ico</iconUrl>
+    <iconUrl>https://raw.githubusercontent.com/UIUCLibrary/Speedwagon/master/speedwagon/logo.png</iconUrl>
     <projectSourceUrl>https://github.com/UIUCLibrary/Speedwagon</projectSourceUrl>
     <projectUrl>https://github.com/UIUCLibrary/Speedwagon</projectUrl>
     <docsUrl>https://www.library.illinois.edu/dccdocs/speedwagon/</docsUrl>
