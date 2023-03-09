@@ -209,6 +209,14 @@ class ComboWidget(EditDelegateWidget):
                 combo_box.setCurrentIndex(index.row())
                 break
 
+    def get_selections(self) -> List[str]:
+        model = self.combo_box.model()
+        selections = []
+        for i in range(model.rowCount()):
+            index = model.index(i)
+            selections.append(model.data(index))
+        return selections
+
 
 class FileSystemItemSelectWidget(EditDelegateWidget):
 
