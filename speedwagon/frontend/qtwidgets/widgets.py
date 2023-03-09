@@ -493,7 +493,6 @@ class InnerForm(QtWidgets.QWidget):
                 options
             )
         painter.end()
-        super().paintEvent(event)
 
 
 class DynamicForm(QtWidgets.QScrollArea):
