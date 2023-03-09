@@ -294,6 +294,9 @@ class QtWidgetPackageBrowserWidget(interaction.AbstractPackageBrowser):
             self.parent
         )
         browser.exec()
+        results = browser.result()
+        if results == QtWidgets.QDialog.DialogCode.Rejected:
+            raise speedwagon.exceptions.JobCancelled()
         return browser.data()
 
 
