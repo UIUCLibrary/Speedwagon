@@ -105,7 +105,14 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
     def get_user_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        """Request user options.
 
+        User Options include:
+            * Input - path directory containing tiff files
+            * Package Type - File package type in the input directory
+            * Output Digital Library - Output path to save new DL packages
+            * Output HathiTrust - Output path to save new HT packages
+        """
         input_path = speedwagon.workflow.DirectorySelect(USER_INPUT_PATH)
 
         package_type_selection = \

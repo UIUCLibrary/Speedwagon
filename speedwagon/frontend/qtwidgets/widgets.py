@@ -569,6 +569,7 @@ def get_workspace(
         workflow_model: models.WorkflowListModel,
         parent: Optional[QtWidgets.QWidget] = None
 ) -> Workspace:
+    """Get Workspace widget."""
     with as_file(
             resources.files(ui).joinpath("workspace.ui")
     ) as ui_file:

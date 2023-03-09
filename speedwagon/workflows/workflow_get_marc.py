@@ -86,6 +86,14 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
                 raise MissingConfiguration(f"Missing value for {k}")
 
     def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        """Request user options.
+
+        User Options include:
+            * Input - path directory containing files
+            * Identifier type - ID type used in file name
+            * Add 955 field - Add additional 955 field to metadata
+            * Add 035 field - Add additional 035 field to metadata
+        """
         user_input = workflow.DirectorySelect(OPTION_USER_INPUT)
 
         id_type_option = workflow.ChoiceSelection(IDENTIFIER_TYPE)

@@ -15,6 +15,8 @@ __all__ = ['HathiLimitedToDLWorkflow']
 
 
 class HathiLimitedToDLWorkflow(Workflow):
+    """Converts Hathi Limited View file packages to Digital Library format."""
+
     name = "Convert HathiTrust limited view to Digital library"
     description = 'This tool converts HathiTrust limited view packages to ' \
                   'Digital library'
@@ -26,7 +28,7 @@ class HathiLimitedToDLWorkflow(Workflow):
             initial_results: List[Any],
             additional_data, **user_args: str
     ) -> List[dict]:
-
+        """Find file packages."""
         hathi_limited_view_packager = packager.PackageFactory(
             packager.packages.HathiLimitedView())
 
@@ -41,6 +43,7 @@ class HathiLimitedToDLWorkflow(Workflow):
             task_builder: "speedwagon.tasks.TaskBuilder",
             **job_args
     ):
+        """Create a task for converting a package."""
         task_builder.add_subtask(
             PackageConverter(src=job_args['package'],
                              dst=job_args['destination'])
@@ -49,6 +52,7 @@ class HathiLimitedToDLWorkflow(Workflow):
     def get_user_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        """Get user options for input and output directories."""
         return [
             speedwagon.workflow.DirectorySelect("Input"),
             speedwagon.workflow.DirectorySelect("Output"),
@@ -58,6 +62,7 @@ class HathiLimitedToDLWorkflow(Workflow):
     @reports.add_report_borders
     def generate_report(cls, results: List[speedwagon.tasks.Result],
                         **user_args) -> Optional[str]:
+        """Generate a report of packages converted."""
         total = len(results)
 
         return f"""All done. Converted {total} packages.
@@ -66,6 +71,7 @@ class HathiLimitedToDLWorkflow(Workflow):
 
     @staticmethod
     def validate_user_options(**user_args: str) -> bool:
+        """Validate user input and output args."""
         required = ['Input', "Output"]
         for arg in required:
             if user_args[arg] is None or str(user_args[arg]).strip() == "":

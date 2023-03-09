@@ -26,6 +26,8 @@ class JobValues(enum.Enum):
 
 
 class ValidateMetadataWorkflow(Workflow):
+    """Workflow for validating embedded image file metadata."""
+
     name = "Validate Metadata"
     description = "Validates the technical metadata for JP2000 files to " \
                   "include x and why resolution, bit depth and color space " \
@@ -40,6 +42,7 @@ class ValidateMetadataWorkflow(Workflow):
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data,
                                **user_args) -> List[dict]:
+        """Create task metadata based on the files located."""
         new_tasks = []
 
         for image_file in initial_results[0].data:
@@ -54,7 +57,7 @@ class ValidateMetadataWorkflow(Workflow):
             task_builder: "speedwagon.tasks.TaskBuilder",
             **user_args
     ) -> None:
-
+        """Create task that locates files based on profile selected by user."""
         task_builder.add_subtask(
             LocateImagesTask(
                 user_args[UserArgs.INPUT.value],
@@ -65,6 +68,10 @@ class ValidateMetadataWorkflow(Workflow):
     def get_user_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        """Request user options.
+
+        This includes an input folder and a validation profile.
+        """
         input_option = \
             speedwagon.workflow.DirectorySelect(UserArgs.INPUT.value)
 
@@ -81,6 +88,7 @@ class ValidateMetadataWorkflow(Workflow):
 
     @staticmethod
     def validate_user_options(**user_args: str) -> bool:
+        """Validate input and other user args."""
         input_data = user_args[UserArgs.INPUT.value]
         if input_data is None:
             raise ValueError("Missing value in input")
@@ -92,6 +100,7 @@ class ValidateMetadataWorkflow(Workflow):
     def create_new_task(self,
                         task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args: str):
+        """Create validation tasks."""
         filename = job_args[JobValues.ITEM_FILENAME.value]
 
         subtask = \
@@ -106,6 +115,7 @@ class ValidateMetadataWorkflow(Workflow):
     def generate_report(cls,
                         results: List[speedwagon.tasks.Result],
                         **user_args) -> Optional[str]:
+        """Generate validation report as a string."""
         result_keys = \
             speedwagon.tasks.validation.ValidateImageMetadataTask.ResultValues
 

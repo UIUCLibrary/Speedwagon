@@ -113,6 +113,13 @@ class MakeJp2Workflow(job.Workflow):
     def get_user_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        """Get user options.
+
+        User options includes:
+            * Source folder to use as source
+            * Output folder to put new files
+            * Image profile for selecting the type of files generated
+        """
         profile = speedwagon.workflow.ChoiceSelection("Profile")
         profile.placeholder_text = "Select a profile"
         for profile_name in ProfileFactory.profile_names():

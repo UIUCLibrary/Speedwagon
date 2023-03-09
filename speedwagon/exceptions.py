@@ -10,6 +10,8 @@ class SpeedwagonException(Exception):
 
 
 class InvalidConfiguration(SpeedwagonException):
+    """Invalid user configuration value."""
+
     description = "Invalid value is settings"
 
 

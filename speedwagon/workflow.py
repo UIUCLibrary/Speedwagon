@@ -105,6 +105,7 @@ class TextLineEditData(AbsOutputOptionDataType):
 
 class DirectorySelect(AbsOutputOptionDataType):
     """Directory path selection."""
+
     def __init__(self, label: str, required: bool = True) -> None:
         super().__init__(label, required)
 
@@ -113,6 +114,7 @@ class DirectorySelect(AbsOutputOptionDataType):
 
 class BooleanSelect(AbsOutputOptionDataType):
     """Boolean selection."""
+
     def __init__(self, label: str, required: bool = False) -> None:
         super().__init__(label, required)
 

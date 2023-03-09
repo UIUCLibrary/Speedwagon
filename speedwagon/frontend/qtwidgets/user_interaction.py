@@ -40,7 +40,6 @@ class QtWidgetFactory(interaction.UserRequestFactory):
             self
     ) -> interaction.AbstractPackageTitlePageSelection:
         """Generate widget for selecting title pages from a package."""
-
         return QtWidgetTitlePageSelection(parent=self.parent)
 
 

@@ -17,6 +17,8 @@ __all__ = ['ZipPackagesWorkflow']
 
 
 class ZipPackagesWorkflow(Workflow):
+    """Zip Package workflow for Speedwagon."""
+
     name = "Zip Packages"
 
     description = "This tool takes a folder, usually of HathiTrust " \
@@ -34,7 +36,7 @@ class ZipPackagesWorkflow(Workflow):
                                initial_results: List[Any],
                                additional_data,
                                **user_args: str) -> List[dict]:
-
+        """Generate metadata need by task."""
         source = user_args["Source"]
         output = user_args["Output"]
 
@@ -48,7 +50,7 @@ class ZipPackagesWorkflow(Workflow):
 
     @staticmethod
     def validate_user_options(**user_args: str) -> bool:
-
+        """Validate user settings for source and output paths."""
         source = user_args["Source"]
         output = user_args["Output"]
         if not os.path.exists(source) or not os.path.isdir(source):
@@ -59,6 +61,7 @@ class ZipPackagesWorkflow(Workflow):
         return True
 
     def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+        """Request user settings for source and output paths."""
         source = workflow.DirectorySelect("Source")
         output = workflow.DirectorySelect("Output")
 
@@ -72,6 +75,7 @@ class ZipPackagesWorkflow(Workflow):
             task_builder: "speedwagon.tasks.TaskBuilder",
             **job_args
     ) -> None:
+        """Create a Zip task."""
         new_task = ZipTask(**job_args)
         task_builder.add_subtask(new_task)
 
@@ -79,7 +83,7 @@ class ZipPackagesWorkflow(Workflow):
     @reports.add_report_borders
     def generate_report(cls, results: List[speedwagon.tasks.Result],
                         **user_args: str) -> Optional[str]:
-
+        """Generate report for all files added to zip file."""
         output = user_args.get("Output")
         if output:
             return f"Zipping complete. All files written to \"{output}\"."

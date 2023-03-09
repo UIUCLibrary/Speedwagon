@@ -69,6 +69,8 @@ class ConvertFile(AbsProcessStrategy):
 
 
 class ConvertTiffPreservationToDLJp2Workflow(Workflow):
+    """Package conversion workflow for Speedwagon."""
+
     name = "Convert CaptureOne Preservation TIFF to Digital Library Access JP2"
     description = 'This tool takes as its input a "preservation" folder of ' \
                   'TIFF files and as its output creates a sibling folder ' \
@@ -82,6 +84,7 @@ class ConvertTiffPreservationToDLJp2Workflow(Workflow):
                                additional_data: Dict[str, str],
                                **user_args: str
                                ) -> List[Dict[str, str]]:
+        """Generate task metadata for converting file packages."""
         jobs = []
         source_input = user_args["Input"]
 
@@ -114,6 +117,7 @@ class ConvertTiffPreservationToDLJp2Workflow(Workflow):
     def get_user_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        """Request use settings for source path."""
         return [
             speedwagon.workflow.DirectorySelect("Input"),
         ]
@@ -121,7 +125,7 @@ class ConvertTiffPreservationToDLJp2Workflow(Workflow):
     def create_new_task(self,
                         task_builder: "speedwagon.tasks.TaskBuilder",
                         **job_args: str) -> None:
-
+        """Create task to convert file package."""
         source_file = job_args['source_file']
         dest_path = job_args['output_path']
         new_task = PackageImageConverterTask(
@@ -132,6 +136,7 @@ class ConvertTiffPreservationToDLJp2Workflow(Workflow):
 
     @staticmethod
     def validate_user_options(**user_args: str) -> bool:
+        """Validate input path option."""
         input_value = user_args["Input"]
 
         if input_value is None:
@@ -153,7 +158,7 @@ class ConvertTiffPreservationToDLJp2Workflow(Workflow):
     def generate_report(cls,
                         results: List[speedwagon.tasks.Result],
                         **user_args: str) -> str:
-
+        """Generate a report for number of successful files created."""
         failure = False
         dest = None
 

@@ -32,7 +32,13 @@ class HathiPrepWorkflow(speedwagon.Workflow):
     def get_user_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        """Get user options.
 
+        User Settings:
+            * input - folder used as a source path
+            * Image File Type - select the type of file to use
+
+        """
         package_type = speedwagon.workflow.ChoiceSelection("Image File Type")
         package_type.placeholder_text = "Select an Image Format"
         package_type.add_selection("JPEG 2000")
