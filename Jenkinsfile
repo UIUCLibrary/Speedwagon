@@ -274,42 +274,44 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
         }
         macArchitectures.each{ processorArchitecture ->
             macPackageStages["Test Python ${pythonVersion}: wheel Mac ${processorArchitecture}"] = {
-                withEnv([
-                    'QT_QPA_PLATFORM=offscreen',
-                    'PATH+EXTRA=./venv/bin'
-                    ]) {
-                    devpi.testDevpiPackage(
-                        agent: [
-                            label: "mac && python${pythonVersion} && ${processorArchitecture} && devpi-access"
-                        ],
-                        devpi: [
-                            index: devpiIndex,
-                            server: devpiServer,
-                            credentialsId: devpiCredentialsId,
-                            devpiExec: 'venv/bin/devpi'
-                        ],
-                        package:[
-                            name: packageName,
-                            version: packageVersion,
-                            selector: 'whl'
-                        ],
-                        test:[
-                            setup: {
-                                checkout scm
-                                sh(
-                                    label:'Installing Devpi client',
-                                    script: '''python3 -m venv venv
-                                                venv/bin/python -m pip install pip --upgrade
-                                                venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
-                                                '''
-                                )
-                            },
-                            toxEnv: "py${pythonVersion}".replace('.',''),
-                            teardown: {
-                                sh( label: 'Remove Devpi client', script: 'rm -r venv')
-                            }
-                        ]
-                    )
+                retry(3){
+                    withEnv([
+                        'QT_QPA_PLATFORM=offscreen',
+                        'PATH+EXTRA=./venv/bin'
+                        ]) {
+                        devpi.testDevpiPackage(
+                            agent: [
+                                label: "mac && python${pythonVersion} && ${processorArchitecture} && devpi-access"
+                            ],
+                            devpi: [
+                                index: devpiIndex,
+                                server: devpiServer,
+                                credentialsId: devpiCredentialsId,
+                                devpiExec: 'venv/bin/devpi'
+                            ],
+                            package:[
+                                name: packageName,
+                                version: packageVersion,
+                                selector: 'whl'
+                            ],
+                            test:[
+                                setup: {
+                                    checkout scm
+                                    sh(
+                                        label:'Installing Devpi client',
+                                        script: '''python3 -m venv venv
+                                                    venv/bin/python -m pip install pip --upgrade
+                                                    venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
+                                                    '''
+                                    )
+                                },
+                                toxEnv: "py${pythonVersion}".replace('.',''),
+                                teardown: {
+                                    sh( label: 'Remove Devpi client', script: 'rm -r venv')
+                                }
+                            ]
+                        )
+                    }
                 }
             }
             macPackageStages["Test Python ${pythonVersion}: sdist Mac ${processorArchitecture}"] = {
