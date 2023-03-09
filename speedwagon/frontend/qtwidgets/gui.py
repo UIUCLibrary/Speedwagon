@@ -706,19 +706,22 @@ class MainWindow2(MainWindow2UI):
             self._tabs[
                 current_tab_index
             ].item_selector_view.selectedIndexes()[0]
-        current_workflow: typing.Type[Workflow] = self._tabs[
+        current_workflow = typing.cast(
+            typing.Type[Workflow],
+            self._tabs[
                 current_tab_index
             ].item_selection_model.data(
                 item_selected_index,
                 role=typing.cast(int, QtCore.Qt.ItemDataRole.UserRole)
             )
+        )
         load_job_settings_model(
             data,
-            all_tab.settings_form,
+            all_tab.workspace_widget.settings_form,
             current_workflow(self.user_settings).get_user_options()
         )
         self._tabs[current_tab_index].options_model = \
-            all_tab.settings_form.model
+            all_tab.workspace_widget.settings_form.model
 
     def close(self) -> bool:
         self.console.close()
@@ -779,7 +782,7 @@ class MainWindow2(MainWindow2UI):
             raise IndexError("Unable to locate the current tab")
         if current_tab.options_model is None:
             raise ValueError("Current tab has no option model")
-        current_tab.settings_form.update_model()
+        current_tab.workspace_widget.settings_form.update_model()
         return current_tab.options_model.get()
 
     def add_tab(
@@ -867,5 +870,5 @@ def load_job_settings_model(
 
             if option_data.label == key:
                 model.setData(index, value, QtCore.Qt.ItemDataRole.EditRole)
-    settings_widget.setModel(model)
+    settings_widget.set_model(model)
     settings_widget.update_widget()
