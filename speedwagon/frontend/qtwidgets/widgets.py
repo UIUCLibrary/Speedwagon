@@ -50,21 +50,13 @@ class WidgetMetadata(TypedDict):
     value: NotRequired[UseDataType]
 
 
-class AbstractEditDelegateWidgetMetaclass(
-    type(QtWidgets.QWidget),  # type: ignore
-    abc.ABCMeta
-):
-    """Pointless class.
+class EditDelegateWidget(QtWidgets.QWidget):
+    """EditDelegateWidget base class.
 
-     This is only here until https://bugreports.qt.io/browse/PYSIDE-1434 is
-     resolved.
-     """
-
-
-class EditDelegateWidget(
-    QtWidgets.QWidget,
-    metaclass=AbstractEditDelegateWidgetMetaclass
-):
+    Note:
+        When https://bugreports.qt.io/browse/PYSIDE-1434 is resolved, this
+        should be made into an abstract base class.
+    """
     editingFinished = QtCore.Signal()
     dataChanged = QtCore.Signal()
 
