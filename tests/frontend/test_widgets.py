@@ -51,6 +51,18 @@ class TestDropDownWidget:
         qtbot.addWidget(widget)
         assert widget.combo_box.placeholderText() == "Dummy"
 
+    def test_get_selections(self, qtbot):
+        parent = QtWidgets.QWidget()
+        qtbot.addWidget(parent)
+        widget = speedwagon.frontend.qtwidgets.widgets.ComboWidget(
+            parent=parent,
+            widget_metadata={
+                "selections": ["spam", "bacon", "eggs"],
+                "placeholder_text": "Dummy"
+            }
+        )
+        qtbot.addWidget(widget)
+        assert widget.get_selections() == ["spam", "bacon", "eggs"]
 
 class TestCheckBoxWidget:
     def test_empty_widget_metadata(self, qtbot):
