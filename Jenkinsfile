@@ -1,5 +1,3 @@
-#!groovy
-import static groovy.json.JsonOutput.* // For pretty printing json data
 
 SUPPORTED_MAC_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
 SUPPORTED_LINUX_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
@@ -143,40 +141,6 @@ def get_build_number(){
     }
 }
 
-//def deploy_to_nexus(filename, deployUrl, credId){
-//    script{
-//        withCredentials([usernamePassword(credentialsId: credId, passwordVariable: 'nexusPassword', usernameVariable: 'nexusUsername')]) {
-//             bat(
-//                 label: "Deploying ${filename} to ${deployUrl}",
-//                 script: "curl -v --upload ${filename} ${deployUrl} -u %nexusUsername%:%nexusPassword%"
-//             )
-//        }
-//    }
-//}
-//def deploy_artifacts_to_url(regex, urlDestination){
-//    script{
-//        def installer_files  = findFiles glob: regex
-////        'dist/*.msi,dist/*.exe,dist/*.zip'
-//        def simple_file_names = []
-//
-//        installer_files.each{
-//            simple_file_names << it.name
-//        }
-//        def new_urls = []
-//        try{
-//            installer_files.each{
-//                def deployUrl = "${urlDestination}" + it.name
-//                  deploy_to_nexus(it, deployUrl, "jenkins-nexus")
-//                  new_urls << deployUrl
-//            }
-//        } finally{
-//            def url_message_list = new_urls.collect{"* " + it}.join("\n")
-//            echo """The following beta file(s) are now available:
-//${url_message_list}
-//"""
-//        }
-//    }
-//}
 def runTox(){
     script{
         def tox = fileLoader.fromGit(
@@ -215,57 +179,6 @@ def runTox(){
     }
 }
 
-def deploy_sscm(file_glob, pkgVersion){
-    script{
-        def msi_files = findFiles glob: file_glob
-        def deployment_request = requestDeploy yaml: "${WORKSPACE}/deployment.yml", file_name: msi_files[0]
-
-        cifsPublisher(
-            publishers: [[
-                configName: 'SCCM Staging',
-                transfers: [[
-                    cleanRemote: false,
-                    excludes: '',
-                    flatten: false,
-                    makeEmptyDirs: false,
-                    noDefaultExcludes: false,
-                    patternSeparator: '[, ]+',
-                    remoteDirectory: '',
-                    remoteDirectorySDF: false,
-                    removePrefix: '',
-                    sourceFiles: '*.msi'
-                    ]],
-                usePromotionTimestamp: false,
-                useWorkspaceInPromotion: false,
-                verbose: false
-                ]]
-            )
-
-        input('Deploy to production?')
-        writeFile file: 'logs/deployment_request.txt', text: deployment_request
-        echo deployment_request
-        cifsPublisher(
-            publishers: [[
-                configName: 'SCCM Upload',
-                transfers: [[
-                    cleanRemote: false,
-                    excludes: '',
-                    flatten: false,
-                    makeEmptyDirs: false,
-                    noDefaultExcludes: false,
-                    patternSeparator: '[, ]+',
-                    remoteDirectory: '',
-                    remoteDirectorySDF: false,
-                    removePrefix: '',
-                    sourceFiles: '*.msi'
-                    ]],
-                usePromotionTimestamp: false,
-                useWorkspaceInPromotion: false,
-                verbose: false
-                ]]
-        )
-    }
-}
 def testSpeedwagonChocolateyPkg(version){
     script{
         def chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
@@ -664,10 +577,7 @@ pipeline {
         booleanParam(name: 'DEPLOY_DEVPI_PRODUCTION', defaultValue: false, description: "Deploy to ${DEVPI_CONFIG.server}/production/release")
         booleanParam(name: 'DEPLOY_PYPI', defaultValue: false, description: 'Deploy to pypi')
         booleanParam(name: 'DEPLOY_CHOCOLATEY', defaultValue: false, description: 'Deploy to Chocolatey repository')
-//        booleanParam(name: 'DEPLOY_DMG', defaultValue: false, description: 'Deploy MacOS standalone')
         booleanParam(name: 'DEPLOY_STANDALONE_PACKAGERS', defaultValue: false, description: 'Deploy standalone packages')
-//        booleanParam(name: 'DEPLOY_HATHI_TOOL_BETA', defaultValue: false, description: 'Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/')
-        booleanParam(name: 'DEPLOY_SCCM', defaultValue: false, description: 'Request deployment of MSI installer to SCCM')
         booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
     }
     stages {
@@ -1692,34 +1602,6 @@ pipeline {
                                     )
                                 }
                             }
-                        }
-                    }
-                }
-                stage('Deploy Standalone Build to SCCM') {
-                    when {
-                        allOf{
-                            equals expected: true, actual: params.DEPLOY_SCCM
-                            anyOf{
-                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
-                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
-                            }
-                            branch 'master'
-                        }
-                    }
-                    options {
-                        skipDefaultCheckout(true)
-                    }
-                    agent any
-                    steps {
-                        unstash 'STANDALONE_INSTALLERS'
-                        dir('dist'){
-                            deploy_sscm('*.msi', props.Version)
-                        }
-                    }
-                    post {
-                        success {
-                            archiveArtifacts artifacts: 'logs/deployment_request.txt'
                         }
                     }
                 }
