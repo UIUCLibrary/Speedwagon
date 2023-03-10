@@ -715,10 +715,13 @@ class MainWindow2(MainWindow2UI):
                 role=typing.cast(int, QtCore.Qt.ItemDataRole.UserRole)
             )
         )
+        workflow_inst = current_workflow(self.user_settings)
+        workflow_inst.global_settings = self.user_settings
+        options = workflow_inst.get_user_options()
         load_job_settings_model(
             data,
             all_tab.workspace_widget.settings_form,
-            current_workflow(self.user_settings).get_user_options()
+            options
         )
         self._tabs[current_tab_index].options_model = \
             all_tab.workspace_widget.settings_form.model

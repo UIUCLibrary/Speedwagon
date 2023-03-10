@@ -6,6 +6,7 @@ import contextlib
 import logging
 import os
 import pathlib
+import subprocess
 import sys
 import typing
 from pathlib import Path
@@ -561,7 +562,7 @@ class AbsOpenSettings(abc.ABC):
 
 class DarwinOpenSettings(AbsOpenSettings):
     def system_open_directory(self, settings_directory: str) -> None:
-        os.system(f"open {settings_directory}")
+        subprocess.call(["/usr/bin/open", settings_directory])
 
 
 class WindowsOpenSettings(AbsOpenSettings):

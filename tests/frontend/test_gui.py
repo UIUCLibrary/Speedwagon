@@ -334,3 +334,44 @@ def test_load_job_settings_model(qtbot):
     form = speedwagon.frontend.qtwidgets.widgets.DynamicForm()
     speedwagon.frontend.qtwidgets.gui.load_job_settings_model(data, form, workflow_options)
     assert form._background.widgets['Source'].data == '/Volumes/G-RAID with Thunderbolt/hathi_test/access/'
+
+
+def test_load_items_with_choice(qtbot):
+    data = {
+        'Image File Type': 'JPEG 2000',
+        'Language': 'English',
+        'Path': None
+    }
+    form = speedwagon.frontend.qtwidgets.widgets.DynamicForm()
+
+    package_type = speedwagon.workflow.ChoiceSelection("Image File Type")
+    package_type.placeholder_text = "Select Image Format"
+    package_type.add_selection("JPEG 2000")
+    package_type.add_selection("TIFF")
+
+    language_type = speedwagon.workflow.ChoiceSelection("Language")
+    language_type.placeholder_text = "Select Language"
+    language_type.add_selection("Dutch")
+    language_type.add_selection("English")
+    language_type.add_selection("French")
+    language_type.add_selection("German")
+    language_type.add_selection("Spanish")
+
+    package_root_option = speedwagon.workflow.DirectorySelect("Path")
+
+    workflow_options = [
+        package_type,
+        language_type,
+        package_root_option
+    ]
+
+    speedwagon.frontend.qtwidgets.gui.load_job_settings_model(data, form, workflow_options)
+    language_widget = form._background.widgets['Language']
+    assert language_widget.data == 'English'
+    assert language_widget.get_selections() == [
+        'Dutch',
+        'English',
+        'French',
+        'German',
+        'Spanish'
+    ]
