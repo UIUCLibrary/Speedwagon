@@ -49,101 +49,6 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
     }; `
     Write-Host "Finished install packages with Chocolatey"
 
-# ==============================================================================
-FROM BASE_BUILDER as WHEEL_BUILDER_PY37
-SHELL ["cmd", "/S", "/C" ]
-COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt requirements-gui.txt ci/docker/python/shared/requirements-extra.txt c:/requirements/
-COPY requirements/ c:/requirements/requirements
-ARG PIP_EXTRA_INDEX_URL
-ARG PIP_INDEX_URL
-ENV PY_PYTHON=3.7
-RUN py -m pip install --upgrade pip wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir  `
-      -r c:/requirements/requirements.txt  `
-      -r c:/requirements/requirements-dev.txt `
-      -r c:/requirements/requirements-vendor.txt `
-      -r c:/requirements/requirements-extra.txt `
-      -r c:/requirements/requirements-gui.txt `
-      -r c:/requirements/requirements-ci.txt
-RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
-
-
-# ==============================================================================
-FROM BASE_BUILDER as WHEEL_BUILDER_PY38
-SHELL ["cmd", "/S", "/C" ]
-COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt requirements-gui.txt ci/docker/python/shared/requirements-extra.txt c:/requirements/
-COPY requirements/ c:/requirements/requirements
-ARG PIP_EXTRA_INDEX_URL
-ARG PIP_INDEX_URL
-ENV PY_PYTHON=3.8
-RUN py -m pip install --upgrade pip wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir  `
-      -r c:/requirements/requirements.txt  `
-      -r c:/requirements/requirements-dev.txt `
-      -r c:/requirements/requirements-vendor.txt `
-      -r c:/requirements/requirements-extra.txt `
-      -r c:/requirements/requirements-gui.txt `
-      -r c:/requirements/requirements-ci.txt
-RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
-
-
-# ==============================================================================
-
-FROM BASE_BUILDER as WHEEL_BUILDER_PY39
-SHELL ["cmd", "/S", "/C" ]
-COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt requirements-gui.txt ci/docker/python/shared/requirements-extra.txt c:/requirements/
-COPY requirements/ c:/requirements/requirements
-ARG PIP_EXTRA_INDEX_URL
-ARG PIP_INDEX_URL
-ENV PY_PYTHON=3.9
-RUN py -m pip install --upgrade pip wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir  `
-      -r c:/requirements/requirements.txt  `
-      -r c:/requirements/requirements-dev.txt `
-      -r c:/requirements/requirements-vendor.txt `
-      -r c:/requirements/requirements-extra.txt `
-      -r c:/requirements/requirements-gui.txt `
-      -r c:/requirements/requirements-ci.txt
-RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
-
-# ==============================================================================
-
-FROM BASE_BUILDER as WHEEL_BUILDER_PY310
-SHELL ["cmd", "/S", "/C" ]
-COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt requirements-gui.txt ci/docker/python/shared/requirements-extra.txt c:/requirements/
-COPY requirements/ c:/requirements/requirements
-ARG PIP_EXTRA_INDEX_URL
-ARG PIP_INDEX_URL
-ENV PY_PYTHON=3.10
-RUN py -m pip install --upgrade pip wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir  `
-      -r c:/requirements/requirements.txt  `
-      -r c:/requirements/requirements-dev.txt `
-      -r c:/requirements/requirements-vendor.txt `
-      -r c:/requirements/requirements-extra.txt `
-      -r c:/requirements/requirements-gui.txt `
-      -r c:/requirements/requirements-ci.txt
-RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
-
-# ==============================================================================
-
-FROM BASE_BUILDER as WHEEL_BUILDER_PY311
-SHELL ["cmd", "/S", "/C" ]
-COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt requirements-gui.txt ci/docker/python/shared/requirements-extra.txt c:/requirements/
-COPY requirements/ c:/requirements/requirements
-ARG PIP_EXTRA_INDEX_URL
-ARG PIP_INDEX_URL
-ENV PY_PYTHON=3.11
-RUN py -m pip install --upgrade pip wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir  `
-      -r c:/requirements/requirements.txt  `
-      -r c:/requirements/requirements-dev.txt `
-      -r c:/requirements/requirements-vendor.txt `
-      -r c:/requirements/requirements-extra.txt `
-      -r c:/requirements/requirements-gui.txt `
-      -r c:/requirements/requirements-ci.txt
-RUN py -m pip wheel -w c:\wheels\ --no-cache-dir -v devpi_client
-
 ## ==============================================================================
 #
 FROM BASE_BUILDER
@@ -152,17 +57,12 @@ RUN certutil -addstore -f root roots.sst ; `
     del roots.sst
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
-COPY --from=WHEEL_BUILDER_PY37 c:/wheels/ c:/wheels/
-COPY --from=WHEEL_BUILDER_PY38 c:/wheels/ c:/wheels/
-COPY --from=WHEEL_BUILDER_PY39 c:/wheels/ c:/wheels/
-COPY --from=WHEEL_BUILDER_PY310 c:/wheels/ c:/wheels/
-COPY --from=WHEEL_BUILDER_PY311 c:/wheels/ c:/wheels/
 
-ENV PIP_FIND_LINKS=c:\wheels
+COPY requirements/ c:/requirements/requirements
 
 RUN python -m pip install pip --upgrade ; `
     pip install wheel ; `
     pip wheel -w c:\wheels wheel ; `
-    pip install --no-index --find-links=c:\wheels tox devpi_client
+    pip install --find-links=c:\wheels -r c:/requirements/requirements/requirements_tox.txt -r c:/requirements/requirements/requirements-devpi.txt
 WORKDIR C:/src
 CMD tox --workdir ${Env:TEMP}\tox\ -vv  --recreate -p=auto

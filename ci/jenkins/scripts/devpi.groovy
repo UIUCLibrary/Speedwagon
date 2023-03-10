@@ -168,6 +168,7 @@ def getAgent(args){
 
     }
     if (args.agent.containsKey("dockerfile")){
+        def runArgs = args.agent['args'] ? args['args']: ''
         return { inner ->
             node(args.agent.dockerfile.label){
                 ws{
@@ -177,7 +178,7 @@ def getAgent(args){
                     lock("docker build-${env.NODE_NAME}"){
                         dockerImage = docker.build(dockerImageName, "-f ${args.agent.dockerfile.filename} ${args.agent.dockerfile.additionalBuildArgs} .")
                     }
-                    dockerImage.inside(){
+                    dockerImage.inside(runArgs){
                         inner()
                     }
                 }
