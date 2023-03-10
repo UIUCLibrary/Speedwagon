@@ -18,17 +18,21 @@ def getPypiConfig() {
     }
 }
 def getChocolateyServers() {
-    return [
-        'https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-beta/',
-        'https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-public/'
-    ]
+        node(){
+            configFileProvider([configFile(fileId: 'deploymentStorageConfig', variable: 'CONFIG_FILE')]) {
+                def config = readJSON( file: CONFIG_FILE)
+                return config['chocolatey']['sources']
+            }
+        }
 }
 
 def getStandAloneStorageServers(){
-    return [
-        'https://jenkins.library.illinois.edu/nexus/repository/prescon-dist/',
-        'https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/'
-    ]
+    node(){
+        configFileProvider([configFile(fileId: 'deploymentStorageConfig', variable: 'CONFIG_FILE')]) {
+            def config = readJSON( file: CONFIG_FILE)
+            return config['publicReleases']['urls']
+        }
+    }
 }
 
 def getDevPiStagingIndex(){
@@ -57,6 +61,19 @@ def getDevpiConfig() {
 }
 def DEVPI_CONFIG = getDevpiConfig()
 
+def deployStandalone(glob, url) {
+    script{
+        findFiles(glob: glob).each{
+            try{
+                def put_response = httpRequest authentication: NEXUS_CREDS, httpMode: 'PUT', uploadFile: it.path, url: "${url}/${it.name}", wrapAsMultipart: false
+            } catch(Exception e){
+                echo "http request response: ${put_response.content}"
+                throw e;
+            }
+        }
+    //                                    deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf,dist/docs/*.dng', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/")
+    }
+}
 def macAppleBundle() {
 
     stage('Create Build Environment'){
@@ -126,40 +143,40 @@ def get_build_number(){
     }
 }
 
-def deploy_to_nexus(filename, deployUrl, credId){
-    script{
-        withCredentials([usernamePassword(credentialsId: credId, passwordVariable: 'nexusPassword', usernameVariable: 'nexusUsername')]) {
-             bat(
-                 label: "Deploying ${filename} to ${deployUrl}",
-                 script: "curl -v --upload ${filename} ${deployUrl} -u %nexusUsername%:%nexusPassword%"
-             )
-        }
-    }
-}
-def deploy_artifacts_to_url(regex, urlDestination){
-    script{
-        def installer_files  = findFiles glob: regex
-//        'dist/*.msi,dist/*.exe,dist/*.zip'
-        def simple_file_names = []
-
-        installer_files.each{
-            simple_file_names << it.name
-        }
-        def new_urls = []
-        try{
-            installer_files.each{
-                def deployUrl = "${urlDestination}" + it.name
-                  deploy_to_nexus(it, deployUrl, "jenkins-nexus")
-                  new_urls << deployUrl
-            }
-        } finally{
-            def url_message_list = new_urls.collect{"* " + it}.join("\n")
-            echo """The following beta file(s) are now available:
-${url_message_list}
-"""
-        }
-    }
-}
+//def deploy_to_nexus(filename, deployUrl, credId){
+//    script{
+//        withCredentials([usernamePassword(credentialsId: credId, passwordVariable: 'nexusPassword', usernameVariable: 'nexusUsername')]) {
+//             bat(
+//                 label: "Deploying ${filename} to ${deployUrl}",
+//                 script: "curl -v --upload ${filename} ${deployUrl} -u %nexusUsername%:%nexusPassword%"
+//             )
+//        }
+//    }
+//}
+//def deploy_artifacts_to_url(regex, urlDestination){
+//    script{
+//        def installer_files  = findFiles glob: regex
+////        'dist/*.msi,dist/*.exe,dist/*.zip'
+//        def simple_file_names = []
+//
+//        installer_files.each{
+//            simple_file_names << it.name
+//        }
+//        def new_urls = []
+//        try{
+//            installer_files.each{
+//                def deployUrl = "${urlDestination}" + it.name
+//                  deploy_to_nexus(it, deployUrl, "jenkins-nexus")
+//                  new_urls << deployUrl
+//            }
+//        } finally{
+//            def url_message_list = new_urls.collect{"* " + it}.join("\n")
+//            echo """The following beta file(s) are now available:
+//${url_message_list}
+//"""
+//        }
+//    }
+//}
 def runTox(){
     script{
         def tox = fileLoader.fromGit(
@@ -1663,17 +1680,7 @@ pipeline {
                         }
                         stage('Deploy'){
                             steps {
-                                script{
-                                    findFiles(glob: 'dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf,dist/*.dmg').each{
-                                        try{
-                                            def put_response = httpRequest authentication: NEXUS_CREDS, httpMode: 'PUT', uploadFile: it.path, url: "${SERVER_URL}/${archiveFolder}/${it.name}", wrapAsMultipart: false
-                                        } catch(Exception e){
-                                            echo "http request response: ${put_response.content}"
-                                            throw e;
-                                        }
-                                    }
-//                                    deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf,dist/docs/*.dng', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/")
-                                }
+                                deployStandalone('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf,dist/*.dmg', "${SERVER_URL}/${archiveFolder}")
                             }
                             post{
                                 cleanup{
