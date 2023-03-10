@@ -168,7 +168,7 @@ def getAgent(args){
 
     }
     if (args.agent.containsKey("dockerfile")){
-        def runArgs = args.agent['args'] ? args['args']: ''
+        def runArgs = args.agent.dockerfile.containsKey('args') ? args.agent.dockerfile['args']: ''
         return { inner ->
             node(args.agent.dockerfile.label){
                 ws{
@@ -221,6 +221,7 @@ def logIntoDevpiServer(devpiExec, serverUrl, credentialsId, clientDir){
 
 def runDevpiTest(devpiExec, devpiIndex, pkgName, pkgVersion, pkgSelector, clientDir, toxEnv){
     if(isUnix()){
+        sh('pip config list')
         sh(
             label: "Running tests on Packages on DevPi",
             script: "${devpiExec} test --index ${devpiIndex} ${pkgName}==${pkgVersion} -s ${pkgSelector} --clientdir ${clientDir} -e ${toxEnv} -v"
@@ -261,7 +262,11 @@ def testDevpiPackage2(args=[:]){
         try{
             logIntoDevpiServer(devpiExec, devpiServerUrl, credentialsId, clientDir)
             runDevpiTest(devpiExec, devpiIndex, pkgName, pkgVersion, pkgSelector, clientDir, toxEnv)
-        } finally {
+        } catch(Exception e){
+            echo 'Waiting 5 seconds'
+            sleep 5;
+            throw e;
+        }finally {
             testTeardown()
         }
     }
