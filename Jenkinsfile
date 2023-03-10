@@ -17,12 +17,19 @@ def getPypiConfig() {
         }
     }
 }
-
-
-NEXUS_SERVERS = [
-    'https://jenkins.library.illinois.edu/nexus/repository/prescon-dist/',
-    'https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/'
+def getChocolateyServers() {
+    return [
+        'https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-beta/',
+        'https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-public/'
     ]
+}
+
+def getStandAloneStorageServers(){
+    return [
+        'https://jenkins.library.illinois.edu/nexus/repository/prescon-dist/',
+        'https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/'
+    ]
+}
 
 def getDevPiStagingIndex(){
 
@@ -131,7 +138,8 @@ def deploy_to_nexus(filename, deployUrl, credId){
 }
 def deploy_artifacts_to_url(regex, urlDestination){
     script{
-        def installer_files  = findFiles glob: 'dist/*.msi,dist/*.exe,dist/*.zip'
+        def installer_files  = findFiles glob: regex
+//        'dist/*.msi,dist/*.exe,dist/*.zip'
         def simple_file_names = []
 
         installer_files.each{
@@ -639,8 +647,9 @@ pipeline {
         booleanParam(name: 'DEPLOY_DEVPI_PRODUCTION', defaultValue: false, description: "Deploy to ${DEVPI_CONFIG.server}/production/release")
         booleanParam(name: 'DEPLOY_PYPI', defaultValue: false, description: 'Deploy to pypi')
         booleanParam(name: 'DEPLOY_CHOCOLATEY', defaultValue: false, description: 'Deploy to Chocolatey repository')
-        booleanParam(name: 'DEPLOY_DMG', defaultValue: false, description: 'Deploy MacOS standalone')
-        booleanParam(name: 'DEPLOY_HATHI_TOOL_BETA', defaultValue: false, description: 'Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/')
+//        booleanParam(name: 'DEPLOY_DMG', defaultValue: false, description: 'Deploy MacOS standalone')
+        booleanParam(name: 'DEPLOY_STANDALONE_PACKAGERS', defaultValue: false, description: 'Deploy standalone packages')
+//        booleanParam(name: 'DEPLOY_HATHI_TOOL_BETA', defaultValue: false, description: 'Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/')
         booleanParam(name: 'DEPLOY_SCCM', defaultValue: false, description: 'Request deployment of MSI installer to SCCM')
         booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
     }
@@ -895,7 +904,7 @@ pipeline {
                     equals expected: true, actual: params.BUILD_PACKAGES
                     equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
                     equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
-                    equals expected: true, actual: params.DEPLOY_DMG
+                    equals expected: true, actual: params.DEPLOY_STANDALONE_PACKAGES
                     equals expected: true, actual: params.DEPLOY_DEVPI
                     equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
                     equals expected: true, actual: params.DEPLOY_CHOCOLATEY
@@ -962,10 +971,7 @@ pipeline {
                                 label 'mac && python3 && x86'
                             }
                             when{
-                                anyOf{
-                                    equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
-                                    equals expected: true, actual: params.DEPLOY_DMG
-                                }
+                                equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
                                 beforeInput true
                             }
                             steps{
@@ -997,7 +1003,6 @@ pipeline {
                             when{
                                 anyOf{
                                     equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
-                                    equals expected: true, actual: params.DEPLOY_DMG
                                 }
                                 beforeInput true
                             }
@@ -1546,10 +1551,7 @@ pipeline {
                         id 'CHOCOLATEY_DEPLOYMENT'
                         parameters {
                             choice(
-                                choices: [
-                                    'https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-beta/',
-                                    'https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-public/'
-                                ],
+                                choices: getChocolateyServers(),
                                 description: 'Chocolatey Server to deploy to',
                                 name: 'CHOCOLATEY_SERVER'
                             )
@@ -1601,55 +1603,12 @@ pipeline {
                         }
                     }
                 }
-                stage('Deploy MacOS DMG to Nexus'){
-                    when{
-                        equals expected: true, actual: params.DEPLOY_DMG
-                        beforeAgent true
-                        beforeInput true
-                    }
-                    agent any
-                    input {
-                        message 'Upload to Nexus server?'
-                        parameters {
-                            credentials credentialType: 'com.cloudbees.plugins.credentials.common.StandardCredentials', defaultValue: 'jenkins-nexus', name: 'NEXUS_CREDS', required: true
-                            choice(
-                                choices: NEXUS_SERVERS,
-                                description: 'Url to upload artifact.',
-                                name: 'SERVER_URL'
-                            )
-                            string defaultValue: 'speedwagon', description: 'subdirectory to store artifact', name: 'archiveFolder'
-                        }
-                    }
-                    steps{
-                        unstash 'APPLE_APPLICATION_BUNDLE_X86_64'
-                        unstash 'APPLE_APPLICATION_BUNDLE_M1'
-                        script{
-                            findFiles(glob: 'dist/*.dmg').each{
-                                try{
-                                    def put_response = httpRequest authentication: NEXUS_CREDS, httpMode: 'PUT', uploadFile: it.path, url: "${SERVER_URL}/${archiveFolder}/${it.name}", wrapAsMultipart: false
-                                } catch(Exception e){
-                                    echo "http request response: ${put_response.content}"
-                                    throw e;
-                                }
-                            }
-                        }
-                    }
-                    post{
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: 'dist/', type: 'INCLUDE']
-                                ]
-                            )
-                        }
-                    }
-                }
-                stage('Deploy standalone to Hathi tools Beta'){
+                stage('Deploy Standalone'){
                     when {
                         allOf{
-                            equals expected: true, actual: params.DEPLOY_HATHI_TOOL_BETA
+                            equals expected: true, actual: params.DEPLOY_STANDALONE_PACKAGERS
                             anyOf{
+                                equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
                                 equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
                                 equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
                                 equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
@@ -1659,31 +1618,73 @@ pipeline {
                         beforeInput true
 
                     }
+                    agent any
                     input {
-                        message 'Update standalone to Hathi Beta'
-                    }
-                    agent{
-                        label 'Windows'
+                        message 'Upload to Nexus server?'
+                        parameters {
+                            credentials credentialType: 'com.cloudbees.plugins.credentials.common.StandardCredentials', defaultValue: 'jenkins-nexus', name: 'NEXUS_CREDS', required: true
+                            choice(
+                                choices: getStandAloneStorageServers(),
+                                description: 'Url to upload artifact.',
+                                name: 'SERVER_URL'
+                            )
+                            string defaultValue: "speedwagon/${props.Version}", description: 'subdirectory to store artifact', name: 'archiveFolder'
+                        }
                     }
                     options {
                         skipDefaultCheckout(true)
                     }
-                    steps {
-                        unstash 'STANDALONE_INSTALLERS'
-                        unstash 'SPEEDWAGON_DOC_PDF'
-                        unstash 'DOCS_ARCHIVE'
-                        script{
-                            deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/")
+                    stages{
+                        stage('Include Mac Bundle Installer for Deployment'){
+                            when{
+                                equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
+                            }
+                            steps {
+                                unstash 'APPLE_APPLICATION_BUNDLE_X86_64'
+                                unstash 'APPLE_APPLICATION_BUNDLE_M1'
+                            }
                         }
-                    }
-                    post{
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: 'dist.*', type: 'INCLUDE']
-                                ]
-                            )
+                        stage('Include Windows Installer(s) for Deployment'){
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+                                }
+                            }
+                            steps {
+                                unstash 'STANDALONE_INSTALLERS'
+                            }
+                        }
+                        stage('Include PDF Documentation for Deployment'){
+                            steps {
+                                unstash 'SPEEDWAGON_DOC_PDF'
+                            }
+                        }
+                        stage('Deploy'){
+                            steps {
+                                script{
+                                    findFiles(glob: 'dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf,dist/*.dmg').each{
+                                        try{
+                                            def put_response = httpRequest authentication: NEXUS_CREDS, httpMode: 'PUT', uploadFile: it.path, url: "${SERVER_URL}/${archiveFolder}/${it.name}", wrapAsMultipart: false
+                                        } catch(Exception e){
+                                            echo "http request response: ${put_response.content}"
+                                            throw e;
+                                        }
+                                    }
+//                                    deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf,dist/docs/*.dng', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/")
+                                }
+                            }
+                            post{
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        patterns: [
+                                            [pattern: 'dist.*', type: 'INCLUDE']
+                                        ]
+                                    )
+                                }
+                            }
                         }
                     }
                 }
