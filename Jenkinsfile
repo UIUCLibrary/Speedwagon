@@ -1,5 +1,3 @@
-#!groovy
-import static groovy.json.JsonOutput.* // For pretty printing json data
 
 SUPPORTED_MAC_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
 SUPPORTED_LINUX_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
@@ -17,12 +15,23 @@ def getPypiConfig() {
         }
     }
 }
+def getChocolateyServers() {
+        node(){
+            configFileProvider([configFile(fileId: 'deploymentStorageConfig', variable: 'CONFIG_FILE')]) {
+                def config = readJSON( file: CONFIG_FILE)
+                return config['chocolatey']['sources']
+            }
+        }
+}
 
-
-NEXUS_SERVERS = [
-    'https://jenkins.library.illinois.edu/nexus/repository/prescon-dist/',
-    'https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/'
-    ]
+def getStandAloneStorageServers(){
+    node(){
+        configFileProvider([configFile(fileId: 'deploymentStorageConfig', variable: 'CONFIG_FILE')]) {
+            def config = readJSON( file: CONFIG_FILE)
+            return config['publicReleases']['urls']
+        }
+    }
+}
 
 def getDevPiStagingIndex(){
 
@@ -50,6 +59,19 @@ def getDevpiConfig() {
 }
 def DEVPI_CONFIG = getDevpiConfig()
 
+def deployStandalone(glob, url) {
+    script{
+        findFiles(glob: glob).each{
+            try{
+                def put_response = httpRequest authentication: NEXUS_CREDS, httpMode: 'PUT', uploadFile: it.path, url: "${url}/${it.name}", wrapAsMultipart: false
+            } catch(Exception e){
+                echo "http request response: ${put_response.content}"
+                throw e;
+            }
+        }
+    //                                    deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf,dist/docs/*.dng', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/")
+    }
+}
 def macAppleBundle() {
 
     stage('Create Build Environment'){
@@ -119,39 +141,6 @@ def get_build_number(){
     }
 }
 
-def deploy_to_nexus(filename, deployUrl, credId){
-    script{
-        withCredentials([usernamePassword(credentialsId: credId, passwordVariable: 'nexusPassword', usernameVariable: 'nexusUsername')]) {
-             bat(
-                 label: "Deploying ${filename} to ${deployUrl}",
-                 script: "curl -v --upload ${filename} ${deployUrl} -u %nexusUsername%:%nexusPassword%"
-             )
-        }
-    }
-}
-def deploy_artifacts_to_url(regex, urlDestination){
-    script{
-        def installer_files  = findFiles glob: 'dist/*.msi,dist/*.exe,dist/*.zip'
-        def simple_file_names = []
-
-        installer_files.each{
-            simple_file_names << it.name
-        }
-        def new_urls = []
-        try{
-            installer_files.each{
-                def deployUrl = "${urlDestination}" + it.name
-                  deploy_to_nexus(it, deployUrl, "jenkins-nexus")
-                  new_urls << deployUrl
-            }
-        } finally{
-            def url_message_list = new_urls.collect{"* " + it}.join("\n")
-            echo """The following beta file(s) are now available:
-${url_message_list}
-"""
-        }
-    }
-}
 def runTox(){
     script{
         def tox = fileLoader.fromGit(
@@ -190,57 +179,6 @@ def runTox(){
     }
 }
 
-def deploy_sscm(file_glob, pkgVersion){
-    script{
-        def msi_files = findFiles glob: file_glob
-        def deployment_request = requestDeploy yaml: "${WORKSPACE}/deployment.yml", file_name: msi_files[0]
-
-        cifsPublisher(
-            publishers: [[
-                configName: 'SCCM Staging',
-                transfers: [[
-                    cleanRemote: false,
-                    excludes: '',
-                    flatten: false,
-                    makeEmptyDirs: false,
-                    noDefaultExcludes: false,
-                    patternSeparator: '[, ]+',
-                    remoteDirectory: '',
-                    remoteDirectorySDF: false,
-                    removePrefix: '',
-                    sourceFiles: '*.msi'
-                    ]],
-                usePromotionTimestamp: false,
-                useWorkspaceInPromotion: false,
-                verbose: false
-                ]]
-            )
-
-        input('Deploy to production?')
-        writeFile file: 'logs/deployment_request.txt', text: deployment_request
-        echo deployment_request
-        cifsPublisher(
-            publishers: [[
-                configName: 'SCCM Upload',
-                transfers: [[
-                    cleanRemote: false,
-                    excludes: '',
-                    flatten: false,
-                    makeEmptyDirs: false,
-                    noDefaultExcludes: false,
-                    patternSeparator: '[, ]+',
-                    remoteDirectory: '',
-                    remoteDirectorySDF: false,
-                    removePrefix: '',
-                    sourceFiles: '*.msi'
-                    ]],
-                usePromotionTimestamp: false,
-                useWorkspaceInPromotion: false,
-                verbose: false
-                ]]
-        )
-    }
-}
 def testSpeedwagonChocolateyPkg(version){
     script{
         def chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
@@ -639,9 +577,7 @@ pipeline {
         booleanParam(name: 'DEPLOY_DEVPI_PRODUCTION', defaultValue: false, description: "Deploy to ${DEVPI_CONFIG.server}/production/release")
         booleanParam(name: 'DEPLOY_PYPI', defaultValue: false, description: 'Deploy to pypi')
         booleanParam(name: 'DEPLOY_CHOCOLATEY', defaultValue: false, description: 'Deploy to Chocolatey repository')
-        booleanParam(name: 'DEPLOY_DMG', defaultValue: false, description: 'Deploy MacOS standalone')
-        booleanParam(name: 'DEPLOY_HATHI_TOOL_BETA', defaultValue: false, description: 'Deploy standalone to https://jenkins.library.illinois.edu/nexus/service/rest/repository/browse/prescon-beta/')
-        booleanParam(name: 'DEPLOY_SCCM', defaultValue: false, description: 'Request deployment of MSI installer to SCCM')
+        booleanParam(name: 'DEPLOY_STANDALONE_PACKAGERS', defaultValue: false, description: 'Deploy standalone packages')
         booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
     }
     stages {
@@ -895,7 +831,7 @@ pipeline {
                     equals expected: true, actual: params.BUILD_PACKAGES
                     equals expected: true, actual: params.BUILD_CHOCOLATEY_PACKAGE
                     equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
-                    equals expected: true, actual: params.DEPLOY_DMG
+                    equals expected: true, actual: params.DEPLOY_STANDALONE_PACKAGES
                     equals expected: true, actual: params.DEPLOY_DEVPI
                     equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
                     equals expected: true, actual: params.DEPLOY_CHOCOLATEY
@@ -962,10 +898,7 @@ pipeline {
                                 label 'mac && python3 && x86'
                             }
                             when{
-                                anyOf{
-                                    equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
-                                    equals expected: true, actual: params.DEPLOY_DMG
-                                }
+                                equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
                                 beforeInput true
                             }
                             steps{
@@ -997,7 +930,6 @@ pipeline {
                             when{
                                 anyOf{
                                     equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
-                                    equals expected: true, actual: params.DEPLOY_DMG
                                 }
                                 beforeInput true
                             }
@@ -1546,10 +1478,7 @@ pipeline {
                         id 'CHOCOLATEY_DEPLOYMENT'
                         parameters {
                             choice(
-                                choices: [
-                                    'https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-beta/',
-                                    'https://jenkins.library.illinois.edu/nexus/repository/chocolatey-hosted-public/'
-                                ],
+                                choices: getChocolateyServers(),
                                 description: 'Chocolatey Server to deploy to',
                                 name: 'CHOCOLATEY_SERVER'
                             )
@@ -1601,55 +1530,12 @@ pipeline {
                         }
                     }
                 }
-                stage('Deploy MacOS DMG to Nexus'){
-                    when{
-                        equals expected: true, actual: params.DEPLOY_DMG
-                        beforeAgent true
-                        beforeInput true
-                    }
-                    agent any
-                    input {
-                        message 'Upload to Nexus server?'
-                        parameters {
-                            credentials credentialType: 'com.cloudbees.plugins.credentials.common.StandardCredentials', defaultValue: 'jenkins-nexus', name: 'NEXUS_CREDS', required: true
-                            choice(
-                                choices: NEXUS_SERVERS,
-                                description: 'Url to upload artifact.',
-                                name: 'SERVER_URL'
-                            )
-                            string defaultValue: 'speedwagon', description: 'subdirectory to store artifact', name: 'archiveFolder'
-                        }
-                    }
-                    steps{
-                        unstash 'APPLE_APPLICATION_BUNDLE_X86_64'
-                        unstash 'APPLE_APPLICATION_BUNDLE_M1'
-                        script{
-                            findFiles(glob: 'dist/*.dmg').each{
-                                try{
-                                    def put_response = httpRequest authentication: NEXUS_CREDS, httpMode: 'PUT', uploadFile: it.path, url: "${SERVER_URL}/${archiveFolder}/${it.name}", wrapAsMultipart: false
-                                } catch(Exception e){
-                                    echo "http request response: ${put_response.content}"
-                                    throw e;
-                                }
-                            }
-                        }
-                    }
-                    post{
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: 'dist/', type: 'INCLUDE']
-                                ]
-                            )
-                        }
-                    }
-                }
-                stage('Deploy standalone to Hathi tools Beta'){
+                stage('Deploy Standalone'){
                     when {
                         allOf{
-                            equals expected: true, actual: params.DEPLOY_HATHI_TOOL_BETA
+                            equals expected: true, actual: params.DEPLOY_STANDALONE_PACKAGERS
                             anyOf{
+                                equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
                                 equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
                                 equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
                                 equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
@@ -1659,59 +1545,63 @@ pipeline {
                         beforeInput true
 
                     }
-                    input {
-                        message 'Update standalone to Hathi Beta'
-                    }
-                    agent{
-                        label 'Windows'
-                    }
-                    options {
-                        skipDefaultCheckout(true)
-                    }
-                    steps {
-                        unstash 'STANDALONE_INSTALLERS'
-                        unstash 'SPEEDWAGON_DOC_PDF'
-                        unstash 'DOCS_ARCHIVE'
-                        script{
-                            deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/")
-                        }
-                    }
-                    post{
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: 'dist.*', type: 'INCLUDE']
-                                ]
-                            )
-                        }
-                    }
-                }
-                stage('Deploy Standalone Build to SCCM') {
-                    when {
-                        allOf{
-                            equals expected: true, actual: params.DEPLOY_SCCM
-                            anyOf{
-                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
-                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
-                                equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
-                            }
-                            branch 'master'
-                        }
-                    }
-                    options {
-                        skipDefaultCheckout(true)
-                    }
                     agent any
-                    steps {
-                        unstash 'STANDALONE_INSTALLERS'
-                        dir('dist'){
-                            deploy_sscm('*.msi', props.Version)
+                    input {
+                        message 'Upload to Nexus server?'
+                        parameters {
+                            credentials credentialType: 'com.cloudbees.plugins.credentials.common.StandardCredentials', defaultValue: 'jenkins-nexus', name: 'NEXUS_CREDS', required: true
+                            choice(
+                                choices: getStandAloneStorageServers(),
+                                description: 'Url to upload artifact.',
+                                name: 'SERVER_URL'
+                            )
+                            string defaultValue: "speedwagon/${props.Version}", description: 'subdirectory to store artifact', name: 'archiveFolder'
                         }
                     }
-                    post {
-                        success {
-                            archiveArtifacts artifacts: 'logs/deployment_request.txt'
+                    options {
+                        skipDefaultCheckout(true)
+                    }
+                    stages{
+                        stage('Include Mac Bundle Installer for Deployment'){
+                            when{
+                                equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
+                            }
+                            steps {
+                                unstash 'APPLE_APPLICATION_BUNDLE_X86_64'
+                                unstash 'APPLE_APPLICATION_BUNDLE_M1'
+                            }
+                        }
+                        stage('Include Windows Installer(s) for Deployment'){
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_MSI
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_NSIS
+                                    equals expected: true, actual: params.PACKAGE_WINDOWS_STANDALONE_ZIP
+                                }
+                            }
+                            steps {
+                                unstash 'STANDALONE_INSTALLERS'
+                            }
+                        }
+                        stage('Include PDF Documentation for Deployment'){
+                            steps {
+                                unstash 'SPEEDWAGON_DOC_PDF'
+                            }
+                        }
+                        stage('Deploy'){
+                            steps {
+                                deployStandalone('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf,dist/*.dmg', "${SERVER_URL}/${archiveFolder}")
+                            }
+                            post{
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        patterns: [
+                                            [pattern: 'dist.*', type: 'INCLUDE']
+                                        ]
+                                    )
+                                }
+                            }
                         }
                     }
                 }
