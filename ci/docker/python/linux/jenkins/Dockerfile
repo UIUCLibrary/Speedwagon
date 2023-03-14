@@ -71,7 +71,8 @@ RUN python -m pip install --no-cache-dir --upgrade pip && \
         -r /tmp/requirements.txt \
         -r /tmp/requirements-dev.txt \
         -r /tmp/requirements-gui.txt \
-        -r /tmp/requirements-ci.txt
+        -r /tmp/requirements-ci.txt \
+        -r /tmp/requirements/requirements-devpi.txt
 
 ENV PIP_FIND_LINKS=/wheels
 RUN python -m pip install --no-cache-dir types-PyYAML types-requests
@@ -83,3 +84,4 @@ ENV SONAR_USER_HOME=/opt/sonar/.sonar
 RUN ln -s /opt/sonar/sonar-scanner-${SONAR_SCANNER_VERSION}-linux/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
     which sonar-scanner
 RUN mkdir -p /home/user/.sonar/ && chmod -R 777 /home/user/
+RUN mkdir -p /.devpi && chmod -R 777 /.devpi

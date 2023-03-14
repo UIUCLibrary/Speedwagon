@@ -3,47 +3,48 @@ def upload(args = [:]){
     def clientDir = args['clientDir'] ? args['clientDir']: './devpi'
     def index = args['index']
     def devpiExec = args['devpiExec'] ? args['devpiExec']: "devpi"
+
     withEnv([
-            "DEVPI_INDEX=${index}",
             "DEVPI_SERVER=${args['server']}",
             "CLIENT_DIR=${clientDir}",
-            "DEVPI=${devpiExec}"
+            "DEVPI=${devpiExec}",
+            "INDEX=${index}"
         ]) {
-        withCredentials([usernamePassword(
-                            credentialsId: credentialsId,
-                            passwordVariable: 'DEVPI_PASSWORD',
-                            usernameVariable: 'DEVPI_USERNAME'
-                        )
-                            ])
+        withCredentials(
+            [
+                usernamePassword(
+                    credentialsId: credentialsId,
+                    passwordVariable: 'DEVPI_PASSWORD',
+                    usernameVariable: 'DEVPI_USERNAME'
+                )
+            ]
+        )
         {
             if(isUnix()){
-                sh(label: "Logging into DevPi",
+                sh(label: 'Logging into DevPi',
                    script: '''$DEVPI use $DEVPI_SERVER --clientdir $CLIENT_DIR
                               $DEVPI login $DEVPI_USERNAME --password=$DEVPI_PASSWORD --clientdir $CLIENT_DIR
                               '''
                    )
-           } else {
-               bat(label: "Logging into DevPi",
-                   script: '''%DEVPI% use %DEVPI_SERVER% --clientdir %CLIENT_DIR%
-                              %DEVPI% login %DEVPI_USERNAME% --password%$DEVPI_PASSWORD% --clientdir %CLIENT_DIR%
-                              '''
-                   )
-           }
-           if(isUnix()){
-                sh(label: "Uploading to DevPi Staging",
-                   script: '''$DEVPI use /$DEVPI_USERNAME/$DEVPI_INDEX --clientdir $CLIENT_DIR
-                              $DEVPI upload --from-dir dist --clientdir $CLIENT_DIR
+                sh(label: 'Uploading to DevPi Staging',
+                   script: '''$DEVPI use --clientdir $CLIENT_DIR --debug
+                              $DEVPI upload --from-dir dist --clientdir $CLIENT_DIR --debug --index $DEVPI_USERNAME/$INDEX
                               '''
                 )
            } else {
-               bat(label: "Uploading to DevPi Staging",
-                   script: '''%DEVPI% use /%DEVPI_USERNAME%/%DEVPI_INDEX% --clientdir %CLIENT_DIR%
-                              %DEVPI% upload --from-dir dist --clientdir %CLIENT_DIR%
+               bat(label: 'Logging into DevPi',
+                   script: '''%DEVPI% use %DEVPI_SERVER% --clientdir %CLIENT_DIR%
+                              %DEVPI% login %DEVPI_USERNAME% --password %DEVPI_PASSWORD% --clientdir %CLIENT_DIR%
                               '''
-                   )
+               )
+               bat(label: 'Uploading to DevPi Staging',
+                   script: '''%DEVPI% use %INDEX% --clientdir %CLIENT_DIR%
+                              %DEVPI% upload --from-dir dist --clientdir %CLIENT_DIR%  --index %DEVPI_USERNAME%/%INDEX%
+                              '''
+               )
            }
        }
-    }
+   }
 }
 
 def pushPackageToIndex(args = [:]){
@@ -139,7 +140,6 @@ def removePackage(args = [:]){
                       ${devpi} remove -y --index ${index} ${pkgName}==${pkgVersion} --clientdir ${clientDir}
                       """
            )
-
     }
 }
 
@@ -149,6 +149,15 @@ def getNodeLabel(agent){
         return agent.dockerfile.label
     }
     return label
+}
+def getAgentLabel(args){
+    if (args.agent.containsKey("label")){
+        return args.agent['label']
+    }
+    if (args.agent.containsKey("dockerfile")){
+        return args.agent.dockerfile.label
+    }
+    error('Invalid agent type, expect [dockerfile,label]')
 }
 
 def getAgent(args){
@@ -163,6 +172,7 @@ def getAgent(args){
 
     }
     if (args.agent.containsKey("dockerfile")){
+        def runArgs = args.agent.dockerfile.containsKey('args') ? args.agent.dockerfile['args']: ''
         return { inner ->
             node(args.agent.dockerfile.label){
                 ws{
@@ -172,7 +182,7 @@ def getAgent(args){
                     lock("docker build-${env.NODE_NAME}"){
                         dockerImage = docker.build(dockerImageName, "-f ${args.agent.dockerfile.filename} ${args.agent.dockerfile.additionalBuildArgs} .")
                     }
-                    dockerImage.inside(){
+                    dockerImage.inside(runArgs){
                         inner()
                     }
                 }
@@ -214,16 +224,26 @@ def logIntoDevpiServer(devpiExec, serverUrl, credentialsId, clientDir){
 }
 
 def runDevpiTest(devpiExec, devpiIndex, pkgName, pkgVersion, pkgSelector, clientDir, toxEnv){
-    if(isUnix()){
-        sh(
-            label: "Running tests on Packages on DevPi",
-            script: "${devpiExec} test --index ${devpiIndex} ${pkgName}==${pkgVersion} -s ${pkgSelector} --clientdir ${clientDir} -e ${toxEnv} -v"
-        )
-    } else{
-        bat(
-            label: "Running tests on Packages on DevPi",
-            script: "${devpiExec} test --index ${devpiIndex} ${pkgName}==${pkgVersion} -s ${pkgSelector}  --clientdir ${clientDir} -e ${toxEnv} -v"
-        )
+    withEnv([
+            "DEVPI=${devpiExec}",
+            "_DEVPI_INDEX=${devpiIndex}",
+            "CLIENT_DIR=${clientDir}",
+            "PACKAGE_NAME=${pkgName}",
+            "PACKAGE_VERSION=${pkgVersion}",
+            "TOX_ENV=${toxEnv}",
+            "TOX_PACKAGE_SELECTOR=${pkgSelector}",
+            ]){
+        if(isUnix()){
+            sh(
+                label: 'Running tests on Packages on DevPi',
+                script: '$DEVPI test --index $_DEVPI_INDEX $PACKAGE_NAME==$PACKAGE_VERSION -s $TOX_PACKAGE_SELECTOR --clientdir $CLIENT_DIR -e $TOX_ENV -v'
+            )
+        } else{
+            bat(
+                label: 'Running tests on Packages on DevPi',
+                script: '%DEVPI% test --index %_DEVPI_INDEX% %PACKAGE_NAME%==%PACKAGE_VERSION% -s %TOX_PACKAGE_SELECTOR% --clientdir %CLIENT_DIR% -e %TOX_ENV% -v'
+            )
+        }
     }
 }
 
@@ -249,14 +269,24 @@ def testDevpiPackage2(args=[:]){
     def toxEnv = args.test.toxEnv
     def testSetup = args.test['setup'] ? args.test['setup'] : {}
     def testTeardown = args.test['teardown'] ? args.test['teardown'] : {}
-
-    agent{
-        testSetup()
-        try{
-            logIntoDevpiServer(devpiExec, devpiServerUrl, credentialsId, clientDir)
-            runDevpiTest(devpiExec, devpiIndex, pkgName, pkgVersion, pkgSelector, clientDir, toxEnv)
-        } finally {
-            testTeardown()
+    def retries = args['retries'] ? args['retries'] : 1
+    def attempt = 1
+    retry(retries){
+        agent{
+            testSetup()
+            try{
+                logIntoDevpiServer(devpiExec, devpiServerUrl, credentialsId, clientDir)
+                runDevpiTest(devpiExec, devpiIndex, pkgName, pkgVersion, pkgSelector, clientDir, toxEnv)
+            } catch(Exception e){
+                if (attempt < retries) {
+                    echo 'Waiting 5 seconds'
+                    sleep 5;
+                }
+                throw e;
+            }finally {
+                testTeardown()
+                attempt += 1
+            }
         }
     }
 }

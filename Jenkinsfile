@@ -33,14 +33,6 @@ def getStandAloneStorageServers(){
     }
 }
 
-def getDevPiStagingIndex(){
-
-    if (env.TAG_NAME?.trim()){
-        return 'tag_staging'
-    } else{
-        return "${env.BRANCH_NAME}_staging"
-    }
-}
 
 def getDevpiConfig() {
     node(){
@@ -136,7 +128,7 @@ def get_build_number(){
             }
             return VersionNumber(projectStartDate: '2017-11-08', versionNumberString: '${BUILD_DATE_FORMATTED, "yy"}${BUILD_MONTH, XX}${BUILDS_THIS_MONTH, XXX}', versionPrefix: '', worstResultForIncrement: 'SUCCESS')
         } catch(e){
-            return ""
+            return ''
         }
     }
 }
@@ -152,7 +144,7 @@ def runTox(){
         )
         def windowsJobs = [:]
         def linuxJobs = [:]
-        stage("Scanning Tox Environments"){
+        stage('Scanning Tox Environments'){
             parallel(
                 'Linux':{
                     linuxJobs = tox.getToxTestsParallel(
@@ -160,7 +152,7 @@ def runTox(){
                             label: 'linux && docker && x86',
                             dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
                             dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                            dockerRunArgs: "-v pipcache_speedwagon:/.cache/pip"
+                            dockerRunArgs: '-v pipcache_speedwagon:/.cache/pip'
                         )
                 },
                 'Windows':{
@@ -169,7 +161,7 @@ def runTox(){
                             label: 'windows && docker && x86',
                             dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
                             dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
-                            dockerRunArgs: "-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip"
+                            dockerRunArgs: '-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip'
                      )
                 },
                 failFast: true
@@ -190,7 +182,7 @@ def testSpeedwagonChocolateyPkg(version){
         )
     }
     powershell(
-            label: "Checking for Start Menu shortcut",
+            label: 'Checking for Start Menu shortcut',
             script: 'Get-ChildItem "$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs" -Recurse -Include *.lnk'
         )
     bat 'speedwagon --help'
@@ -208,48 +200,47 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
             macArchitectures.add('x86_64')
         }
         if(params.INCLUDE_MACOS_ARM == true){
-            macArchitectures.add("m1")
+            macArchitectures.add('m1')
         }
         macArchitectures.each{ processorArchitecture ->
             macPackageStages["Test Python ${pythonVersion}: wheel Mac ${processorArchitecture}"] = {
-                retry(3){
-                    withEnv([
-                        'QT_QPA_PLATFORM=offscreen',
-                        'PATH+EXTRA=./venv/bin'
-                        ]) {
-                        devpi.testDevpiPackage(
-                            agent: [
-                                label: "mac && python${pythonVersion} && ${processorArchitecture} && devpi-access"
-                            ],
-                            devpi: [
-                                index: devpiIndex,
-                                server: devpiServer,
-                                credentialsId: devpiCredentialsId,
-                                devpiExec: 'venv/bin/devpi'
-                            ],
-                            package:[
-                                name: packageName,
-                                version: packageVersion,
-                                selector: 'whl'
-                            ],
-                            test:[
-                                setup: {
-                                    checkout scm
-                                    sh(
-                                        label:'Installing Devpi client',
-                                        script: '''python3 -m venv venv
-                                                    venv/bin/python -m pip install pip --upgrade
-                                                    venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
-                                                    '''
-                                    )
-                                },
-                                toxEnv: "py${pythonVersion}".replace('.',''),
-                                teardown: {
-                                    sh( label: 'Remove Devpi client', script: 'rm -r venv')
-                                }
-                            ]
-                        )
-                    }
+                withEnv([
+                    'QT_QPA_PLATFORM=offscreen',
+                    'PATH+EXTRA=./venv/bin'
+                    ]) {
+                    devpi.testDevpiPackage(
+                        agent: [
+                            label: "mac && python${pythonVersion} && ${processorArchitecture} && devpi-access"
+                        ],
+                        devpi: [
+                            index: devpiIndex,
+                            server: devpiServer,
+                            credentialsId: devpiCredentialsId,
+                            devpiExec: 'venv/bin/devpi'
+                        ],
+                        package:[
+                            name: packageName,
+                            version: packageVersion,
+                            selector: 'whl'
+                        ],
+                        test:[
+                            setup: {
+                                checkout scm
+                                sh(
+                                    label:'Installing Devpi client',
+                                    script: '''python3 -m venv venv
+                                                venv/bin/python -m pip install pip --upgrade
+                                                venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
+                                                '''
+                                )
+                            },
+                            toxEnv: "py${pythonVersion}".replace('.',''),
+                            teardown: {
+                                sh( label: 'Remove Devpi client', script: 'rm -r venv')
+                            }
+                        ],
+                        retries: 3
+                    )
                 }
             }
             macPackageStages["Test Python ${pythonVersion}: sdist Mac ${processorArchitecture}"] = {
@@ -287,7 +278,8 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
                             teardown: {
                                 sh( label: 'Remove Devpi client', script: 'rm -r venv')
                             }
-                        ]
+                        ],
+                        retries: 3
                     )
                 }
             }
@@ -353,7 +345,7 @@ def testPythonPackages(){
                                 label: 'windows && docker && x86',
                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
-                                args: "-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip"
+                                args: '-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip'
                             ]
                         ],
                         glob: 'dist/*.tar.gz,dist/*.zip',
@@ -369,7 +361,7 @@ def testPythonPackages(){
                                 label: 'windows && docker && x86',
                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
-                                args: "-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip"
+                                args: '-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip'
                             ]
                         ],
                         glob: 'dist/*.whl',
@@ -387,7 +379,7 @@ def testPythonPackages(){
                 architectures.add('x86_64')
             }
             if(params.INCLUDE_LINUX_ARM == true){
-                architectures.add("arm")
+                architectures.add('arm')
             }
             architectures.each{ processorArchitecture ->
                 linuxTests["Linux-${processorArchitecture} - Python ${pythonVersion}: sdist"] = {
@@ -397,12 +389,12 @@ def testPythonPackages(){
                                 label: "linux && docker && ${processorArchitecture}",
                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                args: "-v pipcache_speedwagon:/.cache/pip"
+                                args: '-v pipcache_speedwagon:/.cache/pip'
                             ]
                         ],
                         glob: 'dist/*.tar.gz',
                         stash: 'PYTHON_PACKAGES',
-                        toxEnv: processorArchitecture=="arm" ? "py${pythonVersion.replace('.', '')}" : "py${pythonVersion.replace('.', '')}-PySide6",
+                        toxEnv: processorArchitecture=='arm' ? "py${pythonVersion.replace('.', '')}" : "py${pythonVersion.replace('.', '')}-PySide6",
                         retry: 3,
                     )
                 }
@@ -413,12 +405,12 @@ def testPythonPackages(){
                                 label: "linux && docker && ${processorArchitecture}",
                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                args: "-v pipcache_speedwagon:/.cache/pip"
+                                args: '-v pipcache_speedwagon:/.cache/pip'
                             ]
                         ],
                         glob: 'dist/*.whl',
                         stash: 'PYTHON_PACKAGES',
-                        toxEnv: processorArchitecture=="arm" ? "py${pythonVersion.replace('.', '')}" : "py${pythonVersion.replace('.', '')}-PySide6",
+                        toxEnv: processorArchitecture=='arm' ? "py${pythonVersion.replace('.', '')}" : "py${pythonVersion.replace('.', '')}-PySide6",
                         retry: 3,
                     )
                 }
@@ -432,7 +424,7 @@ def testPythonPackages(){
                 architectures.add('x86_64')
             }
             if(params.INCLUDE_MACOS_ARM == true){
-                architectures.add("m1")
+                architectures.add('m1')
             }
             architectures.each{ processorArchitecture ->
                 macTests["Mac - ${processorArchitecture} - Python ${pythonVersion}: wheel"] = {
@@ -590,7 +582,7 @@ pipeline {
                   }
             }
             steps {
-                catchError(buildResult: 'UNSTABLE', message: 'Sphinx has warnings', stageResult: "UNSTABLE") {
+                catchError(buildResult: 'UNSTABLE', message: 'Sphinx has warnings', stageResult: 'UNSTABLE') {
                     buildSphinx()
                 }
             }
@@ -639,7 +631,7 @@ pipeline {
                                     parallel {
                                         stage('Run PyTest Unit Tests'){
                                             steps{
-                                                catchError(buildResult: 'UNSTABLE', message: 'Did not pass all pytest tests', stageResult: "UNSTABLE") {
+                                                catchError(buildResult: 'UNSTABLE', message: 'Did not pass all pytest tests', stageResult: 'UNSTABLE') {
                                                     sh(
                                                         script: 'PYTHONFAULTHANDLER=1 coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml --capture=no'
                                                     )
@@ -675,7 +667,7 @@ pipeline {
                                         stage('Run MyPy Static Analysis') {
                                             steps{
                                                 sh 'mypy --version'
-                                                catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: "UNSTABLE") {
+                                                catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
                                                     tee('logs/mypy.log'){
                                                         sh(label: 'Running MyPy',
                                                            script: 'mypy -p speedwagon --html-report reports/mypy/html'
@@ -707,7 +699,7 @@ pipeline {
                                         }
                                         stage('Run Flake8 Static Analysis') {
                                             steps{
-                                                catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: "UNSTABLE") {
+                                                catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
                                                     sh script: 'flake8 speedwagon -j 1 --tee --output-file=logs/flake8.log'
                                                 }
                                             }
@@ -718,11 +710,11 @@ pipeline {
                                                 }
                                             }
                                         }
-                                        stage("pyDocStyle"){
+                                        stage('pyDocStyle'){
                                             steps{
                                                 catchError(buildResult: 'SUCCESS', message: 'Did not pass all pyDocStyle tests', stageResult: 'UNSTABLE') {
                                                     sh(
-                                                        label: "Run pydocstyle",
+                                                        label: 'Run pydocstyle',
                                                         script: '''mkdir -p reports
                                                                    pydocstyle speedwagon > reports/pydocstyle-report.txt
                                                                    '''
@@ -866,8 +858,6 @@ pipeline {
                             post{
                                 always{
                                     stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: 'PYTHON_PACKAGES'
-                                    stash includes: 'dist/*.whl', name: 'PYTHON_WHL_PACKAGE'
-                                    stash includes: 'dist/*.tar.gz,dist/*.zip', name: 'PYTHON_SDIST_PACKAGE'
                                 }
                                 cleanup{
                                     cleanWs(
@@ -1203,7 +1193,7 @@ pipeline {
                         }
                     }
                 }
-                stage("Test DevPi packages") {
+                stage('Test DevPi packages') {
                     steps{
                         script{
                             def devpi
@@ -1219,7 +1209,7 @@ pipeline {
                                             agent: [
                                                 dockerfile: [
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE",
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
                                                     label: 'windows && docker && x86 && devpi-access'
                                                 ]
                                             ],
@@ -1235,7 +1225,8 @@ pipeline {
                                             ],
                                             test:[
                                                 toxEnv: "py${pythonVersion}".replace('.',''),
-                                            ]
+                                            ],
+                                            retries: 3
                                         )
                                     }
                                     windowsPackages["Test Python ${pythonVersion}: wheel Windows"] = {
@@ -1243,7 +1234,7 @@ pipeline {
                                             agent: [
                                                 dockerfile: [
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE",
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
                                                     label: 'windows && docker && x86 && devpi-access'
                                                 ]
                                             ],
@@ -1259,7 +1250,8 @@ pipeline {
                                             ],
                                             test:[
                                                 toxEnv: "py${pythonVersion}".replace('.',''),
-                                            ]
+                                            ],
+                                            retries: 3
                                         )
                                     }
                                 }
@@ -1272,8 +1264,9 @@ pipeline {
                                             agent: [
                                                 dockerfile: [
                                                     filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL",
-                                                    label: 'linux && docker && x86 && devpi-access'
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                    label: 'linux && docker && x86 && devpi-access',
+                                                    args: '-v pipcache_speedwagon:/.cache/pip'
                                                 ]
                                             ],
                                             devpi: [
@@ -1288,7 +1281,8 @@ pipeline {
                                             ],
                                             test:[
                                                 toxEnv: "py${pythonVersion}".replace('.',''),
-                                            ]
+                                            ],
+                                            retries: 3
                                         )
                                     }
                                     linuxPackages["Test Python ${pythonVersion}: wheel Linux"] = {
@@ -1297,7 +1291,8 @@ pipeline {
                                                 dockerfile: [
                                                     filename: 'ci/docker/python/linux/tox/Dockerfile',
                                                     additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                    label: 'linux && docker && x86 && devpi-access'
+                                                    label: 'linux && docker && x86 && devpi-access',
+                                                    args: '-v pipcache_speedwagon:/.cache/pip'
                                                 ]
                                             ],
                                             devpi: [
@@ -1312,7 +1307,8 @@ pipeline {
                                             ],
                                             test:[
                                                 toxEnv: "py${pythonVersion}".replace('.',''),
-                                            ]
+                                            ],
+                                            retries: 3
                                         )
                                     }
                                 }
@@ -1350,7 +1346,7 @@ pipeline {
                                 pkgName: props.Name,
                                 pkgVersion: props.Version,
                                 server: DEVPI_CONFIG.server,
-                                indexSource: "DS_Jenkins/${getDevPiStagingIndex()}",
+                                indexSource: DEVPI_CONFIG.stagingIndex,
                                 indexDestination: 'production/release',
                                 credentialsId: DEVPI_CONFIG.credentialsId
                             )
@@ -1363,17 +1359,17 @@ pipeline {
                     node('linux && docker && devpi-access') {
                        script{
                             if (!env.TAG_NAME?.trim()){
+                                checkout scm
                                 docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
-                                    checkout scm
                                     load('ci/jenkins/scripts/devpi.groovy').pushPackageToIndex(
                                         pkgName: props.Name,
                                         pkgVersion: props.Version,
                                         server: DEVPI_CONFIG.server,
-                                        indexSource: "DS_Jenkins/${getDevPiStagingIndex()}",
+                                        indexSource: DEVPI_CONFIG.stagingIndex,
                                         indexDestination: "DS_Jenkins/${env.BRANCH_NAME}",
                                         credentialsId: DEVPI_CONFIG.credentialsId,
                                     )
-                            }
+                                }
                            }
                        }
                     }
@@ -1381,12 +1377,12 @@ pipeline {
                 cleanup{
                     node('linux && docker && x86 && devpi-access') {
                        script{
+                            checkout scm
                             docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
-                                checkout scm
                                 load('ci/jenkins/scripts/devpi.groovy').removePackage(
                                     pkgName: props.Name,
                                     pkgVersion: props.Version,
-                                    index: "DS_Jenkins/${getDevPiStagingIndex()}",
+                                    index: DEVPI_CONFIG.stagingIndex,
                                     server: DEVPI_CONFIG.server,
                                     credentialsId: DEVPI_CONFIG.credentialsId,
 
